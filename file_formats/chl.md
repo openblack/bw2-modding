@@ -54,12 +54,40 @@ A `uint32` at the start of this section represents the number of procedures that
 need to be read.
 
 #### Procedure Format
-
-
-### Functions
-
-named functions
+|                     | Type            | Description                                                                                     |
+|---------------------|-----------------|-------------------------------------------------------------------------------------------------|
+| Name                | string          | The name of the procedure.                                                                      |
+| Source Filename     | string          | The filename of the source file this was compiled from.                                         |
+| ?                   | uint32_t        | Unknown.                                                                                        |
+| ?                   | uint32_t        | Unknown.                                                                                        |
+| Local Variables     | uint32_t + data | Names of the local variables, read the integer and then that amount of null terminated strings. |
+| Instruction Address | uint32_t        | The location of the instruction to start at in the instruction array.                           |
+| Parameter Count     | uint32_t        | How many local variables are parameters.                                                        |
+| Procedure ID        | uint32_t        | Unique ID of this procedure, used by instructions to call it.                                   |
 
 ### Data
 
-string data and referred to via pointers.
+A raw byte array represented with it's length prefixed as a `uint32`. Contains
+data used throughout the LHVM.
+
+### Null Padding
+
+4096 bytes of null bytes padding.
+
+### Unknown Segment
+
+A lonesome `uint32` always 0 in every test case.
+
+### Saved Global Segment
+
+A `uint32` at the start of this section represents the number of saved globals
+that need to be read.
+
+#### Saved Global Format
+|       | Type     | Description                                                                   |
+|-------|----------|-------------------------------------------------------------------------------|
+| ?     | uint32_t | Unknown                                                                       |
+| Value | byte[4]  | The data to set the global to - unspecified type because it can be different. |
+| Name  | string   | The name of the variable.                                                     |
+
+Saved globals are simply default values for the globals.
