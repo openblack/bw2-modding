@@ -1,4 +1,8 @@
-| OpCode | SubType | DataType | StackIn | StackOut | V3StackIn | V3StackOut | Name                | Description                                                                                                                                                       |
+The first three columns of this table identify the opcode of the table,
+in the `chl` file. They are named in this order: `Type, Subtype, Datatype`.
+*They were removed to provide a better table view*.
+
+|        |         |          | In      | Out      | V3In      | V3Out      | Name                | Description                                                                                                                                                       |
 |--------|---------|----------|---------|----------|-----------|------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 0      |         |          |         |          |           |            | END                 | End of a script.                                                                                                                                                  |
 | 1      | 1       |          | 1       |          |           |            | WAIT                | If popped bool is true then jumps to the instruction address pointed to by the parameter which must be behind the current instruction.                            |
