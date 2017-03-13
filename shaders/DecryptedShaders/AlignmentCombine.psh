@@ -1,0 +1,40 @@
+ps.2.0
+
+dcl			t0.xyzw
+dcl_2d		s0										//Blurred stuff
+dcl_2d		s1										//Proper landscape
+
+def			c0,	0.33,	0.33,	0.33,	0.0
+def			c4,	-1.0,	1.0,	0.0,	0.0
+
+//C1	0.5f/viewport.Width,		0.5f/viewport.Height,	1.0f,				1.0f
+//C2	good_saturation,			good_brightness,			evil_saturation,	evil_brightness
+
+add			r2,	t0,	c1								//Shove extra pixel bits onto texture
+
+texld		r0,	t0,	s0								//Blurred stuff (rgb for good, a for evil)
+texld		r1,	r2,	s1								//Proper landscape
+
+//Gather useful stuff
+dp3_pp		r3,	r1,	c0								//r3	=	Background	GreyScale
+sub_pp		r4,	r1,	r3								//r4	=	Background	Colour difference from greyscale
+
+//Saturation
+mad_pp		r5,	r4,	c2.z,	r3						//r5	=	Evil image
+//Brightness
+mul_sat_pp	r5,	r5,	c2.w
+
+mad_pp		r0.a,	r0.a,	c4.x,	c4.y			//Invert evil mask
+lrp_pp		r1,	r0.a,	r1,	r5						//r1	=	is now the evils brightness and saturation where the evil mask is
+
+//Gather bloom stuff
+dp3_pp		r3,	r0,	c0								//r3	=	Bloom greyscale
+sub_pp		r4,	r0,	r3								//r4	=	Bloom	Colour difference from greyscale
+
+//Saturation
+mad_pp		r0,	r4,	c2.x,	r3
+
+//Add bloom (brightness here)
+mad_sat_pp	r1,	r0,	c2.y,	r1
+
+mov_pp		oC0,	r1

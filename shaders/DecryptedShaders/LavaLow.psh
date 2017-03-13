@@ -1,0 +1,23 @@
+ps.1.1
+
+//	c0			0,0,0,tween_between_current_and_next
+//	c1			sun direction
+//	c2			sun colour
+//	c3			ambient colour
+
+tex		t0		// r0 = state
+tex		t1		// r1 = next state.
+tex		t2		// hot texture
+tex		t3		// cold texture
+
+// Light cold texture into r0
+mul		r0,		c3,		t3
+
+// Find state texture into r1
+lrp		r1,		c0.w,	t1,		t0
+
+// Blend between cold (lit) and hot texture
+lrp		r0,		r1.w,	t2,		r0
+
+// And set alpha.
+mov		r0.w,	r1.z

@@ -1,0 +1,19 @@
+ps.2.0
+
+dcl		t0.xyzw
+dcl_2d	s0
+
+def		c0, 2.0,	-1.0,	-2.0,	1.0
+def		c1,	0.33,	0.33,	0.33,	0.0
+
+texld	r0,	t0,	s0
+
+//Gets everything above half, then writes it to colour
+mad_sat_pp	r2,	r0.a, c0.x, c0.y
+mul_pp		r1,	r0,	r2
+
+//Gets lower half, writes it to alpha
+mad_sat_pp	r1.a, r0.a, c0.z, c0.w
+
+//And out
+mov_pp		oC0, r1

@@ -1,0 +1,63 @@
+ps.2.0
+
+dcl		v0		// Sky colour + bloom alpha for sun
+
+dcl		t0.xy	// Cloud uv coords
+dcl		t1.xy	// Star uv coords
+dcl		t2.xyzw	// Moon uvwz coords
+
+dcl_2d		s0		// Cloud
+dcl_2d		s1		// Stars
+dcl_volume	s2		// Moon
+
+// Constants.
+
+// c0		cloud colour / star colour.
+// c1	   -256.0, 1.0, 2.0, -1.0
+// c2		moon colour
+// c3		3 rand numbers for star flicker, power
+// 
+
+// Load textures
+texld_pp	r0,		t0,		s0		// Clouds
+texld_pp	r1,		t1,		s1		// Stars
+texld_pp	r2,		t2,		s2		// Moon
+
+// Turn the moon to black if it is 'zclipped'.
+mov_sat_pp r5.x,	t2.w
+mul_pp	   r2,		r2,		r5.x
+
+// Block out stars where the moon alpha > 0 and block out the moon where the alpha < 0.5
+mad_sat_pp	r5.x,	r2.a,	c1.x,	c1.y	// r5.x is 1 when moon alpha is 0.
+mad_sat_pp	r5.y,	r2.a,	c1.z,	c1.w	// r5.y is 1 when moon alpha is 1.
+mul_pp		r1,		r1,		r5.x			// Block out stars.
+//mul		r2,		r2,		r5.y			// No moon where there is low alpha.
+
+// Modulate cloud by cloud colour.
+mul_pp		r0.xyz,	r0,		c0
+
+// No moon blooming where there's no moon rgb!
+dp3_sat_pp	r2.a,	r2,		r2
+
+// Find star flicker amount
+mul_pp		r5.x,	t1.x,	c3.x
+mad_pp		r5.x,	t1.y,	c3.y,	r5.x
+add_pp		r5.x,	r5.x,	c3.z
+frc_pp		r5.x,	r5.x
+pow_pp		r5.x,	r5.x,	c3.w
+mul_pp		r5.x,	r5.x,	c0.w		// Combine with star colour
+
+// Modulate moon and stars by colour
+mul_pp		r1,		r1,		r5.x		// Modulate star texture by star colour
+mul_pp		r2,		r2,		c2			// Modulate moon colour.
+
+
+// Assemble final colour.
+add_pp		r4,		r2,		v0			// Moon + stars
+add_pp		r4.rgb,	r4,		r1
+
+// Blend in the clouds
+lrp_pp		r5,		r0.a,	r0,		r4
+
+// And output.
+mov_pp		oC0,	r5

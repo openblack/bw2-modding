@@ -1,0 +1,14 @@
+ps.1.4
+
+// c0 must be 0.0, 0.0, 0.0, 0.0
+// c1 must be 1.0, 1.0, 1.0, 1.0
+// c2.x is the alpha amount.
+
+texld r0, t0
+sub   r0, r0, v0
+mov   r2, c1
+cmp   r1, r0, c0, r2
+dp4   r0, r1, c1
+mov   r0, r0.w
+sub   r0.w, r0.w, c2.x
+mul   r0, r0, v1

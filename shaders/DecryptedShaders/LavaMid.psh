@@ -1,0 +1,91 @@
+ps.2.0
+
+//	c0			tween_between_current_and_next,
+//				2.0F,
+//			   -1.0F,
+//				16.0F,
+//	c1			actual_params1.amount,
+//				actual_params1.dudv_multiplier,
+//				actual_params2.amount,
+//				actual_params2.dudv_multiplier,
+//
+//	c2			sun direction,norm_sun_angle
+//	c3			sun colour
+//	c4			ambient colour
+//
+
+def			c5,	1.33, -0.33, 0.50, 0.29
+def			c6, 0.29,  0.03, 0.00, 1.00
+
+dcl			t0.xy	// State texture (u,v) coords
+dcl			t1.xy	// Lava base coords
+dcl			t2.xy	// Normal map coords
+
+dcl_2d		s0		// Current State
+dcl_2d		s1		// Next State
+dcl_volume	s2		// lava volume texture
+dcl_2d		s3		// Terrain normal texture
+dcl_2d		s4		// Horizon map
+
+// Find state into r2.
+texld	r0,		t0,		s0	// r0 = state
+texld	r1,		t0,		s1	// r1 = next state.
+
+lrp		r2,		c0.x,	r1,		r0
+
+// Base lava texture uv into r3
+mov		r3,		t1.x
+mov		r3.y,	t1.y
+
+// Convert dudv from biased.
+mad		r2.xy,	r2,		c0.y,	c0.z
+mad_sat	r10.z,	r2.z,	c5.x,	c5.y
+
+mul		r2.xy,	r2,		r10.z
+
+// The two lookup uvs into r4 and r5
+mad		r4,		r2,   -c1.y,	r3
+mad		r5,		r2,   -c1.w,	r3
+
+mov		r4.z,	r2.z
+mov		r5.z,	r2.z
+
+// Two lookups.
+texld_pp	r6,		r4,		s2
+texld_pp	r7,		r5,		s2
+
+// And blend.
+mul_pp		r8,		r6,		c1.x
+mad_pp		r8,		r7,		c1.z,	r8
+
+// Find horizon map multiplier.
+texld_pp	r1,		t2,		s4
+sub_pp		r1.x,	c2.w,	r1.r
+mul_sat_pp r1.x,	r1.x,	c0.w
+
+// Find normal into r0
+texld_pp	r0,		t2,		s3
+mad_pp		r0,		r0,		c0.y,	c0.z
+
+// Find lighting into r0.
+dp3_sat_pp	r0,		r0,		c2
+mul_pp		r0,		r0,		r1.x// Include horizon map
+mul_pp		r0,		r0,		c3	// Sun colour
+add_pp		r0,		r0,		c4	// Include ambient
+
+// include self illumination in texture.
+add_sat_pp	r11,	r0,		r8.a
+mul_pp		r8.rgb,	r8,		r11
+
+// If alpha > c6.x then 1 else 0
+
+sub_pp		r2.a,	r2.a,	c6.x
+cmp_pp		r2.a,	r2.a,	c6.w,	c6.z
+
+//mad		r8.a,	r8.a,	c5.z,	c5.z
+add_pp		r8.a,	r8.a,	c6.y
+mul_pp		r8.a,	r8.a,	r2.a
+
+// And output.
+
+mov_pp		oC0,	r8

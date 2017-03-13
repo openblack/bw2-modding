@@ -1,0 +1,119 @@
+	ps.2.0
+
+	// c0
+	// c1
+	// c2 = Sun normal
+	// c3 = Sun colour
+	// c4 = ambient colour
+	
+	def			c5,	1.25, -0.25, 1.5, 0.50
+	def			c6, 0.29,  1.00, 0.0, 0.03
+	
+	dcl			t0.xy	// Texture (u,v) coords
+	dcl			t1.xy
+	dcl			t2.xyzw	// normal
+	dcl			t3.xyzw	// u/x vector
+	dcl			t4.xyzw	// v/z vector
+
+	dcl_2d		s0		// Current State
+	dcl_2d		s1		// Next State
+	dcl_volume	s2		// lava volume diffuse/illum texture
+	dcl_volume	s3		// lava volume normal texture
+
+	texld	r0,		t0,		s0				// r0 = state
+	texld	r1,		t0,		s1				// r1 = next state.
+	lrp		r2,		c0.x,	r1,		r0		// r2 = interpolated state that we actually use.
+
+	// Base lava texture uv coords into r3
+
+	sub		r3,		r0,		r0
+	mov		r3.x,	t1.x
+	mov		r3.y,	t1.y
+
+	// Convert r2 state into more useable forms.
+
+	mad		r2.xy,	r2,		c0.y,	c0.z		// Convert dudv from biased. c0.y = 2, c0.z = -1
+	mad_sat	r10.z,	r2.z,	c5.x,	c5.y		// Lowest bit of temperature stops texture moving
+	mul		r2.xy,	r2,		r10.z
+	mul		r2.xy,	r2,		c5.z
+
+	// The two lookup uvs into r4 and r5
+
+	mad		r4,		r2,   -c1.y,	r3
+	mad		r5,		r2,   -c1.w,	r3
+
+	rsq		r4.z,	r2.z
+	rcp		r4.z,	r4.z
+	mov		r5.z,	r4.z
+
+	//mov		r4.z,	r2.z						// r2.z is temperature
+	//mov		r5.z,	r2.z
+
+	// Look up into the normal map.
+
+	texld	r6,		r4,		s3
+	texld	r7,		r5,		s3
+
+	// And blend. So now r1 is the normal
+
+	mul		r1,		r6,		c1.x
+	mad		r1,		r7,		c1.z,	r1
+	mad		r1,		r1,		c0.y,	c0.z	// Convert from biased
+	
+	// ==================================================
+	//
+	// Now lighting
+	//
+	// ==================================================
+	
+	// Work out the world space normal into r9.
+	
+	mul		r3,		r1.x,	t3
+	mad		r3,		r1.y,	t4,		r3
+	mad		r3,		r1.z,	t2,		r3
+	nrm		r9,		r3
+	
+	// Light the normal - lit colour into r10
+	
+	dp3_sat	r10,	r9,		c2	// Dot product from sun
+	mul		r10,	r10.w,	c3	// Multiplied by sun colour
+	add		r10,	r10,	c4	// Add in ambient
+
+	// Two lookups.
+
+	texld	r6,		r4,		s2
+	texld	r7,		r5,		s2
+
+	// And blend. So now r8 is (rgb)/Illum
+
+	mul		r8,		r6,		c1.x
+	mad		r8,		r7,		c1.z,	r8
+
+	// Blend between max brightness and lit colour depending on self illum.
+
+	add_sat	r10,	r10,	r8.a
+	
+	// Add onto alpha value - depending on self-illumination.
+
+	mul		r11.a,	r8.a,	r2.a
+	mad		r2.a,	r11.a,	c6.w,	r2.a
+	
+	// r2.a is a alpha value. More than c6.x => 1.0F, less => 0.0
+	
+	sub		r2.a,	r2.a,	c6.x
+	cmp		r2.a,	r2.a,	c6.y,	c6.z
+
+	// The pixel is rejected if alpha == 0, but otherwise we want r8.a (the bloom)
+	// to be in the output pixel.  We must make sure the bloom isn't zero! So add
+	// on a small value to it.	
+	
+	add		r8.a,	r8.a,	c5.w		// c5.w is 0.5F
+	mul		r8.a,	r8.a,	r2.a
+	
+	// Modulate by colour.
+
+	mul		r8.rgb,	r8,		r10
+	
+	// And output.
+
+	mov		oC0,	r8
