@@ -1,0 +1,14 @@
+//------------------------------------------------
+//  LAND 6 ARRIVAL CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land6Arrival
+start
+
+begin dialogue
+	say "The Land 6 Arrival Cut-Scene has not been implemented yet."
+	wait until read
+end dialogue
+
+end script Land6Arrival

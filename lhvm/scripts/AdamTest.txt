@@ -1,0 +1,28 @@
+run script AdamTest
+
+begin script AdamTest
+MyVid1 = 0
+MyVid2 = 0
+start
+	MyVid1 = get town with id 15
+	if not MyVid1 exists
+		begin dialogue
+			say "fucksticks"
+			wait 2 seconds
+		end dialogue
+	else
+		MyVid2 = get building ALL_ABODES in MyVid1 maximum built 1.0
+		if not MyVid2 exists
+			begin dialogue
+				say "fucksticks2"
+				wait until read
+			end dialogue
+		else
+			if is town MyVid1 settlement
+				MyVid2 = create visual effect "gp_s_blackannus_explode.ves" strength 1 scale 1 at {MyVid2} time 5
+			else
+				MyVid2 = create visual effect "gp_s_townctr_beam.ves" strength 1 scale 1 at {MyVid2} time 10
+			end if
+		end if
+	end if
+end script AdamTest

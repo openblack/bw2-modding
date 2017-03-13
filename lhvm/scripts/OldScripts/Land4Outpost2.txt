@@ -1,0 +1,376 @@
+//------------------------------------------------
+//  LAND 4 JAPANESE OUTPOST 2 AI
+//------------------------------------------------
+
+define script Land4Outpost2TownManagement
+define script Land4Outpost2ArmyManagement
+
+begin script Land4Outpost2
+
+start
+
+run background script Land4Outpost2TownManagement
+run background script Land4Outpost2ArmyManagement
+
+begin loop
+	//if PLAYER 1 owns the town
+	if PLAYER of L4JapanOutpost2 == 0
+		L4Outpost2Converted = 1
+		L4JapaneseBattleground = 1
+	end if
+	until L4Outpost2Converted == 1
+end loop
+
+/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+begin cinema
+	//	set camera position to {1286.980,357.471,1462.034}
+	//	set camera focus to {1293.286,326.125,1483.041}
+	//	say "The Norse Submission scripts have not been implemented yet."
+	//	wait until read
+	//	say "It will show simple shots of the villagers reacting to the change..."
+	//	wait until read
+	//	set camera position to {1286.980,357.471,1462.034}
+	//	set camera focus to {1293.286,326.125,1483.041}
+	//	say "Then it goes on to show Fenrick, the Norse High Priest..."
+	//	wait until read
+	//	say "being dragged in front of Dimitrios who shows him the true god."
+	//	wait until read
+	//	say "Fenrick warns of the immense power of the Aztecs and before killing himself..."
+	//	wait until read
+	//	say "he implies that even a god won't save the Greeks."
+	//	wait until read
+end cinema
+
+L4Outpost2Converted = 2
+
+// IF PLAYER CONVERTS L4JapanOutpost2 THEN TRIGGER THE L4JapanOutpost2 SUBMISSION CUT-SCENE
+// REMEMBER TO SET L4Outpost2Converted = 2 when script completed (used in L4Control to trigger L4IslandComplete cut-scene)
+
+end script Land4Outpost2
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script Land4Outpost2TownManagement
+
+InitialGreekAggression = 20
+AngeredGreekAggression = 80
+InitialGreekTolerance = 200
+AngerCounter = 0
+AngerTimer = create timer for 0 seconds
+AngerKickDelay = 180
+FeudValue = 0
+
+start
+
+// Initial villager setup
+set town L4JapanOutpost2 desire for GATHER_FOOD to 0.80
+set town L4JapanOutpost2 desire for GROW_FOOD to 0.60
+set town L4JapanOutpost2 desire for GATHER_WOOD to 0.40
+set town L4JapanOutpost2 desire for GATHER_ORE to 0.40
+set town L4JapanOutpost2 desire for BREED to 0.40
+set town L4JapanOutpost2 desire for ATTACK to 0.10
+set town L4JapanOutpost2 desire for FUN to 0.50
+
+// Initial feud status
+set town L4JapanOutpost2 interracial tolerance with town L4GreekTown to InitialGreekTolerance
+set town L4JapanOutpost2 racial aggression with town L4GreekTown to InitialGreekAggression
+set town L4JapanOutpost2 impressive threshold for town L4GreekTown to 100
+
+wait 10 seconds // give the other scripts time to create the units existing at the start of the land
+
+// Initial army setup
+set town L4JapanOutpost2 platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.2
+set town L4JapanOutpost2 platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.3
+set town L4JapanOutpost2 army type ARMY_UNIT_TYPE_RANGED_1 platoon ratio on wall to 0.5
+///set town L4JapanOutpost2 siege weapon type SIEGE_BALANCE_TYPE_BALLISTA to 2
+
+begin loop
+
+until L4Outpost2Converted == 1
+end loop
+
+end script Land4Outpost2TownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script Land4Outpost2ArmyManagement
+
+ IdlePlatoons	= 0
+ JapanArmyOne = 0
+ IdleTroops = 0
+ Count = 0
+
+ L4_JapMountainArcher1 = 0
+ L4_JapMountainArcher1Pos = marker at {926.067, 99.531, 1314.962}
+ L4_JapMountainArcher1RetreatPos1 = marker at {1108.106, 46.027, 1374.170}
+ L4_JapMountainArcher1RetreatPos2 = marker at {1139.813, 69.567, 1632.346}
+ L4_JapMountainArcher1StrongholdRetreatPos = marker at {889.021, 120.209, 1652.066}
+
+ L4_JapMountainArcher2 = 0
+ L4_JapMountainArcher2Pos = marker at {967.289, 138.123, 1373.294}
+ L4_JapMountainArcher2AdvancedPos = marker at {926.486, 135.949, 1356.170}
+ L4_JapMountainArcher2RetreatPos1 = marker at {1133.048, 77.106, 1467.194}
+ L4_JapMountainArcher2RetreatPos2 = marker at {1128.311, 75.048, 1607.042}
+ L4_JapMountainArcher2StrongholdRetreatPos = marker at {892.093, 131.508, 1679.695}
+
+ L4_JapMountainArcher3 = 0
+ L4_JapMountainArcher3Pos = marker at {879.808, 143.195, 1463.788}
+
+ L4_JapStrongholdGrunt1 = 0
+ L4_JapStrongholdGrunt1Pos = marker at {900.888, 144.516, 1534.864}
+ L4_JapStrongholdGrunt2 = 0
+ L4_JapStrongholdGrunt2Pos = marker at {925.298, 130.762, 1508.458}
+ L4_JapStrongholdArcher1 = 0
+ L4_JapStrongholdArcher1Pos = marker at {942.251, 126.533, 1506.979}
+ L4_JapStrongholdBallista1 = 0
+ L4_JapStrongholdBallista1Pos = marker at {903.959, 135.876, 1487.653}
+ L4_JapStrongholdBallista2 = 0
+ L4_JapStrongholdBallista2Pos = marker at {940.060, 130.037, 1530.903}
+
+ L4_JapSamuraiGuardians = 0
+ L4_JapSamuraiGuardiansPos = marker at {1003.363, 63.472, 1904.488}
+ L4_JapSamuraiGuardiansRetreatPos = marker at {1049.399, 73.356, 1977.786}
+
+ L4_JapHiddenBallista1 = 0
+ L4_JapHiddenBallista1Pos = marker at {810.173, 57.837, 1911.716}
+ L4_JapHiddenBallista2 = 0
+ L4_JapHiddenBallista2Pos = marker at {828.024, 59.374, 1913.792}
+
+ L4_JapTierBallista1 = 0
+ L4_JapTierBallista1Pos = marker at {1125.587, 119.540, 2047.549}
+ L4_JapTierBallista2 = 0
+ L4_JapTierBallista2Pos = marker at {1125.334, 119.071, 2020.488}
+
+ L4_SiegeArcher1 = 0
+ L4_SiegeArcher1Pos = marker at {1215.243, 121.460, 2045.685}
+ L4_SiegeArcher2 = 0
+ L4_SiegeArcher2Pos = marker at {1211.719, 120.238, 2011.475}
+
+ L4_StealthSamurai = 0
+ L4_StealthSamuraiPos = marker at {1100.923, 58.344, 1681.477}
+
+ InMountainChasmMarker = marker at {963.898, 79.798, 1696.082} // when Greek Army here SamuraiGuardians retreat calling a town emergency. Siege Archers and Stealth Samurai search here for Greek Siege Weapons to ambush
+
+ LocalGreeks1 = 0
+ LocalGreeks2 = 0
+ LocalGreeks3 = 0
+ GuardiansRetreat = 0
+ GuardiansCount = 0
+
+ MountainArchersRetreating = 0
+ MountainArchers2Retreating = 0
+
+start
+
+L4_JapMountainArcher1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L4_JapMountainArcher1Pos} with 12 men and 0 women
+attach L4_JapMountainArcher1 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1Pos} to front of L4_JapMountainArcher1 action queue
+
+L4_JapMountainArcher2 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L4_JapMountainArcher2Pos} with 12 men and 0 women
+attach L4_JapMountainArcher2 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2Pos} to front of L4_JapMountainArcher2 action queue
+
+L4_JapMountainArcher3 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L4_JapMountainArcher3Pos} with 12 men and 0 women
+attach L4_JapMountainArcher3 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher3Pos} to front of L4_JapMountainArcher3 action queue
+
+L4_JapStrongholdGrunt1 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {L4_JapStrongholdGrunt1Pos} with 12 men and 0 women
+attach L4_JapStrongholdGrunt1 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapStrongholdGrunt1Pos} to front of L4_JapStrongholdGrunt1 action queue
+
+L4_JapStrongholdGrunt2 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {L4_JapStrongholdGrunt2Pos} with 12 men and 0 women
+attach L4_JapStrongholdGrunt2 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapStrongholdGrunt2Pos} to front of L4_JapStrongholdGrunt2 action queue
+
+L4_JapStrongholdArcher1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L4_JapStrongholdArcher1Pos} with 12 men and 0 women
+attach L4_JapStrongholdArcher1 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapStrongholdArcher1Pos} to front of L4_JapStrongholdArcher1 action queue
+/*
+L4_JapStrongholdBallista1 = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to L4JapanOutpost2 at {L4_JapStrongholdBallista1Pos}
+attach L4_JapStrongholdBallista1 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapStrongholdBallista1Pos} to front of L4_JapStrongholdBallista1 action queue
+
+L4_JapStrongholdBallista2 = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to L4JapanOutpost2 at {L4_JapStrongholdBallista2Pos}
+attach L4_JapStrongholdBallista2 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapStrongholdBallista2Pos} to front of L4_JapStrongholdBallista2 action queue
+
+L4_JapHiddenBallista1 = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to L4JapanOutpost2 at {L4_JapHiddenBallista1Pos}
+attach L4_JapHiddenBallista1 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapHiddenBallista1Pos} to front of L4_JapHiddenBallista1 action queue
+///TID unman siege weapon L4_JapHiddenBallista1
+
+L4_JapHiddenBallista2 = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to L4JapanOutpost2 at {L4_JapHiddenBallista2Pos}
+attach L4_JapHiddenBallista2 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapHiddenBallista2Pos} to front of L4_JapHiddenBallista2 action queue
+///TID unman siege weapon L4_JapHiddenBallista2
+*/
+
+L4_JapSamuraiGuardians = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {L4_JapSamuraiGuardiansPos} with 20 men and 0 women
+attach L4_JapSamuraiGuardians to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapSamuraiGuardiansPos} to front of L4_JapSamuraiGuardians action queue
+
+/*
+L4_JapTierBallista1 = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to L4JapanOutpost2 at {L4_JapTierBallista1Pos}
+attach L4_JapTierBallista1 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapTierBallista1Pos} to front of L4_JapTierBallista1 action queue
+
+L4_JapTierBallista2 = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to L4JapanOutpost2 at {L4_JapTierBallista2Pos}
+attach L4_JapTierBallista2 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapTierBallista2Pos} to front of L4_JapTierBallista2 action queue
+*/
+
+L4_SiegeArcher1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L4_SiegeArcher1Pos} with 12 men and 0 women
+attach L4_SiegeArcher1 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_SiegeArcher1Pos} to front of L4_SiegeArcher1 action queue
+
+L4_SiegeArcher2 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L4_SiegeArcher2Pos} with 12 men and 0 women
+attach L4_SiegeArcher2 to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_SiegeArcher2Pos} to front of L4_SiegeArcher2 action queue
+
+L4_StealthSamurai = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {L4_StealthSamuraiPos} with 12 men and 0 women
+attach L4_StealthSamurai to L4JapanOutpost2
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_StealthSamuraiPos} to front of L4_StealthSamurai action queue
+
+begin loop
+	wait 1 second
+
+// MOUNTAIN ARCHER 1
+	LocalGreeks1 = get platoon of player 0 nearest {L4_JapMountainArcher1} radius 60 ///!
+	if L4_JapMountainArcher1 exists
+		///! if L4_JapMountainArcher1 is firing on Greeks force and MountainArchersRetreating == 0
+		/// ! BODGE EXIST LINE BELOW
+		if LocalGreeks1 exists and MountainArchersRetreating == 0
+			///! retreat to L4_JapMountainArcher1RetreatPos1
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1RetreatPos1} to front of L4_JapMountainArcher1 action queue
+			MountainArchersRetreating = 1
+		elsif MountainArchersRetreating == 0 and {L4_JapMountainArcher1} not near {L4_JapMountainArcher1Pos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1Pos} to front of L4_JapMountainArcher1 action queue
+		elsif MountainArchersRetreating == 1
+			if {L4_JapMountainArcher1} not near {L4_JapMountainArcher1RetreatPos1} radius 10
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1RetreatPos1} to front of L4_JapMountainArcher1 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1RetreatPos2} to front of L4_JapMountainArcher1 action queue
+				MountainArchersRetreating = 2
+			end if
+		elsif MountainArchersRetreating == 2
+			if {L4_JapMountainArcher1} not near {L4_JapMountainArcher1RetreatPos2} radius 10
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1RetreatPos2} to front of L4_JapMountainArcher1 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1StrongholdRetreatPos} to front of L4_JapMountainArcher1 action queue
+				MountainArchersRetreating = 3
+			end if
+		elsif MountainArchersRetreating == 3
+			if {L4_JapMountainArcher1} not near {L4_JapMountainArcher1StrongholdRetreatPos} radius 10
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher1StrongholdRetreatPos} to front of L4_JapMountainArcher1 action queue
+			end if
+		end if
+	elsif PLAYER of L4_MountainStronghold == 1 // if Japs still own Mountain Stronghold Minor Settlement
+		IdlePlatoons = get idle platoons in town L4JapanOutpost2
+		if IdlePlatoons > 0
+			//make an army
+			L4_JapMountainArcher1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost2} radius 200
+		end if
+	end if
+
+// MOUNTAIN ARCHER 2
+	if L4_JapMountainArcher2 exists
+		LocalGreeks2 = get platoon of player 0 nearest {L4_JapMountainArcher2} radius 60 ///!
+		if MountainArchersRetreating > 0 and MountainArchers2Retreating == 0 and {L4_JapMountainArcher2} near {L4_JapMountainArcher2Pos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2AdvancedPos} to front of L4_JapMountainArcher2 action queue
+			MountainArchers2Retreating = 1
+		elsif MountainArchers2Retreating == 1 and {L4_JapMountainArcher2} near {L4_JapMountainArcher2AdvancedPos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2AdvancedPos} to front of L4_JapMountainArcher2 action queue
+		///! BODGE EXIST LINE BELOW
+		elsif MountainArchers2Retreating == 1 and LocalGreeks2 exists
+			// Retreat
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2RetreatPos1} to front of L4_JapMountainArcher2 action queue
+			MountainArchers2Retreating = 2
+		elsif MountainArchers2Retreating == 1 and {L4_JapMountainArcher2} not near {L4_JapMountainArcher2AdvancedPos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2AdvancedPos} to front of L4_JapMountainArcher2 action queue
+		elsif MountainArchers2Retreating == 2
+			if {L4_JapMountainArcher2} not near {L4_JapMountainArcher2RetreatPos1} radius 10
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2RetreatPos1} to front of L4_JapMountainArcher2 action queue
+			else
+				MountainArchers2Retreating = 3
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2RetreatPos2} to front of L4_JapMountainArcher2 action queue
+			end if
+		elsif MountainArchers2Retreating == 3
+			if {L4_JapMountainArcher2} not near {L4_JapMountainArcher2RetreatPos2} radius 10
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2RetreatPos2} to front of L4_JapMountainArcher2 action queue
+			else
+				MountainArchers2Retreating = 4
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2StrongholdRetreatPos} to front of L4_JapMountainArcher2 action queue
+			end if
+		elsif MountainArchers2Retreating == 3
+			if {L4_JapMountainArcher2} not near {L4_JapMountainArcher2StrongholdRetreatPos} radius 10
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher2StrongholdRetreatPos} to front of L4_JapMountainArcher2 action queue
+			end if
+		end if
+	elsif PLAYER of L4_MountainStronghold == 1 // if Japs still own Mountain Stronghold Minor Settlement
+		IdlePlatoons = get idle platoons in town L4JapanOutpost2
+		if IdlePlatoons > 0
+			//make an army
+			L4_JapMountainArcher2 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost2} radius 200
+		end if
+	end if
+
+	if L4_JapMountainArcher3 exists
+		if {L4_JapMountainArcher3} not near {L4_JapMountainArcher3Pos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapMountainArcher3Pos} to front of L4_JapMountainArcher3 action queue
+		end if
+	elsif PLAYER of L4_MountainStronghold == 1 // if Japs still own Mountain Stronghold Minor Settlement
+		IdlePlatoons = get idle platoons in town L4JapanOutpost2
+		if IdlePlatoons > 0
+			//make an army
+			L4_JapMountainArcher3 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost2} radius 200
+		end if
+	end if
+
+	if L4_JapSamuraiGuardians exists
+		if GuardiansRetreat == 0 and GuardiansCount >= 3
+			GuardiansCount = 0
+			LocalGreeks3 = get platoon of player 0 nearest {InMountainChasmMarker} radius 100 ///!
+			if LocalGreeks3 exists
+				/// CALL TOWN EMERGENCY on L4JapanOutpost2
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapSamuraiGuardiansRetreatPos} to front of L4_JapSamuraiGuardians action queue
+			end if
+		elsif GuardiansRetreat == 0
+			GuardiansCount++
+			if {L4_JapSamuraiGuardians} not near {L4_JapSamuraiGuardiansPos} radius 10
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapSamuraiGuardiansPos} to front of L4_JapSamuraiGuardians action queue
+			end if
+		end if
+	elsif GuardiansRetreat == 0
+		IdlePlatoons = get idle platoons in town L4JapanOutpost2
+		if IdlePlatoons > 0
+			//make an army
+			L4_JapSamuraiGuardians = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost2} radius 200
+		end if
+	end if
+
+	if town L4JapanOutpost2 feud threshold with town L4GreekTown passed
+		//check if there's enough platoons idle to create a respectable army
+		IdlePlatoons = get idle platoons in town L4JapanOutpost2
+		if IdlePlatoons > 2
+			//make an army
+			JapanArmyOne = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost2} radius 200
+			Count = 0
+			while Count < 2
+				IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost2} radius 200
+				attach IdleTroops to JapanArmyOne
+				Count++
+			end while
+			set platoon JapanArmyOne take over town L4GreekTown
+			reset town L4JapanOutpost2 feud value for town L4GreekTown
+		end if
+	end if
+
+until L4Outpost2Converted == 1
+end loop
+
+end script Land4Outpost2ArmyManagement

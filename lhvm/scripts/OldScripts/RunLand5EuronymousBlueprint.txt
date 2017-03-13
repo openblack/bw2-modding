@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Euronymous blueprint
+//-----------------------------------------------------------------------------
+run script RunLand5EuronymousBlueprint
+
+begin script RunLand5EuronymousBlueprint
+
+start
+
+	run script Land5EuronymousBlueprint
+
+end script RunLand5EuronymousBlueprint

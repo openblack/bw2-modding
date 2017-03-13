@@ -1,0 +1,23 @@
+run script ArrowStream
+
+begin script ArrowStream
+
+TargetRockPos = 0
+TargetRock = 0
+OriginRockPos = 0
+Arrows = 0
+Flag = 0
+
+start
+
+TargetRockPos = marker at {1711.953,89.037,544.620}
+OriginRockPos = marker at {1768.766,85.880,594.894}
+TargetRock = create OBJECT ROCK at {TargetRockPos}
+
+wait 2 seconds
+
+while Flag == 0
+	Arrows = create missiles MISSILE_ARROW_FLAMING launch MISSILE_LAUNCH_LOB size 5 from {OriginRockPos} to {TargetRock} speed 1
+end while
+
+end script ArrowStream

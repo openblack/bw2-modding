@@ -1,0 +1,6 @@
+run script RunLand5SulphurPool
+
+begin script RunLand5SulphurPool
+start
+	run script Land5SulphurPool
+end script RunLand5SulphurPool

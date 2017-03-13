@@ -1,0 +1,431 @@
+/*
+	NO LONGER USED
+*/	
+
+
+/*
+///////////////////////////////////////////////////////////////////////////////
+//	LAND 6 CONTROL EVIL
+//	~~~~~~~~~~~~~~~~~~~
+//
+//	This is the enemy AI script
+//
+//	Rewards:			None
+//
+//	Start date:			16-03-05			By:	Steve
+//	Update date:		21-03-05			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CE_TRUE						= 1
+define CE_FALSE						= 0
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CE_NearestTown				= 0
+global CE_PlayerID					= 0
+global CE_EnemyPlayerID				= 0
+global CE_L6JapaneseDefcon			= 0
+global CE_GotAllMinorTowns			= CE_FALSE
+global CE_EnemyStillAlive			= CE_TRUE
+
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CE_HasEnemyGotTownsLeft
+define script CE_CheckAllMinorTownsExist
+define script CE_GetNearestMinorTownNotOwned(Town)
+define script CE_SetNearestMinorTownNotOwned(Town)
+
+define script CE_Land6JapaneseCapitalTownManagement
+define script CE_Land6JapaneseCapitalArmyManagement
+define script CE_Land6MinorTownMonitor
+define script CE_Land6GeneralComments
+
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land6ControlEvil
+start
+
+	// Check to see if the enemy town exists
+	if L6JapaneseCapital exists
+		CE_PlayerID = PLAYER of L6GreekTown
+		CE_EnemyPlayerID = PLAYER of L6JapaneseCapital
+		set player CE_EnemyPlayerID alignment -1
+		
+		// Check to see if all the minor towns exist
+		run script CE_CheckAllMinorTownsExist
+		
+		// Are we ok to continue?
+		if CE_GotAllMinorTowns == CE_TRUE
+			// Do AI stuff here...				
+			run background script CE_Land6JapaneseCapitalTownManagement
+			run background script CE_Land6JapaneseCapitalArmyManagement
+			run background script CE_Land6MinorTownMonitor
+			run background script CE_Land6GeneralComments
+
+			// Keep looping while the player hasn't taken over the enemy town			
+			begin loop				
+				// Test to see if the player has taken over the enemy home town
+				if PLAYER of L6JapaneseCapital == 0
+					// The capital is lost by the enemy might still be alive in another town
+					run script CE_HasEnemyGotTownsLeft
+					
+					if CE_EnemyStillAlive == CE_FALSE
+						L6CapitalConverted = CE_TRUE
+					end if
+				end if
+						
+			until L6CapitalConverted == CE_TRUE
+			end loop
+		else
+			// Couldn't get all of the minor towns
+			say "ERROR: Not all of the minor towns exist."
+			wait until read
+		end if
+	else
+		// Couldn't get the main enemy town
+		say "ERROR: Couldn't get Japanese enemy town."
+		wait until read
+	end if
+	
+	// We're finished
+	say "DEBUG: Finished L6ControlEvil"
+	wait until read
+
+end script Land6ControlEvil
+
+
+
+//-----------------------------------------------------------------------------
+//	Handle the town management
+//-----------------------------------------------------------------------------
+begin script CE_Land6JapaneseCapitalTownManagement
+start
+	
+	// Setup the initial enemy towns desires (should be geared to making armies)
+	set town L6JapaneseCapital desire for GATHER_FOOD to 0.40
+	set town L6JapaneseCapital desire for GROW_FOOD to 0.30
+	set town L6JapaneseCapital desire for GATHER_WOOD to 0.30
+	set town L6JapaneseCapital desire for GATHER_ORE to 0.50
+	set town L6JapaneseCapital desire for BREED to 0.50
+	set town L6JapaneseCapital desire for ATTACK to 0.50
+	set town L6JapaneseCapital desire for FUN to 0.20
+	
+	// Handle the changes for town management
+	begin loop
+	until L6CapitalConverted == CE_TRUE
+	end loop
+
+end script CE_Land6JapaneseCapitalTownManagement
+
+
+
+//-----------------------------------------------------------------------------
+//	Handle the army management
+//-----------------------------------------------------------------------------				
+begin script CE_Land6JapaneseCapitalArmyManagement
+
+	RetaliatePlatoon[10]
+	Ctr						= 0
+	IdlePlatoons			= 0
+	DefconComment1			= 0
+	DefconComment2			= 0
+	DefconComment3			= 0
+	DefconComment4			= 0
+	DefconComment5			= 0
+	DefconComment6			= 0
+	L6JapaneseDoAttack		= 0
+
+start
+
+	// Setup the initial army leaning
+	set town L6JapaneseCapital platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.50
+
+	// Handle the changes for war
+	begin loop
+		if CE_L6JapaneseDefcon == 1
+			if DefconComment1 == 0
+				say "Pissed off stage 1"
+				wait until read
+				DefconComment1 = 1
+				if L6JapaneseDoAttack == CE_FALSE
+					L6JapaneseDoAttack = CE_TRUE
+					
+					// Attack the nearest town
+					Ctr = 0
+					run script CE_GetNearestMinorTownNotOwned(L6JapaneseCapital)
+					while L6CapitalConverted == CE_FALSE
+						IdlePlatoons = get idle platoons in town L6JapaneseCapital
+						if IdlePlatoons > 0
+							RetaliatePlatoon[Ctr] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L6JapaneseCapital excluding scripted
+							add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using CE_NearestTown to next in RetaliatePlatoon[Ctr] action queue
+							Ctr++
+						end if
+					end while
+				end if
+			end if
+		end if
+
+		if CE_L6JapaneseDefcon == 2
+			if DefconComment2 == 0
+				say "Pissed off stage 2"
+				wait until read
+				DefconComment2 = 1
+			end if
+		end if
+
+		if CE_L6JapaneseDefcon == 3
+			if DefconComment3 == 0
+				say "Pissed off stage 3"
+				wait until read
+				DefconComment3 = 1
+				set town L6JapaneseCapital platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.60
+				set town L6JapaneseCapital desire for BREED to 0.60
+			end if
+		end if
+
+		if CE_L6JapaneseDefcon == 4
+			if DefconComment4 == 0
+				say "Pissed off stage 4"
+				wait until read
+				DefconComment4 = 1
+			end if
+		end if
+
+		if CE_L6JapaneseDefcon == 5
+			if DefconComment5 == 0
+				say "Pissed off stage 5"
+				wait until read
+				DefconComment5 = 1
+				set town L6JapaneseCapital platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.70
+				set town L6JapaneseCapital desire for BREED to 0.80
+			end if
+		end if
+
+		if CE_L6JapaneseDefcon > 5
+			if DefconComment6 == 0
+				say "Pissed off stage 6"
+				wait until read
+				DefconComment6 = 1
+				set town L6JapaneseCapital platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.80
+			end if
+		end if
+		
+	until L6CapitalConverted == CE_TRUE
+	end loop
+	
+end script CE_Land6JapaneseCapitalArmyManagement
+				
+				
+
+//-----------------------------------------------------------------------------
+//	Check to see if the enemy has any towns left
+//-----------------------------------------------------------------------------
+begin script CE_Land6MinorTownMonitor
+
+	LastPlayer[L6_NUM_MINOR_TOWNS]
+	Ctr = 0
+	
+start
+
+	// Get the player of these settlements at start
+	while Ctr < L6_NUM_MINOR_TOWNS
+		LastPlayer[Ctr] = PLAYER of L6JapaneseTown[Ctr]
+		Ctr++
+	end while
+
+	// Constantly update the ownership of each minor town
+	while L6CapitalConverted == CE_FALSE
+		Ctr = 0
+		while Ctr < L6_NUM_MINOR_TOWNS
+			if PLAYER of L6JapaneseTown[Ctr] != LastPlayer[Ctr]
+				LastPlayer[Ctr] = PLAYER of L6JapaneseTown[Ctr]
+
+				// Does the player own the town?
+				if PLAYER of L6JapaneseTown[Ctr] == 0
+					// Player owns town so up the alert level
+					CE_L6JapaneseDefcon++
+				else
+					// Player doesn't own the town so reduce the alert level
+					CE_L6JapaneseDefcon--
+				end if
+			end if
+			
+			Ctr++
+		end while
+	end while
+
+end script CE_Land6MinorTownMonitor
+
+
+
+//-----------------------------------------------------------------------------
+//	Get comments from the enemy player
+//-----------------------------------------------------------------------------
+begin script CE_Land6GeneralComments
+
+	JapaneseCityComment		= CE_FALSE
+	TownSizeCommentLevel	= 0
+	CommentTimer			= create timer for 0 seconds
+
+start
+
+	begin loop
+		// First time the player zooms over the Japanese capital
+		if JapaneseCityComment == CE_FALSE and dialogue ready
+			if camera position near {L6JapaneseCapital} radius 100 and {L6JapaneseCapital} viewed
+				JapaneseCityComment = CE_TRUE
+				begin dialogue
+					say "Feast your eyes on our great city, WUSS!"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if capacity of L6GreekTown > 60 and size of L6GreekTown > 50 and TownSizeCommentLevel == 0 and get CommentTimer time remaining <= 0 and dialogue ready
+			TownSizeCommentLevel++
+			begin dialogue
+				say "Be warned, WUSS. This is our land."
+				wait until read
+			end dialogue
+			CommentTimer = create timer for 60 seconds
+			CE_L6JapaneseDefcon++
+		end if
+
+		if capacity of L6GreekTown > 120 and size of L6GreekTown > 100 and TownSizeCommentLevel == 1 and get CommentTimer time remaining <= 0 and dialogue ready
+			TownSizeCommentLevel++
+			begin dialogue
+				say "The borders of your wretched home grow, but so does my anger!"
+				wait until read
+				say "Cease your expansion, WUSS, or I'll make you sport for my dogs."
+				end dialogue
+			CommentTimer = create timer for 60 seconds
+			CE_L6JapaneseDefcon++
+		end if
+
+		until L6CapitalConverted == CE_TRUE
+	end loop
+	
+end script CE_Land6GeneralComments
+
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the enemy has any towns left
+//-----------------------------------------------------------------------------
+begin script CE_HasEnemyGotTownsLeft
+
+	Ctr		= 0
+
+start
+
+	while Ctr < L6_NUM_MINOR_TOWNS
+		if L6JapaneseTown[Ctr] exists
+			if PLAYER of L6JapaneseTown[Ctr] == CE_EnemyPlayerID
+				CE_EnemyStillAlive = CE_TRUE
+				Ctr = L6_NUM_MINOR_TOWNS
+			else
+				CE_EnemyStillAlive = CE_FALSE
+			end if
+		end if
+		Ctr++
+	end while
+
+end script CE_HasEnemyGotTownsLeft
+
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if all the minor town exist
+//-----------------------------------------------------------------------------
+begin script CE_CheckAllMinorTownsExist
+
+	Ctr		= 0
+
+start
+
+	// Set to true and see if it's true after we're finished
+	CE_GotAllMinorTowns = CE_TRUE
+
+	// Make sure we have all the minor towns
+	while Ctr < L6_NUM_MINOR_TOWNS
+		if L6JapaneseTown[Ctr] not exists
+			CE_GotAllMinorTowns = CE_FALSE
+			Ctr = L6_NUM_MINOR_TOWNS
+		end if
+		Ctr++
+	end while
+
+end script CE_CheckAllMinorTownsExist
+
+
+
+//-----------------------------------------------------------------------------
+//	Get the nearest minor town to the passed town
+//-----------------------------------------------------------------------------
+begin script CE_GetNearestMinorTownNotOwned(Town)
+
+	Ctr				= 0
+	PlayerID		= 0
+	TownDist		= 0
+	NearestTown		= 0
+	NearestDist		= 10000
+
+start
+
+	if Town exists
+		CE_NearestTown = 0
+		PlayerID = PLAYER of Town		
+	
+		while Ctr < L6_NUM_MINOR_TOWNS
+			if L6JapaneseTown[Ctr] exists
+				if PLAYER of L6JapaneseTown[Ctr] != PlayerID and L6JapaneseTown[Ctr] != Town			
+					TownDist = get distance from {L6JapaneseTown[Ctr]} to {Town}
+				
+					if TownDist < NearestDist
+						NearestDist = TownDist
+						NearestTown = L6JapaneseTown[Ctr]
+					end if
+				end if
+			end if
+			Ctr++
+		end while
+		
+		CE_NearestTown = NearestTown
+	end if
+
+end script CE_GetNearestMinorTownNotOwned
+
+
+
+//-----------------------------------------------------------------------------
+//	Set the nearest minor town to the passed town player type
+//-----------------------------------------------------------------------------
+begin script CE_SetNearestMinorTownNotOwned(Town)
+
+	PlayerID	= 0
+
+start
+
+	PlayerID = PLAYER of Town
+	set CE_NearestTown player PlayerID
+
+end script CE_SetNearestMinorTownNotOwned
+
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------
+*/

@@ -1,0 +1,434 @@
+//------------------------------------------------
+//  LAND 3 PROPAGANDA SPEECH CUT-SCENE
+//------------------------------------------------
+
+begin script Land3PropagandaSpeech
+
+//want to be marker at {1236.583,285.750,1460.657}
+
+//am marker at {1251.989,285.750,1464.175}
+
+//+1.448, -1.563, -24.361
+
+Fen = 0
+YoungBoy = 0
+Walker1 = 0
+Army1 = 0
+Army2 = 0
+Army3 = 0
+ManOnLedge = 0
+WomanOnLedge = 0
+ManLookingUp1 = 0
+ManLookingUp2 = 0
+Watcher = 0
+
+start
+
+begin cinema
+	set camera position to {1338.497, 359.332, 1417.631}
+	set camera focus to {1280.014, 295.438, 1579.049}
+	move camera position to {1276.788, 320.407, 1464.095} time 40
+	move camera focus to {1340.792, 303.258, 1576.424} time 40
+	say "PROPAGANDA SPEECH"
+	wait until read
+	say "This is where the Fenrick encourages the Norse..."
+	wait until read
+	say "...to attack the Greek."
+	wait until read
+	
+end cinema
+
+/*Watcher = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1200.829,285.791,1513.870}
+set Watcher focus to {1202.806,285.735,1510.506}
+play anim "a_p_look_at_creature" on Watcher loop 10000
+//wait 5000 seconds
+
+ManOnLedge = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1198.553,285.500,1499.847}
+WomanOnLedge = create VILLAGER VILLAGER_INFO_NORSE_HOUSEWIFE_FEMALE at {1198.296,285.500,1499.312}
+Fen = create VILLAGER VILLAGER_INFO_FENRICK at {1229.600,285.750,1492.298}
+YoungBoy = create VILLAGER VILLAGER_INFO_SMALL_NORSE_BOY at {1229.600,285.750,1492.298}
+Walker1 = create VILLAGER VILLAGER_INFO_FENRICK at {1274.123,286.572,1469.741}
+
+set Fen focus to {1223.940,285.750,1494.422}
+set YoungBoy focus to {1223.940,285.750,1494.422}
+
+ALTITUDE of Fen = 20.9
+//ALTITUDE of YoungBoy = 20.9
+
+//wait 5000 seconds
+ALTITUDE of ManOnLedge = 5.5
+ALTITUDE of WomanOnLedge = 5.5
+set ManOnLedge focus to {1227.095,285.750,1489.052}
+set WomanOnLedge focus to {1227.095,285.750,1489.052}
+
+play anim "a_p_sitting_swinging_legs" on ManOnLedge loop 100 disable stand//Boy begging
+play anim "a_p_sitting_swinging_legs" on WomanOnLedge loop 100 disable stand//Boy begging
+
+Army1 = flock at {1221.452,285.750,1494.113}
+Army2 = flock at {1206.339,285.750,1496.532}
+Army3 = flock at {1209.890,285.750,1507.360}
+
+populate Army1 with 10 SCRIPT_OBJECT_TYPE_VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE
+populate Army2 with 10 SCRIPT_OBJECT_TYPE_VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE
+populate Army3 with 30 SCRIPT_OBJECT_TYPE_VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE
+
+play anim "a_p_ambient1" on Army1 loop 100 disable stand
+play anim "a_p_look_at_creature" on Army1 loop 100 disable stand
+play anim "a_p_look_at_hand" on Army1 loop 100 disable stand
+
+
+//set Fen position to {1228.350,285.750,1492.298}
+//set YoungBoy position to {1229.100,285.750,1491.298}
+//ALTITUDE of Fen = 20.9
+//ALTITUDE of YoungBoy = 20.9
+//move Fen position to {1228.100,285.750,1492.798}
+//move YoungBoy position to {1228.100,285.750,1492.798}
+
+	//play anim "A_P_Fenrik_holding_boy_end_talk_FEN" on Fen loop 100 disable stand //Carry on talking 
+	//play anim "A_P_Fenrik_holding_boy_end_talk_BOY" on YoungBoy loop 100 disable stand
+//set Fen carrying CARRIED_OBJECT_NORSE_SWORD
+//wait 5000 seconds
+	
+
+//First part...
+set Fen position to {1276.561,286.633,1471.651} + {-1.124, -2.014, 3.334}
+set YoungBoy position to {1277.123,286.647,1469.984}
+set Fen focus to {1275.604,286.609,1468.441}
+set YoungBoy focus to {1276.455,286.630,1471.557}
+
+//set Fen carrying CARRIED_OBJECT_NORSE_DAGGER
+//CARRIED_OBJECT_NONE
+
+
+
+begin cinema
+	start music "CUT_SCENE_SINISTER_02"
+	set camera lens 48
+	set camera position to {1275.142,287.085,1470.965}
+	set camera focus to {1275.860,286.755,1469.510}
+	wait 1 seconds
+	move camera position to {1276.438,287.085,1471.605} time 6
+	move camera focus to {1277.156,286.755,1470.150} time 6
+
+	move Walker1 position to {1279.589,286.656,1472.479}
+	wait 0.8 seconds
+	play anim "a_l3_sht01_man2" on Fen loop 1 disable stand
+	play anim "a_l3_sht01_boy" on YoungBoy loop 1 disable stand//Boy begging at people.
+	
+	wait until YoungBoy played
+	play anim "a_l3_sht02_11" on YoungBoy loop 1 disable stand
+	set camera lens 40
+	set camera position to {1276.347,287.116,1470.144}
+	set camera focus to {1278.241,286.248,1470.045}
+	
+	wait until YoungBoy played
+	play anim "a_l3_sht04_06" on YoungBoy loop 1 disable stand
+	set camera lens 16
+	set camera position to {1276.322,286.948,1470.348}
+	set camera focus to {1278.174,286.478,1469.510}
+	
+	wait 0.3 seconds
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_10" by Fen
+	//wait 1 seconds
+	
+	
+	wait until YoungBoy played
+	set Fen position to {1276.575,286.633,1469.947} + {-1.096, -0.028, -0.074}
+	set Fen focus to {YoungBoy}
+	play anim "a_l3_sht05_16_boy" on YoungBoy loop 1 disable stand
+	
+	set camera lens 48
+	set camera position to {1276.179,287.097,1470.572} 
+	set camera focus to {1277.853,286.549,1469.450}
+	
+	
+	
+	
+	play anim "a_l3_sht05_16_fren" on Fen loop 1 disable stand
+	set YoungBoy focus to {1277.483,286.656,1470.811}
+	
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_20" by Fen
+	wait 1 seconds
+	
+	wait 3 seconds
+	
+	
+	
+	set camera lens 10
+	set camera position to {1277.538,288.215,1470.667}
+	set camera focus to {1276.663,286.500,1469.859}
+	//say "BW2T_SCRIPT_03S_02PROPAGANDA_50" by Fen
+	set Fen focus to {1276.464,286.630,1470.682}
+
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_30" by Fen
+	
+	
+	
+	play anim "a_l3_sht06_15" on Fen loop 1 disable stand
+	wait until Fen played
+	
+	//GO HERE!!
+	
+	//play anim "a_l3_sht07a_19" on Fen loop 1 disable stand
+	play anim "a_l3_sht07a_19" on YoungBoy loop 1 disable stand
+	
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_50" by Fen
+	
+	
+	set camera lens 18
+	set camera position to {1276.776,286.964,1470.479}
+	set camera focus to {1277.734,286.827,1468.629}
+	
+	wait until YoungBoy played
+	set Fen carrying CARRIED_OBJECT_NORSE_DAGGER
+	
+	clear dialogue
+	play anim "a_l3_sht07b_09" on Fen loop 1 disable stand //holding blade
+	set camera lens 14
+	set camera position to {1277.344,287.118,1469.928}
+	set camera focus to {1275.280,286.917,1469.683}
+	
+	wait until Fen played
+	
+	play anim "a_l3_sht07c_08" on YoungBoy loop 1 disable stand
+	set camera lens 14
+	set camera position to {1276.498,286.964,1470.151}
+	set camera focus to {1278.481,286.903,1469.495}
+	//wait 5000 seconds
+	
+	
+	
+	wait 1.5 seconds
+	//Play this a bit quicker...
+	play anim "a_l3_sht08_26" on Fen loop 1 disable stand
+	wait until YoungBoy played
+	
+	
+	
+	set camera position to {1276.936,287.185,1471.347}
+	set camera focus to {1276.688,287.407,1469.284}
+	play sound "MANGROAN"
+	wait 0.5 seconds
+	play sound "BOYGROAN"
+	wait until Fen played
+	
+	
+	play anim "a_l3_sht09_03" on Fen loop 1 disable stand
+	
+	
+	set camera position to {1276.765,287.243,1470.824}
+	set camera focus to {1276.516,287.465,1468.761}
+	
+	/////////////////////////////
+	
+	stop music 
+	play sound "RAVENCUTSCENE"
+	wait 3 seconds
+	wait until Fen played
+	set fade red 0 green 0 blue 0 time 0.3
+	
+	
+	
+	wait 3 seconds
+	start music "CUT_SCENE_SINISTER_01"
+	
+	
+	set Fen carrying CARRIED_OBJECT_NONE
+	
+	//FADE here etc,
+	set Fen position to {1229.600,285.750,1492.298}
+	set YoungBoy position to {1229.600,285.750,1492.298}
+	set Fen focus to {1223.940,285.750,1494.422}
+	set YoungBoy focus to {1223.940,285.750,1494.422}
+	ALTITUDE of Fen = 20.9
+	
+	wait 2 seconds
+	
+	set camera lens 38
+	set camera position to {1197.226,288.310,1499.832}
+	set camera focus to {1224.917,288.488,1493.504}	
+	
+	move camera position to {1197.226,289.779,1499.832} time 8
+	move camera focus to {1224.156,295.280,1492.663} time 8
+	set fade in time 2
+	wait 3.5 seconds
+	
+	move Fen position to {1228.100,285.750,1492.798}
+	move YoungBoy position to {1228.100,285.750,1492.798}
+
+	override Fen anim "A_P_Fenrik_carrying_boy_FEN"
+	override YoungBoy anim "A_P_Fenrik_carrying_boy_BOY"
+	SPEED of Fen = 0.1
+	
+	set camera lens 31
+	set camera position to {1215.203,305.741,1479.606}
+	set camera focus to {1232.245,290.895,1496.660}
+	move camera position to {1215.599,305.741,1479.217} time 10
+	move camera focus to {1232.516,290.956,1496.446} time 10
+	
+	wait 1.3 seconds
+	
+	
+	set camera lens 12
+	set camera position to {1227.533,296.910,1492.160}
+	set camera focus to {1240.182,297.161,1517.489}
+	move camera position to {1227.700,296.910,1492.076} time 3
+	move camera focus to {1240.350,297.161,1517.406} time 3
+	
+	move Fen position to {1228.100,285.750,1492.798}
+	SPEED of Fen = 0.1
+	
+	wait 3 seconds
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_80" by Fen
+	wait until read
+	wait 1 seconds
+	set camera position to {1227.563,296.919,1492.669}
+	set camera focus to {1254.960,297.618,1499.778}
+	wait 0.5 seconds
+	
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_80" by Fen
+	wait 2 seconds
+	
+	set camera position to {1225.510,296.906,1492.500}
+	set camera focus to {1253.609,296.331,1495.928}
+	//move camera position to {1225.510,296.906,1492.500} time 2
+	//move camera focus to {1253.594,298.030,1495.908} time 2
+	move camera position to {1225.415,296.370,1492.455} time 2
+	move camera focus to {1252.774,302.245,1496.769} time 2
+	ALTITUDE of YoungBoy = 20.9
+	play anim "A_P_Fenrik_into_holding_boy_up_FEN" on Fen loop 1 disable stand
+	play anim "A_P_Fenrik_into_holding_boy_up_BOY" on YoungBoy loop 1 disable stand
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_100" by Fen
+	
+	//wait until Fen played
+	wait until read
+	
+	
+	
+	play anim "A_P_Fenrik_holding_boy_up_talking_FEN" on Fen loop 100 disable stand //Carry on talking 
+	play anim "A_P_Fenrik_holding_boy_up_talking_BOY" on YoungBoy loop 100 disable stand
+
+
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_120" by Fen
+	wait until read
+	
+	set camera position to {1226.673,296.889,1492.778}
+	set camera focus to {1254.964,296.738,1493.914}
+	move camera position to {1226.868,296.888,1492.786} time 4
+	move camera focus to {1255.158,296.737,1493.922} time 4
+	//say "Rightfully yours..."
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_130" by Fen
+	wait until read
+	
+	
+	
+	//set camera position to {1226.243,297.147,1490.989}
+	//set camera focus to {1246.502,296.030,1510.738}
+	set camera lens 12
+	set camera position to {1226.484,297.531,1492.370}
+	set camera focus to {1252.019,287.043,1498.672}
+	
+	//Hmm...
+	move camera position to {1226.519,297.531,1492.250} time 4
+	move camera focus to {1251.741,287.328,1500.089} time 4
+	
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_150" by Fen
+	
+	
+	//say "This child..."
+	//wait until read
+	wait 6 seconds
+	
+	//set camera position to {1227.038,296.887,1492.748}
+	//set camera focus to {1255.328,296.736,1493.882}
+	//move camera position to {1227.178,296.886,1492.753} time 4
+	//move camera focus to {1255.469,296.736,1493.889} time 4
+	//wait until read
+	//say "The greeks..."
+	
+	set camera lens 10
+	set camera position to {1200.191,286.743,1513.251}
+	set camera focus to {1201.223,286.362,1514.269}
+	wait until read
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_140" by Fen
+
+	wait until read
+	//wait 4 seconds
+	
+	set camera lens 44
+	set camera position to {1228.866,297.496,1491.967}
+	set camera focus to {1209.255,281.443,1504.594}
+	move camera position to {1228.942,297.496,1492.085} time 6
+	move camera focus to {1208.517,282.209,1504.369} time 6
+	//say "A truce..."
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_170" by Fen
+	wait until read
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_180" by Fen
+	wait until read
+	
+	set camera lens 12
+	set camera position to {1227.032,296.887,1492.887}
+	set camera focus to {1255.285,296.665,1491.034}
+	
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_160" by Fen
+	wait until read
+	
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_190" by Fen
+	wait until read
+
+	//Had to move slightly as Fan has moved in teh anim
+	set Fen position to {1228.350,285.750,1492.298}
+	set YoungBoy position to {1228.350,285.750,1492.298}
+	ALTITUDE of Fen = 20.9
+	ALTITUDE of YoungBoy = 20.9
+
+	
+	set camera lens 30
+	//set camera position to {1228.866,297.496,1491.967}
+	//set camera focus to {1209.255,281.443,1504.594}
+	//set camera position to {1228.469,297.384,1492.196}
+	//set camera focus to {1207.440,283.203,1504.334}
+	//set camera position to {1228.820,297.377,1491.994}
+	//set camera focus to {1207.791,283.196,1504.132}
+	//move camera position to {1228.820,297.986,1491.994} time 4
+	//move camera focus to {1207.791,283.805,1504.132} time 4
+	//move camera position to {1228.866,297.949,1491.967} time 6
+	//move camera focus to {1205.120,287.351,1503.171} time 6
+	//move camera position to {1228.469,298.281,1492.196} time 4
+	//move camera focus to {1207.440,284.100,1504.334} time 4
+	
+	set camera position to {1229.063,298.220,1491.433}
+	set camera focus to {1211.921,277.672,1500.069}
+	move camera position to {1229.063,298.220,1491.433} time 4
+	move camera focus to {1206.118,285.961,1502.106} time 4
+	say "BW2T_SCRIPT_03S_02PROPAGANDA_200" by Fen
+
+	play anim "A_P_Fenrik_holding_boy_end_talk_FEN" on Fen loop 100 disable stand //Carry on talking 
+	play anim "A_P_Fenrik_holding_boy_end_talk_BOY" on YoungBoy loop 100 disable stand
+	
+	play anim "a_p_jump_at_hand" on Army1 loop 10
+	play anim "a_p_jump_at_hand2" on Army2 loop 10
+	play anim "a_p_dance_celebrate03" on Army3 loop 10
+	
+	wait 4 seconds
+	
+	set fade red 0 green 0 blue 0 time 2 
+	wait 2 seconds
+	set camera position to {1809.607,208.820,491.238}
+	set camera focus to {1706.775,92.160,656.533}
+	stop music
+end cinema
+wait 2 seconds
+set fade in time 2
+
+delete Army1
+delete Army2
+delete Army3
+delete Fen
+delete YoungBoy
+delete Watcher
+delete Walker1
+delete WomanOnLedge
+delete ManOnLedge*/
+
+end script Land3PropagandaSpeech

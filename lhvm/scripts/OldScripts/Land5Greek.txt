@@ -1,0 +1,172 @@
+//------------------------------------------------
+//  LAND 5 GREEK TOWN AI
+//------------------------------------------------
+
+define script L5GreekTownManagement
+define script L5GreekArmyManagement
+/// Perhaps we should run a background to detect successful Elder Monk kidnappings and react (celebrations and town boosts)
+
+begin script Land5Greek
+ 
+ 
+start
+run background script L5GreekTownManagement
+run background script L5GreekArmyManagement
+
+	begin loop
+		if PLAYER of L5GreekTown == 0
+			L5GreekConverted = 1
+		end if
+	until L5GreekConverted == 1
+	end loop
+
+	/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+	begin cinema
+		say "The Greek Submission scripts have not been implemented yet."
+		wait until read
+		say "It will show simple shots of the villagers reacting to the change."
+		wait until read
+		say "Then you see Euronymous fleeing the city by boat..."
+		wait until read
+		say "Before literally running into Sanura, the Egyptian High Priestess."
+		wait until read
+	end cinema
+
+	L5GreekConverted = 2
+
+end script Land5Greek
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script L5GreekTownManagement
+
+ InitialGreekReligiousTolerance = 0.6
+ InitialGreekAggression = 0.20
+ AngeredGreekAggression = 0.50
+ InitialJapaneseTolerance = 0.6
+ NewJapaneseTolerance = 0
+ InitialAztecTolerance = 0.6
+ NewAztecTolerance = 0
+ FeudValue = 0
+ AztecConvertReaction = 0
+ LastTotalEldersKilled = 0
+
+start
+	// Initial army setup
+	set town L5GreekTown platoon type ARMY_UNIT_TYPE_MELEE_GRUNT at ratio 0.2
+	set town L5GreekTown army type ARMY_UNIT_TYPE_MELEE_GRUNT platoon ratio on wall to 0.6
+	set town L5GreekTown platoon type ARMY_UNIT_TYPE_RANGED_SHORT at ratio 0.2
+	set town L5GreekTown army type ARMY_UNIT_TYPE_RANGED_SHORT platoon ratio on wall to 0.6
+
+	// Initial villager setup
+	set town L5GreekTown desire for GATHER_FOOD to 0.90
+	set town L5GreekTown desire for GROW_FOOD to 0.20
+	set town L5GreekTown desire for GATHER_WOOD to 0.60
+	set town L5GreekTown desire for GATHER_ORE to 0.50
+	set town L5GreekTown desire for BREED to 0.40
+	set town L5GreekTown desire for ATTACK to 0.20
+	set town L5GreekTown desire for DEFENCE to 0.50
+	set town L5GreekTown desire for FUN to 0.20
+
+	// Initial feud status
+	set town L5GreekTown interracial tolerance with town L5JapaneseTown to InitialJapaneseTolerance
+	set town L5GreekTown interracial tolerance with town L5AztecTown to InitialAztecTolerance // they hate the norse 3 times more than you
+	set town L5GreekTown racial aggression with town L5JapaneseTown to InitialGreekAggression
+	set town L5GreekTown racial aggression with town L5AztecTown to InitialGreekAggression
+	set town L5GreekTown religious tolerance with town L5JapaneseTown to InitialGreekReligiousTolerance
+	set town L5GreekTown religious tolerance with town L5AztecTown to InitialGreekReligiousTolerance
+
+	set town L5GreekTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5JapaneseTown to 0
+	set town L5GreekTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5AztecTown to 0
+
+	set town L5GreekTown impressive threshold for town L5JapaneseTown to 0.4
+	set town L5GreekTown impressive threshold for town L5AztecTown to 0.9
+
+	begin loop
+		// reactionary changes to town variables
+
+		if L5AztecConverted > 0 and AztecConvertReaction == 0
+			set town L5GreekTown platoon type ARMY_UNIT_TYPE_MELEE_GRUNT at ratio 0.3
+			set town L5GreekTown army type ARMY_UNIT_TYPE_MELEE_GRUNT platoon ratio on wall to 0.5
+			set town L5GreekTown platoon type ARMY_UNIT_TYPE_RANGED_SHORT at ratio 0.3
+			set town L5GreekTown army type ARMY_UNIT_TYPE_RANGED_SHORT platoon ratio on wall to 0.5
+			set town L5GreekTown racial aggression with town L5JapaneseTown to AngeredGreekAggression
+			set town L5GreekTown racial aggression with town L5AztecTown to AngeredGreekAggression
+
+			NewJapaneseTolerance = InitialJapaneseTolerance/2
+			set town L5GreekTown interracial tolerance with town L5JapaneseTown to NewJapaneseTolerance
+			NewAztecTolerance = InitialAztecTolerance/2
+			set town L5GreekTown interracial tolerance with town L5AztecTown to NewAztecTolerance
+
+			FeudValue = get town L5GreekTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5JapaneseTown
+			FeudValue += 20
+			set town L5GreekTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5JapaneseTown to FeudValue
+
+			FeudValue = get town L5GreekTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5AztecTown
+			FeudValue += 50
+			set town L5GreekTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5AztecTown to FeudValue
+
+			set town L5GreekTown desire for GATHER_FOOD to 0.90
+			set town L5GreekTown desire for GROW_FOOD to 0.20
+			set town L5GreekTown desire for GATHER_WOOD to 0.60
+			set town L5GreekTown desire for GATHER_ORE to 0.50
+			set town L5GreekTown desire for BREED to 0.40
+			set town L5GreekTown desire for ATTACK to 0.40
+			set town L5GreekTown desire for DEFENCE to 0.60
+			set town L5GreekTown desire for FUN to 0.20
+
+			/// ADD GREEK UNREST EVENT
+			/// REQUIRES RIOT STATE CODE
+
+			AztecConvertReaction = 1
+		end if
+
+		if MonkEldersDeadCount > LastTotalEldersKilled
+			LastTotalEldersKilled = MonkEldersDeadCount
+			/// DO WHATEVER CHANGES OCCUR WHEN AN ELDER IS SACRIFICED
+
+		end if
+
+	until L5GreekConverted == 1
+	end loop
+
+end script L5GreekTownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script L5GreekArmyManagement
+
+start
+	begin loop
+		if town L5GreekTown feud threshold with town L5AztecTown passed 
+			if L5AztecConverted == 0 // Aztecs not conquered by player
+				/// check if there's enough platoons idle to create a respectable army compared to Aztec defences
+				/// get number of idle platoons
+				/// get size of Aztec Army
+				/// if numbers are favourable (compare two values)
+				/// send an army to assault Aztec town
+			elsif L5AztecConverted > 0
+				/// check if there's enough platoons idle to create two massive armies
+				/// if so send one to the Aztec Town and one to the Japanese
+			end if
+		end if
+
+		if town L5GreekTown feud threshold with town L5JapaneseTown passed
+			if L5AztecConverted == 0
+				/// check if there's enough platoons idle to create a respectable army
+				/// if so send an army to raid Japanese town
+			elsif L5AztecConverted > 0
+				/// check if there's enough platoons idle to create a respectable army
+				/// if so send an army to raid Japanese town but avoiding close prozimity to Aztec Town
+			end if
+		end if
+
+	until L5GreekConverted == 1
+	end loop
+end script L5GreekArmyManagement
+

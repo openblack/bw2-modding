@@ -1,0 +1,237 @@
+define LO_FALSE = 0
+define LO_TRUE = 1
+
+define script LO_Advisors(ID)
+
+//*************************************************************
+//	Land3Objectives
+//*************************************************************
+begin script Land3Objectives
+
+	ObjectivesComplete = 0
+//	WoodObjective = LO_FALSE
+//	FoodObjective = LO_FALSE
+//	BuildObjective = LO_FALSE
+//	DiscipleObjective = LO_FALSE
+	SoldierObjective = LO_FALSE
+	BabyObjective = LO_FALSE
+	AllObjectivesDone = LO_FALSE
+	
+start
+
+	////////////////////
+	//GLOBAL OBJECTIVES
+
+	//PRIMARY - get Population to 200    
+	//set player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION with amount 200 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_PRIMARY_NEUTRAL_20" amount 200 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_PRIMARY_NEUTRAL_21" start value 0 reward 60000
+	
+	
+	
+	//SPECIAL Objectives
+	//Take over 1 town using impressiveness    
+	//set player 0 objective TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_IMPRESSIVENESS with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_GOOD_10" amount 1 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_GOOD_11" start value 0 reward 10000 alignment 0.01
+	
+	//Increase impressiveness by 10000    
+	set player 0 objective TRIBUTE_OBJECTIVE_INCREASE_IMPRESSIVENESS with amount 9000 text "BW2T_SCRIPT_06FINAL_OBJECTIVE_NEUTRAL_10" amount 9000 description "BW2T_SCRIPT_06FINAL_OBJECTIVE_NEUTRAL_11" start value 0 reward 10000 alignment 0.05
+		
+	//Uncover every DYK sign on the land    
+	set player 0 objective TRIBUTE_OBJECTIVE_AS_SOON_AS_UNCOVER_ALL_DYK with amount 100 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_10" amount 100 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_11" start value 0 reward 2000
+	
+	
+	///ARMY OBJECTIVES
+	//Create 2 platoons    
+	//set player 0 objective TRIBUTE_OBJECTIVE_CREATE_PLATOONS with amount 2 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_EVIL_20" amount 2 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_EVIL_21" start value 0 reward 5000 alignment -0.001
+	
+	//Take over 1 town using force    
+	//set player 0 objective TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_FORCE with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_EVIL_10" amount 1 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_EVIL_11" start value 0 reward 10000 alignment -0.01
+	
+	//RESOURCE objectives
+	//Collect Resources    
+	//set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_ALL with amount 6000 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_30" amount 6000 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_31" start value 0 reward 0
+	
+	//Collect 2000 ore    
+	//set player 0 objective TRIBUTE_OBJECTIVE_MINE_ORE with amount 2000 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_60" amount 2000 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_61" parent TRIBUTE_OBJECTIVE_COLLECT_ALL start value 0 reward 4000
+	
+	//Collect 2000 food    
+	//set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_FOOD with amount 2000 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_70" amount 2000 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_71" parent TRIBUTE_OBJECTIVE_COLLECT_ALL start value 0 reward 4000
+	
+	//Collect 2000 wood    
+	//set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_WOOD with amount 2000 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_80" amount 2000 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_81" parent TRIBUTE_OBJECTIVE_COLLECT_ALL start value 0 reward 4000
+	
+	
+	//TOWN objectives
+	//Build 10 abodes    
+	//set player 0 objective TRIBUTE_OBJECTIVE_BUILT_ABODE with amount 10 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_40" amount 10 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_41" start value 0 reward 4000
+	
+	//Create 6 disciple breeders    
+	//set player 0 objective TRIBUTE_OBJECTIVE_MAKE_BREEDER_DISCIPLES with amount 6 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_50" amount 6 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_NEUTRAL_51" start value 0 reward 4000
+	
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_GOLD amount 20
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_SPECIAL amount 0
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_TOWN amount 2
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_ARMY amount 2
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_CREATURE amount 2		
+	
+/*
+	reset all objectives for player 0
+	set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_WOOD amount 2000
+	set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_WOOD text "BW2T_SCRIPT_03FINAL_OBJECTIVES_10"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_FOOD amount 2000
+	set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_FOOD text "BW2T_SCRIPT_03FINAL_OBJECTIVES_20"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_BUILT_ABODE amount 20
+	set player 0 objective TRIBUTE_OBJECTIVE_BUILT_ABODE text "BW2T_SCRIPT_03FINAL_OBJECTIVES_30"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_MAKE_DISCIPLES amount 30
+
+	set player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN amount 10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN text "BW2T_SCRIPT_03FINAL_OBJECTIVES_50"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATE_TROOPS amount 20 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATE_TROOPS text "BW2T_SCRIPT_03FINAL_OBJECTIVES_60"
+*/
+
+	begin loop
+/*
+		//Collect wood
+		if WoodObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_COLLECT_WOOD complete
+				WoodObjective = LO_TRUE
+				ObjectivesComplete++
+				run background script LO_Advisors(0)
+			end if			
+		end if
+*/
+
+/*
+		//Collect food
+		if FoodObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_COLLECT_FOOD complete
+				FoodObjective = LO_TRUE
+				ObjectivesComplete++
+				run background script LO_Advisors(1)
+			end if			
+		end if
+*/
+
+/*
+		//Build abodes
+		if BuildObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_BUILT_ABODE complete
+				BuildObjective = LO_TRUE
+				ObjectivesComplete++
+				run background script LO_Advisors(2)
+			end if			
+		end if
+*/
+
+
+		//Make babies
+		/*if BabyObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN complete
+				BabyObjective = LO_TRUE
+				ObjectivesComplete++
+				run background script LO_Advisors(3)
+			end if			
+		end if*/
+
+		//Make soldiers
+		/*if SoldierObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_CREATE_PLATOONS complete
+				SoldierObjective = LO_TRUE
+				ObjectivesComplete++
+				run background script LO_Advisors(4)
+			end if			
+		end if*/
+
+
+/*
+		if PopulationObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION complete
+				PopulationObjective = LO_TRUE
+				ObjectivesComplete++
+				run background script LO_Advisors(5)
+			end if			
+		end if
+*/
+		
+		// Have all the objectives been done?
+		if BabyObjective == LO_TRUE and SoldierObjective == LO_TRUE
+			AllObjectivesDone = LO_TRUE
+		end if
+		
+	until AllObjectivesDone == LO_TRUE
+	end loop
+	
+
+end script Land3Objectives
+
+
+
+//*************************************************************
+//	Land3 Advisors
+//*************************************************************
+begin script LO_Advisors(ID)
+start
+
+	play string sound "SCRIPT18_REWARDSTING"
+
+	begin dialogue
+	
+		//Wood objective
+		if ID == 0
+			eject good spirit
+			//say "Excellent, enough wood has been collected"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_805"
+			wait until read
+			wait 2 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_COLLECT_WOOD
+			
+		elsif ID == 1
+			eject good spirit
+			//say "Excellent, enough food has been collected"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_804"
+			wait until read
+			wait 2 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_COLLECT_FOOD
+			
+		elsif ID == 2
+			eject good spirit
+			//say "Excellent, enough abodes have been built"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_803"
+			wait until read
+			wait 2 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_BUILT_ABODE
+			
+		elsif ID == 3
+			eject good spirit
+			//say "Excellent, enough babies have been made"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_802"
+			wait until read
+			wait 2 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN
+			
+		elsif ID == 4
+			eject evil spirit
+			//say "Excellent, enough soldiers have been recruited"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_801"
+			wait until read
+			wait 2 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_CREATE_TROOPS
+			
+		elsif ID == 5
+			eject good spirit
+			//say "Excellent! You have 100 people - you may now go to the next land"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_800"
+			wait until read
+			wait 2 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION
+		end if
+
+		send good spirit home
+		send evil spirit home
+
+	end dialogue
+
+end script LO_Advisors

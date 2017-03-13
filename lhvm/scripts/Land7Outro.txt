@@ -1,0 +1,264 @@
+define script DoLand7OutroObjectives
+define script DoLand7PreOutroObjectives
+
+global CSMixer = 0
+//-------------------------------------------------------------------------------------------------
+
+begin script Land7Outro
+JapaneseL = 0
+JapaneseR = 0
+Portal = 0
+FX = 0
+TempWeather	= 0
+DepartureScroll = 0
+L7TownConversionMethod = 0
+JapaneseTown = 0
+
+
+start
+	
+	CSMixer = create mixer
+
+	JapaneseTown = get town with id 8//get TOWN at {637.424, 466.983, 1805.349} radius 50
+	
+	if variable get town JapaneseTown status == variable TOWN_STATUS_CAPTURED
+		L7TownConversionMethod = 1
+	else
+		L7TownConversionMethod = 2
+	end if
+	
+	if L7TownConversionMethod == 1 //Aggressive
+		JapaneseL = create VILLAGER VILLAGER_INFO_TARANAGA at {889.130, 497.742, 1870.667}
+		JapaneseR = create VILLAGER VILLAGER_INFO_HIROKU at {890.331, 497.945, 1870.246}
+		set JapaneseL focus to {754.362, 402.261, 1729.573}
+		set JapaneseR focus to {754.362, 402.261, 1729.573}
+		
+		play anim "a_p_chatting_paired01_a" on JapaneseL loop -1
+		play anim "a_p_talk2_male" on JapaneseR loop -1
+
+		Portal = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {908.651, 498.008, 1869.066} + {0, 2.0, 0} time -1
+		
+		begin cinema
+			//AGC: Moved fade out & wait inside the cinema block
+			set fade red 0 green 0 blue 0 time 2
+			wait 2 seconds
+
+			start music "cut_scene_sad_34s_01" 
+			wait 2 seconds
+			set camera position to {894.711, 502.702, 1872.306}
+			set camera focus to {839.364, 463.145, 1799.015}
+			move camera position to {895.770, 507.112, 1877.291} time 30
+			move camera focus to {883.850, 449.144, 1796.688} time 30
+			set fade in time 2
+			//Gen of War:I would not have believed these Greeks could be so strong.		
+			say "BW2T_SCRIPT_07FINAL_PDM_ENDLAND_10"
+			wait until read
+			//Gen of War:Brother, go through the Portal to our homeland. Prepare it for the Greek arrival! They will surely go there next!		
+			say "BW2T_SCRIPT_07FINAL_PDM_ENDLAND_20"
+			wait until read
+			//Gen of War:At our capital they will face the two sides of the Japanese. Even with a god they will not succeed.		
+			
+			move JapaneseR position to {905.994, 497.848, 1868.841}
+			wait 1 seconds
+			say "BW2T_SCRIPT_07FINAL_PDM_ENDLAND_30"
+			wait 4 seconds
+			wait until read
+			set fade red 0 green 0 blue 0 time 3
+			wait 3 seconds
+			//set camera position to {813.665, 247.007, 712.365}
+			//set camera focus to {741.503, 180.247, 730.675}
+			set camera position to {937.327, 523.793, 1868.077}
+			set camera focus to {868.004, 469.271, 1820.945}
+			wait 0.5 seconds
+			DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {908.651, 498.008, 1869.066} 
+			delete JapaneseR
+			delete JapaneseL
+			set fade in time 2
+			wait 2 seconds
+			stop music with fadetime 4
+		end cinema
+		wait until DepartureScroll right clicked
+		
+		run script DoLand7PreOutroObjectives
+
+		begin dialogue
+			eject good spirit
+			//say "Are you sure you wish to leave the land?"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_934"
+			wait until read
+			//say "Click again to confirm"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_933"
+			wait until read
+			send good spirit home
+		end dialogue
+		clear right clicked object
+		wait until DepartureScroll right clicked
+		delete DepartureScroll
+		
+		
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		begin cinema
+			start music "farming_communtiy_land2" loop 2
+		
+			wait 2 seconds
+		
+			set camera position to {908.888, 512.011, 1866.134}
+			set camera focus to {910.530, 413.952, 1885.665}
+			move camera position to {909.036, 503.178, 1867.893} time 10
+			move camera focus to {910.678, 405.118, 1887.424} time 10
+			set fade in time 1
+			eject evil spirit
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYERTHRUWALL_80"
+			wait until read
+			send evil spirit home
+			set fade red 0 green 0 blue 0 time 3
+			set mixer CSMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+			wait 3.5 seconds
+			wait 1 seconds
+		end cinema
+		
+		run script DoLand7OutroObjectives
+	else
+		//PASSIVE
+		JapaneseL = create VILLAGER VILLAGER_INFO_TARANAGA at {1009.046, 368.892, 1492.058}
+		JapaneseR = create VILLAGER VILLAGER_INFO_HIROKU at {1007.984, 369.042, 1492.526}
+		set JapaneseL focus to {935.136, 202.813, 982.302}
+		set JapaneseR focus to {935.136, 202.813, 982.302}
+		
+		play anim "a_p_chatting_paired01_a" on JapaneseL loop -1
+		play anim "a_p_talk2_male" on JapaneseR loop -1
+
+
+		Portal = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {998.711, 369.429, 1503.754} + {0, 1.0, 0} time -1
+
+		begin cinema
+			//AGC: Moved fade out & wait inside the cinema block
+			set fade red 0 green 0 blue 0 time 2
+			wait 2 seconds
+
+			start music "cut_scene_sad_34s_01" 
+			wait 2 seconds
+			set camera position to {1007.847, 372.545, 1497.614}
+			set camera focus to {980.913, 343.000, 1405.951}
+			move camera position to {1007.300, 376.998, 1502.112} time 30
+			move camera focus to {966.229, 324.099, 1427.844} time 30
+			set fade in time 2
+			say "BW2T_SCRIPT_07FINAL_PDM_ENDLAND_10"
+			wait until read
+			//Gen of War:Brother, go through the Portal to our homeland. Prepare it for the Greek arrival! They will surely go there next!		
+			say "BW2T_SCRIPT_07FINAL_PDM_ENDLAND_20"
+			wait until read
+			//Gen of War:At our capital they will face the two sides of the Japanese. Even with a god they will not succeed.		
+			
+			move JapaneseR position to {997.420, 369.759, 1502.376}
+			wait 1 seconds
+			say "BW2T_SCRIPT_07FINAL_PDM_ENDLAND_30"
+			wait 4 seconds
+			wait until read
+			set fade red 0 green 0 blue 0 time 3
+			wait 3 seconds
+			//set camera position to {813.665, 247.007, 712.365}
+			//set camera focus to {741.503, 180.247, 730.675}
+			set camera position to {1035.625, 413.132, 1516.787}
+			set camera focus to {990.239, 357.780, 1446.963}
+			wait 0.5 seconds
+			DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {998.711, 369.429, 1503.754}
+			delete JapaneseR
+			delete JapaneseL
+			set fade in time 2
+			wait 2 seconds
+			stop music with fadetime 4
+			
+		end cinema
+		wait until DepartureScroll right clicked
+		
+		run script DoLand7PreOutroObjectives
+		
+		begin dialogue
+			eject good spirit
+			//say "Are you sure you wish to leave the land?"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_934"
+			wait until read
+			//say "Click again to confirm"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_933"
+			wait until read
+			send good spirit home
+		end dialogue
+		clear right clicked object
+		wait until DepartureScroll right clicked
+		delete DepartureScroll
+		
+		
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		begin cinema
+			start music "farming_communtiy_land2" loop 2
+			wait 2 seconds
+		
+			set camera position to {999.402, 390.600, 1504.358}
+			set camera focus to {991.144, 291.350, 1495.337}
+			move camera position to {999.402, 372.088, 1504.358} time 10
+			move camera focus to {991.144, 272.838, 1495.337} time 10
+			set fade in time 1
+			eject evil spirit
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYERTHRUWALL_80"
+			wait until read
+			send evil spirit home
+			set fade red 0 green 0 blue 0 time 3
+			set mixer CSMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+			wait 3.5 seconds
+			wait 1 seconds
+		end cinema
+		
+		run script DoLand7OutroObjectives
+	end if
+end script Land7Outro
+
+//-------------------------------------------------------------------------------------------------
+
+begin script DoLand7PreOutroObjectives
+start
+	if PLAYER of L7JapanCap == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment -0.1		
+	else
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment 0.1				
+	end if
+	//Either way we have completed the land.
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+	
+end script DoLand7PreOutroObjectives
+
+//-------------------------------------------------------------------------------------------------
+
+begin script DoLand7OutroObjectives
+start 
+	process land end objectives
+	wait until land end objectives processed
+
+
+	if MyCreature exists
+		save my_creature
+	end if
+	
+	//TA: rememebr to show the scroll objectives we haven't done, otherwise they won't appear in the menu!
+	if L7ShowingSickTownObjective == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 with amount 1 text "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_REMINDER" amount 1 description "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_7_SICKTOWN
+	end if
+	
+	if L7ShowingArcheologistsObjective == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_07FINAL_CHALLENGENAME_ARCHAEOLOGISTS" amount 1 description "BW2T_SCRIPT_07FINAL_CHALLENGE_ARCHAEOLOGISTS_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_7_ARCHEOLOGISTS
+	end if
+	
+	if L7ShowingSevenSamuraiObjective == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 with amount 1 text "BW2T_SCRIPT_07FINAL_CHALLENGENAME_SEVEN_SAMURAI" amount 0 description "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_7_SEVENSAMURAI
+	end if
+	
+	
+	L7Complete = 1
+	disable game can be lost
+	run script LandExit
+	load map "./Data/Landscape/BW2/Land8.bwe"
+end script DoLand7OutroObjectives
+
+//-------------------------------------------------------------------------------------------------

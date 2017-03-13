@@ -1,0 +1,18 @@
+run script RunLand2RingOfFire
+
+begin script RunLand2RingOfFire
+start
+	L2_Trigger_StartRingOfFireFires = 1
+	run background script Land2RingOfFire
+	wait 2 seconds
+	RF_RunRing = 1
+
+	//wait 3 seconds
+	//L2_Trigger_CalmRingOfFireSmoke = 1
+
+	//wait 10 seconds
+	//RF_RunRing = 2
+
+	//Wait forever
+	wait until 1 == 0
+end script RunLand2RingOfFire

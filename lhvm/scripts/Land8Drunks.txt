@@ -1,0 +1,854 @@
+
+//================================================================
+
+// Nut Oil 2
+
+// Driley
+
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+
+define NO2_FALSE = 0
+define NO2_TRUE = 1
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global DR_Start = 0
+global DR_EndLevel = 0
+global DR_Home = 0
+
+global DR_Fire	= 1
+global DR_Hand	= 2
+global DR_Attacking = 3
+global DR_Following = 4
+global DR_Wandering = 5
+global DR_Dancing = 6
+global DR_Attacked = 7
+global DR_Waiting = 8
+global DR_Running = 9
+global DR_Flead = 10
+global DR_Commiting = 11
+global DR_Dead = 11
+global DR_Stopped = 12
+global DR_Beer = 13
+global DR_Ambling = 14
+global DR_Follow = 15
+global DR_StupidAct = 16
+global DR_Shagging = 17
+global DR_SeenGirl = 18
+
+define DR_NumDrunks = 3
+global DR_Drunk[DR_NumDrunks]
+global DR_DrunkState[DR_NumDrunks]
+global DR_ActionTimers[DR_NumDrunks]
+global DR_NewTargetPos[DR_NumDrunks]
+global DR_DrunkStartPos[DR_NumDrunks]
+global DR_AttackType[DR_NumDrunks]
+
+
+define DR_NumAnimals = 7
+global DR_Animal[DR_NumAnimals]
+global DR_Flock[DR_NumAnimals]
+global DR_AnimalState[DR_NumAnimals]
+global DR_AnimalTimers[DR_NumAnimals]
+global DR_AnimalStartPos[DR_NumAnimals]
+global DR_NewAnimalTargetPos[DR_NumAnimals]
+global DR_NewAnimalTarget[DR_NumAnimals]
+
+define DR_NumGirls = 3
+global DR_Girl[DR_NumGirls]
+global DR_GirlState[DR_NumGirls]
+global DR_GirlTimers[DR_NumGirls]
+global DR_GirlStartPos[DR_NumGirls]
+global DR_NewGirlTargetPos[DR_NumGirls]
+global DR_NewGirlTarget[DR_NumGirls]
+
+define DR_NumGuards = 3
+global DR_Guard[DR_NumGuards]
+global DR_GuardState[DR_NumGuards]
+global DR_GuardTimers[DR_NumGuards]
+global DR_GuardStartPos[DR_NumGuards]
+global DR_NewGuardTargetPos[DR_NumGuards]
+global DR_NewGuardTarget[DR_NumGuards]
+
+global DR_Fires[4]
+global DR_FireFX[4]
+global DR_SmokeFX[4]
+global DR_NumFires = 4
+
+global DR_Beers[5]
+global DR_NumBeers = 5
+
+global DR_ObjectInHand = 0
+
+global	DR_HandObjectBeer = 0
+global	DR_HandObjectFire = 0
+
+global DR_NumDrunksHome  = 0
+global DR_NumDrunkCaught = 0
+
+global DR_LastGuard = 0
+global DR_LastDrunk = 0
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+
+define script Land8Drunks
+define script DR_Setup
+define script DR_Drunks
+
+define script DR_DrunkControl(Inc)
+define script DR_AnimalControl(Inc)
+define script DR_Intro
+define script DR_CheckFire
+define script DR_CheckHand
+define script DR_Conditions
+define script DR_Outro
+define script DR_Caught
+define script DR_CleanUp
+
+begin script Land8Drunks
+start
+
+	run script DR_Setup
+
+end script Land8Drunks
+
+//-----------------------------------------------------------------
+// Setup
+//-----------------------------------------------------------------
+
+begin script DR_Setup
+
+	StartScroll = 0
+	ScrollPos = 0
+start
+
+	DR_Start = marker at {1395.169, 48.320, 1701.370}
+	DR_Home = marker at {1052.905, 68.111, 1442.971}
+
+	StartScroll = create highlight GOLD name "Drunks" remind "Reminder temp" at {DR_Home}
+    ALTITUDE of StartScroll = 5
+
+	wait until StartScroll right clicked
+	delete StartScroll
+	
+	run background script DR_Drunks
+
+end script DR_Setup
+
+//-----------------------------------------------------------------
+// Drunks
+//-----------------------------------------------------------------
+
+begin script DR_Drunks
+	FirePos[4]
+	BeerPos[4]
+	Inc = 0
+	Inf = 0
+start
+	//marker at {1210.840, 70.108, 1098.224}
+	DR_DrunkStartPos[0] = marker at {1365.253, 44.795, 1699.913}
+	DR_DrunkStartPos[1] = marker at {1348.086, 44.058, 1707.718}
+	DR_DrunkStartPos[2] = marker at {1354.239, 44.143, 1701.903}
+
+	FirePos[0] = marker at {1364.087, 44.734, 1701.964}
+	FirePos[1] = marker at {1264.197, 49.579, 1623.511}
+	FirePos[2] = marker at {1170.226, 53.320, 1548.303}
+	FirePos[3] = marker at {1070.486, 66.450, 1443.964}
+	
+	BeerPos[0] = marker at {1360.116, 44.537, 1705.904}
+	BeerPos[1] = marker at {1266.114, 50.161, 1619.681}
+	BeerPos[2] = marker at {1164.955, 52.950, 1549.597}
+	BeerPos[3] = marker at {1176.609, 53.902, 1540.493}
+	BeerPos[4] = marker at {1071.859, 65.951, 1439.061}
+	
+	DR_AnimalStartPos[0] = marker at {1330.932, 44.959, 1664.339}
+	DR_AnimalStartPos[1] = marker at {1305.570, 44.957, 1660.569}
+	DR_AnimalStartPos[2] = marker at {1235.068, 49.127, 1625.585}
+	DR_AnimalStartPos[3] = marker at {1225.730, 50.541, 1599.427}
+	DR_AnimalStartPos[4] = marker at {1223.295, 50.742, 1583.819}
+	DR_AnimalStartPos[5] = marker at {1145.466, 58.164, 1509.403}
+	DR_AnimalStartPos[6] = marker at {1155.051, 54.646, 1536.363}
+	
+	DR_AnimalStartPos[7] = marker at {348.458, 183.877, 1312.939}
+	DR_AnimalStartPos[8] = marker at {374.689, 183.875, 1264.663}
+	DR_AnimalStartPos[9] = marker at {348.458, 183.877, 1312.939}
+	
+	DR_GuardStartPos[0] = marker at {1287.193, 47.241, 1640.049}
+	DR_GuardStartPos[1] = marker at {1117.326, 63.730, 1466.432}
+	DR_GuardStartPos[2] = marker at {1103.073, 65.466, 1478.085}
+	
+	DR_GirlStartPos[0] = marker at {1061.259, 66.640, 1439.156}
+	DR_GirlStartPos[1] = marker at {1057.179, 67.587, 1435.154}
+	DR_GirlStartPos[2] = marker at {1043.650, 69.506, 1448.794}
+	
+	Inc= 0
+	force while Inc < DR_NumDrunks
+		DR_Drunk[Inc] = create VILLAGER INDIGENOUS_FARMER at {DR_DrunkStartPos[Inc]}
+		disable DR_Drunk[Inc] reactable
+		disable DR_Drunk[Inc] moveable
+		DR_ActionTimers[Inc] = create timer for 0 seconds
+		DR_NewTargetPos[Inc] = marker at {DR_Drunk[Inc]}
+		run background script DR_DrunkControl(Inc)
+		Inc++
+	end while
+	
+	// Needs flocks
+	Inc= 0
+	force while Inc < DR_NumAnimals
+		//DR_Flock[Inc] = create flock container
+		//populate DR_Flock[Inc] with 2 VILLAGER INDIGENOUS_FARMER
+		DR_Animal[Inc] = create VILLAGER INDIGENOUS_FARMER at {DR_AnimalStartPos[Inc]} + {1.0,0.0,1.0}
+		//add DR_Animal[Inc] to flock DR_Flock[Inc]
+		//nominate DR_Animal[Inc] as leader for flock DR_Flock[Inc]
+		//set flock DR_Animal[Inc] to {DR_AnimalStartPos[Inc]} with radius 20
+		DR_AnimalTimers[Inc] = create timer for 0 seconds
+		DR_NewAnimalTargetPos[Inc] = marker at {DR_AnimalStartPos[0]}	
+		DR_AnimalState[Inc] = DR_Wandering
+		disable DR_Animal[Inc] reactable
+		disable DR_Animal[Inc] moveable
+		run background script DR_AnimalControl(Inc)
+		Inc++	
+	end while
+	
+	
+	Inc= 0
+	force while Inc < DR_NumGuards	
+		DR_Guard[Inc] = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {DR_GuardStartPos[Inc]}
+		DR_GuardTimers[Inc] = create timer for 0 seconds
+		DR_NewGuardTargetPos[Inc] = marker at {DR_GuardStartPos[Inc]}
+		DR_GuardState[Inc] = 0
+		disable DR_Guard[Inc] reactable
+		disable DR_Guard[Inc] moveable
+		Inc++
+	end while
+	
+	Inc= 0
+	force while Inc < DR_NumGirls	
+		DR_Girl[Inc] = create VILLAGER VILLAGER_INFO_INDIGENOUS_HOUSEWIFE_FEMALE at {DR_GirlStartPos[Inc]}
+		DR_GirlTimers[Inc] = create timer for 0 seconds
+		DR_NewGirlTargetPos[Inc] = marker at {DR_GirlStartPos[Inc]}
+		DR_GirlState[Inc] = 0
+		disable DR_Girl[Inc] reactable
+		disable DR_Girl[Inc] moveable
+		Inc++
+	end while
+		
+	Inc = 0
+	force while Inc < DR_NumFires
+		//Create the campfire
+		DR_Fires[Inc] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {FirePos[Inc]}
+		override mesh for DR_Fires[Inc] with "..\features\m_generic_bonfire"
+		//Add effects
+		DR_FireFX[Inc]  = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {DR_Fires[Inc]} time -1
+		DR_SmokeFX[Inc]  = create visual effect "Gp_s_smoke_chimney.ves" strength 0.5 scale 0.8 at {DR_Fires[Inc]} + {0.000,1.000,0.000} time -1
+		disable DR_Fires[Inc] pickup
+		Inc++
+	end while
+
+	Inc = 0
+	force while Inc < DR_NumFires
+		//Create the campfire
+		DR_Beers[Inc] = create OBJECT NORSE_BARREL_01 at {BeerPos[Inc]}	
+		enable DR_Beers[Inc] pickup
+		Inf = create influence on DR_Beers[Inc] radius 10
+		Inc++
+	end while
+
+	run background script DR_Intro	
+	run background script DR_CheckFire
+	run background script DR_CheckHand
+	run background script DR_Conditions
+    
+end script DR_Drunks
+
+//-----------------------------------------------------------------
+// CleanUp
+//-----------------------------------------------------------------
+
+begin script DR_CleanUp
+	Inc = 0
+start
+	//marker at {1210.840, 70.108, 1098.224}
+	
+	Inc= 0
+	force while Inc < DR_NumDrunks
+		delete DR_Drunk[Inc]
+		Inc++
+	end while
+	
+
+	// Needs flocks
+	Inc= 0
+	force while Inc < DR_NumAnimals
+		delete DR_Animal[Inc]
+		Inc++	
+	end while
+	
+	
+	Inc= 0
+	force while Inc < DR_NumGuards	
+		delete DR_Guard[Inc]
+		Inc++
+	end while
+	
+	Inc= 0
+	force while Inc < DR_NumGirls	
+		delete DR_Girl[Inc]
+		Inc++
+	end while
+		
+	Inc = 0
+	force while Inc < DR_NumFires
+		//Create the campfire
+		delete DR_Fires[Inc]
+		delete DR_FireFX[Inc]
+		delete DR_SmokeFX[Inc]
+		Inc++
+	end while
+
+	Inc = 0
+	force while Inc < DR_NumBeers
+		delete DR_Beers[Inc]
+		Inc++
+	end while
+ 
+end script DR_CleanUp
+
+//-----------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------
+
+begin script DR_Intro
+	
+start
+	begin cinema
+	
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {1123.812, 156.587, 1389.786}
+		set camera focus to {1061.153, 83.441, 1416.691}
+		wait until camera ready
+		
+		set fade in time 3
+		move camera position to {1089.868, 82.452, 1448.182} time 4
+		move camera focus to {996.948, 60.621, 1418.349} time 4
+		say "Oh please help us; our husbands never come home at night."
+		wait until read
+		say "They’re always out in the forest drinking till dawn."
+		wait until read
+		say "Please guide them safely back to us."
+		wait until read
+
+		move camera position to {1392.948, 68.024, 1697.814} time 3
+		move camera focus to {1308.512, 20.412, 1673.253} time 4
+		wait until camera ready
+	end cinema
+
+end script DR_Intro
+
+//-----------------------------------------------------------------
+// Outro
+//-----------------------------------------------------------------
+
+begin script DR_Outro
+	
+start
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {1123.812, 156.587, 1389.786}
+		set camera focus to {1061.153, 83.441, 1416.691}
+		wait until camera ready
+		
+		set fade in time 3
+		
+		move camera position to {1089.868, 82.452, 1448.182} time 4
+		move camera focus to {996.948, 60.621, 1418.349} time 4
+		say "Thank you !"
+		wait until read
+		wait until camera ready
+		
+		set fade red 0 green 0 blue 0 time 1
+		wait 1.5 seconds
+		run script DR_CleanUp
+		wait 0.5 seconds
+		set fade in time 3
+		
+	end cinema
+
+end script DR_Outro
+
+//-----------------------------------------------------------------
+// TimeOut
+//-----------------------------------------------------------------
+
+begin script DR_TimeOut
+	
+start
+	begin cinema
+		store camera details
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {952.610, 74.307, 1081.930}
+		set camera focus to {854.038, 75.191, 1065.096}
+		wait until camera ready
+		
+		set fade in time 3
+		
+		move camera position  to {951.656, 74.997, 1085.399} time 4
+		move camera focus to {866.005, 73.501, 1033.800} time 4
+		say "They didn't come back in time!"
+		wait until read
+		wait until camera ready
+		
+		set fade red 0 green 0 blue 0 time 1
+		wait 1.5 seconds
+		run script DR_CleanUp
+		wait 0.5 seconds
+		restore camera details
+		run background script DR_Setup
+		set fade in time 3
+		
+	end cinema
+
+end script DR_TimeOut
+
+//-----------------------------------------------------------------
+// DR_Caught
+//-----------------------------------------------------------------
+
+begin script DR_Caught
+	
+start
+	begin cinema
+		store camera details
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {DR_LastGuard} + {0.0,3.0,5.0}
+		set camera focus to {DR_LastGuard}
+		wait until camera ready
+		
+		set fade in time 3
+		
+		move camera position  to  {DR_LastGuard} + {5.0,3.0,0.0} time 4
+		move camera focus to {DR_LastGuard} time 4
+		say "Night in a cell should sober you up!"
+		wait until read
+		wait until camera ready
+		wait 2 seconds
+		
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		restore camera details
+		run script DR_CleanUp
+		run background script DR_Setup
+		set fade in time 3
+		
+	end cinema
+
+end script DR_Caught
+
+//-----------------------------------------------------------------
+// CheckFire
+//-----------------------------------------------------------------
+
+begin script DR_CheckFire
+	Inc = 0
+	
+start
+	begin loop
+		//last player expression spell cast position
+		//if get spell MAGIC_TYPE_VECTOR_WATER at {DR_Fires[Inc]} radius 5
+		if hand position near {DR_Fires[Inc]} radius 2 and DR_FireFX[Inc] exists
+			//delete DR_FireFX[Inc]
+			//delete DR_SmokeFX[Inc]
+			if get object held exists
+				enable get object held on fire 30.0
+			else
+				delete DR_FireFX[Inc]
+				delete DR_SmokeFX[Inc]
+				//enable DR_ObjectInHand indestructible
+			end if
+			wait 3 seconds
+		elsif hand position near {DR_Fires[Inc]} radius 2 and not DR_FireFX[Inc] exists // And fire in hand
+			DR_FireFX[Inc]  = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {DR_Fires[Inc]} time -1
+			DR_SmokeFX[Inc]  = create visual effect "Gp_s_smoke_chimney.ves" strength 0.5 scale 0.8 at {DR_Fires[Inc]} + {0.000,1.000,0.000} time -1
+			wait 3 seconds
+		end if
+		
+		Inc++
+		if not Inc < DR_NumFires
+			Inc = 0
+		end if
+	until DR_EndLevel == 1
+	end loop
+end script DR_CheckFire
+
+//-----------------------------------------------------------------
+// DR_CheckHand
+//-----------------------------------------------------------------
+
+begin script DR_CheckHand
+	Inc = 0
+	BInc = 0
+start
+	begin loop
+		BInc  = 0
+		if DR_ObjectInHand on fire
+				DR_HandObjectFire = 1
+				DR_HandObjectBeer = 0
+		elsif get object held exists and get object held != DR_ObjectInHand
+			while BInc < DR_NumBeers
+				if DR_Beers[BInc] is HELD
+					DR_ObjectInHand = DR_Beers[BInc]
+					DR_HandObjectBeer = 1
+				end if
+				BInc++
+			end while	
+		elsif get object held not exists
+			DR_ObjectInHand= 0
+			DR_HandObjectBeer = 0
+			DR_HandObjectFire = 0
+		end if
+	until DR_EndLevel == 1
+	end loop
+end script DR_CheckHand
+
+//-----------------------------------------------------------------
+// DR_Conditions
+//-----------------------------------------------------------------
+
+begin script DR_Conditions
+
+start
+
+	DR_NumDrunksHome = 0
+	DR_NumDrunkCaught = 0
+	set game time 19.10
+	// need to disable hand ?
+	begin loop
+		if DR_NumDrunksHome >= 3
+			DR_EndLevel = 1
+			run script DR_Outro
+		end  if
+		
+		if DR_NumDrunkCaught >= 3
+			DR_EndLevel = 1
+			run script DR_Caught
+		end  if
+		
+		if get game time >= 6.00 and get game time <= 19.00
+			DR_EndLevel = 1
+			run script DR_TimeOut
+		end if
+		 
+	until DR_EndLevel == 1
+	end loop
+end script DR_Conditions
+
+//-----------------------------------------------------------------
+// DR_DrunkControl
+//-----------------------------------------------------------------
+begin script DR_DrunkControl(Inc)
+	//Inc = 0
+	
+	//NewTargetPos = 0
+	RandAngle = 0
+	RandDist = 0
+	NextActionTime = 0
+	FInc = 0
+	Interupted = 0
+	NoHandInterupt = 0
+	NextFire[4]
+	RandAction = 0
+	RandAttract = 0
+ 
+start
+	
+	while DR_EndLevel != 1 and DR_Drunk[Inc] exists
+	
+		if hand position near {DR_Drunk[Inc]} radius 2 and Interupted != 1 and DR_HandObjectFire == 1 and DR_DrunkState[Inc] != DR_Stopped
+			Interupted = 1
+		else
+			Interupted = 0
+		end if
+		
+		if get DR_ActionTimers[Inc] time remaining == 0 or (Interupted == 1 and NoHandInterupt == 0)
+			NoHandInterupt = 0
+			if DR_DrunkState[Inc] != DR_Stopped
+				
+				//Check for Fires
+				while FInc < DR_NumFires
+					if DR_FireFX[FInc] exists
+						if {DR_Fires[FInc]} near {DR_Drunk[Inc]} radius 5
+							DR_DrunkState[Inc] = DR_Dancing
+						elsif {DR_Fires[FInc]} near {DR_Drunk[Inc]} radius 15
+							RandAngle = number from 0 to 360
+							RandDist  = number from 1 to 5
+							DR_NewTargetPos[Inc] = marker at get target from {DR_Drunk[Inc]} to {DR_Fires[FInc]} distance RandDist angle RandAngle
+							NextFire[Inc] = FInc+1
+							DR_DrunkState[Inc] = DR_Fire
+						end if
+					else
+						NextFire[Inc] = FInc+1
+					end if
+					FInc++
+				end while 
+				FInc = 0
+				
+				//Check for Guards
+				while FInc < DR_NumGuards
+						RandAttract = number from 1 to 100
+						if {DR_Guard[FInc]} near {DR_Drunk[Inc]} radius 2 
+							DR_DrunkState[Inc] = DR_StupidAct
+							DR_NewTargetPos[Inc] = DR_Guard[FInc]
+						elsif {DR_Guard[FInc]} near {DR_Drunk[Inc]} radius 10 //and RandAttract > 80
+							RandAngle = number from 0 to 360
+							RandDist  = number from 1 to 3
+							DR_NewTargetPos[Inc] = marker at get target from {DR_Drunk[Inc]} to {DR_Guard[FInc]} distance RandDist angle RandAngle
+							DR_DrunkState[Inc] = DR_Beer
+						end if
+					FInc++
+				end while 
+				FInc = 0
+				
+				if {DR_Girl[Inc]} near {DR_Drunk[Inc]} radius 4 
+					DR_DrunkState[Inc] = DR_Shagging
+					DR_NewTargetPos[Inc] = DR_Girl[Inc]
+				elsif {DR_Girl[Inc]} near {DR_Drunk[Inc]} radius 20
+					DR_NewTargetPos[Inc] = DR_Girl[Inc]
+					DR_DrunkState[Inc] = DR_SeenGirl
+				end if
+
+				//Check for Beer in hand
+				if hand position near {DR_Drunk[Inc]} radius 1 and DR_HandObjectBeer == 1
+					RandAngle = number from 0 to 90
+					RandDist  = number from 1 to 3
+					DR_NewTargetPos[Inc] = marker at get target from {DR_Drunk[Inc]} to hand position distance RandDist angle RandAngle
+					DR_DrunkState[Inc] = DR_Ambling
+				elsif hand position near {DR_Drunk[Inc]} radius 10 and DR_HandObjectBeer == 1
+					RandAngle = number from 0 to  90
+					RandDist  = number from 3 to 6
+					DR_NewTargetPos[Inc] = marker at get target from {DR_Drunk[Inc]} to hand position distance RandDist angle RandAngle
+					DR_DrunkState[Inc] = DR_Hand
+				end if
+				
+			end if
+
+			if DR_DrunkState[Inc] == DR_Stopped
+				play anim "a_p_swaying" on DR_Drunk[Inc] loop 4
+				NextActionTime = 15
+			elsif DR_DrunkState[Inc] == DR_Shagging
+				NoHandInterupt = 1
+				NextActionTime = 6	
+				set DR_Drunk[Inc] focus to {DR_NewTargetPos[Inc]}
+				set DR_NewTargetPos[Inc] focus to {DR_Drunk[Inc]}  
+				//move DR_Drunk[Inc] position to {DR_NewTargetPos[Inc]}
+				//override DR_Drunk[Inc] anim "a_p_walk_drunk"
+				DR_DrunkState[Inc] = DR_Stopped
+				//wait until {DR_Drunk[Inc]} near {DR_NewTargetPos[Inc]} radius 1
+				
+				play anim "a_p_breeding1_a" on DR_Drunk[Inc] loop 1
+				play anim "a_p_breeding1_b" on DR_NewTargetPos[Inc] loop 1
+				DR_NumDrunksHome++
+			elsif DR_DrunkState[Inc] == DR_SeenGirl
+				NextActionTime = 2
+				move DR_Drunk[Inc] position to {DR_NewTargetPos[Inc]}
+				set DR_NewTargetPos[Inc] focus to {DR_Drunk[Inc]} 
+				override DR_Drunk[Inc] anim "a_p_walk_drunk"
+			elsif DR_DrunkState[Inc] == DR_Beer
+				NextActionTime = 2
+				move DR_Drunk[Inc] position to {DR_NewTargetPos[Inc]}
+				override DR_Drunk[Inc] anim "a_p_walk_drunk"
+			elsif DR_DrunkState[Inc] == DR_Fire
+				NextActionTime = 2
+				move DR_Drunk[Inc] position to {DR_NewTargetPos[Inc]}
+				override DR_Drunk[Inc] anim "a_p_walk_drunk"
+			elsif DR_DrunkState[Inc] == DR_Hand
+				NextActionTime = 2
+				move DR_Drunk[Inc] position to {DR_NewTargetPos[Inc]}
+				override DR_Drunk[Inc] anim "a_p_walk_drunk"
+			elsif DR_DrunkState[Inc] == DR_Dancing
+				play anim "a_p_dance_celebrate02" on DR_Drunk[Inc] loop 1
+				//make DR_Drunk[Inc] dance DANCE_INFO_DANCE_AROUND_OBJECT_DIAMETER_LESS_7 around position {DR_NewTargetPos[Inc]} time 2
+				NextActionTime = 2
+			elsif DR_DrunkState[Inc] == DR_StupidAct
+				RandAction  = number from 1 to 100
+				set DR_Drunk[Inc] focus to {DR_NewTargetPos[Inc]} 
+				set DR_NewTargetPos[Inc] focus to {DR_Drunk[Inc]}  
+				DR_LastGuard = DR_NewTargetPos[Inc]
+				DR_LastDrunk = DR_Drunk[Inc]
+				if RandAction < 5
+					play anim "a_p_stand_despair_3" on DR_Drunk[Inc] loop 1
+					DR_NumDrunkCaught++
+				elsif RandAction < 15
+					play anim "a_p_blow_raspberry" on DR_Drunk[Inc] loop 1
+					DR_NumDrunkCaught++
+				elsif RandAction < 25
+					DR_NumDrunkCaught++
+					play anim "a_p_dance_celebrate02" on DR_Drunk[Inc] loop 1
+				elsif RandAction <= 100
+					play anim "a_p_swaying" on DR_Drunk[Inc] loop 1
+				end if
+				NextActionTime = 3
+			elsif DR_DrunkState[Inc] == DR_Wandering //and {DR_NewTargetPos[Inc]} near {DR_Drunk[Inc]} radius 2
+				// Otherwise Get random target
+				RandAngle = number from 90 to 180
+				RandDist  = number from 10 to 15
+				DR_NewTargetPos[Inc] = marker at get target from {DR_Fires[NextFire[Inc]]} to {DR_Drunk[Inc]} distance RandDist angle RandAngle
+				NextActionTime = 5
+				move DR_Drunk[Inc] position to {DR_NewTargetPos[Inc]}
+				override DR_Drunk[Inc] anim "a_p_walk_drunk"
+			elsif DR_DrunkState[Inc] == DR_Ambling
+				// Otherwise Get random target
+				RandAction  = number from 1 to 100
+				NoHandInterupt = 1
+				if RandAction < 15
+					play anim "a_p_jump_at_hand" on DR_Drunk[Inc] loop 1
+					NextActionTime = 1
+				elsif RandAction < 30
+					play anim "a_p_jump_at_hand2" on DR_Drunk[Inc] loop 1
+					NextActionTime = 1
+				elsif RandAction <= 100
+					//set DR_Drunk[Inc] focus to {DR_NewTargetPos[Inc]} 
+					play anim "a_p_swaying" on DR_Drunk[Inc] loop 2
+					//move DR_Drunk[Inc] position to {DR_NewTargetPos[Inc]}
+					NextActionTime = 2
+				end if
+			end if
+			
+			// set get new target timer
+			DR_ActionTimers[Inc] = create timer for NextActionTime seconds
+			if DR_DrunkState[Inc] != DR_Stopped and DR_DrunkState[Inc] != DR_StupidAct
+				DR_DrunkState[Inc] = DR_Wandering
+			end if
+			
+		end if
+		//Inc++
+		//if not Inc < DR_NumDrunks
+			//Inc = 0
+		//end if
+	//until DR_EndLevel == 1
+	end while
+end script DR_DrunkControl
+
+//-----------------------------------------------------------------
+// DR_AnimalControl
+//-----------------------------------------------------------------
+begin script DR_AnimalControl(Inc)
+	//Inc = 0
+	
+	//NewTargetPos = 0
+	RandAngle = 0
+	RandDist = 0
+	NextActionTime = 0
+	DInc = 0
+	FInc = 0
+	Interupted = 0
+start
+	
+	while DR_EndLevel != 1 and DR_Animal[Inc] exists
+	
+		if hand position near {DR_Animal[Inc]} radius 10 and Interupted != 1 and DR_HandObjectFire == 1
+			Interupted = 1
+		else
+			Interupted = 0
+		end if
+
+		// check if time has run out
+		if  get DR_AnimalTimers[Inc] time remaining == 0 or Interupted == 1
+			
+			if DR_AnimalState[Inc] != DR_Attacked and DR_AnimalState[Inc] != DR_Dead
+				
+				if DR_AnimalState[Inc] != DR_Following
+					//DR_AnimalState[Inc] = DR_Wandering
+				end if
+								
+				if hand position near {DR_Animal[Inc]} radius 15 and DR_HandObjectFire == 1
+					DR_AnimalState[Inc] = DR_Hand
+					
+				else
+					
+					//Check for Drunks
+					while DInc < DR_NumDrunks
+						if DR_Drunk[DInc] exists
+							if {DR_Drunk[DInc]} near {DR_Animal[Inc]} radius 4
+								DR_NewAnimalTargetPos[Inc] = DR_Drunk[DInc]
+								DR_AnimalState[Inc] = DR_Attacking
+								//DR_DrunkState[DInc] = DR_Attacked
+								//DR_AttackType[DInc] = 1
+								DInc = DR_NumDrunks
+							elsif {DR_Drunk[DInc]} near {DR_Animal[Inc]} radius 15 and DR_AnimalState[Inc] != DR_Following
+								DR_AnimalState[Inc] = DR_Follow
+								DR_NewAnimalTargetPos[Inc] = DR_Drunk[DInc]
+								DInc = DR_NumDrunks
+							end if
+						end if
+						DInc++
+					end while 
+					DInc = 0
+					
+					//Check for Fires
+					while FInc < DR_NumFires
+							if {DR_Fires[FInc]} near {DR_Animal[Inc]} radius 20
+								if DR_FireFX[FInc] exists
+									DR_NewAnimalTargetPos[Inc] = marker at get target from {DR_Animal[Inc]} to {DR_Fires[FInc]} distance 40 angle 180
+									DR_AnimalState[Inc] = DR_Fire
+								end if
+							end if
+						FInc++
+					end while 
+					FInc = 0
+					
+				end if		
+			end if
+			
+			if DR_AnimalState[Inc] == DR_Dead
+				NextActionTime = 5
+				play anim "a_p_crawl_injured" on DR_Animal[Inc] loop 2
+			elsif DR_AnimalState[Inc] == DR_Fire
+				NextActionTime = 5
+				SPEED of DR_Animal[Inc]  = 0.5
+				move DR_Animal[Inc] position to {DR_NewAnimalTargetPos[Inc]}
+				DR_AnimalState[Inc] = DR_Wandering
+			elsif DR_AnimalState[Inc] == DR_Hand or DR_AnimalState[Inc] == DR_Running
+				DR_NewAnimalTargetPos[Inc] = marker at get target from hand position to {DR_Animal[Inc]} distance 25 angle 0
+				NextActionTime = 1
+				DR_AnimalState[Inc] = 0
+				move DR_Animal[Inc] position to {DR_NewAnimalTargetPos[Inc]}
+				SPEED of DR_Animal[Inc]  = 0.5
+				DR_AnimalState[Inc] = DR_Running
+			elsif DR_AnimalState[Inc] == DR_Attacking 
+				play anim "a_p_dance_celebrate02" on DR_Animal[Inc] loop 1
+				NextActionTime = 3
+				SPEED of DR_Animal[Inc]  = 0.5
+			elsif DR_AnimalState[Inc] == DR_Follow and DR_AnimalState[Inc] != DR_Following 
+				set DR_Animal[Inc] to follow DR_NewAnimalTargetPos[Inc] at distance 0.5
+				NextActionTime = 2
+				DR_AnimalState[Inc] = DR_Following
+				SPEED of DR_Animal[Inc]  = 0.5
+			elsif DR_AnimalState[Inc] == DR_Wandering
+					// Otherwise Get random target
+					RandAngle = number from 0 to 360
+					RandDist  = number from 10 to 15
+					DR_NewAnimalTargetPos[Inc] = marker at get target from {DR_Animal[Inc]} to {DR_AnimalStartPos[Inc]} distance RandDist angle RandAngle
+					NextActionTime = number from 3 to 6
+					move DR_Animal[Inc] position to {DR_NewAnimalTargetPos[Inc]}
+					//play anim "a_p_dance_celebrate02" on DR_Animal[Inc] loop 1
+					SPEED of DR_Animal[Inc]  = 0.1
+			end if
+			
+			// set get new target timer
+			DR_AnimalTimers[Inc] = create timer for NextActionTime seconds
+			
+		end if
+
+	end while
+end script DR_AnimalControl

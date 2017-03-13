@@ -1,0 +1,151 @@
+//================================================================
+// Land 3 Town Expansion
+// Matt.L
+//================================================================
+
+//-----------------------------------------------------------------
+// Cosntants
+//-----------------------------------------------------------------
+define TE_FALSE = 0
+define TE_TRUE = 1
+
+//Reminder stuff
+define TE_STORAGEPIT_REMINDER = 140
+define TE_WOOD_REMIDNER = 120
+define TE_FOOD_REMIDNER = 120
+define TE_VILLAGERS_REMIDNER = 120
+
+//Conditions
+define TE_REQUIRED_FOOD = 15000
+define TE_REQUIRED_WOOD = 5000
+define TE_REQUIRED_POPULATION = 30
+
+//Advisor defines
+define TE_ADVISORS_TALK_ABOUT_STORAGE_PIT = 0
+define TE_ADVISORS_NEED_MORE_FOOD = 1
+define TE_ADVISORS_NEED_MORE_WOOD = 2
+define TE_ADVISORS_NEED_MORE_VILLAGERS = 3
+
+//-----------------------------------------------------------------
+// Script defines
+//-----------------------------------------------------------------
+define script TE_Advisors(ID)
+
+//-----------------------------------------------------------------
+// Land 3 Town Expansion
+//-----------------------------------------------------------------
+begin script Land3TownExpansion
+	StoragePit = 0
+	NumOfStoragePits = 0
+	NumOfVillagers = 0
+	NumOfFood = 0
+	NumOfWood = 0
+
+	//Remidner Timers
+	ReminderTimer_StoragePit = create timer for TE_STORAGEPIT_REMINDER seconds
+	ReminderTimer_Wood = create timer for TE_WOOD_REMIDNER seconds
+	ReminderTimer_Food = create timer for TE_FOOD_REMIDNER seconds
+	ReminderTimer_Villagers = create timer for TE_VILLAGERS_REMIDNER seconds
+
+	MetTownConditions = TE_FALSE
+start
+
+	if not L3GreekTown exists
+		run background script Land3Globals
+	end if
+
+	begin loop
+
+		//Look for a storage pit
+		NumOfStoragePits = get number of type HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L3GreekTown min built 1.0
+
+		//Population check
+		NumOfVillagers = size of L3GreekTown
+
+		//Food and wood checks
+		if not StoragePit exists			
+
+			//Reminder
+			if get ReminderTimer_StoragePit time remaining == 0
+				ReminderTimer_StoragePit = create timer for TE_STORAGEPIT_REMINDER seconds
+				run background script TE_Advisors(TE_ADVISORS_TALK_ABOUT_STORAGE_PIT)
+			end if
+
+			StoragePit = get HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L3GreekTown
+		else
+			NumOfFood = get resource RESOURCE_TYPE_FOOD in StoragePit
+			NumOfWood = get resource RESOURCE_TYPE_WOOD in StoragePit
+
+			//Check for town conditions
+			if NumOfFood >= TE_REQUIRED_FOOD 
+				if NumOfWood >= TE_REQUIRED_WOOD 
+					if NumOfVillagers >= TE_REQUIRED_POPULATION
+						MetTownConditions = TE_TRUE
+					else
+						if get ReminderTimer_Villagers time remaining == 0
+							run background script TE_Advisors(TE_ADVISORS_NEED_MORE_VILLAGERS)
+							ReminderTimer_Villagers = create timer for TE_VILLAGERS_REMIDNER seconds
+						end if
+					end if
+				else
+					if get ReminderTimer_Wood time remaining == 0
+						run background script TE_Advisors(TE_ADVISORS_NEED_MORE_WOOD)
+						ReminderTimer_Wood = create timer for TE_WOOD_REMIDNER seconds
+					end if
+				end if
+			else
+				if get ReminderTimer_Food time remaining == 0
+					run background script TE_Advisors(TE_ADVISORS_NEED_MORE_FOOD)
+					ReminderTimer_Food = create timer for TE_FOOD_REMIDNER seconds					
+				end if
+			end if
+		
+		end if
+
+	until MetTownConditions == TE_TRUE
+	end loop
+
+	//say "You have met all the town conditions"
+	begin dialogue
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_811"
+		wait until read
+	end dialogue
+end script Land3TownExpansion
+
+//-----------------------------------------------------------------
+// Town Expansion Advisors
+//-----------------------------------------------------------------
+begin script TE_Advisors(ID)
+start
+	begin dialogue
+		if ID == TE_ADVISORS_TALK_ABOUT_STORAGE_PIT
+			eject good spirit
+			//say "GA: Your villagers need a storage pit"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_810"
+			wait until read
+
+		elsif ID == TE_ADVISORS_NEED_MORE_WOOD
+			eject evil spirit
+			//say "Hey your guys $d more wood" with number TE_REQUIRED_WOOD
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_809"
+			wait until read
+
+		elsif ID == TE_ADVISORS_NEED_MORE_FOOD
+			eject good spirit
+			//say "Leader we need $d food" with number TE_REQUIRED_FOOD
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_808"
+			wait until read
+
+		elsif ID == TE_ADVISORS_NEED_MORE_VILLAGERS
+			eject evil spirit
+			//say "Boss we need $d villagers over here" with number TE_REQUIRED_POPULATION
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_807"
+			wait until read
+
+		end if
+
+		//Make sure these two are off the screen
+		send good spirit home
+		send evil spirit home
+	end dialogue
+end script TE_Advisors

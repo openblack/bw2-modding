@@ -1,0 +1,23 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 2
+//===========================================================
+
+// -Globals-
+Land2Globals.txt
+Land2Dialogue.txt
+Land2Audio.txt
+Land2Ambient.txt
+
+//More global stuff
+Land2Teleport.txt
+
+//Main events
+Land2RingOfFire.txt
+Land2AztecAttacks.txt
+Land2Volcano.txt
+Land2BarrelRun.txt
+Land2CatapultingFields.txt
+
+//Control
+Land2Intro.txt
+Land2Control.txt

@@ -1,0 +1,11 @@
+run script RunGestureGame
+
+begin script RunGestureGame
+start
+	begin camera
+		set camera position to {951.411,12.974,1290.613}
+		set camera focus to {956.817,8.163,1272.430}
+	end camera
+	
+	run script GestureGame
+end script RunGestureGame

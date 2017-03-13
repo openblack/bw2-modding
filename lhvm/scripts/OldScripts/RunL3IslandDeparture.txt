@@ -1,0 +1,10 @@
+//------------------------------------------------------------------------------------------------------------------------
+run script RunL3IslandDeparture
+//------------------------------------------------------------------------------------------------------------------------
+begin script RunL3IslandDeparture
+
+start
+
+	run script Land3IslandDeparture
+	
+end script RunL3IslandDeparture

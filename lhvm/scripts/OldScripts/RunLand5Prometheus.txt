@@ -1,0 +1,12 @@
+run script RunLand5Prometheus
+
+begin script RunLand5Prometheus
+
+start
+
+	if L5GreekTown not exists
+		run background script Land5Globals
+	end if
+	run script Land5Prometheus
+
+end script RunLand5Prometheus

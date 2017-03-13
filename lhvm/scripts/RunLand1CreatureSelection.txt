@@ -1,0 +1,6 @@
+run script RunLand1CreatureSelection
+
+begin script RunLand1CreatureSelection
+start
+	run script Land1CreatureSelection
+end script RunLand1CreatureSelection

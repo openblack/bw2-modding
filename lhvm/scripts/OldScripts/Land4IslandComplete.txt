@@ -1,0 +1,153 @@
+//------------------------------------------------
+//  LAND 4 ISLAND COMPLETE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land4IslandComplete
+
+RelCamPos=0
+RelCamFoc=0
+WeDontNeedAnotherHeroku=0
+DimDim=0
+IllHouseYou=0
+
+start
+
+begin cinema
+
+	IllHouseYou = get HOUSE at {2159.815,28.938,1478.790}
+	WeDontNeedAnotherHeroku = create VILLAGER VILLAGER_INFO_JAPANESE_LEADER_MALE at get world position from IllHouseYou to {-0.205,0.000,12.440}
+
+	set WeDontNeedAnotherHeroku focus to get world position from IllHouseYou to {-0.563,0.000,20.233}
+
+	play anim "A_P_SITTING_DOWN_MALE1" on WeDontNeedAnotherHeroku loop -1
+	ALTITUDE of WeDontNeedAnotherHeroku = -0.5
+
+	RelCamPos=marker at get world position from IllHouseYou to {-14.316,13.198,24.424}
+	RelCamFoc=marker at get world position from IllHouseYou to {-2.587,0.275,8.853}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	set camera lens 66.000 time 6
+	wait 5 second
+
+	set camera lens 47.000
+	RelCamPos=marker at get world position from WeDontNeedAnotherHeroku to {-0.039,0.609,0.822}
+	RelCamFoc=marker at get world position from WeDontNeedAnotherHeroku to {-0.616,1.168,-18.127}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	DimDim = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at get world position from IllHouseYou to {-2.895,0.000,15.682}
+	move DimDim position to get world position from IllHouseYou to {-0.700,0.000,12.901}
+
+	set camera lens 45.000 time 6
+
+	wait 6 seconds
+	say "Will you stop me?"
+	wait until read
+
+	/*set camera lens 21.000
+	RelCamPos=marker at get world position from IllHouseYou to {0.633,0.049,12.106}
+	RelCamFoc=marker at get world position from IllHouseYou to {-15.722,6.247,19.441}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait until read*/
+	say "No."
+	wait until read
+	wait 3 seconds
+
+	set camera lens 21.000
+	RelCamPos=marker at get world position from IllHouseYou to {0.633,0.049,12.106}
+	RelCamFoc=marker at get world position from IllHouseYou to {-15.722,6.247,19.441}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "Help me."
+	wait until read
+	wait 1 second
+
+	set camera lens 21.000
+	RelCamPos=marker at get world position from IllHouseYou to {0.210,0.142,13.004}
+	RelCamFoc=marker at get world position from IllHouseYou to {-10.704,5.907,-1.395}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "Euronymous asked me this once as well."
+	wait until read
+
+	set camera lens 21.000
+	RelCamPos=marker at get world position from IllHouseYou to {0.633,0.049,12.106}
+	RelCamFoc=marker at get world position from IllHouseYou to {-15.722,6.247,19.441}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	say "I know"
+	wait until read
+	say "But we can win"
+	wait until read
+
+	set camera lens 34.000
+	RelCamPos=marker at get world position from IllHouseYou to {0.127,0.498,12.908}
+	RelCamFoc=marker at get world position from IllHouseYou to {-12.387,-0.661,-1.295}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "No.  You can’t."
+	wait until read
+
+	set camera lens 29.000
+	RelCamPos=marker at get world position from IllHouseYou to {0.036,0.470,12.540}
+	RelCamFoc=marker at get world position from IllHouseYou to {-17.235,5.617,18.448}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	say "Look up, Hiroku"
+	wait until read
+
+	set camera lens 34.000
+	RelCamPos=marker at get world position from IllHouseYou to {0.127,0.498,12.908}
+	RelCamFoc=marker at get world position from IllHouseYou to {-12.387,-0.661,-1.295}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "Why?"
+	wait until read
+	say "Look up."
+	wait until read
+	wait 5 seconds
+
+	//offer hand
+	set camera lens 29.000
+	RelCamPos=marker at get world position from IllHouseYou to {-0.059,0.590,12.917}
+	RelCamFoc=marker at get world position from IllHouseYou to {-15.909,-6.955,5.741}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 1 seconds
+	say "Help me"
+	wait 1 seconds
+
+	RelCamPos=marker at get world position from IllHouseYou to {-0.108,0.639,12.844}
+	RelCamFoc=marker at get world position from IllHouseYou to {-19.053,0.162,12.113}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait until read
+	clear dialogue
+	wait 2 seconds
+
+	RelCamPos=marker at get world position from IllHouseYou to {0.292,0.414,12.903}
+	RelCamFoc=marker at get world position from IllHouseYou to {-15.057,0.619,1.768}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 2 seconds
+	say "With all my soul, before god."
+	wait 2 seconds
+
+	RelCamPos=marker at get world position from IllHouseYou to {-0.059,0.590,12.917}
+	RelCamFoc=marker at get world position from IllHouseYou to {-15.909,-6.955,5.741}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 2 seconds
+
+	RelCamPos=marker at get world position from IllHouseYou to {1.137,0.561,14.561}
+	RelCamFoc=marker at get world position from IllHouseYou to {-10.299,-0.598,-0.524}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 2 seconds
+
+end cinema
+
+end script Land4IslandComplete

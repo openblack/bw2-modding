@@ -1,0 +1,6 @@
+run script RunLand3Gypos
+
+begin script RunLand3Gypos
+start
+	run script Land3Orphans
+end script RunLand3Gypos

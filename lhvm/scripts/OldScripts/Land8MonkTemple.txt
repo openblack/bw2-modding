@@ -1,0 +1,356 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define MT_True = 1
+define MT_False = 0
+define NUMBER_OF_FEATURES = 8
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global MT_ChallengeOver = MT_False
+global MT_FeatureSpawn[NUMBER_OF_FEATURES]
+global MT_PlayersTown = 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script MT_GardenFeature(Type, Feature)
+//-----------------------------------------------------------------------------
+//----Land8MonkTemple----// 
+//-----------------------------------------------------------------------------
+begin script Land8MonkTemple
+	Scroll_Pos = marker at {1727.865,82.657,710.236}
+	Floor = marker at {1688.619,74.885,687.467}
+	Grand_Kai_Pos[2]
+	CamPos[2]
+	FeaturePosition[NUMBER_OF_FEATURES]
+	GardenFeature[NUMBER_OF_FEATURES]
+	FeatureHighlight[NUMBER_OF_FEATURES]
+	PosMarker[9]
+	ScrubCommentSaid = MT_False
+	FloorClean = MT_False
+	FeaturesCollected = MT_False
+	Old_Master = 0
+	Scroll = 0
+	TempleRuin = 0
+	Counter = 0
+start
+	MT_PlayersTown = marker at {853.168,224.750,653.274}
+	MT_FeatureSpawn[0] = marker at {1705.281,77.735,672.486}
+	MT_FeatureSpawn[1] = marker at {1722.321,78.885,688.401}
+	MT_FeatureSpawn[2] = marker at {1715.550,79.296,655.274}
+	MT_FeatureSpawn[3] = marker at {1666.615,69.881,700.316}
+	MT_FeatureSpawn[4] = marker at {1685.471,78.001,665.011}
+	MT_FeatureSpawn[5] = marker at {1707.755,79.494,707.437}
+	MT_FeatureSpawn[6] = marker at {1660.743,70.438,726.046}
+	MT_FeatureSpawn[7] = marker at {1647.093,69.497,710.176}
+	
+	FeaturePosition[0] = marker at {1689.942,74.840,725.410}
+	FeaturePosition[1] = marker at {1671.554,69.734,708.947}
+	FeaturePosition[2] = marker at {1658.809,71.650,686.680}
+	FeaturePosition[3] = marker at {1677.258,76.554,669.605}
+	FeaturePosition[4] = marker at {1698.441,79.566,657.335}
+	FeaturePosition[5] = marker at {1725.354,79.815,672.920}
+	FeaturePosition[6] = marker at {1740.986,79.116,690.179}
+	FeaturePosition[7] = marker at {1722.881,83.586,714.714}
+	
+	Grand_Kai_Pos[0] = marker at {1707.009,76.763,691.094}
+	CamPos[1] = 0
+	Grand_Kai_Pos[1] = 0
+	
+//----Create Scroll----//
+
+	Scroll = create highlight GOLD name "Monk Temple" remind "Reminder temp" at {Scroll_Pos}
+	ALTITUDE of Scroll = 8
+	wait until Scroll right clicked
+	delete Scroll
+	store camera details
+	
+//----Create Objects----//
+
+	Old_Master = create VILLAGER OLD_MONK at {Grand_Kai_Pos[0]}
+
+	GardenFeature[0] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[0]}
+	override mesh for GardenFeature[0] with "..\models\m_japanese_pillar"
+	FeatureHighlight[0] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[0] time -1
+	set FeatureHighlight[0] colour red 255 green 100 blue 100
+	PosMarker[0] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[0]} time -1
+	set PosMarker[0] colour red 255 green 100 blue 100
+	
+	GardenFeature[1] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[1]}
+	override mesh for GardenFeature[1] with "..\models\m_japanese_pillar"
+	FeatureHighlight[1] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[1] time -1
+	set FeatureHighlight[1] colour red 255 green 255 blue 255
+	PosMarker[1] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[1]} time -1
+	set PosMarker[1] colour red 255 green 255 blue 255
+	
+	GardenFeature[2] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[2]}
+	override mesh for GardenFeature[2] with "..\models\m_japanese_pillar"
+	FeatureHighlight[2] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[2] time -1
+	set FeatureHighlight[2] colour red 0 green 255 blue 255
+	PosMarker[2] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[2]} time -1
+	set PosMarker[2] colour red 0 green 255 blue 255
+	
+	GardenFeature[3] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[3]}
+	override mesh for GardenFeature[3] with "..\models\m_japanese_pillar"
+	FeatureHighlight[3] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[3] time -1
+	set FeatureHighlight[3] colour red 255 green 0 blue 255
+	PosMarker[3] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[3]} time -1
+	set PosMarker[3] colour red 255 green 0 blue 255
+		
+	GardenFeature[4] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[4]}
+	override mesh for GardenFeature[4] with "..\models\m_japanese_pillar"
+	FeatureHighlight[4] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[4] time -1
+	set FeatureHighlight[4] colour red 255 green 255 blue 0
+	PosMarker[4] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[4]} time -1
+	set PosMarker[4] colour red 255 green 255 blue 0
+		
+	GardenFeature[5] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[5]}
+	override mesh for GardenFeature[5] with "..\models\m_japanese_pillar"
+	FeatureHighlight[5] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[5] time -1
+	set FeatureHighlight[5] colour red 0 green 0 blue 255
+	PosMarker[5] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[5]} time -1
+	set PosMarker[5] colour red 0 green 0 blue 255
+		
+	GardenFeature[6] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[6]}
+	override mesh for GardenFeature[6] with "..\models\m_japanese_pillar"
+	FeatureHighlight[6] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[6] time -1
+	set FeatureHighlight[6] colour red 255 green 0 blue 0
+	PosMarker[6] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[6]} time -1
+	set PosMarker[6] colour red 255 green 0 blue 0
+		
+	GardenFeature[7] = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[7]}
+	override mesh for GardenFeature[7] with "..\models\m_japanese_budha"	
+	FeatureHighlight[7] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on GardenFeature[7] time -1
+	set FeatureHighlight[7] colour red 0 green 255 blue 0
+	PosMarker[7] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {FeaturePosition[7]} time -1
+	set PosMarker[7] colour red 0 green 255 blue 0
+		
+//----Intro----//
+
+	begin cinema
+		wait 0.5 seconds
+		CamPos[0] = marker at focus position of Old_Master
+		move camera position to {CamPos[0]} + {0.000,1.500,0.000} time 3
+		move camera focus to {Old_Master} + {0.000,1.500,0.000} time 3
+		wait until camera ready
+		say "Its no use i can't train in this environment!"
+		wait until read
+		say "The Zen Garden has fallen into disrepair."
+		wait until read
+		say "Help me restore the Garden so i can train my students."
+		wait until read
+		set fade red 0 green 0 blue 0 time 2
+		restore camera details
+		set fade in time 2
+	end cinema
+	
+	delete Old_Master
+	
+	begin dialogue
+		eject good spirit
+		say "Lets clean up leader."
+		wait until read
+		eject evil spirit
+		say "Its a chore but if we build this place up we can recruit some mean lean fighting machines."
+		wait until read
+		say "Hi-yah!"
+		wait until read
+		say "Good grief."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+//----Load Feature Behaviour----//
+	
+	Counter = 0
+	while Counter < NUMBER_OF_FEATURES
+		run background script MT_GardenFeature(Counter, GardenFeature[Counter])
+		Counter++
+	end while
+
+	PosMarker[8] = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 0.6 at {Floor} time -1
+	set PosMarker[8] colour red 255 green 0 blue 0
+	
+//----Main Analysis----//
+	
+	begin loop
+	
+	//----Check if floor cleaned----//
+	
+		if FloorClean == MT_False
+			if variable get hand state == variable HAND_STATE_FIST_STRONG and hand position near {Floor} radius 10 and ScrubCommentSaid == MT_False
+				ScrubCommentSaid = MT_True
+				begin dialogue
+					eject good spirit 
+					eject evil spirit
+					say "Excellent, work i can see some colour coming through."
+					wait until read
+					say "Fisting guaranteed to remove all stuborn staines."
+					wait until read
+					send good spirit home
+					send evil spirit home
+				end dialogue
+			end if
+			
+			/*if some clever check to decide if the floor is clean
+				FloorClean = MT_True
+				begin dialogue
+					eject good spirit
+					say "Its a plan of the Garden in its prime."
+					wait until read
+					say "That should prove useful for restoring the Garden to it's former glory."
+					wait until read
+					send good spirit home
+				end dialogue
+			end if*/
+		end if
+		
+	//----Check if all the features are in the garden----//	
+	
+		if FeaturesCollected == MT_False
+			if not {GardenFeature[0]} near {Floor} radius 30 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[1]} near {Floor} radius 30 or GardenFeature[1] is HELD
+			elsif not {GardenFeature[2]} near {Floor} radius 30 or GardenFeature[2] is HELD
+			elsif not {GardenFeature[3]} near {Floor} radius 30 or GardenFeature[3] is HELD
+			elsif not {GardenFeature[4]} near {Floor} radius 30 or GardenFeature[4] is HELD
+			elsif not {GardenFeature[5]} near {Floor} radius 30 or GardenFeature[5] is HELD
+			elsif not {GardenFeature[6]} near {Floor} radius 30 or GardenFeature[6] is HELD
+			elsif not {GardenFeature[7]} near {Floor} radius 30 or GardenFeature[7] is HELD
+			else 
+				FeaturesCollected = MT_True
+				begin dialogue
+					eject good spirit
+					eject evil spirit
+						say "Well done leader you've collected all the features."
+						wait until read
+						say "Seems a shame to give them all away, couldn't we keep one for our town?"
+						wait until read
+						say "That would be stealing!"
+						wait until read
+					send good spirit home
+					send evil spirit home
+				end dialogue
+			end if
+		end if
+	
+	//----Check if all the features are in the right place----//	
+	
+		if FeaturesCollected == MT_False
+			if not {GardenFeature[0]} near {FeaturePosition[0]} radius 3 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[1]} near {FeaturePosition[1]} radius 3 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[2]} near {FeaturePosition[2]} radius 3 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[3]} near {FeaturePosition[3]} radius 3 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[4]} near {FeaturePosition[4]} radius 3 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[5]} near {FeaturePosition[5]} radius 3 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[6]} near {FeaturePosition[6]} radius 3 or GardenFeature[0] is HELD
+			elsif not {GardenFeature[7]} near {FeaturePosition[7]} radius 3 or GardenFeature[0] is HELD
+			else
+				MT_ChallengeOver = MT_True
+			end if
+		end if
+		
+	until MT_ChallengeOver == MT_True
+	end loop
+	
+	//run background script EndCutscene
+	delete PosMarker[0]
+	delete PosMarker[1]
+	delete PosMarker[2]
+	delete PosMarker[3]
+	delete PosMarker[4]
+	delete PosMarker[5]
+	delete PosMarker[6]
+	delete PosMarker[7]
+	delete PosMarker[8]
+	
+end script Land8MonkTemple
+//-----------------------------------------------------------------------------
+//----MT_GardenFeature----// 
+//-----------------------------------------------------------------------------
+begin script MT_GardenFeature(Type, Feature)
+	FeatureStolen = MT_False
+	FeatureFoundComment = MT_False
+	StolenComment = 0
+	StolenTimer = create timer for 0 seconds
+	Garden = marker at {338.758,164.714,1117.985}
+	End = MT_False
+start
+	begin loop
+		if MT_ChallengeOver == MT_False
+			if {Feature} under water
+				delete Feature
+			end if
+			
+			if Feature not exists 
+				if Type == 0
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_pillar"
+				elsif Type == 1
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_pillar"
+				elsif Type == 2
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_pillar"
+				elsif Type == 3
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_pillar"
+				elsif Type == 4
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_pillar"
+				elsif Type == 5
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_pillar"
+				elsif Type == 6
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_pillar"
+				elsif Type == 7
+					Feature = create OBJECT MOBILE_STATIC_INFO_ROCK at {MT_FeatureSpawn[Type]}
+					override mesh for Feature with "..\models\m_japanese_budha"	
+				end if
+			end if
+		
+			if {Feature} near {MT_PlayersTown} radius 20 and FeatureStolen == MT_False and Feature is not HELD
+				FeatureStolen = MT_True
+				set StolenTimer time to 0 seconds
+			elsif {Feature} near {Garden} radius 20 and FeatureStolen == MT_True and Feature is not HELD
+				FeatureStolen = MT_False
+			end if
+			
+			if FeatureStolen == MT_True and get StolenTimer time remaining == 0
+				if StolenComment == 0
+					say "I hope you aren't thinking of keeping that X"
+					wait until read
+					StolenComment++
+					set StolenTimer time to 20 seconds
+				elsif StolenComment == 1
+					say "I'm sure its a misunderstanding but you have my X."
+					wait until read
+					say "Please return it to my Garden."
+					wait until read
+					StolenComment++
+					set StolenTimer time to 20 seconds
+				elsif StolenComment == 2
+					say "Ok my patience is wearing thin."
+					wait until read
+					say "Return the X or face the consequences."
+					wait until read
+					StolenComment++
+					set StolenTimer time to 40 seconds
+				elsif StolenComment == 3
+					say "Right, don't say i didn't warn you."
+					wait until read
+					say "Students, retrieve the X from the dishonorable Greeks."
+					wait until read
+					//run background script MT_MonksAttack
+					MT_ChallengeOver = MT_True
+				end if
+			end if
+		end if
+			
+	//Insert Features Special behaviour
+		
+	until MT_ChallengeOver == MT_True and Feature not exists
+	end loop
+
+end script MT_GardenFeature

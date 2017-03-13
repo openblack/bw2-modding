@@ -1,0 +1,95 @@
+//================================================================
+// Land 2 Aztec Creature
+// Matt.L
+//================================================================
+
+//-------------------------------------------------------------
+// Cosntants
+//-------------------------------------------------------------
+define AC_FALSE = 0
+define AC_TRUE = 1
+
+//-------------------------------------------------------------
+// Globals
+//-------------------------------------------------------------
+global AC_EventStart = AC_FALSE
+
+//-------------------------------------------------------------
+// Script defines
+//-------------------------------------------------------------
+define script AC_Ambient
+define script AC_SmashWall
+
+//-------------------------------------------------------------
+// Land 2 Aztec Creature
+//-------------------------------------------------------------
+begin script Land2AztecCreature
+start
+	L2Creature = create CREATURE CREATURE_TYPE_GORILLA at {1977.258, 64.213, 668.834}
+	set player 1 creature to L2Creature
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 1 time 0
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_STRENGTH 0.7 time 0	
+
+	set creature L2Creature role to CR_SOLDIER radius 50
+
+	//Run ambient creatutre stuff for the player to see before the scroll is clicked	
+	run script AC_Ambient
+	
+	//Move the creature to the wall
+	run script AC_SmashWall
+
+	//force object constant object with object
+
+end script Land2AztecCreature
+
+//-------------------------------------------------------------
+// Aztec Creature Ambient
+//-------------------------------------------------------------
+begin script AC_Ambient
+	MeleePlatoon1 = 0
+	RangedPlatoon2 = 0
+	MeleeCreatePos = marker at {1856.539, 96.482, 596.948}
+	//RangedCreatePos = marker at {1908.759, 69.569, 709.444}
+	QueueSize = 0
+start
+	
+	release L2Creature
+
+	begin loop
+		if MeleePlatoon1 exists
+			QueueSize = get size of MeleePlatoon1 action queue
+			if QueueSize == 0
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L2Creature} to front of MeleePlatoon1 action queue
+				wait 1 seconds
+			end if
+		else
+			MeleePlatoon1 = create platoon PLATOON_INFO_GREEK_MELEE_2 at {MeleeCreatePos} with 25 men and 0 women
+			PLAYER of MeleePlatoon1 = 0
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L2Creature} to front of MeleePlatoon1 action queue
+			wait 1 seconds
+		end if
+
+		/*
+		if not RangedPlatoon exists
+			RangedPlatoon = //create platoon here
+			PLAYER of RangedPlatoon = 0
+		end if
+		*/
+	until AC_EventStart == AC_TRUE
+	end loop
+
+end script AC_Ambient
+
+//-------------------------------------------------------------
+// Smash Wall
+//-------------------------------------------------------------
+begin script AC_SmashWall
+	WallSeg = 0
+start
+
+	L2Creature = get player 1 creature
+
+	//Move the creature to the wll
+	//force GuardianCreature THROW_AT LostBrother with Stone
+
+end script AC_SmashWall

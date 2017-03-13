@@ -1,0 +1,9 @@
+run script RunLand3MerryMen
+
+begin script RunLand3MerryMen
+
+start
+	
+	run script Land3MerryMen
+	
+end script RunLand3MerryMen

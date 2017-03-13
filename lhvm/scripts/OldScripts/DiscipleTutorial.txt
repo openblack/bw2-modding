@@ -1,0 +1,414 @@
+//-----------------------------------------------------------------------------
+// DiscipleTutorial
+//
+// Paul Nettleton
+//
+// The disciple tutorial for Gods playground
+//
+//-----------------------------------------------------------------------------
+
+define NUMBER_OF_DISCIPLES = 9
+global DiscipleTimer
+
+//-----------------------------------------------------------------------------
+
+begin script LookAfterTrader(Trader)
+start
+	set Trader position to {1064.665,1.340,1510.581}
+	begin loop
+		move Trader position to {1057.730,0.000,1505.276}
+		wait until {Trader} at {1057.730,0.000,1505.276}
+		Trader play ANM_P_DANCE_PISS_TAKE_ loop 2
+		wait until Trader played
+		move Trader position to {1064.956,1.340,1511.047}
+		wait until {Trader} at {1064.956,1.340,1511.047}
+		Trader play ANM_P_DANCE_PISS_TAKE_ loop 2
+		wait until Trader played
+	end loop
+end script LookAfterTrader
+
+//-----------------------------------------------------------------------------
+
+begin script LookAfterDisciplesSittingAndHavingAParty
+Disciples[NUMBER_OF_DISCIPLES]
+Extra = 0 
+Campfire = 0
+Tree1 = 0
+Tree2 = 0
+Cow = 0
+Boulder = 0
+
+Bush1 = 0
+Bush2 = 0
+Bush3 = 0
+
+start
+	//Create the gates
+	Bush1 = create TREE TREE_INFO_HEDGE at {1069.127,1.340,1508.441}
+	SCALE of Bush1 = 0.3
+	Bush2 = create TREE TREE_INFO_HEDGE at {1067.958,1.340,1508.011}
+	SCALE of Bush2 = 0.2
+	ANGLE of Bush2 = 20
+	Bush3 = create TREE TREE_INFO_HEDGE at {1066.010,1.052,1507.937}
+	SCALE of Bush3 = 0.3
+	ANGLE of Bush3 = 20
+	
+	//Fisherman
+	Disciples[0] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1057.464,0.000,1505.098}
+	set Disciples[0] focus to {1036.984,0.000,1504.300}
+	set Disciples[0] carrying CARRIED_OBJECT_FISHING_ROD
+	Disciples[0] play ANM_P_FISHERMAN loop -1
+	set Disciples[0] disciple VILLAGER_DISCIPLE_FISHERMAN
+	
+	//Breeder
+	Disciples[1] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1066.429,1.340,1512.000}
+	set Disciples[1] focus to {1066.937,1.340,1508.889}
+	Disciples[1] play ANM_P_COUPLE_KISS_MAN loop -1
+	Extra = create VILLAGER VILLAGER_INFO_NORSE_HOUSEWIFE_FEMALE at {1066.581,1.340,1511.660}
+	set Extra focus to {Disciples[1]}
+	Extra play ANM_P_COUPLE_KISS_WOMAN loop -1
+	set Disciples[1] disciple VILLAGER_DISCIPLE_BREEDER
+	
+	//Forester
+	Disciples[2] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1066.092,1.340,1510.604}
+	set Disciples[2] focus to {1065.166,1.340,1511.770}
+	Disciples[2] play ANM_P_DANCE_STAND loop -1
+	set Disciples[2] carrying CARRIED_OBJECT_AXE
+	set Disciples[2] disciple VILLAGER_DISCIPLE_FORESTER
+	
+	//Herder
+	Disciples[3] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1065.694,1.340,1512.979}
+	set Disciples[3] focus to {1065.166,1.340,1511.770}
+	Disciples[3] play ANM_P_DANCE_PISS_TAKE_ loop -1
+	Cow = create ANIMAL ANIMAL_INFO_COW at {1065.348,1.340,1513.552}
+	//set Disciples[3] disciple VILLAGER_DISCIPLE_HERDER
+	ANGLE of Cow = 240
+	
+	//Engineer
+	Disciples[4] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1064.446,1.340,1512.624}
+	set Disciples[4] focus to {1065.166,1.340,1511.770}
+	Disciples[4] play ANM_P_SITTING_DOWN_DANCE_SAILING1 loop -1
+	ALTITUDE of Disciples[4] = 0.8
+	Boulder = create OBJECT ROCK at {1064.446,1.340,1512.624}
+	ALTITUDE of Boulder = -0.1
+	SCALE of Boulder = 0.3
+	//set Disciples[4] disciple VILLAGER_DISCIPLE_ENGINEER
+	
+	//Builder
+	Disciples[5] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1067.447,1.340,1511.007}
+	set Disciples[5] focus to {1065.166,1.340,1511.770}
+	set Disciples[5] carrying CARRIED_OBJECT_HAMMER
+	Disciples[5] play ANM_P_F_DANCE_C loop -1
+	set Disciples[5] disciple VILLAGER_DISCIPLE_BUILDER
+	
+	//Trader
+	Disciples[6] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {1067.447,1.340,1511.007}
+	run background script LookAfterTrader(Disciples[6])
+	set Disciples[6] disciple VILLAGER_DISCIPLE_TRADER
+	
+	disable Disciples[0] pickup
+	enable Disciples[0] indestructible
+	disable Disciples[1] pickup
+	enable Disciples[1] indestructible
+	disable Disciples[2] pickup
+	enable Disciples[2] indestructible
+	disable Disciples[3] pickup
+	enable Disciples[3] indestructible
+	disable Disciples[4] pickup
+	enable Disciples[4] indestructible
+	disable Disciples[5] pickup
+	enable Disciples[5] indestructible
+	disable Disciples[6] pickup
+	enable Disciples[6] indestructible
+	disable Extra pickup
+	enable Extra indestructible
+	
+	//Trees
+	Tree1 = create TREE TREE_INFO_CEDAR at {1064.427,1.340,1513.427}
+	Tree2 = create TREE TREE_INFO_CEDAR at {1067.283,1.340,1510.157}
+	SCALE of Tree1 = 0.7
+	ANGLE of Tree1 = 100
+	
+	//Campfire
+	Campfire = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {1065.166,1.340,1511.770}
+	
+	begin loop
+		if  Disciples[0] right clicked
+			clear right clicked object
+			say "I am a fisherman. I fish."
+			wait until read
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+		
+		if  Disciples[1] right clicked
+			clear right clicked object
+			say "I am a breeder. I have sex."
+			wait until read
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+		
+		if  Disciples[2] right clicked
+			clear right clicked object
+			say "I am a Forester. I cut down trees."
+			wait until read
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+		
+		if  Disciples[3] right clicked
+			clear right clicked object
+			say "I am a Herder. I herd."
+			wait until read
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+
+		if  Disciples[4] right clicked
+			clear right clicked object
+			say "I am an engineer. I do stuff with stuff."
+			wait until read
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+		
+		if  Disciples[5] right clicked
+			clear right clicked object
+			say "I am an Builder. I build."
+			wait until read
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+		
+		if  Disciples[6] right clicked
+			clear right clicked object
+			say "I am an Trader. I trade."
+			wait until read
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+		
+		if Extra right clicked 
+			clear right clicked object
+			say "mnmmmnm...."
+			begin cinema
+				clear dialogue
+			end cinema
+		end if 
+	end loop
+
+end script LookAfterDisciplesSittingAndHavingAParty
+
+//-----------------------------------------------------------------------------
+
+begin script LookAfterVillagerAfterLeavingTheQueue(Villager)
+ObjectInHand = 0
+DiscipleType = 0
+
+start
+	//Get object disciple type
+	ObjectInHand = get object held
+	
+	while (ObjectInHand == Villager)
+		ObjectInHand = get object held
+	end while
+	
+	DiscipleType = variable get Villager disciple type
+	
+	if DiscipleType == variable VILLAGER_DISCIPLE_NONE
+		//Wait until the villager has stopped flying
+		wait until Villager is not FLYING
+	else
+		set DiscipleTimer time to 10 seconds
+		wait until Villager is not FLYING
+	end if 
+end script LookAfterVillagerAfterLeavingTheQueue
+
+//-----------------------------------------------------------------------------
+
+begin script BouncerCinema
+start
+	begin cinema
+		move camera position to {1067.153,1.782,1508.782} time 4
+		move camera focus to {1071.250,5.958,1530.380} time 4
+		wait until camera ready
+		say "Hello. I am a bouncer here at this beach party."
+		wait until read
+		set camera position to {1062.533,2.352,1512.380} 
+		set camera focus to {1084.025,-2.885,1509.000} 
+		say "As you can see, its banging down here."
+		wait until read
+		set camera position to {1065.354,2.655,1508.823}
+		set camera focus to {1069.227,-5.650,1529.236} 
+		say "Yeah! look at them go."
+		wait until read
+		set camera position to {1067.153,1.782,1508.782}
+		set camera focus to {1071.250,5.958,1530.380} 
+		say "The only problem is, there is a big queue. Too many people!"
+		wait until read
+		set camera position to {1068.586,2.667,1510.184}
+		set camera focus to {1056.914,-7.591,1494.083} 
+		say "Can you get rid of the queue for me?"
+		wait until read
+		say "To do this, grab the person at the front of the queue."
+		wait until read
+		
+		set camera position to {1067.153,1.782,1508.782}
+		set camera focus to {1071.250,5.958,1530.380} 
+		say "Then, make any sort of disciple out of him."
+		wait until read
+		say "Any disciple will do. Just be quick about it. Dawdle, and the queue might form again."
+		wait until read
+		
+		move camera position to {1068.745,5.578,1502.826} time 5
+		move camera focus to {1063.404,-7.573,1520.125} time 5
+		wait until camera ready
+	end cinema
+	
+end script BouncerCinema
+
+//-----------------------------------------------------------------------------
+
+begin script DiscipleTutorial
+Disciples[12]													
+DisciplePositions[12]											
+QueueStartPosition = marker at {1067.100,1.340,1508.665}
+QueueEndPosition = marker at {1065.507,0.837,1497.364}
+NumberOfPeopleInQueue = 0										
+Count = 0														
+DX = 0															
+DZ = 0															
+ObjectInHand = 0												
+VillagerInHand = 0												
+MoveUpQueueCounter = 0											
+MoveRemaningVillagers = 0	
+Town = 0									
+Bouncer = 0
+SilverScroll = 0 
+ScrollPos = marker at {1068.964,1.340,1506.298}
+start
+	DiscipleTimer = create timer for 0 seconds
+	
+	run background script LookAfterDisciplesSittingAndHavingAParty
+	
+	//Create the bouncer
+	Bouncer = create VILLAGER VILLAGER_INFO_GIANT at {1067.333,1.340,1509.542}
+	set Bouncer focus to {1066.786,0.958,1506.808}
+	disable Bouncer pickup
+	enable Bouncer indestructible
+	
+	Town = get TOWN at {1112.599,26.130,1455.455} radius 50
+	
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	
+	run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+	run background script BouncerCinema
+	delete SilverScroll
+	//First, calculate the steps in the queue.
+	Count=0
+	DX = SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of QueueEndPosition
+	DZ = SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of QueueEndPosition
+	
+	DX = DX - SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of QueueStartPosition
+	DZ = DZ - SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of QueueStartPosition
+	
+	DX=DX/12
+	DZ=DZ/12
+	
+	Count=0
+	while (Count < 12)
+		DisciplePositions[Count] = marker at {QueueStartPosition} + {Count*DX, 0, Count*DZ} //+ {number from -0.5 to 0.5, 0, number from -0.5 to 0.5}
+		Count++
+	end while
+	
+	//Now begin the loop
+	begin loop
+		if not (NumberOfPeopleInQueue < 13)
+			begin loop
+				say "ASSERT - Paul - number of people in queue over 12!"
+				wait until read
+			end loop
+		end if
+		
+		//if (not QueueEndPosition viewed) and (NumberOfPeopleInQueue < 12)
+		if (NumberOfPeopleInQueue < 12 and get DiscipleTimer time remaining <= 0)
+			Disciples[NumberOfPeopleInQueue] = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {QueueEndPosition}
+			enable Disciples[NumberOfPeopleInQueue] indestructible
+			move Disciples[NumberOfPeopleInQueue] position to {DisciplePositions[NumberOfPeopleInQueue]}
+			NumberOfPeopleInQueue++
+		end if
+		
+		ObjectInHand = get object held
+		if ObjectInHand exists
+			Count=0
+			if (ObjectInHand == Disciples[0])
+				//VillagerInHand = Disciples[0]
+				attach Disciples[0] to Town
+				release Disciples[0]
+				
+				run background script LookAfterVillagerAfterLeavingTheQueue(Disciples[0])
+				
+				Disciples[0] = 0
+				NumberOfPeopleInQueue--
+			end if 
+			
+			/*while (Count < 12)
+				if (ObjectInHand == Disciples[Count])
+					VillagerInHand = Disciples[Count]
+					attach Disciples[Count] to Town
+					release Disciples[Count]
+					run script LookAfterVillagerAfterLeavingTheQueue(Disciples[Count])
+					//release VillagerInHand
+					//release Disciples[Count]
+					//delete Disciples[Count]
+					Disciples[Count] = 0
+					NumberOfPeopleInQueue--
+				end if 
+				Count++
+			end while*/
+		end if
+		
+		MoveUpQueueCounter = 0
+		MoveRemaningVillagers = 0
+		
+		while (MoveUpQueueCounter < 12)
+			if (MoveRemaningVillagers == 1)
+				move Disciples[MoveUpQueueCounter] position to {DisciplePositions[MoveUpQueueCounter-1]}
+				Disciples[MoveUpQueueCounter-1] = Disciples[MoveUpQueueCounter]
+			end if							
+			if (Disciples[MoveUpQueueCounter] == 0)
+				MoveRemaningVillagers = 1
+			end if
+			MoveUpQueueCounter++
+		end while
+		
+		if (MoveRemaningVillagers == 1)
+			move Disciples[11] position to {DisciplePositions[10]}
+			Disciples[11] = 0
+		end if			
+		
+		until NumberOfPeopleInQueue == 0
+	end loop
+	
+	begin cinema
+		wait until widescreen transition complete
+		say "Well done! You got rid of them all."
+		wait until read
+	end cinema
+	
+	wait 40000 seconds
+	
+end script DiscipleTutorial
+
+//-----------------------------------------------------------------------------
+
+

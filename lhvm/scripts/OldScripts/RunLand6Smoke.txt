@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run the smoke signal script
+//-----------------------------------------------------------------------------
+run script RunLand6Smoke
+
+begin script RunLand6Smoke
+
+start
+
+	run script Land6Smoke
+
+end script RunLand6Smoke

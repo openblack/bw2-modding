@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land 6 Spartan Legion
+//-----------------------------------------------------------------------------
+run script RunLand6SpartanLegion
+
+begin script RunLand6SpartanLegion
+
+start
+
+	run script Land6SpartanLegion
+
+end script RunLand6SpartanLegion

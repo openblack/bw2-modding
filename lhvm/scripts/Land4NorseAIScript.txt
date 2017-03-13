@@ -1,0 +1,466 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NC_True = 1
+define NC_False = 0
+
+define NUMBER_OF_PASSIVE_PATROL_PLATOONS = 3
+define NUMBER_OF_AGGRESSIVE_PATROL_PLATOONS = 5
+define NUMBER_OF_PLATOONS = 10
+define NUMBER_OF_MINOR_SETTLEMENTS = 7
+
+define CONDITION_GREEN = 0
+define CONDITION_AMBER = 1
+define CONDITION_RED = 2
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global NC_NorsePlatoon[NUMBER_OF_PLATOONS]
+global NC_MinorSettlement[NUMBER_OF_MINOR_SETTLEMENTS]
+global NC_PlayerOwnsSettlement[NUMBER_OF_MINOR_SETTLEMENTS]
+
+global NC_ConditionJustChanged = NC_False
+global NC_Defend = NC_False
+global NC_Condition = CONDITION_GREEN
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+
+//----AI Structure----//
+
+define script Land4NC_NorseArmyManagement
+define script Land4NC_NorseConditionManagement
+define script Land4NC_NorseGeneralManagement
+define script Land4NC_NorseCreatureManagement
+define script Land4NC_NorseCityManagement
+
+//----Assisting function----//
+
+define script NC_TakeBackTown(Town)
+define script NC_AttackPlayersTown
+define script NC_DefendAITown
+define script NC_BuildWallAttack
+//-----------------------------------------------------------------------------
+//----Land4NorseCapitalScript----// 
+//-----------------------------------------------------------------------------
+begin script Land4NorseCapitalScript
+start
+
+	L4NorseCity = get town with id 8
+	NC_MinorSettlement[0] = get town with id 2
+	NC_MinorSettlement[1] = get town with id 3
+	NC_MinorSettlement[2] = get town with id 4
+	NC_MinorSettlement[3] = get town with id 5
+	NC_MinorSettlement[4] = get town with id 6
+	NC_MinorSettlement[5] = get town with id 7
+	NC_MinorSettlement[6] = get town with id 1
+
+//----Initialise the town----//
+
+	set town L4NorseCity platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.1
+	set town L4NorseCity desire for GATHER_FOOD to 0.30
+	set town L4NorseCity desire for GROW_FOOD to 0.20
+	set town L4NorseCity desire for GATHER_WOOD to 0.30
+	set town L4NorseCity desire for GATHER_ORE to 0.10
+	set town L4NorseCity desire for BREED to 0.10
+	//set town L4NorseCity desire for ATTACK to 0.10
+	//set town L4NorseCity desire for FUN to 0.00
+	
+	run background script Land4NC_NorseArmyManagement
+	run background script Land4NC_NorseConditionManagement
+	run background script Land4NC_NorseGeneralManagement
+	run background script Land4NC_NorseCreatureManagement
+	run background script Land4NC_NorseCityManagement
+	
+	while PLAYER of L4NorseCity != 0
+		if NC_Condition == CONDITION_GREEN
+			say "Condition green" 
+			wait until read
+		elsif NC_Condition == CONDITION_AMBER
+			say "Condition amber" 
+			wait until read		
+		elsif NC_Condition == CONDITION_RED
+			say "Condition red" 
+			wait until read		end if
+	end while
+	
+end script Land4NorseCapitalScript
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseArmyManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseArmyManagement
+	RallyPoint = marker at {1848.406, 272.887, 1937.592}
+	PassivePatrolPlatoonPos1[NUMBER_OF_PASSIVE_PATROL_PLATOONS]
+	PassivePatrolPlatoonPos2[NUMBER_OF_PASSIVE_PATROL_PLATOONS]
+	AggressivePatrolPlatoonPos1[NUMBER_OF_AGGRESSIVE_PATROL_PLATOONS]
+	AggressivePatrolPlatoonPos2[NUMBER_OF_AGGRESSIVE_PATROL_PLATOONS]
+	Counter = 0
+start
+	
+	PassivePatrolPlatoonPos1[0] = marker at {1991.896,151.061,1725.551}
+	PassivePatrolPlatoonPos2[0] = marker at {1591.623, 145.225, 1733.600}
+	
+	PassivePatrolPlatoonPos1[1] = marker at {1991.896,151.061,1725.551}
+	PassivePatrolPlatoonPos2[1] = marker at {2019.295, 128.621, 1454.904}
+	
+	PassivePatrolPlatoonPos1[2] = marker at {1496.541, 165.984, 2046.893}
+	PassivePatrolPlatoonPos2[2] = marker at {1489.398, 171.699, 1856.786}
+	
+	AggressivePatrolPlatoonPos1[0] = marker at {1082.233, 257.806, 1848.436}
+	AggressivePatrolPlatoonPos2[0] = marker at {1306.755, 207.667, 1894.454}
+	
+	AggressivePatrolPlatoonPos1[1] = marker at {1166.376, 244.625, 1805.297}
+	AggressivePatrolPlatoonPos2[1] = marker at {1236.552, 227.925, 1588.277}
+	
+	AggressivePatrolPlatoonPos1[2] = marker at {1359.085, 173.962, 1540.914}
+	AggressivePatrolPlatoonPos2[2] = marker at {1556.781, 135.139, 1746.782}
+	
+	AggressivePatrolPlatoonPos1[3] = marker at {1526.237, 139.034, 1744.492}
+	AggressivePatrolPlatoonPos2[3] = marker at {2041.428, 139.770, 1672.738}
+	
+	AggressivePatrolPlatoonPos1[4] = marker at {1985.602, 143.602, 1615.434}
+	AggressivePatrolPlatoonPos2[4] = marker at {1786.773, 125.325, 1139.352}
+	
+	begin loop
+	
+	//----Grab any idle platoons----//
+		
+		if get idle platoons in town L4NorseCity > 0
+		
+			if NC_NorsePlatoon[0] not exists
+				NC_NorsePlatoon[0] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[0] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[0] action queue
+				end if
+			elsif NC_NorsePlatoon[1] not exists
+				NC_NorsePlatoon[1] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[1] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[1] action queue
+				end if	
+			elsif NC_NorsePlatoon[2] not exists
+				NC_NorsePlatoon[2] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[2] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[2] action queue
+				end if
+			elsif NC_NorsePlatoon[3] not exists
+				NC_NorsePlatoon[3] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[3] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[3] action queue
+				end if
+			elsif NC_NorsePlatoon[4] not exists
+				NC_NorsePlatoon[4] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[4] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[4] action queue
+				end if
+			elsif NC_NorsePlatoon[5] not exists
+				NC_NorsePlatoon[5] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[5] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[5] action queue
+				end if
+			elsif NC_NorsePlatoon[6] not exists
+				NC_NorsePlatoon[6] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[6] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[6] action queue
+				end if
+			elsif NC_NorsePlatoon[7] not exists
+				NC_NorsePlatoon[7] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[7] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[7] action queue
+				end if
+			elsif NC_NorsePlatoon[8] not exists
+				NC_NorsePlatoon[8] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[8] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[8] action queue
+				end if
+			elsif NC_NorsePlatoon[9] not exists
+				NC_NorsePlatoon[9] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L4NorseCity excluding scripted
+				if NC_NorsePlatoon[9] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {RallyPoint} to NC_NorsePlatoon[9] action queue
+				end if
+			end if
+			
+		end if
+
+//----GREEN----//
+			
+		if NC_Condition == CONDITION_GREEN 
+			
+			Counter = 0
+			while Counter < NUMBER_OF_PASSIVE_PATROL_PLATOONS
+				if NC_NorsePlatoon[Counter] exists
+					if get size of NC_NorsePlatoon[Counter] action queue == 0 
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PassivePatrolPlatoonPos1[Counter]} to NC_NorsePlatoon[Counter] action queue
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PassivePatrolPlatoonPos2[Counter]} to NC_NorsePlatoon[Counter] action queue
+					end if
+				end if
+				Counter++
+			end while
+
+//----AMBER----//
+			
+		elsif NC_Condition == CONDITION_AMBER 
+		
+		//----Reset Armies orders----//
+		
+			if NC_ConditionJustChanged == NC_True
+				Counter = 0
+				while Counter < NUMBER_OF_PLATOONS
+					if NC_NorsePlatoon[Counter] exists //and not fighting
+						clear NC_NorsePlatoon[Counter] action queue
+					end if
+					Counter++
+				end while
+				NC_ConditionJustChanged = NC_False
+			end if
+	
+		//----Take back by force any towns player takes----//
+		
+			if NC_PlayerOwnsSettlement[0] == NC_False
+				if PLAYER of NC_MinorSettlement[0] == 0
+					run script NC_TakeBackTown(0)
+				end if
+			end if
+			
+			if NC_PlayerOwnsSettlement[1] == NC_False
+				if PLAYER of NC_MinorSettlement[1] == 0
+					run script NC_TakeBackTown(1)
+				end if
+			end if
+			
+			if NC_PlayerOwnsSettlement[4] == NC_False
+				if PLAYER of NC_MinorSettlement[4] == 0
+					run script NC_TakeBackTown(4)
+				end if
+			end if
+			
+			if NC_PlayerOwnsSettlement[5] == NC_False
+				if PLAYER of NC_MinorSettlement[5] == 0
+					run script NC_TakeBackTown(5)
+				end if
+			end if
+			
+			if NC_PlayerOwnsSettlement[6] == NC_False
+				if PLAYER of NC_MinorSettlement[6] == 0
+					run script NC_TakeBackTown(6)
+				end if
+			end if
+			
+		//----Set patrol orders----//
+			
+			Counter = 0
+			while Counter < NUMBER_OF_AGGRESSIVE_PATROL_PLATOONS
+				if NC_NorsePlatoon[Counter] exists
+					if get size of NC_NorsePlatoon[Counter] action queue == 0 
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AggressivePatrolPlatoonPos1[Counter]} to NC_NorsePlatoon[Counter] action queue
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AggressivePatrolPlatoonPos2[Counter]} to NC_NorsePlatoon[Counter] action queue
+					end if
+				end if
+				Counter++
+			end while
+			
+//----RED----//			
+
+		elsif NC_Condition == CONDITION_RED 
+		
+		//----Reset Armies orders----//
+		
+			if NC_ConditionJustChanged == NC_True
+				Counter = 0
+				while Counter < NUMBER_OF_PLATOONS
+					if NC_NorsePlatoon[Counter] exists //and not fighting
+						clear NC_NorsePlatoon[Counter] action queue
+					end if
+					Counter++
+				end while
+				NC_ConditionJustChanged = NC_False
+			end if
+			
+		//----Check if we are defending or attacking----//
+		
+			if NC_Defend == NC_True
+				run	script NC_DefendAITown
+				NC_Condition = CONDITION_AMBER
+			else
+				run script NC_AttackPlayersTown
+				NC_Condition = CONDITION_AMBER
+			end if
+			
+		end if
+	until PLAYER of L4NorseCity == 0
+	end loop
+end script Land4NC_NorseArmyManagement
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseConditionManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseConditionManagement
+	NumberOfTownsPlayerOwns = 0
+	Counter = 0
+	Threat = 0
+	ConditionRedTimer = create timer for 0 seconds
+	BuildWallAttackTriggered = NC_False
+start
+	begin loop
+	
+	//----Check if player is attacking AI----//
+		Threat = 0
+		Threat = get platoon of player 0 nearest {L4NorseCity} radius 30 	
+		
+		if Threat exists
+			NC_Condition = CONDITION_RED
+			NC_Defend = NC_True
+		end if
+		
+	//----Check if player has crossed norse border----//	
+	
+	//----Check if player has taken two neutral settlements----//	
+				
+		Counter = 0
+		NumberOfTownsPlayerOwns = 0
+		while Counter < NUMBER_OF_MINOR_SETTLEMENTS
+			if PLAYER of NC_MinorSettlement[Counter] == 0
+				NumberOfTownsPlayerOwns++
+			end if
+			Counter++
+		end while
+					
+		if NumberOfTownsPlayerOwns >= 2
+			NC_Condition = CONDITION_AMBER
+		end if
+		
+		if BuildWallAttackTriggered == NC_False and L4BuildWallComplete == NC_True
+			run background script NC_BuildWallAttack
+			BuildWallAttackTriggered = NC_True
+			NC_Condition = CONDITION_AMBER
+		end if
+		
+	until NC_Condition != CONDITION_GREEN 
+	end loop
+	
+	begin loop 
+	
+		if NC_Condition == CONDITION_AMBER
+		
+		//----Check which minor settlements the player owns----//
+		
+			if NC_ConditionJustChanged == NC_True
+				Counter = 0
+				while Counter < NUMBER_OF_MINOR_SETTLEMENTS
+					if PLAYER of NC_MinorSettlement[Counter] == 0
+						NC_PlayerOwnsSettlement[Counter] = NC_True
+					end if
+				Counter++
+				end while
+			end if
+		
+		//----Check if player is attacking AI----//
+			
+			Threat = 0
+			Threat = get platoon of player 0 nearest {L4NorseCity} radius 30 
+		
+			if Threat exists
+				NC_Condition = CONDITION_RED
+				NC_Defend = NC_True
+			end if	
+		
+		//----Check if player has crossed norse border----//	
+				
+		end if
+	until PLAYER of L4NorseCity == 0
+	end loop
+	
+end script Land4NC_NorseConditionManagement
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseGeneralManagement----//
+//-----------------------------------------------------------------------------
+begin help script Land4NC_NorseGeneralManagement
+	BuildWallCommentSaid = NC_False
+	Warning = 0
+	Counter = 0
+	NumberOfTownsPlayerOwns = 0
+start
+	NC_PlayerOwnsSettlement[0] = NC_False
+	NC_PlayerOwnsSettlement[1] = NC_False
+	NC_PlayerOwnsSettlement[2] = NC_False
+	NC_PlayerOwnsSettlement[3] = NC_False
+	NC_PlayerOwnsSettlement[4] = NC_False
+	NC_PlayerOwnsSettlement[5] = NC_False
+	NC_PlayerOwnsSettlement[6] = NC_False
+	NC_PlayerOwnsSettlement[7] = NC_False
+	
+	begin dialogue
+		begin loop
+		
+		//----Check if the player has completed the build wall challenge---/	
+		
+			if L4BuildWallComplete == NC_True and BuildWallCommentSaid == NC_False
+				say "They are building their defensive walls up. Send a party to attack them!"
+				wait until read
+			end if
+			
+		//----Check if the player is taking the towns nearest to them---/	
+			
+			if NC_Condition == CONDITION_GREEN
+				if Warning == 0
+					if PLAYER of NC_MinorSettlement[0] == 0 or PLAYER of NC_MinorSettlement[1] == 0 or PLAYER of NC_MinorSettlement[4] == 0 or PLAYER of NC_MinorSettlement[5] == 0 or PLAYER of NC_MinorSettlement[6] == 0 
+						say "Hey do not force yourself on my people."
+						wait until read
+						Warning++
+					end if
+				elsif Warning == 1
+					Counter = 0
+					NumberOfTownsPlayerOwns = 0
+					while Counter < NUMBER_OF_MINOR_SETTLEMENTS
+						if PLAYER of NC_MinorSettlement[Counter] == 0
+							NumberOfTownsPlayerOwns++
+						end if
+						Counter++
+					end while
+						
+					if NumberOfTownsPlayerOwns == 2
+						say "This is your last warning.  My army is powerful and i will attack you."
+						wait until read
+						Warning++
+					end if
+				end if
+			end if
+			
+		until PLAYER of L4NorseCity == 0
+		end loop
+	end dialogue
+end script Land4NC_NorseGeneralManagement
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseCreatureManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseCreatureManagement
+start
+end script Land4NC_NorseCreatureManagement
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseCityManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseCityManagement
+start
+end script Land4NC_NorseCityManagement
+//-----------------------------------------------------------------------------
+//----NC_TakeBackTown----//
+//-----------------------------------------------------------------------------
+begin script NC_TakeBackTown(Town)
+start
+end script NC_TakeBackTown
+//-----------------------------------------------------------------------------
+//----NC_AttackPlayersTown----//
+//-----------------------------------------------------------------------------
+begin script NC_AttackPlayersTown
+start
+end script NC_AttackPlayersTown
+//-----------------------------------------------------------------------------
+//----NC_DefendAITown----//
+//-----------------------------------------------------------------------------
+begin script NC_DefendAITown
+start
+end script NC_DefendAITown
+//-----------------------------------------------------------------------------
+//----NC_BuildWallAttack----//
+//-----------------------------------------------------------------------------
+begin script NC_BuildWallAttack
+start
+end script NC_BuildWallAttack

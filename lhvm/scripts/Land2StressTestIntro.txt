@@ -1,0 +1,517 @@
+//================================================================
+// Land 2 Intro
+//================================================================
+
+//-------------------------------------------
+// Script Defines
+//-------------------------------------------
+define script Land2MaintainTime
+define script Land2InterfaceActions(EnableDisable)
+define script CF_MattLovesCameraRoll
+define script Advisorage
+
+define script Land2BackgroundChaos(Position, Radius, Num)
+define script Land2ChaosSection(House)
+
+//MyWeatherPos = marker at {1117.815, 50.155, 601.610}			
+//MyActualWeather[0] = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {MyActualWeather[0]}		
+
+//-------------------------------------------
+// Land 2 Intro
+//-------------------------------------------
+begin script Land2Intro
+	L2IntroObjectInHand = 0
+	volcanoonlooker = 0
+start
+
+	run script Land2InterfaceActions(0)
+
+	L2GreekTown = get TOWN at {2011.118, 99.516, 890.750}
+
+	enable global influence
+	disable toolbar
+
+	//run background script Land2AztecCreature
+	run background script Land2AztecAttacks
+
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 0
+		wait 10 seconds
+		
+		set fade in time 2
+
+		eject good spirit
+		eject evil spirit
+		run background script Advisorage
+
+		run background script Land2Teleport
+
+		set game time 19.00
+		run background script Land2MaintainTime
+
+		start music "cut_scene_battle_03 " loop 2
+
+		InCameraRollMode = 1
+		run background script CF_MattLovesCameraRoll
+		
+		set camera position to {198.250, 53.778, 3388.563}
+		set camera focus to {255.683, 55.096, 3306.703}
+
+		move camera position to {1726.142, 118.450, 1910.163} time 4 catmullrom bias  0.7 tension 0.0
+		move camera focus to {1779.084, 113.910, 1825.446} time 4 catmullrom bias  0.7 tension 0.0
+
+		move camera position to {1742.705, 137.184, 1688.078} time 4 catmullrom bias  0.7 tension 0.0
+		move camera focus to {1710.491, 139.999, 1593.449} time 4 catmullrom bias  0.7 tension 0.0
+
+		move camera position to {1655.584, 153.571, 1600.380} time 2 catmullrom bias  0.2 tension 0.0
+		move camera focus to {1594.390, 172.801, 1523.659} time 2 catmullrom bias  0.2 tension 0.0
+
+		move camera position to {1613.959, 180.489, 1535.568} time 2 catmullrom bias  0.2 tension 0.0
+		move camera focus to {1624.200, 154.537, 1439.536} time 2 catmullrom bias  0.2 tension 0.0
+
+		move camera position to {1686.979, 176.818, 1257.906} time 2 catmullrom bias  0.2 tension 0.0
+		move camera focus to {1717.777, 172.084, 1162.886} time 2 catmullrom bias  0.2 tension 0.0
+
+		move camera position to {1735.164, 164.152, 1113.046} time 2 catmullrom bias  0.2 tension 0.0
+		move camera focus to {1750.032, 159.156, 1014.279} time 2 catmullrom bias  0.2 tension 0.0
+
+		move camera position to {1747.204, 163.966, 1034.778} time 4 catmullrom bias  0.2 tension 0.0
+		move camera focus to {1767.517, 163.591, 936.865} time 4 catmullrom bias  0.2 tension 0.0
+
+		move camera position to {1756.471, 163.593, 976.591} time 4 catmullrom bias  0.9 tension 0.0
+		move camera focus to {1726.051, 162.568, 881.334} time 4 catmullrom bias  0.9 tension 0.0
+
+		move camera position to {1632.751, 173.683, 833.819} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1589.453, 158.804, 744.915} time 4 catmullrom bias  0.0 tension 0.0
+				
+		move camera position to {1449.866, 171.044, 517.111} time 4 catmullrom bias  0.2 tension 0.0
+		move camera focus to {1358.338, 131.782, 508.145} time 4 catmullrom bias  0.2 tension 0.0
+
+		move camera position to {1286.701, 112.288, 535.057} time 4 catmullrom bias  0.0 tension 0.0
+		move  camera focus to {1192.475, 80.089, 544.316} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1060.332, 106.779, 545.786} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {961.003, 99.782, 536.575} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {689.803, 58.624, 463.823} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {654.177, 24.019, 377.028} time 4 catmullrom bias  0.0 tension 0.0
+		
+		wait 5 seconds
+
+		attach atmos "battle_atmos_" to camera
+		set camera atmos group 1 time 1 seconds
+
+		wait 6 seconds
+
+		//stat scared villagers
+		run background script Land2UberScaredVillagers(40, marker at {1740.497, 159.251, 1064.828}, 30)
+		run background script Land2UberScaredVillagers(20, marker at {1752.853, 159.142, 1003.706}, 20)
+		run background script Land2UberScaredVillagers(50, marker at {1728.193, 155.428, 853.800}, 40)
+		wait 2 seconds
+		
+		run background script Land2BackgroundChaos(marker at {1746.562, 159.386, 1046.940}, 10, 2)
+		run background script Land2BackgroundChaos(marker at {1761.293, 156.742, 863.187}, 20, 5)
+
+		run background script L2_SmallExplosion(marker at {1762.576, 160.256, 1057.842}, 1)
+		wait 2 seconds
+
+		run background script L2_SmallExplosion(marker at {1747.673, 159.532, 1081.907}, 1)
+		wait 0.3 seconds
+
+
+		run background script L2_SmallExplosion(marker at {1732.585, 159.678, 1070.667}, 1)
+		wait 1.5 seconds
+		
+		run background script L2_SmallExplosion(marker at {1753.377, 157.436, 957.132}, 1)		
+
+		run background script L2_SmallExplosion(marker at {1753.405, 159.500, 1039.432}, 1)
+
+		run background script Land2BackgroundChaos(marker at {1672.389, 138.016, 713.776}, 35, 10)
+		
+		wait 21 seconds
+
+		run background script Land2AudioDistantExplosions(8)
+
+		set camera atmos group 0 time 8 seconds
+		detach atmos from camera
+		wait 6 seconds
+		run background script Land2AudioDistantExplosions(8)
+		run background script Land2AudioDistantScreams(2)
+
+		move camera position to {655.530, 73.495, 457.278} time 5// catmullrom bias  0.0 tension 0.0
+		move camera focus to {723.358, 22.408, 404.461} time 5// catmullrom bias  0.0 tension 0.0
+		wait 5 seconds
+
+		//delete stuff for inital flyby
+		L2DeleteUberVillagers = 1
+		L2DeleteCityArmies = 1
+
+		//teleport to island move
+		move camera position to {658.262, 76.392, 413.053} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {740.202, 39.417, 456.852} time 4 catmullrom bias  0.0 tension 0.0
+		move camera position to {943.341, 85.924, 668.915} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {963.269, 76.579, 766.461} time 4 catmullrom bias  0.0 tension 0.0
+				
+		wait 8 seconds		
+
+		set camera position to {968.968, 65.737, 1062.686}
+		set camera focus to {987.003, 50.642, 1159.878}
+
+		move camera position to {938.091, 57.460, 1087.089} time 6
+		move camera focus to {1002.850, 63.527, 1163.053} time 6
+
+		shake camera strength 8.0	
+
+		//First Volcano
+		wait 2 seconds
+		
+		run background script Land2Volcano(marker at {973.172, 73.010, 1150.741})
+		wait 1 seconds
+		volcanoonlooker = create VILLAGER GREEK_FARMER at {947.531, 53.427, 1097.627}
+		set volcanoonlooker focus to {967.288, 69.795, 1133.777}
+		wait 1 seconds
+
+		set camera position to get world position from volcanoonlooker to {-2.084, 1.097, -1.807}
+		set camera focus to get world position from volcanoonlooker to {30.539, 14.413, 91.783}
+		move camera position to get world position from volcanoonlooker to {-2.084, 1.097, -1.807} time 1
+		move camera focus to get world position from volcanoonlooker to {29.029, 25.531, 90.040} time 1
+		play anim "a_p_look_up" on volcanoonlooker
+		wait 2 seconds
+		
+		InCameraRollMode = 0
+		set camera position to {943.341, 85.924, 668.915}
+		set camera focus to {963.269, 76.579, 766.461}
+		move camera position to {966.564, 55.827, 998.894} time 8
+		move camera focus to {979.821, 95.538, 1089.708} time 8
+
+		wait 8 seconds
+		
+		stop camera shake
+		set camera position to {974.689, 168.393, 577.798}
+		set camera focus to {969.763, 162.033, 677.475}
+		wait 3 seconds
+	
+		set camera position to {966.564, 55.827, 998.894}
+		set camera focus to {979.821, 95.538, 1089.708}
+		//say "WHOA! The Aztecs have harnessed the power of the volcano"
+		move camera position to {885.647, 66.941, 973.918} time 8
+		move camera focus to {921.640, 93.487, 1063.359} time 8
+		wait until camera ready
+		InCameraRollMode = 1       
+		move camera position to {623.812, 207.174, 1787.071} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {669.906, 193.414, 1874.742} time 4 catmullrom bias  0.0 tension 0.0
+		move camera position to {757.708, 147.651, 1917.399} time 3 catmullrom bias  0.0 tension 0.0
+		move camera focus to {856.634, 144.742, 1931.742} time 3 catmullrom bias  0.0 tension 0.0
+		move camera position to {1249.095, 182.878, 1905.090} time 2 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1347.435, 167.167, 1896.032} time 2 catmullrom bias  0.0 tension 0.0
+		move camera position to {1539.954, 151.144, 1845.528} time 2 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1634.424, 127.206, 1823.129} time 2 catmullrom bias  0.0 tension 0.0
+		wait 11 seconds
+
+	end cinema
+
+	run script Land2CatapultingFields	
+
+	//PJ - Is this a bad thing to do? if so I need a proper function!!!
+	L2IntroObjectInHand=get object held
+	if L2IntroObjectInHand exists
+		delete L2IntroObjectInHand
+	end if
+
+	L2ChangeTime = 1
+
+	InCameraRollMode = 0 
+
+	begin cinema
+
+		//start music "cut_scene_end_battle 1"
+		run background script CF_Advisors(CF_ADVISORS_VOLCANO_TWO )
+
+		run background script Land2AudioDistantScreams(3)
+		move camera position to {1610.106, 164.060, 1650.700} time 2 easein 2 easeout 0
+		move camera focus to {1654.056, 136.718, 1741.389} time 2 easein 2 easeout 0
+		wait until camera ready
+
+		move camera position to {1677.555, 139.602, 1731.260} time 6 easein 0 easeout 0
+		move camera focus to {1725.761, 176.159, 1810.887} time 6 easein 0 easeout 0
+		wait until camera ready
+		clear dialogue
+
+		run background script Land2AudioDistantExplosions(5)
+
+		move camera position to {1769.011, 164.131, 1607.120} time 4 easein 0 easeout 0// catmullrom bias  0.0 tension 0.0
+		move camera focus to {1731.023, 156.920, 1699.344} time 4 easein 0 easeout 0// catmullrom bias  0.0 tension 0.0
+		wait until camera ready		
+
+		stop camera shake
+
+		move camera position to {2029.224, 108.525, 999.596} time 6 easein 0 easeout 0// catmullrom bias  0.0 tension 0.0
+		move camera focus to {1986.329, 93.764, 1088.713} time 6 easein 0 easeout 0// catmullrom bias  0.0 tension 0.0
+		wait until camera ready				
+
+	end cinema
+
+	InCameraRollMode = 1   
+
+	//Run second section
+	run script Land2BarrelRun		
+	
+	begin cinema
+
+		set camera position to {2186.607, 83.513, 927.194}
+		set camera focus to {2097.569, 87.360, 881.821}
+
+		move camera position to {2186.607, 83.513, 927.194} time 6
+		move camera focus to {2091.246, 62.136, 906.027} time 6
+		wait 2 seconds
+
+		//FINAL volcano
+		run background script Land2Volcano(marker at {1995.963, 100.559, 946.154})
+		wait 2 seconds
+		shake camera strength 8.0	
+		wait 2 seconds
+		wait 2 seconds
+
+		run background script BI_Advisors(BI_ADVISORS_FINAL_VOLCANO)
+
+		move camera position to {2118.910, 139.890, 924.105} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2020.252, 144.106, 939.931} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2118.182, 140.523, 925.989} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2028.338, 182.346, 939.325} time 4 catmullrom bias  0.0 tension 0.0
+		wait 6 seconds
+
+		start music "cut_scene_sad_34s_01" with fadetime 10
+
+		clear dialogue
+
+		set camera position to {2088.346, 105.040, 881.667}
+		set camera focus to {2021.573, 168.802, 920.082}
+		wait 5 seconds
+
+		set camera position to {2159.850, 124.211, 845.064}
+		set camera focus to {2076.745, 145.081, 896.615}
+
+		move camera position to {2159.850, 131.219, 845.064} time 6
+		move camera focus to {2088.439, 157.278, 910.042} time 6
+
+		wait 6 seconds
+
+		set camera position to {2445.731, 185.784, 420.333}
+		set camera focus to {2379.324, 198.754, 493.956}
+		stop camera shake
+
+		move camera position to {2695.798, 136.951, 143.128} time 20
+		move camera focus to {2629.392, 149.921, 216.752} time 20
+		wait 15 seconds
+		set fade red 0 green 0 blue 0 time 5
+		stop music with fadetime 5
+		wait 5 seconds
+
+	end cinema
+
+	run script Land2InterfaceActions(1)
+
+	set fade in time 1
+	Land2Complete = 1
+	load map "./Data/Landscape/BW2/Land3.bwe"
+
+end script Land2Intro
+
+//-------------------------------------------
+// Maintain time
+//-------------------------------------------
+begin script Land2MaintainTime
+start
+	begin loop
+		set game time 19.00
+	until L2ChangeTime == 1
+	end loop
+
+end script Land2MaintainTime
+
+//-------------------------------------------
+// Disable lots of interface actions
+//-------------------------------------------
+begin script Land2InterfaceActions(EnableDisable)
+start
+
+	if EnableDisable == 0
+
+		disable interface action MANACOST_BALANCE_TYPE_CREATEDISCIPLE
+		disable interface action MANACOST_BALANCE_TYPE_PLACEBLUEPRINT
+		disable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+		disable interface action MANACOST_BALANCE_TYPE_PERHOURCHANGED
+		disable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+		disable interface action MANACOST_BALANCE_TYPE_TAPBUILDING
+		disable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+		enable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		enable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT                   
+		enable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT                                            
+		disable pickup type PICKUP_BALANCE_TYPE_ROAD                                                     
+		disable pickup type PICKUP_BALANCE_TYPE_SMALLTREE                                               
+		disable pickup type PICKUP_BALANCE_TYPE_TREE                                                   
+		disable pickup type PICKUP_BALANCE_TYPE_SPELLSEED
+		disable pickup type PICKUP_BALANCE_TYPE_ABODE
+		disable pickup type PICKUP_BALANCE_TYPE_ARMYFLAG 
+
+	else
+
+		enable interface action MANACOST_BALANCE_TYPE_CREATEDISCIPLE
+		enable interface action MANACOST_BALANCE_TYPE_PLACEBLUEPRINT
+		enable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+		enable interface action MANACOST_BALANCE_TYPE_PERHOURCHANGED
+		enable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+		enable interface action MANACOST_BALANCE_TYPE_TAPBUILDING
+		enable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+		enable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		enable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT                   
+		enable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT                                            
+		enable pickup type PICKUP_BALANCE_TYPE_ROAD                                                     
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLTREE                                               
+		enable pickup type PICKUP_BALANCE_TYPE_TREE                                                   
+		enable pickup type PICKUP_BALANCE_TYPE_SPELLSEED
+		enable pickup type PICKUP_BALANCE_TYPE_ABODE
+		enable pickup type PICKUP_BALANCE_TYPE_ARMYFLAG 
+
+	end if
+
+end script Land2InterfaceActions
+
+//-------------------------------------------------------------------------
+// Camera Roll
+//-------------------------------------------------------------------------
+begin script CF_MattLovesCameraRoll
+
+start
+
+	while 0 ==0
+
+		if InCameraRollMode ==1
+
+			begin known cinema
+
+				set camera roll -3 time 3
+				wait 3 seconds
+
+				begin loop
+					set camera roll 3 time 3
+					wait 6 seconds
+					set camera roll -3 time 3
+					wait 6 seconds
+				until InCameraRollMode == 0
+				end loop
+
+			end known cinema
+
+		end if
+
+	end while
+
+end script CF_MattLovesCameraRoll
+
+//=========================================================================================
+begin script Advisorage
+
+start
+
+	begin known cinema
+
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_10"
+		wait until read
+		wait 5 seconds
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_20"
+		wait until read
+		wait 5 seconds
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_30"
+		wait until read
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_40"
+		wait 15 seconds
+		wait until read
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_50"
+		wait until read
+		wait 5 seconds
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_60"
+		wait until read
+		wait 5 seconds
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_70"
+		wait until read
+		wait 5 seconds
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_80"
+		wait until read
+		wait 10 seconds
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_90"
+		wait until read
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_100"
+		wait until read
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_110"
+		wait until read
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_120"
+		wait until read
+
+	end known cinema
+end script Advisorage
+//-------------------------------------------------------------------------
+// Camera Roll
+//-------------------------------------------------------------------------
+begin script Land2BackgroundChaos(Position, Radius, Num)
+	SearchHouse = 0
+	GotHouses = 0
+start
+
+	begin loop
+		SearchHouse = get HOUSE at {Position} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius} excluding scripted
+		if SearchHouse exists
+			run background script Land2ChaosSection(SearchHouse)
+			GotHouses++
+			wait ((number from 5 to 15) / 10) seconds
+		end if
+	until GotHouses >= Num
+	end loop
+
+end script Land2BackgroundChaos
+
+//-------------------------------------------------------------------------
+// Chaos Section
+//-------------------------------------------------------------------------
+begin script Land2ChaosSection(House)
+	FX = 0
+	SmokeFX = 0
+	FireCracker = 0
+	Scaler = 0
+	RandSoundString = 0
+start
+
+	while FireCracker < 5
+		Scaler = (number from 15 to 40) / 10
+		FX = create visual effect "eh_s_lsflash.ves" strength 1 scale (Scaler/10) at {House} - {0, 55, 0} time 5
+		wait ((number from 5 to 15 )/10) seconds
+		FX = create visual effect "fr_s_bounce.ves" strength 1 scale Scaler at {House} + {number from -10 to 10, number from -10 to 10} time 5
+
+
+		RandSoundString = number from 1 to 4  //anything above 4 means no sound
+
+		if RandSoundString == 1
+			play sound "SIEGEWEAPONHITOBJECT" at {House} with maximum range 100 with volume 4
+		elsif RandSoundString == 2
+			play sound "EXPLOSION1" at {House} with maximum range 100 with volume 4
+		elsif RandSoundString == 3
+			play sound "EXPLOSION2" at {House} with maximum range 100 with volume 4
+		elsif RandSoundString == 4
+			play sound "EXPLOSION3" at {House} with maximum range 100 with volume 4
+		end if
+
+
+		FireCracker++
+	end while
+
+	SmokeFX = create visual effect "gp_s_smoke_bbuilding.ves" strength 1 scale 0.3 at {House} - {0, 20, 0} time -1
+
+	wait 500 seconds
+
+end script Land2ChaosSection

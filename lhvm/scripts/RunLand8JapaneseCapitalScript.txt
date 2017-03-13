@@ -1,0 +1,8 @@
+run script RunLand8JapaneseCapitalScript
+
+begin script RunLand8JapaneseCapitalScript
+start
+
+	run script Land8JapaneseCapitalScript
+	
+end script RunLand8JapaneseCapitalScript

@@ -1,0 +1,1068 @@
+//-------------------------//
+//  Constants & Variables  //
+//-------------------------//
+define GGNumberOfSpellsInGame		= 43
+
+define GGSpellCompletedFalse		= 0
+define GGSpellCompletedTrue			= 1
+define GGSpellCompletedReset		= 2
+
+define GGFalse						= 0
+define GGTrue						= 1
+
+define GGSpellLevelZero				= 0
+define GGSpellLevelOne				= 1
+define GGSpellLevelTwo				= 2
+
+define GGPlayingGamePlaying			= 0
+define GGPlayingGameNotPlaying		= 1
+define GGPlayingGameLearning		= 2
+global GGPlayingGame				= GGPlayingGameNotPlaying
+global GGStopWhatYoureDoing			= GGFalse
+
+global GGNumberOfSpellsAvailable	= 0
+global GGSpellsAvailable[GGNumberOfSpellsInGame]
+global GGGestureRequired[GGNumberOfSpellsInGame]
+global GGIsCreatureSpell[GGNumberOfSpellsInGame]
+global GGLevel[GGNumberOfSpellsInGame]
+global GGWorshipSites[6]
+
+global GGGestures[GGNumberOfSpellsInGame]
+global GGCreature[GGNumberOfSpellsInGame]
+global GGSpellLevel[GGNumberOfSpellsInGame]
+
+global GGHighScoreBoard				= 0
+global GGLastScoreBoard				= 0
+global GGHut						= 0
+global GGBloke						= 0
+global GGHutPos						= 0
+
+
+//----------------------//
+//  Script definitions  //
+//----------------------//
+define script GestureGame
+define script GGDetectSpellsAvailable
+define script GGDistanceMonitor(WhereFrom)
+define script GGDragBackIfTooFar(WhereToDragBackTo, WhereToLook, HowFarToGo)
+define script GGFindWorshipSites
+define script GGHandleCancelScrollClick(Scroll)
+define script GGKeepWorshipSitesAlive
+define script GGMakeBlokeGoAndSitDown
+define script GGPlayGame(ScrollPosition)
+define script GGSaySpell(SpellNumber)
+define script GGShowTutorial
+define script GGSortOutSpells
+
+
+//---------------------------------------------------------------------//
+//  GestureGame:  Main script.  Controls the flow of everything else.  //
+//---------------------------------------------------------------------//
+begin script GestureGame
+  ScrollPosition	= marker at {969.859,7.424,1244.205}
+  TutorialScroll	= 0
+  GameScroll		= 0
+start
+//DEBUG:
+	run background script GGDistanceMonitor(ScrollPosition)
+
+	run script GGSortOutSpells					//Set up the arrays which hold spell / gesture lists
+	run script GGFindWorshipSites
+	
+	GGHighScoreBoard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {983.367,7.758,1244.226}
+	GGLastScoreBoard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {956.060,7.382,1244.832}
+	set GGHighScoreBoard score 0
+	set GGLastScoreBoard score 0
+	
+	GGHutPos = marker at {952.504,6.700,1280.469}
+	GGHut = create HOUSE ABODE_INFO_INDIAN_TENT at {GGHutPos}
+	ANGLE of GGHut = 40
+	enable GGHut indestructible
+	disable GGHut set on fire
+
+	GGBloke = create VILLAGER VILLAGER_INFO_SHAOLIN at {GGHutPos}
+	enable GGBloke indestructible
+	disable GGBloke set on fire
+	disable GGBloke pickup
+		
+	//Keep looping while the gesture game is accessible
+	begin loop
+		GGStopWhatYoureDoing = GGFalse
+	
+		wait until (get player 1 town total > 0)
+		TutorialScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {GGHutPos}
+		GameScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ScrollPosition}
+		ALTITUDE of TutorialScroll = 10
+		ALTITUDE of GameScroll = 0
+		wait until (TutorialScroll right clicked) or (GameScroll right clicked) or (get player 1 town total == 0)
+		
+		delete TutorialScroll
+		delete GameScroll
+		
+		if (get object right clicked == TutorialScroll)
+			clear right clicked object
+			
+			run script GGShowTutorial
+		elsif (get object right clicked == GameScroll)
+			run background script GGDetectSpellsAvailable
+			clear right clicked object
+			
+			begin camera
+				move camera position to {971.568,22.556,1264.183} time 1
+				move camera focus to {970.286,7.663,1245.692} time 1
+			end camera
+			
+			run script GGPlayGame(ScrollPosition)
+		end if
+		
+		until (GestureGameAvailable == 0)
+	end loop
+end script GestureGame
+
+
+//----------------------------------------------------------------------------------------------------------//
+//							  Go through each spell, and see if it's in a player-controlled worship site.	//
+//  GGDetectSpellsAvailable:  This compiles a list of what spells the player has access to, and copies the	// 
+//							  gesture needed, if it's a creature spell, and the level of the spell.			//
+//----------------------------------------------------------------------------------------------------------//
+begin script GGDetectSpellsAvailable
+  Count				= 1
+  SpellAvailable	= 0
+start
+	GGNumberOfSpellsAvailable = 0
+	while (Count <= GGNumberOfSpellsInGame)
+		SpellAvailable = 0
+		
+		if (spell constant Count in GGWorshipSites[0])
+			SpellAvailable = 1
+		elsif (spell constant Count in GGWorshipSites[1])
+			SpellAvailable = 1
+		elsif (spell constant Count in GGWorshipSites[2])
+			SpellAvailable = 1
+		elsif (spell constant Count in GGWorshipSites[3])
+			SpellAvailable = 1
+		elsif (spell constant Count in GGWorshipSites[4])
+			SpellAvailable = 1
+		elsif (spell constant Count in GGWorshipSites[5])
+			SpellAvailable = 1
+		end if
+		
+		//If the spell is available, copy the details from the main arrays into the next slot in the 'available' arrays
+		if (SpellAvailable == 1)
+			GGSpellsAvailable[GGNumberOfSpellsAvailable] = Count
+			GGGestureRequired[GGNumberOfSpellsAvailable] = GGGestures[Count - 1]
+			GGIsCreatureSpell[GGNumberOfSpellsAvailable] = GGCreature[Count - 1]
+			GGLevel[GGNumberOfSpellsAvailable] = GGSpellLevel[Count - 1]
+		
+			GGNumberOfSpellsAvailable ++
+		end if
+		
+		Count ++
+	end while
+end script GGDetectSpellsAvailable
+
+
+//--------------------------------------------------------------------------------------------------//
+//  GGDistanceMonnitor:  Monitors the distance from the camera to a given point for debug purposes  //
+//--------------------------------------------------------------------------------------------------//
+begin script GGDistanceMonitor(WhereFrom)
+  Distance = 0
+start
+	begin loop
+		Distance = get distance from camera position to {WhereFrom}
+	end loop
+end script GGDistanceMonitor
+
+
+//----------------------------------------------------------------------------------------------------------//
+//  GGDragBackIfTooFar:	 Drags the player back to a given position if they travel too far away from there.	//
+//----------------------------------------------------------------------------------------------------------//
+begin script GGDragBackIfTooFar(WhereToDragBackTo, WhereToLook, HowFarToGo)
+start
+	begin loop
+		if ((get distance from camera position to {WhereToDragBackTo}) > HowFarToGo)
+			begin camera
+				enable highlight draw
+				
+				move camera position to {WhereToDragBackTo} time 2
+				move camera focus to {WhereToLook} time 2
+				say "To cancel this tutorial, click on the scroll above my tent."
+				wait until read
+			end camera
+		end if
+	end loop
+end script GGDragBackIfTooFar
+
+
+//-----------------------------------------------------------------------------------------//
+//  GGFindWorshipSites:  Finds the player controlled worship sites (hard coded positions)  //
+//-----------------------------------------------------------------------------------------//
+begin script GGFindWorshipSites
+start
+	//I haven't got all of the worship site positions yet
+	GGWorshipSites[0] = get WORSHIP at {1116.105,26.130,1427.289} radius 5
+	GGWorshipSites[1] = get WORSHIP at {1104.777,26.130,1422.890} radius 5
+	//GGWorshipSites[2] = get WORSHIP at {608.145,83.750,624.352} radius 5
+	//GGWorshipSites[5] = get WORSHIP at {634.573,83.750,617.881} radius 5
+end script GGFindWorshipSites
+
+
+//--------------------------------------------------------------------------------//
+//  GGHandleCancelScrollClick:	Handles the player clicking on the cancel scroll  //
+//--------------------------------------------------------------------------------//
+begin script GGHandleCancelScrollClick(Scroll)
+start
+	wait until Scroll right clicked
+	clear right clicked object
+	delete Scroll
+
+	run background script GGMakeBlokeGoAndSitDown
+
+	GGStopWhatYoureDoing = GGTrue
+end script GGHandleCancelScrollClick
+
+
+//--------------------------------------------------------------------------------------------------------//
+//							  Once the game has started, the player needs to have enough mana to be able  //
+//	GGKeepWorshipSitesAlive:  to cast any of the spells they have gestures.  This script makes sure that  //
+//							  they will have, but returns the mana to previous levels upon completion.	  //
+//--------------------------------------------------------------------------------------------------------//
+begin script GGKeepWorshipSitesAlive
+  Count				= 0
+  InitialMana[6]
+start
+	while (Count < 6)
+		if (GGWorshipSites[Count] exists)
+			InitialMana[Count] = get GGWorshipSites[Count] mana total
+		end if
+		
+		Count ++
+	end while
+	
+	Count = 0
+	begin loop
+		while (Count < 6)
+			if (GGWorshipSites[Count] exists)
+				set GGWorshipSites[Count] mana 2000000
+			end if
+			Count ++
+			
+			if (Count == 6)
+				Count = 0 
+			end if
+		end while
+		
+		until GGPlayingGame == GGPlayingGameNotPlaying
+	end loop
+	
+	Count = 0
+	while (Count < 6)
+		if (GGWorshipSites[Count] exists)
+			set GGWorshipSites[Count] mana InitialMana[Count]
+		end if
+		
+		Count ++
+	end while	
+end script GGKeepWorshipSitesAlive
+
+
+//--------------------------------------------------------------------//
+//  GGMakeBlokeGoAndSitDown:  Makes the tutor go and sit in his tent  //
+//--------------------------------------------------------------------//
+begin script GGMakeBlokeGoAndSitDown
+start
+	move GGBloke position to {GGHutPos}
+	wait until {GGBloke} at {GGHutPos}
+	set GGBloke focus to {955.135,6.700,1277.411}
+	
+	GGBloke play ANM_P_SITTING_DOWN1_INTO loop 1
+	wait until GGBloke played
+	GGBloke play ANM_P_SITTING_DOWN1_SITTING loop -1	
+end script GGMakeBlokeGoAndSitDown
+
+
+//--------------------------------------------------------------------------------------------------------//
+//  GGPlayGame:  Takes care of recognising what gestures they are doing.  This is the hard bit.			  //
+//--------------------------------------------------------------------------------------------------------//
+begin script GGPlayGame(ScrollPosition)
+  AnticlockwiseSpiral	= 0
+  ClockwiseSpiral		= 0
+  RepeatGesture			= 0
+  ScribbleGesture		= 0
+  
+  CorrectSpiral			= 0
+  IncorrectSpiral		= 0
+  
+  GesturesDone			= 0
+  Influence				= 0
+  SpellCompleted		= 0
+  ValidSpellChoice		= 0
+  
+  LastGesture			= 0
+  LastSpell				= 0
+  LastSpellNumber		= 0
+  LastSpellType			= 0
+  ThisSpell				= 0
+  ThisSpellNumber		= 0
+  ThisSpellType			= 0
+  
+  ObjectHeld			= 0
+start
+	GGPlayingGame = GGPlayingGamePlaying
+	run background script GGKeepWorshipSitesAlive
+	Influence = create influence at {ScrollPosition} radius 40				//Allows them to cast the spells in the 'arena' if they want to
+
+	//Define these just to make it easier to read this script
+	RepeatGesture = variable GESTURE_TYPE_R_SHAPE
+	ScribbleGesture = variable GESTURE_TYPE_SCRIBBLE	
+	ClockwiseSpiral = variable GESTURE_TYPE_SPIRAL
+	AnticlockwiseSpiral = variable GESTURE_TYPE_INVERSE_SPIRAL
+
+	begin dialogue
+		say "Do the gesture for the spell"
+		wait until read
+	end dialogue
+
+	set countdown timer draw SCRIPT_COUNTDOWN_DRAW_TOP_LEFT
+	enable countdown timer down with 60 seconds
+	
+	begin loop
+		LastSpell = ThisSpell
+		LastSpellType = LastSpell - GGLevel[ThisSpellNumber]
+		LastSpellNumber = ThisSpellNumber
+		
+		ValidSpellChoice = GGFalse
+		while (ValidSpellChoice == GGFalse)
+			ThisSpellNumber = number from 0 to GGNumberOfSpellsAvailable - 1
+			ThisSpell = GGSpellsAvailable[ThisSpellNumber]
+			ThisSpellType = ThisSpell - GGLevel[ThisSpellNumber]
+			
+			if ((ThisSpellType != LastSpellType) or ((ThisSpellType == LastSpellType) and (GGLevel[ThisSpellNumber] == 0) and (GGLevel[LastSpellNumber] == 0)))
+				ValidSpellChoice = GGTrue
+			end if
+		end while
+		
+		run background script GGSaySpell(ThisSpell)							//Tell the user which spell to do
+		
+		if (GGIsCreatureSpell[ThisSpellNumber] == 1)
+			CorrectSpiral = variable GESTURE_TYPE_INVERSE_SPIRAL
+			IncorrectSpiral = variable GESTURE_TYPE_SPIRAL
+		else
+			CorrectSpiral = variable GESTURE_TYPE_SPIRAL
+			IncorrectSpiral = variable GESTURE_TYPE_INVERSE_SPIRAL
+		end if
+		
+		begin loop
+			SpellCompleted = GGSpellCompletedFalse
+			LastGesture = variable get last gesture
+			clear last gesture
+			
+			if ((LastGesture == CorrectSpiral) or (LastGesture == RepeatGesture))
+			
+				if (LastGesture == RepeatGesture)
+				
+					if (ThisSpellType == LastSpellType)
+					
+						SpellCompleted = GGSpellCompletedTrue
+						
+					else
+					
+						begin loop
+							LastGesture = variable get last gesture
+							clear last gesture
+							
+							until (LastGesture == ScribbleGesture)
+						end loop
+						
+					end if
+					
+				else
+				
+					begin loop
+					
+						LastGesture = variable get last gesture
+						clear last gesture
+						
+						if (LastGesture == GGGestureRequired[ThisSpellNumber])
+						
+							if (GGLevel[ThisSpellNumber] > GGSpellLevelZero)
+							
+								begin loop
+								
+									LastGesture = variable get last gesture
+									clear last gesture
+									
+									ObjectHeld = get object held
+
+									if (LastGesture == ClockwiseSpiral)
+									
+										if (GGLevel[ThisSpellNumber] == GGSpellLevelTwo)
+											SpellCompleted = GGSpellCompletedTrue
+										end if
+										
+									elsif (LastGesture == AnticlockwiseSpiral)
+									
+										if (GGLevel[ThisSpellNumber] == GGSpellLevelOne)
+											SpellCompleted = GGSpellCompletedTrue
+										end if
+										
+									elsif ((LastGesture == ScribbleGesture) or (not ObjectHeld exists))
+									
+										SpellCompleted = GGSpellCompletedReset
+										
+									end if
+									
+									until SpellCompleted != GGSpellCompletedFalse
+									
+								end loop
+								
+							else
+								SpellCompleted = GGSpellCompletedTrue
+							end if
+							
+						elsif ((LastGesture == ScribbleGesture) or (LastGesture == IncorrectSpiral))
+							SpellCompleted = GGSpellCompletedReset
+						end if
+						
+						until SpellCompleted != GGSpellCompletedFalse
+					end loop
+					
+				end if
+				
+			end if
+			
+			until (SpellCompleted == GGSpellCompletedTrue)
+		end loop
+		
+		GesturesDone ++
+		set GGLastScoreBoard score GesturesDone
+		
+		until ((get countdown timer time <= 0) or (GGStopWhatYoureDoing == GGTrue))
+	end loop
+	
+	disable countdown timer
+	run script GGSaySpell(44)
+	
+	if (GGStopWhatYoureDoing == GGFalse)
+		if (GesturesDone > get GGHighScoreBoard score)
+			set GGHighScoreBoard score GesturesDone
+			
+			begin dialogue
+				say "You win"
+				wait until read
+			end dialogue
+		else
+			begin dialogue
+				say "You lose"
+				wait until read
+			end dialogue
+		end if	
+	end if
+	
+	delete Influence
+	GGPlayingGame = GGPlayingGameNotPlaying
+end script GGPlayGame
+
+
+//----------------------------------------------------------------------------------------------------//
+//  GGSaySpell:  Prints text on the screen to tell the user what spell they must do the gesture for.  //
+//				 It's really crappy ATM but in the end, a loop with an array of strings will be used  //
+//----------------------------------------------------------------------------------------------------//
+begin script GGSaySpell(SpellNumber)
+start
+	fade all draw text time 0 seconds
+	
+	if SpellNumber == variable MAGIC_TYPE_FIREBALL
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "FIREBALL LEVEL I" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_FIREBALL_PU_ONE
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "FIREBALL LEVEL II" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_FIREBALL_PU_TWO
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "FIREBALL LEVEL III" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_LIGHTNING_BOLT
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "LIGHTNING LEVEL I" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_LIGHTNING_BOLT_PU_ONE
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "LIGHTNING LEVEL II" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_LIGHTNING_BOLT_PU_TWO
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "LIGHTNING LEVEL III" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_EXPLOSION_ONE
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "MEGABLAST LEVEL I" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_EXPLOSION_ONE_PU_ONE
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "MEGABLAST LEVEL II" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_EXPLOSION_ONE_PU_TWO
+	
+		set draw text colour red 255 green 255 blue 255
+		draw text "MEGABLAST LEVEL III" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+	
+	elsif SpellNumber == variable MAGIC_TYPE_HEAL
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_HEAL_PU_ONE
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_TELEPORT
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_FOREST
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_FOOD
+
+		set draw text colour red 255 green 255 blue 255
+		draw text "FOOD LEVEL I" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+
+	elsif SpellNumber == variable MAGIC_TYPE_FOOD_PU_ONE
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_STORM_WIND_RAIN
+
+		set draw text colour red 255 green 255 blue 255
+		draw text "STORM LEVEL I" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+
+	elsif SpellNumber == variable MAGIC_TYPE_STORM_WIND_RAIN_LIGHTNING
+
+		set draw text colour red 255 green 255 blue 255
+		draw text "STORM LEVEL II" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+
+	elsif SpellNumber == variable MAGIC_TYPE_TORNADO
+
+		set draw text colour red 255 green 255 blue 255
+		draw text "STORM LEVEL III" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+
+	elsif SpellNumber == variable MAGIC_TYPE_SHIELD
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_PHYSICAL_SHIELD
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_WOOD
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_WATER
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_WATER_PU_ONE
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_FLOCK_FLYING
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_FLOCK_GROUND
+	
+	//SAY SPELL
+	
+	elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_FREEZE
+
+		set draw text colour red 255 green 255 blue 255
+		draw text "FREEZE LEVEL I" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_SMALL
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_BIG
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_WEAK
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_STRONG
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_FAT
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_THIN
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_INVISIBLE
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_COMPASSION
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_ANGRY
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_HUNGRY
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_FRIGHTENE
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_TIRED
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_ILL
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_THIRSTY
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_ITCHY
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_ANTI_SPELL
+	
+	//SAY SPELL
+	
+    elsif SpellNumber == variable MAGIC_TYPE_CREATURE_SPELL_FAST
+
+		set draw text colour red 255 green 255 blue 255
+		draw text "FAST LEVEL I" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+
+	end if
+end script GGSaySpell
+
+
+//---------------------------------------//
+//  GGShowTutorial:  Shows the tutorial  //
+//---------------------------------------//
+begin script GGShowTutorial
+  Gesture			= 0
+  GesturePosition	= marker at {952.068,6.700,1273.679} 
+  
+  CancelScroll		= 0
+  FinishedTutorial	= GGFalse
+  LastGesture		= 0
+  ObjectInHand		= 0
+  
+  SpiralType		= 0
+  ScribbleTaught	= GGFalse
+  SectionCompleted	= GGFalse
+  Countdown			= create timer for 0 seconds 
+  RanOutOfTime		= GGFalse
+  RepeatTaught		= GGFalse
+start
+	CancelScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CANCEL_QUEST at {GGHutPos}
+	ALTITUDE of CancelScroll = 10
+	GGPlayingGame = GGPlayingGameLearning
+
+	run background script GGKeepWorshipSitesAlive
+	run background script GGHandleCancelScrollClick(CancelScroll)
+	stop script "GGMakeBlokeGoAndSitDown"
+
+	begin loop
+		begin camera
+			enable highlight draw
+			enable GGBloke high graphics detail							//Not really needed as the bloke is a Shaolin ATM
+			if {GGBloke} at {GGHutPos}
+				GGBloke play ANM_P_SITTING_DOWN1_OUT_OF loop 1
+			end if
+			
+			move camera position to {971.568,22.556,1264.183} time 3
+			move camera focus to {GGHutPos} time 3
+			wait until camera ready
+			move GGBloke position to {955.135,6.700,1277.411}
+			
+			wait 1 seconds
+			move camera position to {957.778,8.611,1274.411} time 2
+			move camera focus follow GGBloke
+			wait until camera ready
+			set GGBloke focus to camera position
+			wait until {GGBloke} near {955.135,6.700,1277.411} radius 1
+			
+			say "To quickly cast miracles, you can make use of gestures."
+			wait until read
+			say "Available gestures are shown in the bottom right corner of the screen."
+			wait until read
+			say "By tracing one of these gestures using your hand,"
+			wait until read
+			say "you are given a set of new gestures to choose from."
+			wait until read
+			say "Give it a go.  Trace a spiral gesture using your hand."
+			
+			move camera position to {963.340,17.101,1267.970} time 2
+			move camera position to {963.340,17.101,1267.970} time 2
+		
+			wait until read and camera ready
+		end camera
+		
+		run background script GGDragBackIfTooFar(marker at camera position, marker at camera focus, 100)
+		
+		begin loop
+			RanOutOfTime = GGFalse
+			set Countdown time to 20 seconds
+			
+			clear last gesture
+			begin loop
+				LastGesture = variable get last gesture
+				clear last gesture
+				
+				if (get Countdown time remaining <= 0)
+					RanOutOfTime = GGTrue
+				end if
+				
+				until ((LastGesture == variable GESTURE_TYPE_INVERSE_SPIRAL) or (LastGesture == variable GESTURE_TYPE_SPIRAL) or (RanOutOfTime == GGTrue))
+			end loop
+			
+			if RanOutOfTime == GGTrue
+				begin camera
+					say "You seem to be having a bit of trouble drawing the spiral gesture."
+					wait until read
+					say "There is a white light tracing around the gesture in the corner."
+					wait until read
+					say "You should try to emulate this speed when you are trying to do the gesture."
+					wait until read
+					say "Keep trying - you'll get it in the end!"
+					wait until read
+				end camera
+			elsif (LastGesture == variable GESTURE_TYPE_INVERSE_SPIRAL)
+				begin camera
+					say "No, that's a reverse spiral.  I want you to do a regular spiral"
+					wait until read
+					say "Shake your hand from side to side to stop picking a spell to cast."
+					wait until read
+					ScribbleTaught = GGTrue
+				end camera
+				
+				begin loop
+					LastGesture = variable get last gesture
+					clear last gesture
+					
+					until (LastGesture == variable GESTURE_TYPE_SCRIBBLE)
+				end loop
+				
+				begin camera
+					say "That's it.  Now try doing the correct spiral gesture."
+					wait until read
+				end camera
+			else
+				if (ScribbleTaught == GGFalse)
+					begin camera
+						say "Very good.  As you can see, you now have access to some spells."
+						wait until read
+						say "Try charging a fireball by tracing the fireball gesture with your hand."
+						wait until read
+					end camera
+				end if
+				
+				begin loop
+					LastGesture = variable get last gesture
+					clear last gesture
+					
+					until (LastGesture != variable GESTURE_TYPE_NONE)
+				end loop
+							
+				if (LastGesture == variable GESTURE_TYPE_INVERSE_SPIRAL)
+					begin camera
+						say "No, that's the reverse spiral gesture.  You've brought up a list of creature spells."
+						wait until read
+						say "By doing a regular spiral gesture from here, you can bring back the list of regular spells."
+						wait until read
+					end camera
+				elsif (LastGesture == variable GESTURE_TYPE_SCRIBBLE)
+					begin camera
+						say "By shaking your hand from side to side, you've cleared the charge from your hand."
+						wait until read
+						ScribbleTaught = GGTrue
+						
+						say "Do a spiral again to open up the list of spells you can access."
+						wait until read
+					end camera
+				elsif (LastGesture != variable GESTURE_TYPE_VERTICAL_SCRIBBLE)
+					begin camera
+						say "Well done.  You've started a spell charging, but unfortunately it's not the one I asked for."
+						wait until read
+						say "Charge a fireball, by tracing a spiral followed by the fireball gesture."
+						wait until read
+						say "First, you'll need to shake your hand from side to side to stop the current spell from charging."
+						wait until read
+						ScribbleTaught = GGTrue
+					end camera
+					
+					begin loop
+						LastGesture = variable get last gesture
+						clear last gesture
+						
+						until (LastGesture == variable GESTURE_TYPE_SCRIBBLE)
+					end loop
+					
+					begin camera
+						say "That's it.  Now try charging a fireball."
+						wait until read
+					end camera
+				else
+					SectionCompleted = GGTrue
+				end if
+			end if
+
+			until (SectionCompleted == GGTrue)
+		end loop
+		
+		begin camera
+			say "Fantastic!  The fireball is charging in the worship site now, and when ready it will reach your hand."
+			wait until read
+			
+			if (ScribbleTaught == GGTrue)
+				say "There is one more thing that you need to learn relating to gestures."
+				wait until read
+			end if
+			
+			say "Some spells can be powered up to an increased version, and some spells even have an extreme version."
+			wait until read
+			say "These 'upgrades' are shown via new symbols in the corner of the screen,"
+			wait until read
+			say "and are charged in the same way that regular spells are charged."
+			wait until read
+			say "Try powering up your fireball by doing the spiral or reverse spiral gestures."
+			wait until read
+		end camera
+		
+		SectionCompleted = GGFalse
+		begin loop
+			begin loop
+				LastGesture = variable get last gesture
+				clear last gesture
+				
+				ObjectInHand = get object held
+				
+				until ((LastGesture == variable GESTURE_TYPE_SPIRAL) or (LastGesture == variable GESTURE_TYPE_INVERSE_SPIRAL) or (not ObjectInHand exists))
+			end loop
+			
+			if (ObjectInHand exists)
+				SectionCompleted = GGTrue
+			else
+				begin camera
+					say "Oh, no!  You got rid of the fireball from your hand - that's not what you wanted!"
+					wait until read
+					say "There's an easy way to get it back though."
+					wait until read
+					say "By tracing the repeat gesture (the R symbol), you will re-cast your last spell."
+					wait until read
+					say "Give it a try."
+					wait until read
+				end camera
+				
+				begin loop
+					LastGesture = variable get last gesture
+					clear last gesture
+					
+					until (LastGesture == variable GESTURE_TYPE_R_SHAPE)
+				end loop
+				
+				begin camera
+					say "Very good.  Now try to powerup the fireball, by doing a spiral gesture."
+					wait until read
+				end camera
+			end if
+			
+			until (SectionCompleted == GGTrue)
+		end loop
+		
+		if (ScribbleTaught == GGTrue)
+			begin camera
+				say "Congratulations.  You've managed to get a powered-up fireball into your hand through the exclusive use of gestures."
+				wait until read
+				say "Even though the spell is in your hand, you can still shake your hand from side to side to get rid of it."
+				wait until read
+				say "There is nothing more that I can teach you.  For practice, I have a little game you can play if you wish."
+				wait until read
+				say "Simply click on the scroll between the scoreboards to play."
+				wait until read
+				say "If you'd like to learn how to use gestures again, click on the help scroll above my tent at any time."
+				wait until read
+			end camera
+		else
+			begin camera
+				say "Congratulations.  You've managed to get a powered-up fireball into your hand through the exclusive use of gestures."
+				wait until read
+				say "Even though the spell is in your hand, you can easily get rid of it."
+				wait until read
+				say "By shaking your hand from side to side, you can remove things from your hand at any time."
+				wait until read
+				say "Give it a try."
+				wait until read
+				
+				disable GGBloke high graphics detail								//Again, not really needed as he's a Shaolin
+				FinishedTutorial = GGTrue
+			end camera
+			
+			begin loop
+				LastGesture = variable get last gesture
+				clear last gesture
+				
+				until (LastGesture == variable GESTURE_TYPE_SCRIBBLE)
+			end loop
+			
+			begin camera
+				say "Well done.  To practice your gesturing, feel free to play the game I have devised."
+				wait until read
+				say "To activate it, simply click on the scroll between the scoreboards."
+				wait until read
+				say "If you'd like to learn how to use gestures again, click on the help scroll above my tent at any time."
+				wait until read
+		
+				disable GGBloke high graphics detail								//Again, not really needed as he's a Shaolin
+				FinishedTutorial = GGTrue
+			end camera
+		end if
+			
+		
+		until ((FinishedTutorial == GGTrue) or (GGStopWhatYoureDoing == GGTrue))
+	end loop
+	
+	if (CancelScroll exists)
+		delete CancelScroll with fade
+	end if
+	
+	GGPlayingGame = GGPlayingGameNotPlaying
+	
+	stop script "GGDragBackIfTooFar"
+	stop script "HandleCancelScrollClick"
+	run background script GGMakeBlokeGoAndSitDown
+end script GGShowTutorial
+
+
+//----------------------------------------------------------------------------------------------//
+//  GGSortOutSpells:  Fills the relevant arrays with the details of all the spells in the game  //
+//----------------------------------------------------------------------------------------------//
+begin script GGSortOutSpells
+  Count = 25							//The start of the creature spells
+start
+	GGGestures[variable MAGIC_TYPE_FIREBALL - 1]					= variable GESTURE_TYPE_VERTICAL_SCRIBBLE
+    GGGestures[variable MAGIC_TYPE_FIREBALL_PU_ONE - 1]				= variable GESTURE_TYPE_VERTICAL_SCRIBBLE
+    GGGestures[variable MAGIC_TYPE_FIREBALL_PU_TWO - 1]				= variable GESTURE_TYPE_VERTICAL_SCRIBBLE
+    GGGestures[variable MAGIC_TYPE_LIGHTNING_BOLT - 1]				= variable GESTURE_TYPE_FORK_UP
+    GGGestures[variable MAGIC_TYPE_LIGHTNING_BOLT_PU_ONE - 1]		= variable GESTURE_TYPE_FORK_UP
+    GGGestures[variable MAGIC_TYPE_LIGHTNING_BOLT_PU_TWO - 1]		= variable GESTURE_TYPE_FORK_UP
+    GGGestures[variable MAGIC_TYPE_EXPLOSION_ONE - 1]				= variable GESTURE_TYPE_STAR
+    GGGestures[variable MAGIC_TYPE_EXPLOSION_ONE_PU_ONE - 1]		= variable GESTURE_TYPE_STAR
+    GGGestures[variable MAGIC_TYPE_EXPLOSION_ONE_PU_TWO - 1]		= variable GESTURE_TYPE_STAR
+    GGGestures[variable MAGIC_TYPE_HEAL - 1]						= variable GESTURE_TYPE_HEART
+    GGGestures[variable MAGIC_TYPE_HEAL_PU_ONE - 1]					= variable GESTURE_TYPE_HEART
+    GGGestures[variable MAGIC_TYPE_TELEPORT - 1]					= variable GESTURE_TYPE_HOUSE
+    GGGestures[variable MAGIC_TYPE_FOREST - 1]						= variable GESTURE_TYPE_CYRILLIC_L
+    GGGestures[variable MAGIC_TYPE_FOOD - 1]						= variable GESTURE_TYPE_S_SHAPE
+    GGGestures[variable MAGIC_TYPE_FOOD_PU_ONE - 1]					= variable GESTURE_TYPE_S_SHAPE
+    GGGestures[variable MAGIC_TYPE_STORM_WIND_RAIN - 1]				= variable GESTURE_TYPE_FORK_DOWN
+    GGGestures[variable MAGIC_TYPE_STORM_WIND_RAIN_LIGHTNING - 1]	= variable GESTURE_TYPE_FORK_DOWN
+    GGGestures[variable MAGIC_TYPE_TORNADO - 1]						= variable GESTURE_TYPE_FORK_DOWN
+    GGGestures[variable MAGIC_TYPE_SHIELD - 1]						= variable GESTURE_TYPE_FORK_LEFT
+    GGGestures[variable MAGIC_TYPE_PHYSICAL_SHIELD - 1]				= variable GESTURE_TYPE_FORK_RIGHT
+    GGGestures[variable MAGIC_TYPE_WOOD - 1]						= variable GESTURE_TYPE_THREE
+    GGGestures[variable MAGIC_TYPE_WATER - 1]						= variable GESTURE_TYPE_W_SHAPE
+    GGGestures[variable MAGIC_TYPE_WATER_PU_ONE - 1]				= variable GESTURE_TYPE_W_SHAPE
+    GGGestures[variable MAGIC_TYPE_FLOCK_FLYING - 1]				= variable GESTURE_TYPE_SQUARE_SPIRIAL
+    GGGestures[variable MAGIC_TYPE_FLOCK_GROUND - 1]				= variable GESTURE_TYPE_INVERSE_SQUARE_SPIRAL
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_FREEZE - 1]		= variable GESTURE_TYPE_STAR
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_SMALL - 1]		= variable GESTURE_TYPE_FORK_DOWN
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_BIG - 1]			= variable GESTURE_TYPE_FORK_UP
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_WEAK - 1]			= variable GESTURE_TYPE_FORK_LEFT
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_STRONG - 1]		= variable GESTURE_TYPE_FORK_RIGHT
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_INVISIBLE - 1]	= variable GESTURE_TYPE_INFINITY
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_COMPASSION - 1]	= variable GESTURE_TYPE_HEART
+    GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_FAST - 1]			= variable GESTURE_TYPE_VERTICAL_SCRIBBLE
+//	GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_FAT - 1]			= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_THIN - 1]			= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_ANGRY - 1]		= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_HUNGRY - 1]		= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_FRIGHTENE - 1]	= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_TIRED - 1]		= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_ILL - 1]			= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_THIRSTY - 1]		= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_ITCHY - 1]		= variable GESTURE_TYPE_
+//  GGGestures[variable MAGIC_TYPE_CREATURE_SPELL_ANTI_SPELL - 1]	= variable GESTURE_TYPE_
+    
+	GGSpellLevel[variable MAGIC_TYPE_FIREBALL - 1]					= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_FIREBALL_PU_ONE - 1]			= GGSpellLevelOne
+    GGSpellLevel[variable MAGIC_TYPE_FIREBALL_PU_TWO - 1]			= GGSpellLevelTwo
+    GGSpellLevel[variable MAGIC_TYPE_LIGHTNING_BOLT - 1]			= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_LIGHTNING_BOLT_PU_ONE - 1]		= GGSpellLevelOne
+    GGSpellLevel[variable MAGIC_TYPE_LIGHTNING_BOLT_PU_TWO - 1]		= GGSpellLevelTwo
+    GGSpellLevel[variable MAGIC_TYPE_EXPLOSION_ONE - 1]				= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_EXPLOSION_ONE_PU_ONE - 1]		= GGSpellLevelOne
+    GGSpellLevel[variable MAGIC_TYPE_EXPLOSION_ONE_PU_TWO - 1]		= GGSpellLevelTwo
+    GGSpellLevel[variable MAGIC_TYPE_HEAL - 1]						= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_HEAL_PU_ONE - 1]				= GGSpellLevelOne
+    GGSpellLevel[variable MAGIC_TYPE_TELEPORT - 1]					= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_FOREST - 1]					= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_FOOD - 1]						= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_FOOD_PU_ONE - 1]				= GGSpellLevelOne
+    GGSpellLevel[variable MAGIC_TYPE_STORM_WIND_RAIN - 1]			= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_STORM_WIND_RAIN_LIGHTNING - 1]	= GGSpellLevelOne
+    GGSpellLevel[variable MAGIC_TYPE_TORNADO - 1]					= GGSpellLevelTwo
+    GGSpellLevel[variable MAGIC_TYPE_SHIELD - 1]					= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_PHYSICAL_SHIELD - 1]			= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_WOOD - 1]						= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_WATER - 1]						= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_WATER_PU_ONE - 1]				= GGSpellLevelOne
+    GGSpellLevel[variable MAGIC_TYPE_FLOCK_FLYING - 1]				= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_FLOCK_GROUND - 1]				= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_FREEZE - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_SMALL - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_BIG - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_WEAK - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_STRONG - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_FAT - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_THIN - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_INVISIBLE - 1]	= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_COMPASSION - 1]	= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_ANGRY - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_HUNGRY - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_FRIGHTENE - 1]	= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_TIRED - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_ILL - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_THIRSTY - 1]	= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_ITCHY - 1]		= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_ANTI_SPELL - 1]	= GGSpellLevelZero
+    GGSpellLevel[variable MAGIC_TYPE_CREATURE_SPELL_FAST - 1]		= GGSpellLevelZero
+    
+    while (Count < GGNumberOfSpellsInGame)
+		GGCreature[Count] = GGTrue
+		Count ++
+    end while
+end script GGSortOutSpells
+
+//-------------------------------------------------------------------------------//
+//	TODO:																		 //
+//		Known bug for Jonty: scribble while spell is travelling to hand			 //
+//-------------------------------------------------------------------------------//

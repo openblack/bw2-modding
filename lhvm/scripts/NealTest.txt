@@ -1,0 +1,270 @@
+define script NT_QstBody
+define script GF_SetObjectFirefly(Object,FireflyScale,Tribute)
+//define script NT_SignFlipDirection
+define script NT_SignInitialDirection
+define script NT_SignCreation
+
+define NT_OFFSET_ANGLE				= 180
+define NT_ROCKS_LIFTED			= 5
+
+global NT_StartPos = 0
+global NT_Influence = 0
+global NT_PickedUpRock = 0
+global NT_EndPos[NT_ROCKS_LIFTED]
+
+define NT_SIGNS_TOTAL			= 9
+define NT_SIGNS_PER_ROW			= 3
+
+global NT_SignPos[NT_SIGNS_TOTAL]
+global NT_SignObjects[NT_SIGNS_TOTAL]
+global NT_SignDirections[NT_SIGNS_TOTAL]
+global NT_SignPointingTo[NT_SIGNS_TOTAL]
+
+run script NealTest
+
+begin script NealTest
+//initialisation
+	StartScroll = 0
+	
+//main
+start
+	NT_StartPos = marker at {353.724,153.733,1953.096}
+	NT_EndPos[0] = marker at {579.000,161.000,1941.000}
+	NT_EndPos[1] = marker at {588.411,182.882,1913.203}
+	NT_EndPos[2] = marker at {620.706,167.537,1941.524}
+	NT_EndPos[3] = marker at {551.343,160.140,1900.665}
+	NT_EndPos[4] = marker at {556.309,162.221,1969.702}
+
+	NT_SignPos[0] = marker at {810.372,204.040,695.262}
+	NT_SignPos[1] = marker at {822.950,204.037,686.287}
+	NT_SignPos[2] = marker at {834.723,204.038,678.276}
+	NT_SignPos[3] = marker at {822.487,204.057,709.435}
+	NT_SignPos[4] = marker at {836.511,204.046,700.456}
+	NT_SignPos[5] = marker at {848.881,204.038,692.525}
+	NT_SignPos[6] = marker at {832.571,204.038,722.250}
+	NT_SignPos[7] = marker at {846.898,204.037,712.659}
+	NT_SignPos[8] = marker at {857.882,204.047,702.799}
+
+	NT_SignDirections[0] = 2
+	NT_SignDirections[1] = 3
+	NT_SignDirections[2] = 2
+	NT_SignDirections[3] = 3
+	NT_SignDirections[4] = 4
+	NT_SignDirections[5] = 3
+	NT_SignDirections[6] = 2
+	NT_SignDirections[7] = 3
+	NT_SignDirections[8] = 2
+
+	run script NT_SignInitialDirection
+	run script NT_SignCreation
+
+	// create scroll to click on
+	StartScroll = create highlight GOLD name "BW2T_SCRIPT_04FINAL_NUT_OIL_MISC_10" remind "BW2T_SCRIPT_04FINAL_NUT_OIL_MISC_20" at {NT_StartPos}
+
+	wait until StartScroll right clicked
+	delete StartScroll
+
+	enable objective window
+
+	wait 2 seconds
+
+	reset all objectives for player 0
+	
+	//Reset these two objectives
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+
+	//Wall objectives
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_BARRELS_10"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_WALL_50" amount 5
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 parent objective TRIBUTE_OBJECTIVE_LAND_2
+
+	run background script NT_QstBody
+
+end script NealTest
+
+
+//-----------------------------------------------------------------
+// Qst Body
+//-----------------------------------------------------------------
+
+begin script NT_QstBody
+	Count = 0
+	Object = 0
+	HeldObject = 0
+	ProximityTimer = 0
+	RescueFX = 0
+
+	PersonToControl = 0
+start
+
+	begin interactive camera
+		move camera focus to {NT_StartPos} time 2
+	end interactive camera
+
+	begin dialogue
+			eject good spirit
+		
+			say "This is some test dialogue"
+			wait until read
+
+	end dialogue
+
+	begin interactive camera
+		move camera focus to {NT_EndPos[0]} time 2
+	end interactive camera
+
+	begin dialogue
+			say "And some more"
+			wait until read
+			send good spirit home
+	end dialogue
+
+	wait 1 seconds
+
+	PersonToControl = create VILLAGER INDIGENOUS_FARMER at {NT_EndPos[0]}
+	disable PersonToControl pickup
+	move PersonToControl position to {NT_EndPos[1]}
+
+	wait 5 seconds
+
+	//enable objective window
+
+	while Count < NT_ROCKS_LIFTED
+		NT_PickedUpRock = 0
+		NT_StartPos = marker at {509.319,158.096,1918.913}
+		//NT_StartPos = {NT_StartPos}
+		NT_Influence = create influence at {NT_StartPos} radius 40
+		Object = create ROCK_OBJECT ROUND_ROCK_SMALL at {NT_StartPos} + {0.000,0.000,0.000}
+		RescueFX = create visual effect "gp_s_area.ves" strength 1 scale 1.7 at {NT_EndPos[Count]} time -1 
+		set RescueFX colour red 0 green 255 blue 0
+		run background script GF_SetObjectFirefly(Object,3,50)
+			
+		ProximityTimer = create timer for 5 seconds
+
+		//while not {Object} near {NT_EndPos} radius 10 or Object is not HELD
+
+		//	// have to keep picking up rocks quickly otherwise the count goes back down
+		//	if get ProximityTimer time remaining == 0
+		//		if Count > 0
+		//			Count--
+		//			ProximityTimer = create timer for 2 seconds
+		//			set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_WALL_50" amount (5 - Count)
+		//		end if
+		//	end if
+
+		//end while
+
+		begin loop
+
+			// have to keep picking up rocks quickly otherwise the count goes back down
+			if get ProximityTimer time remaining == 0
+				if Count > 0
+					Count--
+					ProximityTimer = create timer for 10 seconds
+					
+					// decreased count so change the target visual fx back to the old one
+					delete RescueFX
+					RescueFX = create visual effect "gp_s_area.ves" strength 1 scale 1.7 at {NT_EndPos[Count]} time -1 
+					set RescueFX colour red 0 green 255 blue 0
+					
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_WALL_50" amount (5 - Count)
+				end if
+			end if
+
+			if Object == get object hand is over
+				//set Object velocity heading {NT_EndPos[Count]} speed 130
+				//set Object target {NT_EndPos[Count]} time 5
+				set Object shake 1
+				wait 1 seconds
+			end if
+
+			until {Object} near {NT_EndPos[Count]} radius 9 and Object is not HELD
+		end loop
+
+		
+		Count++
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_WALL_50" amount (5 - Count)
+		
+		
+		
+		/*HeldObject = get object held
+
+		while HeldObject == Object
+			wait 0.2 seconds
+			HeldObject = get object held
+		end while*/
+		
+		delete Object
+		delete RescueFX
+	end while
+
+	//delete RescueFX
+
+	disable objective window
+
+end script NT_QstBody
+
+//-----------------------------------------------------------------
+// Firefly script
+//-----------------------------------------------------------------
+
+begin script GF_SetObjectFirefly(Object,FireflyScale,Tribute)
+	HeldObject = 0
+	FireflyEffect = 0
+start
+	FireflyEffect = create visual effect "gp_s_fireflies.ves" strength 0 scale FireflyScale on Object time -1
+
+	while HeldObject != Object
+		wait 0.2 seconds
+		HeldObject = get object held
+	end while
+	
+	delete FireflyEffect
+
+	NT_PickedUpRock = 1
+	increment tribute by Tribute
+end script GF_SetObjectFirefly
+
+//-----------------------------------------------------------------
+// NT_SignInitialDirection script
+//-----------------------------------------------------------------
+
+begin script NT_SignInitialDirection
+	
+start
+	NT_SignPointingTo[0] = 1
+	NT_SignPointingTo[1] = 1
+	NT_SignPointingTo[2] = 1
+	NT_SignPointingTo[3] = 1
+	NT_SignPointingTo[4] = 1
+	NT_SignPointingTo[5] = 1
+	NT_SignPointingTo[6] = 1
+	NT_SignPointingTo[7] = 1
+	NT_SignPointingTo[8] = 1
+
+end script NT_SignInitialDirection
+
+//-----------------------------------------------------------------
+// NT_SignCreation script
+//-----------------------------------------------------------------
+
+begin script NT_SignCreation
+	Count = 0
+start
+
+	while Count < NT_SIGNS_TOTAL
+
+		NT_SignObjects[Count] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {NT_SignPos[Count]}
+		override mesh for NT_SignObjects[Count] with "..\models\m_aztec_bstonehead"
+		SCALE of NT_SignObjects[Count] = 0.7
+		enable NT_SignObjects[Count] indestructible
+		set NT_SignObjects[Count] focus to {NT_SignPos[NT_SignPointingTo[Count]]}
+
+		Count++
+	end while
+
+end script NT_SignCreation

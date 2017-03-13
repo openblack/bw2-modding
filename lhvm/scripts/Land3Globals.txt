@@ -1,0 +1,345 @@
+define script L3_CheckForOwningTowns
+define script L3_ArmyTakeOverStorm(Town)
+define script Land3RoadStatCounterTemp2
+//===========================================================
+// LAND 3 GLOBALS
+//===========================================================
+global L3Complete = 0
+global L3GreekTown = 0
+global L3MinorTown1 = 0
+global L3MinorTown2 = 0
+global L3MinorTown3 = 0
+global L3MinorTown4 = 0
+
+global L3VillagerRelease = 0					//Set to 1 when to release the scripted town villagers into script
+global L3RunningIllVillagers = 0
+global L3FedTheVillagers = 0
+global L3VillagersCanFeedThemselves = 0
+global L3OkToCheckForHealthOfVillagers = 0
+
+global L3TutorialsScroll = 0
+global L3CreatureSleeping = 1					// Set to 0 if he needs to be used by a script
+
+global L3PaternitySuitComplete = 0
+global L3MigrationComplete = 0
+global L3MaraudersHowl = 0
+global L3BuildTabTutorialComplete = 0
+
+global L3CreatureTutorial = 0
+global L3TimeForCreatureToWake = 0
+
+global L3CreaturePen = 0
+
+global L3NumTownsOwnedByPlayer = 0
+global L3FinishedTutorials = 0
+global L3OkToDoRoadTutorial = 0
+
+global L3RoosterChallengeState = 0
+global L3PaternityChallengeState = 0 
+
+
+global L3_Leave	= 0
+global LookAtTownCommentTimer = 0 
+global L3InBuildTabTutorial = 0
+global ObjectForLeash = 0
+global TUT_StoragePit = 0
+global L3_InAScroll = 0
+global RT_RoadStat = 0
+//-----------------------------------------------------------
+// LAND 3 GLOBALS
+//-----------------------------------------------------------
+begin script Land3Globals
+
+	Threshold		= 0
+
+start
+
+	L3GreekTown = get town with id 0
+	L3MinorTown1 = get town with id 1
+	L3MinorTown2 = get town with id 2
+	L3MinorTown3 = get town with id 3
+	L3MinorTown4 = get town with id 4
+	set persistent data "ARMY_TUTORIAL_RUN" to 0
+
+//----Set Max Populations For Non-Player Towns----//
+
+	set town L3MinorTown1 maximum population to 20
+	set town L3MinorTown2 maximum population to 20
+	set town L3MinorTown3 maximum population to 20
+	set town L3MinorTown4 maximum population to 20
+
+	L3CreaturePen = get building ABODE_NUMBER_CREATURE_PEN in L3GreekTown min built 1
+	enable L3CreaturePen indestructible
+	
+	// Get the storage pit
+	TUT_StoragePit = get building ABODE_NUMBER_STORAGE_PIT in L3GreekTown min built 1.0
+	enable TUT_StoragePit indestructible
+
+	while ObjectForLeash not exists
+		ObjectForLeash = get SCRIPT_OBJECT_TYPE_ROCK at {1162.115, 363.589, 1575.934} radius 5
+	end while
+	
+	disable ObjectForLeash moveable
+	enable ObjectForLeash indestructible
+	disable ObjectForLeash set on fire
+	disable ObjectForLeash pickup
+	
+	// Setup the players migration values
+	// L3MinorTown1
+	Threshold = get town L3MinorTown1 impressiveness
+	set migration threshold from L3MinorTown1 to L3GreekTown GLOBAL_VALUE_THRESHOLD_LAND_3_SETTLEMENT1_TO_GREEK - Threshold
+
+	// L3MinorTown2
+	Threshold = get town L3MinorTown2 impressiveness
+	set migration threshold from L3MinorTown2 to L3GreekTown GLOBAL_VALUE_THRESHOLD_LAND_3_SETTLEMENT2_TO_GREEK - Threshold
+
+	// L3MinorTown3
+	Threshold = get town L3MinorTown3 impressiveness
+	set migration threshold from L3MinorTown3 to L3GreekTown GLOBAL_VALUE_THRESHOLD_LAND_3_SETTLEMENT3_TO_GREEK - Threshold
+
+	// L3MinorTown4
+	Threshold = get town L3MinorTown4 impressiveness
+	set migration threshold from L3MinorTown4 to L3GreekTown GLOBAL_VALUE_THRESHOLD_LAND_3_SETTLEMENT4_TO_GREEK - Threshold
+
+	// Disable the migrations
+	disable migration from L3MinorTown1 to all other towns
+	disable migration from L3MinorTown2 to all other towns
+	disable migration from L3MinorTown3 to all other towns
+	disable migration from L3MinorTown4 to all other towns
+	enable script controlled migration player 0
+	
+	// Disable town takeover
+	disable town L3MinorTown1 can be taken by force
+	disable town L3MinorTown2 can be taken by force
+	disable town L3MinorTown3 can be taken by force
+	disable town L3MinorTown4 can be taken by force
+
+	// Handle the town ownership stuff
+	run background script L3_CheckForOwningTowns
+	run background script Land3RoadStatCounterTemp2
+	
+	//wait until L3Completed == 1
+	
+end script Land3Globals
+
+
+//-----------------------------------------------------------
+// Check if the player owns the towns on land 3 and if so give some tribute
+//-----------------------------------------------------------
+begin script L3_CheckForOwningTowns
+
+	PlayerOwnsTown1		= 0
+	PlayerOwnsTown2		= 0
+	PlayerOwnsTown3		= 0
+	PlayerOwnsTown4		= 0
+
+	Town1Status			= 0
+	Town2Status			= 0
+	Town3Status			= 0
+	Town4Status			= 0
+
+	DoneTown1Stuff		= 0
+	DoneTown2Stuff		= 0
+	DoneTown3Stuff		= 0
+	DoneTown4Stuff		= 0
+
+	HandOverTownLine	= 0
+start
+	LookAtTownCommentTimer = create timer for 0 seconds
+
+	while PlayerOwnsTown1 == 0 or PlayerOwnsTown2 == 0 or PlayerOwnsTown3 == 0 or PlayerOwnsTown4 == 0
+		// Town 1 check
+		if PlayerOwnsTown1 == 0
+			if L3MinorTown1 exists
+				// Get the status of the town (for impressing check)
+				Town1Status = variable get town L3MinorTown1 status
+				
+				// Check for armies taking over or impressing
+				if PLAYER of L3MinorTown1 == 0 
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN1
+					PlayerOwnsTown1 = 1
+					L3NumTownsOwnedByPlayer++
+				
+				elsif Town1Status == variable TOWN_STATUS_MIGRATION_STARTED
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN1
+					PlayerOwnsTown1 = 1
+					L3NumTownsOwnedByPlayer++
+				end if				
+			end if
+		end if
+
+		if get LookAtTownCommentTimer time remaining == 0 and hand position near {L3MinorTown1} radius 50 and HandOverTownLine == 0 and PLAYER of L3MinorTown1 != 0
+			HandOverTownLine++
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_60"
+				wait until read
+				send good spirit home
+			end dialogue
+		end if
+
+
+		// Town 2 check
+		if PlayerOwnsTown2 == 0
+			if L3MinorTown2 exists
+				// Get the status of the town (for impressing check)
+				Town2Status = variable get town L3MinorTown2 status
+
+				// Check for armies taking over or impressing
+				if PLAYER of L3MinorTown2 == 0  
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN2
+					PlayerOwnsTown2 = 1
+					L3NumTownsOwnedByPlayer++
+				
+				elsif Town2Status == variable TOWN_STATUS_MIGRATION_STARTED
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN2
+					PlayerOwnsTown2 = 1
+					L3NumTownsOwnedByPlayer++
+				end if				
+			end if
+		end if
+		
+		if get LookAtTownCommentTimer time remaining == 0 and hand position near {L3MinorTown2} radius 50 and HandOverTownLine == 0 and PLAYER of L3MinorTown2 != 0
+			HandOverTownLine++
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_60"
+				wait until read
+				send good spirit home
+			end dialogue
+		end if
+
+
+		// Town 3 check
+		if PlayerOwnsTown3 == 0
+			if L3MinorTown3 exists
+				// Get the status of the town (for impressing check)
+				Town3Status = variable get town L3MinorTown3 status
+
+				// Check for armies taking over or impressing
+				if PLAYER of L3MinorTown3 == 0  
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN3
+					PlayerOwnsTown3 = 1
+					L3NumTownsOwnedByPlayer++
+				
+				elsif Town3Status == variable TOWN_STATUS_MIGRATION_STARTED
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN3
+					PlayerOwnsTown3 = 1
+					L3NumTownsOwnedByPlayer++
+				end if				
+			end if
+		end if
+		
+		if get LookAtTownCommentTimer time remaining == 0 and hand position near {L3MinorTown3} radius 50 and HandOverTownLine == 0 and PLAYER of L3MinorTown3 != 0
+			HandOverTownLine++
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_60"
+				wait until read
+				send good spirit home
+			end dialogue
+		end if
+
+
+		// Town 4 check
+		if PlayerOwnsTown4 == 0
+			if L3MinorTown4 exists
+				// Get the status of the town (for impressing check)
+				Town4Status = variable get town L3MinorTown4 status
+
+				// Check for armies taking over or impressing
+				if PLAYER of L3MinorTown4 == 0 
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN4
+					PlayerOwnsTown4 = 1
+					L3NumTownsOwnedByPlayer++
+				
+				elsif Town4Status == variable TOWN_STATUS_MIGRATION_STARTED
+					// Give the tribute
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_MINORTOWN4
+					PlayerOwnsTown4 = 1
+					L3NumTownsOwnedByPlayer++
+				end if				
+			end if
+
+		end if
+		
+		if get LookAtTownCommentTimer time remaining == 0 and hand position near {L3MinorTown4} radius 50 and HandOverTownLine == 0 and PLAYER of L3MinorTown4 != 0
+			HandOverTownLine++
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_60"
+				wait until read
+				send good spirit home
+			end dialogue
+		end if
+
+		// Dialogue check based on towns owned by player
+		if L3NumTownsOwnedByPlayer == 1 and DoneTown1Stuff == 0
+			DoneTown1Stuff = 1
+
+		elsif L3NumTownsOwnedByPlayer == 2 and DoneTown2Stuff == 0
+			DoneTown2Stuff = 1
+
+
+		elsif L3NumTownsOwnedByPlayer == 3 and DoneTown3Stuff == 0
+			DoneTown3Stuff = 1
+
+		elsif L3NumTownsOwnedByPlayer == 4 and DoneTown4Stuff == 0
+			DoneTown4Stuff = 1
+			
+			run background script LandOver(L3GreekTown)
+			
+			// Mark the objective as being done
+			enable objective window
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 value 1
+			wait 3 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_11
+			disable player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND
+			disable objective window
+		end if
+	end while
+
+end script L3_CheckForOwningTowns
+//-----------------------------------------------------------------------------
+//----L3_ArmyTakeOverStorm----// Create a storm at a town when the player takes it over with armies
+//-----------------------------------------------------------------------------
+begin script L3_ArmyTakeOverStorm(Town)
+	Weather = 0
+	TownCentre = 0
+start
+	TownCentre = get HOUSE ABODE_NUMBER_TOWN_CENTRE in Town 
+	if TownCentre exists
+		Weather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {TownCentre} + {0,90,0}
+		disable Weather affected by wind		
+		set cloud for Weather above {TownCentre} + {0,90,0}
+		set cloud Weather points to 1
+		set cloud generation 5
+		set Weather properties rainfall 1 snowfall 0 overcast 1
+		wait 4 seconds
+		set lightning strike at {TownCentre} from Weather scale 1
+		wait 30 seconds 
+		set Weather properties rainfall 0 snowfall 0 overcast 0
+		wait 5 seconds
+		delete Weather
+	end if
+end script L3_ArmyTakeOverStorm
+
+//-------------------------
+
+begin script Land3RoadStatCounterTemp2
+
+start
+
+while L3GreekTown exists
+	RT_RoadStat = get total of stat STATS_EVT_BUILDINGS_BUILT_ROAD
+	wait 1 second
+end while
+
+end script Land3RoadStatCounterTemp2

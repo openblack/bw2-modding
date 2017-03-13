@@ -1,0 +1,2481 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+//	MONSTER MINE
+//	~~~~~~~~~~~~
+//	There is a monster lurking in a mine that you want to use. If you send
+//	villagers into the mine they will mine the ore but lose half of their
+//	number. To successfully mine the ore without losing villagers you need to
+//	defeat the monster.
+//
+//	Resolutions:		Send in a big enough army
+//						Poison the monster with the diseased herd
+//						Flood the mine with water (this will only reduce the monsters health - not kill it)
+//
+//	Rewards:			Get food from the shepherd for healing his herd
+//						Get the ore from the mine without risking miners after killing the monster
+//						Get the shepherd attacking your town if you kill his herd off
+//
+//	Start date:			20-02-03			By:	Steve
+//	Update date:		11-03-04			By: Steve
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// To Do
+// Get size of flock working
+// Get sheep or cows in the flock
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define MM_TRUE									= 1
+define MM_FALSE									= 0
+define MM_YES									= 1
+define MM_MINERS_GROUP_SIZE						= 10
+define MM_AMOUNT_OF_SHEEP_IN_FLOCK				= 10
+define MM_DAMAGE_INFLICTED_BY_WARRIOR			= 30
+define MM_DAMAGE_INFLICTED_BY_WATER				= 100
+define MM_MIN_DAMAGE_BY_WATER_THRESHOLD			= 100
+define MM_WARRIORS_PER_PLATOON					= 10
+define MM_MAX_AMOUNT_OF_ARMY_RECRUITS_IN_LIMBO	= 50
+define MM_MIN_WARRIOR_ATTACK_ALLOWED			= 2
+define MM_FAILED_ATTACKS_BEFORE_HEALTH_CHANGE	= 3
+define MM_NUM_PLATOONS_NEEDED_TO_KILL_MONSTER	= 2
+define MM_INCREASE_HEALTH						= 1
+define MM_DECREASE_HEALTH						= 0
+define MM_MAXIMUM_MONSTER_HEALTH				= 600
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global MM_Miner[MM_MINERS_GROUP_SIZE]
+global MM_Sheep[MM_AMOUNT_OF_SHEEP_IN_FLOCK]
+global MM_ArmyRecruitInLimbo[MM_MAX_AMOUNT_OF_ARMY_RECRUITS_IN_LIMBO]
+global MM_MonsterMineActive				= MM_TRUE
+global MM_MonsterDiseased				= MM_FALSE
+global MM_DiseasedFlockHealed			= MM_FALSE
+global MM_DiseasedFlockKilled			= MM_FALSE
+global MM_MonsterDrowningInWater		= MM_FALSE
+global MM_KickOffIntro					= MM_FALSE
+global MM_IntroFinished					= MM_FALSE
+global MM_MinersMiningCount				= 0
+global MM_DiseasedFlock					= 0
+global MM_AmountOfFlockKilled			= 0
+global MM_AmountOfFlockSold				= 0
+global MM_Shepherd						= 0
+global MM_ShepherdIsAlive				= MM_TRUE
+
+// Set up the mine and mine pos as globals as they are used in a lot of different functions
+global MM_MinePos						= 0
+global MM_JustOutsideMineEntrance		= 0
+global MM_Mine							= 0
+global MM_PlayersTown					= 0
+global MM_NumberOfSurvivors				= 0
+global MM_ShepherdAttackedTown			= MM_FALSE
+global MM_ShepherdIsAngryWithPlayer		= MM_FALSE
+
+// Keep track of how we defeated the monster
+global MM_HealthOfMonster				= MM_MAXIMUM_MONSTER_HEALTH
+	
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script MM_Intro
+define script MM_MoveArmyIntoMineCutscene(Army, Size, Resolution)
+define script MM_MoveRecruitIntoMine(Recruit, ArrayIndex)
+define script MM_WonByUsingArmy(PlatoonType)
+define script MM_MoveArmyRecruitOutOfMine(Recruit)
+define script MM_SumupFromAdvisorsAboutExperienceGained
+define script MM_WonByPoisoningMonster
+define script MM_FailedByUsingArmy
+define script MM_MineOre
+define script MM_KillMiners
+define script MM_SurvivingMinersRunOutOfMine(Miner)
+define script MM_ArmyKillingMonster(*HaveWeDefeatedTheMonster, ArmySize)
+define script MM_HasArmyEnteredMine(Radius)
+define script MM_HaveMinersEnteredMine(Radius)
+define script MM_MoveMinerIntoMine(MinerID)
+define script MM_ReleaseSurvivingMinerBackToTown(Miner)
+define script MM_CreateDiseasedFlock(DiseasedFlockPos)
+define script MM_HandleDiseasedFlockMovements(Waypoint1, Waypoint2, Waypoint3)
+define script MM_HandleShepherdComplaints
+define script MM_GiveRewardFromShepherd
+define script MM_ShepherdGoesToSellFlock
+define script MM_SellSheep(Sheep, Store)
+define script MM_ShepherdIsAnnoyed(CreateScroll_YesNo)
+define script MM_ShepherdAttacksPlayer
+define script MM_TownAttackedByShepherd(Target)
+define script MM_CheckForHealedDiseasedFlock
+define script MM_CheckForKilledDiseasedFlock
+define script MM_CheckHealthOfShepherd
+define script MM_GetResponseForAttackingOrHealingShepherd
+define script MM_CheckToSeeIfMonsterIsPoisoned(Radius)
+define script MM_CheckToSeeIfMonsterIsDrowning(Radius)
+define script MM_ReduceMonsterThreatWithWater(*WasMonsterDamaged)
+define script MM_MonsterGroans
+define script MM_ReleaseDiseasedFlock
+define script MM_CheckForFeedingMonsterStuff
+define script MM_DealWithEdibleFedToMonster(Item, HealthChangeAmount, HealthChangeDirection)
+define script MM_DealWithInedibleFedToMonster(Item)
+define script MM_CheckForCreatureTryingToDefeatMonster
+define script MM_CreateLittlePersonForHealingMonsterCheck
+define script MM_KeepSheepLifeAtrificiallyHigh(Sheep)
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land3MonsterMine
+
+	RADIUS_CHECK				= 14//20 pj change
+	DiseasedFlockPos			= marker at {666.702, 34.853, 729.177}
+	GrazingPoint1				= marker at {644.444, 48.279, 777.125}
+	GrazingPoint2				= marker at {731.986, 32.890, 713.441}
+	GrazingPoint3				= marker at {741.746, 32.640, 711.614}
+
+start
+
+	// Set values for globals
+	MM_MinePos					= marker at {891.196, 33.278, 782.386}
+	MM_JustOutsideMineEntrance	= marker at {892.701, 31.322, 767.520}
+	MM_Mine						= get HOUSE at {MM_MinePos} radius 10
+	MM_PlayersTown				= get town with id 0
+
+	// Create the diseased flock and move it around a bit
+	run script MM_CreateDiseasedFlock(DiseasedFlockPos)
+   	run background script MM_HandleDiseasedFlockMovements(GrazingPoint1, GrazingPoint2, GrazingPoint3)
+	run background script MM_HandleShepherdComplaints
+	run background script MM_CheckForHealedDiseasedFlock
+	run background script MM_CheckForKilledDiseasedFlock
+	run background script MM_CheckHealthOfShepherd
+	run background script MM_GetResponseForAttackingOrHealingShepherd
+	run background script MM_CheckForCreatureTryingToDefeatMonster
+
+	// Ask for help with the monster problem
+	run background script MM_Intro
+
+	// Check to see if the monster has been poisoned or healed or drowned (cannot die from drowning)
+	run background script MM_CreateLittlePersonForHealingMonsterCheck
+	run background script MM_CheckToSeeIfMonsterIsPoisoned(RADIUS_CHECK)
+	run background script MM_CheckToSeeIfMonsterIsDrowning(RADIUS_CHECK)
+	run background script MM_CheckForFeedingMonsterStuff					// Need to be able to check if something is scripted or not / Tid
+	
+	while MM_MonsterMineActive == MM_TRUE
+		// Check to see if an army has been sent into the mine and if miners have entered the mine
+		run script MM_HasArmyEnteredMine(RADIUS_CHECK)
+
+		// Only check for miners going into the mine until the first lot have been killed
+		// After this we need to put a reaction on the mine to make the villagers scared of the mine
+		if MM_KickOffIntro == MM_FALSE
+			run script MM_HaveMinersEnteredMine(RADIUS_CHECK)
+		end if
+		wait 1 second
+	end while
+
+end script Land3MonsterMine
+
+
+//-----------------------------------------------------------------------------
+//	Kick off a villager asking for help once the first lot of villagers are in danger
+//-----------------------------------------------------------------------------
+begin script MM_Intro
+
+	Scroll			= 0
+	RelCamPos		= 0
+	RelCamFoc		= 0
+	CAM				= 0
+	MainMiner		= 0
+	ReminderTimer	= create timer for 0 seconds
+
+start
+
+	// Wait until a few people have been killed by the monster before starting the intro
+	wait until MM_KickOffIntro == MM_TRUE or MM_MonsterMineActive == MM_FALSE
+
+	// Intro only becomes available after some miners have been killed
+	if MM_KickOffIntro == MM_TRUE
+		// Create a scroll for the player to click on
+		Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {MM_MinePos}
+		ALTITUDE of Scroll = 10
+
+		// Highlight the scroll with the advisors
+		begin loop
+		if get ReminderTimer time remaining <= 0 and camera position near {Scroll} radius 200 and {Scroll} viewed
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					say "GA: Leader something requires your attention here."
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 180 seconds
+			end if
+		until Scroll right clicked
+		until MM_MonsterMineActive == MM_FALSE
+		end loop
+		delete Scroll
+
+		// Only do the intro if the monster is still alive
+		if MM_MonsterMineActive == MM_TRUE
+			MainMiner = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at get world position from MM_Mine to {-1.144, -0.143, 1.244}
+
+			begin cinema
+				set camera lens 36.000
+				RelCamPos=marker at get world position from MM_Mine to {-9.796, 11.885, 17.146}
+				RelCamFoc=marker at get world position from MM_Mine to {-9.271, 11.330, 16.500}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				//override MainMiner anim "M_P_RUN_MAN"
+				SPEED of MainMiner = 0.6
+				move MainMiner position to get world position from MM_Mine to {1.059, 1.864, 10.210}
+				//wait until MainMiner at get world position from MM_Mine to {-0.310,0.160,-5.725}
+				wait 2 seconds
+				RelCamPos=marker at get world position from MM_Mine to {-0.841, 1.474, 8.220}
+				RelCamFoc=marker at get world position from MM_Mine to {-0.345, 1.644, 9.071}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				// MAIN MINER: "You’ve got to do something.  It’s eating everything."
+				say "BW2T_SCRIPT_03C_01MONSTMINE_INTRO_10" by MainMiner
+				play anim "a_p_mine_ookatsky_speaking" on MainMiner 					
+				wait 2.5 seconds
+				play string sound "MONSTERLOWGROWL3"
+				wait 0.5 seconds
+				wait 0.6 seconds				
+				play anim "A_P_TURN_180" on MainMiner 
+				// MAIN MINER: "Tabius?"
+				say "BW2T_SCRIPT_03C_01MONSTMINE_INTRO_30" by MainMiner
+				wait 0.3 second
+				
+				set camera lens 31.000
+				RelCamPos=marker at get world position from MM_Mine to {-0.028, 1.825, 9.033}
+				RelCamFoc=marker at get world position from MM_Mine to {0.709, 1.881, 9.707}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				wait until MainMiner played
+				set MainMiner focus to {MM_Mine}
+				//wait 1.7 seconds
+				set camera lens 70.000
+				play string sound "MONSTERROAR"
+
+				set camera roll 13.000 time 0
+				RelCamPos=marker at get world position from MM_Mine to {-1.588, 2.253, 3.836}
+				RelCamFoc=marker at get world position from MM_Mine to {18.790, -15.268, -16.916}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				set camera lens 68.000 time 2
+				wait 2 seconds
+				clear dialogue
+				
+				play string sound "MONSTERSTOMP2"// loop 3
+
+				set camera roll 0.000 time 0
+				set camera lens 31.000
+				RelCamPos=marker at get world position from MM_Mine to {-0.435, 2.010, 8.238}
+				RelCamFoc=marker at get world position from MM_Mine to {0.366, 2.028, 8.837}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				// MAIN MINER: "Tabius! I’m cominnnnnnnnnnnnnnnnnnnnnnnnnnng!"
+				say "BW2T_SCRIPT_03C_01MONSTMINE_INTRO_40" by MainMiner
+
+				wait 0.2 seconds
+				play string sound "MONSTERSTOMP"// loop 3
+				
+				RelCamPos=marker at get world position from MM_Mine to {-9.438, 10.804, 13.638}
+				RelCamFoc=marker at get world position from MM_Mine to {-3.378, 5.624, 8.359}
+				move MainMiner position to get world position from MM_Mine to {-0.326,-0.093,-0.962}
+
+				wait 0.5 seconds
+				set camera lens 36.000
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				wait 2 seconds
+				play string sound "MONSTERSTOMP2"// loop 3
+				play string sound "MONSTERGROWL2"
+
+			end cinema
+		end if
+	end if
+
+	MM_IntroFinished = MM_TRUE
+
+end script MM_Intro
+
+
+//-----------------------------------------------------------------------------
+//	This is the end cutscene for winning by using an army
+//-----------------------------------------------------------------------------
+begin script MM_WonByUsingArmy(PlatoonType)
+
+	ArmyOfSurvivors		= 0
+	Warrior1			= 0
+	Warrior2			= 0
+	RelCamPos			= 0
+	RelCamFoc			= 0
+	StartPos			= 0
+	CAM					= 0
+	Counter				= 0
+	SurvivingTotal		= 0
+
+start
+
+	begin known cinema
+		//dialogue on black screen
+		//dialogue on black screen
+		set camera roll 0 time 0
+		RelCamPos=marker at get world position from MM_Mine to {0.348, -0.196, 0.553}
+		Warrior1 = create SOLDIER PLATOON_INFO_GREEK_MELEE_1 at {RelCamPos}
+		RelCamPos=marker at get world position from MM_Mine to {-1.013, -0.064, 0.858}
+		Warrior2 = create SOLDIER PLATOON_INFO_GREEK_MELEE_1 at {RelCamPos}
+		RelCamPos=marker at get target from {Warrior2} to {Warrior1} distance 20 angle 90//world position from MM_Mine to {2.345, 3.816, 15.672}
+
+		set Warrior1 focus to {RelCamPos}
+		move Warrior1 position to {RelCamPos}
+		//RelCamPos=marker at get world position from MM_Mine to {0.989, 3.515, 15.996}
+		RelCamPos=marker at get target from {Warrior1} to {Warrior2} distance 20 angle 270
+		set Warrior2 focus to {RelCamPos}
+		move Warrior2 position to {RelCamPos}
+		set fade in time 1
+		wait 0.2 seconds
+		set camera lens 38.000
+		RelCamPos=marker at get world position from MM_Mine to {0.941, 0.942, -1.244}
+		RelCamFoc=marker at get world position from MM_Mine to {-2.620, 1.264, 7.365}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		// WARRIOR: "That was amazing.  Where’d you learn to do that?"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_60" by Warrior2
+		wait until read
+
+		set camera lens 38.000
+		set camera position follow Warrior1 offset {-0.734, 1.623, 5.762}
+		set camera focus follow Warrior1 offset {0.209, -0.384, -34.791}
+		StartPos = marker at camera position
+		
+		//override Warrior2 anim "a_p_islandcomp_walking_talking"
+		//move follow camera position offset {-0.697,0.428,1.778} time 3
+		//move follow camera focus offset {2.095,6.484,-38.269} time 3
+		// HERO: "Don’t know.  Just came to me in mid stab, you know?"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_70" by Warrior1
+		// AUDIO_TODO play sound constant 125 SOUND_BANK_TYPE_BW2_MINE
+		wait until read
+
+		// Handle the survivors
+		if MM_NumberOfSurvivors > 0
+			// Create an empty platoon to attach the survivors to
+			ArmyOfSurvivors = create platoon constant PlatoonType at {MM_MinePos} with 0 men and 0 women
+
+			// Find out how many survivors we need to release from limbo (max amount or less)
+			if MM_NumberOfSurvivors < MM_MAX_AMOUNT_OF_ARMY_RECRUITS_IN_LIMBO
+				SurvivingTotal = MM_NumberOfSurvivors
+			else
+				SurvivingTotal = MM_MAX_AMOUNT_OF_ARMY_RECRUITS_IN_LIMBO
+			end if
+
+			// Release the survivors from limbo and attach them to the platton
+			while Counter < SurvivingTotal
+				// dRemove the survivors from limbo then add them to a platoon
+				release MM_ArmyRecruitInLimbo[Counter] from limbo
+				run background script MM_MoveArmyRecruitOutOfMine(Counter)
+				wait 0.2 seconds
+				Counter++
+			end while
+		end if
+
+		// HERO: "You get in a few more battles… maybe you’ll work it out too."
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_80" by Warrior1
+		CAM = marker at get target from {MM_Mine} to camera position distance 2 angle 0
+		move camera position to {CAM} time 2
+		set camera focus to camera focus
+		wait 4 seconds
+		wait until read
+
+		// Add the 2 scripted dudes to the platoon
+		if MM_NumberOfSurvivors > 0
+			// SURVIVOR: "That wasn't too bad."
+			//say "BW2T_SCRIPT_03C_MONSTMINE_SUCC_SOLDIER_140"
+			//wait until read
+			// SURVIVOR: "Yeah, I don't know what all the fuss was about."
+			//say "BW2T_SCRIPT_03C_MONSTMINE_SUCC_SOLDIER_150"
+			//wait until read
+
+			Counter = 0
+			while Counter < SurvivingTotal
+				// Add the survivors to a platoon
+				add villager MM_ArmyRecruitInLimbo[Counter] to platoon ArmyOfSurvivors
+				Counter++
+			end while
+
+			// Attach the 2 poeple talking to the rest of the survivors and then release them
+			add villager Warrior1 to platoon ArmyOfSurvivors
+			add villager Warrior2 to platoon ArmyOfSurvivors
+			set ArmyOfSurvivors player 0
+			release ArmyOfSurvivors
+		end if
+
+		//say "Any reward given should be referred to here"
+		//wait until read
+
+		// if the player noticed the problem and killed the beast before being asked to the reward is greater
+		//if MM_KickOffIntro == MM_FALSE
+		//    say "You killed the monster before being asked to and will get a greater reward."
+		//    wait until read
+		//end if
+	end known cinema
+
+end script MM_WonByUsingArmy
+
+
+//-----------------------------------------------------------------------------
+//	Move the surviving army members out of the mne
+//-----------------------------------------------------------------------------
+begin script MM_MoveArmyRecruitOutOfMine(Recruit)
+
+	FormationPos		= marker at {1632.613, 102.439, 484.802}
+
+start
+
+	move MM_ArmyRecruitInLimbo[Recruit] position to {MM_JustOutsideMineEntrance}
+	wait until {MM_ArmyRecruitInLimbo[Recruit]} near {MM_JustOutsideMineEntrance} radius 1 or 10 seconds
+	move MM_ArmyRecruitInLimbo[Recruit] position to {FormationPos} + {number from -5 to 5, number from -5 to 5}
+
+end script MM_MoveArmyRecruitOutOfMine
+
+
+//-----------------------------------------------------------------------------
+//	This is the end cutscene for winning by poisoning the monster
+//-----------------------------------------------------------------------------
+begin script MM_WonByPoisoningMonster
+
+	HeadMinerStart = 0
+	HeadMinerGoes = 0
+	MinerSpawn = 0
+	MinersNew[8]
+	MainMiner = 0
+	RelCamPos = 0
+	RelCamFoc = 0
+	GoMinersGo=0
+
+start
+
+		begin cinema
+		
+		GoMinersGo = marker at get world position from MM_Mine to {-1.061, -0.047, 0.819}
+		HeadMinerStart = marker at get world position from MM_Mine to {0.488, -0.269, 0.941}
+		MainMiner = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {HeadMinerStart}
+		HeadMinerGoes = marker at get world position from MM_Mine to {1.117,0.030,4.689}
+		move MainMiner position to {HeadMinerGoes}
+		set camera lens 38.000
+		RelCamPos=marker at get world position from MM_Mine to {-1.463, 1.135, 7.029}
+		RelCamFoc=marker at get world position from MM_Mine to {-0.858, 1.170, 6.234}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc} 
+		wait until {MainMiner} at {HeadMinerGoes}
+		wait 0.1 seconds
+		play anim "A_P_BECKON" on MainMiner 
+		// MAIN MINER: "Right you lot!  Back inside!"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_30" by MainMiner
+
+		RelCamFoc=marker at get world position from MM_Mine to {-3.060,0.016,12.653}
+		set MainMiner focus to {RelCamFoc}
+		RelCamPos=marker at get world position from MM_Mine to {-1.463, 1.135, 7.029}
+		RelCamFoc=marker at get world position from MM_Mine to {-0.858, 1.170, 6.234}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc} 
+
+		RelCamPos=marker at get world position from MM_Mine to {0.498, 1.152, 3.141}
+		RelCamFoc=marker at get world position from MM_Mine to {0.730, 1.276, 4.106}
+		MinerSpawn = marker at get world position from MM_Mine to {0.209,0.273,6.539}
+		MinersNew[0] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {MinerSpawn}
+		move MinersNew[0] position to {GoMinersGo}
+		wait 1 seconds
+		MinersNew[1] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {MinerSpawn}
+		move MinersNew[1] position to {GoMinersGo}
+		//wait 2 seconds
+		MinersNew[2] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {MinerSpawn}
+		move MinersNew[2] position to get target from {MinersNew[2]} to {MainMiner} distance 1 angle 180
+		wait until {MinersNew[2]} near {MainMiner} radius 1.7
+		set camera lens 37.000
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//wait until {MinersNew[2]} near {MainMiner} radius 1.2
+		wait until read
+
+		// MINER: "How do we know it’s dead?"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_40" by MinersNew[2]
+		
+		play anim "A_P_TALK2_MALE" on MinersNew[2] 
+		wait until read		
+		
+		RelCamPos=marker at get world position from MM_Mine to {-0.001, 1.433, 5.240}
+		RelCamFoc=marker at get world position from MM_Mine to {0.860, 1.401, 4.733}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		// MAIN MINER: "Well we won’t know ‘til you go back down there will we?"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_50" by MainMiner
+		play anim "A_P_TALK2_MALE"  on MainMiner loop 2
+		wait until read		
+		
+		// MAIN MINER: "BACK TO WORK!"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_60" by MainMiner
+		wait until read		
+		
+		clear dialogue
+		set camera lens 35.000
+		RelCamPos=marker at get world position from MM_Mine to {-6.178, 8.563, 17.039}
+		RelCamFoc=marker at get world position from MM_Mine to {-1.968, 4.631, 9.709}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		move MinersNew[2] position to get target from {MinersNew[2]} to {HeadMinerStart} distance 3 angle 0
+		SPEED of MinersNew[2] = 0.6
+		wait 1 seconds
+		move MainMiner position to get target from {MainMiner} to {HeadMinerStart} distance 3 angle 0
+		wait 2 seconds
+
+		delete MinersNew[0]
+		delete MinersNew[1]
+		delete MinersNew[2]
+	end cinema
+
+	// Get the reaction from the advisors
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+
+		// GA: "Surely there were more humane ways to eliminate the monster?"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_70"
+		wait until not sound "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_70" playing
+
+		delete MainMiner
+        
+		// EA: "Yeah, but that wouldn’t have been any fun, would it?"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_80"
+		wait until not sound "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_80" playing
+		
+		// EA: "Ignore him.  I’m proud of you, big guy."
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_90"
+		wait until not sound "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_90" playing
+	
+		// EA: "Way to get that new source of ore."
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_100"
+		wait until not sound "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_DISEASE_100" playing
+		
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script MM_WonByPoisoningMonster
+
+
+//-----------------------------------------------------------------------------
+//	This is the end cutscene for failing an army attack on the monster
+//-----------------------------------------------------------------------------
+begin script MM_FailedByUsingArmy
+
+	RelCamPos	= 0
+	RelCamFoc	= 0
+	StartPos	= 0
+	Survivor	= 0
+	Counter		= 0
+
+start
+         
+	begin known cinema
+		set camera roll 0 time 0	
+        set camera lens 46.000
+        RelCamPos=marker at get world position from MM_Mine to {0.804, 0.244, 5.024}
+        Survivor = create SOLDIER PLATOON_INFO_GREEK_MELEE_1 at {RelCamPos}
+		set Survivor focus to get world position from MM_Mine to {0.817, 1.597, 9.831}
+        play anim "A_P_DYING"  on Survivor loop 2
+        set fade in time 3
+        say "BW2T_SCRIPT_03C_01MONSTMINE_FAIL_SOLDIER_10" by Survivor
+        RelCamPos=marker at get world position from MM_Mine to {-0.877, 0.617, 5.389}
+        RelCamFoc=marker at get world position from MM_Mine to {-0.555, 0.569, 4.444}
+        set camera position to {RelCamPos}
+        set camera focus to {RelCamFoc}
+		RelCamPos=marker at get world position from MM_Mine to {-0.359, 0.725, 7.940}
+        RelCamFoc=marker at get world position from MM_Mine to {-0.036, 0.677, 6.995}
+        move camera position to {RelCamPos} time 10
+        move camera focus to {RelCamFoc} time 10
+        wait until read
+        wait until Survivor played
+
+		HEALTH of Survivor = 0
+		release Survivor
+
+		// Clear out the array of army recruits as they've f*cked up and got killed
+		while Counter < MM_MAX_AMOUNT_OF_ARMY_RECRUITS_IN_LIMBO
+			release MM_ArmyRecruitInLimbo[Counter] from limbo
+			delete MM_ArmyRecruitInLimbo[Counter]
+			Counter++
+		end while
+	end known cinema
+
+end script MM_FailedByUsingArmy
+
+
+//-----------------------------------------------------------------------------
+//	Make the villagers mine the ore
+//-----------------------------------------------------------------------------
+begin script MM_MineOre
+start
+
+	// Play mining effects etc
+	
+end script MM_MineOre
+
+
+//-----------------------------------------------------------------------------
+//	Kill off half of the villagers that are in the mine. Lots of screaming SFX and have the remaining villagers flee
+//-----------------------------------------------------------------------------
+begin script MM_KillMiners
+
+	MINER_SURVIVING_NUM			= MM_MINERS_GROUP_SIZE / 2
+	Counter						= MINER_SURVIVING_NUM
+
+start
+
+	// Kill off the second half of the miners
+	while Counter < MM_MINERS_GROUP_SIZE
+		HEALTH of MM_Miner[Counter] = 0
+		release MM_Miner[Counter] from limbo
+		delete MM_Miner[Counter]
+		Counter++
+	end while
+	
+	Counter = 0
+	
+	// Make the first half of the miner group flee the mine screaming
+	// Wait until the miners have run out of breath, play an out of breath anim, then release the miner back to the town
+	while Counter < MINER_SURVIVING_NUM
+		run background script MM_SurvivingMinersRunOutOfMine(Counter)
+		wait 0.3 second
+		Counter++
+	end while
+
+end script MM_KillMiners
+
+
+//-----------------------------------------------------------------------------
+//	Make the miners run out of the mine and then run out of breath
+//-----------------------------------------------------------------------------
+begin script MM_SurvivingMinersRunOutOfMine(Miner)
+
+	FleePos					= 0
+	RunToMarker				= 0
+
+start
+
+	// Fleeing anims here
+	// Screaming SFX here
+	enable MM_Miner[Miner] pickup
+	enable MM_Miner[Miner] set on fire
+	disable MM_Miner[Miner] indestructible
+	release MM_Miner[Miner] from limbo
+
+	FleePos = marker at get target from {MM_MinePos} to {MM_JustOutsideMineEntrance} distance number from 20 to 30 angle number from -90 to 90
+	RunToMarker = marker at {MM_JustOutsideMineEntrance} + {number from -2 to 2, number from -2 to 2}
+
+	move MM_Miner[Miner] position to {RunToMarker}
+	override MM_Miner[Miner] anim "a_p_run_on_fire"
+	SPEED of MM_Miner[Miner] = 0.6
+	wait until {MM_Miner[Miner]} near {RunToMarker} radius 1 or 10 seconds
+
+	move MM_Miner[Miner] position to {FleePos}
+	override MM_Miner[Miner] anim "a_p_run_on_fire"
+	SPEED of MM_Miner[Miner] = 0.6
+	wait until {MM_Miner[Miner]} near {FleePos} radius 1 or 10 seconds
+
+	run script MM_ReleaseSurvivingMinerBackToTown(Miner)
+
+end script MM_SurvivingMinersRunOutOfMine
+
+
+//-----------------------------------------------------------------------------
+//	Get the sounds of the army killing off the monster and get the victorious army leaving the mine
+//-----------------------------------------------------------------------------
+begin script MM_ArmyKillingMonster(*HaveWeDefeatedTheMonster, ArmySize)
+
+	AdjustedHealthOfMonster		= 0
+
+start
+	
+	// The army sent into the mine needs to be at least 2 people in size to be successful because of cutscene requirements
+	if ArmySize > MM_MIN_WARRIOR_ATTACK_ALLOWED
+		// How much damage have the warriors done to the monster?
+		AdjustedHealthOfMonster = MM_HealthOfMonster - (ArmySize * MM_DAMAGE_INFLICTED_BY_WARRIOR)
+		MM_HealthOfMonster = AdjustedHealthOfMonster
+
+		// See if the monster has been killed or not
+		if MM_HealthOfMonster <= 0
+			// The monster has been successfully killed
+			HaveWeDefeatedTheMonster[0] = MM_TRUE
+			// Work out the surviving amount of warriors
+			if (abs MM_HealthOfMonster) > 0
+				// Make sure the number of survivors is a whole number
+				MM_NumberOfSurvivors = (abs MM_HealthOfMonster) / MM_DAMAGE_INFLICTED_BY_WARRIOR
+				MM_NumberOfSurvivors -= MM_NumberOfSurvivors % 1
+			else
+				MM_NumberOfSurvivors = 0
+			end if
+		else
+			// There weren't enough warriors sent in
+			HaveWeDefeatedTheMonster[0] = MM_FALSE
+		end if
+	else
+		// Not enough people have been sent in to succeed
+		HaveWeDefeatedTheMonster[0] = MM_FALSE
+	end if
+
+end script MM_ArmyKillingMonster
+
+
+//-----------------------------------------------------------------------------
+//	See if the Army is going to kill the monster
+//-----------------------------------------------------------------------------
+begin script MM_HasArmyEnteredMine(Radius)
+
+	DefeatedMonster[1]
+	Army				= 0
+	ArmySize			= 0
+	TypeOfPlatoon		= 0
+
+start
+
+	// Check if the Army has eneterd the mine to kill the monster
+	Army = get platoon of player 0 nearest {MM_MinePos} radius Radius // excluding scripted
+
+	// Flag that the Army have entered the mine (they must be interacting with it - attached or defending)
+	if Army exists and Army interacting with MM_Mine
+		begin cinema
+			// Get the size and type of the Army
+			ArmySize = get number of villagers in platoon Army
+		//	TypeOfPlatoon = get platoon Army type
+
+			// How does the Army do against the monster?
+			run script MM_ArmyKillingMonster(&DefeatedMonster[0], ArmySize)
+
+			// Move Army into the mine
+			run script MM_MoveArmyIntoMineCutscene(Army, ArmySize, DefeatedMonster[0])
+
+			// Play the relevant cutscene
+			if DefeatedMonster[0] == MM_TRUE
+				MM_MonsterMineActive = MM_FALSE
+				run script MM_WonByUsingArmy(TypeOfPlatoon)
+				run background script MM_SumupFromAdvisorsAboutExperienceGained
+			else
+				run script MM_FailedByUsingArmy
+			end if
+		end cinema
+	end if
+	
+end script MM_HasArmyEnteredMine
+
+
+//-----------------------------------------------------------------------------
+//	Get a few lines from the advisors about experience
+//-----------------------------------------------------------------------------
+begin script MM_SumupFromAdvisorsAboutExperienceGained
+start
+
+	// Get comments from the advisors
+	wait 1 second								// Make sure the previous cinema block has ended
+
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+
+		// GA: "Your warrior has become more experienced."
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_90"
+		wait until read
+
+		// EA: "That’s it?  Hell, send him on a rampage if it’s that easy"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_100"
+		wait until read
+
+		// EA: "to make him tougher."
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_110"
+		wait until read
+
+		// GA: "It’s not that easy.  Besides they don’t have to kill, get them to"
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_120"
+		wait until read
+
+		// GA: "train, train, train.  Whip them into shape that way."
+		say "BW2T_SCRIPT_03C_01MONSTMINE_SUCC_SOLDIER_130"
+		wait until read
+
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+end script MM_SumupFromAdvisorsAboutExperienceGained
+
+
+//-----------------------------------------------------------------------------
+//	Show the cutscene of the army going into the mine
+//-----------------------------------------------------------------------------
+begin script MM_MoveArmyIntoMineCutscene(Army, Size, Resolution)
+
+	RelCamPos	= 0
+	RelCamFoc	= 0
+	Recruit		= 0
+	Counter		= 0
+	MusicEventTimer=0
+	MusicEvent1=	0
+	MusicEvent2=	0
+
+start
+
+	begin known cinema
+
+		RelCamPos=marker at get world position from MM_Mine to {-4.288, 6.763, 9.205}
+		RelCamFoc=marker at get world position from MM_Mine to {-0.219, 1.964, 5.788}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		// Stop the army
+		move Army position to {Army}
+
+		// Move the individual into the mine
+		while Counter < Size
+			Recruit = get villager from platoon Army nearest {MM_Mine} excluding scripted
+			remove villager Recruit from platoon
+			run background script MM_MoveRecruitIntoMine(Recruit, Counter)
+			wait 0.2 seconds
+			Counter++
+		end while
+
+		// Get rid of the army container
+		delete Army
+
+		wait 4 seconds
+
+		if Resolution == MM_TRUE
+			start music "monster_mine_main"	
+			MusicEventTimer=create timer for 0 seconds
+			MusicEvent1=get music "monster_mine_main" event "e1" time
+			MusicEvent2=get music "monster_mine_main" event "e2" time
+		else
+			start music "monster_mine_maindie"	
+			MusicEventTimer=create timer for 0 seconds
+			MusicEvent1=get music "monster_mine_maindie" event "e1" time
+			MusicEvent2=get music "monster_mine_maindie" event "e2" time
+		end if
+
+		wait 1 seconds
+		RelCamPos=marker at get world position from MM_Mine to {-1.028, 2.103, 3.727}
+		RelCamFoc=marker at get world position from MM_Mine to {-0.765, 1.741, 2.833}
+		move camera position to {RelCamPos} time 30
+		move camera focus to {RelCamFoc} time 30
+		set camera lens 38.000 time 20
+		set camera roll -10 time 20
+		//wait until camera ready
+		//wait 17 seconds
+		wait until get MusicEventTimer time since set >= MusicEvent1
+		//set camera lens 10.000 time 5
+		set fade red 0 green 0 blue 0 time 0.1
+		wait until get MusicEventTimer time since set >= MusicEvent2
+		wait 5 seconds
+		
+	end known cinema
+
+end script MM_MoveArmyIntoMineCutscene
+
+
+//-----------------------------------------------------------------------------
+//	Move the individual recruit into the mine
+//-----------------------------------------------------------------------------
+begin script MM_MoveRecruitIntoMine(Recruit, ArrayIndex)
+start
+
+	move Recruit position to {MM_JustOutsideMineEntrance}
+	SPEED of Recruit = 0.6
+	wait until {Recruit} near {MM_JustOutsideMineEntrance} radius 2
+	move Recruit position to {MM_MinePos}
+	wait until {Recruit} near {MM_MinePos} radius 1 or 10 seconds
+
+	// Add the recruit to the array so he can be placed in limbo or delete him
+	if ArrayIndex < MM_MAX_AMOUNT_OF_ARMY_RECRUITS_IN_LIMBO
+		MM_ArmyRecruitInLimbo[ArrayIndex] = Recruit
+		move MM_ArmyRecruitInLimbo[ArrayIndex] to limbo
+	else
+		delete Recruit
+	end if
+
+end script MM_MoveRecruitIntoMine
+
+
+//-----------------------------------------------------------------------------
+//	See if the miners are going to get ore
+//-----------------------------------------------------------------------------
+begin script MM_HaveMinersEnteredMine(Radius)
+
+	NumMinersCurrentlyUsing		= 0
+
+start
+
+	NumMinersCurrentlyUsing = get current number of users in MM_Mine
+
+	// Check if the miners are going into the mine to get ore
+	MM_Miner[MM_MinersMiningCount] = get VILLAGER at {MM_MinePos} radius Radius excluding scripted
+
+	// Flag that the Miners have entered the mine
+	if MM_Miner[MM_MinersMiningCount] exists
+		if HEALTH of MM_Miner[MM_MinersMiningCount] > 0
+			// Move the miner into the mine, but don't kick off the killing unless there is a big enough group there
+			run background script MM_MoveMinerIntoMine(MM_MinersMiningCount)
+			MM_MinersMiningCount++
+
+			if MM_MinersMiningCount >= MM_MINERS_GROUP_SIZE
+				// Wait until the last miner of the group is in the mine before killing them off
+				wait until {MM_Miner[MM_MinersMiningCount]} near {MM_MinePos} radius 1 or 10 seconds
+				run script MM_MineOre
+				run script MM_KillMiners
+				MM_MinersMiningCount = 0
+
+				// We've got enough miners in the group so allow the killing to commence then kick off the intro
+				// This also stops the script from putting more miners into the mine
+				MM_KickOffIntro = MM_TRUE
+			end if
+		end if
+	end if
+	
+end script MM_HaveMinersEnteredMine
+
+
+//-----------------------------------------------------------------------------
+//	Move an individual miner into the mine and scale him down so he cannot be seen
+//-----------------------------------------------------------------------------
+begin script MM_MoveMinerIntoMine(MinerID)
+start
+
+	disable MM_Miner[MinerID] pickup
+	disable MM_Miner[MinerID] set on fire
+	enable MM_Miner[MinerID] indestructible
+
+	move MM_Miner[MinerID] position to {MM_MinePos}
+	wait until {MM_Miner[MinerID]} near {MM_MinePos} radius 1 or not MM_Miner[MinerID] exists or HEALTH of MM_Miner[MinerID] <= 0 or 10 seconds
+
+	if MM_Miner[MinerID] exists and HEALTH of MM_Miner[MinerID] > 0
+		if not {MM_Miner[MinerID]} near {MM_MinePos} radius 1
+			set MM_Miner[MinerID] position to {MM_MinePos}
+		end if
+		move MM_Miner[MinerID] to limbo
+	end if
+
+end script MM_MoveMinerIntoMine
+
+
+//-----------------------------------------------------------------------------
+//	Release the surviving miners from the script
+//-----------------------------------------------------------------------------
+begin script MM_ReleaseSurvivingMinerBackToTown(Miner)
+start
+
+	// Attach the miner to the players town and release them from script
+	if MM_Miner[Miner] exists and HEALTH of MM_Miner[Miner] > 0
+		attach MM_Miner[Miner] to MM_PlayersTown
+		release MM_Miner[Miner]
+	end if
+
+end script MM_ReleaseSurvivingMinerBackToTown
+
+
+//-----------------------------------------------------------------------------
+//	Create a diseased flock that the player can give to the monster to make him easier to kill
+//-----------------------------------------------------------------------------
+begin script MM_CreateDiseasedFlock(DiseasedFlockPos)
+
+	Counter						= 0
+
+start
+
+	// Create the shepherd
+	MM_Shepherd = create VILLAGER VILLAGER_INFO_GREEK_SHEPHERD_MALE at {DiseasedFlockPos} + {5, 5}
+
+	SPEED of MM_Shepherd = 0.075			// Match the speed of the shepherd to the diseased cows
+	MM_ShepherdIsAlive = MM_TRUE
+
+	// Create the diseased flock and have the shepherd complaining about the state of the flock
+	MM_DiseasedFlock = create flock container
+	nominate MM_Shepherd as leader for flock MM_DiseasedFlock
+	
+	while Counter < MM_AMOUNT_OF_SHEEP_IN_FLOCK
+		MM_Sheep[Counter] = create ANIMAL ANIMAL_INFO_SHEEP at {DiseasedFlockPos} + {number from -5 to 5, number from -5 to 5}
+		//MM_Sheep[Counter] = create VILLAGER VILLAGER_INFO_NORSE_LEADER_MALE at {DiseasedFlockPos} + {number from -5 to 5, number from -5 to 5}
+
+		add MM_Sheep[Counter] to flock MM_DiseasedFlock
+		// Make sure the sheep is poisoned (0-1)
+		set MM_Sheep[Counter] decay 0.5
+
+		run background script MM_KeepSheepLifeAtrificiallyHigh(Counter)
+		Counter++
+	end while
+	
+	// Make the shepherd the leader of the flock
+//	attach MM_Shepherd to MM_DiseasedFlock as leader
+	
+end script MM_CreateDiseasedFlock
+
+
+//-----------------------------------------------------------------------------
+//	Make sure the sheep do not die prematurely
+//-----------------------------------------------------------------------------
+begin script MM_KeepSheepLifeAtrificiallyHigh(Sheep)
+
+	SheepAlive		= MM_TRUE
+
+start
+
+	// Keep the sheep healthy
+	while MM_DiseasedFlockHealed == MM_FALSE and MM_DiseasedFlockKilled == MM_FALSE and MM_ShepherdIsAlive == MM_TRUE and MM_MonsterMineActive == MM_TRUE and SheepAlive == MM_TRUE
+		if MM_Sheep[Sheep] exists and HEALTH of MM_Sheep[Sheep] > 0
+			if MM_Sheep[Sheep] decayed
+				HEALTH of MM_Sheep[Sheep] = 1
+			end if
+		else
+			SheepAlive = MM_FALSE
+		end if
+		wait 30 seconds
+	end while
+
+end script MM_KeepSheepLifeAtrificiallyHigh
+
+
+//-----------------------------------------------------------------------------
+//	Move the flock around a bit
+//-----------------------------------------------------------------------------
+begin script MM_HandleDiseasedFlockMovements(Waypoint1, Waypoint2, Waypoint3)
+
+	WAYPOINT_RADIUS		= 10
+	CurrentWaypoint		= 0
+	NextWaypoint		= 0
+	EndPos				= 0
+	GrazingDelay		= 0
+	GotValidWaypoint	= MM_FALSE
+
+start
+
+	while MM_DiseasedFlockHealed == MM_FALSE and MM_DiseasedFlockKilled == MM_FALSE and MM_ShepherdIsAlive == MM_TRUE
+		// Only move the diseased flock if it exists :) and the shepherd is alive :):)
+		if MM_DiseasedFlock exists and MM_ShepherdIsAlive == MM_TRUE
+			GotValidWaypoint = MM_FALSE
+			
+			// Where are we?
+			if {MM_Shepherd} near {Waypoint1} radius WAYPOINT_RADIUS
+				CurrentWaypoint = 1
+			elsif {MM_Shepherd} near {Waypoint2} radius WAYPOINT_RADIUS
+				CurrentWaypoint = 2
+			else
+				CurrentWaypoint = 3
+			end if
+			
+			// Select a waypoint to move to
+			while GotValidWaypoint == MM_FALSE
+				NextWaypoint = number from 1 to 3
+				
+				// Make sure we are not trying to move the flock to where they already are
+				if not CurrentWaypoint == NextWaypoint
+					GotValidWaypoint = MM_TRUE
+				end if
+			end while
+			
+			// Setup the end pos
+			if NextWaypoint == 1
+				EndPos = marker at {Waypoint1}
+			elsif NextWaypoint == 2
+				EndPos = marker at {Waypoint2}
+			else
+				EndPos = marker at {Waypoint3}		
+			end if
+			
+			// Move the flock to the new waypoint
+			if MM_DiseasedFlock exists and MM_ShepherdIsAlive == MM_TRUE
+//				move MM_DiseasedFlock position to {EndPos}
+				move MM_Shepherd position to {EndPos}			// This should move the whole flock as the shepherd is the leader
+			end if
+			wait until not MM_DiseasedFlock exists or {MM_Shepherd} near {EndPos} radius WAYPOINT_RADIUS or MM_DiseasedFlockHealed == MM_TRUE or MM_DiseasedFlockKilled == MM_TRUE or MM_ShepherdIsAlive == MM_FALSE
+			GrazingDelay = number from 30 to 60
+			wait 1 seconds								// This is the wait within a while bug
+			wait GrazingDelay seconds
+		end if
+	end while
+	
+end script MM_HandleDiseasedFlockMovements
+
+
+//-----------------------------------------------------------------------------
+//	Has the monster been poisoned?
+//-----------------------------------------------------------------------------
+begin script MM_CheckToSeeIfMonsterIsPoisoned(Radius)
+
+	ObjectInHand			= 0
+	
+start
+
+	// Keep checking to see if the monster is poisoned for the life of the script
+	while MM_MonsterMineActive == MM_TRUE
+		// Only check to see if the monster is diseased if he's not already
+		if MM_MonsterDiseased == MM_FALSE
+			// The poisoned object needs to be dropped near the mine
+			ObjectInHand = get object held
+
+			if ObjectInHand exists
+				// Check to see if the object in the hand is poisoned
+				if ObjectInHand decayed
+					// Wait for the object to be dropped
+					wait until not ObjectInHand is HELD or not ObjectInHand exists or MM_MonsterMineActive == MM_FALSE
+
+					// Is it close enough to the mine to poison the monster?
+					if ObjectInHand exists and MM_MonsterMineActive == MM_TRUE
+						if {ObjectInHand} near {MM_MinePos} radius Radius
+							delete ObjectInHand with fade
+							
+							if MM_MonsterDiseased == MM_FALSE
+								begin dialogue
+									say "MONSTER: Mmmmm that had a funny taste."
+									wait until read
+								end dialogue
+
+								// Start the monster groaning if it is poisoned
+								MM_MonsterDiseased = MM_TRUE
+								run background script MM_MonsterGroans
+							end if
+						end if
+					end if
+				end if
+			end if
+		end if
+   	end while
+
+end script MM_CheckToSeeIfMonsterIsPoisoned
+
+
+//-----------------------------------------------------------------------------
+//	The monster has been poisioned so make him groan and complain
+//-----------------------------------------------------------------------------
+begin script MM_MonsterGroans
+
+	DELAY			= 30
+	Scroll			= 0
+	Groaning		= 0
+	GroanTimer		= create timer for DELAY seconds
+	ReminderTimer	= create timer for 0 seconds
+
+start
+
+	// Put various monster groans / complaints here, probably as 3d sounds
+
+	while MM_MonsterMineActive == MM_TRUE and MM_MonsterDiseased == MM_TRUE
+		if get GroanTimer time remaining <= 0
+			begin dialogue
+				say "MONSTER: Help me I'm dying......."
+				wait until read
+			end dialogue
+			set GroanTimer time to DELAY seconds
+		end if
+
+		// Get out of here if the monster has dies from being poisoned
+		if MM_HealthOfMonster <= 0
+			// Flag that the monster mine script is finished as the monster is dead
+			MM_MonsterMineActive = MM_FALSE
+
+			// Create a scroll for the player to click on
+			Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {MM_MinePos}
+			ALTITUDE of Scroll = 10
+
+			// TODO: Need to highlight the scroll with the advisors properly
+			begin loop
+				if get ReminderTimer time remaining <= 0
+					begin dialogue
+						eject good spirit
+						make good spirit point at {Scroll}						
+						// Get a line from the advisors alerting the player to the fact that the monster has been poisoned
+						say "GA: Leader there seems to be something happening over at the mine."
+						wait until read
+						stop good spirit pointing
+						send good spirit home
+					end dialogue
+					set ReminderTimer time to 30 seconds
+				end if
+			until Scroll right clicked
+			end loop
+			delete Scroll
+
+			begin dialogue
+				say "MONSTER: Good bye cruel, cruel world. Hmmph."
+				wait until read
+
+				eject good spirit
+				eject evil spirit
+
+				// GA: "That…thing…in the mine… It’s stopped howling."
+				say "BW2T_SCRIPT_03C_MONSTMINE_SUCC_DISEASE_10"
+				wait until read
+				// EA: "Yeah I know.  I was really starting to get into it."
+				say "BW2T_SCRIPT_03C_MONSTMINE_SUCC_DISEASE_20"
+				wait until read
+
+				send good spirit home
+				send evil spirit home
+			end dialogue
+
+			run script MM_WonByPoisoningMonster
+		end if
+
+		wait 1 second
+		MM_HealthOfMonster--
+	end while
+
+end script MM_MonsterGroans
+
+
+//-----------------------------------------------------------------------------
+//	If the player casts water on the monster his effectiveness will be reduced for a while
+//-----------------------------------------------------------------------------
+begin script MM_CheckToSeeIfMonsterIsDrowning(Radius)
+
+	MonsterTookHealthHit[1]
+	WaterSpell				= 0
+	GivenDrowningHelp		= MM_FALSE
+	MessageTimer			= create timer for 0 seconds
+
+start
+
+	while MM_MonsterMineActive == MM_TRUE
+		// Check to see if there is a heal spell cast near the mine
+		WaterSpell = get spell MAGIC_TYPE_VECTOR_WATER at {MM_MinePos} radius 100
+
+		// Check to see if there was a heal spell cast from a spell seed
+		if not WaterSpell exists
+			WaterSpell = get spell SPELL_SEED_TYPE_VECTOR_WATER at {MM_MinePos} radius 100
+		end if
+		
+		// Fully heal the monster and cure him of any poisoned effect
+		if WaterSpell exists
+			run script MM_ReduceMonsterThreatWithWater(&MonsterTookHealthHit[0])
+
+			// Get responses from the advisors about drowning the monster
+			if get MessageTimer time remaining <= 0
+				if MonsterTookHealthHit[0] == MM_TRUE
+					// Play sfx of monster gurgling and spluttering here...
+					// ...
+					// ...
+					if GivenDrowningHelp == MM_FALSE
+						GivenDrowningHelp = MM_TRUE
+						// MONSTER: "Urh?  Rrrrrr!"
+						play sound "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_10" at {MM_MinePos}
+						wait until not sound "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_10" playing
+
+						begin dialogue
+							eject evil spirit
+							// EA: "Oh, why didn’t I think of that?  Drown him!"
+							say "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_20"
+							wait until read
+							send evil spirit home
+						end dialogue
+					else
+						// MONSTER: "soft, mocking laughter  from monster"
+						play sound "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_30" at {MM_MinePos}
+						wait until not sound "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_30" playing
+
+						begin dialogue
+							eject evil spirit
+							// EA: "I don’t get it.  He should be floating by now."
+							say "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_40"
+							wait until read
+							send evil spirit home
+						end dialogue
+					end if
+				else
+					// MONSTER: "Roars of evil laughter."
+					play sound "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_50" at {MM_MinePos}
+					wait until not sound "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_50" playing
+
+					begin dialogue
+						eject good spirit
+						eject evil spirit
+
+						// GA: "It doesn’t seem to be working.  There must be an underground river taking all the water away."
+						say "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_60"
+						wait until read
+
+						// EA: "Grrrr… it’s laughing at us… there’s got to be some way to hurt it."
+						say "BW2T_SCRIPT_03C_01MONSTMINE_MONSTER_DROWNING_70"
+						wait until read
+
+						send good spirit home
+						send evil spirit home
+					end dialogue
+				end if
+				set MessageTimer time to 10 seconds
+			end if
+		end if
+	end while
+
+end script MM_CheckToSeeIfMonsterIsDrowning
+
+
+//-----------------------------------------------------------------------------
+//	Reduce the monsters health when he gets doused with water
+//-----------------------------------------------------------------------------
+begin script MM_ReduceMonsterThreatWithWater(*WasMonsterDamaged)
+start
+
+	// Reduce the monsters health - cannot kill the monster by drowning
+	if MM_HealthOfMonster - MM_DAMAGE_INFLICTED_BY_WATER >= MM_MIN_DAMAGE_BY_WATER_THRESHOLD
+		MM_HealthOfMonster -= MM_DAMAGE_INFLICTED_BY_WATER
+		WasMonsterDamaged[0] = MM_TRUE
+	else
+		WasMonsterDamaged[0] = MM_FALSE
+	end if
+
+end script MM_ReduceMonsterThreatWithWater
+
+
+//-----------------------------------------------------------------------------
+//	Make the Shepherd complain about his diseased flock
+//-----------------------------------------------------------------------------
+begin script MM_HandleShepherdComplaints
+
+	DELAY						= 30
+	RandomMessage				= 0
+	ShepherdIsAlive				= MM_TRUE
+	ShepherdComplaintTimer		= create timer for DELAY seconds
+
+start
+
+	// Need to have the Shepherd complaining about the state of his herd
+	while MM_DiseasedFlockHealed == MM_FALSE and MM_DiseasedFlockKilled == MM_FALSE and MM_ShepherdIsAlive == MM_TRUE 
+		// Only complain if the camera position is near the shepherd
+		if camera position near {MM_Shepherd} radius 50 //every frame?
+			// Is it time to complain?
+			if get ShepherdComplaintTimer time remaining <= 0
+				RandomMessage = number from 1 to 10
+
+				if MM_ShepherdIsAlive == MM_TRUE
+					if RandomMessage == 1
+						// SHEPHERD: "Hey you!  Yeah you!  Oh, I’ve got a bone to pick with you, fella."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_10" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_10" playing
+						// SHEPHERD: "What exactly is your problem?  What did my cows ever do to you!"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_20" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_20" playing
+					elsif RandomMessage == 2
+						// SHEPHERD: "What did I ever do to you?  No, no.  I want to know.  Really."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_30" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_30" playing
+						// SHEPHERD: "I mean, there has to be some reason that you’re killing my entire herd."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_40" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_40" playing
+					elsif RandomMessage == 3
+						// SHEPHERD: "First you let my wife die.  Then you take all 19 of my children.  Now it’s my cattle."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_50" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_50" playing
+						// SHEPHERD: "What is it with you? What have you got against me?"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_60" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_60" playing
+					elsif RandomMessage == 4
+						// SHEPHERD: "Aw man… come on… what do you want me to do?"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_70" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_70" playing
+						// SHEPHERD: "Just tell me and I’ll do it, but please… stop making my cows sick."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_80" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_80" playing
+					elsif RandomMessage == 5
+						// SHEPHERD: "Destroying my life wasn’t enough, you have to go after my cows now too?"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_90" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_90" playing
+						// SHEPHERD: "Nice.  Really great work there god."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_100" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_100" playing
+					elsif RandomMessage == 6
+						// SHEPHERD: "Did I anger you somehow?  Is that it?  Is that why you’re picking on me?"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_110" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_110" playing
+						// SHEPHERD: "I mean, listen to them coughing cows.  I can’t sleep through that."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_120" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_120" playing
+					elsif RandomMessage == 7
+						// SHEPHERD: "What, taking EVERYTHING that was important to me wasn’t enough?"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_130" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_130" playing
+						// SHEPHERD: "Well go on, contaminate my cows then.  I don’t need to eat."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_140" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_140" playing
+					elsif RandomMessage == 8
+						// SHEPHERD: "Hey, I need to be punished.  I know, why don’t you make all my cows sick…"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_150" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_150" playing
+						// SHEPHERD: "oh!  Oh wait!  You’ve. ALREADY! DONE! THAT!"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_160" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_160" playing
+					elsif RandomMessage == 9
+						// SHEPHERD: "Yeah, I must have been reeeaaally bad to deserve this nightmare you’re piling on my head."
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_170" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_170" playing
+						// SHEPHERD: "Great work god.  My life’s a nightmare.  You sadistic mumble grumble…"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_180" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_180" playing
+					elsif RandomMessage == 10
+						// SHEPHERD: "AAAAAAAAAAAAAARGGGH!  I can’t take it anymore!"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_190" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_190" playing
+						// SHEPHERD: "Look!  Look at those cows!  They’re all dying.  AAAAAAAAAAAA!"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_200" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_INTRO_200" playing
+					end if
+				end if
+				
+				// Reset the timer if a complaint has been made
+				set ShepherdComplaintTimer time to DELAY seconds
+			end if
+		end if
+		wait 0.2 seconds
+	end while
+
+	// Give a reward if the player has healed the Shepherds herd
+	if MM_ShepherdIsAlive == MM_TRUE
+		// Get a reward or slagging off from the shepherd
+		if MM_DiseasedFlockKilled == MM_TRUE
+			move MM_Shepherd position to {MM_Shepherd}
+			run script MM_ShepherdIsAnnoyed(MM_TRUE)
+		else
+			// The flock must have been healed
+			move MM_DiseasedFlock position to {MM_DiseasedFlock}
+			run script MM_GiveRewardFromShepherd
+		end if
+	end if
+
+end script MM_HandleShepherdComplaints
+
+
+//-----------------------------------------------------------------------------
+//	The diseased flock was healed so give the player a reward from the Shepherd
+//-----------------------------------------------------------------------------
+begin script MM_GiveRewardFromShepherd
+
+	RewardScroll			= 0
+	SizeOfFlock				= 0
+	ScrollClickedOnByPlayer	= MM_FALSE
+	RelCamPos=0
+	RelCamFoc=0
+
+start
+
+	// Create a scroll for the player to click on
+	RewardScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {MM_Shepherd}
+	ALTITUDE of RewardScroll = 5
+	
+	// This is needed as the player might kill the shepherd before clicking on the scroll
+	// If he does then this loop will delete the scroll and get no comments from the shepherd
+	while MM_ShepherdIsAlive == MM_TRUE and ScrollClickedOnByPlayer == MM_FALSE
+		// Has the player clicked on the scroll?
+		if RewardScroll right clicked
+			ScrollClickedOnByPlayer = MM_TRUE
+		end if
+	end while
+
+	// Delete the scroll
+	delete RewardScroll
+
+	// Only get the comments from the shepherd if he is still alive :)
+	if MM_ShepherdIsAlive == MM_TRUE
+		// Need to check that there is still a flock left (needs to be greater than 1 as the Shepherd is a flock member)
+		SizeOfFlock = size of MM_DiseasedFlock
+
+		// Check to see if the flock have died since they were healed
+		if SizeOfFlock == 1
+			// Only the shepherd is left, so treat it as though the flock was killed by the player
+			run script MM_ShepherdIsAnnoyed(MM_FALSE)
+		else
+			// Give thanks from the Shepherd for healing his flock (dependant on how many flock members are left)
+			begin cinema
+				move MM_DiseasedFlock position to {MM_DiseasedFlock}
+				detach MM_Shepherd from MM_DiseasedFlock
+
+				play anim "A_P_TALK2_MALE" on MM_Shepherd 
+				RelCamPos=marker at get world position from MM_Shepherd to {0.898, 0.773, -1.380}
+				RelCamFoc=marker at get world position from MM_Shepherd to {0.638, 1.595, 0.377}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				RelCamPos=marker at get world position from MM_Shepherd to {1.329, 1.225, 0.092}
+				RelCamFoc=marker at get world position from MM_Shepherd to {-0.551, 1.459, -0.396}
+
+				// One animal was lost (maybe used to poison the monster)
+				if SizeOfFlock == MM_AMOUNT_OF_SHEEP_IN_FLOCK
+					// SHEPHERD: "I understand.  I understand!  Only the man who feels loss can feel joy."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_30" by MM_Shepherd
+					// AUDIO_TODO play sound constant 53 SOUND_BANK_TYPE_BW2_PJTEST
+					wait until read
+					wait until MM_Shepherd played
+					set camera lens 31.000
+					set camera position to {RelCamPos}
+					set camera focus to {RelCamFoc}
+					// SHEPHERD: "Of course!  Forgive me for taking so long to learn your lesson."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_40" by MM_Shepherd
+					wait until read
+
+					eject good spirit
+					// GA: "Hmmm… He’s offering you something."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_80"
+					wait until read
+					send good spirit home
+					// TODO: Give a suitable reward here
+
+				// All the herd are left (including the Shepherd)
+				elsif SizeOfFlock == MM_AMOUNT_OF_SHEEP_IN_FLOCK + 1
+					// SHEPHERD: "Ohhhh, Lord.  I am supremely embarrassed by… uh… what I said earlier."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_10" by MM_Shepherd
+					// AUDIO_TODO play sound constant 54 SOUND_BANK_TYPE_BW2_PJTEST
+					wait until read
+					wait until MM_Shepherd played
+					set camera lens 31.000
+					set camera position to {RelCamPos}
+					set camera focus to {RelCamFoc}
+					// SHEPHERD: "Please forgive my behaviour and accept this gift."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_20" by MM_Shepherd
+					wait until read
+					// TODO: Give highest level of reward here
+
+				// Half the herd was lost
+				elsif SizeOfFlock <= (MM_AMOUNT_OF_SHEEP_IN_FLOCK / 2) + 1
+					// SHEPHERD: "Please… please god…  can’t you please screw me over some more?"
+					say "BW2T_SCRIPT_03C_02DISHERD_END_90" by MM_Shepherd
+					// AUDIO_TODO play sound constant 55 SOUND_BANK_TYPE_BW2_PJTEST
+					wait until read
+					wait until MM_Shepherd played
+					set camera lens 31.000
+					set camera position to {RelCamPos}
+					set camera focus to {RelCamFoc}
+					// SHEPHERD: "Bah.  Why am I even wasting my breath?  You clearly don’t give a damn."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_100" by MM_Shepherd
+					wait until read
+
+					eject evil spirit
+					eject good spirit
+					// EA: "Did you hear that?  Did… I can’t believe… Oh… killhimkillhimkillhim."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_110"
+					wait until read
+
+					// GA: "That was a little ungrateful after healing his cattle, but he has had a hard life."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_120"
+					wait until read
+					send evil spirit home
+					send good spirit home
+					// TODO: Give smallest level of reward here
+
+				// Half the herd was saved
+				else
+					// SHEPHERD: "Well, that was a pretty harsh lesson.  I’m sure you had your reasons and all"
+					say "BW2T_SCRIPT_03C_02DISHERD_END_60" by MM_Shepherd
+					// AUDIO_TODO play sound constant 56 SOUND_BANK_TYPE_BW2_PJTEST
+					wait until read
+					// SHEPHERD: "but wasn’t there some… oh I don’t know… less heartless way to teach me?"
+					say "BW2T_SCRIPT_03C_02DISHERD_END_70" by MM_Shepherd
+
+					eject good spirit
+					// GA: "Hmmm… He’s offering you something."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_80"
+					wait until read
+					send good spirit home
+					// TODO: Give a suitable reward here
+
+				end if
+
+				// Clean up the diseased herd script
+				if SizeOfFlock > 1
+					// SHEPHERD: "I'll be taking what remains of my herd to town now to sell."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_160" by MM_Shepherd
+					wait until read
+				end if
+			end cinema
+
+			// Reattach the shepherd to the flock as he's done his anims
+			attach MM_Shepherd to MM_DiseasedFlock as leader
+
+			// Clean up the diseased flock script
+			run script MM_ShepherdGoesToSellFlock
+		end if
+	end if
+
+end script MM_GiveRewardFromShepherd
+
+
+//-----------------------------------------------------------------------------
+//	Move the shepherd to the storage pit to sell his herd
+//-----------------------------------------------------------------------------
+begin script MM_ShepherdGoesToSellFlock
+
+	StoragePit					= get STORE at {1776.210,89.375,674.729} radius 20
+	StoragePitVicinity			= marker at {1781.277,89.375,654.992}
+	ShepherdByStorePos			= marker at {1777.677,89.375,661.740}
+	SomeFlockMembersKilled		= MM_FALSE
+	FlockReachedDestination		= MM_FALSE
+	FlockKilled					= MM_FALSE
+	SizeOfFlockAtStart			= 0
+	SizeOfFlockOnMove			= 0
+	SizeOfFlockBeforeSelling	= 0
+	AmountSold					= 0
+	Counter						= 0
+
+start
+
+	if MM_DiseasedFlock exists and MM_ShepherdIsAlive == MM_TRUE
+		// Get the size of the flock initially but don't include the shepherd
+		SizeOfFlockAtStart = size of MM_DiseasedFlock
+		SizeOfFlockAtStart -= 1
+
+		// Make the size of the outer ring smaller so the flock is more compact
+		set MM_DiseasedFlock properties inner 5 outer 5
+
+		// Move the shepherd to the storage pit to sell the flock
+		move MM_DiseasedFlock position to {StoragePitVicinity}
+
+		// Check to see if the flock is killed on route to the storage pit
+		while MM_ShepherdIsAlive == MM_TRUE and FlockReachedDestination == MM_FALSE and FlockKilled == MM_FALSE
+			SizeOfFlockOnMove = size of MM_DiseasedFlock
+			SizeOfFlockOnMove -= 1
+
+			if SizeOfFlockOnMove <= 0
+				FlockKilled = MM_TRUE
+			else
+				if {MM_DiseasedFlock} near {StoragePitVicinity} radius 10
+					FlockReachedDestination = MM_TRUE
+				end if
+			end if
+		end while
+
+		// Detatch the shepherd from the flock and then move the flock to the sell pos
+		if MM_ShepherdIsAlive == MM_TRUE and FlockReachedDestination == MM_TRUE
+			detach MM_Shepherd from MM_DiseasedFlock
+
+			// Move the shepherd near to the storage pit entrance
+			if MM_ShepherdIsAlive == MM_TRUE
+				move MM_Shepherd position to {ShepherdByStorePos} radius 1
+
+				// Make sure he gets there
+				wait until {MM_Shepherd} near {ShepherdByStorePos} radius 2 or MM_ShepherdIsAlive == MM_FALSE or not MM_DiseasedFlock exists
+				
+				// Check to see if any animals were killed on the way to the storage pit
+				SizeOfFlockBeforeSelling = size of MM_DiseasedFlock
+				if SizeOfFlockAtStart == SizeOfFlockBeforeSelling
+					SomeFlockMembersKilled = MM_FALSE
+				else
+					SomeFlockMembersKilled = MM_TRUE
+				end if
+
+				// Only move the sheep if they exist
+				if SizeOfFlockBeforeSelling > 0
+					// Move all of the sheep into the storage pit individually
+					while Counter < MM_AMOUNT_OF_SHEEP_IN_FLOCK
+						// Move the sheep into the store and sell them
+						run background script MM_SellSheep(Counter, StoragePit)
+						wait 2 seconds
+						Counter++
+					end while
+
+					// Wait until there are no more sheep alive then clean up the script and let the shepherd
+					// continue with his life :)
+					wait until MM_AmountOfFlockSold + MM_AmountOfFlockKilled == SizeOfFlockBeforeSelling
+
+					// Check to see if there were any animals killed while being sold
+					if SomeFlockMembersKilled == MM_FALSE
+						if MM_AmountOfFlockKilled > 0
+							SomeFlockMembersKilled = MM_TRUE
+						else
+							SomeFlockMembersKilled = MM_FALSE
+						end if
+					end if
+				end if
+			end if
+		end if
+	end if
+
+	// Get a response from the shepherd depending on whether there were any animals killed or not
+	if MM_ShepherdIsAlive == MM_TRUE
+		// Make sure we're close enough to hear the response
+		if camera position near {MM_Shepherd} radius 30 and MM_Shepherd viewed
+			// Make sure the shepherd is not moving and make him look at the camera
+			move MM_Shepherd position to {MM_Shepherd}
+			set MM_Shepherd focus to camera position
+
+			// Get the response
+			begin dialogue
+				if SomeFlockMembersKilled == MM_TRUE
+					// SHEPHERD: "Hey, why didn't you look after my cows."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_170" by MM_Shepherd
+					wait until read
+				elsif FlockKilled == MM_TRUE
+					// SHEPHERD: "Just as I was going to make some money you go and kill my flock. BASTARD."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_180" by MM_Shepherd
+					wait until read
+				else
+					// SHEPHERD: "That's my flock sold, now I'm off for a nice rest."
+					say "BW2T_SCRIPT_03C_02DISHERD_END_190" by MM_Shepherd
+					wait until read
+				end if
+			end dialogue
+		end if
+	end if
+
+	// Attach the shepherd to the players town
+	if MM_ShepherdIsAlive == MM_TRUE
+		MM_ShepherdIsAlive = MM_FALSE
+		attach MM_Shepherd to MM_PlayersTown
+   		release MM_Shepherd
+	end if
+
+	// Release the diseased flock
+	run script MM_ReleaseDiseasedFlock
+
+end script MM_ShepherdGoesToSellFlock
+
+
+//-----------------------------------------------------------------------------
+//	Move the members of the flock into the storage pit
+//-----------------------------------------------------------------------------
+begin script MM_SellSheep(Sheep, Store)
+
+	SHEEP_FOOD_VALUE	= 50
+	EnteredPitPos		= marker at {1781.141,89.375,665.734}
+	ReadyToExitPitPos	= marker at {1778.427,89.375,666.101}
+	StoragePitSoldPos	= marker at {1776.210,89.375,674.729}
+
+start
+
+	// Move the sheep through the different points to get to the sell point
+	if MM_Sheep[Sheep] exists and HEALTH of MM_Sheep[Sheep] > 0
+		detach MM_Sheep[Sheep] from MM_DiseasedFlock
+		move MM_Sheep[Sheep] position to {EnteredPitPos}
+		wait until {MM_Sheep[Sheep]} near {EnteredPitPos} radius 1 or not MM_Sheep[Sheep] exists or HEALTH of MM_Sheep[Sheep] <= 0
+
+		// Got to the destination
+		if MM_Sheep[Sheep] exists and HEALTH of MM_Sheep[Sheep] > 0
+			set MM_Sheep[Sheep] position to {ReadyToExitPitPos}
+
+			// Move the sheep to the sell pos
+			move MM_Sheep[Sheep] position to {StoragePitSoldPos}
+			wait until {MM_Sheep[Sheep]} near {StoragePitSoldPos} radius 1 or not MM_Sheep[Sheep] exists or HEALTH of MM_Sheep[Sheep] <= 0
+		end if
+	end if
+
+	// Check to see that the sheep made it to the sell pos and then sell it :)
+	if MM_Sheep[Sheep] exists and HEALTH of MM_Sheep[Sheep] > 0
+		delete MM_Sheep[Sheep] with fade
+		add resource RESOURCE_TYPE_FOOD SHEEP_FOOD_VALUE to Store
+		MM_AmountOfFlockSold++
+	else
+		MM_AmountOfFlockKilled++
+	end if 
+
+end script MM_SellSheep
+
+
+//-----------------------------------------------------------------------------
+//	Get a resolution from the shpeherd where he is upset because the herd has been killed by you
+//-----------------------------------------------------------------------------
+begin script MM_ShepherdIsAnnoyed(CreateScroll_YesNo)
+
+	RewardScroll			= 0
+	ScrollClickedOnByPlayer	= 0
+	RelCamPos				= 0
+	RelCamFoc				= 0
+
+start
+
+	// Only create a scroll if one hasn't been created elsewhere
+	if CreateScroll_YesNo == MM_YES
+		// Create a scroll for the player to click on
+		RewardScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {MM_Shepherd} + {5.000,5.000,5.000}
+
+		// This is needed as the player might kill the shepherd before clicking on the scroll
+		// If he does then this loop will delete the scroll and get no comments from the shepherd
+		while MM_ShepherdIsAlive == MM_TRUE and ScrollClickedOnByPlayer == MM_FALSE
+			// Has the player clicked on the scroll?
+			if RewardScroll right clicked
+				ScrollClickedOnByPlayer = MM_TRUE
+			end if
+		end while
+
+		// Delete the scroll
+		delete RewardScroll
+	end if
+
+	// Make sure the shepherd is alive before getting dialogue from him
+	if MM_ShepherdIsAlive == MM_TRUE
+		begin cinema
+			RelCamPos=marker at get world position from MM_Shepherd to {0.898, 0.773, -1.380}
+			RelCamFoc=marker at get world position from MM_Shepherd to {0.638, 1.595, 0.377}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			play anim "A_P_SHAKE_FIST_WOMAN"  on MM_Shepherd loop 2
+			// SHEPHERD: "Ooooo… aren’t you just huge and powerful.  You.  Sadistic.  No good.  Scumbag."
+			say "BW2T_SCRIPT_03C_02DISHERD_END_130" by MM_Shepherd
+			// AUDIO_TODO play sound constant 52 SOUND_BANK_TYPE_BW2_PJTEST
+			wait until read
+			// SHEPHERD: "Jerk-faced…. PUNK!  You want suffering?  I’ll show you suffering!"
+			say "BW2T_SCRIPT_03C_02DISHERD_END_140" by MM_Shepherd
+
+			wait until read
+			eject evil spirit
+			// EA: "Nice.  You broke his fragile little mind, boss.  You.  Are the dude."
+			say "BW2T_SCRIPT_03C_02DISHERD_END_150"
+			wait until read
+			send evil spirit home
+
+			// Flag that the shepherd is annoyed with the player
+			MM_ShepherdIsAngryWithPlayer = MM_TRUE
+		end cinema
+
+		// Make the shepherd go and attack the players town
+		run script MM_ShepherdAttacksPlayer
+	end if
+
+end script MM_ShepherdIsAnnoyed
+
+
+//-----------------------------------------------------------------------------
+//	The shepherd attacks the players town for killing his flock
+//-----------------------------------------------------------------------------
+begin script MM_ShepherdAttacksPlayer
+
+	ShepherdTarget		= 0
+	Message				= 0
+
+start
+
+	// Get a target for the shepherd to attack
+	ShepherdTarget = get building STORAGE_PIT in MM_PlayersTown min built 1.0 excluding scripted
+
+	// Attack the target if there is one
+	if ShepherdTarget exists and MM_ShepherdIsAlive == MM_TRUE
+		SPEED of MM_Shepherd = 0.5
+		move MM_Shepherd position to {ShepherdTarget} radius 3
+		wait until {MM_Shepherd} near {ShepherdTarget} radius 5 or MM_ShepherdIsAlive == MM_FALSE
+
+		// Set the target on fire
+		if MM_ShepherdIsAlive == MM_TRUE
+			play anim "A_P_ARSONIST" on MM_Shepherd 
+			wait until MM_Shepherd played or 5 seconds
+
+			// Move the shepherd away from the target so he doesn't get burned
+			if MM_ShepherdIsAlive == MM_TRUE
+				ShepherdTarget = marker at {ShepherdTarget} + {15.000,0.000,0.000}
+				SPEED of MM_Shepherd = 0.5
+				move MM_Shepherd position to {ShepherdTarget} radius 3
+				wait until {MM_Shepherd} near {ShepherdTarget} radius 5 or MM_ShepherdIsAlive == MM_FALSE
+
+				// Set the target on fire
+				MM_ShepherdAttackedTown = MM_TRUE
+				enable ShepherdTarget on fire 0.3
+				run background script MM_TownAttackedByShepherd(ShepherdTarget)
+
+				// Make the shepherd take the piss :)
+				if MM_ShepherdIsAlive == MM_TRUE
+					play anim "A_P_DANCE_CELEBRATE02" on MM_Shepherd
+
+					Message = number from 1 to 3
+					if Message == 1
+						// SHEPHERD: "Hahahaha!  DIE!"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACKED_PLAYER_10" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACKED_PLAYER_10" playing
+					elsif Message == 2
+						// SHEPHERD: "Burn! Burn! Burn! Weeeee!"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACKED_PLAYER_20" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACKED_PLAYER_20" playing
+					else
+						// SHEPHERD: "How does it feel, huh?  HUH?  You like that?!"
+						play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACKED_PLAYER_30" at {MM_Shepherd}
+						wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACKED_PLAYER_30" playing
+					end if
+
+					wait until MM_Shepherd played or 10 seconds
+					wait until read
+				end if
+			end if
+		end if
+	end if
+
+	// Delete the shepherd because he's either done his job or he couldn't get a job to do
+	if MM_ShepherdIsAlive == MM_TRUE
+		MM_ShepherdIsAlive = MM_FALSE
+		attach MM_Shepherd to MM_PlayersTown
+   		release MM_Shepherd
+	end if
+
+end script MM_ShepherdAttacksPlayer
+
+
+//-----------------------------------------------------------------------------
+//	Get the advisors to warn the player that their town has been attacked by the shepherd
+//-----------------------------------------------------------------------------
+begin script MM_TownAttackedByShepherd(Target)
+
+	GivenWarning	= MM_FALSE
+	BurnTimer		= create timer for 10 seconds
+
+start
+
+	while GivenWarning == MM_FALSE
+		// If the town is on screen then alert the player straight away, otherwise wait for a few seconds
+		begin dialogue
+			eject evil spirit
+			make evil spirit point at {Target}
+			// EA: "Not that I'm against a little bit of mayhem, but the punk with the cows is torching your town."
+			say "BW2T_SCRIPT_03C_02DISHERD_ATTACKED_PLAYER_40"
+			wait until read
+			send evil spirit home
+		end dialogue
+
+		GivenWarning = MM_TRUE
+	end while
+
+end script MM_TownAttackedByShepherd
+
+
+//-----------------------------------------------------------------------------
+//	See if the player has healed the diseased flock
+//-----------------------------------------------------------------------------
+begin script MM_CheckForHealedDiseasedFlock
+
+	AmountOfHealedAnimals		= 0
+	SizeOfFlock					= 0
+	Counter						= 0
+
+start
+
+	// Check to see if the player has healed the diseased herd
+	while MM_DiseasedFlockHealed == MM_FALSE and MM_DiseasedFlockKilled == MM_FALSE
+		if MM_DiseasedFlock exists
+			Counter = 0
+			AmountOfHealedAnimals = 0
+
+			// Check each sheep to see if it is diseased
+			while Counter < MM_AMOUNT_OF_SHEEP_IN_FLOCK
+				if MM_Sheep[Counter] exists and HEALTH of MM_Sheep[Counter] > 0
+					if not MM_Sheep[Counter] decayed
+						AmountOfHealedAnimals++
+					end if
+				end if
+				Counter++
+			end while
+
+			// Make sure there are still animals left in the herd
+			SizeOfFlock = size of MM_DiseasedFlock
+
+			// Check to see if any of the animals are diseased (-1 because the Shepherd is part of the flock)
+			if AmountOfHealedAnimals == SizeOfFlock -1
+				MM_DiseasedFlockHealed = MM_TRUE
+			end if
+		end if
+	end while
+
+end script MM_CheckForHealedDiseasedFlock
+
+
+//-----------------------------------------------------------------------------
+//	See if the player has killed the diseased flock
+//-----------------------------------------------------------------------------
+begin script MM_CheckForKilledDiseasedFlock
+
+	SizeOfFlock		= 0
+
+start
+
+	// Check to see if the player has killed the diseased herd
+	while MM_DiseasedFlockHealed == MM_FALSE and MM_DiseasedFlockKilled == MM_FALSE
+		SizeOfFlock = size of MM_DiseasedFlock
+
+		// The shepherd is a member of the flock so check to see if he is alive if the size of the flock is 1
+		if SizeOfFlock == 0
+			MM_DiseasedFlockKilled = MM_TRUE
+		elsif SizeOfFlock == 1
+			if MM_ShepherdIsAlive == MM_TRUE
+				// The shepherd is alive so there must be no herd left
+				MM_DiseasedFlockKilled = MM_TRUE
+			end if
+		end if
+	end while
+
+end script MM_CheckForKilledDiseasedFlock
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the shepherd is alive
+//-----------------------------------------------------------------------------
+begin script MM_CheckHealthOfShepherd
+start
+
+	while MM_ShepherdIsAlive == MM_TRUE
+		if MM_Shepherd exists and HEALTH of MM_Shepherd > 0
+			// Shepherd is still alive
+			MM_ShepherdIsAlive = MM_TRUE
+		else
+			// Shepherd is dead! Release the diseased flock
+			MM_ShepherdIsAlive = MM_FALSE
+			run script MM_ReleaseDiseasedFlock
+		end if
+	end while
+
+end script MM_CheckHealthOfShepherd
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the player is interfering (Oooer!) with the shepherd
+//-----------------------------------------------------------------------------
+begin script MM_GetResponseForAttackingOrHealingShepherd
+
+	SECS_PER_RESPONSE	= 10
+	IveBeenHurtByGod	= MM_FALSE
+	IveBeenHealedByGod	= MM_FALSE
+	CurrentHealth		= HEALTH of MM_Shepherd
+	PreviousHealth		= CurrentHealth
+	AnnoyedTimer		= create timer for 0 seconds
+	HappyTimer			= create timer for 0 seconds
+	RandomMessage		= 0
+
+start
+
+/*
+Excessive torture 
+You... sick... (searching) dickhead!  You going to pull my wings off next?
+You're starting to make me really angry.
+Yeah, you just keep pushing me... see what happens.
+
+Weeee... this still makes me giggle.
+The Penultimate hurt: 1 hurt prior to shepherd absolutely going ballistic.
+Alright!  You’re about this close, mate.  I swear to god.
+
+Excessive torture + 1 = snapped mind
+(rage)AAAAAAARGH!  THAT DOES IT!!!!  YOU’RE DEAD!
+(charges off towards town half laughing madly and half screaming)
+HAHAHAHAAAAAAAA
+
+
+If player hurts or heals after shepherd's mind snaps
+DEAD!  HAHAHAHA!  DEAD!!!
+AAAGH!  Think that'll save you?
+You want a piece of me? Bring it on!  
+
+*/
+
+	// Keep looping while the shepherd exists and is alive
+	while MM_ShepherdIsAlive == MM_TRUE and MM_ShepherdAttackedTown == MM_FALSE
+		// Get the current health value
+		CurrentHealth = HEALTH of MM_Shepherd
+
+		// Check to see if the health value has changed
+		if not PreviousHealth == CurrentHealth
+			// Health value has changed - has it increased or decreased?
+			if PreviousHealth > CurrentHealth
+				// Only give a line from the Shepherd if the player is quite close by
+				if MM_ShepherdIsAlive == MM_TRUE
+					if camera position near {MM_Shepherd} radius 100
+						// Only get 1 complaint every 10 seconds
+						if get AnnoyedTimer time since set >= SECS_PER_RESPONSE
+							if MM_ShepherdAttackedTown == MM_FALSE
+								if MM_ShepherdIsAngryWithPlayer == MM_FALSE
+									// He's been hurt - give a line that relates to how you've treated him previously
+									if IveBeenHurtByGod == MM_TRUE and IveBeenHealedByGod == MM_TRUE
+										// Hurt and healed before
+										// SHEPHERD: "What are you?  Bipolar?"
+										play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_10" at {MM_Shepherd}
+										wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_10" playing
+									elsif IveBeenHurtByGod == MM_TRUE and IveBeenHealedByGod == MM_FALSE
+										// Hurt before but hasn't healed before (OR this should be hurt repeatedly without heals in between)
+										RandomMessage = number from 1 to 4
+
+										if RandomMessage == 1
+											// SHEPHERD: "ARGH!  What did I ever do?"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_20" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_20" playing
+										elsif RandomMessage == 2
+											// SHEPHERD: "No! NO!  What's wrong with you? Leave me alone!"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_30" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_30" playing
+										elsif RandomMessage == 3
+											// SHEPHERD: "Stop!  Stop!  Oh please stop! For the love of god! Stop!"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_40" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_40" playing
+										else
+											// SHEPHERD: "(sobs brokenheartedly) please... please stop."
+											play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_50" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_50" playing
+										end if
+									elsif IveBeenHurtByGod == MM_FALSE and IveBeenHealedByGod == MM_TRUE
+										// Hasn't hurt before but has healed before
+										// SHEPHERD: "Ow! OW!  I think that you did that the wrong way around."
+										play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_60" at {MM_Shepherd}
+										wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_60" playing
+									else
+										// Hasn't been hurt or healed before
+										// SHEPHERD: "ARGH!  What was that for?"
+										play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_70" at {MM_Shepherd}
+										wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_70" playing
+									end if
+								else
+									// The shepherd is angry with the player for killing his herd
+									// SHEPHERD: "I'm gonna make you pay for killing my herd."
+									play sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_80" at {MM_Shepherd}
+									wait until not sound "BW2T_SCRIPT_03C_02DISHERD_ATTACK_80" playing
+								end if	
+							end if
+
+							// Reset the timer to 0 seconds
+							set AnnoyedTimer time to 0 seconds
+						end if
+					end if
+				end if
+
+				// Flag that he's been hurt by the player
+				IveBeenHurtByGod = MM_TRUE
+			else
+				// Only give a line from the Shepherd if the player is quite close by
+				if MM_ShepherdIsAlive == MM_TRUE
+					if camera position near {MM_Shepherd} radius 100
+						// Only get one thanks every 10 seconds
+						if get HappyTimer time since set >= SECS_PER_RESPONSE
+							if MM_ShepherdAttackedTown == MM_FALSE
+								if MM_ShepherdIsAngryWithPlayer == MM_FALSE
+									// He's been healed - give a line that relates to how you've treated him previously
+									if IveBeenHealedByGod == MM_TRUE and IveBeenHurtByGod == MM_TRUE
+										// Healed and hurt before (repeated healing)
+										RandomMessage = number from 1 to 3
+
+										if RandomMessage == 1
+											// SHEPHERD: "Just keeping me alive so you can heap more misery on me, eh?"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_10" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_10" playing
+										elsif RandomMessage == 2
+											// SHEPHERD: "Why are you doing this?"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_20" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_20" playing
+										else
+											// SHEPHERD: "Please, can we stop now?  Please?"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_30" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_30" playing
+										end if
+									elsif IveBeenHealedByGod == MM_FALSE and IveBeenHurtByGod == MM_TRUE
+										// Hasn't been healed but hurt before
+										// SHEPHERD: "(starts to scream in agony) AAARRHH--oh wait a second... that feels pretty nice."
+										play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_40" at {MM_Shepherd}
+										wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_40" playing
+									elsif IveBeenHealedByGod == MM_TRUE and IveBeenHurtByGod == MM_FALSE
+										// Healed but hasn't been hurt before (OR repeated healings in a row)
+										RandomMessage = number from 1 to 4
+
+										if RandomMessage == 1
+											// SHEPHERD: "You ever get the feeling that something really bad is about to happen?"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_50" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_50" playing
+										elsif RandomMessage == 2
+											// SHEPHERD: "Ahhhh."
+											play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_60" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_60" playing
+										elsif RandomMessage == 3
+											// SHEPHERD: "You're trying to trick me, aren't you?  Nice, nice, nice... then WHAM!"
+											play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_70" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_70" playing
+										else
+											// SHEPHERD: "Hey, wow.  That feels fantastic."
+											play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_80" at {MM_Shepherd}
+											wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_80" playing
+										end if
+									else
+										// Hasn't been healed or hurt before
+										// SHEPHERD: "(surprised) Wow... thank you."
+										play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_90" at {MM_Shepherd}
+										wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_90" playing
+									end if
+								else
+									// The shepherd is angry with the player for killing his herd
+									// SHEPHERD: "Healing me ain't gonna bring my herd back. You're still gonna pay."
+									play sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_100" at {MM_Shepherd}
+									wait until not sound "BW2T_SCRIPT_03C_02DISHERD_HEAL_100" playing
+								end if
+							end if
+
+							// Reset the timer to 0 seconds
+							set HappyTimer time to 0 seconds
+						end if
+					end if
+				end if
+
+				// Flag that he's been healed by the player
+				IveBeenHealedByGod = MM_TRUE
+			end if
+
+			// Update the previous health value
+			PreviousHealth = CurrentHealth
+		end if
+	end while
+
+	// Shepherds been killed - get some responses from the advisors if the player is nearby
+	if MM_ShepherdIsAlive == MM_FALSE and MM_ShepherdAttackedTown == MM_FALSE
+		if camera position near {MM_Shepherd} radius 50 and MM_Shepherd viewed
+			// SHEPHERD: "aaaaaaaahhhhh!  Oh god, it hurts!  It Huuuuuuurts!!!"
+			play sound "BW2T_SCRIPT_03C_02DISHERD_KILLED_10" at {MM_Shepherd}
+			wait until not sound "BW2T_SCRIPT_03C_02DISHERD_KILLED_10" playing
+
+			begin dialogue
+				eject good spirit
+				eject evil spirit
+				// GA: "Hey now... Was that really necessary?  You didn't have to do that."
+				say "BW2T_SCRIPT_03C_02DISHERD_KILLED_20"
+				wait until read
+
+				// EA: "The little whiner got what he deserved.  Deal with it.  Good work, boss."
+				say "BW2T_SCRIPT_03C_02DISHERD_KILLED_30"
+				wait until read
+				send good spirit home
+				send evil spirit home
+			end dialogue
+		end if
+	end if
+
+end script MM_GetResponseForAttackingOrHealingShepherd
+
+
+//-----------------------------------------------------------------------------
+// Check to see if the monster has been fed an edible item
+//-----------------------------------------------------------------------------
+begin script MM_CheckForFeedingMonsterStuff
+
+	SEARCH_SIZE				= 20
+	ItemGivenToMonster		= 0
+	AmountToIncreaseHealth	= 0
+	AmountToDecreaseHealth	= 0
+	IncreaseMonstersHealth	= MM_FALSE
+	DecreaseMonstersHealth	= MM_FALSE
+
+	TossTarget				= 0
+	ScaleOfTossedObject		= 0
+
+	ItemType				= 0
+	Counter					= 0
+	ItemIsDiseasedCow		= MM_FALSE
+
+start
+
+	// Only check while the monster is alive
+	while MM_MonsterMineActive == MM_TRUE
+		// Get the object in the players hand
+		ItemGivenToMonster = get object held
+
+		// There's something in the hand
+		if ItemGivenToMonster exists
+			// Wait until the object has been dropped from the players hand
+			wait until ItemGivenToMonster is not HELD
+
+			// Has the object been dropped into or near the mine?
+			if {ItemGivenToMonster} near {MM_MinePos} radius SEARCH_SIZE
+				// Yes it has...so what is the object that's been dropped into the mine?
+				ItemType = variable get ItemGivenToMonster type
+
+				// Check it against the following items:
+				// Villager			->	Monster gets a health increase
+				// Animal			->	Monster gets a health increase
+				// Grain			->	Monster gets a health increase
+				// Wood				->	Monster gets a health hit
+				// Ore				->	Monster gets a health hit
+				// Rock				->	Monster tosses out of mine
+				// Tree				->	Monster tosses out of mine
+				// Dead Tree		->	Monster tosses out of mine
+
+				if ItemType == variable VILLAGER
+					// Check the thing given to the monster is not a member of the diseased herd
+					Counter = 0
+					ItemIsDiseasedCow = MM_FALSE
+					while Counter < MM_AMOUNT_OF_SHEEP_IN_FLOCK and ItemIsDiseasedCow == MM_FALSE
+						if ItemGivenToMonster == MM_Sheep[Counter]
+							ItemIsDiseasedCow = MM_TRUE
+						end if
+					end while
+
+					// If the item is not a diseased cow treat it as a normal object
+					if ItemIsDiseasedCow == MM_FALSE
+						say "Got a villager"
+						run background script MM_DealWithEdibleFedToMonster(ItemGivenToMonster, 50, MM_INCREASE_HEALTH)
+					end if
+				elsif ItemType == variable ANIMAL
+					say "Got an animal"
+					run background script MM_DealWithEdibleFedToMonster(ItemGivenToMonster, 30, MM_INCREASE_HEALTH)
+				elsif ItemType == variable FOOD
+					say "Got some food"
+					run background script MM_DealWithEdibleFedToMonster(ItemGivenToMonster, 30, MM_INCREASE_HEALTH)
+				elsif ItemType == variable WOOD
+					say "Got some wood"
+					run background script MM_DealWithEdibleFedToMonster(ItemGivenToMonster, 30, MM_DECREASE_HEALTH)
+				elsif ItemType == variable ORE
+					say "Got some ore"
+					run background script MM_DealWithEdibleFedToMonster(ItemGivenToMonster, 30, MM_DECREASE_HEALTH)
+				elsif ItemType == variable ROCK_OBJECT
+					say "Got a rock"
+					run background script MM_DealWithInedibleFedToMonster(ItemGivenToMonster)
+				elsif ItemType == variable TREE
+					say "Got a tree"
+					run background script MM_DealWithInedibleFedToMonster(ItemGivenToMonster)
+				elsif ItemType == variable DEAD_TREE
+					say "Got a dead tree"
+					run background script MM_DealWithInedibleFedToMonster(ItemGivenToMonster)
+				end if
+			end if
+		end if
+	end while
+
+end script MM_CheckForFeedingMonsterStuff
+
+
+//-----------------------------------------------------------------------------
+// Effects the monsters health
+//-----------------------------------------------------------------------------
+begin script MM_DealWithEdibleFedToMonster(Item, HealthChangeAmount, HealthChangeDirection)
+start
+
+	// Delete the item that's been fed to the monster
+	if Item exists
+		delete Item with fade
+	end if
+
+	// Do the increase or decrease to the monsters health
+	if HealthChangeDirection == MM_INCREASE_HEALTH
+		// Only increase the health of the monster if it doesn't take it over the max level
+		if MM_HealthOfMonster + HealthChangeAmount <= MM_MAXIMUM_MONSTER_HEALTH
+			MM_HealthOfMonster += HealthChangeAmount
+		end if
+	else
+		// Only decrease the health of the monster if it doesn't drop it below the threshold
+		if MM_HealthOfMonster - HealthChangeAmount >= MM_MIN_DAMAGE_BY_WATER_THRESHOLD
+			MM_HealthOfMonster -= HealthChangeAmount
+		end if
+	end if
+
+end script MM_DealWithEdibleFedToMonster
+
+
+//-----------------------------------------------------------------------------
+// Make the monster throw the item out of the mine
+//-----------------------------------------------------------------------------
+begin script MM_DealWithInedibleFedToMonster(Item)
+
+	SEARCH_SIZE				= 20
+	ScaleOfTossedObject		= 0
+	TossTarget				= 0
+
+start
+
+	if Item exists
+		disable Item pickup
+		// Get the scale of the object then make it really small to look like it's been put into the mine
+		// Then pause for a bit and then fire the tree out and reset it's scale.
+		ScaleOfTossedObject = SCALE of Item
+		SCALE of Item = 0.0001
+		wait 3 seconds
+		SCALE of Item = ScaleOfTossedObject
+
+		// Get a random position to toss the thing to
+		TossTarget = marker at get target from {MM_MinePos} to {MM_MinePos} + {10, 10} distance number from SEARCH_SIZE + 20 to 80 angle number from 0 to 360
+		// Give the shot some altitude
+		TossTarget = marker at {TossTarget} + {0.000,25.000,0.000}
+		// Toss that thing out of the mine
+		set Item velocity heading {TossTarget} speed number from 100 to 150
+		enable Item pickup
+		release Item
+	end if
+
+end script MM_DealWithInedibleFedToMonster
+
+
+//-----------------------------------------------------------------------------
+// Release script control over the diseased herd - because the shepherd has been killed
+//-----------------------------------------------------------------------------
+begin script MM_ReleaseDiseasedFlock
+start
+
+	// Release the herd into the game
+	if MM_DiseasedFlock exists
+		release MM_DiseasedFlock
+	end if
+
+end script MM_ReleaseDiseasedFlock
+
+
+//-----------------------------------------------------------------------------
+// Alert the player that using the creature will not help him
+//-----------------------------------------------------------------------------
+begin script MM_CheckForCreatureTryingToDefeatMonster
+
+	SaidLineOnce	= MM_FALSE
+	LeashedObject	= 0
+	RemindTimer		= create timer for 0 seconds
+
+start
+
+	// Make sure the intro has played before the player gets a warning about leashing the creature to the mine
+	wait until MM_IntroFinished == MM_TRUE
+
+	while MM_MonsterMineActive == MM_TRUE
+		// Has the timer run out?
+		if get RemindTimer time remaining <= 0
+			// Check to see if the creature has been leased to the mine
+			MyCreature = get player 0 creature
+			if MyCreature exists
+				LeashedObject = get object MyCreature leashed to
+				if LeashedObject == MM_Mine
+					begin dialogue
+						if SaidLineOnce == MM_FALSE
+							// EA: "Great idea, but I think he’s too big to get in there, boss.  You’ll have to try something else."
+							say "BW2T_SCRIPT_03C_01MONSTMINE_LEASH_CREATURE_10"
+							SaidLineOnce = MM_TRUE
+						else
+							// EA: "He’s too big to get in there, boss.  Try something else."
+							say "BW2T_SCRIPT_03C_01MONSTMINE_LEASH_CREATURE_20"
+						end if
+						wait until read
+					end dialogue
+				end if
+			end if
+
+			// Reset the timer
+			set RemindTimer time to 30 seconds
+		end if
+	end while
+
+end script MM_CheckForCreatureTryingToDefeatMonster
+
+
+//-----------------------------------------------------------------------------
+// Create a tiny person at the mine and check to see if he's healed, if he is the monster has been healed
+//-----------------------------------------------------------------------------
+begin script MM_CreateLittlePersonForHealingMonsterCheck
+
+	LittleMonsterPerson			= 0
+
+start
+
+	// Create the little sod
+	LittleMonsterPerson = create VILLAGER VILLAGER_INFO_AZTEC_TRADER_MALE at {MM_MinePos}
+	disable LittleMonsterPerson pickup
+	disable LittleMonsterPerson moveable
+	disable LittleMonsterPerson set on fire
+	enable LittleMonsterPerson indestructible
+	HEALTH of LittleMonsterPerson = 0.5
+	SCALE of LittleMonsterPerson = 0.001
+
+	// Handle the checks for if he's been healed or not
+	while MM_MonsterMineActive == MM_TRUE
+		// The little person has been healed so flag that the monster has been healed
+		if HEALTH of LittleMonsterPerson >= 1.0
+			MM_HealthOfMonster = MM_MAXIMUM_MONSTER_HEALTH			// Heal the monster
+			MM_MonsterDiseased = MM_FALSE							// Stop the monster being diseased
+			HEALTH of LittleMonsterPerson = 0.5						// Reset the health of the person to 50%
+		end if
+	end while
+
+end script MM_CreateLittlePersonForHealingMonsterCheck
+
+
+//-----------------------------------------------------------------------------
+// End of script
+//-----------------------------------------------------------------------------

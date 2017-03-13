@@ -1,0 +1,120 @@
+//-------------------------------------------------------------------------------------------
+// Cosntants
+//-------------------------------------------------------------------------------------------
+define TP_FALSE = 0
+define TP_TRUE = 1
+
+//-------------------------------------------------------------------------------------------
+// Globals
+//-------------------------------------------------------------------------------------------
+global TeleportPos[4]
+global MovePos[4]
+global GateLock[4]
+
+//-------------------------------------------------------------------------------------------
+// Constants
+//-------------------------------------------------------------------------------------------
+define TP_CHARGE_WAIT = 4
+
+//define script WatchGate(ThisGate, MoveGate, MoveOutOfPos)
+define script WatchGate(GateID, NewGateID)
+
+run script Teleportals
+
+//-------------------------------------------------------------------------------------------
+// Teleportals
+//-------------------------------------------------------------------------------------------
+begin script Teleportals
+
+start
+
+	//The actual teleports
+	TeleportPos[0] = marker at {1015.332, 77.530, 754.416}
+	TeleportPos[1] = marker at {1228.067, 54.246, 1561.398}
+	TeleportPos[2] = marker at {501.293, 108.976, 1477.193}
+	TeleportPos[3] = marker at {1335.583, 86.333, 2009.822}
+
+	//The positions the platoons move to after they have teleported (to stop them continuosley teleporting)
+	MovePos[0] = marker at {1009.694, 75.782, 728.880}
+	MovePos[1] = marker at {1246.034, 47.678, 1587.502}
+	MovePos[2] = marker at {512.771, 108.271, 1508.994}
+	MovePos[3] = marker at {1310.451, 99.968, 2024.524}
+/*
+	run background script WatchGate (marker at {TeleportPos[0]}, marker at {TeleportPos[1]}, marker at {MovePos[1]})
+	run background script WatchGate (marker at {TeleportPos[1]}, marker at {TeleportPos[2]}, marker at {MovePos[2]})
+	run background script WatchGate (marker at {TeleportPos[2]}, marker at {TeleportPos[3]}, marker at {MovePos[3]})
+	run background script WatchGate (marker at {TeleportPos[3]}, marker at {TeleportPos[0]}, marker at {MovePos[0]})
+*/
+
+	run background script WatchGate(0, 1)
+	run background script WatchGate(1, 2)
+	run background script WatchGate(2, 3)
+	run background script WatchGate(3, 0)
+
+end script Teleportals
+
+//-------------------------------------------------------------------------------------------
+// Watch Gate
+//-------------------------------------------------------------------------------------------
+//begin script WatchGate(ThisGate, MoveGate, MoveOutOfPos)
+begin script WatchGate(GateID, NewGateID)
+	TeleportFX = 0
+	TeleportFXColour = 0
+	TeleportTimer = create timer for 0 seconds
+	Platoon = 0
+	ThisGate = 0
+	MoveGate = 0
+	MoveOutOfPos = 0
+start
+
+	//Setup some local marker stuff
+	ThisGate = marker at {TeleportPos[GateID]}
+	MoveGate = marker at {TeleportPos[NewGateID]}
+	MoveOutOfPos = marker at {MovePos[NewGateID]}
+
+	begin loop
+		//Check for Gate 0
+		Platoon = get platoon of player 0 nearest {ThisGate} radius 10 excluding scripted
+		if Platoon exists and get distance from {Platoon} to {ThisGate} < 10 and GateLock[GateID] == 0
+			GateLock[NewGateID] = 1
+			clear Platoon action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {ThisGate} to front of Platoon action queue
+			
+			wait until {Platoon} near {ThisGate} radius 5
+
+			TeleportTimer = create timer for TP_CHARGE_WAIT seconds
+			TeleportFX = create visual effect "gp_s_rayfx.ves" strength 1 scale 0.5 at {ThisGate} + {0, 10, 0} time 8
+			TeleportFXColour = 50
+
+			begin loop			
+				set TeleportFX colour red 0 green 0 blue TeleportFXColour
+				if TeleportFXColour < 255
+					TeleportFXColour+=20
+				else
+					set TeleportFX colour red 255 green 255 blue 255
+				end if
+				wait 0.2 seconds
+			until get TeleportTimer time remaining == 0
+			end loop
+
+			TeleportFXColour = 0
+			
+			if {Platoon} near {ThisGate} radius 5
+				clear Platoon action queue				
+				set Platoon position to {MoveGate}
+				clear Platoon action queue
+
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MoveOutOfPos} to front of Platoon action queue
+				
+				wait 10 seconds
+				release Platoon
+				Platoon = 0
+				GateLock[NewGateID] = 0
+			end if
+			
+		end if
+
+		//wait 0 seconds
+	end loop
+
+end script WatchGate

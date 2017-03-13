@@ -1,0 +1,1026 @@
+
+			 //  //  //  //  //  //  //  //
+			   //////////////////////////
+			// //  Land8RescueInachus  // //
+			   //////////////////////////
+			 //  //  //  //  //  //  //  //
+
+////////////////////////////////////////////////////////
+// ToDo:
+//			Place the maze somewhere it should be
+//			Get the buildings etc. to be part of the map (once we know where they should be)
+//			Get focus walk bug fixed
+//			Make this actually look nice. Maybe ask an artist for suggestions...
+//			Delete the guards cleanly at the end of the script.
+//			Replace columns with bushes
+//			Make Big Guard more visible (moving bushes where he is?)
+//			Maybe add more Big Guards patroling towards wonder.
+//			Do we need this if there is only one 'start' location? Add reminder scrolls or a special effect that shows Inachus' location clearly to the player.
+//			Is it a problem that Inachus can't get back into the 'start' location?
+//			Is Inachus stoping half way when spotted a serious problem? Maybe both he and the guard should run at the same time?
+//			Add rewards.
+//
+////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////
+// Booleans
+define INA_FALSE						= 0
+define INA_TRUE							= 1
+////////////////////////////////////////////////////////
+// GameState
+define INA_WAITING_FOR_MOVE				= 0
+define INA_INACHUS_MOVING				= 1
+define INA_GAME_OVER					= 2
+////////////////////////////////////////////////////////
+// SaboState
+define INA_NO_SABO						= 0
+define INA_SABO_NO_STEAL				= 1
+define INA_SABO_STEAL					= 2
+////////////////////////////////////////////////////////
+define INA_HOUSE_NUM_X					= 3
+define INA_HOUSE_NUM_Y					= 15
+define INA_HOUSE_NUM_TOTAL				= 45 // please ensure that this = INA_HOUSE_NUM_X * INA_HOUSE_NUM_Y
+//define INA_COLUMN_NUM_TOTAL			= 135 // please ensure that this = INA_HOUSE_NUM_TOTAL * 4
+define INA_PEOPLE_NUM_X					= 4
+define INA_PEOPLE_NUM_Y					= 16
+define INA_PEOPLE_NUM_TOTAL				= 64 // please ensure that this = INA_PEOPLE_NUM_X * INA_PEOPLE_NUM_Y
+define INA_HOUSE_DISTANCE_X				= 7
+define INA_HOUSE_DISTANCE_Y				= 7
+define INA_RUN_SPEED					= 1
+define INA_BIG_GUARD_SPEED				= 0.5
+define INA_BIG_GUARD_SIZE				= 2 // temp fix to make him more visible
+define INA_NEW_POS_CLICK_RADIUS			= 5
+// variables concerned with turning guards
+define INA_TIME_BETWEEN_TURNS			= 3
+define INA_NUM_SIM_TURNS				= 15
+define INA_MAX_TURN_OFFSET				= 8 // should be (INA_PEOPLE_NUM_TOTAL / INA_NUM_SIM_TURNS) * 2
+define INA_ANIM_TIME					= 2
+////////////////////////////////////////////////////////
+define INA_TESTING						= INA_FALSE // make true to make it easier to test (big guard won't catch... no time between attempts)
+
+////////////////////////////////////////////////////////
+
+global InaGameState = INA_WAITING_FOR_MOVE
+global SabotageState = INA_NO_SABO
+global InaNormalWin = INA_TRUE // did the player win the game normaly (if GameState is GameOver and this is still false [and Inachus is not dead], the game was won by fluke)
+global InachusAlive = INA_TRUE
+global GuardPos[INA_PEOPLE_NUM_TOTAL]
+global LockedGuards[2] // these guards won't be turned by HandleSimTurns
+global MazeGuard[INA_PEOPLE_NUM_TOTAL]
+global MazeGuardFacing[INA_PEOPLE_NUM_TOTAL]
+global MazeHousePos[INA_HOUSE_NUM_TOTAL]
+//global MazeHouseColumn[INA_COLUMN_NUM_TOTAL]
+global Inachus = 0
+global InachusEffect = 0
+global InachusPos[2]
+global InachusStartHouse = 0
+global InachusSaboHouse = 0
+global InachusEndHouse = 0
+global InachusStealHouse = 0
+global InachusCapturePos = 0
+global InachusFirstEscape = INA_TRUE
+global TimeTillNextScroll = 1
+global BigGuard = 0
+global BigGuardPos[2]
+
+///////////////////////////////////////////////////////
+
+define script HandleReminderScroll(ScrollPos)
+define script HandleScroll
+define script WaitForNewScroll
+//define script CreateMazeHouse(MazeHouseNum)
+//define script ConfigStartFacing
+//define script SetStartFacing
+define script SetGuardStartFacing
+define script SetOneGuardStartFacing(GuardNum)
+define script HandleInachusMove(Direction, Amount) // Direction: 0 = X, 1 = Y // Amount should be pos or neg 1
+define script HandleInachusEscape
+//define script HandleInachusStart // don't need to handle start, done indirectly through SetInachusStartPos
+define script HandleInachusSabotage
+define script HandleInachusSteal
+define script HandleBigGuard
+define script HandleBigGuardCapture
+define script SetInachusStartPos
+define script CreateInachus
+define script SetBigGuardStartPos
+define script CreateBigGuard
+define script MakeSureNoOneDies
+define script HandleSimTurns
+define script TurnGuard(GuardNum)
+define script GuardCleanUp
+define script CatchInachus(Spotted1,Spotted2,GuardNum1,GuardNum2)
+define script IntroCutscene
+define script FailCutscene
+define script OutroCutscene
+
+///////////////////////////////////////////////////////
+
+begin script Land8RescueInachus
+	XYCorner = marker at {845.247, 115.860, 1157.277}
+	Offset = 0
+	XCount = 0
+	YCount = 0
+	Count = 0
+	InachusStartPos = 0
+
+// for creating start houses
+	MazeHouseNum = 0
+	Location = 0
+	Column = 0
+	HouseBitX = INA_HOUSE_DISTANCE_X / 5
+	HouseBitY = INA_HOUSE_DISTANCE_Y / 5
+	
+start
+	XCount = 0
+	YCount = 0
+	while Count < INA_HOUSE_NUM_TOTAL
+		MazeHousePos[(YCount*INA_HOUSE_NUM_X) + XCount] = marker at ({XYCorner} + {XCount * INA_HOUSE_DISTANCE_X,0,YCount * INA_HOUSE_DISTANCE_Y})
+		MazeHouseNum = (YCount*INA_HOUSE_NUM_X) + XCount
+
+		// Create a maze house
+		Location = marker at {MazeHousePos[MazeHouseNum]}
+		Column = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {-HouseBitX,0,-HouseBitY}
+		enable Column indestructible
+		disable Column pickup
+		Column = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {-HouseBitX,0,HouseBitY}
+		enable Column indestructible
+		disable Column pickup
+		Column = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {HouseBitX,0,-HouseBitY}
+		enable Column indestructible
+		disable Column pickup
+		Column = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {HouseBitX,0,HouseBitY}
+		enable Column indestructible
+		disable Column pickup
+		/*
+		MazeHouseColumn[MazeHouseNum * 4] = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {-HouseBitX,0,-HouseBitY}
+		enable MazeHouseColumn[MazeHouseNum * 4] indestructible
+		disable MazeHouseColumn[MazeHouseNum * 4] pickup
+		MazeHouseColumn[MazeHouseNum * 4 + 1] = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {-HouseBitX,0,HouseBitY}
+		enable MazeHouseColumn[MazeHouseNum * 4 + 1] indestructible
+		disable MazeHouseColumn[MazeHouseNum * 4 + 1] pickup
+		MazeHouseColumn[MazeHouseNum * 4 + 2] = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {HouseBitX,0,-HouseBitY}
+		enable MazeHouseColumn[MazeHouseNum * 4 + 2] indestructible
+		disable MazeHouseColumn[MazeHouseNum * 4 + 2] pickup
+		MazeHouseColumn[MazeHouseNum * 4 + 3] = create with angle 0 and scale 0.6 OBJECT AZTEC_STREETLIGHT at {Location} + {HouseBitX,0,HouseBitY}
+		enable MazeHouseColumn[MazeHouseNum * 4 + 3] indestructible
+		disable MazeHouseColumn[MazeHouseNum * 4 + 3] pickup
+		*/
+		// end create maze house
+
+		YCount++
+		if (YCount == INA_HOUSE_NUM_Y)
+			YCount = 0
+			XCount++
+		end if
+
+		Count++
+	end while
+
+	InachusStartHouse = create with angle 0 and scale 1.0 HOUSE ABODE_INFO_AZTEC_HUT at ({XYCorner} + {3 * INA_HOUSE_DISTANCE_X,0,5 * INA_HOUSE_DISTANCE_Y})
+	InachusSaboHouse = create with angle 0 and scale 1.0 HOUSE ABODE_INFO_AZTEC_HUT at ({XYCorner} + {1 * INA_HOUSE_DISTANCE_X,0,-1 * INA_HOUSE_DISTANCE_Y})
+	InachusStealHouse = create with angle 0 and scale 1.0 HOUSE ABODE_INFO_AZTEC_HUT at ({XYCorner} + {2 * INA_HOUSE_DISTANCE_X,0,-1 * INA_HOUSE_DISTANCE_Y})
+	InachusEndHouse = create with angle 0 and scale 1.0 HOUSE ABODE_INFO_AZTEC_HUT at ({XYCorner} + {1 * INA_HOUSE_DISTANCE_X,0,15 * INA_HOUSE_DISTANCE_Y})
+
+	XCount = 0
+	YCount = 0
+	Count = 0
+	while Count < INA_PEOPLE_NUM_TOTAL
+
+		GuardPos[YCount*INA_PEOPLE_NUM_X + XCount] = marker at ({XYCorner} + {XCount * INA_HOUSE_DISTANCE_X - INA_HOUSE_DISTANCE_X/2,0,YCount * INA_HOUSE_DISTANCE_Y - INA_HOUSE_DISTANCE_Y/2})
+		MazeGuard[YCount*INA_PEOPLE_NUM_X + XCount] = create VILLAGER VILLAGER_INFO_AZTEC_FORESTER_MALE at {GuardPos[YCount*INA_PEOPLE_NUM_X + XCount]}
+		SPEED of MazeGuard[YCount*INA_PEOPLE_NUM_X + XCount] = INA_RUN_SPEED
+		// for now, make the guards bigger and easier to see.
+		//SCALE of MazeGuard[YCount*INA_PEOPLE_NUM_X + XCount] = 2
+
+		YCount++
+		if (YCount == INA_PEOPLE_NUM_Y)
+			YCount = 0
+			XCount++
+		end if
+
+		Count++
+	end while
+
+	run script SetGuardStartFacing
+
+	LockedGuards[0] = (5*INA_PEOPLE_NUM_X) + 3
+	LockedGuards[1] = (6*INA_PEOPLE_NUM_X) + 3
+
+	// make sure that the guards Guarding the start location aren't doing
+	// a good job.
+	MazeGuardFacing[LockedGuards[0]] = 4
+	MazeGuardFacing[LockedGuards[1]] = 4
+
+	run script SetOneGuardStartFacing(LockedGuards[0])
+	run script SetOneGuardStartFacing(LockedGuards[1])
+
+	run script SetInachusStartPos
+	run script CreateInachus
+	run script SetBigGuardStartPos
+	run script CreateBigGuard
+
+	//run background script MakeSureNoOneDies
+	run background script HandleSimTurns
+
+	run background script HandleBigGuard
+	if INA_TESTING == INA_FALSE
+		run background script HandleBigGuardCapture
+	else
+		TimeTillNextScroll = 0
+	end if
+
+	run script HandleScroll
+
+	run background script HandleInachusMove(0,-1)
+	run background script HandleInachusMove(0,1)
+	run background script HandleInachusMove(1,-1)
+	run background script HandleInachusMove(1,1)
+	run background script HandleInachusSabotage
+	run background script HandleInachusSteal
+	run background script HandleInachusEscape
+
+	wait until InaGameState == INA_GAME_OVER
+	run script OutroCutscene
+	run script GuardCleanUp
+end script Land8RescueInachus
+
+///////////////////////////////////////////////////////
+
+begin script HandleBigGuard
+	GoodMove = INA_FALSE
+	MaxMove = 0
+	Direction = 0
+	Amount = 1
+start
+	while InaGameState != INA_GAME_OVER
+		GoodMove = INA_FALSE
+		while GoodMove == INA_FALSE
+			Direction = number from 0 to 1
+			Amount = number from 0 to 1
+			if Amount == 0
+				Amount = -1
+			end if
+
+			if Direction == 0
+				MaxMove = INA_HOUSE_NUM_X
+			else
+				MaxMove = INA_HOUSE_NUM_Y
+			end if
+
+			if BigGuardPos[Direction] + Amount >= 0 and BigGuardPos[Direction] + Amount < MaxMove // can't move where we can't move
+				GoodMove = INA_TRUE
+			end if
+		end while
+		BigGuardPos[Direction] += Amount
+		move BigGuard position to {MazeHousePos[(BigGuardPos[1]*INA_HOUSE_NUM_X) + BigGuardPos[0]]}
+		wait until {BigGuard} near {MazeHousePos[(BigGuardPos[1]*INA_HOUSE_NUM_X) + BigGuardPos[0]]} radius 0.5
+	end while
+end script HandleBigGuard
+
+///////////////////////////////////////////////////////
+
+begin script HandleBigGuardCapture
+start
+	while InaGameState != INA_GAME_OVER
+		wait until {BigGuard} near {Inachus} radius 0.5 or InaGameState == INA_GAME_OVER
+		if InaGameState != INA_GAME_OVER
+			InachusCapturePos = marker at {Inachus}
+			InaGameState = INA_INACHUS_MOVING
+			move BigGuard position to {Inachus}
+			wait until {BigGuard} near {Inachus} radius 0.5
+
+			// reset Inachus
+			delete Inachus
+			run script SetInachusStartPos
+			run script CreateInachus
+
+			run script FailCutscene
+
+			run script WaitForNewScroll
+
+			InaGameState = INA_WAITING_FOR_MOVE
+		end if
+	end while
+end script HandleBigGuardCapture
+
+///////////////////////////////////////////////////////
+
+begin script CatchInachus(Spotted1,Spotted2,GuardNum1,GuardNum2)
+start
+	wait 2 seconds
+
+	InachusCapturePos = marker at {Inachus}
+	// reset Inachus
+	delete Inachus
+	run script SetInachusStartPos
+	run script CreateInachus
+	// reset guards
+	if Spotted1 == INA_TRUE
+		delete MazeGuard[GuardNum1]
+		MazeGuard[GuardNum1] = create VILLAGER VILLAGER_INFO_AZTEC_FORESTER_MALE at {GuardPos[GuardNum1]}
+		SPEED of MazeGuard[GuardNum1] = INA_RUN_SPEED
+		// for now, make the guards bigger and easier to see.
+		//SCALE of MazeGuard[GuardNum1] = 2
+		run script SetOneGuardStartFacing(GuardNum1)
+	end if
+	if Spotted2 == INA_TRUE
+		delete MazeGuard[GuardNum2]
+		MazeGuard[GuardNum2] = create VILLAGER VILLAGER_INFO_AZTEC_FORESTER_MALE at {GuardPos[GuardNum2]}
+		SPEED of MazeGuard[GuardNum2] = INA_RUN_SPEED
+		// for now, make the guards bigger and easier to see.
+		//SCALE of MazeGuard[GuardNum2] = 2
+		run script SetOneGuardStartFacing(GuardNum2)
+	end if
+
+	// make sure that the guards Guarding the start location aren't doing
+	// a good job.
+	MazeGuardFacing[LockedGuards[0]] = 4
+	MazeGuardFacing[LockedGuards[1]] = 4
+	run script SetOneGuardStartFacing(LockedGuards[0])
+	run script SetOneGuardStartFacing(LockedGuards[1])
+
+	run script FailCutscene
+	run script WaitForNewScroll
+end script CatchInachus
+
+///////////////////////////////////////////////////////
+
+begin script HandleInachusMove(Direction, Amount)
+	WaitingPosition = 0 // The house we are waiting to be cliked on
+	GuardNum[2] // the number of the guard
+	Spotted[2] // whether or not the guards spoted Inachus
+	NotDirection = 0
+	MoveTarget = 0
+	MaxMove = 0
+	MaxNotMove = 0
+start
+	if Direction == 0
+		NotDirection = 1
+		MaxMove = INA_HOUSE_NUM_X
+		MaxNotMove = INA_HOUSE_NUM_Y
+	else
+		MaxMove = INA_HOUSE_NUM_Y
+		MaxNotMove = INA_HOUSE_NUM_X
+	end if
+	while InaGameState != INA_GAME_OVER
+		// Init
+		Spotted[0] = INA_FALSE
+		Spotted[1] = INA_FALSE
+
+		wait until InachusPos[Direction] + Amount >= 0 and InachusPos[Direction] + Amount < MaxMove and InachusPos[NotDirection] >= 0 and InachusPos[NotDirection] < MaxNotMove // can't move where we can't move
+		// add line
+		if Direction == 0
+			WaitingPosition = MazeHousePos[(InachusPos[1]*INA_HOUSE_NUM_X) + InachusPos[0] + Amount]
+		else
+			WaitingPosition = MazeHousePos[((InachusPos[1] + Amount)*INA_HOUSE_NUM_X) + InachusPos[0]]
+		end if
+		clear right clicked position
+		wait until InaGameState != INA_WAITING_FOR_MOVE or {WaitingPosition} right clicked radius INA_NEW_POS_CLICK_RADIUS
+		if InaGameState != INA_WAITING_FOR_MOVE
+			wait until InaGameState != INA_INACHUS_MOVING
+		else // then the house to move to must have been clicked
+			InaGameState = INA_INACHUS_MOVING
+
+			// figure out which guards might see inachus, and find out if they do
+			if Direction == 0
+				// who are the guards
+				if Amount == -1
+					GuardNum[0] = (InachusPos[1]*INA_PEOPLE_NUM_X) + InachusPos[0]
+					GuardNum[1] = ((InachusPos[1]+1)*INA_PEOPLE_NUM_X) + InachusPos[0]
+				else
+					GuardNum[0] = (InachusPos[1]*INA_PEOPLE_NUM_X) + InachusPos[0] + 1
+					GuardNum[1] = ((InachusPos[1]+1)*INA_PEOPLE_NUM_X) + InachusPos[0] + 1
+				end if
+				// and did they spot our intrepid friend
+				if MazeGuardFacing[GuardNum[0]] == 3
+					Spotted[0] = INA_TRUE
+				end if
+				if MazeGuardFacing[GuardNum[1]] == 1
+					Spotted[1] = INA_TRUE
+				end if
+			else
+				// who are the guards
+				if Amount == -1
+					GuardNum[0] = (InachusPos[1]*INA_PEOPLE_NUM_X) + InachusPos[0]
+					GuardNum[1] = (InachusPos[1]*INA_PEOPLE_NUM_X) + InachusPos[0] + 1
+				else
+					GuardNum[0] = ((InachusPos[1]+1)*INA_PEOPLE_NUM_X) + InachusPos[0]
+					GuardNum[1] = ((InachusPos[1]+1)*INA_PEOPLE_NUM_X) + InachusPos[0] + 1
+				end if
+				// and did they spot our masterful friend
+				if MazeGuardFacing[GuardNum[0]] == 2
+					Spotted[0] = INA_TRUE
+				end if
+				if MazeGuardFacing[GuardNum[1]] == 4
+					Spotted[1] = INA_TRUE
+				end if
+			end if
+
+			// make our move
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				MoveTarget = marker at ({Inachus} + ({WaitingPosition}-{Inachus})/2)
+			else
+				MoveTarget = marker at {WaitingPosition}
+				InachusPos[Direction] += Amount
+			end if
+			move Inachus position to {MoveTarget}
+			wait until {Inachus} near {MoveTarget} radius 0.5
+
+			// the guards react
+			if Spotted[0] == INA_TRUE
+				move MazeGuard[GuardNum[0]] position to {MoveTarget}
+			elsif Direction == 0
+				MazeGuardFacing[GuardNum[0]] = 3
+				set MazeGuard[GuardNum[0]] focus to ({MazeGuard[GuardNum[0]]} + {0,0,1})
+			else
+				MazeGuardFacing[GuardNum[0]] = 2
+				set MazeGuard[GuardNum[0]] focus to ({MazeGuard[GuardNum[0]]} + {1,0,0})
+			end if
+			if Spotted[1] == INA_TRUE
+				move MazeGuard[GuardNum[1]] position to {MoveTarget}
+			elsif Direction == 0
+				MazeGuardFacing[GuardNum[1]] = 1
+				set MazeGuard[GuardNum[1]] focus to ({MazeGuard[GuardNum[1]]} + {0,0,-1})
+			else
+				MazeGuardFacing[GuardNum[1]] = 4
+				set MazeGuard[GuardNum[1]] focus to ({MazeGuard[GuardNum[1]]} + {-1,0,0})
+			end if
+
+			// if we were caught wait a little while
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				run script CatchInachus(Spotted[0],Spotted[1],GuardNum[0],GuardNum[1])
+			end if
+			if InaGameState != INA_GAME_OVER
+				InaGameState = INA_WAITING_FOR_MOVE
+			end if
+		end if
+	end while
+end script HandleInachusMove
+
+///////////////////////////////////////////////////////
+
+begin script HandleInachusEscape
+	Spotted[2] // whether or not the guards spoted Inachus
+	GuardNum[2]
+	MoveTarget = 0
+start
+	GuardNum[0] = (15*INA_PEOPLE_NUM_X) + 1
+	GuardNum[1] = (15*INA_PEOPLE_NUM_X) + 2
+
+	while InaGameState != INA_GAME_OVER
+		// Init
+		Spotted[0] = INA_FALSE
+		Spotted[1] = INA_FALSE
+
+		wait until InachusPos[0] == 1 and InachusPos[1] == 14
+		clear right clicked object
+		wait until InaGameState != INA_WAITING_FOR_MOVE or InachusEndHouse right clicked
+		if InaGameState != INA_WAITING_FOR_MOVE
+			wait until InaGameState != INA_INACHUS_MOVING
+		else // then the house to move to must have been clicked
+			InaGameState = INA_INACHUS_MOVING
+
+			// did the guards spot our collected friend
+			if MazeGuardFacing[GuardNum[0]] == 2
+				Spotted[0] = INA_TRUE
+			end if
+			if MazeGuardFacing[GuardNum[1]] == 4
+				Spotted[1] = INA_TRUE
+			end if
+
+			// make our move
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				MoveTarget = marker at ({Inachus} + ({InachusEndHouse}-{Inachus})/2)
+			else
+				MoveTarget = marker at {InachusEndHouse}
+			end if
+			move Inachus position to {MoveTarget}
+			wait until {Inachus} near {MoveTarget} radius 0.5
+
+			// the guards react
+			if Spotted[0] == INA_TRUE
+				move MazeGuard[GuardNum[0]] position to {MoveTarget}
+			else
+				MazeGuardFacing[GuardNum[0]] = 2
+				set MazeGuard[GuardNum[0]] focus to ({MazeGuard[GuardNum[0]]} + {1,0,0})
+			end if
+			if Spotted[1] == INA_TRUE
+				move MazeGuard[GuardNum[1]] position to {MoveTarget}
+			else
+				MazeGuardFacing[GuardNum[1]] = 4
+				set MazeGuard[GuardNum[1]] focus to ({MazeGuard[GuardNum[1]]} + {-1,0,0})
+			end if
+
+			// if we were caught reset the game
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				run script CatchInachus(Spotted[0],Spotted[1],GuardNum[0],GuardNum[1])
+				if InaGameState != INA_GAME_OVER
+					InaGameState = INA_WAITING_FOR_MOVE
+				end if
+			else
+				InaGameState = INA_GAME_OVER
+			end if
+		end if
+	end while
+end script HandleInachusEscape
+
+///////////////////////////////////////////////////////
+
+begin script HandleInachusSabotage
+	Spotted[2] // whether or not the guards spoted Inachus
+	GuardNum[2]
+	MoveTarget = 0
+start
+	GuardNum[0] = 1
+	GuardNum[1] = 2
+
+	while InaGameState != INA_GAME_OVER
+		// Init
+		Spotted[0] = INA_FALSE
+		Spotted[1] = INA_FALSE
+
+		wait until InachusPos[0] == 1 and InachusPos[1] == 0
+		clear right clicked object
+		wait until InaGameState != INA_WAITING_FOR_MOVE or InachusSaboHouse right clicked
+		if InaGameState != INA_WAITING_FOR_MOVE
+			wait until InaGameState != INA_INACHUS_MOVING
+		else // then the house to move to must have been clicked
+			InaGameState = INA_INACHUS_MOVING
+
+			// did the guards spot our collected friend
+			if MazeGuardFacing[GuardNum[0]] == 2
+				Spotted[0] = INA_TRUE
+			end if
+			if MazeGuardFacing[GuardNum[1]] == 4
+				Spotted[1] = INA_TRUE
+			end if
+
+			// make our move
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				MoveTarget = marker at ({Inachus} + ({InachusSaboHouse}-{Inachus})/2)
+			else
+				MoveTarget = marker at {InachusSaboHouse}
+				InachusPos[1] -= 1
+			end if
+			move Inachus position to {MoveTarget}
+			wait until {Inachus} near {MoveTarget} radius 0.5
+
+			// the guards react
+			if Spotted[0] == INA_TRUE
+				move MazeGuard[GuardNum[0]] position to {MoveTarget}
+			else
+				MazeGuardFacing[GuardNum[0]] = 2
+				set MazeGuard[GuardNum[0]] focus to ({MazeGuard[GuardNum[0]]} + {1,0,0})
+			end if
+			if Spotted[1] == INA_TRUE
+				move MazeGuard[GuardNum[1]] position to {MoveTarget}
+			else
+				MazeGuardFacing[GuardNum[1]] = 4
+				set MazeGuard[GuardNum[1]] focus to ({MazeGuard[GuardNum[1]]} + {-1,0,0})
+			end if
+
+			// if we were caught reset the game
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				run script CatchInachus(Spotted[0],Spotted[1],GuardNum[0],GuardNum[1])
+				if InaGameState != INA_GAME_OVER
+					InaGameState = INA_WAITING_FOR_MOVE
+				end if
+			else
+				SabotageState = INA_SABO_NO_STEAL
+				InaGameState = INA_GAME_OVER
+			end if
+		end if
+	end while
+end script HandleInachusSabotage
+
+///////////////////////////////////////////////////////
+
+begin script HandleInachusSteal
+	Spotted[2] // whether or not the guards spoted Inachus
+	GuardNum[2]
+	MoveTarget = 0
+start
+	GuardNum[0] = 2
+	GuardNum[1] = 3
+
+	while InaGameState != INA_GAME_OVER
+		// Init
+		Spotted[0] = INA_FALSE
+		Spotted[1] = INA_FALSE
+
+		wait until InachusPos[0] == 2 and InachusPos[1] == 0
+		clear right clicked object
+		wait until InaGameState != INA_WAITING_FOR_MOVE or InachusStealHouse right clicked
+		if InaGameState != INA_WAITING_FOR_MOVE
+			wait until InaGameState != INA_INACHUS_MOVING
+		else // then the house to move to must have been clicked
+			InaGameState = INA_INACHUS_MOVING
+
+			// did the guards spot our collected friend
+			if MazeGuardFacing[GuardNum[0]] == 2
+				Spotted[0] = INA_TRUE
+			end if
+			if MazeGuardFacing[GuardNum[1]] == 4
+				Spotted[1] = INA_TRUE
+			end if
+
+			// make our move
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				MoveTarget = marker at ({Inachus} + ({InachusStealHouse}-{Inachus})/2)
+			else
+				MoveTarget = marker at {InachusStealHouse}
+				InachusPos[1] -= 1
+			end if
+			move Inachus position to {MoveTarget}
+			wait until {Inachus} near {MoveTarget} radius 0.5
+
+			// the guards react
+			if Spotted[0] == INA_TRUE
+				move MazeGuard[GuardNum[0]] position to {MoveTarget}
+			else
+				MazeGuardFacing[GuardNum[0]] = 2
+				set MazeGuard[GuardNum[0]] focus to ({MazeGuard[GuardNum[0]]} + {1,0,0})
+			end if
+			if Spotted[1] == INA_TRUE
+				move MazeGuard[GuardNum[1]] position to {MoveTarget}
+			else
+				MazeGuardFacing[GuardNum[1]] = 4
+				set MazeGuard[GuardNum[1]] focus to ({MazeGuard[GuardNum[1]]} + {-1,0,0})
+			end if
+
+			// if we were caught reset the game
+			if Spotted[0] == INA_TRUE or Spotted[1] == INA_TRUE
+				run script CatchInachus(Spotted[0],Spotted[1],GuardNum[0],GuardNum[1])
+				if InaGameState != INA_GAME_OVER
+					InaGameState = INA_WAITING_FOR_MOVE
+				end if
+			else
+				SabotageState = INA_SABO_STEAL
+				InaGameState = INA_GAME_OVER
+			end if
+		end if
+	end while
+end script HandleInachusSteal
+
+///////////////////////////////////////////////////////
+
+begin script MakeSureNoOneDies
+	WhichPerson = 0
+	PlaceToRunTo = marker at {1052.746, 87.881, 1474.580}
+start
+	while InaGameState != INA_GAME_OVER
+		wait until InaGameState != INA_INACHUS_MOVING
+		if MazeGuard[WhichPerson] not exists or HEALTH of MazeGuard[WhichPerson] <= 0
+			WhichPerson = 0
+			while WhichPerson < INA_PEOPLE_NUM_TOTAL
+				if MazeGuard[WhichPerson] exists
+					move MazeGuard[WhichPerson] position to {PlaceToRunTo}
+				end if
+				WhichPerson++
+			end while
+			InaNormalWin = INA_FALSE
+			InaGameState = INA_GAME_OVER
+		end if
+		WhichPerson++
+		if WhichPerson >= INA_PEOPLE_NUM_TOTAL and InaGameState != INA_GAME_OVER
+			WhichPerson = 0
+			wait until InaGameState != INA_INACHUS_MOVING
+			if InaGameState != INA_GAME_OVER and (Inachus not exists or HEALTH of Inachus <= 0)
+				InachusAlive = INA_FALSE
+				InaNormalWin = INA_FALSE
+				InaGameState = INA_GAME_OVER
+			end if
+			wait until InaGameState != INA_INACHUS_MOVING
+			if InaGameState != INA_GAME_OVER and (InachusStartHouse not exists or HEALTH of InachusStartHouse <= 0.9 or InachusEndHouse not exists or HEALTH of InachusEndHouse <= 0.1)
+				InaNormalWin = INA_FALSE
+				InaGameState = INA_GAME_OVER
+			end if
+		end if
+	end while
+end script MakeSureNoOneDies
+
+///////////////////////////////////////////////////////
+
+begin script SetGuardStartFacing
+	count = 0
+start
+	while count < INA_PEOPLE_NUM_TOTAL
+		MazeGuardFacing[count] = number from 1 to 4
+		if MazeGuardFacing[count] == 1
+			set MazeGuard[count] focus to ({MazeGuard[count]} + {0,0,-1})
+		elsif MazeGuardFacing[count] == 2
+			set MazeGuard[count] focus to ({MazeGuard[count]} + {1,0,0})
+		elsif MazeGuardFacing[count] == 3
+			set MazeGuard[count] focus to ({MazeGuard[count]} + {0,0,1})
+		else
+			set MazeGuard[count] focus to ({MazeGuard[count]} + {-1,0,0})
+		end if
+		count++
+	end while
+end script SetGuardStartFacing
+
+///////////////////////////////////////////////////////
+
+begin script SetOneGuardStartFacing(GuardNum)
+start
+	if MazeGuardFacing[GuardNum] == 1
+		set MazeGuard[GuardNum] focus to ({MazeGuard[GuardNum]} + {0,0,-1})
+	elsif MazeGuardFacing[GuardNum] == 2
+		set MazeGuard[GuardNum] focus to ({MazeGuard[GuardNum]} + {1,0,0})
+	elsif MazeGuardFacing[GuardNum] == 3
+		set MazeGuard[GuardNum] focus to ({MazeGuard[GuardNum]} + {0,0,1})
+	else
+		set MazeGuard[GuardNum] focus to ({MazeGuard[GuardNum]} + {-1,0,0})
+	end if
+end script SetOneGuardStartFacing
+
+///////////////////////////////////////////////////////
+
+begin script SetInachusStartPos
+start
+	InachusPos[0] = 3
+	InachusPos[1] = 5
+end script SetInachusStartPos
+
+///////////////////////////////////////////////////////
+
+begin script CreateInachus
+start
+	// for now, create Inachus just into the maze
+	// make the real Inachus, not Dimitrious
+	//Inachus = create VILLAGER INACHUS at {MazeHousePos[(InachusPos[1]*INA_HOUSE_NUM_X) + InachusPos[0]]}
+	Inachus = create VILLAGER INACHUS at {InachusStartHouse}
+	SPEED of Inachus = INA_RUN_SPEED
+	//Make this work
+	//InachusEffect = create special effect SPOT_VISUAL_MAGIC_BEAM on Inachus time -1
+end script CreateInachus
+
+///////////////////////////////////////////////////////
+
+begin script SetBigGuardStartPos
+start
+	BigGuardPos[0] = 1
+	BigGuardPos[1] = 5
+end script SetBigGuardStartPos
+
+///////////////////////////////////////////////////////
+
+begin script CreateBigGuard
+start
+	// for now, create Inachus just into the maze
+	// make the real Inachus, not Dimitrious
+	BigGuard = create VILLAGER VILLAGER_INFO_AZTEC_FORESTER_MALE at {MazeHousePos[(BigGuardPos[1]*INA_HOUSE_NUM_X) + BigGuardPos[0]]}
+	SPEED of BigGuard = INA_BIG_GUARD_SPEED
+	SCALE of BigGuard = INA_BIG_GUARD_SIZE
+end script CreateBigGuard
+
+///////////////////////////////////////////////////////
+
+begin script WaitForNewScroll
+	ClickTimer = create timer for 0 seconds
+start
+	set ClickTimer time to TimeTillNextScroll seconds
+	wait until get ClickTimer time remaining <= 0
+
+	set ClickTimer time to (64 - TimeTillNextScroll) seconds
+	run script HandleScroll
+
+	if get ClickTimer time remaining <= 0
+		TimeTillNextScroll = 1
+	elsif TimeTillNextScroll < 32
+		TimeTillNextScroll *= 2
+	end if
+end script WaitForNewScroll
+
+///////////////////////////////////////////////////////
+
+begin script HandleScroll
+	Scroll = 0
+	ReminderTimer = create timer for 0 seconds
+start
+	// Create the scroll to kick the script off
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {InachusStartHouse}
+
+	// Highlight the scroll with the advisors
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			if camera position near {Scroll} radius 200 and {Scroll} viewed
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					if InachusFirstEscape == INA_TRUE
+						say "GA: Leader something requires your attention here."
+					else
+						say "GA: Hey, Inachus got his bonds free again!"
+					end if
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 180 seconds
+			end if
+		end if
+		until Scroll right clicked or InaGameState == INA_GAME_OVER
+	end loop
+	delete Scroll
+
+	if InaGameState != INA_GAME_OVER
+		run script IntroCutscene
+	end if
+
+end script HandleScroll
+
+///////////////////////////////////////////////////////
+
+begin script HandleSimTurns
+	GuardNum = 0
+	GuardNumNum = 0
+	TurnTimer = create timer for 0 seconds
+start
+	while InaGameState != INA_GAME_OVER
+		wait until get TurnTimer time remaining <= 0
+		wait until InaGameState != INA_INACHUS_MOVING
+		if InaGameState == INA_WAITING_FOR_MOVE
+			GuardNum = (number from 1 to INA_MAX_TURN_OFFSET) - 1
+			GuardNumNum = 0
+			while GuardNumNum < INA_NUM_SIM_TURNS and GuardNum < INA_PEOPLE_NUM_TOTAL
+				if GuardNum != LockedGuards[0] and GuardNum != LockedGuards[1]
+					run background script TurnGuard(GuardNum)
+					GuardNumNum++
+				end if
+				GuardNum += (number from 1 to INA_MAX_TURN_OFFSET) - 1
+			end while
+		end if
+		set TurnTimer time to INA_TIME_BETWEEN_TURNS seconds
+	end while
+end script HandleSimTurns
+
+///////////////////////////////////////////////////////
+
+begin script TurnGuard(GuardNum)
+	NewFacing = 1
+start
+	play anim "a_p_clicking_heels" on MazeGuard[GuardNum]
+	wait INA_ANIM_TIME seconds
+	if InaGameState == INA_WAITING_FOR_MOVE
+		NewFacing = number from 1 to 4
+		// make sure the guard turns
+		if NewFacing == MazeGuardFacing[GuardNum]
+			NewFacing++
+			if NewFacing > 4
+				NewFacing = 1
+			end if
+		end if
+		MazeGuardFacing[GuardNum] = NewFacing
+
+		run script SetOneGuardStartFacing(GuardNum)
+	end if
+end script TurnGuard
+
+///////////////////////////////////////////////////////
+
+begin script GuardCleanUp
+	WhichGuard = 0
+start
+	while WhichGuard < INA_PEOPLE_NUM_TOTAL
+		if MazeGuard[WhichGuard] exists
+			wait until MazeGuard[WhichGuard] not exists or MazeGuard[WhichGuard] not viewed
+			if MazeGuard[WhichGuard] exists
+				delete MazeGuard[WhichGuard]
+			end if
+		end if
+		WhichGuard++
+	end while
+end script GuardCleanUp
+
+///////////////////////////////////////////////////////
+
+begin script HandleReminderScroll(ScrollPos)
+	ReminderScroll = 0
+	ReminderTimer = 0
+start
+	ReminderScroll = create highlight CHALLENGE_NONE HIGHLIGHT_PAST at {ScrollPos}
+	// Highlight the scroll with the advisors
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			if camera position near {ReminderScroll} radius 200 and {ReminderScroll} viewed
+				begin dialogue
+					eject good spirit
+					make good spirit point at {ReminderScroll}
+					say "GA: Leader something requires your attention here."
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 180 seconds
+			end if
+		end if
+		until ReminderScroll right clicked or InaGameState == INA_GAME_OVER
+	end loop
+	delete ReminderScroll
+end script HandleReminderScroll
+
+///////////////////////////////////////////////////////
+
+begin script IntroCutscene
+start
+	if InachusFirstEscape == INA_TRUE
+		begin cinema
+			say "Inachus has escaped"
+			wait until read
+			say "As this is the first time, this is the extended version"
+			wait until read
+		end cinema
+	else
+		begin cinema
+			say "Inachus has escaped"
+			wait until read
+			say "As this is a repeat atempt, this is realy short"
+			wait until read
+		end cinema
+	end if
+end script IntroCutscene
+
+///////////////////////////////////////////////////////
+
+begin script FailCutscene
+start
+// test to see if the player is near
+	if camera position not near {InachusCapturePos} radius 50 or InachusCapturePos not viewed
+		// create and wait for reminder scroll
+		run script HandleReminderScroll(InachusCapturePos)
+	end if
+
+	if InaGameState == INA_GAME_OVER
+		run script OutroCutscene
+	else
+		if InachusFirstEscape == INA_TRUE
+			InachusFirstEscape = INA_FALSE
+			begin cinema
+				say "Inachus got caught"
+				wait until read
+				say "As this is the first time, this is the extended version"
+				wait until read
+			end cinema
+		else
+			begin cinema
+				say "Inachus got caught"
+				wait until read
+				say "As this is a repeat atempt, this is realy short"
+				wait until read
+			end cinema
+		end if
+	end if
+end script FailCutscene
+
+///////////////////////////////////////////////////////
+
+begin script OutroCutscene
+start
+	if InachusAlive == INA_TRUE
+		if InaNormalWin == INA_TRUE
+			if SabotageState == INA_NO_SABO
+				begin cinema
+					say "Inachus got free"
+					wait until read
+					say "Since this is the big thing, make it a big thing"
+					wait until read
+				end cinema
+			elsif SabotageState == INA_SABO_NO_STEAL
+				begin cinema
+					say "Inachus has sabotaged the Wonder."
+					wait until read
+					say "And he escapes!"
+					wait until read
+				end cinema
+			else
+				begin cinema
+					say "Inachus has sabotaged the Wonder."
+					wait until read
+					say "And he stole the blueprint!"
+					wait until read
+					say "And he escapes!"
+					wait until read
+				end cinema
+			end if
+		else
+			// create reminder scroll if the player isn't nearby
+			begin cinema
+				say "Inachus got free"
+				wait until read
+				say "Since the guards all ran away, this might be different..."
+				wait until read
+			end cinema
+		end if
+	else
+		// create a reminder scroll if the player isn't nearby
+		begin cinema
+			say "Inachus got killed, accidentally"
+			wait until read
+			say "We probably don't need a cut scene for this..."
+			wait until read
+			say "But maybe PJ has some spare time ;)"
+			wait until read
+		end cinema
+	end if
+end script OutroCutscene

@@ -1,0 +1,8 @@
+run script RunLand1BeerBarrel
+
+begin script RunLand1BeerBarrel
+start
+	
+	run script Land1BeerBarrel
+
+end script RunLand1BeerBarrel

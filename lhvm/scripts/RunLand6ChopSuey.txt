@@ -1,0 +1,7 @@
+run script RunLand6ChopSuey
+
+begin script RunLand6ChopSuey
+start
+	run script Land6ChopSuey
+
+end script RunLand6ChopSuey

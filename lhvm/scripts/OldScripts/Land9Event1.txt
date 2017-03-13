@@ -1,0 +1,188 @@
+//Land9Event1.txt
+
+/*
+Sandstorms
+Sandstorms plague the deserts and threaten any who cross it and occasionally have been known to reach far enough out of
+the deserts to shroud settlements. Any villagers caught in the sandstorm will lose health the longer they are in it and
+villagers can even be flung through the air by the winds. Should a sandstorm roll over the player’s settlement they can
+protect their people by shielding their buildings. Any villagers near a building when a sandstorm approaches will run inside.
+
+Use a rock pickup to signify the start of a storm. Storm starts at the location where you place the rock down.
+The storm will occur for a random amount of time, let's say between 30 seconds and 2 minutes. It will move around the 
+landscape at a variable speed; changing direction slightly every now and again.
+Need to make sure that the sandstorm "stays" around the land masses of the world and not out to sea (distance from centre)
+The storm will pick-up anything of a certain size, including people that aren’t next to anything; i.e. so they couldn’t
+hold on to it (if possible…) It will cause damage to people as well as buildings? It might be good to have some smaller
+trees plucked out of the ground by the larger storms and thrown.
+There could also be a way of starting a storm off in a certain area.
+How the player can achieve this I’m not quite sure. Diverting a storm doesn’t seem feasible without a wind spell; so
+encouraging one to follow flames for example might be what we are looking for.
+No need to script everything; most of it will be in code – i.e. the effect it has on people and objects.
+I will script some temporary special effects involved to show some sort of range/radius of the storm.
+*/
+
+
+/*
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SS_FALSE			= 0
+define SS_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SS_Waypoints[4]				//... Waypoint array
+global SS_Initial_Scroll_Used		= SS_FALSE
+global SS_GotRock					= SS_FALSE
+global SS_Players_Town				= 0
+global SS_Rock						= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SS_Create_Rock
+define script SS_Advisors_Explain_Sandstorms
+define script SS_Storm_Moves
+define script SS_Throw_People_About
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=======================
+begin script Land9Event1 //Sandstorms
+
+start
+
+	SS_Players_Town		= get TOWN at {1744.493,26.924,776.366} radius 100
+
+	run script SS_Create_Rock
+
+	run script SS_Advisors_Explain_Sandstorms
+	
+	//wait until camera position near {SS_Rock} radius 100 and SS_Rock viewed
+
+	run background script SS_Storm_Moves
+	run background script SS_Throw_People_About
+
+	wait 1000 seconds
+
+end script Land9Event1 //Sandstorms
+//=======================
+
+
+
+//-----------------------------------------------------------------------------
+//	SS_Create_Rock
+//-----------------------------------------------------------------------------
+begin script SS_Create_Rock
+	
+	SS_Rock_Pos = 0
+
+start
+
+	SS_Rock_Pos = marker at {1195.910,29.944,1314.931}
+
+	SS_Rock	= create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER1_SAND at {SS_Rock_Pos}
+	//SCALE of SS_Rock = 1
+	enable SS_Rock indestructible
+
+end script SS_Create_Rock
+
+
+//-----------------------------------------------------------------------------
+//	SS_Advisors_Explain_Sandstorms
+//-----------------------------------------------------------------------------
+begin script SS_Advisors_Explain_Sandstorms
+
+start
+
+	begin dialogue
+		eject good spirit
+		say "There's a rock in the middle of the world. This is a dormant sandstorm."
+		wait until read
+		clear dialogue
+		say "You can pick it up and take it around the world as if it's a sandstorm."
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+	
+end script SS_Advisors_Explain_Sandstorms
+
+
+//-----------------------------------------------------------------------------
+//	SS_Storm_Moves
+//-----------------------------------------------------------------------------
+begin script SS_Storm_Moves
+
+start
+
+	set SS_Rock temperature 1000
+
+	begin loop
+		while SS_Rock is HELD
+			set SS_Rock temperature 0
+			wait until SS_Rock is not HELD
+			set SS_Rock temperature 1000
+		end while
+	end loop
+
+end script SS_Storm_Moves
+
+
+//-----------------------------------------------------------------------------
+//	SS_Throw_People_About
+//-----------------------------------------------------------------------------
+begin script SS_Throw_People_About
+
+	SEARCH_SIZE		= 20
+	SS_Person		= 0
+	Target			= 0
+
+start
+
+	begin loop
+
+		wait until SS_Rock is HELD
+
+		while SS_Rock is HELD
+			SS_Person = get VILLAGER at {SS_Rock} radius 50
+			if SS_Person exists
+				// Get a random position to toss the thing to
+				Target = marker at get target from {SS_Rock} to {SS_Rock} + {20, 20} distance number from SEARCH_SIZE + 20 to 80 angle number from 0 to 360
+				// Give the shot some altitude
+				Target = marker at {Target} + {0.000,20.000,0.000}
+				// Toss that thing :)
+				set SS_Person velocity heading {Target} speed number from 15 to 30
+			end if		
+			until SS_Rock is not HELD	
+		end while
+
+	end loop
+
+end script SS_Throw_People_About
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+/*
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land 7 Slave Grabbers script
+//-----------------------------------------------------------------------------
+run script RunLand7SlaveGrabbers
+
+begin script RunLand7SlaveGrabbers
+
+start
+
+	run script Land7SlaveGrabbers
+
+end script RunLand7SlaveGrabbers

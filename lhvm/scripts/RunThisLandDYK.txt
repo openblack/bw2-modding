@@ -1,0 +1,32 @@
+run script RunThisLandDYK
+
+//-----------------------------------------------------------------
+// Run Land Did you Knowns
+//-----------------------------------------------------------------
+begin script RunThisLandDYK
+	LandNumber			= 0
+start
+
+	LandNumber = get land number
+
+	if LandNumber == 1
+		run script Land1DidYouKnow
+	elsif LandNumber == 3
+		run script Land3DidYouKnow
+	elsif LandNumber == 4
+		run script Land4DidYouKnow
+	elsif LandNumber == 6
+		run script Land6DidYouKnow
+	elsif LandNumber == 7
+		run script Land7DidYouKnow
+	elsif LandNumber == 8
+		run script Land8DidYouKnow
+	elsif LandNumber == 9
+		run script Land9DidYouKnow
+	elsif LandNumber == 10
+		run script Land10DidYouKnow
+	elsif LandNumber == 11
+		run script Land11DidYouKnow
+	end if
+
+end script RunThisLandDYK

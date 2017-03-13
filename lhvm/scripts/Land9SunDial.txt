@@ -1,0 +1,351 @@
+
+//================================================================
+//Trigby
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+
+define SD_FALSE = 0
+define SD_TRUE = 1
+
+//Globals
+//-----------------------
+global SD_Pillar[4]
+global SD_PillarEffect[4]
+global PillarAlight[4]
+global Completed = 0
+
+//Script defines
+//---------------
+define script HighlightStatue(ID)
+define script DeHighlightStatue(ID)
+define script SD_Tooltips
+
+
+begin script Land9SunDial
+
+	StartPos = marker at {1466.273, 96.013, 533.493}
+	RotPos = marker at {1448.549, 97.229, 519.832}
+	ScrollPos = marker at {1464.454, 95.998, 532.859}
+
+	Inc = 0
+	ThingPos[4]
+	TargetTime[8]
+	NextAngle = 90
+	StartScroll = 0
+
+	CamPos = marker at {1486.867, 110.383, 511.213}
+	CamFoc = marker at {1428.713, 58.052, 573.502}
+	CurrentStatue = 0
+
+	SunTimer = 0
+	HintTimer = 0
+	HintGiven = 0
+
+	TimeChanged = 0
+
+	TempHighlight = 0 //In the absence of a sun god statue highlight the middle one
+
+	Counter = 0
+
+	StatuePos[4]
+	
+start
+
+	SunTimer = create timer for 0 seconds
+	HintTimer = create timer for 180 seconds
+	PillarAlight[0] = SD_FALSE
+	PillarAlight[1] = SD_FALSE
+	PillarAlight[2] = SD_FALSE
+	PillarAlight[3] = SD_FALSE
+
+	TargetTime[0] = 6.0
+	TargetTime[1] = 8.0
+	TargetTime[2] = 19.0
+	TargetTime[3] = 21.0
+	TargetTime[4] = 13.0
+	TargetTime[5] = 15.0
+	TargetTime[6] = 0.0
+	TargetTime[7] = 2.0
+
+	StatuePos[0] = marker at {1450.590, 96.352, 521.850}
+	StatuePos[1] = marker at {1454.454, 95.348, 547.009}
+	StatuePos[2] = marker at {1478.163, 95.665, 548.532}
+	StatuePos[3] = marker at {1477.936, 95.897, 516.961}
+
+	force while Inc < 4
+		SD_Pillar[Inc] = create OBJECT TOMBMARKERS at {StatuePos[Inc]}
+		disable SD_Pillar[Inc] moveable
+		disable SD_Pillar[Inc] pickup
+		disable SD_Pillar[Inc] hurt by fire
+		Inc++
+	end while
+
+	StartScroll = create highlight SILVER name "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_MISC_10" remind "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_MISC_20" at {ScrollPos}
+    ALTITUDE of StartScroll = 6
+
+	wait until StartScroll right clicked
+
+	delete StartScroll
+
+	begin cinema
+		move camera position to {CamPos} time 3
+		move camera focus to {CamFoc} time 3
+
+		eject good spirit
+			//say " what is this? It looks like some sort of solar machine?"
+			say "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_60"
+			wait until read
+			//say ":lets examine the statues. Maybe we can figure this out."
+			say "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_70"
+			wait until read
+			//say "Light them in order to awaken the sun god."
+		//	say "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_30"
+		//	wait until read
+		send good spirit home
+
+	end cinema
+	
+	StartScroll = create highlight SILVER name "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_REMINDER" remind "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_REMINDER" at {ScrollPos}
+    ALTITUDE of StartScroll = 6
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 with amount 1 text "BW2T_SCRIPT_09FINAL_CHALLENGENAME_SUNDIAL" amount 1 description "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_9_SUNDIAL
+	L9ShowingSunDialObjective = 1
+
+	wait 3 seconds
+
+	run background script SD_Tooltips
+
+	//First statue will light if time is right
+	//if get game time > TargetTime[0] and get game time < TargetTime[1]
+		//TimeChanged = 1
+	//end if
+
+	begin loop
+
+	//say "time = $d" with number get game time
+
+		if get HintTimer time remaining <= 0 and HintGiven == 0
+			HintGiven++
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_120"
+				wait until read
+				send good spirit home
+			end dialogue
+		end if
+
+	//	if CurrentStatue == 0
+			if get game time > TargetTime[0] and get game time < TargetTime[1] and TimeChanged == 1 and PillarAlight[0] == SD_FALSE
+				run script HighlightStatue(0)
+				//CurrentStatue = 1
+				SunTimer = create timer for 15 seconds
+				TimeChanged = 0
+			end if
+		//end if
+
+       // if CurrentStatue == 1
+			if get game time > TargetTime[2] and get game time < TargetTime[3] and TimeChanged == 1 and PillarAlight[1] == SD_FALSE
+				run script HighlightStatue(1)
+				//CurrentStatue = 2
+				SunTimer = create timer for 15 seconds
+				TimeChanged = 0
+
+
+			end if
+		//end if
+
+		// if CurrentStatue == 2
+			if get game time > TargetTime[4] and get game time < TargetTime[5] and TimeChanged == 1 and PillarAlight[2] == SD_FALSE
+				run script HighlightStatue(2)
+			//	CurrentStatue = 3
+				SunTimer = create timer for 15 seconds
+				TimeChanged = 0
+				
+
+			end if
+		//end if
+
+		// if CurrentStatue == 3
+			if get game time > TargetTime[6] and get game time < TargetTime[7] and TimeChanged == 1 and PillarAlight[3] == SD_FALSE
+				
+				run script HighlightStatue(3)
+				SunTimer = create timer for 15 seconds
+				TimeChanged = 0
+
+			end if
+	//	end if
+
+		if get SunTimer time remaining <= 0
+			//Lose
+			Inc = 0
+			while Inc < 4
+				run script DeHighlightStatue(Inc)
+				Inc++
+			end while
+
+			//CurrentStatue = 0
+
+			//First statue will light if time is right
+			//if get game time > TargetTime[0] and get game time < TargetTime[1]
+				//TimeChanged = 1
+			//else
+				//TimeChanged = 0
+			//end if
+		end if
+
+		if sky is in transition
+			wait until not sky is in transition
+			//if CurrentStatue == 0
+				if get game time > TargetTime[0] and get game time < TargetTime[1] and PillarAlight[0] == SD_FALSE
+					TimeChanged = 1
+				end if
+		//	end if
+			//if CurrentStatue == 1
+				if get game time > TargetTime[2] and get game time < TargetTime[3] and PillarAlight[1] == SD_FALSE
+					TimeChanged = 1
+				end if
+			//end if
+			//if CurrentStatue == 2
+				if get game time > TargetTime[4] and get game time < TargetTime[5] and PillarAlight[2] == SD_FALSE
+					TimeChanged = 1
+				end if
+		//	end if
+		//	if CurrentStatue == 3
+				if get game time > TargetTime[6] and get game time < TargetTime[7] and PillarAlight[3] == SD_FALSE
+					TimeChanged = 1
+				end if
+		//	end if
+		end if
+
+		//Check for winning
+		if PillarAlight[0] == SD_TRUE and PillarAlight[1] == SD_TRUE and PillarAlight[2] == SD_TRUE and PillarAlight[3] == SD_TRUE
+			delete StartScroll
+			begin cinema
+				move camera position to {CamPos} time 3
+				move camera focus to {CamFoc} time 3
+
+				SunTimer = create timer for 60 seconds //Stop any statues turning off during ending
+
+				eject good spirit
+					//say "Well done! You solved the puzle of the sundial."
+					say "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_130"
+					wait until read
+					//say "Now your lands will be blessed with good fortune."
+				//	say "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_50"
+				//	wait until read
+				send good spirit home
+
+			end cinema
+
+			Completed = 1
+		end if
+		
+
+	until Completed == 1
+	end loop
+
+	//increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_SUNDIAL
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	wait 2.5 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+end script Land9SunDial
+
+
+//Highlightstatue-------------
+//----------------------------
+
+begin script HighlightStatue(ID)
+
+start
+
+	SD_PillarEffect[ID] = create visual effect "gp_s_fire_vil.ves"  strength 0.2 scale 0.7  at {SD_Pillar[ID]}+{0.0,5.0,0.0} time -1
+	
+	if ID == 0
+		set SD_PillarEffect[ID] colour red 255 green 0 blue 0
+	elsif ID == 1
+		set SD_PillarEffect[ID] colour red 255 green 255 blue 0
+	elsif ID == 2
+		set SD_PillarEffect[ID] colour red 0 green 255 blue 20
+	elsif ID == 3
+		set SD_PillarEffect[ID] colour red 0 green 0 blue 255
+	end if
+
+	PillarAlight[ID] = SD_TRUE
+
+end script HighlightStatue
+
+
+
+//DeHighlightstatue-------------
+//----------------------------
+
+begin script DeHighlightStatue(ID)
+
+start
+
+	if ID >= 0 and ID < 4
+		if SD_PillarEffect[ID] exists
+			delete SD_PillarEffect[ID]
+			PillarAlight[ID] = SD_FALSE
+		end if
+	end if
+
+end script DeHighlightStatue
+
+
+
+//--SD_Tooltips--//
+
+begin script SD_Tooltips
+
+Tooltimer[4]
+Tooltips[4]
+Counter = 0
+
+start
+
+	Tooltimer[0] = create timer for 0 seconds
+	Tooltimer[1] = create timer for 0 seconds
+	Tooltimer[2] = create timer for 0 seconds
+	Tooltimer[3] = create timer for 0 seconds
+
+	begin loop
+
+		Counter = 0
+
+		while Counter < 4
+			if Tooltips[Counter] exists and get Tooltimer[Counter] time remaining <= 0 and hand position not near {SD_Pillar[Counter]} radius 5
+				delete Tooltips[Counter]
+			elsif Tooltips[Counter] not exists and hand position near {SD_Pillar[Counter]} radius 5
+				if Counter == 0
+					Tooltips[0] = create tooltip at {SD_Pillar[0]} with text "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_80"
+				elsif Counter == 1
+					Tooltips[1] = create tooltip at {SD_Pillar[1]} with text "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_90"
+				elsif Counter == 2
+					Tooltips[2] = create tooltip at {SD_Pillar[2]} with text "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_100"
+				elsif Counter == 3
+					Tooltips[3] = create tooltip at {SD_Pillar[3]} with text "BW2T_SCRIPT_09FINAL_CHALLENGE_SUNDIAL_110"
+				end if
+
+				Tooltimer[Counter] = create timer for 5 seconds
+			end if			
+			Counter++
+		end while
+
+	until Completed == 1
+	end loop
+
+	Counter = 0
+	while Counter < 4
+		if Tooltips[Counter] exists
+			delete Tooltips[Counter]
+		end if
+		Counter++
+	end while
+		
+end script SD_Tooltips

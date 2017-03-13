@@ -1,0 +1,883 @@
+/*
+====================================================================================
+Land 2 :: FARMING EXPERTS SCRIPT
+By: Matthew Leonard
+====================================================================================
+
+A group of farming experts are being forced to give food tto the Norse.
+In return for protection from the Norse the farmnig experts will farm for the Greeks instead.
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FE_FALSE = 0
+define FE_TRUE = 1
+define FE_EXPERTS_GROUP_SIZE = 10
+define FE_FAMERS_GROUP_SIZE = 5
+define FE_FOOD_CARRY = 700		//The amount of food each villager carries at a time
+define FE_SCROLL_WAIT = 400		//The scroll wait time  -  for advisor comments
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FE_Complete = FE_FALSE
+global FE_Experts[FE_EXPERTS_GROUP_SIZE]		//Thses are the delivery boys
+global FE_Farmers[FE_FAMERS_GROUP_SIZE]			//These are the farmers working the fields
+global FE_Action[FE_EXPERTS_GROUP_SIZE]
+global FE_ExpertsLeft = 0						//Will be incremented later
+global FE_FarmQueue[FE_EXPERTS_GROUP_SIZE]		//There are 10 slots at the farm queue
+global FE_QueuePos[FE_EXPERTS_GROUP_SIZE]		//Queue position
+global FE_TheFoods = 0
+global FE_GreekFoods = 0						//Greek food store
+global FE_NorseFoods = 0						//Norse food store
+global FE_GreekStoragePit = 0
+global FE_Started = FE_FALSE
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FE_Intro					//Cut scene
+define script FE_NearFarmTown
+define script FE_TownWatch				//Watched town ownership so the advisors comment when ownership has changed
+define script FE_Farmers_Protected		//Cut scene
+define script FE_ReminderScroll
+define script FE_GetStoragePit
+define script FE_Protection				//Watches the Norse guard army for a greek attack
+
+define script FE_CollectFromFarmStore(ID)
+define script FE_DeliverFood(ID)
+define script FE_FarmerControl(ID)
+define script FE_Advisors(AdvisorID)
+define script FE_QueueTalk(ID)
+
+//-------------------------------------------------------------------------------------------
+// Land 2 Farming Experts
+//-------------------------------------------------------------------------------------------
+begin script Land2FarmingExperts
+	FarmScroll = 0
+	TheFoods = 0
+	FarmerCreateLoop = 0
+
+	NorseCollectorsPos = marker at {1303.433, 25.373, 1172.404}
+	FarmFoodStorePos = marker at {1189.202, 13.469, 1362.654}
+	ScrollPos = marker at {1905.041, 11.031, 1007.711}
+start
+	
+	//For Debug as we're not running Land control, so no land globals
+	if L2_FarmingCommunity == 0
+		L2_FarmingCommunity	= get town with id 2
+	end if
+
+	wait until get PLAYER of L2_FarmingCommunity == 1
+
+	run background script FE_GetStoragePit
+	run background script FE_Protection
+
+	FarmScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+	ALTITUDE of FarmScroll = 10
+	
+	FE_TheFoods = create STORE FOOD at {FarmFoodStorePos}
+	add resource FOOD 10000 to FE_TheFoods
+	
+	attach FE_TheFoods to L2_FarmingCommunity
+	
+	//Create additional food stores now too
+	FE_NorseFoods = create STORE FOOD at {1275.666, 18.757, 846.808}
+	FE_GreekFoods = create STORE FOOD at {933.978, 117.202, 1446.891}
+
+	//Setup farmers
+	begin loop
+		run background script FE_FarmerControl(FarmerCreateLoop)
+		wait 1.5 seconds
+		FarmerCreateLoop++
+	until FarmerCreateLoop == 10
+	end loop
+
+	//multipule advisor comments when the player is near the town
+	run background script FE_NearFarmTown
+	run background script FE_TownWatch
+	
+	//Nothing needs to run if the Greeks won the town before they click the scroll
+	wait until FarmScroll right clicked
+	
+	//there are two ways to get to this if....
+	if FarmScroll right clicked		
+		FE_Started = FE_TRUE
+		run script FE_Intro	
+		run background script FE_Advisors(1)
+		run background script FE_ReminderScroll
+	end if
+	
+end script Land2FarmingExperts
+
+//-------------------------------------------------------------------------------------------
+// Intro cut scene
+//-------------------------------------------------------------------------------------------
+begin script FE_Intro
+	
+	FE_Farmer_Giles_Spawn_Position		= 0
+	FE_Farmer_Giles_Destination			= 0
+	FE_Farmer_Giles						= 0
+
+	RelCamPos=0
+	RelCamFoc=0
+	MrFarmer1=0
+	FFFFarmhousePos=0
+	FFFFarmhouse=0
+	FarmerTarget=0
+
+start
+	
+	//... Wait for the player to initialise the explanation of the event taking place.
+
+	FFFFarmhousePos = marker at {1930.157, 9.911, 1020.213}
+	FFFFarmhouse = get HOUSE at {FFFFarmhousePos}
+
+	if FFFFarmhouse exists
+
+		start music "farming_communtiy_land2"
+	
+
+		begin cinema
+
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+
+			MrFarmer1 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {FFFFarmhousePos}
+			FarmerTarget= marker at get world position from FFFFarmhouse to {-0.454, -0.127, 4.928}
+			move MrFarmer1 position to {FarmerTarget}
+			SPEED of MrFarmer1 = 0.6
+			override MrFarmer1 anim "a_p_run_male_miserable"
+
+			RelCamPos=marker at get world position from FFFFarmhouse to {-4.945, 5.782, 10.284}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-4.320, 5.383, 9.613}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			set camera lens 67.000 time 2.6
+			set fade in time 1
+			wait until {MrFarmer1} at {FarmerTarget}
+			play anim "a_p_farm_pleeding_on_knees_into" on MrFarmer1 disable stand
+			wait 0.5 seconds			
+			
+			set camera lens 50.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-1.628, 0.439, 7.893}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-1.206, 0.543, 6.992}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_INTRO_10" by MrFarmer1
+			wait until MrFarmer1 played
+			play anim "a_p_farm_pleeding_on_knees_loop" on MrFarmer1 loop 10 disable stand
+			wait until read
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_INTRO_20" by MrFarmer1
+			wait until read
+
+			set camera lens 60.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-0.671, 0.490, 3.122}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-0.644, 0.755, 4.086}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_INTRO_30" by MrFarmer1
+			
+			wait until read
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_INTRO_40" by MrFarmer1
+			
+			wait until read
+			set camera lens 37.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-2.256, 0.524, 4.655}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-1.340, 0.795, 4.952}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_INTRO_50" by MrFarmer1
+			wait until read
+
+			set camera lens 70.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-4.945, 5.782, 10.284}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-4.320, 5.383, 9.613}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			play anim "a_p_farm_pleeding_on_knees_outof" on MrFarmer1
+			move MrFarmer1 position to {FFFFarmhouse}
+			SPEED of MrFarmer1 = 0.6
+			wait until {MrFarmer1} at {FFFFarmhouse}
+			delete MrFarmer1
+
+			eject evil spirit
+			eject good spirit
+
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_INTRO_60"
+			wait until read
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_INTRO_70"
+			wait until read
+			clear dialogue
+			send evil spirit home
+			send good spirit home
+
+		end cinema
+	else
+		say "ERROR: The position of the farmers building has changed, which would break this intro cutscene"
+		wait until read
+	end if
+
+
+end script FE_Intro
+
+//-------------------------------------------------------------------------------------------
+// Farmer Control
+//-------------------------------------------------------------------------------------------
+begin script FE_FarmerControl(ID)
+	LastAction = -1	
+start
+
+	FE_Experts[ID] = create random villager of tribe TRIBE_TYPE_JAPANESE at extra position 1 of get random home in town L2_FarmingCommunity
+	
+	//SPEED of FE_Experts[ID] = 2.0
+	
+	//We've added an expert so increment this value
+	FE_ExpertsLeft++
+	
+	while FE_Complete == FE_FALSE and HEALTH of FE_Experts[ID] > 0
+		
+		//Release the villager when on fire so they run around etc
+		if FE_Experts[ID] on fire
+			set FE_Experts[ID] carrying CARRIED_OBJECT_NONE
+			attach FE_Experts[ID] to L2_FarmingCommunity
+			release FE_Experts[ID]
+		end if
+		
+		//Farming Experts have various actions				
+		/*
+		-- Deliver food to Norse--
+		0 Go to village store
+		2 Deliver food
+		*/
+		if not LastAction == FE_Action[ID]
+		
+			LastAction = FE_Action[ID]
+		
+			if FE_Action[ID] == 0							
+				run background script FE_CollectFromFarmStore(ID)
+				
+			elsif FE_Action[ID] == 1
+				run background script FE_DeliverFood(ID)
+				
+			end if		
+		end if		
+		
+	end while
+	
+	if not FE_Experts[ID] exists
+		FE_ExpertsLeft-- //An expert has gone
+		
+		//Free the queue space this expert is occupying
+		FE_FarmQueue[FE_QueuePos[ID]] = FE_FALSE
+	end if
+	
+	//release the villager
+	set FE_Experts[ID] carrying CARRIED_OBJECT_NONE
+	attach FE_Experts[ID] to L2_FarmingCommunity
+	release FE_Experts[ID]
+			
+end script FE_FarmerControl
+
+//-------------------------------------------------------------------------------------------
+// Collect From Farm Store
+//-------------------------------------------------------------------------------------------
+begin script FE_CollectFromFarmStore(ID)
+	GotFood = FE_FALSE
+	MovePos = 0	
+	QueueLoop = 0
+	
+	DEBUG_TEST = 0
+	
+	//FarmStoreDoor = marker at {1185.948, 13.469, 1368.336}
+	FarmStoreDoor = marker at {1900.857, 11.639, 1030.376}
+	StoreWaypoint_1 = marker at {1881.810, 12.340, 1016.630}	//food
+	StoreWaypoint_2 = marker at {1880.572, 12.971, 1003.999}	//exit
+	
+start
+
+	while not {FE_Experts[ID]} near {FarmStoreDoor} radius 1 and HEALTH of FE_Experts[ID] > 0 and GotFood == FE_FALSE
+					
+	//Find a spot in the queue
+	QueueLoop = 0
+	while FE_FarmQueue[QueueLoop] == FE_TRUE
+		QueueLoop++
+	end while
+
+	//This villagers position in the queue
+	FE_QueuePos[ID] = QueueLoop
+
+	FE_FarmQueue[QueueLoop] = FE_TRUE
+
+	MovePos = marker at {FarmStoreDoor} + {QueueLoop, 0} - {0, QueueLoop}
+	move FE_Experts[ID] position to {MovePos}
+
+	if FE_QueuePos[ID] == 0
+		wait until {FE_Experts[ID]} near {FarmStoreDoor} radius 1
+						
+		//Move to food
+		move FE_Experts[ID] position to {StoreWaypoint_1}
+		wait until {FE_Experts[ID]} near {StoreWaypoint_1} radius 1						
+		
+		wait until get resource RESOURCE_TYPE_FOOD in FE_TheFoods > FE_FOOD_CARRY
+		
+		play anim "a_p_pick_up_bag" on FE_Experts[ID] loop 1 disable stand
+		GotFood = FE_TRUE //can no leave the store and queue loop		
+		
+		//Remove food and wait till anim finished
+		remove resource RESOURCE_TYPE_FOOD FE_FOOD_CARRY from FE_TheFoods
+		wait until FE_Experts[ID] played					
+		
+		set FE_Experts[ID] carrying CARRIED_OBJECT_BAG
+		
+		//Bring the next person in
+		FE_FarmQueue[FE_QueuePos[ID]] = FE_FALSE		
+		
+		//Move to exit
+		move FE_Experts[ID] position to {StoreWaypoint_2}
+		wait until {FE_Experts[ID]} near {StoreWaypoint_2} radius 1			
+		
+		//Move on to the Norse
+		FE_Action[ID] = 1
+
+	else
+		//wait until FE_FarmQueue[FE_QueuePos[ID]-1] == FE_FALSE
+		wait until {FE_Experts[ID]} at {MovePos}
+		run script FE_QueueTalk(ID)
+		FE_FarmQueue[FE_QueuePos[ID]] = FE_FALSE
+	end if
+
+	end while	
+
+end script FE_CollectFromFarmStore
+
+//-------------------------------------------------------------------------------------------
+// Deliver food
+//-------------------------------------------------------------------------------------------
+begin script FE_DeliverFood(ID)
+	NorseWaypoint_1 = marker at {1751.127, 33.302, 997.655}	//exit to path from farm to Norse
+	NorseWaypoint_2 = marker at {1276.161, 18.790, 847.012}
+	
+	GreekWaypoint_1 = marker at {1750.410, 27.448, 1016.417}
+	GreekWaypoint_2 = marker at {934.258, 117.193, 1446.957}
+start
+
+	//If the Greeks have this town
+	if PLAYER of L2_FarmingCommunity == 0 and FE_GreekStoragePit exists
+		//Move to farm village outskirts waypoint
+		move FE_Experts[ID] position to {GreekWaypoint_1}
+		wait until {FE_Experts[ID]} near {GreekWaypoint_1} radius 1
+		
+		//If the player doesnt have a storage pit (which is unlikley) then dump the food on the outskirts of the town
+		if not FE_GreekStoragePit exists 
+			move FE_Experts[ID] position to {GreekWaypoint_2}
+			wait until {FE_Experts[ID]} near {GreekWaypoint_2} radius 1
+		//Hopefully they will have  storage pit though
+		else	
+			move FE_Experts[ID] position to extra position 1 of FE_GreekStoragePit
+			wait until {FE_Experts[ID]} at extra position 1 of FE_GreekStoragePit
+		end if
+
+		//Add food to store
+		add resource FOOD FE_FOOD_CARRY to FE_GreekFoods
+		
+		set FE_Experts[ID] carrying CARRIED_OBJECT_NONE
+		wait 2 seconds
+		
+		//Move to farm village outskirts waypoint
+		move FE_Experts[ID] position to {GreekWaypoint_1}
+		wait until {FE_Experts[ID]} near {GreekWaypoint_1} radius 1
+
+	elsif PLAYER of L2_FarmingCommunity == 1
+		//Move to farm village outskirts waypoint
+		move FE_Experts[ID] position to {NorseWaypoint_1}
+		wait until {FE_Experts[ID]} near {NorseWaypoint_1} radius 1
+	
+		//Move to farm village outskirts waypoint
+		move FE_Experts[ID] position to {NorseWaypoint_2}
+		wait until {FE_Experts[ID]} near {NorseWaypoint_2} radius 1
+		
+		//Add food to store
+		add resource FOOD FE_FOOD_CARRY to FE_NorseFoods
+		
+		set FE_Experts[ID] carrying CARRIED_OBJECT_NONE
+		wait 2 seconds
+		
+		//Move to farm village outskirts waypoint
+		move FE_Experts[ID] position to {NorseWaypoint_1}
+		wait until {FE_Experts[ID]} near {NorseWaypoint_1} radius 1
+	end if
+	
+	FE_Action[ID] = 0
+
+end script FE_DeliverFood
+
+//-------------------------------------------------------------------------------------------
+// Advisor Comments
+//-------------------------------------------------------------------------------------------
+begin script FE_Advisors(AdvisorID)
+start
+	begin dialogue
+	
+		//Look there's a scroll down there
+		if AdvisorID == 0
+		
+			eject good spirit
+			eject evil spirit
+			
+			//I spy
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_SCROLL_10"
+			make good spirit point at {L2_FarmingCommunity}			
+			wait until read
+			
+			stop good spirit pointing
+			
+			//A scroll.. easy		
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_SCROLL_20"
+			wait until read
+			
+			send good spirit home
+			send evil spirit home
+			
+		//After scroll
+		elsif AdvisorID == 1
+		
+			eject evil spirit
+			eject good spirit
+			
+			//Lets take the town and force them to give us fod instead
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_AFTERSCROLL_10"
+			wait until read
+			
+			//We dont need to force them... etc
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_AFTERSCROLL_20"
+			wait until read
+			
+			//Boo hoo
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_AFTERSCROLL_30"
+			wait until read
+			
+			send good spirit home
+			send evil spirit home
+			
+		//After Norse take town	
+		elsif AdvisorID == 2
+		
+			eject evil spirit
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_NORSE_10"
+			wait until read
+						
+			eject good spirit
+			
+			//make good spirit cry
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_NORSE_20"			
+			wait until read
+			
+			send good spirit home
+			send evil spirit home
+			
+		//After Greeks take town		// THIS IS NOW DONE IN LAND 2 NORSE
+		/*
+		elsif AdvisorID == 3			
+			
+			eject good spirit
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_GREEK_10"
+			wait until read
+			
+			eject evil spirit
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_GREEK_20"
+			wait until read
+						
+			send good spirit home
+			send evil spirit home
+		*/
+		//Remined player to re-take Norse down.. dont do this too often because it will be annoying
+		elsif AdvisorID == 4
+						
+			eject good spirit
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_REMIND_10"
+			wait until read
+			
+			eject evil spirit
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_REMIND_20"
+			wait until read
+			
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_REMIND_30"
+			wait until read
+			
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_REMIND_40"
+			wait until read
+			
+			send good spirit home
+			send evil spirit home
+		
+		//Norse counter attack
+		elsif AdvisorID == 5
+		
+			/* This isnt used anymore */ 
+		
+		//Scroll reminder --player has town
+		elsif AdvisorID == 6
+					
+			eject evil spirit
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_REMINDER_10"
+			wait until read
+			
+			eject good spirit
+			
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_REMINDER_20"
+			wait until read
+			
+			send good spirit home
+			send evil spirit home
+		
+		//Scroll reminder -- player doesnt have town
+		elsif AdvisorID == 7
+		
+			eject good spirit
+			
+			//GA: If we convert this town then they'll provide su with free food
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_REMINDER_NORSE_10"
+			wait until read
+			
+			eject evil spirit
+			
+			//EA: Yea and hopefully we'll rub the Norse up the wrong way too HA!
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_REMINDER_NORSE_20"
+			wait until read
+			
+			send good spirit home
+			send evil spirit home
+				
+		end if
+		
+	end dialogue
+end script FE_Advisors
+
+//-------------------------------------------------------------------------------------------
+// Near Farm Town?
+//-------------------------------------------------------------------------------------------
+begin script FE_NearFarmTown
+	WaitTime = 0
+start
+	
+	while FE_Complete == FE_FALSE
+		
+		//Wait until the player is near the town
+		wait until camera position near {L2_FarmingCommunity} radius 40 and L2_FarmingCommunity viewed
+		
+		//If the player hasnt started this script by clicking the scroll
+		if FE_Started == FE_FALSE			
+			run background script FE_Advisors(0)
+		
+		//If the player has started this script and the Norse have the town
+		elsif FE_Started == FE_TRUE and PLAYER of L2_FarmingCommunity == 1
+			
+			//Only run this one if the player is in a smaller radius for at least 5 seconds			
+			wait 5 seconds
+			
+			if camera position near {L2_FarmingCommunity} radius 40
+				run background script FE_Advisors(4)		
+			end if
+			
+		end if
+		
+		//Now wait until the player has moved away to avoid repeating messages
+		wait until not camera position near {L2_FarmingCommunity} radius 150
+		
+		//Also wait some seconds before we bother the player again
+		WaitTime = FE_SCROLL_WAIT
+		wait WaitTime seconds
+		
+	end while
+	
+end script FE_NearFarmTown
+
+//-------------------------------------------------------------------------------------------
+// Town Watch
+//-------------------------------------------------------------------------------------------
+begin script FE_TownWatch
+	LastPlayer = 0	//It will start as neutral
+	GreeksGotTownFirst = FE_FALSE	//Outro needs to eb triggered the first time the Greeks capture this town
+start	
+	
+	//The Last player is the current player when this script is run
+	//We dont want to trigger a "Well done you just took this town" message etc
+	
+	LastPlayer = get PLAYER of L2_FarmingCommunity
+	
+	while FE_Complete == FE_FALSE
+		
+		//The player in control of this town has changed
+		if not LastPlayer == get PLAYER of L2_FarmingCommunity
+			
+			//Update
+			LastPlayer = get PLAYER of L2_FarmingCommunity
+			
+			if LastPlayer == 0 and GreeksGotTownFirst == FE_FALSE and FE_Started == FE_TRUE
+				run script FE_Farmers_Protected
+				GreeksGotTownFirst = FE_TRUE
+			end if
+			
+			//The player is in charge (Greeks)
+			if get PLAYER of L2_FarmingCommunity == 0
+				run background script FE_Advisors(3)
+			
+			//The Norse have taken the town
+			else
+				run background script FE_Advisors(2)
+				
+			end if
+			
+		end if
+		
+	end while
+end script FE_TownWatch
+
+//-------------------------------------------------------------------------------------------
+// Farmers Protected cut scene
+//-------------------------------------------------------------------------------------------
+begin script FE_Farmers_Protected
+
+	RelCamPos=0
+	RelCamFoc=0
+	MrFarmer1=0
+	FFFFarmhousePos=0
+	FFFFarmhouse=0
+	FarmerTarget=0
+
+start
+	
+	FFFFarmhousePos = marker at {1928.793, 9.952, 1013.952}
+	FFFFarmhouse = get HOUSE at {FFFFarmhousePos}
+
+	if FFFFarmhouse exists
+
+		MrFarmer1 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {FFFFarmhousePos}
+		FarmerTarget= marker at get world position from FFFFarmhouse to {-0.454, -0.127, 4.928}
+		move MrFarmer1 position to {FarmerTarget}
+		SPEED of MrFarmer1 = 0.6
+
+		begin cinema
+
+			start music "farming_success_land2"
+			RelCamPos=marker at get world position from FFFFarmhouse to {-4.945, 5.782, 10.284}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-4.320, 5.383, 9.613}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			set camera lens 67.000 time 2.6
+			wait until {MrFarmer1} at {FarmerTarget}
+			play anim "a_p_paternity_talking_to_god_calmly" on MrFarmer1 loop 3
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_PROTECTED_10" by MrFarmer1
+			wait until read
+			set camera lens 70.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-1.089, 0.873, 2.818}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-0.977, 1.144, 3.774}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_PROTECTED_20" by MrFarmer1
+			wait until read
+			set camera lens 38.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-1.826, 0.792, 6.429}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-1.145, 1.030, 5.737}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_PROTECTED_30" by MrFarmer1
+			wait until read
+			set camera lens 70.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-1.089, 0.873, 2.818}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-0.977, 1.144, 3.774}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_PROTECTED_40" by MrFarmer1
+			wait until read
+			
+			set camera lens 70.000
+			RelCamPos=marker at get world position from FFFFarmhouse to {-4.945, 5.782, 10.284}
+			RelCamFoc=marker at get world position from FFFFarmhouse to {-4.320, 5.383, 9.613}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			play anim "a_p_farm_pleeding_on_knees_outof" on MrFarmer1
+			move MrFarmer1 position to {FFFFarmhouse}
+			//SPEED of MrFarmer1 = 0.6
+			wait until {MrFarmer1} at {FFFFarmhouse}
+			delete MrFarmer1
+
+		end cinema
+	else
+		say "ERROR: The position of the farmers building has changed, which would break this intro cutscene"
+		wait until read
+	end if
+
+end script FE_Farmers_Protected
+
+//-------------------------------------------------------------------------------------------
+// Reminder Scroll
+//-------------------------------------------------------------------------------------------
+begin script FE_ReminderScroll
+	FarmScroll = 0
+	ScrollPos = marker at {1905.041, 11.031, 1007.711}
+start
+	
+	FarmScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+	ALTITUDE of FarmScroll = 14
+	
+	while FE_Complete == FE_FALSE
+		
+		if FarmScroll right clicked
+			
+			//Player has the town
+			if get PLAYER of L2_FarmingCommunity == 0	
+				run background script FE_Advisors(6)
+				
+			//Player doesnt have the town			
+			else				
+				run background script FE_Advisors(7)
+				
+			end if
+			
+			//Clear the click
+			clear right clicked object
+			
+		end if
+		
+	end while
+	
+end script FE_ReminderScroll
+
+//-------------------------------------------------------------------------------------------
+// Queue Talk
+//-------------------------------------------------------------------------------------------
+begin script FE_QueueTalk(ID)
+	FarmStoreDoor = marker at {1900.857, 11.639, 1030.376}
+	Villager = 0
+start
+
+	Villager = FE_Experts[ID]
+
+	begin loop
+
+		//Check basic conditions
+		if FE_FarmQueue[FE_QueuePos[ID]-1] == FE_TRUE
+
+			//Do we need to change focus?
+			if ID == 2 or ID == 4 or ID == 6 or ID == 8
+				set Villager focus to {FarmStoreDoor} + {100, 0} - {0, 100}
+			end if
+
+			play anim "a_p_talk1_male" on Villager
+			wait until Villager played
+
+		end if
+
+	until FE_FarmQueue[FE_QueuePos[ID]-1] == FE_FALSE
+	end loop
+
+end script FE_QueueTalk
+
+//-------------------------------------------------------------------------------------------
+// Get Storage Pit
+//-------------------------------------------------------------------------------------------
+begin script FE_GetStoragePit
+start
+	begin loop
+		FE_GreekStoragePit = get HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L2GreekTown
+		wait 5 seconds
+	until FE_GreekStoragePit exists
+	end loop
+end script FE_GetStoragePit
+
+//-------------------------------------------------------------------------------------------
+// Farming Experts Protection
+//-------------------------------------------------------------------------------------------
+begin script FE_Protection
+	PlayerPlatoon = 0
+	ExitFighterCheck = FE_FALSE
+	FightCheck = 0
+start
+	begin loop
+
+		//Nasty loop crap because (  platoon blah melee fighting  ) crashes if the platoon dosent exist
+		begin loop
+			if L2_FarmRaiders[0] exists
+				if platoon L2_FarmRaiders[0] melee fighting
+					FightCheck = FE_TRUE	//Quit loop
+				end if
+			end if
+		until FightCheck == FE_TRUE
+		end loop
+
+		//reset
+		FightCheck = FE_FALSE
+
+		//wait until platoon L2_FarmRaiders[0] melee fighting
+
+		begin dialogue
+			say "So you have the nerve to challenge me for the farming community?"
+			wait until read
+
+			say "Fine, challenge all you like but I take no prisoners"
+			wait until read
+		end dialogue
+
+		//This platoon must be fighting with the player as there are no other players on this land
+		//Get the platoon this army is fighting with
+		begin loop
+			PlayerPlatoon = get platoon of player 0 nearest {L2_FarmRaiders[0]} radius 20
+			wait 3 seconds
+		until PlayerPlatoon exists
+		end loop
+
+		begin loop
+			//If the player has defeated the guard army
+			if not L2_FarmRaiders[0] exists
+
+				begin dialogue
+					say "So you think killing my guard army will help those slaves to the Norse?"
+					wait until read
+					
+					if get idle platoons in town L2NorseTown > 3
+						say "Lets see how you handle retalliation"
+						wait until read
+					else
+						say "Well maybe for now, but the Norse will prevail"
+						wait until read
+					end if
+				end dialogue
+
+				ExitFighterCheck = FE_TRUE
+
+			//If the guard army has defeated
+			elsif not PlayerPlatoon exists
+				
+				begin dialogue
+					say "Your simply no match for me"
+					wait until read
+
+					say "I'd suggest you go back to your homeland, but then the Aztecs seem to be the occupants right now"
+					wait until read
+				end dialogue
+
+				ExitFighterCheck = FE_TRUE
+
+			//The armies are not engaged in nelee combat
+			elsif not platoon L2_FarmRaiders[0] attacking platoon PlayerPlatoon	
+
+				begin dialogue
+					say "Why do you retreat mortal?"
+					wait until read
+				end dialogue
+				add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using PlayerPlatoon to front of L2_FarmRaiders[0] action queue
+
+				wait 10 seconds
+
+			end if
+		until ExitFighterCheck == FE_TRUE
+		end loop
+
+	end loop
+end script FE_Protection

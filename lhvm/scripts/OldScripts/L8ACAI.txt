@@ -1,0 +1,24 @@
+//-----------------------------------------------------------------
+// LAND 8 AZTEC CREATURE AI
+//-----------------------------------------------------------------
+
+begin script L8ACAI
+
+ L8AztecCreaturePos = marker at {1824.752,90.131,665.690}
+
+start
+
+	L8AztecCreature = create CREATURE CREATURE_TYPE_APE at {L8AztecCreaturePos}
+	SCALE of L8AztecCreature = 0.9
+	ALIGNMENT of L8AztecCreature = -0.8
+
+	set player 1 creature to L8AztecCreature
+
+	release L8AztecCreature
+
+	begin loop
+		/// SCRIPTED BEHAVIOUR TO BE ADDED
+	until L8AztecConverted == 1
+	end loop
+
+end script L8ACAI

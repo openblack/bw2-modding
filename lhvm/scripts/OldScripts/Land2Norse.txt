@@ -1,0 +1,875 @@
+//------------------------------------------------
+//  LAND 5 JAPANESE TOWN AI (just the capital city)
+//------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L2_FALSE = 0
+define L2_TRUE = 1
+
+//Timer time defines
+define L2_COMMENT_WAIT = 120	//To stop the player being bombarded with comments. //After Fenrik has spoken he will wait before saying his idle and minor comments.
+define L2_CHALLENGE_WAIT = 500  //Fenrik repeats his taunt comments
+define L2_GENERIC_WAIT = 600    //Generic boredom comments
+define L2_FARM_ATTACK_WAIT = 500
+define L2_FARM_SWAP_WAIT = 450	//The time the Norse wait before re-inforcing
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global Land2BoredomTimer = 0
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script L2NorseTownManagement
+define script L2NorseArmyManagement
+define script L2NorseArmyGreekAttacks
+define script MainFenrikComments
+
+define script TrackHomagesandTributes (Target, MigrationType)
+
+//--------------------------------------------------------------------------
+// Land 2 Norse
+//--------------------------------------------------------------------------
+begin script Land2Norse
+	NightToggle = 0
+	NightCount = 0
+start
+
+	Land2BoredomTimer = create timer for 0 seconds
+
+	run background script L2NorseTownManagement
+	run background script L2NorseArmyManagement
+	run background script MainFenrikComments
+
+	begin loop
+		//if PLAYER 1 owns the town
+		if PLAYER of L2NorseTown == 0
+			L2NorseTownConverted = 1
+		end if
+
+		if get game time > 20.00 or get game time < 4.00 and NightToggle == 0
+			NightToggle = 1
+			NightCount++
+		elsif get game time <= 20.00 and get game time >= 4.00 and NightToggle == 1
+			NightToggle = 0
+		end if
+		
+		wait 2 seconds
+
+	until L2NorseTownConverted == 1 or PLAYER of L2GreekTown != 0
+	end loop
+
+	/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+
+	L2NorseTownConverted = 2
+
+	// IF PLAYER CONVERTS L2NorseTown THEN TRIGGER THE L2NorseTown SUBMISSION CUT-SCENE
+	// REMEMBER TO SET L2NorseTownConverted = 2 when script completed (used in L2Control to trigger L2IslandComplete cut-scene)
+
+end script Land2Norse
+
+//--------------------------------------------------------------------------
+// Norse town Managment
+//--------------------------------------------------------------------------
+begin script L2NorseTownManagement
+
+	InitialGreekAggression = 20
+	AngeredGreekAggression = 80
+	InitialGreekTolerance = 200
+	NewRacialTolerance = 0
+	AngerCounter = 0
+	AngerTimer = create timer for 0 seconds
+	AngerKickDelay = 180
+	FeudValue = 0
+
+	NorseImpressivePoints = 0
+	InitialTimer = create timer for 0 seconds
+	NorsePilgrims = 0
+	PilgrimSize = 0
+	NorseImpressivenessThreshold = 0.3
+
+	Pilgrim_Ctr = 0
+	RatiosAdjusted = 0
+	TributeComment = 0
+	HomageComment = 0
+
+start
+
+	// Initial army setup
+	set town L2NorseTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.2
+	//set town L2NorseTown platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.2
+	//set town L2NorseTown army type ARMY_UNIT_TYPE_RANGED_1 platoon ratio on wall to 1
+
+	// Initial villager setup
+	set town L2NorseTown desire for GATHER_FOOD to 0.80
+	set town L2NorseTown desire for GROW_FOOD to 0.60
+	set town L2NorseTown desire for GATHER_WOOD to 0.40
+	set town L2NorseTown desire for GATHER_ORE to 0.40
+	set town L2NorseTown desire for BREED to 0.60
+	set town L2NorseTown desire for ATTACK to 0.10
+	set town L2NorseTown desire for FUN to 0.50
+
+	// Initial feud status
+	set town L2NorseTown interracial tolerance with town L2GreekTown to InitialGreekTolerance
+	set town L2NorseTown racial aggression with town L2GreekTown to InitialGreekAggression	
+
+	begin loop
+		
+		NorseImpressivePoints = get town L2NorseTown impressive value for town L2GreekTown
+
+		//Make sure no other dialogue is currently happening, or there will be too much
+		if dialogue ready
+
+			if get InitialTimer time remaining <= 0 and Land2GreekImpressiveness >= Land2GreekImpressivenessMinimum
+
+				if Pilgrim_Ctr == 10 and Land2GreekImpressiveness >= (Land2GreekImpressivenessMinimum + 3000)
+					if TownPilgrimageStatus[9] == 1 // Always Accept
+						// CONVERT THE TOWN PEACEFULLY
+						set player 0 town L2NorseTown capture reason LAST_CAPTURE_PASSIVE
+						begin dialogue
+							//say "But why is everyone leaving?"
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_10"
+							wait until read
+							//say "My own bretheren..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_20"
+							wait until read
+						end dialogue
+					elsif TownPilgrimageStatus[9] == 2 // always Decline
+					end if
+					reset town L2NorseTown impressive value for town L2GreekTown
+					set InitialTimer time to 300 seconds
+				end if
+
+				if Pilgrim_Ctr == 9 and Land2GreekImpressiveness >= (Land2GreekImpressivenessMinimum + 2500)
+					if TownPilgrimageStatus[9] == 1 // Always Accept
+						begin dialogue
+							//say "DEVTEXT - TEST INFO - CAPITAL 1/2 MIGRATION TRIGGERED"
+							//say "My generals tell me half the town is going"
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_30"
+							wait until read
+							//say "By every god and demon..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_40"
+							wait until read
+						end dialogue
+						PilgrimSize = size of L2NorseTown
+						PilgrimSize = PilgrimSize/2
+						NorsePilgrims = L2NorseTown pilgrimage PAY_PILGRIMAGE to town L2GreekTown with PilgrimSize pilgrims
+					elsif TownPilgrimageStatus[9] == 2 // always Decline
+					end if
+					reset town L2NorseTown impressive value for town L2GreekTown
+					Pilgrim_Ctr++
+					set InitialTimer time to 300 seconds
+				end if
+
+				if Pilgrim_Ctr == 8 and Land2GreekImpressiveness >= (Land2GreekImpressivenessMinimum + 2000)
+					if TownPilgrimageStatus[9] == 1 // Always Accept
+						begin dialogue
+							//say "DEVTEXT - TEST INFO - CAPITAL 1/4 MIGRATION TRIGGERED"
+							//say "What? More people are leaving? They say..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_50"
+							wait until read
+							//say "I could weep..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_60"
+							wait until read
+						end dialogue
+						PilgrimSize = size of L2NorseTown
+						PilgrimSize = PilgrimSize/4
+						NorsePilgrims = L2NorseTown pilgrimage PAY_PILGRIMAGE to town L2GreekTown with PilgrimSize pilgrims
+					elsif TownPilgrimageStatus[9] == 2 // always Decline
+					end if
+					reset town L2NorseTown impressive value for town L2GreekTown
+					Pilgrim_Ctr++
+					set InitialTimer time to 300 seconds
+				end if
+
+				if Pilgrim_Ctr == 7 and Land2GreekImpressiveness >= (Land2GreekImpressivenessMinimum + 1500)
+					if TownPilgrimageStatus[9] == 1 // Always Accept
+						begin dialogue
+							//say "DEVTEXT - TEST INFO - CAPITAL 1/8 MIGRATION TRIGGERED"
+							//say "I cannot understand it..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_70"
+							wait until read
+							//say "I'm at a loss to stop it. The Greeks..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_80"
+							wait until read
+						end dialogue
+						PilgrimSize = size of L2NorseTown
+						PilgrimSize = PilgrimSize/8
+						NorsePilgrims = L2NorseTown pilgrimage PAY_PILGRIMAGE to town L2GreekTown with PilgrimSize pilgrims
+						run background script ManagePilgrims (NorsePilgrims, 9)
+						Pilgrim_Ctr++
+					elsif TownPilgrimageStatus[9] == 2 // always Decline
+						Pilgrim_Ctr = 6
+						TownPilgrimageStatus[9] = 0
+						NorseImpressivenessThreshold += 0.2
+						if NorseImpressivenessThreshold > 1
+							NorseImpressivenessThreshold = 1
+						end if
+						set town L2NorseTown impressive threshold for town L2GreekTown to NorseImpressivenessThreshold
+						Land2GreekImpressivenessMinimum += 4000
+					end if
+					reset town L2NorseTown impressive value for town L2GreekTown
+					set InitialTimer time to 300 seconds
+				end if
+
+				if Pilgrim_Ctr == 6 and Land2GreekImpressiveness >= (Land2GreekImpressivenessMinimum + 1000)
+					begin dialogue
+						//say "DEVTEXT - TEST INFO - CAPITAL MINOR MIGRATION TRIGGERED"
+						//say "My people no longer give the Greeks tributes."
+						say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_90"
+						wait until read
+						//say "Now they want to go..."
+						say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_100"
+						wait until read
+					end dialogue
+					NorsePilgrims = L2NorseTown pilgrimage PAY_PILGRIMAGE to town L2GreekTown with 4 pilgrims
+					run background script ManagePilgrims (NorsePilgrims, 9)
+					reset town L2NorseTown impressive value for town L2GreekTown
+					Pilgrim_Ctr++
+					set InitialTimer time to 300 seconds
+				end if
+
+				if Pilgrim_Ctr >= 2 and Pilgrim_Ctr <= 5 and Land2GreekImpressiveness >= (Land2GreekImpressivenessMinimum + 500)
+					// Japanese pay tribute to Greeks
+					if TributeComment == 0
+						begin dialogue
+							//say "DEVTEXT - TEST INFO - CAPITAL TRIBUTE TRIGGERED"
+							//say "I can't believe what I'm hearing."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_110"
+							wait until read
+							//say "My people are stealing my own resources and..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_120"
+							wait until read
+						end dialogue
+						TributeComment = 1
+					else
+						begin dialogue
+							//say "DEVTEXT - TEST INFO - CAPITAL TRIBUTE TRIGGERED"
+							//say "My people are still giving the Greeks tributes."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_130"
+							wait until read
+							//say "I thought we had put..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_140"
+							wait until read
+						end dialogue
+					end if
+					NorsePilgrims = L2NorseTown pilgrimage PAY_TRIBUTE to town L2GreekTown with 4 pilgrims
+					run background script TrackHomagesandTributes (NorsePilgrims, 1)
+					reset town L2NorseTown impressive value for town L2GreekTown
+					Pilgrim_Ctr++
+					set InitialTimer time to 300 seconds
+				end if
+
+				if Pilgrim_Ctr < 2
+					if HomageComment == 0
+						begin dialogue
+							//say "DEVTEXT - TEST INFO - CAPITAL HOMAGE TRIGGERED"
+							//say "What is this? My people seem distracted."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_150"
+							wait until read
+							//say "Are they paying homage..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_160"
+							wait until read
+						end dialogue
+						HomageComment = 1
+					else
+						begin dialogue
+							//say "DEVTEXT - TEST INFO - CAPITAL HOMAGE TRIGGERED 2"
+							//say "Why do my people act this way?"
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_170"
+							wait until read
+							//say "They seem transfixed..."
+							say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_180"
+							wait until read
+						end dialogue
+					end if
+					NorsePilgrims = L2NorseTown pilgrimage PAY_HOMAGE to town L2GreekTown with 4 pilgrims
+					run background script TrackHomagesandTributes (NorsePilgrims, 0)
+					reset town L2NorseTown impressive value for town L2GreekTown
+					Pilgrim_Ctr++
+					set InitialTimer time to 300 seconds
+				end if
+			end if
+		end if
+		
+		wait 5 seconds
+
+	until L2NorseTownConverted == 1 or PLAYER of L2GreekTown != 0
+end loop
+
+end script L2NorseTownManagement
+
+//--------------------------------------------------------------------------
+// Track Homag Tributes
+//--------------------------------------------------------------------------
+begin script TrackHomagesandTributes (Target, MigrationType)
+	Arrival = 0
+start
+
+	begin loop
+		if {Target} near {L2GreekTown} radius 150
+			if MigrationType == 0 // Homage
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Target}
+					say "Look there! Some Norse have come to pay homage to our great city."
+					wait until read
+					say "This is the first step to conversion."
+					wait until read
+				end dialogue
+			else	//Tribute
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Target}
+					say "Excellent news! Some Norse have left tributes on our border."
+					wait until read
+					say "This is the second step to conversion. Soon they will come seeking homes with us."
+					wait until read
+				end dialogue
+			end if
+			Arrival = 1
+		end if
+
+		wait 5 seconds
+	until Arrival == 1
+	end loop
+
+end script TrackHomagesandTributes
+
+//--------------------------------------------------------------------------
+// Track Homag Tributes
+//--------------------------------------------------------------------------
+begin script L2NorseArmyManagement
+	FarmEntrance = marker at {1890.626343,11.465739,1004.984741}
+	FarmPlayer = 0
+	
+	FarmAttack = L2_FALSE
+	FarmGuard = L2_FALSE
+	FarmAttackTimer = 0
+
+	GuardSwapPos = marker at {1078.211, 37.658, 883.345}	//Back in the capitol
+	PlatoonSwap = 0 //Used for swapping the guard platoons
+	SwapTimer = create timer for 0 seconds
+/*
+	WallArmy = 0
+	Wall = 0
+	WallPos = marker at {944.175, 7.456, 1231.470}
+*/
+start
+
+	set Land2BoredomTimer time to 300 seconds
+
+	run background script L2NorseArmyGreekAttacks
+
+	begin loop
+/*
+		
+		WallArmy = get idle platoon of type PLATOON_INFO_NORSE_RANGED_1 nearest {L2NorseTown} radius 45
+		if WallArmy exists
+			say "hello"
+			Wall = get wall segment nearest {WallPos} radius 5
+			add action PLATOON_AGENDA_ACTION_GET_ON_WALL using Wall to front of WallArmy action queue
+			wait 5000000000 seconds
+		end if
+*/
+		//If the player has just taken the town then the Norse send 3 platoons (if there are 3 idle platoons) to retake it.
+		//There must be at least 2 free platoons to initiate this attack
+		if PLAYER of L2_FarmingCommunity == 0 and get idle platoons in town L2NorseTown > 2 and FarmAttack == L2_FALSE and get FarmAttackTimer time remaining == 0
+			begin dialogue
+				say "That farming settlment belongs to me!"
+				wait until read
+
+				say "You've taken it from me and now you will pay"
+				wait until read
+
+				eject good spirit
+				say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_GREEK_10"
+				wait until read
+				
+				eject evil spirit
+				say "BW2T_SCRIPT_02NEW_FARMINGEXPERTS_ADVISOR_GREEK_20"
+				wait until read
+							
+				send good spirit home
+				send evil spirit home
+			end dialogue
+
+			//Platoon 1
+			L2_FarmRaiders[0] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FarmEntrance} to front of L2_FarmRaiders[0] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L2_FarmingCommunity to next in L2_FarmRaiders[0] action queue
+			FarmAttack = L2_TRUE
+
+			//Platoon 2
+			L2_FarmRaiders[1] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+			if L2_FarmRaiders[1] exists
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FarmEntrance} to front of L2_FarmRaiders[1] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L2_FarmingCommunity to next in L2_FarmRaiders[1] action queue
+			end if
+
+			//Platoon 3
+			L2_FarmRaiders[2] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+			if L2_FarmRaiders[2] exists
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FarmEntrance} to front of L2_FarmRaiders[2] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L2_FarmingCommunity to next in L2_FarmRaiders[2] action queue
+			end if
+			
+			wait until PLAYER of L2_FarmingCommunity == 1 or L2_FarmRaiders[0] not exists and L2_FarmRaiders[1] not exists and L2_FarmRaiders[2] not exists
+			FarmAttack = L2_FALSE
+			
+			//Check to see if the player has wiped out the Norse platoons and comment
+			if L2_FarmRaiders[0] not exists and L2_FarmRaiders[1] not exists and L2_FarmRaiders[2] not exists 
+				begin dialogue
+					say "You wiped out my soldiers"
+					wait until read
+
+					say "Dont let it get to your head, I'll be the victor in the end"
+					wait until read
+				end dialogue
+			end if
+
+			FarmAttackTimer = create timer for L2_FARM_ATTACK_WAIT seconds
+
+		//If the Norse don't have the town and there is an idle platoon
+		elsif PLAYER of L2_FarmingCommunity != 1 and get idle platoons in town L2NorseTown > 0 and FarmAttack == L2_FALSE and get FarmAttackTimer time remaining == 0
+			L2_FarmRaiders[0] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FarmEntrance} to front of L2_FarmRaiders[0] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L2_FarmingCommunity to next in L2_FarmRaiders[0] action queue
+			FarmAttack = L2_TRUE
+
+			wait until PLAYER of L2_FarmingCommunity == 1 or L2_FarmRaiders[0] not exists
+			FarmAttack = L2_FALSE
+
+		end if
+
+		//If farm raiders first platoon doesnt exist then prepare for retalliation
+		if L2_FarmRaiders[0] not exists
+			/*
+			begin dialogue
+				say "Retalliate!!!"
+				wait until read
+			end dialogue
+			*/
+		end if
+
+		//The Norse patrol the area between their city and the farming community
+		if FarmGuard == L2_FALSE and FarmAttack == L2_FALSE and PLAYER of L2_FarmingCommunity == 1 and get SwapTimer time remaining == 0
+			FarmGuard = L2_TRUE
+			L2_FarmRaiders[1] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FarmEntrance} to front of L2_FarmRaiders[1] action queue
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {FarmEntrance} to L2_FarmRaiders[1] action queue
+
+			wait until {L2_FarmRaiders[1]} near {FarmEntrance} radius 20
+
+			PlatoonSwap = L2_FarmRaiders[0]
+			L2_FarmRaiders[0] = L2_FarmRaiders[1]
+			L2_FarmRaiders[1] = PlatoonSwap
+
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {GuardSwapPos} to front of L2_FarmRaiders[1] action queue
+			SwapTimer = create timer for L2_FARM_SWAP_WAIT seconds
+			FarmGuard = L2_FALSE
+			release L2_FarmRaiders[1]
+			L2_FarmRaiders[1] = 0
+		end if
+
+		wait 5 seconds
+	until L2NorseTownConverted == 1 or PLAYER of L2GreekTown != 0
+	end loop
+
+end script L2NorseArmyManagement
+
+//-------------------------------------------------------------------------------------------
+// Norse Army Greek attacks
+//-------------------------------------------------------------------------------------------
+begin script L2NorseArmyGreekAttacks
+	GreekArmySize = 0
+	GreekRaiders[1]
+	GreekTownPos = marker at {1129.089, 157.954, 1582.777}
+
+	//Norse attack flags
+	NorseAttack1 = L2_FALSE
+
+	NorseAttackTimer = create timer for 0 seconds
+start
+
+	begin loop
+		//==== Greek city attacks =======
+		GreekArmySize = get army size in town L2GreekTown
+
+		//The player has a sizable army	// 30 troops means probably 2 platoons, possibly three and hasn't attacked the Norse
+		// ATTACK WITH ONE PLATOON
+		if GreekArmySize >= 30 and NorseAttack1 == L2_FALSE
+			NorseAttack1 = L2_TRUE
+
+			say "lets attack"
+			wait 2 seconds
+
+			//-- Are there idle platoons?
+			//Yes there are, let's attack
+			if get idle platoons in town L2NorseTown > 0
+				GreekRaiders[0] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {GreekTownPos} to front of GreekRaiders[0] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L2GreekTown to next in GreekRaiders[0] action queue			
+		
+				//Wait a short while before getting the advisors to comment on this
+				wait 35 seconds
+
+				begin dialogue
+					say "GA: Leader, the Norse are approaching our town."
+					wait until read
+
+					say "EA: Yes, looks like things are going to get busy!"
+					wait until read
+				end dialogue
+
+				wait until not GreekRaiders[0] exists
+				NorseAttack1 = L2_TRUE
+
+				begin dialogue
+					say "That was just a warning. Continue to grow your forces and I will return with a far greater force."
+					wait until read
+				end dialogue
+
+			///No there aren't, set the desire for platon creating thingy higher
+			else
+				//Lets create mreo Norse troops
+				set town L2NorseTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.6
+
+				//Wait until there is an idle platoon
+				wait until get idle platoons in town L2NorseTown > 0
+			end if
+
+		end if
+
+		//The player has a large army, attack with 2 platoons
+		if get army size in town L2GreekTown >= 50 and size of L2GreekTown > 150 and NorseAttack1 == L2_TRUE and get NorseAttackTimer time remaining == 0
+			//-- Are there idle platoons?
+			//Yes there are, let's attack
+			if get idle platoons in town L2NorseTown >= 2
+				GreekRaiders[0] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {GreekTownPos} to front of GreekRaiders[0] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L2GreekTown to next in GreekRaiders[0] action queue
+
+				GreekRaiders[1] = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L2NorseTown} radius 200 excluding scripted
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {GreekTownPos} to front of GreekRaiders[1] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L2GreekTown to next in GreekRaiders[1] action queue
+
+				//Wait a short while before getting the advisors to comment on this
+				wait 35 seconds
+
+				begin dialogue
+					say "EA: The Norse are coming up towards our town again"
+					wait until read
+
+					say "EA: We might have to defend ourselves here leader"
+					wait until read
+
+					say "EA: Yea, then let's retalliate!"
+					wait until read
+				end dialogue
+
+				wait until not GreekRaiders[0] exists and not GreekRaiders[0] exists
+				NorseAttack1 = L2_TRUE
+
+				begin dialogue
+					say "You can't keep winnnig forever"
+					wait until read
+				end dialogue
+
+			///No there aren't, set the desire for platon creating thingy higher
+			else
+				//Lets create mreo Norse troops
+				set town L2NorseTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.8
+
+				//Wait until there is an idle platoon
+				wait until get idle platoons in town L2NorseTown > 0
+			end if
+		end if
+
+		//The player has attacked the Norse capitol
+
+		//Set the desire for troops and breeding to max
+
+		//
+	end loop
+
+	wait 500000 seconds
+end script L2NorseArmyGreekAttacks
+
+//-------------------------------------------------------------------------------------------
+// MAIN HIROKU COMMENTS
+//-------------------------------------------------------------------------------------------
+begin script MainFenrikComments
+
+	GenericTimer = create timer for 0 seconds
+	InitialTimer = create timer for 0 seconds
+	ChallengeReminderTimer = create timer for 0 seconds
+	CommentTimer = create timer for 0 seconds
+
+	GenericInstance = 0
+	GenericTimerDelay = L2_GENERIC_WAIT		//redo this as a define
+	ChallengeType = 0
+	GreekFarmPlatoon = 0
+
+	//Comment flags
+	FarmCommunityComment = L2_FALSE
+	CapitalComment = L2_FALSE
+	ValleyComment = L2_FALSE
+	WallComment = L2_FALSE
+	ChallengeComment = L2_FALSE
+
+	WallView = marker at {944.267456,7.707120,1234.642456}
+	CreatureValleyPos = marker at {1585.015381,12.252315,1395.507568}	
+
+start
+
+	set GenericTimer time to 600 seconds
+	set InitialTimer time to 500 seconds
+
+	begin loop				
+
+		// Generic Boredom Comments
+		if get GenericTimer time remaining <= 0 and get CommentTimer time remaining == 0 and dialogue ready
+			if GenericInstance == L2_FALSE
+				begin dialogue
+					//say "Fenrik - Begone, exiles, you are not wanted here."
+					say "BW2T_SCRIPT_02C_FENRIK_10"
+					wait until read
+					//say "FENRIK - I will not allow the insidious Greek infection to take this land."
+					say "BW2T_SCRIPT_02C_FENRIK_20"
+					wait until read				
+				end dialogue
+
+				//-- set comment timer
+				CommentTimer = create timer for L2_COMMENT_WAIT seconds
+
+				GenericInstance++
+			elsif GenericInstance == 1
+				begin dialogue
+					//say "FENRIK - My hounds grow restless for the taste of Greek flesh."
+					say "BW2T_SCRIPT_02C_FENRIK_30"
+					wait until read
+					//say "FENRIK - There is nothing for you here but swift death."
+					say "BW2T_SCRIPT_02C_FENRIK_40"
+					wait until read
+				end dialogue
+
+				//-- set comment timer
+				CommentTimer = create timer for L2_COMMENT_WAIT seconds
+
+				GenericInstance++
+			elsif GenericInstance == 2
+				GenericInstance++
+				begin dialogue
+					//say "FENRIK - You deny me, Greek! Damn your eyes!"
+					say "BW2T_SCRIPT_02C_FENRIK_50"
+					wait until read
+					//say "FENRIK - This cold land will be your grave."
+					say "BW2T_SCRIPT_02C_FENRIK_60"
+					wait until read
+				end dialogue
+
+				//-- set comment timer
+				CommentTimer = create timer for L2_COMMENT_WAIT seconds
+			end if
+
+			set GenericTimer time to GenericTimerDelay seconds
+		end if
+
+		//Do a capacity check on the town. when it's high and so is the population trigger these comments
+		if capacity of L2GreekTown > 60 and size of L2GreekTown > 80 and ChallengeComment == L2_FALSE and get CommentTimer time remaining == 0 and dialogue ready
+
+			ChallengeComment = L2_TRUE
+
+			//Check alignment
+			if get player 0 alignment > 0
+				begin dialogue
+					say "It's quite pathetic to see you. So new, yet siding with the inferior good"
+					wait until read
+
+					say "If you had more courage you'd fight it fair and square on the battlefield"
+					wait until read
+
+					say "It looks like you'd prefer to steal my towns people instead."
+					wait until read
+				end dialogue
+				ChallengeType = 1	//Good				
+			else
+				begin dialogue
+					say "So new to the world and already siding with evil?"
+					wait until read
+
+					say "It's a shame you and your petty forces would fall so harshly in battle against my own"
+					wait until read
+
+					say "I dont suppose your daring enough to contest this either? You know where to find me.."
+					wait until read
+				end dialogue
+				ChallengeType = -1 //Evil
+
+			end if
+
+			ChallengeReminderTimer = create timer for L2_CHALLENGE_WAIT seconds
+			//-- set comment timer
+			CommentTimer = create timer for L2_COMMENT_WAIT seconds
+		end if
+
+		//After the challenge check the timer to remind the player.. of the challenge
+		if get ChallengeReminderTimer time remaining == 0 and ChallengeType != 0 and get CommentTimer time remaining == 0 and dialogue ready
+			//Player is currently aligned good
+			if  get player 0 alignment > 0
+				//Player was aligned good before
+				if ChallengeType == 1
+					begin dialogue
+						say "So your still weak at the knees."
+						wait until read
+
+						//If the player has had Norse imgrating to them
+						say "My people seem to see something in your though"
+						wait until read
+					end dialogue
+				//Player was aligned evil before
+				else
+					begin dialogue
+						say "Your even more pathetic than I first imagined"
+						wait until read
+
+						say "Why switch from being an honourable evil to a pitiful good?"
+						wait until read
+					end dialogue
+				end if
+
+			//Player is currently aligned evil
+			else
+				//Player was aligned good before
+				if ChallengeType == -1
+					begin dialogue
+						say "You appear to be listening to me."
+						wait until read
+
+						say "You change to the dark side has been noted"
+						wait until read
+					end dialogue
+				//Player was aligned evil before
+				else
+					begin dialogue
+						say "I still await your challenge?"
+						wait until read
+
+						say "Anyone would think you were too scared to challenge the mighty Norse"
+						wait until read
+					end dialogue
+				
+				end if
+			end if
+
+			ChallengeReminderTimer = create timer for L2_CHALLENGE_WAIT seconds
+			//-- set comment timer
+			CommentTimer = create timer for L2_COMMENT_WAIT seconds
+		end if
+		
+		//Comments on when the player has a platoon near the Farming Community
+		if not GreekFarmPlatoon exists and get PLAYER of L2_FarmingCommunity == 1
+			GreekFarmPlatoon = get platoon of player 0 nearest {L2_FarmingCommunity} radius 75
+
+			if GreekFarmPlatoon exists
+				say "Why does your army approach the farming community?"
+				wait until read
+
+				say "They are under my control, leave now or face the consiquences"
+				wait until read
+			end if
+		end if		
+
+		// First time player zooms over the Farming Community
+		if FarmCommunityComment == L2_FALSE and dialogue ready
+			if camera position near {L2_FarmingCommunity} radius 100 and {L2_FarmingCommunity} viewed
+				FarmCommunityComment = L2_TRUE
+				begin dialogue
+					//say "FENRIK - They are thralls to my will, Greek. As you will be."
+					say "BW2T_SCRIPT_02C_FENRIK_70"
+					wait until read
+				end dialogue
+
+				//-- set comment timer
+				CommentTimer = create timer for L2_COMMENT_WAIT seconds
+
+			end if
+		end if
+
+		// First time the player zooms over the Norse Town
+		if CapitalComment == L2_FALSE and dialogue ready
+			if camera position near {L2NorseTown} radius 100 and {L2NorseTown} viewed
+				CapitalComment = L2_TRUE
+				begin dialogue
+					//say "FENRIK - See that, Exile? A place of strength and indomitable spirit!"
+					say "BW2T_SCRIPT_02C_FENRIK_80"
+					wait until read
+					//say "FENRIK - "The Sons of Sigvid will never falter or yield."
+					say "BW2T_SCRIPT_02C_FENRIK_90"
+					wait until read
+				end dialogue
+
+				//-- set comment timer
+				CommentTimer = create timer for L2_COMMENT_WAIT seconds
+			end if
+		end if
+
+		// First time the player zooms in near wall of the Norse town
+		if WallComment == L2_FALSE and get CommentTimer time remaining == 0 and dialogue ready
+			if camera position near {WallView} radius 50 and {WallView} viewed
+				WallComment = L2_TRUE
+				begin dialogue
+					eject evil spirit
+					eject good spirit
+					//say "EA - Hmmmm. Wooden wall. I wonder how we can deal with that." (animation of EA looking crafty and creating a fireball in hand)
+					say "BW2T_SCRIPT_02C_FENRIK_100"
+					wait until read
+					//say "GA - Must you always consider destruction as the best solution?"
+					say "BW2T_SCRIPT_02C_FENRIK_110"
+					wait until read
+				end dialogue
+
+				//-- set comment timer
+				CommentTimer = create timer for L2_COMMENT_WAIT seconds
+			end if
+		end if
+
+		// First time the player zooms over the Farming Plateau
+		if ValleyComment == L2_FALSE and dialogue ready
+			if camera position near {CreatureValleyPos} radius 200 and {CreatureValleyPos} viewed
+				ValleyComment = L2_TRUE
+				begin dialogue
+					eject good spirit
+					//say "GA - Oh my! What was that terrible noise!"
+					say "BW2T_SCRIPT_02C_ANALYSIS_10"
+					wait until read
+					//say "EA - Hey, sorry, man - had five alarm chilli for lunch"
+					say "BW2T_SCRIPT_02C_ANALYSIS_20"
+					wait until read
+					eject evil spirit
+					//say "GA - I meant that loud, agonised, echoing howl"
+					say "BW2T_SCRIPT_02C_ANALYSIS_30"
+					wait until read
+					//say "EA - Yeah, I shouldn't have had that second bowl."
+					say "BW2T_SCRIPT_02C_ANALYSIS_40"
+					wait until read
+					//say "GA - There's something in that canyon"
+					say "BW2T_SCRIPT_02C_ANALYSIS_50"
+					wait until read
+				end dialogue
+
+				//-- set comment timer
+				CommentTimer = create timer for L2_COMMENT_WAIT seconds
+			end if
+		end if
+		
+		//wait 1 seconds
+
+	until L2NorseTownConverted == 1 or PLAYER of L2GreekTown != 0
+	end loop
+
+end script MainFenrikComments

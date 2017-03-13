@@ -1,0 +1,20 @@
+//-----------------------------------------------------------------------------
+//	Sigvids Ruins
+//-----------------------------------------------------------------------------
+begin script Land2SigvidsRuins
+	RuinsPos = marker at {1478.260, 12.800, 1240.855}
+	Army = 0
+	GotPrize = 0
+start
+	begin loop
+		Army = get platoon of player 0 nearest {RuinsPos} radius 18
+		if Army exists
+			begin dialogue
+				say "you got past the creature and won a prize"
+				wait until read
+			end dialogue
+			GotPrize = 1
+		end if
+	until GotPrize == 1
+	end loop
+end script Land2SigvidsRuins

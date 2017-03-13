@@ -1,0 +1,260 @@
+
+define script EADemoGreekWallArchers
+define script EADemoArcherVictims (JapanGruntPos, JapanGruntPos2)
+define script EADemoBattlefield
+
+//global
+
+run script DemoTest
+
+//-------------------------------------------------------------------
+// MAIN
+//-------------------------------------------------------------------
+
+begin script DemoTest
+
+ Eternity = 0
+ WallAttackPos1 = marker at {893.823, 50.138, 956.543}
+ WallAttackPos2 = marker at {889.348, 65.265, 865.019}
+ WallAttackPos3 = marker at {785.173, 90.935, 924.794}
+ WallAttackPos4 = marker at {802.527, 71.405, 837.257}
+
+start
+
+ set player 0 ENEMY to player 1
+ set player 1 ENEMY to player 0
+
+ run background script Land5Globals
+ run background script EADemoGreekWallArchers
+ run background script EADemoArcherVictims (WallAttackPos1, WallAttackPos2)
+ run background script EADemoArcherVictims (WallAttackPos3, WallAttackPos4)
+ run background script EADemoBattlefield
+
+ run background script TownEventKnockADoorRun
+ run background script TownEventPotter
+ run background script TownEventWindowCleaner
+ run background script TownEventChimneySweep
+
+ begin loop
+		
+ until Eternity == 1
+ end loop
+ 
+end script DemoTest
+
+//-------------------------------------------------------------------
+// BATTLE FIELD SCENE
+//-------------------------------------------------------------------
+
+begin script EADemoBattlefield
+
+ Eternity = 0
+
+ GreekGrunt1 = 0
+ GreekGrunt1Pos = marker at {948.599, 71.664, 1629.897}
+ GreekGrunt2 = 0
+ GreekGrunt2Pos = marker at {977.364, 73.651, 1628.099}
+ GreekGrunt3 = 0
+ GreekGrunt3Pos = marker at {1002.588, 77.040, 1624.352}
+ GreekGrunt4 = 0
+ GreekGrunt4Pos = marker at {1035.916, 72.865, 1622.729}
+
+ GreekArcher1 = 0
+ GreekArcher1Pos = marker at {942.704, 85.533, 1585.469}
+ GreekArcher2 = 0
+ GreekArcher2Pos = marker at {969.508, 86.077, 1580.440}
+ GreekArcher3 = 0
+ GreekArcher3Pos = marker at {995.315, 88.538, 1581.077}
+ GreekArcher4 = 0
+ GreekArcher4Pos = marker at {1035.439, 83.473, 1582.422}
+
+ GreekSiege1 = 0
+ GreekSiege1Pos = marker at {963.153, 81.998, 1560.967}
+ GreekSiege2 = 0
+ GreekSiege2Pos = marker at {1002.686, 84.057, 1557.148}
+
+ JapGrunt1 = 0
+ JapGrunt1Pos = marker at {971.493, 87.455, 1728.189}
+ JapGrunt2 = 0
+ JapGrunt2Pos = marker at {994.652, 88.801, 1729.822}
+ JapGrunt3 = 0
+ JapGrunt3Pos = marker at {1019.393, 88.889, 1727.089}
+ JapGrunt4 = 0
+ JapGrunt4Pos = marker at {1049.048, 91.405, 1733.108}
+
+ JapArcher1 = 0
+ JapArcher1Pos = marker at {969.486, 97.878, 1756.977}
+ JapArcher2 = 0
+ JapArcher2Pos = marker at {987.738, 97.269, 1756.359}
+ JapArcher3 = 0
+ JapArcher3Pos = marker at {1015.784, 95.861, 1756.721}
+ JapArcher4 = 0
+ JapArcher4Pos = marker at {1038.720, 96.810, 1761.809}
+
+ JapSiege1 = 0
+ JapSiege1Pos = marker at {981.348, 99.126, 1778.540}
+ JapSiege2 = 0
+ JapSiege2Pos = marker at {1014.713, 99.479, 1776.540}
+
+start
+
+ //Create Greek Army
+ GreekGrunt1 = create platoon PLATOON_INFO_GREEK_MELEE_1 at {GreekGrunt1Pos} with 20 men and 0 women
+ attach GreekGrunt1 to L5GreekTown
+
+ GreekGrunt2 = create platoon PLATOON_INFO_GREEK_MELEE_1 at {GreekGrunt2Pos} with 20 men and 0 women
+ attach GreekGrunt2 to L5GreekTown
+
+ GreekGrunt3 = create platoon PLATOON_INFO_GREEK_MELEE_1 at {GreekGrunt3Pos} with 20 men and 0 women
+ attach GreekGrunt3 to L5GreekTown
+
+ GreekGrunt4 = create platoon PLATOON_INFO_GREEK_MELEE_1 at {GreekGrunt4Pos} with 20 men and 0 women
+ attach GreekGrunt4 to L5GreekTown
+
+ GreekArcher1 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher1Pos} with 20 men and 0 women
+ attach GreekArcher1 to L5GreekTown
+
+ GreekArcher2 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher2Pos} with 20 men and 0 women
+ attach GreekArcher2 to L5GreekTown
+
+ GreekArcher3 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher3Pos} with 20 men and 0 women
+ attach GreekArcher3 to L5GreekTown
+
+ GreekArcher4 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher4Pos} with 20 men and 0 women
+ attach GreekArcher4 to L5GreekTown
+
+ create planned siege weapon SIEGE_BALANCE_TYPE_CATAPULT at {GreekSiege1Pos} belonging to town L5GreekTown
+ create planned siege weapon SIEGE_BALANCE_TYPE_CATAPULT at {GreekSiege2Pos} belonging to town L5GreekTown
+
+ //create Japanese army
+ JapGrunt1 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {JapGrunt1Pos} with 20 men and 0 women
+ attach JapGrunt1 to L5JapanCapitol
+
+ JapGrunt2 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {JapGrunt2Pos} with 20 men and 0 women
+ attach JapGrunt2 to L5JapanCapitol
+
+ JapGrunt3 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {JapGrunt3Pos} with 20 men and 0 women
+ attach JapGrunt3 to L5JapanCapitol
+
+ JapGrunt4 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {JapGrunt4Pos} with 20 men and 0 women
+ attach JapGrunt4 to L5JapanCapitol
+
+ JapArcher1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {JapArcher1Pos} with 20 men and 0 women
+ attach JapArcher1 to L5JapanCapitol
+
+ JapArcher2 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {JapArcher2Pos} with 20 men and 0 women
+ attach JapArcher2 to L5JapanCapitol
+
+ JapArcher3 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {JapArcher3Pos} with 20 men and 0 women
+ attach JapArcher3 to L5JapanCapitol
+
+ JapArcher4 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {JapArcher4Pos} with 20 men and 0 women
+ attach JapArcher4 to L5JapanCapitol
+
+ create planned siege weapon SIEGE_BALANCE_TYPE_CATAPULT at {JapSiege1Pos} belonging to town L5JapanCapitol
+ create planned siege weapon SIEGE_BALANCE_TYPE_CATAPULT at {JapSiege2Pos} belonging to town L5JapanCapitol
+
+ begin loop
+
+	if get number of men in platoon JapGrunt1 <= 18 or get number of men in platoon JapGrunt2 <= 18 or get number of men in platoon JapGrunt3 <= 18 or get number of men in platoon JapGrunt4 <= 18 or get number of men in platoon JapArcher1 <= 18 or get number of men in platoon JapArcher2 <= 18 or get number of men in platoon JapArcher3 <= 18 or get number of men in platoon JapArcher4 <= 18
+		Eternity = 1
+	end if
+
+ until Eternity == 1
+ end loop
+
+ add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using GreekGrunt1 to front of JapGrunt1 action queue
+ add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using GreekGrunt2 to front of JapGrunt2 action queue
+ add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using GreekGrunt3 to front of JapGrunt3 action queue
+ add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using GreekGrunt4 to front of JapGrunt4 action queue
+ add action PLATOON_AGENDA_ACTION_RANGED_ATTACK_MAINTAINING_DISTANCE using GreekArcher1 to front of JapArcher1 action queue
+ add action PLATOON_AGENDA_ACTION_RANGED_ATTACK_MAINTAINING_DISTANCE using GreekArcher2 to front of JapArcher2 action queue
+ add action PLATOON_AGENDA_ACTION_RANGED_ATTACK_MAINTAINING_DISTANCE using GreekArcher3 to front of JapArcher3 action queue
+ add action PLATOON_AGENDA_ACTION_RANGED_ATTACK_MAINTAINING_DISTANCE using GreekArcher4 to front of JapArcher4 action queue
+ add action PLATOON_AGENDA_ACTION_ATTACK using GreekArcher1 to front of JapSiege1 action queue
+ add action PLATOON_AGENDA_ACTION_ATTACK using GreekArcher4 to front of JapSiege2 action queue
+
+ begin loop
+ until Eternity == 2
+ end loop
+
+end script EADemoBattlefield
+
+//-------------------------------------------------------------------
+// MANNED WALL SCENE
+//-------------------------------------------------------------------
+
+begin script EADemoGreekWallArchers
+
+ Eternity = 0
+
+ GreekWall1 = 0
+ GreekWall2 = 0
+ GreekWallPos1 = marker at {925.442, 74.977, 835.439}
+ GreekWallPos2 = marker at {807.646, 70.184, 829.752}
+
+ GreekArcher1 = 0
+ GreekArcher1Pos = marker at {902.820, 71.162, 827.174}
+ GreekArcher2 = 0
+ GreekArcher2Pos = marker at {889.178, 65.350, 837.681}
+ GreekArcher3 = 0
+ GreekArcher3Pos = marker at {874.391, 66.174, 841.350}
+ GreekArcher4 = 0
+ GreekArcher4Pos = marker at {833.406, 69.938, 817.522}
+
+start
+// find the wall
+ GreekWall1 = get wall segment nearest {GreekWallPos1} radius 5
+ GreekWall2 = get wall segment nearest {GreekWallPos2} radius 5
+
+// Man the walls with Greek Archers
+ GreekArcher1 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher1Pos} with 20 men and 0 women
+ attach GreekArcher1 to L5GreekTown
+ add action PLATOON_AGENDA_ACTION_GET_ON_WALL using GreekWall1 to front of GreekArcher1 action queue
+
+ GreekArcher2 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher2Pos} with 20 men and 0 women
+ attach GreekArcher2 to L5GreekTown
+ add action PLATOON_AGENDA_ACTION_GET_ON_WALL using GreekWall1 to front of GreekArcher2 action queue
+
+ GreekArcher3 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher3Pos} with 20 men and 0 women
+ attach GreekArcher3 to L5GreekTown
+ add action PLATOON_AGENDA_ACTION_GET_ON_WALL using GreekWall2 to front of GreekArcher3 action queue
+
+ GreekArcher4 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArcher4Pos} with 20 men and 0 women
+ attach GreekArcher4 to L5GreekTown
+ add action PLATOON_AGENDA_ACTION_GET_ON_WALL using GreekWall2 to front of GreekArcher4 action queue
+
+ begin loop
+
+ until Eternity == 1
+ end loop
+
+end script EADemoGreekWallArchers
+
+//-------------------------------------------------------------------
+// WALL ATTACK SCENE
+//-------------------------------------------------------------------
+
+begin script EADemoArcherVictims (JapanGruntPos, JapanGruntPos2)
+
+ JapanGrunt = 0
+ Eternity = 0
+ 
+start
+
+ begin loop
+	// setup new Japanese platoon
+	JapanGrunt = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {JapanGruntPos} with 20 men and 0 women
+	attach JapanGrunt to L5JapanCapitol
+
+	// send new platoon to attack wall
+	add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using JapanGruntPos2 to front of JapanGrunt action queue
+
+	// wait until they are all dead
+	wait until get number of men in platoon JapanGrunt > 0 // suspicious that its not creating properly
+	wait until get number of men in platoon JapanGrunt <= 0
+
+ until Eternity == 1
+ end loop
+
+end script EADemoArcherVictims

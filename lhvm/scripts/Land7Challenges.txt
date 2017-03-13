@@ -1,0 +1,22 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 7
+//===========================================================
+
+// -Globals-
+Land7Hurricane.txt
+GlobalCreatureAI.txt
+Land7Globals.txt
+Land7Intro.txt
+Land7Outro.txt
+Land7Departure.txt
+Land7SickTown.txt
+Land7NutOil2.txt
+Land7Objectives.txt
+Land7JapanCapital.txt
+Land7Archeologists.txt 
+Land7SevenSamurai.txt
+Land7DYK.txt
+
+
+//should always be last
+Land7Control.txt

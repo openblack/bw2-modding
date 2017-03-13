@@ -1,0 +1,26 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 10
+//===========================================================
+
+// -Globals-
+Land10Globals.txt
+
+// -AI-
+Land10CreatureAI.txt
+
+// -Misc-
+Land10Intro.txt
+Land10Outro.txt
+Land10Departure.txt
+Land10Objectives.txt
+Land10DYK.txt
+
+
+// -Challenges-
+Land10SmokeSignals.txt
+
+// -Control-
+Land10Women.txt
+Land10Stealth.txt
+Land10AztecCapitalScript.txt
+Land10Control.txt

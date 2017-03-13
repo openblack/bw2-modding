@@ -1,0 +1,1367 @@
+define script FlipSign(PassedSignPost)
+define script MoveActor(PassedActor)
+define script FA_CreateSignPosts
+define script FA_CreateSpy
+define script FA_CreateAssassins
+define script FA_CheckForHittingInfo
+define script FA_Intro
+define script FA_RandomDialogue
+define script FA_Outro
+define script FA_AssassinFlip(PassedSignPost)
+define script FA_CheckForCapture
+define script FA_CreateMap
+
+define FA_NUM_SIGN_POSTS = 26
+define FA_NUM_ASSASSINS = 6
+define FA_NUM_INFO = 4
+define FA_NUM_MAP = 4
+define FA_NUM_INFO_NEEDED = 4
+define FA_CAN_FLIP = 1
+define FA_CANT_FLIP = 0
+define FA_EXIT_DRAGONS = 8
+
+global SignPostFacing[FA_NUM_SIGN_POSTS]
+global FA_SignPost[FA_NUM_SIGN_POSTS]
+global FA_Spy
+global Assassin[FA_NUM_ASSASSINS]
+global SignPostTarget[FA_NUM_SIGN_POSTS]
+global FA_Map[FA_NUM_MAP]
+global FA_NumInfoCollected = 0
+global FA_TimesAttempted = 0
+global FA_BeginScript = 0
+global FA_ScriptRunning = 0
+global FA_SpyTarget = 0
+global FA_AssassinState[FA_NUM_ASSASSINS]
+global FA_CompletedScript = 0
+global FA_Success = 0
+global FA_SpyEffect = 0
+global ScrollEffect[FA_NUM_MAP]
+//------------------------------
+
+begin script Land6ForestAmbush
+
+Ctr = 0
+
+start
+
+if FA_CompletedScript == 0
+	if FA_TimesAttempted == 0
+		run script FA_CreateSignPosts
+	end if
+	run script FA_CreateMap
+
+	run script FA_Intro	// cutscene, creation of spy and assassins
+	
+	FA_ScriptRunning = 1
+
+	while Ctr < FA_NUM_SIGN_POSTS
+		SignPostFacing[Ctr] = 1
+		run background script FlipSign(FA_SignPost[Ctr])
+		run background script FA_AssassinFlip(FA_SignPost[Ctr])
+		Ctr++
+	end while
+
+	run background script MoveActor(FA_Spy)
+	run background script FA_CheckForHittingInfo
+	run background script FA_RandomDialogue
+	run background script FA_CheckForCapture
+
+	Ctr = 0
+
+	while Ctr < FA_NUM_ASSASSINS
+		run background  script MoveActor(Assassin[Ctr])
+		Ctr++
+	end while
+
+	//wait until FA_CompletedScript	== 1
+end if
+end script Land6ForestAmbush
+
+// ------------------------
+
+begin script FlipSign(PassedSignPost)
+
+Ctr = 0
+
+start
+
+	begin loop
+	while FA_ScriptRunning == 1 and Ctr < FA_NUM_ASSASSINS
+		if {Assassin[Ctr]} not near {PassedSignPost} radius 4
+			FA_AssassinState[Ctr] = FA_CAN_FLIP
+		end if
+
+		wait until PassedSignPost right clicked or ({Assassin[Ctr]} near {PassedSignPost} radius 2 and FA_AssassinState[Ctr] == FA_CAN_FLIP)// or (hand position near {PassedSignPost} radius 10 and mouse left button clicked)
+		clear right clicked object
+		FA_AssassinState[Ctr] = FA_CANT_FLIP
+
+		if PassedSignPost == FA_SignPost[0]
+			if SignPostFacing[0] == 1
+				SignPostFacing[0] = 1
+				SignPostTarget[0] = FA_SignPost[1]
+				set FA_SignPost[0] focus to {FA_SignPost[1]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[1]
+			if SignPostFacing[1] == 1
+				SignPostTarget[1] = FA_SignPost[19]
+				SignPostFacing[1] = 2
+				set FA_SignPost[1] focus to {FA_SignPost[19]}
+			elsif SignPostFacing[1] == 2
+				SignPostFacing[1] = 1
+				SignPostTarget[1] = FA_SignPost[2]
+				set FA_SignPost[1] focus to {FA_SignPost[2]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[2]
+			if SignPostFacing[2] == 1
+				SignPostTarget[2] = FA_SignPost[17]
+				SignPostFacing[2] = 2
+				set FA_SignPost[2] focus to {FA_SignPost[17]}
+			elsif SignPostFacing[2] == 2
+				SignPostFacing[2] = 3
+				SignPostTarget[2] = FA_SignPost[6]
+				set FA_SignPost[2] focus to {FA_SignPost[6]}
+			elsif SignPostFacing[2] == 3
+				SignPostFacing[2] = 1
+				SignPostTarget[2] = FA_SignPost[3]
+				set FA_SignPost[2] focus to {FA_SignPost[3]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[3]
+			if SignPostFacing[3] == 1
+				SignPostTarget[3] = FA_SignPost[4]
+				SignPostFacing[3] = 2
+				set FA_SignPost[3] focus to {FA_SignPost[4]}
+			elsif SignPostFacing[3] == 2
+				SignPostFacing[3] = 3
+				SignPostTarget[3] = FA_SignPost[5]
+				set FA_SignPost[3] focus to {FA_SignPost[5]}
+			elsif SignPostFacing[3] == 3
+				SignPostFacing[3] = 1
+				SignPostTarget[3] = FA_SignPost[2]
+				set FA_SignPost[3] focus to {FA_SignPost[2]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[4]
+			if SignPostFacing[4] == 1
+				SignPostTarget[4] = FA_SignPost[24]
+				SignPostFacing[4] = 2
+				set FA_SignPost[4] focus to {FA_SignPost[24]}
+			elsif SignPostFacing[4] == 2
+				SignPostFacing[4] = 1
+				SignPostTarget[4] = FA_SignPost[3]
+				set FA_SignPost[4] focus to {FA_SignPost[3]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[5]
+			if SignPostFacing[5] == 1
+				SignPostTarget[5] = FA_SignPost[3]
+				SignPostFacing[5] = 2
+				set FA_SignPost[5] focus to {FA_SignPost[3]}
+			elsif SignPostFacing[5] == 2
+				SignPostFacing[5] = 3
+				SignPostTarget[5] = FA_SignPost[24]
+				set FA_SignPost[5] focus to {FA_SignPost[24]}
+			elsif SignPostFacing[5] == 3
+				SignPostFacing[5] = 1
+				SignPostTarget[5] = FA_SignPost[7]
+				set FA_SignPost[5] focus to {FA_SignPost[7]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[6]
+			if SignPostFacing[6] == 1
+				SignPostTarget[6] = FA_SignPost[2]
+				SignPostFacing[6] = 2
+				set FA_SignPost[6] focus to {FA_SignPost[2]}
+			elsif SignPostFacing[6] == 2
+				SignPostFacing[6] = 3
+				SignPostTarget[6] = FA_SignPost[7]
+				set FA_SignPost[6] focus to {FA_SignPost[7]}
+			elsif SignPostFacing[6] == 3
+				SignPostFacing[6] = 1
+				SignPostTarget[6] = FA_SignPost[23]
+				set FA_SignPost[6] focus to {FA_SignPost[23]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[7]
+			if SignPostFacing[7] == 1
+				SignPostTarget[7] = FA_SignPost[6]
+				SignPostFacing[7] = 2
+				set FA_SignPost[7] focus to {FA_SignPost[6]}
+			elsif SignPostFacing[7] == 2
+				SignPostFacing[7] = 1
+				SignPostTarget[7] = FA_SignPost[8]
+				set FA_SignPost[7] focus to {FA_SignPost[8]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[8]
+			if SignPostFacing[8] == 1
+				SignPostTarget[8] = FA_SignPost[7]
+				SignPostFacing[8] = 2
+				set FA_SignPost[8] focus to {FA_SignPost[7]}
+			elsif SignPostFacing[8] == 2
+				SignPostFacing[8] = 1
+				SignPostTarget[8] = FA_SignPost[9]
+				set FA_SignPost[8] focus to {FA_SignPost[9]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[9]
+			if SignPostFacing[9] == 1
+				SignPostTarget[9] = FA_SignPost[8]
+				SignPostFacing[9] = 2
+				set FA_SignPost[9] focus to {FA_SignPost[8]}
+			elsif SignPostFacing[9] == 2
+				SignPostFacing[9] = 3
+				SignPostTarget[9] = FA_SignPost[22]
+				set FA_SignPost[9] focus to {FA_SignPost[22]}
+			elsif SignPostFacing[9] == 3
+				SignPostFacing[9] = 4
+				SignPostTarget[9] = FA_SignPost[10]
+				set FA_SignPost[9] focus to {FA_SignPost[10]}
+			elsif SignPostFacing[9] == 4
+				SignPostFacing[9] = 1
+				SignPostTarget[9] = FA_SignPost[11]
+				set FA_SignPost[9] focus to {FA_SignPost[11]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[10]
+			if SignPostFacing[10] == 1
+				SignPostTarget[10] = FA_SignPost[9]
+				SignPostFacing[10] = 2
+				set FA_SignPost[10] focus to {FA_SignPost[9]}
+			elsif SignPostFacing[10] == 2
+				SignPostFacing[10] = 1
+				SignPostTarget[10] = FA_SignPost[25]
+				set FA_SignPost[10] focus to {FA_SignPost[25]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[11]
+			if SignPostFacing[11] == 1
+				SignPostTarget[11] = FA_SignPost[9]
+				SignPostFacing[11] = 2
+				set FA_SignPost[11] focus to {FA_SignPost[9]}
+			elsif SignPostFacing[11] == 2
+				SignPostFacing[11] = 3
+				SignPostTarget[11] = FA_SignPost[12]
+				set FA_SignPost[11] focus to {FA_SignPost[12]}
+			elsif SignPostFacing[11] == 3
+				SignPostFacing[11] = 1
+				SignPostTarget[11] = FA_SignPost[25]
+				set FA_SignPost[11] focus to {FA_SignPost[25]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[12]
+			if SignPostFacing[12] == 1
+				SignPostTarget[12] = FA_SignPost[11]
+				SignPostFacing[12] = 2
+				set FA_SignPost[12] focus to {FA_SignPost[11]}
+			elsif SignPostFacing[12] == 2
+				SignPostFacing[12] = 3
+				SignPostTarget[12] = FA_SignPost[13]
+				set FA_SignPost[12] focus to {FA_SignPost[13]}
+			elsif SignPostFacing[12] == 3
+				SignPostFacing[12] = 1
+				SignPostTarget[12] = FA_SignPost[16]
+				set FA_SignPost[12] focus to {FA_SignPost[16]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[13]
+			if SignPostFacing[13] == 1
+				SignPostTarget[13] = FA_SignPost[12]
+				SignPostFacing[13] = 2
+				set FA_SignPost[13] focus to {FA_SignPost[12]}
+			elsif SignPostFacing[13] == 2
+				SignPostFacing[13] = 3
+				SignPostTarget[13] = FA_SignPost[25]
+				set FA_SignPost[13] focus to {FA_SignPost[25]}
+			elsif SignPostFacing[13] == 3
+				SignPostFacing[13] = 1
+				SignPostTarget[13] = FA_SignPost[14]
+				set FA_SignPost[13] focus to {FA_SignPost[14]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[14]
+			if SignPostFacing[14] == 1
+				SignPostTarget[14] = FA_SignPost[13]
+				SignPostFacing[14] = 2
+				set FA_SignPost[14] focus to {FA_SignPost[13]}
+			elsif SignPostFacing[14] == 2
+				SignPostFacing[14] = 1
+				SignPostTarget[14] = FA_SignPost[15]
+				set FA_SignPost[14] focus to {FA_SignPost[15]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[15]
+			if SignPostFacing[15] == 1
+				SignPostTarget[15] = FA_SignPost[14]
+				SignPostFacing[15] = 2
+				set FA_SignPost[15] focus to {FA_SignPost[14]}
+			elsif SignPostFacing[15] == 2
+				SignPostFacing[15] = 1
+				SignPostTarget[15] = FA_SignPost[18]
+				set FA_SignPost[15] focus to {FA_SignPost[18]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[16]
+			if SignPostFacing[16] == 1
+				SignPostTarget[16] = FA_SignPost[12]
+				SignPostFacing[16] = 2
+				set FA_SignPost[16] focus to {FA_SignPost[12]}
+			elsif SignPostFacing[16] == 2
+				SignPostFacing[16] = 1
+				SignPostTarget[16] = FA_SignPost[18]
+				set FA_SignPost[16] focus to {FA_SignPost[18]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[17]
+			if SignPostFacing[17] == 1
+				SignPostTarget[17] = FA_SignPost[23]
+				SignPostFacing[17] = 2
+				set FA_SignPost[17] focus to {FA_SignPost[23]}
+			elsif SignPostFacing[17] == 2
+				SignPostFacing[17] = 3
+				SignPostTarget[17] = FA_SignPost[16]
+				set FA_SignPost[17] focus to {FA_SignPost[16]}
+			elsif SignPostFacing[17] == 3
+				SignPostFacing[17] = 1
+				SignPostTarget[17] = FA_SignPost[21]
+				set FA_SignPost[17] focus to {FA_SignPost[21]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[18]
+			if SignPostFacing[18] == 1
+				SignPostTarget[18] = FA_SignPost[15]
+				SignPostFacing[18] = 2
+				set FA_SignPost[18] focus to {FA_SignPost[15]}
+			elsif SignPostFacing[18] == 2
+				SignPostFacing[18] = 1
+				SignPostTarget[18] = FA_SignPost[19]
+				set FA_SignPost[18] focus to {FA_SignPost[19]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[19]
+			if SignPostFacing[19] == 1
+				SignPostTarget[19] = FA_SignPost[1]
+				SignPostFacing[19] = 2
+				set FA_SignPost[19] focus to {FA_SignPost[1]}
+			elsif SignPostFacing[19] == 2
+				SignPostFacing[19] = 3
+				SignPostTarget[19] = FA_SignPost[18]
+				set FA_SignPost[19] focus to {FA_SignPost[18]}
+			elsif SignPostFacing[19] == 3
+				SignPostFacing[19] = 1
+				SignPostTarget[19] = FA_SignPost[20]
+				set FA_SignPost[19] focus to {FA_SignPost[20]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[20]
+			if SignPostFacing[20] == 1
+				SignPostTarget[20] = FA_SignPost[19]
+				SignPostFacing[20] = 2
+				set FA_SignPost[20] focus to {FA_SignPost[19]}
+			elsif SignPostFacing[20] == 2
+				SignPostFacing[20] = 1
+				SignPostTarget[20] = FA_SignPost[21]
+				set FA_SignPost[20] focus to {FA_SignPost[21]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[21]
+			if SignPostFacing[21] == 1
+				SignPostFacing[21] = 2
+				SignPostTarget[21] = FA_SignPost[20]
+				set FA_SignPost[21] focus to {FA_SignPost[20]}
+			elsif SignPostFacing[21] == 2
+				SignPostFacing[21] = 1
+				SignPostTarget[21] = FA_SignPost[17]
+				set FA_SignPost[21] focus to {FA_SignPost[17]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[22]
+			if SignPostFacing[22] == 1
+				SignPostFacing[22] = 1
+				SignPostTarget[22] = FA_SignPost[9]
+				set FA_SignPost[22] focus to {FA_SignPost[9]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[23]
+			if SignPostFacing[23] == 1
+				SignPostTarget[23] = FA_SignPost[6]
+				SignPostFacing[23] = 2
+				set FA_SignPost[23] focus to {FA_SignPost[6]}
+			elsif SignPostFacing[23] == 2
+				SignPostFacing[23] = 3
+				SignPostTarget[23] = FA_SignPost[12]
+				set FA_SignPost[23] focus to {FA_SignPost[12]}
+			elsif SignPostFacing[23] == 3
+				SignPostFacing[23] = 1
+				SignPostTarget[23] = FA_SignPost[17]
+				set FA_SignPost[23] focus to {FA_SignPost[17]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[24]
+			if SignPostFacing[24] == 1
+				SignPostFacing[24] = 2
+				SignPostTarget[24] = FA_SignPost[5]
+				set FA_SignPost[24] focus to {FA_SignPost[5]}
+			elsif SignPostFacing[24] == 2
+				SignPostFacing[24] = 1
+				SignPostTarget[24] = FA_SignPost[4]
+				set FA_SignPost[24] focus to {FA_SignPost[4]}
+			end if
+
+		elsif PassedSignPost == FA_SignPost[25]
+			if SignPostFacing[25] == 1
+				SignPostTarget[25] = FA_SignPost[10]
+				SignPostFacing[25] = 2
+				set FA_SignPost[25] focus to {FA_SignPost[10]}
+			elsif SignPostFacing[25] == 2
+				SignPostFacing[25] = 3
+				SignPostTarget[25] = FA_SignPost[11]
+				set FA_SignPost[25] focus to {FA_SignPost[11]}
+			elsif SignPostFacing[25] == 3
+				SignPostFacing[25] = 1
+				SignPostTarget[25] = FA_SignPost[13]
+				set FA_SignPost[25] focus to {FA_SignPost[13]}
+			end if
+		end if
+	
+	Ctr++
+	end while
+	Ctr = 0
+	until FA_ScriptRunning == 0
+	end loop
+
+end script FlipSign
+
+// ------------------------
+
+begin script MoveActor(PassedActor)
+
+Ctr = 0
+
+start
+
+begin loop
+if FA_BeginScript == 1 and FA_ScriptRunning != 0
+	while Ctr < FA_NUM_SIGN_POSTS
+		if PassedActor exists
+			if {PassedActor} near {FA_SignPost[Ctr]} radius 3
+				move PassedActor position to {SignPostTarget[Ctr]}
+			end if
+		end if
+		Ctr++
+	end while
+end if
+Ctr = 0
+
+until FA_ScriptRunning == 0
+end loop
+
+end script MoveActor
+
+//----------------------------------------
+
+begin script FA_CreateSignPosts
+
+	SignPostPos[FA_NUM_SIGN_POSTS]
+	InfoPos[FA_NUM_INFO]
+	Ctr			= 0
+
+start
+	SignPostPos[0] = marker at {1737.471,68.432,1360.214}
+	SignPostPos[1] = marker at {1712.484,67.941,1344.623}
+	SignPostPos[2] = marker at {1670.177,62.258,1358.237}
+	SignPostPos[3] = marker at {1672.894,64.363,1379.363}
+	SignPostPos[4] = marker at {1701.460,67.933,1371.646}
+	SignPostPos[5] = marker at {1648.538,59.315,1383.559}
+	SignPostPos[6] = marker at {1637.406,57.528,1348.298}
+	SignPostPos[7] = marker at {1620.000,57.433,1366.151}
+	SignPostPos[8] = marker at {1586.013,56.959,1347.056}
+	SignPostPos[9] = marker at {1593.347,57.288,1331.611}
+	SignPostPos[10] = marker at {1567.043,57.523,1309.657}
+	SignPostPos[11] = marker at {1610.787,57.215,1311.847}
+	SignPostPos[12] = marker at {1625.961,57.418,1298.073}
+	SignPostPos[13] = marker at {1622.001,58.737,1280.250}
+	SignPostPos[14] = marker at {1647.751,58.677,1270.243}
+	SignPostPos[15] = marker at {1696.359,65.385,1278.328}
+	SignPostPos[16] = marker at {1680.536,64.535,1297.501}
+	SignPostPos[17] = marker at {1669.625,61.450,1323.401}
+	SignPostPos[18] = marker at {1693.995,67.925,1297.288}
+	SignPostPos[19] = marker at {1715.426,67.941,1296.716}
+	SignPostPos[20] = marker at {1743.025,77.243,1288.079}
+	SignPostPos[21] = marker at {1744.515,73.632,1316.074}
+	SignPostPos[22] = marker at {1614.724,57.339,1335.363}
+	SignPostPos[23] = marker at {1639.775,57.502,1319.591}
+	SignPostPos[24] = marker at {1684.655,77.053,1402.500}
+	SignPostPos[25] = marker at {1584.804,58.090,1289.216}
+
+	while Ctr < FA_NUM_SIGN_POSTS
+		if FA_SignPost[Ctr] not exists
+			FA_SignPost[Ctr] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {SignPostPos[Ctr]}
+			override mesh for FA_SignPost[Ctr] with "..\models\m_genericsignpost_forest"
+			SCALE of FA_SignPost[Ctr] = 4
+			enable FA_SignPost[Ctr] indestructible
+			disable FA_SignPost[Ctr] pickup
+			disable FA_SignPost[Ctr] set on fire
+			disable FA_SignPost[Ctr] moveable
+			enable FA_SignPost[Ctr] cylindar override
+		end if
+		Ctr++
+	end while
+
+	Ctr = 0
+
+	SignPostTarget[0]  = FA_SignPost[1]
+	SignPostTarget[1]  = FA_SignPost[2]
+	SignPostTarget[2]  = FA_SignPost[17]
+	SignPostTarget[3]  = FA_SignPost[4]
+	SignPostTarget[4]  = FA_SignPost[5]
+	SignPostTarget[5]  = FA_SignPost[7]
+	SignPostTarget[6]  = FA_SignPost[23]
+	SignPostTarget[7]  = FA_SignPost[6]
+	SignPostTarget[8]  = FA_SignPost[9]
+	SignPostTarget[9]  = FA_SignPost[10]
+	SignPostTarget[10] = FA_SignPost[25]
+	SignPostTarget[11] = FA_SignPost[9]
+	SignPostTarget[12] = FA_SignPost[16]
+	SignPostTarget[13] = FA_SignPost[14]
+	SignPostTarget[14] = FA_SignPost[15]
+	SignPostTarget[15] = FA_SignPost[18]
+	SignPostTarget[16] = FA_SignPost[12]
+	SignPostTarget[17] = FA_SignPost[16]
+	SignPostTarget[18] = FA_SignPost[19]
+	SignPostTarget[19] = FA_SignPost[1]
+	SignPostTarget[20] = FA_SignPost[19]
+	SignPostTarget[21] = FA_SignPost[20]
+	SignPostTarget[22] = FA_SignPost[9]
+	SignPostTarget[23] = FA_SignPost[12]
+	SignPostTarget[24] = FA_SignPost[5]
+	SignPostTarget[25] = FA_SignPost[11]
+
+	set FA_SignPost[0] focus to {FA_SignPost[1]}
+	set FA_SignPost[1] focus to {FA_SignPost[2]}
+	set FA_SignPost[2] focus to {FA_SignPost[17]}
+	set FA_SignPost[3] focus to {FA_SignPost[4]}
+	set FA_SignPost[4] focus to {FA_SignPost[5]}
+	set FA_SignPost[5] focus to {FA_SignPost[7]}
+	set FA_SignPost[6] focus to {FA_SignPost[23]}
+	set FA_SignPost[7] focus to {FA_SignPost[6]}
+	set FA_SignPost[8] focus to {FA_SignPost[9]}
+	set FA_SignPost[9] focus to {FA_SignPost[10]}
+	set FA_SignPost[10] focus to {FA_SignPost[25]}
+	set FA_SignPost[11] focus to {FA_SignPost[9]}
+	set FA_SignPost[12] focus to {FA_SignPost[16]}
+	set FA_SignPost[13] focus to {FA_SignPost[14]}
+	set FA_SignPost[14] focus to {FA_SignPost[15]}
+	set FA_SignPost[15] focus to {FA_SignPost[18]}
+	set FA_SignPost[16] focus to {FA_SignPost[12]}
+	set FA_SignPost[17] focus to {FA_SignPost[16]}
+	set FA_SignPost[18] focus to {FA_SignPost[19]}
+	set FA_SignPost[19] focus to {FA_SignPost[1]}
+	set FA_SignPost[20] focus to {FA_SignPost[19]}
+	set FA_SignPost[21] focus to {FA_SignPost[20]}
+	set FA_SignPost[22] focus to {FA_SignPost[9]}
+	set FA_SignPost[23] focus to {FA_SignPost[12]}
+	set FA_SignPost[24] focus to {FA_SignPost[5]}
+	set FA_SignPost[25] focus to {FA_SignPost[11]}
+
+end script FA_CreateSignPosts
+
+//-------------------------------
+
+begin script FA_CreateSpy
+
+start
+
+	if FA_Spy not exists
+		FA_Spy = create VILLAGER VILLAGER_INFO_INACHUS at {FA_SignPost[0]}  + {2.000,0.000,2.000}
+		set FA_Spy focus to {FA_SignPost[1]}
+		SPEED of FA_Spy += 0.5
+		disable FA_Spy reactable
+		disable FA_Spy pickup
+		enable FA_Spy indestructible
+		disable FA_Spy set on fire
+		disable FA_Spy moveable
+
+		FA_SpyEffect = create visual effect VISUAL_EFFECT_BEAUTY_GLOW on FA_Spy time -1
+	end if
+
+end script FA_CreateSpy
+
+//-----------------------------------
+
+begin script FA_CreateAssassins
+
+	SpyHunterPos[FA_NUM_ASSASSINS]
+	SpyHunterFocus[FA_NUM_ASSASSINS]
+	Ctr		= 0
+
+start
+
+	SpyHunterPos[0] = marker at {FA_SignPost[18]} + {2.000,0.000,0.000}
+	SpyHunterPos[1] = marker at {FA_SignPost[8]} + {2, 0, -2}
+	SpyHunterPos[2] = marker at {FA_SignPost[10]} + {2.000,0.000,2.000}
+	SpyHunterPos[3] = marker at {FA_SignPost[13]} + {2.000,0.000,2.000}
+	SpyHunterPos[4] = marker at {FA_SignPost[5]} + {-2, 0, 2}
+	SpyHunterPos[5] = marker at {FA_SignPost[23]} + {-2, 0, 2}
+
+	SpyHunterFocus[0] = FA_SignPost[19]
+	SpyHunterFocus[1] = FA_SignPost[7]
+	SpyHunterFocus[2] = FA_SignPost[25]
+	SpyHunterFocus[3] = FA_SignPost[12]
+	SpyHunterFocus[4] = FA_SignPost[3]
+	SpyHunterFocus[5] = FA_SignPost[12]
+
+	while Ctr < FA_NUM_ASSASSINS
+		if Assassin[Ctr] not exists
+			Assassin[Ctr] = create VILLAGER VILLAGER_INFO_EGYPTIAN_ASSASSIN at {SpyHunterPos[Ctr]}
+			set Assassin[Ctr] focus to {SpyHunterFocus[Ctr]}
+			SPEED of Assassin[Ctr] += 0.3
+			disable Assassin[Ctr] reactable
+			disable Assassin[Ctr] pickup
+			enable Assassin[Ctr] indestructible
+			disable Assassin[Ctr] set on fire
+			disable Assassin[Ctr] moveable
+			FA_AssassinState[Ctr] = FA_CAN_FLIP
+		end if
+		Ctr++
+	end while
+
+end script FA_CreateAssassins
+
+//-------------------------------
+
+//-------------------------------
+
+begin script FA_CheckForHittingInfo
+
+	InfoLeft			= FA_NUM_INFO
+	AmountLeftToLose	= 0
+	Ctr					= 0
+	GotAllComment		= 0
+
+start
+
+	begin loop
+		// Check to see if we've got a piece of the information
+		Ctr = 0
+		while Ctr < FA_NUM_INFO
+
+			if FA_Map[Ctr] exists
+				if {FA_Spy} near {FA_Map[Ctr]} radius 5
+					delete FA_Map[Ctr] with fade
+					delete ScrollEffect[Ctr]
+					play string sound "REWARD6"
+					FA_NumInfoCollected++
+					if FA_NumInfoCollected > 1 and FA_NumInfoCollected < FA_NUM_INFO_NEEDED
+						begin dialogue
+							// GA: You got another piece of information.
+							say "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_30"
+							wait until read
+						end dialogue 
+
+					elsif FA_NumInfoCollected == 1
+						begin dialogue
+							// GA: Congratulations you've got your first piece of info.
+							say "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_40"
+							wait until read
+						end dialogue 
+					elsif FA_NumInfoCollected == FA_NUM_INFO_NEEDED and GotAllComment == 0
+						GotAllComment = 1
+						begin dialogue
+							// GA: Excellent you've got all of the necessary pieces of info, get the spy to the exit.
+							say "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_50"
+							wait until read
+						end dialogue 
+						FA_CompletedScript = 1
+						run script FA_Outro
+					end if
+				end if
+			end if
+			Ctr++
+		end while
+
+	//until FA_Spy not exists
+	//until HEALTH of FA_Spy <= 0
+	until FA_ScriptRunning == 0
+	end loop
+
+end script FA_CheckForHittingInfo
+
+//-------------------------
+
+begin script FA_Intro
+
+	Scroll		= 0
+	ScrollPos	= marker at {1739.495,69.298,1360.640}
+	CamPos		= 0
+	ActorAss	= 0
+	Map = 0
+	CentrePos	= marker at {1640.050, 57.766, 1324.916}
+start
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_60" remind "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_70" at {ScrollPos}
+	ALTITUDE of Scroll = 3
+
+	run script FA_CreateSpy
+	run script FA_CreateAssassins
+
+	wait until Scroll right clicked or wonder fire near {CentrePos} radius 200  or HEALTH of Assassin[0] <= 0 or HEALTH of Assassin[1] <= 0 or HEALTH of Assassin[2] <= 0 or HEALTH of Assassin[3] <= 0 or HEALTH of Assassin[4] <= 0 or HEALTH of FA_Spy <= 0
+	clear right clicked object
+	delete Scroll
+
+	if not wonder fire near {CentrePos} radius 200 and HEALTH of Assassin[0] > 0 and HEALTH of Assassin[1] > 0 and HEALTH of Assassin[2] > 0 and HEALTH of Assassin[3] > 0 and HEALTH of Assassin[4] > 0 and HEALTH of FA_Spy > 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 with amount 1 text "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_60" amount 1 description "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_70" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_6_FORESTAMBUSH
+		L6ShowingForestAmbush = 1
+		
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		begin cinema
+			set FA_Spy position to {1747.630, 67.500, 1368.593}
+			
+			store camera details
+			CamPos = marker at focus position of FA_Spy
+			wait 2 seconds
+			
+			if FA_TimesAttempted == 0
+				ActorAss = create VILLAGER VILLAGER_INFO_EGYPTIAN_ASSASSIN at {1714.967, 67.941, 1324.862}
+				set ActorAss carrying CARRIED_OBJECT_GREEK_SMALL_SWORD
+				set camera position to {1744.822, 112.823, 1395.342}
+				set camera focus to {1678.599, 54.697, 1348.064}
+				move camera position to {1744.822, 112.823, 1395.342} time 10
+				move camera focus to {1706.053, 42.892, 1335.296} time 12
+				set fade in time 3
+				wait 4 seconds
+				move FA_Spy position to {1738.591, 69.080, 1361.199}
+				wait 5.6 seconds
+				
+				set camera position to {1737.778, 73.166, 1366.501}
+				set camera focus to {1698.068, 53.428, 1276.877}
+				move camera position to {1737.778, 71.985, 1366.501} time 8
+				move camera focus to {1698.068, 52.249, 1276.877} time 8
+				
+				move ActorAss position to {1711.412, 67.939, 1342.164}
+				SPEED of ActorAss = 0.08
+				wait 0.7 seconds
+				override ActorAss anim "a_p_l6forestambush_assassin_walk"
+				
+				wait 1 seconds
+				play anim "a_p_l6forestambush_man_look_at_sign" on FA_Spy loop 1
+				wait 3 seconds
+				eject evil spirit
+				make evil spirit fly across 0.75 down 0.7
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_10"
+				wait 5 seconds
+				
+				
+				move camera position to {1737.778, 71.985, 1366.501} time 1
+				move camera focus to {1679.709, 64.457, 1285.434} time 1
+				set camera lens 20 time 1
+				wait 0.5 seconds
+				set camera lens 24 time 1
+				
+				wait until read
+				
+				set camera position to {1715.228, 68.910, 1336.831}
+				set camera focus to {1628.570, 64.911, 1287.075}
+				set camera lens 60
+				move camera position to {1714.443, 68.741, 1339.342} time 8
+				move camera focus to {1627.785, 64.743, 1289.587} time 8
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_20"
+				wait until read
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_30"
+				set FA_Spy position to {1739.201, 69.428, 1359.837}
+				move FA_Spy position to {1739.201, 69.428, 1359.837}
+				wait 4 seconds
+				
+				play anim "a_p_looking_for_something" on FA_Spy 
+				set camera position to {1731.479, 81.456, 1367.899}
+				set camera focus to {1744.113, 8.250, 1300.956}
+				set camera lens 70
+				delete ActorAss
+							
+				wait until read
+			else
+				set camera position to {1731.479, 81.456, 1367.899}
+				set camera focus to {1744.113, 8.250, 1300.956}
+				set FA_Spy position to {1739.201, 69.428, 1359.837}
+				move FA_Spy position to {1739.201, 69.428, 1359.837}
+				set fade in time 1
+			
+				// SPY:  Let's try again shall we?
+				say "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_120"
+				wait until read
+			end if
+			FA_TimesAttempted++
+			FA_BeginScript = 1
+		end cinema
+	end if
+
+end script FA_Intro
+
+//----------------------------
+
+begin script FA_RandomDialogue
+
+Speaker = 0
+RandomNumber = 0
+RandomTime = 0
+RandomAssassin = 0
+
+start
+
+begin loop
+	if FA_BeginScript == 1
+		RandomNumber = number from 0 to 6
+		RandomTime = number from 20 to 40
+		RandomAssassin = number from 0 to FA_NUM_ASSASSINS
+		wait until dialogue ready
+		disable dialogue manager
+		begin dialogue
+			wait 2 seconds
+			if RandomNumber == 0
+				play sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_40" at {Assassin[RandomAssassin]}
+				wait until not sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_40" playing
+			elsif RandomNumber == 1
+				play sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_50" at {Assassin[RandomAssassin]}
+				wait until not sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_50" playing
+			elsif RandomNumber == 2
+				play sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_60" at {Assassin[RandomAssassin]}
+				wait until not sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_60" playing
+			elsif RandomNumber == 3
+				play sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_70" at {Assassin[RandomAssassin]}
+				wait until not sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_70" playing
+			elsif RandomNumber == 4
+				play sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_80" at {FA_Spy}
+				wait until not sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_80" playing
+			elsif RandomNumber == 5
+				play sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_90" at {FA_Spy}
+				wait until not sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_90" playing
+			elsif RandomNumber == 6
+				play sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_100" at {FA_Spy}
+				wait until not sound "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_100" playing
+			end if
+		end dialogue
+		enable dialogue manager
+		wait RandomTime seconds
+	end if
+
+until FA_ScriptRunning == 0
+end loop
+
+end script FA_RandomDialogue
+
+//---------------------------------
+
+begin script FA_Outro
+Map = 0
+Ctr = 0
+start
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	begin cinema
+		wait until widescreen transition complete
+		if FA_Spy exists// and HEALTH of FA_Spy < 0
+			if FA_NumInfoCollected == FA_NUM_INFO
+				delete FA_SpyEffect
+				start music "cut_scene_mystery_01"
+				set FA_Spy position to {1751.261, 79.833, 1278.838}
+				set FA_Spy focus to {1753.604, 79.872, 1281.182}
+				play anim "a_p_l6forestambush_man_read_map_loop" on FA_Spy loop 3 disable stand
+				Map = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {1752.009, 79.856, 1279.890}
+				set Map focus to {1753.094, 79.882, 1278.495}
+				override mesh for Map with "..\models\m_parchment_wholemap"
+				set camera position to {1752.073, 81.482, 1281.772}
+				set camera focus to {1762.303, -17.988, 1280.783}
+				move camera position to {1751.898, 81.482, 1279.943} time 12
+				move camera focus to {1762.128, -17.988, 1278.954} time 12
+				set fade in time 2
+				wait 12 seconds
+				set camera position to {1752.508, 80.317, 1281.100}
+				set camera focus to {1723.211, 67.711, 1186.325}
+				set camera lens 50
+				wait until FA_Spy played
+				play anim "a_p_l6forestambush_man_leaves" on FA_Spy blend time 0
+				move camera position to {1752.508, 80.317, 1281.100} time 4
+				move camera focus to {1723.114, 77.011, 1185.580} time 4
+				wait 2.7 seconds
+				set camera position to {1747.741, 80.719, 1277.124}
+				set camera focus to {1822.595, 82.609, 1343.408}
+				delete Map
+				wait until FA_Spy played
+				move FA_Spy position to {1775.984, 73.735, 1308.392}
+				eject good spirit
+				eject evil spirit
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_140"
+				wait until read
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_150"
+				wait until read
+				set camera position to {1741.550, 147.746, 1259.541}
+				set camera focus to {1693.686, 79.217, 1314.424}
+				set camera lens 70
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_FOREST_AMBUSH_160"
+				wait until read
+				send good spirit home
+				send evil spirit home
+				wait 1 seconds
+
+				delete FA_Spy
+
+				while Ctr < FA_NUM_ASSASSINS
+					if Assassin[Ctr] exists
+						delete Assassin[Ctr]
+					end if
+					Ctr++
+				end while
+	
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+				wait 2.5 seconds
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+			else
+				set fade in time 2
+				say "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_120"
+				wait until read
+			end if
+		else
+			set fade in time 2
+			// EA: Uh oh, you got the spy killed.
+			say "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_150"
+			wait until read
+		end if
+	end cinema
+
+end script FA_Outro
+
+//------------------------------
+
+begin script FA_AssassinFlip(PassedSignPost)
+
+Ctr = 0
+LocalFlip = 0
+
+start
+
+	begin loop
+	while FA_BeginScript == 1 and Ctr < FA_NUM_ASSASSINS
+		if {Assassin[Ctr]} near {PassedSignPost} radius 3 and FA_AssassinState[Ctr] == FA_CAN_FLIP
+			FA_AssassinState[Ctr] = FA_CANT_FLIP
+
+			wait 3 seconds
+			if PassedSignPost == FA_SignPost[0]
+				if SignPostFacing[0] == 1
+					SignPostFacing[0] = 1
+					SignPostTarget[0] = FA_SignPost[1]
+					set FA_SignPost[0] focus to {FA_SignPost[1]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[1]
+				if SignPostFacing[1] == 1
+					SignPostTarget[1] = FA_SignPost[19]
+					SignPostFacing[1] = 2
+					set FA_SignPost[1] focus to {FA_SignPost[19]}
+				elsif SignPostFacing[1] == 2
+					SignPostFacing[1] = 1
+					SignPostTarget[1] = FA_SignPost[2]
+					set FA_SignPost[1] focus to {FA_SignPost[2]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[2]
+				if SignPostFacing[2] == 1
+					SignPostTarget[2] = FA_SignPost[17]
+					SignPostFacing[2] = 2
+					set FA_SignPost[2] focus to {FA_SignPost[17]}
+				elsif SignPostFacing[2] == 2
+					SignPostFacing[2] = 3
+					SignPostTarget[2] = FA_SignPost[6]
+					set FA_SignPost[2] focus to {FA_SignPost[6]}
+				elsif SignPostFacing[2] == 3
+					SignPostFacing[2] = 1
+					SignPostTarget[2] = FA_SignPost[3]
+					set FA_SignPost[2] focus to {FA_SignPost[3]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[3]
+				if SignPostFacing[3] == 1
+					SignPostTarget[3] = FA_SignPost[4]
+					SignPostFacing[3] = 2
+					set FA_SignPost[3] focus to {FA_SignPost[4]}
+				elsif SignPostFacing[3] == 2
+					SignPostFacing[3] = 3
+					SignPostTarget[3] = FA_SignPost[5]
+					set FA_SignPost[3] focus to {FA_SignPost[5]}
+				elsif SignPostFacing[3] == 3
+					SignPostFacing[3] = 1
+					SignPostTarget[3] = FA_SignPost[2]
+					set FA_SignPost[3] focus to {FA_SignPost[2]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[4]
+				if SignPostFacing[4] == 1
+					SignPostTarget[4] = FA_SignPost[24]
+					SignPostFacing[4] = 2
+					set FA_SignPost[4] focus to {FA_SignPost[24]}
+				elsif SignPostFacing[4] == 2
+					SignPostFacing[4] = 1
+					SignPostTarget[4] = FA_SignPost[3]
+					set FA_SignPost[4] focus to {FA_SignPost[3]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[5]
+				if SignPostFacing[5] == 1
+					SignPostTarget[5] = FA_SignPost[3]
+					SignPostFacing[5] = 2
+					set FA_SignPost[5] focus to {FA_SignPost[3]}
+				elsif SignPostFacing[5] == 2
+					SignPostFacing[5] = 3
+					SignPostTarget[5] = FA_SignPost[24]
+					set FA_SignPost[5] focus to {FA_SignPost[24]}
+				elsif SignPostFacing[5] == 3
+					SignPostFacing[5] = 1
+					SignPostTarget[5] = FA_SignPost[7]
+					set FA_SignPost[5] focus to {FA_SignPost[7]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[6]
+				if SignPostFacing[6] == 1
+					SignPostTarget[6] = FA_SignPost[2]
+					SignPostFacing[6] = 2
+					set FA_SignPost[6] focus to {FA_SignPost[2]}
+				elsif SignPostFacing[6] == 2
+					SignPostFacing[6] = 3
+					SignPostTarget[6] = FA_SignPost[7]
+					set FA_SignPost[6] focus to {FA_SignPost[7]}
+				elsif SignPostFacing[6] == 3
+					SignPostFacing[6] = 1
+					SignPostTarget[6] = FA_SignPost[23]
+					set FA_SignPost[6] focus to {FA_SignPost[23]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[7]
+				if SignPostFacing[7] == 1
+					SignPostTarget[7] = FA_SignPost[6]
+					SignPostFacing[7] = 2
+					set FA_SignPost[7] focus to {FA_SignPost[6]}
+				elsif SignPostFacing[7] == 2
+					SignPostFacing[7] = 1
+					SignPostTarget[7] = FA_SignPost[8]
+					set FA_SignPost[7] focus to {FA_SignPost[8]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[8]
+				if SignPostFacing[8] == 1
+					SignPostTarget[8] = FA_SignPost[7]
+					SignPostFacing[8] = 2
+					set FA_SignPost[8] focus to {FA_SignPost[7]}
+				elsif SignPostFacing[8] == 2
+					SignPostFacing[8] = 1
+					SignPostTarget[8] = FA_SignPost[9]
+					set FA_SignPost[8] focus to {FA_SignPost[9]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[9]
+				if SignPostFacing[9] == 1
+					SignPostTarget[9] = FA_SignPost[8]
+					SignPostFacing[9] = 2
+					set FA_SignPost[9] focus to {FA_SignPost[8]}
+				elsif SignPostFacing[9] == 2
+					SignPostFacing[9] = 3
+					SignPostTarget[9] = FA_SignPost[22]
+					set FA_SignPost[9] focus to {FA_SignPost[22]}
+				elsif SignPostFacing[9] == 3
+					SignPostFacing[9] = 4
+					SignPostTarget[9] = FA_SignPost[10]
+					set FA_SignPost[9] focus to {FA_SignPost[10]}
+				elsif SignPostFacing[9] == 4
+					SignPostFacing[9] = 1
+					SignPostTarget[9] = FA_SignPost[11]
+					set FA_SignPost[9] focus to {FA_SignPost[11]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[10]
+				if SignPostFacing[10] == 1
+					SignPostTarget[10] = FA_SignPost[9]
+					SignPostFacing[10] = 2
+					set FA_SignPost[10] focus to {FA_SignPost[9]}
+				elsif SignPostFacing[10] == 2
+					SignPostFacing[10] = 1
+					SignPostTarget[10] = FA_SignPost[25]
+					set FA_SignPost[10] focus to {FA_SignPost[25]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[11]
+				if SignPostFacing[11] == 1
+					SignPostTarget[11] = FA_SignPost[9]
+					SignPostFacing[11] = 2
+					set FA_SignPost[11] focus to {FA_SignPost[9]}
+				elsif SignPostFacing[11] == 2
+					SignPostFacing[11] = 3
+					SignPostTarget[11] = FA_SignPost[12]
+					set FA_SignPost[11] focus to {FA_SignPost[12]}
+				elsif SignPostFacing[11] == 3
+					SignPostFacing[11] = 1
+					SignPostTarget[11] = FA_SignPost[25]
+					set FA_SignPost[11] focus to {FA_SignPost[25]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[12]
+				if SignPostFacing[12] == 1
+					SignPostTarget[12] = FA_SignPost[11]
+					SignPostFacing[12] = 2
+					set FA_SignPost[12] focus to {FA_SignPost[11]}
+				elsif SignPostFacing[12] == 2
+					SignPostFacing[12] = 3
+					SignPostTarget[12] = FA_SignPost[13]
+					set FA_SignPost[12] focus to {FA_SignPost[13]}
+				elsif SignPostFacing[12] == 3
+					SignPostFacing[12] = 1
+					SignPostTarget[12] = FA_SignPost[16]
+					set FA_SignPost[12] focus to {FA_SignPost[16]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[13]
+				if SignPostFacing[13] == 1
+					SignPostTarget[13] = FA_SignPost[12]
+					SignPostFacing[13] = 2
+					set FA_SignPost[13] focus to {FA_SignPost[12]}
+				elsif SignPostFacing[13] == 2
+					SignPostFacing[13] = 3
+					SignPostTarget[13] = FA_SignPost[25]
+					set FA_SignPost[13] focus to {FA_SignPost[25]}
+				elsif SignPostFacing[13] == 3
+					SignPostFacing[13] = 1
+					SignPostTarget[13] = FA_SignPost[14]
+					set FA_SignPost[13] focus to {FA_SignPost[14]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[14]
+				if SignPostFacing[14] == 1
+					SignPostTarget[14] = FA_SignPost[13]
+					SignPostFacing[14] = 2
+					set FA_SignPost[14] focus to {FA_SignPost[13]}
+				elsif SignPostFacing[14] == 2
+					SignPostFacing[14] = 1
+					SignPostTarget[14] = FA_SignPost[15]
+					set FA_SignPost[14] focus to {FA_SignPost[15]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[15]
+				if SignPostFacing[15] == 1
+					SignPostTarget[15] = FA_SignPost[14]
+					SignPostFacing[15] = 2
+					set FA_SignPost[15] focus to {FA_SignPost[14]}
+				elsif SignPostFacing[15] == 2
+					SignPostFacing[15] = 1
+					SignPostTarget[15] = FA_SignPost[18]
+					set FA_SignPost[15] focus to {FA_SignPost[18]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[16]
+				if SignPostFacing[16] == 1
+					SignPostTarget[16] = FA_SignPost[12]
+					SignPostFacing[16] = 2
+					set FA_SignPost[16] focus to {FA_SignPost[12]}
+				elsif SignPostFacing[16] == 2
+					SignPostFacing[16] = 1
+					SignPostTarget[16] = FA_SignPost[18]
+					set FA_SignPost[16] focus to {FA_SignPost[18]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[17]
+				if SignPostFacing[17] == 1
+					SignPostTarget[17] = FA_SignPost[23]
+					SignPostFacing[17] = 2
+					set FA_SignPost[17] focus to {FA_SignPost[23]}
+				elsif SignPostFacing[17] == 2
+					SignPostFacing[17] = 3
+					SignPostTarget[17] = FA_SignPost[16]
+					set FA_SignPost[17] focus to {FA_SignPost[16]}
+				elsif SignPostFacing[17] == 3
+					SignPostFacing[17] = 1
+					SignPostTarget[17] = FA_SignPost[21]
+					set FA_SignPost[17] focus to {FA_SignPost[21]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[18]
+				if SignPostFacing[18] == 1
+					SignPostTarget[18] = FA_SignPost[15]
+					SignPostFacing[18] = 2
+					set FA_SignPost[18] focus to {FA_SignPost[15]}
+				elsif SignPostFacing[18] == 2
+					SignPostFacing[18] = 1
+					SignPostTarget[18] = FA_SignPost[19]
+					set FA_SignPost[18] focus to {FA_SignPost[19]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[19]
+				if SignPostFacing[19] == 1
+					SignPostTarget[19] = FA_SignPost[1]
+					SignPostFacing[19] = 2
+					set FA_SignPost[19] focus to {FA_SignPost[1]}
+				elsif SignPostFacing[19] == 2
+					SignPostFacing[19] = 3
+					SignPostTarget[19] = FA_SignPost[18]
+					set FA_SignPost[19] focus to {FA_SignPost[18]}
+				elsif SignPostFacing[19] == 3
+					SignPostFacing[19] = 1
+					SignPostTarget[19] = FA_SignPost[20]
+					set FA_SignPost[19] focus to {FA_SignPost[20]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[20]
+				if SignPostFacing[20] == 1
+					SignPostTarget[20] = FA_SignPost[19]
+					SignPostFacing[20] = 2
+					set FA_SignPost[20] focus to {FA_SignPost[19]}
+				elsif SignPostFacing[20] == 2
+					SignPostFacing[20] = 3
+					SignPostTarget[20] = FA_SignPost[21]
+					set FA_SignPost[20] focus to {FA_SignPost[21]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[21]
+				if SignPostFacing[21] == 1
+					SignPostFacing[21] = 2
+					SignPostTarget[21] = FA_SignPost[20]
+					set FA_SignPost[21] focus to {FA_SignPost[20]}
+				elsif SignPostFacing[21] == 2
+					SignPostFacing[21] = 1
+					SignPostTarget[21] = FA_SignPost[17]
+					set FA_SignPost[21] focus to {FA_SignPost[17]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[22]
+				if SignPostFacing[22] == 1
+					SignPostFacing[22] = 1
+					SignPostTarget[22] = FA_SignPost[9]
+					set FA_SignPost[22] focus to {FA_SignPost[9]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[23]
+				if SignPostFacing[23] == 1
+					SignPostTarget[23] = FA_SignPost[6]
+					SignPostFacing[23] = 2
+					set FA_SignPost[23] focus to {FA_SignPost[6]}
+				elsif SignPostFacing[23] == 2
+					SignPostFacing[23] = 1
+					SignPostTarget[23] = FA_SignPost[12]
+					set FA_SignPost[23] focus to {FA_SignPost[12]}
+				elsif SignPostFacing[23] == 3
+					SignPostFacing[23] = 1
+					SignPostTarget[23] = FA_SignPost[17]
+					set FA_SignPost[23] focus to {FA_SignPost[17]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[24]
+				if SignPostFacing[24] == 1
+					SignPostFacing[24] = 2
+					SignPostTarget[24] = FA_SignPost[5]
+					set FA_SignPost[24] focus to {FA_SignPost[5]}
+				elsif SignPostFacing[24] == 2
+					SignPostFacing[24] = 1
+					SignPostTarget[24] = FA_SignPost[4]
+					set FA_SignPost[24] focus to {FA_SignPost[4]}
+				end if
+
+			elsif PassedSignPost == FA_SignPost[25]
+				if SignPostFacing[25] == 1
+					SignPostTarget[25] = FA_SignPost[10]
+					SignPostFacing[25] = 2
+					set FA_SignPost[25] focus to {FA_SignPost[10]}
+				elsif SignPostFacing[25] == 2
+					SignPostFacing[25] = 3
+					SignPostTarget[25] = FA_SignPost[11]
+					set FA_SignPost[25] focus to {FA_SignPost[11]}
+				elsif SignPostFacing[25] == 3
+					SignPostFacing[25] = 1
+					SignPostTarget[25] = FA_SignPost[13]
+					set FA_SignPost[25] focus to {FA_SignPost[13]}
+				end if
+			end if
+		
+		FA_AssassinState[Ctr] = FA_CAN_FLIP
+		end if
+	Ctr++
+	end while
+	Ctr = 0
+	until FA_ScriptRunning == 0
+	end loop
+
+end script FA_AssassinFlip
+
+//--------------------------------
+
+begin script FA_CheckForCapture
+
+Ctr = 0
+
+start
+
+begin loop
+	while FA_BeginScript == 1 and Ctr < FA_NUM_ASSASSINS
+		if {FA_Spy} near {Assassin[Ctr]} radius 3
+			delete Assassin[0]
+			delete Assassin[1]
+			delete Assassin[2]
+			delete Assassin[3]
+			delete Assassin[4]
+			if FA_Spy exists
+				begin dialogue
+					delete FA_Spy
+					say "BW2T_SCRIPT_06FINAL_FORESTAMBUSH_150"
+					wait until read
+					FA_NumInfoCollected = 0
+				end dialogue
+			end if
+
+			FA_ScriptRunning = 0
+		end if
+		Ctr++
+	end while
+
+	Ctr = 0
+
+until FA_ScriptRunning == 0
+end loop
+
+run script Land6ForestAmbush
+
+end script FA_CheckForCapture
+
+//-------------------------------------------
+
+begin script FA_CreateMap
+
+Ctr = 0
+InfoPos[FA_NUM_MAP]
+
+start
+
+InfoPos[0] = marker at {1716.006,67.920,1320.137}
+InfoPos[1] = marker at {1665.655,67.060,1392.918}
+InfoPos[2] = marker at {1605.632,57.296,1332.694}
+InfoPos[3] = marker at {1607.088,58.167,1283.700}
+
+	while Ctr < FA_NUM_MAP
+		if FA_Map[Ctr] not exists
+			FA_Map[Ctr] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {InfoPos[Ctr]}
+			if Ctr == 0
+				override mesh for FA_Map[Ctr] with "..\models\m_parchment_piece01"
+			elsif Ctr == 1
+				override mesh for FA_Map[Ctr] with "..\models\m_parchment_piece02"
+			elsif Ctr == 2
+				override mesh for FA_Map[Ctr] with "..\models\m_parchment_piece03"
+			elsif Ctr == 3
+				override mesh for FA_Map[Ctr] with "..\models\m_parchment_piece04"
+			end if
+			SCALE of FA_Map[Ctr] = 1
+			ALTITUDE of FA_Map[Ctr] = 2
+			disable FA_Map[Ctr] pickup
+			disable FA_Map[Ctr] set on fire
+			disable FA_Map[Ctr] moveable
+			ScrollEffect[Ctr] = create visual effect "gp_s_sparkle.ves" strength 10 scale 2 at {FA_Map[Ctr]} + {0.000,6.000,0.000} time -1
+
+		end if
+		Ctr++
+	end while
+
+end script FA_CreateMap

@@ -1,0 +1,1984 @@
+///////////////////////////////////////////////////////////////////////////////
+//	LAND CONTROL 9
+//	~~~~~~~~~~~~~~
+//
+//	This is the enemy AI script
+//
+//	Rewards:			None
+//
+//	Start date:			21-03-05			By:	Tiddles
+//	Update date:		21-03-05			By: Tiddles
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define LC9_TRUE										= 1
+define LC9_FALSE									= 0
+
+define LC9_NUM_OF_PATROL_PLATOONS					= 2
+define LC9_NUM_OF_ATTACK_PLATOONS					= 3
+define LC9_NUM_OF_AGGRESSIVE_PATROL_PLATOONS		= 5
+define LC9_NUMBER_OF_PLATOONS						= 20
+define LC9_NUM_OF_MINOR_SETTLEMENTS					= 9
+
+define LC9_STATE_AT_PEACE							= 0
+define LC9_STATE_AT_WAR								= 1
+define LC9_STATE_AT_ALERT							= 2
+define LC9_HARASS									= 3
+define LC9_NOT_EXISTS								= 4
+
+define WAITING										= 0
+define ATTACKING									= 1
+define DEFENDING									= 2
+define IN_POSITION									= 3	
+define MOVING_TO_POSITION							= 4
+define TAKE_BACK_TOWN								= 5
+
+define YLARUAM_STAGE_0								= 0
+define YLARUAM_STAGE_1								= 1
+define YLARUAM_STAGE_2								= 2
+define YLARUAM_STAGE_3								= 3
+
+define L9_NUMBER_OF_WALLS							= 7
+define L9_ZONES										= 9
+define IMPRESSIVE_VALUE_FOR_SIEGE					= 6000
+define NIGHT_TIME									= 0
+define DAY_TIME										= 1
+define CATAPULT_TYPE								= 0
+define PLATOON_TYPE									= 1
+define CAPACITY_VALUE_FOR_SIEGE						= 250
+
+define NUMBER_OF_GATE_HOUSES						= 5
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+
+global LC9_Platoon[LC9_NUMBER_OF_PLATOONS]
+global LC9_PlatoonState[LC9_NUMBER_OF_PLATOONS]
+global LC9_PlayerOwnsSettlement[LC9_NUM_OF_MINOR_SETTLEMENTS]
+global LC9_Catapult1 = 0
+global LC9_Catapult2 = 0
+global LC9_Catapult3 = 0
+global LC9_Catapult4 = 0
+global LC9_Catapult5 = 0
+global LC9_Catapult6 = 0
+global LC9_Catapult7 = 0
+global LC9_Catapult8 = 0
+global LC9_Waypoint1 = 0
+global LC9_Waypoint2 = 0
+global LC9_Waypoint3 = 0
+global LC9_Waypoint4 = 0
+global LC9_Waypoint5 = 0
+global LC9_MinimumRecruit = 0
+global LC9_BuildYlaruam = 0
+global LC9_HarassSize = 3
+global LC9_HarassSeverity = 0.2
+global LC9_HarassTarget = 0
+global LC9_HarassTimer = 0
+global LC9_SwitchPos[9]
+global FINAL_YLARUAM_STAGE = 0
+global LC9_NearestEnemyTown = 0
+global MigrationTarget[LC9_NUM_OF_MINOR_SETTLEMENTS]
+
+global LC9_ConditionJustChanged						= LC9_FALSE
+global LC9_Defend									= LC9_FALSE
+global LC9_Condition								= LC9_STATE_AT_PEACE
+
+global LC9_NumberOfTownsTakenByImpressiveness = 0
+
+global L9_TownTaken[LC9_NUM_OF_MINOR_SETTLEMENTS]
+global GotWall = 0
+global L9_EpicCanFire = 0
+global EnemyWallPos[7]
+global EnemyWall[7]
+global PlatoonCreatePos[LC9_NUMBER_OF_PLATOONS]
+global PlatoonDefendPos[3]
+global L9SiegeBroken = 0
+global TimeOfDay = 0
+global Platoon1RandomNumber = 0
+global Platoon2RandomNumber = 0
+global RandomPosition = 0
+global PlayerGatehouse = 0
+global MohcComment = 0
+global TownRaid = 0
+global PlatoonInZone[9]
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+//----AI Structure----//
+define script LC9_ArmyManagement
+define script LC9_GeneralManagement
+define script LC9_CityManagement
+define script LC9_GeneralComment(SAY_ID)
+define script LC9_MaintainArmy
+
+//----Assisting function----//
+define script LC9_TakeBackTown
+define script LC9_AttackPlayersTown(Platoon)
+define script LC9_DefendAITown
+define script LC9_Marauders
+define script LC9_FireEpic(TargetPlatoon)
+define script LC9_GreekCitySiege
+define script LC9_GetTimeOfDay
+define script LC9_SiegeUnit(Unit, Type)
+define script LC9_SetupTownDefenders
+define script LC9_GenericAttacks
+define script LC9_IdlePlatoonsAttack
+
+//-----------------------------------------------------------------------------
+//----Land9AztecCapitalScript----// 
+//-----------------------------------------------------------------------------
+begin script Land9AztecCapitalScript
+
+	CatapultSpawn		= marker at {1777.021,94.567,1535.906}
+	CatapultSpawn2		= marker at {1665.333,93.846,1592.586}
+
+	CatapultSpawn3		= marker at {985.560,96.600,1102.026}
+	CatapultSpawn4		= marker at {998.585,96.449,1142.729}
+
+	CatapultSpawn5		= marker at {1758.542,171.402,1898.910}
+	CatapultSpawn6		= marker at {1814.788,171.317,1890.676}
+
+	CatapultSpawn7		= marker at {1011.164,97.193,1112.615}
+	CatapultSpawn8		= marker at {1008.182,96.293,1151.643}
+
+
+	Route1Waypoint[4]
+	Route2Waypoint[4]
+	Route3Waypoint[4]
+	Route4Waypoint[4]
+	Route5Waypoint[4]
+
+	Counter = 0
+
+start
+
+//switches are positions used to test if a player platoon is on the same side of a switch
+	LC9_SwitchPos[0] = marker at {1964.418,94.525,1357.116}
+	LC9_SwitchPos[1] = marker at {977.332,98.247,439.606}
+	LC9_SwitchPos[2] = marker at {1154.144,94.537,1372.468}
+	LC9_SwitchPos[3] = marker at {1376.480,98.464,1471.498}
+	LC9_SwitchPos[4] = marker at {1220.440,96.787,1758.378}
+	LC9_SwitchPos[5] = marker at {827.405,98.448,484.800}
+	LC9_SwitchPos[6] = marker at {692.941,99.889,1424.796}
+	LC9_SwitchPos[7] = marker at {1529.084,90.874,1522.709}
+	LC9_SwitchPos[8] = marker at {1018.751,96.311,1148.298}
+
+	run background script LC9_Marauders
+	run background script LC9_ArmyManagement
+	run background script LC9_GeneralManagement
+	run background script LC9_CityManagement
+	run background script LC9_TakeBackTown
+	run background script LC9_GetTimeOfDay
+	run background script LC9_SetupTownDefenders
+	run background script LC9_GenericAttacks
+	run background script LC9_IdlePlatoonsAttack
+
+	//*************************** setup any patrol routes ***********************************
+
+	LC9_Waypoint1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {1197.891,108.560,782.416}
+	LC9_Waypoint2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {1197.891,108.560,782.416}
+	LC9_Waypoint3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {1197.891,108.560,782.416}
+	LC9_Waypoint4 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {1197.891,108.560,782.416}
+	LC9_Waypoint5 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {1197.891,108.560,782.416}
+
+	Route1Waypoint[0] = marker at {1939.214,97.672,1443.376}
+	Route1Waypoint[1] = marker at {2009.923,94.273,1364.495}
+	Route1Waypoint[2] = marker at {1929.867,97.130,1370.044}
+	Route1Waypoint[3] = marker at {1884.534,94.616,1434.058}
+
+	Route2Waypoint[0] = marker at {1824.435,94.485,1572.554}
+	Route2Waypoint[1] = marker at {1916.928,92.272,1475.470}
+	Route2Waypoint[2] = marker at {1872.984,100.688,1401.473}
+	Route2Waypoint[3] = marker at {1799.215,91.835,1492.958}
+
+	Route3Waypoint[0] = marker at {848.137,104.914,1901.414}
+	Route3Waypoint[1] = marker at {892.094,105.582,1779.861}
+	Route3Waypoint[2] = marker at {830.487,105.010,1764.580}
+	Route3Waypoint[3] = marker at {782.353,108.656,1853.513}
+
+	Route4Waypoint[0] = marker at {1036.376,101.300,846.259}
+	Route4Waypoint[1] = marker at {939.831,106.697,758.816}
+	Route4Waypoint[2] = marker at {909.381,98.069,776.302}
+	Route4Waypoint[3] = marker at {991.768,94.448,858.396}
+
+	Route5Waypoint[0] = marker at {781.112,95.876,743.732}
+	Route5Waypoint[1] = marker at {655.894,98.434,854.958}
+	Route5Waypoint[2] = marker at {765.467,96.423,731.300}
+	Route5Waypoint[3] = marker at {702.159,96.343,845.925}
+
+	//----------------------------------------------------------- positions for platoon creation
+	PlatoonCreatePos[0] = marker at {1819.730,92.085,1470.297}
+	PlatoonCreatePos[1] = marker at {1754.054,91.343,1503.242}
+	PlatoonCreatePos[2] = marker at {1014.793,96.323,891.426}
+	PlatoonCreatePos[3] = marker at {662.135,96.810,873.441}
+	PlatoonCreatePos[4] = marker at {629.421,99.164,1506.172}
+	PlatoonCreatePos[5] = marker at {881.127,104.850,1829.025}
+	PlatoonCreatePos[6] = marker at {1212.275,100.635,1843.851}
+	PlatoonCreatePos[7] = marker at {1935.242,102.228,1348.220}
+	PlatoonCreatePos[8] = marker at {822.587,115.723,860.504}
+	PlatoonCreatePos[9] = marker at {795.780,117.824,864.239}
+	PlatoonCreatePos[10] = marker at {1183.037,103.925,1859.215}
+	PlatoonCreatePos[11] = marker at {1263.394,104.058,1882.046}
+	PlatoonCreatePos[12] = marker at {1597.181,163.428,2096.970}
+	PlatoonCreatePos[13] = marker at {1578.763,160.697,2066.366}
+	PlatoonCreatePos[14] = marker at {1660.086,169.175,2031.209}
+	PlatoonCreatePos[15] = marker at {1584.424,157.524,1989.026}
+	PlatoonCreatePos[16] = marker at {1601.321,165.438,1955.801}
+	PlatoonCreatePos[17] = marker at {955.347,97.373,1107.071}
+	PlatoonCreatePos[18] = marker at {1916.155,98.689,818.216}
+	PlatoonCreatePos[19] = marker at {1546.666,94.502,624.754}
+
+	//++++++++++++++++++++++++++++++++++++++++++++ used when getting wall segments - should be the same number as L9_NUMBER_OF_WALLS
+	EnemyWallPos[0] = marker at {1613.125,162.228,2128.624}
+	EnemyWallPos[1] = marker at {1600.874,163.849,2073.722}
+	EnemyWallPos[2] = marker at {1603.552,162.820,1989.709}
+	EnemyWallPos[3] = marker at {1613.498,168.771,1945.090}
+	EnemyWallPos[4] = marker at {840.499,101.450,791.689}
+	EnemyWallPos[5] = marker at {770.424,101.391,806.331}
+	EnemyWallPos[6] = marker at {1930.545,102.638,1294.657}
+
+	//++++++++++++++++++++++++++++++++++++++++++++ add waypoints to the patrol route containers
+	while Counter < 4
+		add {Route1Waypoint[Counter]} to waypoint list LC9_Waypoint1
+		add {Route2Waypoint[Counter]} to waypoint list LC9_Waypoint2
+		add {Route3Waypoint[Counter]} to waypoint list LC9_Waypoint3
+		add {Route4Waypoint[Counter]} to waypoint list LC9_Waypoint4
+		add {Route5Waypoint[Counter]} to waypoint list LC9_Waypoint5
+		Counter++
+	end while
+
+	//**************************************************************************************** create catapults
+	LC9_Catapult1 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn}
+	LC9_Catapult2 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn2}
+	LC9_Catapult3 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn3}
+	LC9_Catapult4 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn4}
+	LC9_Catapult5 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn5}
+	LC9_Catapult6 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn6}
+	LC9_Catapult7 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn7}
+	LC9_Catapult8 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawn8}
+
+	Counter = 0
+
+	// get wall segments
+	while Counter < L9_NUMBER_OF_WALLS
+		EnemyWall[Counter] = get wall segment nearest {EnemyWallPos[Counter]} radius 30
+		Counter++
+	end while
+
+	//----Create static platoons, set player and give them experience----//
+	Counter = 0
+	while Counter != LC9_NUMBER_OF_PLATOONS
+		if Counter < 7 or Counter == 18
+			LC9_Platoon[Counter] = create platoon PLATOON_INFO_AZTEC_MELEE_4 at {PlatoonCreatePos[Counter]} with 50 men and 0 women 
+			PLAYER of LC9_Platoon[Counter] = 1	
+		elsif Counter >= 7 or Counter == 19
+			LC9_Platoon[Counter] = create platoon PLATOON_INFO_AZTEC_RANGED_4 at {PlatoonCreatePos[Counter]} with 30 men and 0 women 
+			PLAYER of LC9_Platoon[Counter] = 1	
+		end if
+
+	//------------ set platoons on patrol (where applicable) and set the others to idle
+		if Counter == 0
+			clear LC9_Platoon[0] action queue
+			move LC9_Platoon[0] along LC9_Waypoint1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		elsif Counter == 1
+			clear LC9_Platoon[1] action queue
+			move LC9_Platoon[1] along LC9_Waypoint2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		elsif Counter == 5
+			clear LC9_Platoon[5] action queue
+			move LC9_Platoon[5] along LC9_Waypoint3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		elsif Counter == 2
+			clear LC9_Platoon[2] action queue
+			move LC9_Platoon[2] along LC9_Waypoint4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		elsif Counter == 3
+			clear LC9_Platoon[3] action queue
+			move LC9_Platoon[3] along LC9_Waypoint5 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		elsif Counter == 7
+			clear LC9_Platoon[7] action queue
+			add action PLATOON_AGENDA_ACTION_GET_ON_WALL using EnemyWall[6] to LC9_Platoon[7] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {EnemyWall[6]} to LC9_Platoon[7] action queue
+		elsif Counter == 12
+			clear LC9_Platoon[12] action queue
+			add action PLATOON_AGENDA_ACTION_GET_ON_WALL using EnemyWall[0] to LC9_Platoon[12] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {EnemyWall[0]} to LC9_Platoon[12] action queue
+		elsif Counter == 13
+			clear LC9_Platoon[13] action queue
+			add action PLATOON_AGENDA_ACTION_GET_ON_WALL using EnemyWall[1] to LC9_Platoon[13] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {EnemyWall[1]} to LC9_Platoon[13] action queue
+		elsif Counter == 15
+			clear LC9_Platoon[15] action queue
+			add action PLATOON_AGENDA_ACTION_GET_ON_WALL using EnemyWall[3] to LC9_Platoon[15] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {EnemyWall[3]} to LC9_Platoon[15] action queue
+		elsif Counter == 16
+			clear LC9_Platoon[16] action queue
+			add action PLATOON_AGENDA_ACTION_GET_ON_WALL using EnemyWall[2] to LC9_Platoon[16] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {EnemyWall[2]} to LC9_Platoon[16] action queue
+		else
+			clear LC9_Platoon[Counter] action queue
+			add action PLATOON_AGENDA_ACTION_WAIT_IN_STATE_OF_READINESS using {PlatoonCreatePos[Counter]} to LC9_Platoon[Counter] action queue
+		end if
+		LC9_PlatoonState[Counter] = MOVING_TO_POSITION
+		Counter++
+	end while
+
+	attach LC9_Platoon[0] to LC9_MinorSettlement[0]
+	attach LC9_Platoon[1] to LC9_MinorSettlement[0]
+	attach LC9_Platoon[2] to LC9_MinorSettlement[4]
+	attach LC9_Platoon[3] to LC9_MinorSettlement[4]
+	attach LC9_Platoon[4] to LC9_MinorSettlement[6]
+	attach LC9_Platoon[5] to LC9_MinorSettlement[6]
+	attach LC9_Platoon[6] to L9AztecCapital
+	attach LC9_Platoon[7] to LC9_MinorSettlement[0]
+	attach LC9_Platoon[8] to LC9_MinorSettlement[4]
+	attach LC9_Platoon[9] to LC9_MinorSettlement[4]
+	attach LC9_Platoon[10] to L9AztecCapital
+	attach LC9_Platoon[11] to L9AztecCapital
+	attach LC9_Platoon[12] to L9AztecCapital
+	attach LC9_Platoon[13] to L9AztecCapital
+	attach LC9_Platoon[14] to L9AztecCapital
+	attach LC9_Platoon[15] to L9AztecCapital
+	attach LC9_Platoon[16] to L9AztecCapital
+	attach LC9_Platoon[17] to L9AztecCapital
+
+
+	enable platoon LC9_Platoon[1] respond to town LC9_MinorSettlement[0] attack
+	enable platoon LC9_Platoon[0] respond to town LC9_MinorSettlement[0] attack
+
+	enable platoon LC9_Platoon[2] respond to town LC9_MinorSettlement[4] attack
+	enable platoon LC9_Platoon[3] respond to town LC9_MinorSettlement[4] attack
+	enable platoon LC9_Platoon[8] respond to town LC9_MinorSettlement[4] attack
+	enable platoon LC9_Platoon[9] respond to town LC9_MinorSettlement[4] attack
+	
+	enable platoon LC9_Platoon[5] respond to town LC9_MinorSettlement[6] attack
+	enable platoon LC9_Platoon[6] respond to town LC9_MinorSettlement[6] attack
+	enable platoon LC9_Platoon[10] respond to town LC9_MinorSettlement[6] attack
+	enable platoon LC9_Platoon[11] respond to town LC9_MinorSettlement[6] attack
+
+	enable platoon LC9_Platoon[6] respond to town L9AztecCapital attack
+	enable platoon LC9_Platoon[10] respond to town L9AztecCapital attack
+	enable platoon LC9_Platoon[11] respond to town L9AztecCapital attack
+	enable platoon LC9_Platoon[12] respond to town L9AztecCapital attack
+	enable platoon LC9_Platoon[13] respond to town L9AztecCapital attack
+	enable platoon LC9_Platoon[15] respond to town L9AztecCapital attack
+	enable platoon LC9_Platoon[16] respond to town L9AztecCapital attack
+
+	run background script LC9_MaintainArmy
+
+end script Land9AztecCapitalScript
+
+
+//-----------------------------------------------------------------------------
+//----LC9_GeneralManagement----//
+//-----------------------------------------------------------------------------
+begin script LC9_GeneralManagement
+
+	BuildWallCommentSaid			= LC9_FALSE
+	TakingSettlementsWarning		= 0
+	GettingTooCloseWarning			= 0
+	NumberOfTownsPlayerHasTaken		= 0
+	PlayersPlatoon					= 0
+	Counter							= 0
+	ArrivalComment					= 0
+	TownCounter						= 0
+	TownTakenComment[7]
+	TownMigrated[LC9_NUM_OF_MINOR_SETTLEMENTS]
+
+start
+
+	LC9_PlayerOwnsSettlement[0] = LC9_FALSE
+	LC9_PlayerOwnsSettlement[1] = LC9_FALSE
+	LC9_PlayerOwnsSettlement[2] = LC9_FALSE
+	LC9_PlayerOwnsSettlement[3] = LC9_FALSE
+	LC9_PlayerOwnsSettlement[4] = LC9_FALSE
+	LC9_PlayerOwnsSettlement[5] = LC9_FALSE
+	LC9_PlayerOwnsSettlement[6] = LC9_FALSE
+	
+	TownMigrated[0] = 0
+	TownMigrated[1] = 0
+	TownMigrated[2] = 0
+	TownMigrated[3] = 0
+	TownMigrated[4] = 0
+	TownMigrated[5] = 0
+	TownMigrated[6] = 0
+	TownMigrated[7] = 0
+	TownMigrated[8] = 0
+
+	if ArrivalComment == 0
+		if alignment of player < 0
+			run script LC9_GeneralComment(1)
+		elsif alignment of player > 0
+			run script LC9_GeneralComment(2)
+		end if
+		ArrivalComment = 1
+	end if
+
+	begin loop
+		while Counter < LC9_NUM_OF_MINOR_SETTLEMENTS 
+			if get town LC9_MinorSettlement[Counter] migrating == L9GreekTown and TownMigrated[Counter] == 0
+				TownMigrated[Counter] = 1
+				LC9_NumberOfTownsTakenByImpressiveness++
+			end if
+			Counter++
+		end while
+
+		Counter = 0
+
+		while Counter < LC9_NUM_OF_MINOR_SETTLEMENTS
+			if (variable get town LC9_MinorSettlement[Counter] status == variable TOWN_STATUS_CAPTURED and PLAYER of LC9_MinorSettlement[Counter] == 0) or get town LC9_MinorSettlement[Counter] migrating == L9GreekTown//or (TownMigrated[Counter] == 1)
+				L9_TownTaken[Counter] = 1
+				if TownTakenComment[Counter] == 0
+					if Counter == 0
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN1
+						run script LC9_GeneralComment(3)
+						if PLAYER of LC9_MinorSettlement[4] != 0
+							run script LC9_GeneralComment(4)
+						end if
+						TownTakenComment[Counter] = 1
+					elsif Counter == 1
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN2
+						run script LC9_GeneralComment(5)
+						TownTakenComment[Counter] = 1
+					elsif Counter == 2
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN3
+						run script LC9_GeneralComment(6)
+						TownTakenComment[Counter] = 1
+					elsif Counter == 3
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN4
+						run script LC9_GeneralComment(7)
+						TownTakenComment[Counter] = 1
+					elsif Counter == 4
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN5
+						run script LC9_GeneralComment(8)
+						TownTakenComment[Counter] = 1
+					elsif Counter == 5
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN6
+						run script LC9_GeneralComment(9)
+						TownTakenComment[Counter] = 1
+					elsif Counter == 6
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN7
+						run script LC9_GeneralComment(10)
+						TownTakenComment[Counter] = 1
+					elsif Counter == 7
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN8
+						TownTakenComment[Counter] = 1
+					elsif Counter == 8
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_TOWN9
+						TownTakenComment[Counter] = 1
+					end if
+				end if
+			end if
+			Counter++
+		end while
+
+		Counter = 0
+
+		NumberOfTownsPlayerHasTaken = get player 0 town total
+			
+		if (NumberOfTownsPlayerHasTaken == 2 or LC9_NumberOfTownsTakenByImpressiveness == 2) and TakingSettlementsWarning == 0
+			run script LC9_GeneralComment(11)
+			TakingSettlementsWarning++
+			//run background script creatureharassplayer or something
+		elsif (NumberOfTownsPlayerHasTaken == 3 or LC9_NumberOfTownsTakenByImpressiveness == 3) and TakingSettlementsWarning == 1
+			TakingSettlementsWarning = 2
+			if PLAYER of LC9_MinorSettlement[4] == 1
+				FINAL_YLARUAM_STAGE = YLARUAM_STAGE_1
+			end if
+		elsif (NumberOfTownsPlayerHasTaken == 5 or LC9_NumberOfTownsTakenByImpressiveness == 5) and TakingSettlementsWarning == 2
+			TakingSettlementsWarning = 3
+			if PLAYER of LC9_MinorSettlement[4] == 1
+				FINAL_YLARUAM_STAGE = YLARUAM_STAGE_2
+			end if
+			LC9_Condition = LC9_STATE_AT_ALERT
+			//run background script creatureharassplayer or something
+		elsif (NumberOfTownsPlayerHasTaken > 5 or LC9_NumberOfTownsTakenByImpressiveness > 5) and TakingSettlementsWarning == 3
+			run script LC9_GeneralComment(13)
+			TakingSettlementsWarning = 4
+			if PLAYER of LC9_MinorSettlement[4] == 1
+				FINAL_YLARUAM_STAGE = YLARUAM_STAGE_3
+			end if
+			LC9_Condition = LC9_STATE_AT_WAR
+		end if
+		
+	until PLAYER of L9AztecCapital == 0
+	end loop
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 1
+
+
+	L9Complete = 1
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+
+	
+end script LC9_GeneralManagement
+
+
+//-----------------------------------------------------------------------------
+//----LC9_ArmyManagement----//
+//-----------------------------------------------------------------------------
+begin script LC9_ArmyManagement
+
+	PatrolPlatoonPos1[LC9_NUM_OF_PATROL_PLATOONS]
+	PatrolPlatoonPos2[LC9_NUM_OF_PATROL_PLATOONS]
+	RallyPoint			= marker at {1495.015,141.821,2002.465}
+	Counter				= 0
+	TempPlatoon = 0
+	TownCounter = 0
+	CapacityComment = 0
+	GotWallComment = 0
+	CanAztecsRecruit = 0
+	HarassPlatoon[4]
+	SourceTown = 0
+	CanRecruit = 0
+	HarassCounter = 0
+	HarassTimerValue = 300
+	WallPos[22]
+	BridgePlatoonRetreatPos = marker at {1200.316,96.346,1918.542}
+	PlatoonCounter = 0
+	AztecPlatoonCount = 0
+	CatapultTownBombardPos1 = marker at {1410.933,115.994,890.885}
+	CatapultTownBombardPos2 = marker at {1388.624,116.123,871.202}
+	LC9_CATAPULT7_STATE		= 0
+	LC9_CATAPULT8_STATE		= 0
+	LC9_MigrationToAttack[LC9_NUM_OF_MINOR_SETTLEMENTS]
+	CTR = 0
+	TempEffect = 0
+	GateHouse[5]
+	GateHousePos[5]
+	SiegeComment = 0
+
+	PlayersPlatoon = 0
+    PlayersCatapult = 0
+    PlayersInWalls[4]
+    GatehouseCounter = 0
+    ArmyDistance = 40
+    CreatureDistance = 100
+	GateClosed[5]
+	GatehousesOpen = 0
+	WonderToAttack = 0
+	EpicComment = 0
+
+start
+//+++++++++++++++++++++++++++++++++++++++++++
+WallPos[0] = marker at {1132.521,91.526,227.856}	// Line1
+WallPos[1] = marker at {1180.185,83.835,532.858}	// Line1
+WallPos[2] = marker at {800.596,88.265,385.471}	// Line2
+WallPos[3] = marker at {913.984,88.918,586.170}	// Line2
+WallPos[4] = marker at {2150.568,89.001,1251.352}	// Line3
+WallPos[5] = marker at {1838.992,144.742,1303.896}// Line3
+WallPos[6] = marker at {1486.334,88.230,1214.995}	// Line4
+WallPos[7] = marker at {1572.047,88.706,1669.473}	// Line4
+WallPos[8] = marker at {1164.893,92.100,1568.729}	// Line5
+WallPos[9] = marker at {1273.010,87.202,1322.959}	// Line5
+WallPos[10] = marker at {1064.438,123.472,1389.031}// Line6
+WallPos[11] = marker at {1171.344,88.018,1246.535} // Line6
+WallPos[12] = marker at {740.540,114.669,1258.751} // Line7
+WallPos[13] = marker at {492.604,89.145,1227.870}	 // Line7
+WallPos[14] = marker at {1450.803,92.100,1611.218} // Line8
+WallPos[15] = marker at {1390.513,92.100,1338.305} // Line8
+WallPos[16] = marker at {1276.819,92.100,1682.886} // Line9
+WallPos[17] = marker at {1119.589,92.100,1685.628} // Line9
+WallPos[18] = marker at {786.281,88.162,1965.202}  // Line10
+WallPos[19] = marker at {895.095,89.185,1674.074}	 // Line10
+WallPos[20] = marker at {1499.841,88.490,2191.744} // Line11
+WallPos[21] = marker at {1504.890,89.337,1872.363} // Line11
+//++++++++++++++++++++++++++++++++++++++++++++
+PlatoonDefendPos[0]	= marker at {1175.930,104.803,1863.909}
+PlatoonDefendPos[1]	= marker at {1263.394,104.058,1882.046}
+PlatoonDefendPos[2]	= marker at {1221.940,101.255,1826.967}
+//++++++++++++++++++++++++++++++++++++++++++++
+GateHousePos[0] = marker at {1959.243,100.523,1283.018}
+GateHousePos[1] = marker at {807.635,101.417,777.643}
+GateHousePos[2] = marker at {1599.868,163.408,2034.502}
+GateHousePos[3] = marker at {1041.471,103.982,1854.398}
+GateHousePos[4] = marker at {987.166,104.348,1836.925}
+
+LC9_HarassTarget = L9GreekTown
+LC9_HarassTimer = create timer for 0 seconds
+
+set LC9_HarassTimer time to HarassTimerValue seconds
+
+PatrolPlatoonPos1[0] = marker at {1425.326,138.253,2023.265}
+PatrolPlatoonPos2[0] = marker at {1568.728,95.932,1502.637}
+PatrolPlatoonPos1[1] = marker at {1427.254,131.869,1954.186}
+PatrolPlatoonPos2[1] = marker at {1243.205,99.660,1839.235}
+
+PlayersInWalls[0] = LC9_FALSE
+PlayersInWalls[1] = LC9_FALSE
+PlayersInWalls[2] = LC9_FALSE
+PlayersInWalls[3] = LC9_FALSE
+
+	wait 5 seconds 
+
+	begin loop
+		if PlayerGatehouse not exists
+			PlayerGatehouse = get building ABODE_NUMBER_GATEHOUSE in L9GreekTown min built 1.0
+		end if
+
+		GotWall = get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH0 in L9GreekTown min built 1.0
+		//the below checks are used to determine if the player has moved forces into certain sectors of the map
+		PlatoonInZone[0] = get platoon of player 0 nearest {LC9_SwitchPos[0]} radius 200
+		PlatoonInZone[1] = get platoon of player 0 nearest {LC9_SwitchPos[1]} radius 500
+		PlatoonInZone[2] = get platoon of player 0 nearest {LC9_SwitchPos[2]} radius 200
+		PlatoonInZone[3] = get platoon of player 0 nearest {LC9_SwitchPos[3]} radius 200
+		PlatoonInZone[4] = get platoon of player 0 nearest {LC9_SwitchPos[4]} radius 200
+		PlatoonInZone[5] = get platoon of player 0 nearest {LC9_SwitchPos[5]} radius 300	// In town south of Ylaruam
+		PlatoonInZone[6] = get platoon of player 0 nearest {LC9_SwitchPos[6]} radius 300
+		PlatoonInZone[7] = get platoon of player 0 nearest {LC9_SwitchPos[7]} radius 300
+		PlatoonInZone[8] = get platoon of player 0 nearest {LC9_SwitchPos[8]} radius 300
+
+		while CTR < LC9_NUM_OF_MINOR_SETTLEMENTS 
+			if LC9_MigrationToAttack[CTR] not exists
+				LC9_MigrationToAttack[CTR] = get migration from LC9_MinorSettlement[CTR] to L9GreekTown
+				CTR++
+			end if
+		end while
+
+		CTR = 0
+
+		if L9GatesCanOpen == 1
+			while CTR < NUMBER_OF_GATE_HOUSES and GatehousesOpen == 0
+				GateHouse[CTR] = get HOUSE ABODE_NUMBER_GATEHOUSE at {GateHousePos[CTR]} radius 50
+				if PLAYER of LC9_MinorSettlement[0] == 1
+					if not gate GateHouse[0] is open 
+						set gate GateHouse[0] open
+					end if
+				end if 
+
+				if PLAYER of LC9_MinorSettlement[4] == 1
+					if not gate GateHouse[1] is open 
+						set gate GateHouse[1] open
+					end if
+				end if
+
+				if PLAYER of LC9_MinorSettlement[6] == 1
+					if not gate GateHouse[3] is open 
+						set gate GateHouse[3] open
+					end if
+
+					if not gate GateHouse[4] is open 
+						set gate GateHouse[4] open
+					end if
+				end if
+
+				if PLAYER of L9AztecCapital == 1
+					if not gate GateHouse[2] is open 
+						set gate GateHouse[2] open
+					end if
+				end if
+
+				CTR++
+				if CTR == NUMBER_OF_GATE_HOUSES
+					GatehousesOpen = 1
+					GateClosed[0] = LC9_FALSE 
+					GateClosed[1] = LC9_FALSE 
+					GateClosed[2] = LC9_FALSE 
+					GateClosed[3] = LC9_FALSE 
+					GateClosed[4] = LC9_FALSE 
+				end if
+			end while
+		end if
+
+         if town LC9_MinorSettlement[0] is under takeover from player 0 
+			PlayersInWalls[0] = LC9_TRUE
+			if not gate GateHouse[0] is open
+                set gate GateHouse[0] open
+				GateClosed[0] = LC9_FALSE 
+            end if
+         else
+            PlayersInWalls[0] = LC9_FALSE
+         end if
+       
+         if town LC9_MinorSettlement[4] is under takeover from player 0 
+			PlayersInWalls[1] = LC9_TRUE
+			if not gate GateHouse[1] is open
+	                set gate GateHouse[1] open
+				GateClosed[1] = LC9_FALSE 
+            end if
+         else
+            PlayersInWalls[1] = LC9_FALSE
+         end if
+
+         if town LC9_MinorSettlement[6] is under takeover from player 0 
+			PlayersInWalls[2] = LC9_TRUE
+			if not gate GateHouse[3] is open
+                set gate GateHouse[3] open
+				GateClosed[2] = LC9_FALSE 
+            end if
+			if not gate GateHouse[4] is open
+                set gate GateHouse[4] open
+				GateClosed[3] = LC9_FALSE 
+            end if
+         else
+            PlayersInWalls[2] = LC9_FALSE
+         end if
+
+         if town L9AztecCapital is under takeover from player 0 
+			PlayersInWalls[3] = LC9_TRUE
+			if not gate GateHouse[2] is open
+                set gate GateHouse[2] open
+				GateClosed[4] = LC9_FALSE 
+            end if
+         else
+            PlayersInWalls[3] = LC9_FALSE
+         end if
+
+		GatehouseCounter = 0
+
+		while GatehouseCounter < NUMBER_OF_GATE_HOUSES
+			if PLAYER of GateHouse[GatehouseCounter] == 1
+				if gate GateHouse[GatehouseCounter] is open
+
+				else
+					GateClosed[GatehouseCounter] = LC9_TRUE
+				end if
+
+				PlayersPlatoon = get platoon of player 0 nearest {GateHouse[GatehouseCounter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE 
+				PlayersCatapult = get siege weapon of player 0 nearest {GateHouse[GatehouseCounter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE 
+				if PlayersPlatoon exists or PlayersCatapult exists or get distance from {MyCreature} to {GateHouse[GatehouseCounter]} < GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE 
+					if gate GateHouse[GatehouseCounter] is open
+						set gate GateHouse[GatehouseCounter] close
+						GateClosed[GatehouseCounter] = LC9_TRUE
+					end if
+				elsif GateClosed[GatehouseCounter] == LC9_TRUE 
+
+					PlayersPlatoon = get platoon of player 0 nearest {GateHouse[GatehouseCounter]} radius (ArmyDistance+5)
+					PlayersCatapult = get siege weapon of player 0 nearest {GateHouse[GatehouseCounter]} radius ArmyDistance
+
+					if not PlayersPlatoon exists and not PlayersCatapult exists and get distance from {MyCreature} to {GateHouse[GatehouseCounter]} > (GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE)
+						if not gate GateHouse[GatehouseCounter] is open
+							set gate GateHouse[GatehouseCounter] open
+						end if
+						GateClosed[GatehouseCounter] = LC9_FALSE
+					end if
+
+				end if
+			end if
+			GatehouseCounter++
+		end while
+
+		GatehouseCounter = 0
+
+		//----PEACE----//			
+		if LC9_Condition == LC9_STATE_AT_PEACE 
+		
+		//----WAR----//			
+		elsif LC9_Condition == LC9_STATE_AT_WAR 
+
+		elsif LC9_Condition == LC9_STATE_AT_ALERT
+
+		elsif LC9_Condition == LC9_HARASS
+
+		end if
+
+		//----------- these are reactions to specific events
+		//----------- when town capacity exceeds 100, launch an attack from the north
+		////if capacity of L9GreekTown > 120 and CapacityComment == 0
+		////	run script LC9_GeneralComment(14)
+		////	CapacityComment = 1
+		////	LC9_Condition = LC9_HARASS
+
+		////	if LC9_Platoon[0] exists
+		////		clear LC9_Platoon[0] action queue
+		////		set LC9_Platoon[0] attack L9GreekTown with severity LC9_HarassSeverity
+		////	elsif LC9_Platoon[0] not exists and can town L9AztecCapital recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size 20
+		////		clear LC9_Platoon[0] action queue
+		////		set LC9_Platoon[0] attack L9GreekTown with severity LC9_HarassSeverity
+		////	end if
+
+		////	if LC9_Platoon[1] exists
+		////		clear LC9_Platoon[1] action queue
+		////		set LC9_Platoon[1] attack L9GreekTown with severity LC9_HarassSeverity
+		////	elsif LC9_Platoon[1] not exists and can town L9AztecCapital recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size 20
+		////		clear LC9_Platoon[1] action queue
+		////		set LC9_Platoon[1] attack L9GreekTown with severity LC9_HarassSeverity
+		////	end if
+		////end if
+
+		//////---------- when capacity of town exceeds 400, move catapults to position and bombard the city
+		////if capacity of L9GreekTown > 400 and LC9_Catapult7 exists and LC9_CATAPULT7_STATE == WAITING
+		////	clear siege weapon LC9_Catapult7 action queue
+		////	add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultTownBombardPos1} to siege weapon LC9_Catapult7 action queue
+		////	add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_AREA_HOLDING_POSITION using {1701.155,99.915,585.317} to siege weapon LC9_Catapult7 action queue
+		////	LC9_CATAPULT7_STATE = IN_POSITION
+		////end if
+
+		////if capacity of L9GreekTown > 400 and LC9_Catapult8 exists and LC9_CATAPULT8_STATE == WAITING
+		////	clear siege weapon LC9_Catapult8 action queue
+		////	add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultTownBombardPos2} to siege weapon LC9_Catapult8 action queue
+		////	add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_AREA_HOLDING_POSITION using {1690.689,101.063,548.467} to siege weapon LC9_Catapult8 action queue
+		////	LC9_CATAPULT8_STATE = IN_POSITION
+		////end if
+
+		// this is to test if the platoons north of the player have been destroyed // dialogue refers to lady mohc having fallen
+		if MohcComment != 1
+			if LC9_Platoon[18] not exists 
+				run script LC9_GeneralComment(15)
+				MohcComment = 1
+			end if
+		end if
+
+		// smash those walls to dust comment
+		if (GotWall > 4 and GotWallComment == 0)
+			run script LC9_GeneralComment(16) // "smash those walls to dust"
+			GotWallComment = 1
+			run background script LC9_GreekCitySiege
+		elsif (capacity of L9GreekTown > CAPACITY_VALUE_FOR_SIEGE and SiegeComment == 0) or (get player 0 impressiveness > IMPRESSIVE_VALUE_FOR_SIEGE and SiegeComment == 0)
+			SiegeComment = 1
+			run script LC9_GeneralComment(12) //"perhaps the greeks need a second lesson in respect. move my legions into position"
+			run background script LC9_GreekCitySiege
+		end if
+
+		// ---------------- if platoons move west of the players town, start building up Ylaruam
+		if PlatoonInZone[1] exists 
+			if {PlatoonInZone[1]} and {LC9_SwitchPos[1]} on same side of line between {WallPos[0]} and {WallPos[1]}
+				if FINAL_YLARUAM_STAGE == YLARUAM_STAGE_0
+					FINAL_YLARUAM_STAGE = YLARUAM_STAGE_1
+				end if
+			end if
+		end if
+
+		// if players are near the settlement south of Ylaruam, check for size of player force and send the patrolling melee troops to attack
+		if PlatoonInZone[5] exists 
+			if {PlatoonInZone[5]} and {LC9_SwitchPos[5]} on same side of line between {WallPos[2]} and {WallPos[3]}
+				if LC9_Platoon[2] exists
+					clear LC9_Platoon[2] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using PlatoonInZone[5] to LC9_Platoon[2] action queue
+				end if
+				if LC9_Platoon[3] exists
+					clear LC9_Platoon[3] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using PlatoonInZone[5] to LC9_Platoon[3] action queue
+				end if
+			end if
+		end if
+
+		//northwest of ylaruam/near centre - send platoon and catapults to attack
+		if PlatoonInZone[2] exists 
+			if {PlatoonInZone[2]} and {LC9_SwitchPos[2]} on same side of line between {WallPos[8]} and {WallPos[9]}
+				//platoon passed through switch 5
+				//General speech
+				//Troops protect catapults
+				if LC9_Platoon[2] exists
+					clear LC9_Platoon[17] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using PlatoonInZone[2] to LC9_Platoon[17] action queue
+				end if
+
+				if LC9_Catapult3 exists
+					clear LC9_Catapult3 action queue
+					add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using PlatoonInZone[2] to siege weapon LC9_Catapult3 action queue
+				end if
+
+				if LC9_Catapult4 exists
+					clear LC9_Catapult4 action queue
+					add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using PlatoonInZone[2] to siege weapon LC9_Catapult4 action queue
+				end if
+			end if
+		end if
+
+		// when a platoon reaches this position, we fire the epic near the land bridge
+		if PlatoonInZone[3] exists
+			if {PlatoonInZone[3]} and {LC9_SwitchPos[3]} on same side of line between {WallPos[14]} and {WallPos[15]}
+				if L9_EpicCanFire == 0 and PLAYER of LC9_MinorSettlement[4] == 1
+					run script LC9_FireEpic(PlatoonInZone[3])
+				end if
+			end if
+		end if
+
+		//attack platoons crossing the land bridge
+		if PlatoonInZone[4] exists
+			if {PlatoonInZone[4]} and {LC9_SwitchPos[4]} on same side of line between {WallPos[16]} and {WallPos[17]}
+				if LC9_Platoon[10] exists
+					clear LC9_Platoon[10] action queue
+					add action PLATOON_AGENDA_ACTION_RANGED_ATTACK using PlatoonInZone[4] to LC9_Platoon[10] action queue
+				end if
+
+				if LC9_Platoon[11] exists
+					clear LC9_Platoon[11] action queue
+					add action PLATOON_AGENDA_ACTION_RANGED_ATTACK using PlatoonInZone[4] to LC9_Platoon[11] action queue
+				end if
+
+				if LC9_Platoon[6] exists
+					clear LC9_Platoon[6] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using PlatoonInZone[4] to LC9_Platoon[6] action queue
+				end if
+			end if
+		//////if there is no player platoon on the land bridge, return to position
+		////elsif not PlatoonInZone[4] exists
+		////		if LC9_Platoon[10] exists
+		////			clear LC9_Platoon[10] action queue
+		////			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PlatoonDefendPos[0]} to LC9_Platoon[10] action queue
+		////		end if
+
+		////		if LC9_Platoon[11] exists
+		////			clear LC9_Platoon[11] action queue
+		////			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PlatoonDefendPos[1]} to LC9_Platoon[11] action queue
+		////		end if
+
+		////		if LC9_Platoon[6] exists
+		////			clear LC9_Platoon[6] action queue
+		////			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PlatoonDefendPos[2]} to LC9_Platoon[6] action queue
+		////		end if
+		end if
+
+		if get number of type WONDER SCRIPT_FIND_TYPE_ANY in L9GreekTown min built 1.0 > 0
+			WonderToAttack = get WONDER SCRIPT_FIND_TYPE_ANY in L9GreekTown
+			if LC9_Platoon[18] exists and EpicComment == 0
+				run script LC9_GeneralComment(19)
+				EpicComment = 1
+				clear LC9_Platoon[18] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK using WonderToAttack to LC9_Platoon[18] action queue
+			elsif LC9_Platoon[19] exists and EpicComment == 0
+				run script LC9_GeneralComment(19)
+				EpicComment = 1
+				clear LC9_Platoon[19] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK using WonderToAttack to LC9_Platoon[19] action queue
+			end if
+		end if
+
+		// clear defunct target platoons
+		while CTR < L9_ZONES and PlatoonInZone[CTR] exists
+			if get number of villagers in platoon PlatoonInZone[CTR] < 1
+				PlatoonInZone[CTR] = 0
+			end if
+			CTR++
+		end while
+
+		CTR = 0
+	until PLAYER of L9AztecCapital == 0
+	end loop
+	
+end script LC9_ArmyManagement
+
+//-----------------------------------------------------------------------------
+//----LC9_CityManagement----//
+//-----------------------------------------------------------------------------
+begin script LC9_CityManagement
+
+Stage1Started = 0
+Stage2Started = 0
+Stage3Started = 0
+AztecEpicPos = 0
+AztecEpic = 0
+L9AztecCapitalTaken = 0
+CTR = 0
+
+start
+
+begin loop
+	if FINAL_YLARUAM_STAGE == YLARUAM_STAGE_1 and Stage1Started == 0
+		build all town LC9_MinorSettlement[4] buildings in group 1
+		AztecEpicPos = get planned WONDER SCRIPT_FIND_TYPE_ANY in LC9_MinorSettlement[4] near {LC9_MinorSettlement[4]} radius 400
+		AztecEpic = build building at {AztecEpicPos} desire 1.0
+		Stage1Started = 1
+	elsif FINAL_YLARUAM_STAGE == YLARUAM_STAGE_2 and Stage2Started == 0
+		build all town LC9_MinorSettlement[4] buildings in group 2
+		Stage2Started = 1
+	elsif FINAL_YLARUAM_STAGE == YLARUAM_STAGE_3 and Stage3Started == 0
+		build all town LC9_MinorSettlement[4] buildings in group 3
+		Stage3Started = 1
+	end if
+
+	if PLAYER of L9AztecCapital == 0 and L9AztecCapitalTaken == 0
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_9_CAPITAL
+		L9AztecCapitalTaken = 1
+	end if
+
+	CTR = 0
+
+until L9Complete == 1
+end loop
+
+end script LC9_CityManagement
+
+
+//-----------------------------------------------------------------------------
+//----LC9_TakeBackTown----//
+//-----------------------------------------------------------------------------
+begin script LC9_TakeBackTown
+
+Platoon0Target			= 0
+Platoon1Target			= 0
+Platoon2Target			= 0
+Platoon5Target			= 0
+Platoon6Target			= 0
+Platoon7Target			= 0
+
+Platoon2ArcherPos1		= marker at {1607.995,92.194,1546.077}
+Platoon3ArcherPos1		= marker at {1754.054,91.343,1503.242}
+Platoon4RetreatPos		= marker at {1222.357,100.352,1896.210}
+
+Settlement1Attackers	= 0
+
+CentreOfBridge1			= marker at {1180.183,102.081,1689.751}
+PlayerOnBridge1			= 0
+
+Catapult1Move			= marker at {1824.297,93.729,1514.973}
+Catapult2Move			= marker at {1824.821,93.725,1483.002}
+
+LC9_CATAPULT1_STATE		= 0
+LC9_CATAPULT2_STATE		= 0
+LC9_CATAPULT3_STATE		= 0
+LC9_CATAPULT4_STATE		= 0
+
+LC9_Platoon0State		= 0
+LC9_Platoon1State		= 0
+LC9_Platoon2State		= 0
+LC9_Platoon3State		= 0
+
+LC9_Platoon4State		= 0
+LC9_Platoon5State		= 0
+LC9_Platoon6State		= 0
+LC9_Platoon7State		= 0
+
+LC9_Platoon8State		= 0
+LC9_Platoon9State		= 0
+LC9_Platoon10State		= 0
+LC9_Platoon11State		= 0
+
+Catapult1SpawnPos		= marker at {1665.352,93.876,1586.534}
+Catapult2SpawnPos		= marker at {1771.402,94.554,1537.176}
+Catapult3SpawnPos		= marker at {990.682,98.961,1104.017}
+Catapult4SpawnPos		= marker at {1002.786,97.980,1144.576}
+
+Catapult3Town1Pos		= marker at {1147.571,94.279,1399.122}
+Catapult4Town1Pos		= marker at {1191.285,94.200,1374.834}
+Catapult3Town5Pos		= marker at {850.039,95.633,737.399}
+Catapult4Town5Pos		= marker at {791.772,98.320,725.689}
+
+WesternBridgeGuard1		= marker at {776.911,98.576,708.464}
+WesternBridgeGuard2		= marker at {799.417,98.244,707.013}
+WesternBridgeGuard3		= marker at {799.417,98.244,707.013}
+WesternBridgeGuard4		= marker at {817.018,102.798,719.228}
+
+start
+
+while L9AztecCapital exists
+	// if the player has taken the town to the north of the player
+	if PLAYER of LC9_MinorSettlement[0] == 0
+		if LC9_Platoon[0] exists and LC9_Platoon0State != TAKE_BACK_TOWN
+			clear LC9_Platoon[0] action queue
+			set LC9_Platoon[0] attack LC9_MinorSettlement[0] with severity 0.2 for takeover
+			LC9_Platoon0State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[1] exists and LC9_Platoon1State != TAKE_BACK_TOWN
+			clear LC9_Platoon[1] action queue
+			set LC9_Platoon[1] attack LC9_MinorSettlement[0] with severity 0.2 for takeover
+			LC9_Platoon1State = TAKE_BACK_TOWN
+		end if
+	end if
+
+//*******************************************************************************************
+	//if the player has taken Ylaruam, the city with the epic
+	if PLAYER of LC9_MinorSettlement[4] == 0
+		if LC9_Platoon[2] exists and LC9_Platoon2State != TAKE_BACK_TOWN
+			clear LC9_Platoon[2] action queue
+			set LC9_Platoon[2] attack LC9_MinorSettlement[4] with severity 0.1 for takeover
+			LC9_Platoon2State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[3] exists and LC9_Platoon3State != TAKE_BACK_TOWN
+			clear LC9_Platoon[3] action queue
+			set LC9_Platoon[3] attack LC9_MinorSettlement[4] with severity 0.1 for takeover
+			LC9_Platoon3State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[8] exists and LC9_Platoon8State != TAKE_BACK_TOWN
+			clear LC9_Platoon[8] action queue
+			set LC9_Platoon[8] attack LC9_MinorSettlement[4] with severity 0.1 for takeover
+			LC9_Platoon8State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[9] exists and LC9_Platoon9State != TAKE_BACK_TOWN
+			clear LC9_Platoon[9] action queue
+			set LC9_Platoon[9] attack LC9_MinorSettlement[4] with severity 0.1 for takeover
+			LC9_Platoon9State = TAKE_BACK_TOWN
+		end if
+	end if
+
+//*******************************************************************************************
+	//if the player has taken the town to the far north
+	if PLAYER of LC9_MinorSettlement[6] == 0
+		if LC9_Platoon[4] exists and LC9_Platoon4State != TAKE_BACK_TOWN
+			clear LC9_Platoon[4] action queue
+			set LC9_Platoon[4] attack LC9_MinorSettlement[6] with severity 0.1 for takeover
+			LC9_Platoon4State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[5] exists and LC9_Platoon5State != TAKE_BACK_TOWN
+			clear LC9_Platoon[5] action queue
+			set LC9_Platoon[5] attack LC9_MinorSettlement[6] with severity 0.1 for takeover
+			LC9_Platoon5State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[6] exists and LC9_Platoon6State != TAKE_BACK_TOWN
+			clear LC9_Platoon[6] action queue
+			set LC9_Platoon[6] attack LC9_MinorSettlement[6] with severity 0.1 for takeover
+			LC9_Platoon6State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[11] exists and LC9_Platoon11State != TAKE_BACK_TOWN
+			clear LC9_Platoon[11] action queue
+			set LC9_Platoon[11] attack LC9_MinorSettlement[6] with severity 0.1 for takeover
+			LC9_Platoon11State = TAKE_BACK_TOWN
+		end if
+
+		if LC9_Platoon[10] exists and LC9_Platoon10State != TAKE_BACK_TOWN
+			clear LC9_Platoon[10] action queue
+			set LC9_Platoon[10] attack LC9_MinorSettlement[6] with severity 0.1 for takeover
+			LC9_Platoon10State = TAKE_BACK_TOWN
+		end if
+		//LC9_PlayerOwnsSettlement[0] = 1
+	end if
+
+//*********************************************************************************************
+end while
+
+end script LC9_TakeBackTown
+
+
+//-----------------------------------------------------------------------------
+//----LC9_AttackPlayersTown----//
+//-----------------------------------------------------------------------------
+begin script LC9_AttackPlayersTown(Platoon)
+	
+start
+	
+	begin loop
+	
+	until Platoon not exists or LC9_Condition != LC9_HARASS
+	end loop
+
+end script LC9_AttackPlayersTown
+
+
+//-----------------------------------------------------------------------------
+//----LC9_DefendAITown----//
+//-----------------------------------------------------------------------------
+begin script LC9_DefendAITown
+
+	Counter = 0
+	
+start
+
+	while Counter < LC9_NUMBER_OF_PLATOONS
+		if LC9_Platoon[Counter] exists //and not fighting
+			clear LC9_Platoon[Counter] action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L9AztecCapital} to LC9_Platoon[Counter] action queue
+			add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using L9AztecCapital to LC9_Platoon[Counter] action queue
+		end if
+		Counter++
+	end while
+	
+	wait until get platoon of player 0 nearest {L9AztecCapital} radius 30 not exists//Norse capital not under attack
+	
+	LC9_Defend = LC9_FALSE
+	LC9_Condition = LC9_STATE_AT_WAR
+	
+end script LC9_DefendAITown
+
+//-----------------------------------------------------------------------------
+//----LC9_GeneralComment---//
+//-----------------------------------------------------------------------------
+begin script LC9_GeneralComment(SAY_ID)
+
+start
+
+wait until dialogue ready
+begin dialogue
+	if SAY_ID == 1
+		say "BW2T_SCRIPT_09FINAL_ADVISORS_AZTEC_ANGER_10"
+		wait until read
+	elsif SAY_ID == 2
+		say "BW2T_SCRIPT_09FINAL_ADVISORS_AZTEC_ANGER_12"
+		wait until read
+	elsif SAY_ID == 3
+		say "BW2T_SCRIPT_09FINAL_GENERAL_10"
+		wait until read
+	elsif SAY_ID == 4
+		say "BW2T_SCRIPT_09FINAL_GENERAL_20"
+		wait until read
+	elsif SAY_ID == 5
+		say "BW2T_SCRIPT_09FINAL_GENERAL_190"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_200"
+		wait until read
+	elsif SAY_ID == 6
+		say "BW2T_SCRIPT_09FINAL_GENERAL_210"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_220"
+		wait until read
+	elsif SAY_ID == 7
+		say "BW2T_SCRIPT_09FINAL_GENERAL_230"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_240"
+		wait until read
+	elsif SAY_ID == 8
+		say "BW2T_SCRIPT_09FINAL_GENERAL_30"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_40"
+		wait until read
+	elsif SAY_ID == 9
+		say "BW2T_SCRIPT_09FINAL_GENERAL_250"
+		wait until read
+	elsif SAY_ID == 10
+		say "BW2T_SCRIPT_09FINAL_GENERAL_260"
+		wait until read
+	elsif SAY_ID == 11
+		say "BW2T_SCRIPT_09FINAL_GENERAL_50"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_60"
+		wait until read
+	elsif SAY_ID == 12
+		say "BW2T_SCRIPT_09FINAL_GENERAL_70"
+		wait until read
+	elsif SAY_ID == 13
+		say "BW2T_SCRIPT_09FINAL_GENERAL_90"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_100"
+		wait until read
+	elsif SAY_ID == 14
+		say "BW2T_SCRIPT_09FINAL_GENERAL_130" 		//Command Lord Mohc to 'welcome' the Greeks
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_140"		//Tell him to kill the men. And bring the women to me
+		wait until read
+	elsif SAY_ID == 15
+		say "BW2T_SCRIPT_09FINAL_GENERAL_180"
+		wait until read
+	elsif SAY_ID == 16
+		say "BW2T_SCRIPT_09FINAL_GENERAL_170"
+		wait until read
+	elsif SAY_ID == 17
+		say "BW2T_SCRIPT_09FINAL_GENERAL_110"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_120"
+		wait until read
+	elsif SAY_ID == 18
+		say "BW2T_SCRIPT_09FINAL_GENERAL_150"
+		wait until read
+		say "BW2T_SCRIPT_09FINAL_GENERAL_160"
+		wait until read
+	elsif SAY_ID == 19
+		say "BW2T_SCRIPT_09FINAL_GENERAL_80"
+		wait until read
+	end if
+end dialogue
+
+end script LC9_GeneralComment
+
+//-----------------------------------------------------------------------------
+//	Make sure that the Aztec army is the right size
+//-----------------------------------------------------------------------------
+
+begin script LC9_MaintainArmy
+
+Ctr = 0
+
+CapitalRecruitTimer = create timer for 0 seconds
+YlaruamRecruitTimer = create timer for 0 seconds
+CapitalRecruit = 120
+YlaruamRecruit = 180
+
+start
+
+set CapitalRecruitTimer time to CapitalRecruit seconds
+set YlaruamRecruitTimer time to YlaruamRecruit seconds
+
+begin loop
+
+	if PLAYER of L9AztecCapital == 1 and get CapitalRecruitTimer time remaining <= 0
+		if get number of type ABODE_NUMBER_MELEE_ARMOURY in L9AztecCapital min built 1.0 >= 1
+			if LC9_Platoon[0] not exists
+				LC9_Platoon[0] = recruit PLATOON_INFO_AZTEC_MELEE_3 town L9AztecCapital platoon of size 24
+				attach LC9_Platoon[0] to L9AztecCapital
+				PLAYER of LC9_Platoon[0] = 1
+				set CapitalRecruitTimer time to CapitalRecruit seconds
+				if PLAYER of LC9_MinorSettlement[0] == 1
+					clear LC9_Platoon[0] action queue
+					move LC9_Platoon[0] along LC9_Waypoint1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM	
+				else
+					clear LC9_Platoon[0] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using LC9_MinorSettlement[0] to LC9_Platoon[0] action queue
+				end if
+			end if
+			
+			if LC9_Platoon[1] not exists
+					LC9_Platoon[1] = recruit PLATOON_INFO_AZTEC_MELEE_3 town L9AztecCapital platoon of size 24
+					attach LC9_Platoon[1] to L9AztecCapital
+					PLAYER of LC9_Platoon[1] = 1
+					set CapitalRecruitTimer time to CapitalRecruit seconds
+				if PLAYER of LC9_MinorSettlement[0] == 1
+					clear LC9_Platoon[1] action queue
+					move LC9_Platoon[1] along LC9_Waypoint2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM	
+				else
+					clear LC9_Platoon[1] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using LC9_MinorSettlement[0] to LC9_Platoon[1] action queue
+				end if
+			end if
+
+			if LC9_Platoon[7] not exists
+					LC9_Platoon[7] = recruit PLATOON_INFO_AZTEC_RANGED_5 town L9AztecCapital platoon of size 24
+					PLAYER of LC9_Platoon[7] = 1
+					set CapitalRecruitTimer time to CapitalRecruit seconds
+				if PLAYER of LC9_MinorSettlement[0] == 1 and EnemyWall[6] exists
+					attach LC9_Platoon[7] to LC9_MinorSettlement[0]
+					add action PLATOON_AGENDA_ACTION_GET_ON_WALL using EnemyWall[6] to LC9_Platoon[7] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {EnemyWall[6]} to LC9_Platoon[7] action queue
+				else
+					attach LC9_Platoon[7] to L9AztecCapital
+					clear LC9_Platoon[7] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using LC9_MinorSettlement[0] to LC9_Platoon[7] action queue
+				end if
+			end if
+
+			if LC9_Platoon[6] not exists
+					LC9_Platoon[6] = recruit PLATOON_INFO_AZTEC_MELEE_3 town L9AztecCapital platoon of size 24
+					attach LC9_Platoon[6] to L9AztecCapital
+					PLAYER of LC9_Platoon[6] = 1
+					set CapitalRecruitTimer time to CapitalRecruit seconds
+				if PlatoonInZone[4] exists
+					clear LC9_Platoon[6] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using PlatoonInZone[4] to LC9_Platoon[6] action queue
+				else
+					clear LC9_Platoon[6] action queue
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PlatoonDefendPos[2]} to LC9_Platoon[6] action queue
+				end if
+			end if
+
+			if LC9_Platoon[11] not exists
+					LC9_Platoon[11] = recruit PLATOON_INFO_AZTEC_MELEE_3 town L9AztecCapital platoon of size 24
+					attach LC9_Platoon[11] to L9AztecCapital
+					PLAYER of LC9_Platoon[11] = 1
+					set CapitalRecruitTimer time to CapitalRecruit seconds
+				if PlatoonInZone[4] exists
+					clear LC9_Platoon[11] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using PlatoonInZone[4] to LC9_Platoon[11] action queue
+				else
+					clear LC9_Platoon[11] action queue
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PlatoonDefendPos[1]} to LC9_Platoon[11] action queue
+				end if
+			end if
+		end if
+	end if
+
+	if PLAYER of LC9_MinorSettlement[4] == 1 and get CapitalRecruitTimer time remaining <= 0
+		if get number of type ABODE_NUMBER_MELEE_ARMOURY in LC9_MinorSettlement[4] min built 1.0 >= 1
+			if LC9_Platoon[2] not exists
+				LC9_Platoon[2] = recruit PLATOON_INFO_AZTEC_MELEE_3 town LC9_MinorSettlement[4] platoon of size 24
+				attach LC9_Platoon[2] to LC9_MinorSettlement[4]
+				PLAYER of LC9_Platoon[2] = 1
+				set YlaruamRecruitTimer time to YlaruamRecruit seconds
+				clear LC9_Platoon[2] action queue
+				move LC9_Platoon[2] along LC9_Waypoint4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM	
+			end if
+
+			if LC9_Platoon[3] not exists
+				LC9_Platoon[3] = recruit PLATOON_INFO_AZTEC_MELEE_3 town LC9_MinorSettlement[4] platoon of size 24
+				attach LC9_Platoon[3] to LC9_MinorSettlement[4]
+				PLAYER of LC9_Platoon[3] = 1
+				set YlaruamRecruitTimer time to YlaruamRecruit seconds
+				clear LC9_Platoon[3] action queue
+				move LC9_Platoon[3] along LC9_Waypoint4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM	
+			end if
+		end if
+	end if
+until L9Complete == 1
+end loop
+
+end script LC9_MaintainArmy
+
+//===============================================================
+
+begin script LC9_Marauders
+
+Food = 0
+FoodPos = marker at {1903.658,95.906,796.862}
+PatrolMarker[10]
+PatrolRoute = 0
+PatrolPoints = 10
+Counter = 0
+PlatoonToAttack[2]
+SplitAndAttack[2]
+SupportSent = 0
+MarauderTownRaid = 0
+
+start
+
+PatrolRoute = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {1197.891,108.560,782.416}
+
+PatrolMarker[0] = marker at {1882.125,102.312,840.293}
+PatrolMarker[1] = marker at {1807.434,98.782,809.842}
+PatrolMarker[2] = marker at {1688.787,97.814,713.705}
+PatrolMarker[3] = marker at {1582.414,107.939,617.631}
+PatrolMarker[4] = marker at {1574.400,100.253,430.929}
+PatrolMarker[5] = marker at {1633.534,98.196,346.994}
+PatrolMarker[6] = marker at {1576.400,100.253,430.929}
+PatrolMarker[7] = marker at {1584.414,107.939,617.631}
+PatrolMarker[8] = marker at {1690.787,97.814,713.705}
+PatrolMarker[9] = marker at {1809.434,98.782,809.842}
+
+
+while Counter < PatrolPoints
+	add {PatrolMarker[Counter]} to waypoint list PatrolRoute
+	Counter++
+end while
+
+wait 10 seconds
+
+enable platoon LC9_Platoon[18] camp
+enable platoon LC9_Platoon[19] camp
+
+wait 300 seconds
+
+clear LC9_Platoon[18] action queue
+move LC9_Platoon[18] along PatrolRoute with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+
+while LC9_Platoon[18] exists or LC9_Platoon[19] exists
+	if GotWall <= 4
+		if LC9_Platoon[18] exists
+			if capacity of L9GreekTown > 60 and SplitAndAttack[0] == 0 and get number of soldiers in town L9GreekTown <= 0
+				if LC9_Platoon[18] can navigate to {1775.323,100.755,480.985}
+					if size of LC9_Platoon[18] > 12 
+						if MohcComment == 0
+							run script LC9_GeneralComment(14)
+						end if
+						SplitAndAttack[0] = 1
+						PlatoonToAttack[0] = split 12 soldiers from platoon LC9_Platoon[18]
+						clear PlatoonToAttack[0] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to PlatoonToAttack[0] action queue
+					end if
+				end if
+			elsif capacity of L9GreekTown > 100 and SplitAndAttack[1] == 0
+				if  LC9_Platoon[18] can navigate to {1775.323,100.755,480.985}
+					if size of LC9_Platoon[18] > 12
+						SplitAndAttack[1] = 1
+						PlatoonToAttack[1] = split 12 soldiers from platoon LC9_Platoon[18]
+						clear PlatoonToAttack[1] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to PlatoonToAttack[1] action queue
+					end if
+				end if
+			elsif capacity of L9GreekTown > 150 and LC9_Platoon[18] exists
+				if LC9_Platoon[18] can navigate to {1775.323,100.755,480.985}
+					clear LC9_Platoon[18] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to LC9_Platoon[18] action queue
+				end if
+			end if
+		end if
+
+		if capacity of L9GreekTown < 20 and PlatoonToAttack[0] exists
+			clear PlatoonToAttack[0] action queue
+			merge platoon PlatoonToAttack[0] into platoon LC9_Platoon[18]
+		end if
+
+		if capacity of L9GreekTown < 40 and PlatoonToAttack[1] exists
+			clear PlatoonToAttack[1] action queue
+			merge platoon PlatoonToAttack[1] into platoon LC9_Platoon[18]
+		end if
+
+		if LC9_Platoon[19] exists
+			if get number of villagers in platoon LC9_Platoon[18] < 12 and SupportSent == 0
+				SupportSent = 1
+				clear LC9_Platoon[19] action queue
+				add action PLATOON_AGENDA_ACTION_SUPPORT using LC9_Platoon[18] to LC9_Platoon[19] action queue
+			end if
+		end if
+	end if
+
+	if GotWall > 4
+		if MarauderTownRaid == 0 and LC9_Platoon[18] exists
+			if gate PlayerGatehouse is open
+				MarauderTownRaid = 1
+				clear LC9_Platoon[18] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to LC9_Platoon[18] action queue
+			end if
+		end if
+	end if
+	
+end while
+
+end script LC9_Marauders
+
+//=====================================================
+
+begin script LC9_FireEpic(TargetPlatoon)
+
+EpicEQ = 0
+CastEpicPos = marker at {1198.393,93.083,1389.025}
+EpicTarget = marker at {1430.334,94.984,1438.310}
+EpicWarning = 0
+Wonder=0
+EpicTimer = 0
+
+start
+if L9_EpicCanFire == 0
+
+	L9_EpicCanFire = 1
+
+	if get number of type WONDER SCRIPT_FIND_TYPE_ANY in LC9_MinorSettlement[4] min built 1.0 > 0
+
+		Wonder= get WONDER SCRIPT_FIND_TYPE_ANY in LC9_MinorSettlement[4]
+
+		EpicWarning = create visual effect VISUAL_EFFECT_EPIC_TARGET_WARNING at {CastEpicPos} + {0.000,10.000,0.000} time 15 target {CastEpicPos} + {0.000,10.000,0.000}
+		wait 15 seconds
+
+		EpicEQ = create hurricane at {CastEpicPos} player 1 direction {TargetPlatoon}
+
+		run background script Land9Hurricane(Wonder, EpicEQ)
+
+		wait 600 seconds
+
+		L9_EpicCanFire = 0
+	end if
+end if
+
+end script LC9_FireEpic
+//******************************
+
+begin script LC9_GreekCitySiege
+
+StartSiege = 0
+InitialCatapult = 0
+CatapultDefended = 0
+StagingPos[8]
+CatapultToGo = 0
+
+start
+
+StagingPos[0] = marker at {1814.794,101.571,856.898}
+StagingPos[1] = marker at {1848.786,101.857,858.818}
+StagingPos[2] = marker at {1834.561,101.976,868.285}
+StagingPos[3] = marker at {1802.909,100.590,842.038}
+StagingPos[4] = marker at {1801.387,100.529,823.579}
+StagingPos[5] = marker at {1788.655,99.581,851.100}
+StagingPos[6] = marker at {1858.809,102.412,842.382}
+StagingPos[7] = marker at {1832.277,101.526,842.202}
+
+if LC9_Catapult1 exists // begin the siege by moving the catapult to position
+	InitialCatapult = LC9_Catapult1
+	CatapultToGo = 1
+elsif LC9_Catapult2 exists
+	InitialCatapult = LC9_Catapult2
+	CatapultToGo = 2
+end if
+
+if StartSiege == 0 //get everyone to position
+	if InitialCatapult exists
+		StartSiege = 1
+		clear siege weapon InitialCatapult action queue
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {StagingPos[6]} to siege weapon InitialCatapult action queue
+	end if
+
+	if LC9_Platoon[0] exists
+		if InitialCatapult exists and CatapultDefended == 0
+			clear LC9_Platoon[0] action queue
+			add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using InitialCatapult to LC9_Platoon[0] action queue
+			CatapultDefended = 1
+		elsif CatapultDefended == 0
+			clear LC9_Platoon[0] action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {StagingPos[1]} to LC9_Platoon[0] action queue
+		end if
+	end if
+
+	wait 5 seconds 
+
+	if LC9_Platoon[1] exists
+		if InitialCatapult exists and CatapultDefended == 0
+			clear LC9_Platoon[1] action queue
+			add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using InitialCatapult to LC9_Platoon[1] action queue
+			CatapultDefended = 1
+		elsif CatapultDefended == 1
+			clear LC9_Platoon[1] action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {StagingPos[0]} to LC9_Platoon[1] action queue
+		end if
+	end if
+end if
+
+run background script LC9_SiegeUnit(InitialCatapult, CATAPULT_TYPE)
+run background script LC9_SiegeUnit(LC9_Platoon[0], PLATOON_TYPE)
+run background script LC9_SiegeUnit(LC9_Platoon[1], PLATOON_TYPE)
+
+wait 300 seconds
+
+if CatapultToGo == 1
+	if LC9_Catapult2 exists
+		run background script LC9_SiegeUnit(LC9_Catapult2, CATAPULT_TYPE)
+	end if
+end if
+
+while (TownRaid == 0 and LC9_Platoon[0] exists) or (TownRaid == 0 and LC9_Platoon[1] exists)
+	if gate PlayerGatehouse is open
+		TownRaid = 1
+		if LC9_Platoon[0] exists
+			clear LC9_Platoon[0] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to LC9_Platoon[0] action queue
+		elsif LC9_Platoon[1] exists
+			clear LC9_Platoon[1] action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to LC9_Platoon[1] action queue
+		end if
+	end if
+end while
+
+end script LC9_GreekCitySiege
+
+//******************************
+
+begin script LC9_GetTimeOfDay
+
+start
+begin loop
+
+	if get game time >= 20 or get game time <= 6
+		TimeOfDay = NIGHT_TIME
+	else
+		TimeOfDay = DAY_TIME
+	end if
+
+until PLAYER of L9AztecCapital == 0
+end loop
+
+end script LC9_GetTimeOfDay
+
+//********************************
+
+begin script LC9_SiegeUnit(Unit, Type)
+
+PlayerCitySiegePos[12]
+InitialCatapult = 0
+CatapultDefended = 0
+StagingPos[8]
+RandomTimer = 0
+PlayerWall = 0
+GotPlayerWall = 0
+RandomAttackNumber = 0
+
+start
+
+PlayerCitySiegePos[0] = marker at {1699.011,98.148,705.776}
+PlayerCitySiegePos[1] = marker at {1619.330,99.401,676.929}
+PlayerCitySiegePos[2] = marker at {1661.289,97.427,724.273}
+PlayerCitySiegePos[3] = marker at {1533.741,96.291,486.127}
+PlayerCitySiegePos[4] = marker at {1661.913,97.858,658.461}
+PlayerCitySiegePos[5] = marker at {1514.908,97.550,544.133}
+PlayerCitySiegePos[6] = marker at {1580.996,97.070,508.810}
+PlayerCitySiegePos[7] = marker at {1554.903,100.770,569.687}
+PlayerCitySiegePos[8] = marker at {1538.686,98.653,442.323}
+PlayerCitySiegePos[9] = marker at {1619.036,98.586,374.844}
+PlayerCitySiegePos[10] = marker at {1603.635,98.788,473.168}
+PlayerCitySiegePos[11] = marker at {1629.965,98.206,626.009}
+
+StagingPos[0] = marker at {1814.794,101.571,856.898}
+StagingPos[1] = marker at {1848.786,101.857,858.818}
+StagingPos[2] = marker at {1834.561,101.976,868.285}
+StagingPos[3] = marker at {1802.909,100.590,842.038}
+StagingPos[4] = marker at {1801.387,100.529,823.579}
+StagingPos[5] = marker at {1788.655,99.581,851.100}
+StagingPos[6] = marker at {1858.809,102.412,842.382}
+StagingPos[7] = marker at {1832.277,101.526,842.202}
+
+wait until {Unit} near {StagingPos[6]} radius 20 or {Unit} near {StagingPos[0]} radius 20
+
+begin loop
+	if Type == CATAPULT_TYPE
+
+		if get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH0 in L9GreekTown min built 1.0 > 2 or get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH1 in L9GreekTown min built 1.0 > 2
+			PlayerWall = get building ABODE_NUMBER_WALLTOWER_TECH0 in L9GreekTown min built 1.0
+			if PlayerWall exists
+				GotPlayerWall = 1
+			else
+				PlayerWall = get building ABODE_NUMBER_WALLTOWER_TECH1 in L9GreekTown min built 1.0
+				if PlayerWall exists
+					GotPlayerWall = 1
+				end if
+			end if
+		end if
+
+		if Unit exists
+			disable siege weapon Unit auto attack
+			RandomPosition = number from 0 to 12
+			clear siege weapon Unit action queue
+			add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {PlayerCitySiegePos[RandomPosition]} to siege weapon Unit action queue
+		end if
+
+		wait until {Unit} near {PlayerCitySiegePos[RandomPosition]} radius 10
+
+		wait 30 seconds
+
+		clear siege weapon Unit action queue
+		if GotPlayerWall == 1
+			add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using PlayerWall to siege weapon Unit action queue
+		else
+			add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {L9GreekTown} to siege weapon Unit action queue 
+		end if
+
+		wait 60 seconds
+	elsif Type == PLATOON_TYPE
+
+		if Unit exists
+			RandomAttackNumber = number from 0 to 10
+			if RandomAttackNumber == 7
+                if Unit can navigate to {1775.323,100.755,480.985}
+					clear Unit action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using L9GreekTown to Unit action queue	
+				end if
+			else
+				Platoon1RandomNumber = number from 0 to 12
+				RandomTimer = number from 20 to 50
+				if Unit can navigate to {PlayerCitySiegePos[Platoon1RandomNumber]}
+					clear Unit action queue
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PlayerCitySiegePos[Platoon1RandomNumber]} to Unit action queue
+					wait until {Unit} near {PlayerCitySiegePos[Platoon1RandomNumber]} radius 10
+					wait RandomTimer seconds
+				end if
+			end if
+		end if
+	end if
+
+until L9SiegeBroken == 1
+end loop
+
+end script LC9_SiegeUnit
+
+//********************
+
+begin script LC9_SetupTownDefenders
+
+TownDefenders[14] 
+TownDefenderPos[14]
+Ctr = 0
+
+start
+
+TownDefenderPos[0] = marker at {1747.980,92.662,1441.725}
+TownDefenderPos[1] = marker at {1633.608,95.322,1513.330}
+TownDefenderPos[2] = marker at {1654.981,97.407,1373.412}
+TownDefenderPos[3] = marker at {905.472,98.443,950.753}
+TownDefenderPos[4] = marker at {871.333,98.329,870.323}
+TownDefenderPos[5] = marker at {806.143,116.164,864.631}
+TownDefenderPos[6] = marker at {801.658,102.514,811.275}
+TownDefenderPos[7] = marker at {902.572,104.378,1892.874}
+TownDefenderPos[8] = marker at {1080.904,104.312,2032.591}
+TownDefenderPos[9] = marker at {984.188,97.363,1995.382}
+TownDefenderPos[10] = marker at {2026.584, 191.921, 2048.801}
+TownDefenderPos[11] = marker at {2032.693, 192.454, 2041.744}
+TownDefenderPos[12] = marker at {1748.265, 172.271, 1986.831}
+TownDefenderPos[13] = marker at {1732.700, 171.124, 2096.257}
+
+while Ctr < 14
+	TownDefenders[Ctr] = create platoon PLATOON_INFO_AZTEC_MELEE_1 at {TownDefenderPos[Ctr]} with 12 men and 0 women
+	PLAYER of TownDefenders[Ctr] = 1
+	if Ctr < 3
+		enable platoon TownDefenders[Ctr] respond to town LC9_MinorSettlement[0] attack
+		attach TownDefenders[Ctr] to LC9_MinorSettlement[0]
+	elsif Ctr > 2 and Ctr < 7
+		enable platoon TownDefenders[Ctr] respond to town LC9_MinorSettlement[4] attack
+		attach TownDefenders[Ctr] to LC9_MinorSettlement[4]
+	elsif Ctr > 7 and Ctr < 10
+		enable platoon TownDefenders[Ctr] respond to town LC9_MinorSettlement[6] attack
+		enable platoon TownDefenders[Ctr] respond to town L9AztecCapital attack
+		attach TownDefenders[Ctr] to LC9_MinorSettlement[6]
+	else
+		enable platoon TownDefenders[Ctr] respond to town L9AztecCapital attack
+		attach TownDefenders[Ctr] to L9AztecCapital
+	end if
+	enable platoon TownDefenders[Ctr] camp
+	Ctr++
+end while
+
+end script LC9_SetupTownDefenders
+
+//-----------------------------------
+
+begin script LC9_GenericAttacks
+
+AttackPlatoon1 = 0
+AttackPlatoon2 = 0
+PlatoonsToAttack = 0
+AttackTime = 0
+AttackTimer = create timer for 0 seconds
+AkabaRecruitPos = 0
+YlaruamRecruitPos = 0
+CapitalRecruitPos = 0
+CapitalRecruitPos2 = 0
+PlatoonSize = 0
+Source1 = 0
+Source2 = 0
+AttackCatapult = 0
+RandomNumber = 0
+CatapultSpawnPos = 0
+PlayerWall = 0
+
+start
+
+AkabaRecruitPos = marker at {1840.150,91.632,1479.696}
+YlaruamRecruitPos = marker at {819.483,102.581,809.390}
+CapitalRecruitPos = marker at {1672.669,169.574,2030.054}
+CatapultSpawnPos = marker at {1734.747, 171.371, 2089.610}
+CapitalRecruitPos2 = marker at {1749.532, 172.124, 2076.441}
+
+wait 600 seconds
+
+begin loop
+
+	AttackTime = number from 120 to 240
+	RandomNumber = number from 0 to 3
+
+	set AttackTimer time to AttackTime seconds
+
+	if get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH0 in L9GreekTown min built 1.0 > 2 or get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH1 in L9GreekTown min built 1.0 > 2
+		PlayerWall = get building ABODE_NUMBER_WALLTOWER_TECH0 in L9GreekTown min built 1.0
+		if PlayerWall not exists
+			PlayerWall = get building ABODE_NUMBER_WALLTOWER_TECH1 in L9GreekTown min built 1.0
+		end if
+	end if
+
+	if capacity of L9GreekTown < 200
+		PlatoonsToAttack = 1
+		PlatoonSize = number from 8 to 15
+	else
+		PlatoonsToAttack = 2
+		PlatoonSize = number from 12 to 24
+	end if
+
+	if RandomNumber != 3
+		wait until get AttackTimer time remaining <= 0
+		if PlatoonsToAttack == 1 and AttackPlatoon1 not exists and PLAYER of L9AztecCapital == 1
+			if PLAYER of LC9_MinorSettlement[0] == 1 and get number of type ABODE_NUMBER_MELEE_ARMOURY in LC9_MinorSettlement[0] min built 1.0 >= 1// recruit from Akaba 
+				AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {AkabaRecruitPos} with PlatoonSize men and 0 women 
+				PLAYER of AttackPlatoon1 = 1
+				Source1 = 1
+			elsif PLAYER of LC9_MinorSettlement[4] == 1 and get number of type ABODE_NUMBER_MELEE_ARMOURY in LC9_MinorSettlement[4] min built 1.0 >= 1// recruit from Ylaruam
+				AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {YlaruamRecruitPos} with PlatoonSize men and 0 women 
+				PLAYER of AttackPlatoon1 = 1
+				Source1 = 2
+			else
+				if get number of type ABODE_NUMBER_MELEE_ARMOURY in L9AztecCapital min built 1.0 >= 1
+					AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {CapitalRecruitPos} with PlatoonSize men and 0 women 
+					PLAYER of AttackPlatoon1 = 1
+					Source1 = 3
+				end if
+			end if
+		elsif PlatoonsToAttack == 2 and AttackPlatoon1 not exists and AttackPlatoon2 not exists
+			if PLAYER of LC9_MinorSettlement[0] == 1 and PLAYER of LC9_MinorSettlement[4] == 0// recruit from Akaba
+				if get number of type ABODE_NUMBER_MELEE_ARMOURY in LC9_MinorSettlement[0] min built 1.0 >= 1 and get number of type ABODE_NUMBER_MELEE_ARMOURY in LC9_MinorSettlement[4] min built 1.0 >= 1
+					AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {AkabaRecruitPos} with PlatoonSize men and 0 women 
+					PLAYER of AttackPlatoon1 = 1
+					Source1 = 1
+					AttackPlatoon2 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {YlaruamRecruitPos} with PlatoonSize men and 0 women 
+					PLAYER of AttackPlatoon2 = 1
+					Source2 = 2
+				end if
+			elsif PLAYER of LC9_MinorSettlement[0] == 1 // recruit from Akaba
+				if get number of type ABODE_NUMBER_MELEE_ARMOURY in LC9_MinorSettlement[0] min built 1.0 >= 1
+					AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {AkabaRecruitPos} with PlatoonSize men and 0 women 
+					PLAYER of AttackPlatoon1 = 1	
+					Source1 = 1
+					AttackPlatoon2 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {AkabaRecruitPos} with PlatoonSize men and 0 women 
+					PLAYER of AttackPlatoon2 = 1
+					Source2 = 1
+				end if
+			elsif PLAYER of LC9_MinorSettlement[4] == 1 and get number of type ABODE_NUMBER_MELEE_ARMOURY in LC9_MinorSettlement[4] min built 1.0 >= 1// recruit from Ylaruam
+				AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {YlaruamRecruitPos} with PlatoonSize men and 0 women 
+				PLAYER of AttackPlatoon1 = 1	
+				Source1 = 2
+				AttackPlatoon2 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {YlaruamRecruitPos} with PlatoonSize men and 0 women 
+				PLAYER of AttackPlatoon2 = 1
+				Source2 = 2
+			else
+				if get number of type ABODE_NUMBER_MELEE_ARMOURY in L9AztecCapital min built 1.0 >= 1
+					AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {CapitalRecruitPos} with PlatoonSize men and 0 women 
+					PLAYER of AttackPlatoon1 = 1
+					Source1 = 3
+					AttackPlatoon2 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {CapitalRecruitPos2} with PlatoonSize men and 0 women 
+					PLAYER of AttackPlatoon2 = 1
+					Source2 = 3
+				end if
+			end if
+		end if
+
+		if AttackPlatoon1 exists
+			if get size of AttackPlatoon1 action queue < 1
+				if Source1 == 1 or Source1 == 2// from Akaba
+					clear AttackPlatoon1 action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to AttackPlatoon1 action queue
+				elsif Source1 == 3
+					if PLAYER of LC9_MinorSettlement[6] == 0 // if player owns Talita
+						clear AttackPlatoon1 action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using LC9_MinorSettlement[6] to AttackPlatoon1 action queue
+					elsif PLAYER of LC9_MinorSettlement[4] == 0 // if player owns Ylaruam
+						clear AttackPlatoon1 action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using LC9_MinorSettlement[4] to AttackPlatoon1 action queue
+					elsif PLAYER of LC9_MinorSettlement[0] == 0 // if player owns Akaba
+						clear AttackPlatoon1 action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using LC9_MinorSettlement[0] to AttackPlatoon1 action queue
+					end if
+				end if
+			end if
+		end if
+
+		if AttackPlatoon2 exists
+			if get size of AttackPlatoon2 action queue < 1
+				if Source1 == 1 or Source1 == 2// from Akaba
+					clear AttackPlatoon2 action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L9GreekTown to AttackPlatoon2 action queue
+				elsif Source1 == 3
+					if PLAYER of LC9_MinorSettlement[6] == 0 // if player owns Talita
+						clear AttackPlatoon2 action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using LC9_MinorSettlement[6] to AttackPlatoon2 action queue
+					elsif PLAYER of LC9_MinorSettlement[4] == 0 // if player owns Ylaruam
+						clear AttackPlatoon2 action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using LC9_MinorSettlement[4] to AttackPlatoon2 action queue
+					elsif PLAYER of LC9_MinorSettlement[0] == 0 // if player owns Akaba
+						clear AttackPlatoon2 action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using LC9_MinorSettlement[0] to AttackPlatoon2 action queue
+					end if
+				end if
+			end if
+		end if
+
+		if GotWall > 4 and PlayerWall exists and PLAYER of L9AztecCapital == 1
+			if RandomNumber == 3
+				AttackPlatoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {CapitalRecruitPos} with PlatoonSize men and 0 women 
+				PLAYER of AttackPlatoon1 = 1
+				Source1 = 3
+				AttackPlatoon2 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {CapitalRecruitPos2} with PlatoonSize men and 0 women 
+				PLAYER of AttackPlatoon2 = 1
+				Source2 = 3
+				AttackCatapult = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to L9AztecCapital at {CatapultSpawnPos}
+				PLAYER of AttackCatapult = 1
+
+				clear siege weapon AttackCatapult action queue
+				add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using PlayerWall to siege weapon AttackCatapult action queue
+				clear AttackPlatoon1 action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using AttackCatapult to AttackPlatoon1 action queue
+				clear AttackPlatoon2 action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using AttackCatapult to AttackPlatoon2 action queue
+			end if
+		end if
+	end if
+
+until PLAYER of L9AztecCapital == 0
+end loop
+
+end script LC9_GenericAttacks
+
+//-------------------------------------
+
+begin script LC9_IdlePlatoonsAttack
+
+PlatoonToAttack = 0
+ReturnToPos = marker at {1546.666,94.502,624.754}
+
+start
+
+begin loop
+
+if HEALTH of MyCreature <= 0 and LC9_Platoon[19] exists
+	clear LC9_Platoon[19] action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {ReturnToPos} to LC9_Platoon[19] action queue
+end if
+
+until PLAYER of L9AztecCapital == 0
+end loop
+
+end script LC9_IdlePlatoonsAttack

@@ -1,0 +1,51 @@
+//*************************************************************
+//
+//	Land4GatehouseCheck
+//
+//*************************************************************
+
+begin help script Land4GatehouseCheck
+
+GatehouseComment = 0
+GatehousePos = marker at {1001.179, 184.815, 801.295}
+Gatehouse = 0
+GatehouseOpen = 1
+
+start
+
+Gatehouse = get building ABODE_NUMBER_GATEHOUSE in L4GreekTown min built 1
+
+while L4CapitalConverted == 0
+	//if Gatehouse exists
+	//	GatehouseOpen = gate Gatehouse is open
+	//end if
+	if GatehouseComment == 0// and dialogue ready
+		if camera position near {GatehousePos} radius 60 and {GatehousePos} viewed
+			GatehouseComment = 1
+			begin dialogue
+				say "That is a gatehouse. It opens and it closes."
+				wait until read
+			end dialogue
+		end if
+		
+		if GatehouseComment == 1 and dialogue ready and Gatehouse exists
+			if gate Gatehouse is open
+				GatehouseComment = 2
+				begin dialogue
+					say "That gatehouse is open. We should probably close it"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if GatehouseOpen == 0 and GatehouseComment == 2
+			begin dialogue
+				say "You closed the gate"
+				wait until read
+			end dialogue
+		end if
+
+	end if
+end while
+
+end script Land4GatehouseCheck

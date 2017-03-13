@@ -1,0 +1,960 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+//	ICE MELT
+//	~~~~~~~~
+//
+//	Sigved, an ancient Norseman, is trapped in a geyser vent of a glacier. 
+//	A nearby community (minor Settlement) wants the player to free Sigved by blocking the other geysers 
+//	in order to build up pressure in the main geyser. The player blocks these Geysers by rolling rocks 
+//	over the vents (the area is inaccessible to the creature).
+//
+//	If the player successfully keeps Sigved alive after freeing him a number
+//	of things may happen. Sigved is an honourable warrior, but the current
+//	Norse regime is evil, so he will be on a crusade to punish the evil doers.
+//
+//	Resolutions:		*	If you are a good god when you free Sigved but you haven't taken over the Norse
+//							tribe yet Sigved will thank you and go off and attack the Norse.
+//						*	If you are a good god and you have taken over the Norse tribe then Sigved
+//							will thank you for freeing him and for sorting out the Norse, then he
+//							will go off and battle against evil. He may even show up on a later land
+//							and help the player battle against and evil onslaught. Land 5 would be likely.
+//						*	If you are an evil god and youo haven't taken over the Norse then Sigved
+//							will go and attack the Norse and give you a warning that he'll be back for
+//							you later. He'll then show up on the next level (4) and attack you.
+//						*	The same will happen if you are evil and you have taken over the Norse.
+//
+//	Rewards:			Freeze Miracle (this is hidden in the glacier with Sigved)
+//						Hinderance from Sigved on land 4 if you are evil when freeing him
+//						Help from Sigved on land 5 if you are good when freeing him
+//
+//	Start date:			26-02-04			By:	Steve		(new version)
+//	Update date:		18-05-04			By: Phil
+//
+//	ToDo:	Lock in camera (once this functionality is present)
+//			Add explanation of how the player can stop playing the game.
+//			Once throwing physics are locked down, get the land redesigned so that this is:
+//				a) Possible
+//				b) Fun
+//				c) Look like a series of Geysers
+//			Add the Freeze spell at the end
+//			Remove the extra rocks at the end
+//			Make Sigved disapear for now
+//			Make Sigved able to attack
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+/*
+WORK THAT NEEDS DOING TO ICE MELT...
+
+Add the graphics for the geysers 
+	(i.e. on the land, not the venting - editor?) 
+Add the Freeze spell as the prize at the end of the script 
+	(to be added later, near the end of development) 
+The way this script triggers needs changing - it only starts by a scroll click. This is fine.
+	(Needs changing back to only trigger on the scroll click.) 
+
+Make sure the player can't win without first clicking the scroll... Unlikely, without rocks... but possible.
+Add camera locked in
+Add influence
+Rewrite Handle Geyser so that the shake doesn't happen.
+Add in glow so that we can see where the geysers are, as well as a subdude glow for 'filled' geysers.
+Maybe let the player rotate and/or move the camera slightly
+*/
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define IM_TRUE					= 1
+define IM_FALSE					= 0
+define IM_AMOUNT_OF_GEYSERS		= 5
+define IM_NUM_ACTIVE_ROCKS		= 10
+define IM_TIME_FOR_GEYSER_TO_BLOW = 60
+define IM_TIME_FOR_GEYSER_TO_AUTO_BLOW = 30
+define IM_TIME_GEYSER_SPOUT		= 7
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global IM_Geyser[IM_AMOUNT_OF_GEYSERS]
+global IM_SigvedFreed					= IM_FALSE
+global IM_Mine							= 0
+//global IM_Rock						= 0
+global IM_Sigved						= 0
+global IM_SigvedGeyser					= 0
+global IM_AmountOfBlockedGeysers		= 0
+global IM_ActiveRocks[IM_NUM_ACTIVE_ROCKS]
+global IM_MostRecentRockIndex			= IM_NUM_ACTIVE_ROCKS // will advance to start
+global IM_GameOn						= IM_FALSE
+
+
+// <TEMP>
+//global IM_GeyserMarkers[40]
+// </TEMP>
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script IM_SetupGameArea
+define script IM_Intro
+define script IM_Outro
+define script IM_CreateRock
+define script IM_HandleGeyser(Geyser, TimeBeforeTopBlows, DelayToStart)
+define script IM_GetResult
+define script IM_SuxxessAsGood
+define script IM_SuxxessAsEvil
+define script IM_BlowTop(Geyser,ObjectBlockingGeyser)
+define script IM_PeriodicBigBlow(BigBlowLocation)
+define script IM_LeaveGame
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land3IceMelt
+
+	Counter		= 0
+	NotARock	= 0
+
+start
+	// Setup the little settlement and the throwing area
+	run script IM_SetupGameArea
+
+	// Handle the sctions of the geysers (building pressure and firing the rock etc)
+	while Counter < IM_AMOUNT_OF_GEYSERS
+		run background script IM_HandleGeyser(Counter, IM_TIME_FOR_GEYSER_TO_BLOW, number from 0 to IM_TIME_FOR_GEYSER_TO_AUTO_BLOW)
+		Counter++
+	end while
+
+	// Wait for the game to begin
+	run script IM_Intro
+	IM_GameOn = IM_TRUE
+
+	// Main loop
+	run background script IM_LeaveGame // let the player leave the game if he wants to
+	while IM_SigvedFreed == IM_FALSE
+
+		if IM_GameOn == IM_TRUE
+			NotARock = get ROCK_OBJECT at {IM_Mine} radius 20
+			if NotARock not exists
+				run script IM_CreateRock
+			end if
+		end if
+
+		// Have we done the task?
+		if IM_AmountOfBlockedGeysers == IM_AMOUNT_OF_GEYSERS
+			IM_SigvedFreed = IM_TRUE
+		end if
+
+		//wait 1 seconds
+	end while
+
+	// Get the outro
+	run script IM_Outro
+
+end script Land3IceMelt
+
+
+//-----------------------------------------------------------------------------
+//	Create a rock
+//-----------------------------------------------------------------------------
+// Note: This rock can't be caught... is this good?
+//-----------------------------------------------------------------------------
+begin script IM_CreateRock
+
+	RockOutsideMinePos		= marker at {1181.713, 228.061, 1895.757}
+	Steps					= 10
+	StartX					= 0
+	StartZ					= 0
+	Count					= 0
+	MidTargetPos			= 0
+
+start
+	// advance the last created rock
+	IM_MostRecentRockIndex++
+	if IM_MostRecentRockIndex >= IM_NUM_ACTIVE_ROCKS
+		IM_MostRecentRockIndex = 0
+	end if
+
+	if IM_ActiveRocks[IM_MostRecentRockIndex] exists
+		delete IM_ActiveRocks[IM_MostRecentRockIndex]
+	end if
+
+	// Create the rock in the mine
+	IM_ActiveRocks[IM_MostRecentRockIndex] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {IM_Mine}
+	SCALE of IM_ActiveRocks[IM_MostRecentRockIndex] = 0.3
+	ALTITUDE of IM_ActiveRocks[IM_MostRecentRockIndex] = 0
+	disable IM_ActiveRocks[IM_MostRecentRockIndex] pickup
+	enable IM_ActiveRocks[IM_MostRecentRockIndex] indestructible
+
+	StartX = XPOS of RockOutsideMinePos
+	StartZ = ZPOS of RockOutsideMinePos
+	
+	StartX = StartX - XPOS of IM_Mine
+	StartZ = StartZ - ZPOS of IM_Mine
+	
+	StartX = StartX / Steps
+	StartZ = StartZ / Steps
+	
+	// Move the rock out of the mine
+	Count = 0
+	while Count < Steps
+		MidTargetPos = marker at {IM_Mine} + {Count*StartX, 0, Count*StartZ}
+		set IM_ActiveRocks[IM_MostRecentRockIndex] position to {MidTargetPos}
+		Count++
+	end while
+
+	enable IM_ActiveRocks[IM_MostRecentRockIndex] pickup
+
+end script IM_CreateRock
+
+
+//-----------------------------------------------------------------------------
+//	Handle the geysers actions
+//-----------------------------------------------------------------------------
+begin script IM_HandleGeyser(Geyser, TimeBeforeTopBlows, DelayToStart)
+
+	GeyserBlocked			= IM_FALSE
+	ObjectBlockingGeyser	= 0
+	TimeGeyserBlocked		= create timer for 0 seconds
+//	OneSecondTimer			= create timer for 1 second
+	GeyserAutoBlow			= create timer for IM_TIME_FOR_GEYSER_TO_AUTO_BLOW seconds
+//	ShakeFrequency			= 0
+//	ShakeIncrement			= 100 / TimeBeforeTopBlows
+//	Venting_1				= 0
+	WhichRockCounter		= 0
+
+start
+/*
+	set GeyserAutoBlow time to DelayToStart seconds
+	while IM_SigvedFreed == IM_FALSE
+		// *** CHECK TO SEE IF THE GEYSER IS BLOCKED ***
+		if GeyserBlocked == IM_FALSE
+			// Reset the shake frequency counter
+			ShakeFrequency = 0
+			// Get a rock blocking the geyser if there is one
+			ObjectBlockingGeyser = get ROCK_OBJECT at {IM_Geyser[Geyser]} radius 5
+
+			// If there is one increment the amount of blocked geysers counter
+			if ObjectBlockingGeyser exists
+				WhichRockCounter = 0
+				while WhichRockCounter < IM_NUM_ACTIVE_ROCKS
+					if ObjectBlockingGeyser == IM_ActiveRocks[WhichRockCounter]
+						IM_ActiveRocks[WhichRockCounter] = 0
+					end if
+					WhichRockCounter++
+				end while
+				IM_AmountOfBlockedGeysers++
+				set TimeGeyserBlocked time to 0 seconds
+				disable ObjectBlockingGeyser pickup
+				GeyserBlocked = IM_TRUE
+			elsif get GeyserAutoBlow time remaining <= 0
+				run script IM_BlowTop(IM_Geyser[Geyser],0)
+				set GeyserAutoBlow time to IM_TIME_FOR_GEYSER_TO_AUTO_BLOW seconds
+			end if
+		end if
+
+		/*
+		C:\dev\White\VisualEffectTypeEnum.h(155):    VISUAL_EFFECT_GEYSER                            =  144 ,
+		C:\dev\White\VisualEffectTypeEnum.h(156):    VISUAL_EFFECT_GEYSER_LARGE                      =  145 ,
+		C:\dev\White\VisualEffectTypeEnum.h(157):    VISUAL_EFFECT_GEYSER_START_UP                   =  146 ,
+		C:\dev\White\VisualEffectTypeEnum.h(158):    VISUAL_EFFECT_GEYSER_START_UP_LARGE             =  147 ,
+		Venting_1 = create visual effect VISUAL_EFFECT_EARTHQUAKE_BEAM at {Venting_Pos}
+		Venting_2 = create visual effect "ev_s_beam.ves" strength 0.3 scale 1.0 at {Venting_Pos}
+		*/
+
+		// *** CHECK TO SEE IF THE GEYSER SHOULD START ROCKING THE BLOCKING OBJECT OR BLOW IT OFF ***
+		if GeyserBlocked == IM_TRUE
+			if get OneSecondTimer time remaining <= 0
+				if get TimeGeyserBlocked time since set >= TimeBeforeTopBlows
+					IM_AmountOfBlockedGeysers--
+					run script IM_BlowTop(IM_Geyser[Geyser],ObjectBlockingGeyser)
+					GeyserBlocked = IM_FALSE
+				//else
+					// The pressure is building so start rocking the object
+					//ShakeFrequency += ShakeIncrement
+					//set ObjectBlockingGeyser shake ShakeFrequency
+				end if
+				set OneSecondTimer time to 1 second
+			end if
+			set GeyserAutoBlow time to IM_TIME_FOR_GEYSER_TO_AUTO_BLOW seconds
+		end if
+	end while
+
+	if ObjectBlockingGeyser exists // it should
+		set ObjectBlockingGeyser shake 0
+	end if
+*/
+end script IM_HandleGeyser
+
+
+//-----------------------------------------------------------------------------
+//	Squirt a Geyser
+//-----------------------------------------------------------------------------
+begin script IM_BlowTop(Geyser,ObjectBlockingGeyser)
+	TimeGeyserSpout			= create timer for IM_TIME_GEYSER_SPOUT seconds
+	TargetToFireTo			= 0
+	Venting_2				= 0
+start
+	//Venting_1 = create visual effect VISUAL_EFFECT_GEYSER_START_UP at {IM_Geyser[Geyser]}
+	// The object should get blown off
+	TargetToFireTo = marker at {Geyser} + {0, 100, 0}
+	Venting_2 = create visual effect VISUAL_EFFECT_GEYSER at {Geyser}
+	wait 0.2 second
+
+	set TimeGeyserSpout time to IM_TIME_GEYSER_SPOUT seconds
+	begin loop
+		if ObjectBlockingGeyser exists
+			set ObjectBlockingGeyser velocity heading {TargetToFireTo} speed number from 50 to 100
+			disable ObjectBlockingGeyser pickup
+			set ObjectBlockingGeyser shake 0
+			wait 0.5 seconds
+			delete ObjectBlockingGeyser
+		end if
+		ObjectBlockingGeyser = get ROCK_OBJECT at {Geyser} radius 5
+		until get TimeGeyserSpout time remaining <= 0
+	end loop
+end script IM_BlowTop
+
+
+//-----------------------------------------------------------------------------
+//	Let the player temporarily leave the game
+//-----------------------------------------------------------------------------
+begin script IM_LeaveGame
+	Scroll = 0
+	Influence = 0
+	PlayerHasSettlement = IM_FALSE
+	PrevCamPos = 0
+	PrevCamFocus = 0
+start
+	while IM_SigvedFreed == IM_FALSE
+		IM_GameOn = IM_TRUE
+		Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {1199.579, 228.351, 1895.161}
+		// add temporary influence
+		Influence = create influence at {1185.414, 227.926, 1901.361} radius 40
+		/*
+		if PLAYER of L3IceMeltSettlement != 0
+			set player 0 town L3IceMeltSettlement capture reason LAST_CAPTURE_PASSIVE
+		else
+			PlayerHasSettlement = IM_TRUE
+		end if
+		*/
+
+		PrevCamPos = marker at camera position
+		PrevCamFocus = marker at camera focus
+
+		// lock the camera
+		begin interactive camera
+			set camera position to {1212.269, 258.595, 1924.823}
+			set camera focus to {1211.612, 258.021, 1924.336}
+			wait until Scroll right clicked or IM_SigvedFreed == IM_TRUE or key KB_SPACE down
+			set camera position to {PrevCamPos}
+			set camera focus to {PrevCamFocus}
+		end interactive camera
+
+		delete Scroll
+		// disable temporary influence
+		delete Influence
+
+		IM_GameOn = IM_FALSE
+
+		if IM_SigvedFreed == IM_FALSE
+			/*
+			// the player only loses the town again if they haven't finished the chalenge
+			if PlayerHasSettlement == IM_FALSE
+				set player 6 town L3IceMeltSettlement capture reason LAST_CAPTURE_PASSIVE
+			end if
+			*/
+			Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {IM_Mine} + {0,5,0}
+			wait until Scroll right clicked or IM_SigvedFreed == IM_TRUE
+			delete Scroll
+		end if
+	end while
+	
+	delete Scroll
+end script IM_LeaveGame
+
+
+//-----------------------------------------------------------------------------
+//	Setup the throwing area
+//-----------------------------------------------------------------------------
+begin script IM_SetupGameArea
+
+	MinePos			= marker at {1192.421, 227.528, 1886.923}
+
+// <TEMP>
+	GeyserCurrentlyOn	= 0
+	MarkerPos			= 0
+	Angle				= 0
+	Counter				= 0
+// </TEMP>
+
+start
+
+	// Create a few houses and a mine and the infinate rocks for now
+	IM_Mine = get HOUSE at {MinePos} radius 5
+
+	// By default set the state of the game so Sigved doesn't help the player
+	UG_SigvedToAttackPlayer = -1
+
+	// Create the Geysers markers
+	IM_Geyser[0] = marker at {1150.237, 218.299, 1849.398}
+	IM_Geyser[1] = marker at {1148.701, 213.267, 1869.446}
+	IM_Geyser[2] = marker at {1122.145, 217.008, 1864.350}
+	IM_Geyser[3] = marker at {1126.982, 216.197, 1882.187}
+	IM_Geyser[4] = marker at {1098.147, 226.571, 1877.976}
+	IM_SigvedGeyser = marker at {1112.243, 269.126, 1831.219}
+
+	// Create Sigved
+	IM_Sigved = create VILLAGER SIGVED at {IM_SigvedGeyser}
+	HEALTH of IM_Sigved = 1
+	disable IM_Sigved set on fire
+	disable IM_Sigved pickup
+	set IM_Sigved temperature -1								// Freeze that bugger
+	set IM_Sigved focus to {IM_Mine}
+	
+	//This doesn't work!!!!
+	//enable jc special SJC_ALWAYS_VISIBLE on IM_Sigved
+
+/*
+// <TEMP>
+	// Show the geysers by creating a ring of small rocks
+	while Counter < 32
+		if Counter > 0 and Counter % (IM_AMOUNT_OF_GEYSERS * 2) == 0
+			GeyserCurrentlyOn++
+		end if
+
+		Angle += (360 / 8)
+		MarkerPos = marker at get target from {IM_Mine} to {IM_Geyser[GeyserCurrentlyOn]} distance 3 angle Angle
+		IM_GeyserMarkers[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {MarkerPos}
+		SCALE of IM_GeyserMarkers[Counter] = 0.2
+		ALTITUDE of IM_GeyserMarkers[Counter] = 0
+		disable IM_GeyserMarkers[Counter] pickup
+		enable IM_GeyserMarkers[Counter] indestructible
+		wait until IM_GeyserMarkers[Counter] is not MOVING
+		wait 0.1 seconds
+		disable IM_GeyserMarkers[Counter] moveable
+		Counter++
+	end while
+
+	// Show the Sigved geyser
+	Counter = 0
+	Angle = 0
+	while Counter < 8
+		Angle += (360 / 8)
+		MarkerPos = marker at get target from {IM_Mine} to {IM_SigvedGeyser} distance 3 angle Angle
+		IM_GeyserMarkers[Counter + 32] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {MarkerPos}
+		SCALE of IM_GeyserMarkers[Counter + 32] = 0.5
+		ALTITUDE of IM_GeyserMarkers[Counter + 32] = 0
+		disable IM_GeyserMarkers[Counter + 32] pickup
+		enable IM_GeyserMarkers[Counter + 32] indestructible
+		wait until IM_GeyserMarkers[Counter + 32] is not MOVING
+		wait 0.1 seconds
+		disable IM_GeyserMarkers[Counter + 32] moveable
+		Counter++
+	end while
+// </TEMP>
+*/
+
+end script IM_SetupGameArea
+
+
+//-----------------------------------------------------------------------------
+//	Get the intro to the script
+//-----------------------------------------------------------------------------
+begin script IM_Intro
+
+	Scroll					= 0
+	ReminderTimer			= create timer for 0 seconds
+	JustOutSideMinePos		= marker at {1185.817, 227.804, 1899.216}
+	Miner					= 0
+
+start
+/*
+	// make it simple to do this chalenge
+	begin cinema
+		move camera position to {1325.017, 449.262, 1829.105} time 1
+		set camera focus to {1325.578, 448.455, 1829.293}
+	end cinema
+*/
+
+	// skip this for debuging
+	// Create the scroll to kick the script off
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {IM_Mine} + {0,5,0}
+
+	// Highlight the scroll with the advisors
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			if camera position near {Scroll} radius 200 and {Scroll} viewed
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					say "GA: Leader something requires your attention here."
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 180 seconds
+			end if
+		end if
+		until Scroll right clicked
+	end loop
+	delete Scroll
+
+	/*
+	// Get the intro cutscene
+	begin cinema
+		move camera position to {IM_Mine} + {-5, 2, 5} time 3
+		move camera focus to {JustOutSideMinePos} + {0, 1.5, 0} time 3
+		Miner = create VILLAGER VILLAGER_INFO_NORSE_LEADER_MALE at {IM_Mine}
+		move Miner position to {JustOutSideMinePos}
+		wait until {Miner} near {JustOutSideMinePos} radius 1
+		wait until camera ready
+		set Miner focus to camera position
+
+		say "There is a legend that a powerful warrior named Sigved is frozen in a thermal vent."
+		wait until read
+		say "We would like to free him but only a god can perform the tasks needed."
+		wait until read
+		say "So I plead with you to help us and free him."
+		wait until read
+		say "I will produce a rock from this infinate rock producing mine."
+		wait until read
+
+		set camera position to {1325.017, 449.262, 1829.105}
+		set camera focus to {1325.578, 448.455, 1829.293}
+
+		say "And you need to use the rocks to block the 4 thermal vent over that ridge."
+		wait until read
+		say "All vents need to be blocked at the same time to free him."
+		wait until read
+
+		move Miner position to {IM_Mine}
+		wait until {Miner} near {IM_Mine} radius 1
+		delete Miner
+	end cinema
+*/
+end script IM_Intro
+
+
+//-----------------------------------------------------------------------------
+//	Get the outro that shows Sigved getting fired out of the geyser
+//-----------------------------------------------------------------------------
+begin script IM_Outro
+
+	TargetToFireTo		= 0
+	CamPos				= 0
+	GeyserLoc			= marker at {IM_Sigved}
+
+start
+/*
+	// Do the fire Sigved out of the vent cutscene
+	begin cinema
+		say "Sigved gets fired out of the vent."
+		wait until read
+		say "Ice Melt complete."
+		wait until read
+
+		CamPos = marker at get target from {IM_Mine} to {GeyserLoc} distance 5 angle 180
+		set camera position to {CamPos} + {0, 2, 0}
+		set camera focus to {GeyserLoc} + {0, 1, 0}
+		
+		say "GA: Leader it looks like the pressure is building up."
+		wait until read
+
+		TargetToFireTo = marker at {GeyserLoc} + {0, 30, 0}
+		run script IM_BlowTop(GeyserLoc,0)
+		set IM_Sigved velocity heading {TargetToFireTo} speed 50
+		set camera focus follow IM_Sigved
+		set IM_Sigved temperature 0										// Un-Freeze that bugger
+
+		say "EA: Oh Yeah. Champagne anyone."
+		wait until read
+
+		wait until IM_Sigved is not FLYING
+	end cinema
+*/
+	run background script IM_PeriodicBigBlow(GeyserLoc)
+	// Get the correct resolution cutscene to play
+	run script IM_GetResult
+
+end script IM_Outro
+
+
+//-----------------------------------------------------------------------------
+//	Handle the ocasional big blowing
+//-----------------------------------------------------------------------------
+begin script IM_PeriodicBigBlow(BigBlowLocation)
+start
+	begin loop
+		wait IM_TIME_FOR_GEYSER_TO_AUTO_BLOW seconds
+		run script IM_BlowTop(BigBlowLocation,0)
+	end loop
+end script IM_PeriodicBigBlow
+
+
+//-----------------------------------------------------------------------------
+//	Handle the saving or killing of Sigved
+//-----------------------------------------------------------------------------
+begin script IM_GetResult
+
+	PAlignment				= 0
+
+start
+
+	// Get the alignment of the player to find out if Sigved will help or hinder the player
+	PAlignment = alignment of player
+	if PAlignment >= 0
+		// Help the player
+		UG_SigvedToAttackPlayer = 0
+		run script IM_SuxxessAsGood
+	else
+		// Attack the player
+		UG_SigvedToAttackPlayer = 1
+		run script IM_SuxxessAsEvil
+	end if
+
+end script IM_GetResult
+
+
+//-----------------------------------------------------------------------------
+//	Sigved has been saved and the player is good
+//-----------------------------------------------------------------------------
+begin script IM_SuxxessAsGood
+start
+/*
+	// Cutscene here PJ, come on pull yer finger out :)
+	begin cinema
+		// SIGVED: "I can’t express the depth of my gratitude."
+		say "SIGVED: I can’t express the depth of my gratitude."
+		wait until read
+		// SIGVED: "Every child I save, every villain I slaughter, will all be thanks to you."
+		say "SIGVED: Every child I save, every villain I slaughter, will all be thanks to you."
+		wait until read
+
+		eject evil spirit
+		eject good spirit
+		// EA: "Aw!  Tell me you’re not going to let him go do that…"
+		say "EA: Aw!  Tell me you’re not going to let him go do that…"
+		wait until read
+		// EA: "What are you looking so smug about?"
+		say "EA: What are you looking so smug about?"
+		wait until read
+		// GA: "Just enjoying the look on your face."
+		say "GA: Just enjoying the look on your face."
+		wait until read
+		// EA: "Ech!  I’m outta here before I puke."
+		say "EA: Ech!  I’m outta here before I puke."
+		wait until read
+		// GA: "Ooo… Look.  There’s a miracle in the ice."
+		say "GA: Ooo… Look.  There’s a miracle in the ice."
+		wait until read
+		// GA: "How wonderful!  It’s the freeze miracle."
+		say "GA: How wonderful!  It’s the freeze miracle."
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end cinema
+*/
+end script IM_SuxxessAsGood
+
+
+//-----------------------------------------------------------------------------
+//	Sigved has been saved and the player is evil
+//-----------------------------------------------------------------------------
+begin script IM_SuxxessAsEvil
+
+	FlamingHousePos = 0
+	FlamingHouse = 0
+	SquatterWoman = 0
+	NorsePyro1 = 0
+	NorsePyro2 = 0
+	SeeSigmund=0
+	RelCamPos =0
+	RelCamFoc=0
+	NorseTown				= get TOWN at {1249.353,285.750,1480.840} radius 100
+	NorseTownPlayerOwned	= IM_FALSE
+
+start
+
+/*
+	// Check to see if the player has taken over the Norse town
+	if PLAYER of NorseTown == IM_TRUE
+		NorseTownPlayerOwned = IM_TRUE
+	end if
+	if NorseTownPlayerOwned == IM_TRUE
+		///play the sigved talking badboy
+		begin cinema
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_10"
+			wait until read
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_20"							
+			wait until read
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_30"							
+			wait until read
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_40"							
+			wait until read
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_50"							
+			wait until read
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_60"							
+			wait until read
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_70"							
+			wait until read
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_NORSEDEAD_80"							
+			wait until read
+		end cinema
+
+	else
+		///play the kickass cutscene
+		FlamingHousePos = marker at {1392.510, 354.000, 1939.110}
+		FlamingHouse = get HOUSE at {FlamingHousePos}
+		SeeSigmund = marker at get world position from FlamingHouse to {25.574, 3.355, 16.130}
+		ALTITUDE of IM_Sigved = 0
+		SquatterWoman = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at get world position from FlamingHouse to {2.208, 0.591, 3.733}
+		NorsePyro1 = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at get world position from FlamingHouse to {0.900, 0.874, 7.454}
+		NorsePyro2 = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at get world position from FlamingHouse to {-1.902, 0.771, 8.246}
+		
+		set NorsePyro1 carrying CARRIED_OBJECT_TORCH
+		
+		set NorsePyro2 carrying CARRIED_OBJECT_NONE
+		set SquatterWoman focus to {NorsePyro1}
+		set NorsePyro1 focus to {SquatterWoman}
+		set NorsePyro2 focus to {SquatterWoman}
+
+		begin cinema
+
+			start music "cut_scene_danger_01"
+			//IM_Sigved = create VILLAGER SIGVED at get world position from FlamingHouse to {33.178, 5.417, 17.711}
+			
+			set IM_Sigved position to get world position from FlamingHouse to {33.178, 5.417, 17.711}
+			
+			move IM_Sigved position to {SeeSigmund}
+			override IM_Sigved anim "a_p_ice_melt_sigved_walk_lookaround"
+
+			//walking
+			set camera lens 70.000
+			RelCamPos=marker at get world position from FlamingHouse to {17.634, 13.343, 22.238}
+			RelCamFoc=marker at get world position from FlamingHouse to {18.356, 12.827, 21.777}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			set fade in time 2
+			wait until {IM_Sigved} near {SeeSigmund} radius 1
+
+			set camera lens 34.000
+			RelCamPos=marker at get world position from FlamingHouse to {23.032, 3.512, 16.353}
+			RelCamFoc=marker at get world position from FlamingHouse to {24.009, 3.553, 16.148}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait until {IM_Sigved} at {SeeSigmund}
+			play anim "a_p_ice_melt_sigved_react_turn" on IM_Sigved
+			wait 0.1 seconds
+			set IM_Sigved focus to {NorsePyro1}
+			wait 1.8 seconds
+
+			set IM_Sigved focus to get world position from FlamingHouse to {22.183, 4.105, 9.408}
+
+			//pov:
+			set camera lens 70.000
+			RelCamPos=marker at get world position from FlamingHouse to {4.200, 2.279, 9.371}
+			RelCamFoc=marker at get world position from FlamingHouse to {-19.684, 2.695, -17.537}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			play anim "a_p_icemelt_scared" on SquatterWoman 
+			play anim "A_P_ARMS_CROSSED" on NorsePyro2 
+			wait 3 seconds
+
+			set camera lens 30.000
+			RelCamPos=marker at get world position from FlamingHouse to {23.032, 3.512, 16.353}
+			RelCamFoc=marker at get world position from FlamingHouse to {24.009, 3.553, 16.148}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			move IM_Sigved position to get world position from FlamingHouse to {22.183, 4.105, 9.408}
+			SPEED of IM_Sigved = 0.5			
+			wait 0.7 seconds
+			play anim "A_P_WAITING_IMPATIENTLY" on NorsePyro2 
+
+			//man
+			set camera lens 50.000
+			RelCamPos=marker at get world position from FlamingHouse to {1.948, 1.376, 5.717}
+			RelCamFoc=marker at get world position from FlamingHouse to {1.199, 1.437, 6.377}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			//say "The rent!"
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_10"							
+			play anim "a_p_icemelt_threatening01" on NorsePyro1 
+			wait until read
+			wait 2 seconds
+
+			//woman
+			set camera lens 50.000
+			RelCamPos=marker at get world position from FlamingHouse to {2.506, 1.827, 5.438}
+			RelCamFoc=marker at get world position from FlamingHouse to {2.118, 1.607, 4.543}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			//say "I can get it tomorrow… please…"
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_20"
+
+			play anim "A_P_STAND_DESPAIR_1" on SquatterWoman 
+			wait until read
+
+			//man
+			set camera lens 29.000
+			RelCamPos=marker at get world position from FlamingHouse to {1.869, 1.697, 7.209}
+			RelCamFoc=marker at get world position from FlamingHouse to {0.922, 1.863, 7.486}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			//say "Didn’t you say that yesterday?"
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_30"
+
+			play anim "a_p_icemelt_threatening02" on NorsePyro1 loop 2
+			wait until read
+			set camera lens 29.000
+			RelCamPos=marker at get world position from FlamingHouse to {-0.393, 1.846, 7.095}
+			RelCamFoc=marker at get world position from FlamingHouse to {-1.193, 1.863, 7.695}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			//say "And the day before."
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_40"
+
+			play anim "A_P_TALK1_MALE" on NorsePyro2 
+			wait 1 seconds
+
+			//scared woman close
+			play anim "A_P_STAND_DESPAIR_1" on SquatterWoman 
+			RelCamPos=marker at get world position from FlamingHouse to {2.174, 2.003, 5.115}
+			RelCamFoc=marker at get world position from FlamingHouse to {2.127, 1.675, 4.172}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait until read
+			wait 1.5 seconds
+
+			//2nd dude
+			//man
+			set camera lens 50.000
+			RelCamPos=marker at get world position from FlamingHouse to {1.371, 1.770, 6.577}
+			RelCamFoc=marker at get world position from FlamingHouse to {0.571, 1.719, 7.175}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			set IM_Sigved position to get world position from FlamingHouse to {1.707, 1.844, 8.236}
+			set IM_Sigved focus to {NorsePyro1}
+			wait until read
+			//wait 3 seconds
+			play anim "a_p_icemelt_lookingathandconfused" on NorsePyro1 
+			RelCamFoc=marker at get world position from FlamingHouse to {-33.736, 3.921, 0.059}
+			wait 1.1 second
+			move camera focus to {RelCamFoc} time 1
+			//say "OS: DON’T!"
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_50"
+
+			wait 0.8 second
+
+			set NorsePyro1 carrying CARRIED_OBJECT_NONE
+
+			set camera lens 32.000
+			RelCamPos=marker at get world position from FlamingHouse to {2.074, 0.956, 5.834}
+			RelCamFoc=marker at get world position from FlamingHouse to {1.468, 1.255, 6.572}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 3 seconds
+			play anim "A_P_CONFUSED_MALE2" on NorsePyro2
+
+			//wait 1 second
+			play anim "A_P_PANIC_WOMAN" on SquatterWoman 
+			wait 0.2 seconds
+
+			set camera lens 21.000
+			RelCamPos=marker at get world position from FlamingHouse to {2.104, 1.220, 6.099}
+			RelCamFoc=marker at get world position from FlamingHouse to {2.154, 1.325, 5.106}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			RelCamPos=marker at get world position from FlamingHouse to {2.133, 1.280, 5.537}
+			RelCamFoc=marker at get world position from FlamingHouse to {2.184, 1.385, 4.544}
+			move camera position to {RelCamPos} time 2
+			move camera focus to {RelCamFoc} time 2
+			set camera lens 19.000 time 2
+			wait until camera ready
+
+			//say "What the…"
+			say "BW2T_SCRIPT_03C_04SIGVID_SUCC_60"
+			wait until NorsePyro1 played
+			//set NorsePyro1 focus to {IM_Sigved}
+			play anim "A_P_TURN_180" on NorsePyro1 
+
+			set camera lens 37.000
+			RelCamPos=marker at get world position from FlamingHouse to {4.587, 2.356, 9.181}
+			RelCamFoc=marker at get world position from FlamingHouse to {3.659, 2.212, 8.838}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait until NorsePyro1 played
+			set NorsePyro1 focus to {IM_Sigved}
+
+			wait until NorsePyro1 played
+			set NorsePyro1 focus to {IM_Sigved}
+
+			wait 0.3 seconds
+			play anim "a_p_icemelt_sigved_punch" on IM_Sigved 
+			wait 0.5 second
+			RelCamPos=marker at get world position from FlamingHouse to {0.884, 1.897, 7.462}
+			RelCamFoc=marker at get world position from FlamingHouse to {1.548, 2.050, 8.194}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 0.6 seconds
+
+			set NorsePyro2 focus to {NorsePyro1}
+
+			//2nd dude
+			clear dialogue
+
+			set fade red 0 green 0 blue 0 time 0.2
+			wait 2 seconds
+			set camera position to {1458.937,391.045,1626.516}
+			set camera focus to {1512.723,370.546,1667.891}
+
+			delete IM_Sigved
+			delete NorsePyro2
+			delete NorsePyro1
+			delete SquatterWoman
+
+			set fade in time 2
+			wait 2 seconds
+
+				eject good spirit
+				eject evil spirit
+
+				if NorseTownPlayerOwned == IM_TRUE
+					// GA: "Apparently he doesn’t think much of your politics."
+					say "GA: Apparently he doesn’t think much of your politics."
+					wait until read
+				else
+					//say "GS: Apparently he doesn’t think much of Fenrik’s politics."
+					say "BW2T_SCRIPT_03C_04SIGVID_SUCC_GOOD_70"
+					wait until read 
+				end if
+
+				//say "ES: Ech… he’s a good guy… We should have left him in the snow."
+				say "BW2T_SCRIPT_03C_04SIGVID_SUCC_80"
+				wait until read
+				//say "GS: Speaking of snow, that looks like a miracle in there."
+				say "BW2T_SCRIPT_03C_04SIGVID_SUCC_90"
+				wait until read 
+				//say "GS: How wonderful!  It’s the freeze miracle."
+				say "BW2T_SCRIPT_03C_04SIGVID_SUCC_100"
+				stop music
+				wait until read 
+				send good spirit home
+				send evil spirit home
+			end cinema
+//		else
+//			say "ERROR: someone has move the house the success outro is based around. This is NOT good."
+//			wait until read
+//		end if
+	end if
+*/
+end script IM_SuxxessAsEvil
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

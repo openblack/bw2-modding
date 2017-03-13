@@ -1,0 +1,701 @@
+//------------------------------------------
+// Constants
+//------------------------------------------
+define BA_FALSE = 0
+define BA_TRUE = 1
+
+//Time constants
+define BA_TIME_DAY = 0
+define BA_TIME_NIGHT = 1
+
+//Burn sounds
+define BA_SOUND_HIT = 0
+define BA_SOUND_HISS = 1
+define BA_SOUND_BURNT = 2
+
+define BA_STATE_IN_CAVE = 0
+define BA_STATE_ATTACKING = 1
+define BA_STATE_WALKING = 2
+
+//------------------------------------------
+// Globals
+//------------------------------------------
+global BA_L5GreekTown = 0
+global BA_LairPos = 0
+global BA_BlackAnnis = 0
+global BA_TargetHouse = 0
+
+global BA_State = 0
+
+global BA_AnnisBurnLevel = 0
+
+global BA_Time = BA_TIME_DAY
+global BA_PlayingSoundNow[3]
+
+global BA_Finished = BA_FALSE //Completion flag
+
+global BA_InitialBurnFlag = BA_FALSE
+
+global BA_AnnisMist = 0
+global BA_BurnFXInstances = 0
+global BA_AnnisInterrupt = BA_TRUE
+
+//------------------------------------------
+// Script defines
+//------------------------------------------
+define script Land5BlackAnnis
+define script BA_WatchTime
+define script BA_AnnisControl
+define script BA_MoveAnnis
+define script BA_Alignment
+define script BA_ChaseBlackAnnis
+define script BA_Completed
+define script BA_ScaleAnnis
+define script BA_AnnisScroll
+define script BA_BeforeDeath
+
+define script BA_Teleport
+define script BA_Tunnel
+define script BA_SoldiersCheck
+
+define script AnnisHit
+
+//Text scripts
+define script BA_InitialBurn
+define script BA_RaidingHouse
+define script BA_Rhyme10Talk
+define script BA_Rhyme20Talk
+define script BA_Rhyme30Talk
+define script BA_Rhyme40Talk
+define script BA_FinishSpirtTalk
+define script BA_SoldiersTalk
+
+define script BA_PlaySound(SoundID)
+define script BA_AlignmentBlender(Position, Radius, AlterVal)
+
+//------------------------------------------
+// Land 5 Black Annis
+//------------------------------------------
+begin script Land5BlackAnnis
+start	
+
+	BA_L5GreekTown = get TOWN at {891.472, 85.635, 734.046} radius 100
+
+	wait until size of BA_L5GreekTown > 100
+
+	BA_LairPos = marker at {695.314, 143.384, 950.109}
+	BA_BlackAnnis = create VILLAGER BLACK_ANNIS at {BA_LairPos}
+	attach reaction BA_BlackAnnis REACTION_FLEE_FROM_OBJECT
+	disable BA_BlackAnnis pickup
+	disable BA_BlackAnnis reaction
+	enable BA_BlackAnnis indestructible
+
+	run background script BA_Alignment
+
+	move BA_BlackAnnis to limbo
+
+	run background script BA_AnnisControl
+	run background script BA_SoldiersCheck
+
+end script Land5BlackAnnis
+
+//------------------------------------------
+// Watch Time
+//------------------------------------------
+begin script BA_WatchTime
+start
+	begin loop
+		if get game time > 19.00 or get game time < 8.00
+			BA_Time = BA_TIME_NIGHT
+		else
+			BA_Time = BA_TIME_DAY
+		end if
+
+	until BA_Finished == BA_TRUE
+	end loop
+end script BA_WatchTime
+
+//------------------------------------------
+// Annis Control
+//------------------------------------------
+begin script BA_AnnisControl
+	CurrentTime = 0
+
+	DayRhymeFlag = BA_FALSE
+	TwilightRhymeFlag = BA_FALSE
+	NightRhymeFlag = BA_FALSE
+start
+
+	//Contol time variables
+	run background script BA_WatchTime
+
+	begin loop
+		if CurrentTime != BA_Time
+
+			CurrentTime = BA_Time
+
+			//Black Annis comes out to fright
+			if BA_Time == BA_TIME_NIGHT
+				//Twilight rhyme
+				if TwilightRhymeFlag == BA_FALSE
+					TwilightRhymeFlag = BA_TRUE
+					DayRhymeFlag = BA_FALSE					
+
+					run background script BA_MoveAnnis
+					run background script BA_ChaseBlackAnnis
+					//run background script BA_Teleport
+					
+					run script BA_Rhyme20Talk
+
+				end if
+			//Return BA to her cave to rest
+			else 
+				//Day time rhyme
+				if DayRhymeFlag == BA_FALSE
+
+					//Stop annis sounds and set flags
+					detach sound "Annisbreath" from BA_BlackAnnis
+					DayRhymeFlag = BA_TRUE
+					TwilightRhymeFlag = BA_FALSE
+
+					run script BA_Rhyme10Talk
+
+				end if
+			end if
+		end if
+
+	until BA_Finished == BA_TRUE
+	end loop
+end script BA_AnnisControl
+
+//------------------------------------------
+// Move Annis
+//------------------------------------------
+begin script BA_MoveAnnis
+	AdvisorReaction = BA_FALSE	
+	AnnisScroll = BA_FALSE
+
+	AnnisFlies = 0	
+start
+	//min built isn't compiling
+	BA_TargetHouse = get building ABODE_NUMBER_A in BA_L5GreekTown min built 1
+	//min built 1.0
+
+	//If there's a house then Black Annis can attack so mvoe her there
+	if BA_TargetHouse exists
+		release BA_BlackAnnis from limbo
+		BA_State = BA_STATE_WALKING
+
+		attach 3d sound "Annisbreath" to BA_BlackAnnis
+		
+		BA_AnnisMist = create visual effect "gp_s_darkannus_mist.ves" strength 0.5 scale 1 on BA_BlackAnnis time -1
+		AnnisFlies = create visual effect "gp_s_bluebottles.ves" strength 1 scale 2 on BA_BlackAnnis time -1
+
+		move BA_BlackAnnis position to extra position 1 of BA_TargetHouse	
+		wait until {BA_BlackAnnis} at extra position 1 of BA_TargetHouse
+
+		// --- Black Annis is in the house! ---
+		move BA_BlackAnnis to limbo
+		BA_State = BA_STATE_ATTACKING
+
+		run script BA_Rhyme30Talk
+
+		play string sound "SCRIPT22_WOMANSCREAM"
+
+		wait 1.5 seconds		
+
+		if AdvisorReaction == BA_FALSE
+			AdvisorReaction = BA_TRUE
+			run background script BA_RaidingHouse
+		end if
+
+		wait 5 seconds
+
+		release BA_BlackAnnis from limbo
+		BA_State = BA_STATE_WALKING
+
+		// --- Move Annis back home ---
+		//Release the Target house and set to 0
+		release BA_TargetHouse
+		BA_TargetHouse = 0
+
+		move BA_BlackAnnis position to {BA_LairPos}		
+		wait 8 seconds
+
+		wait until {BA_BlackAnnis} near {BA_LairPos} radius 5
+		move BA_BlackAnnis to limbo
+		BA_State = BA_STATE_IN_CAVE
+
+		detach sound "Annisbreath" from BA_BlackAnnis
+		stop visual effect BA_AnnisMist
+		stop visual effect AnnisFlies
+
+		if AnnisScroll == BA_FALSE
+			AnnisScroll = BA_TRUE
+			run background script BA_AnnisScroll
+		end if
+
+		//Reset burn level
+		BA_AnnisBurnLevel = 0
+	end if	
+
+end script BA_MoveAnnis
+
+//------------------------------------------
+// Chase Black Annis
+//------------------------------------------
+begin script BA_ChaseBlackAnnis	
+	AnnisSpeed = 0
+	AnnisMistScale = 0.6
+start
+	begin loop
+		//Move Annis
+		if get distance from {BA_BlackAnnis} to hand position < 6 and BA_State == BA_STATE_WALKING
+			BA_AnnisInterrupt = BA_TRUE
+
+			move BA_BlackAnnis position to {BA_BlackAnnis} + ({BA_BlackAnnis} - hand position)
+			SPEED of BA_BlackAnnis = 0.3
+
+			AnnisMistScale += 0.005
+			SCALE of BA_AnnisMist = AnnisMistScale
+
+			run background script AnnisHit
+
+			//Other move speeds
+			if get distance from {BA_BlackAnnis} to hand position < 2
+				SPEED of BA_BlackAnnis = 0.8
+				BA_AnnisBurnLevel+=0.2
+				run background script BA_PlaySound(BA_SOUND_HISS)
+			elsif get distance from {BA_BlackAnnis} to hand position < 4
+				SPEED of BA_BlackAnnis = 0.4
+				BA_AnnisBurnLevel+=0.1
+				run background script BA_PlaySound(BA_SOUND_BURNT)
+			else
+				BA_AnnisBurnLevel+=0.05
+				run background script BA_PlaySound(BA_SOUND_HIT)
+			end if
+
+		end if
+
+		//Move Black Annis back to her current destination
+		if BA_AnnisInterrupt == BA_TRUE and get distance from {BA_BlackAnnis} to hand position > 6			
+			BA_AnnisInterrupt = BA_FALSE
+			//Move to house or lair depdning on situation
+			if BA_TargetHouse exists
+				move BA_BlackAnnis position to extra position 1 of BA_TargetHouse
+			else
+				move BA_BlackAnnis position to {BA_LairPos}
+			end if
+		end if
+		
+		if BA_AnnisBurnLevel > 24
+			run script BA_Completed
+		end if
+		
+	until BA_Finished == BA_TRUE or BA_State == BA_STATE_IN_CAVE
+	end loop
+
+end script BA_ChaseBlackAnnis
+
+//------------------------------------------
+// Play Sound
+//------------------------------------------
+begin script BA_PlaySound(SoundID)
+start
+
+	if BA_PlayingSoundNow[SoundID] == BA_FALSE
+		BA_PlayingSoundNow[SoundID] = BA_TRUE
+
+		//Play the sound
+		if SoundID == BA_SOUND_HIT
+			play string sound "SCRIPT22_Annishit"
+			wait until not sound "Annishit" playing
+			//wait 0.4 seconds
+
+		elsif SoundID == BA_SOUND_HISS
+			play string sound "SCRIPT22_Annishiss"
+			wait until not sound "Annishiss" playing
+			
+		elsif SoundID == BA_SOUND_BURNT
+			play string sound "SCRIPT22_Annisburnt"
+			//wait until not sound "Annisburnt" playing
+			wait 0.2 seconds
+
+		end if
+
+		BA_PlayingSoundNow[SoundID] = BA_FALSE
+	end if
+
+end script BA_PlaySound
+
+//------------------------------------------
+// Black Annis Alignment
+//------------------------------------------
+begin script BA_Alignment
+start
+	begin loop
+
+		//Change this to states
+
+		//Stationary alignment
+		if BA_State == BA_STATE_IN_CAVE
+			//set ground alignment to -1 at {BA_BlackAnnis} radius 20 amount 1
+			run background script BA_AlignmentBlender(BA_LairPos, 25, 0.1)
+			wait 5 seconds
+
+		//In a house attacking
+		elsif BA_State == BA_STATE_ATTACKING
+			set ground alignment to -1 at {BA_BlackAnnis} radius 12 amount 1
+			run background script BA_AlignmentBlender(BA_LairPos, 25, 0.1)
+			wait 1 seconds
+
+		//Movement alignment
+		elsif BA_State == BA_STATE_WALKING
+			run background script BA_AlignmentBlender(marker at {BA_BlackAnnis}, 3, 0.1)
+			run background script BA_AlignmentBlender(marker at {BA_BlackAnnis} + {number from -5 to 5, 0, number from -5 to 5}, 1, 0.3)
+
+		end if
+ 
+	until BA_Finished == BA_TRUE
+	end loop
+end script BA_Alignment
+
+//------------------------------------------
+// Black Annis Completed
+//------------------------------------------
+begin script BA_Completed
+	AnnisFX = 0
+	DeathPos = 0
+	BloodPoolFX = 0
+	FliesFX = 0
+start
+
+	stop visual effect BA_AnnisMist
+
+	BA_Finished = BA_TRUE
+
+	detach sound "Annisbreath" from BA_BlackAnnis
+
+	set BA_BlackAnnis position to {BA_BlackAnnis}
+	DeathPos = marker at {BA_BlackAnnis}
+
+	run script BA_Rhyme40Talk
+
+	run background script BA_BeforeDeath
+	play string sound "SCRIPT22_Annishiss"
+	wait 1.5 seconds	
+
+	run background script BA_ScaleAnnis
+	wait until SCALE of BA_BlackAnnis < 0.4
+
+	//Destroy Black Annis
+	AnnisFX = create visual effect "gp_s_blackannus_explode.ves" strength 1 scale 2 at {BA_BlackAnnis} + {0, 0.5, 0} time 100
+
+	wait 0.5 seconds	
+	delete BA_BlackAnnis
+
+	BloodPoolFX = create visual effect "gp_s_blood_vilpool.ves" strength 1 scale 2 at {DeathPos} + {0, 0.2, 0} time 15
+	FliesFX = create visual effect "gp_s_bluebottles.ves" strength 1 scale 2 at {DeathPos} + {0, 0.4, 0} time 30
+
+	wait 3 seconds
+
+	run script BA_FinishSpirtTalk
+
+end script BA_Completed
+
+//------------------------------------------
+// Black Annis Soldiers Check
+//------------------------------------------
+begin script BA_SoldiersCheck
+	CheckPlatoon = 0
+	CheckFlag = BA_FALSE
+start
+
+	begin loop
+		//Check for soldiers at the cave durving the day
+		if BA_Time == BA_TIME_DAY
+			CheckPlatoon = get platoon of player 0 nearest {BA_LairPos} radius 15
+
+			if CheckPlatoon exists
+				
+				run script BA_SoldiersTalk
+				CheckFlag = BA_TRUE
+			end if
+
+		end if
+	until BA_Finished == BA_TRUE or CheckFlag == BA_TRUE
+	end loop
+
+end script BA_SoldiersCheck
+
+//------------------------------------------
+// Black Annis Rhyme 10 talk
+//------------------------------------------
+begin help script BA_Rhyme10Talk
+start
+	begin dialogue
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_RHYME_10"
+		wait until read
+	end dialogue
+end script BA_Rhyme10Talk
+
+//------------------------------------------
+// Black Annis Rhyme 20 talk
+//------------------------------------------
+begin help script BA_Rhyme20Talk
+start
+	begin dialogue
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_RHYME_20"
+		wait until read
+	end dialogue
+end script BA_Rhyme20Talk
+
+//------------------------------------------
+// Black Annis Rhyme 30 talk
+//------------------------------------------
+begin help script BA_Rhyme30Talk
+start
+	begin dialogue
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_RHYME_30"
+		wait until read
+	end dialogue
+end script BA_Rhyme30Talk
+
+//------------------------------------------
+// Black Annis Rhyme 40 talk
+//------------------------------------------
+begin help script BA_Rhyme40Talk
+start
+	begin dialogue
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_RHYME_40"
+		wait 1 seconds
+	end dialogue
+end script BA_Rhyme40Talk
+
+//------------------------------------------
+// Black Annis Finish spirit talk
+//------------------------------------------
+begin help script BA_FinishSpirtTalk
+start
+	begin dialogue
+		eject good spirit
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_END_10"
+		wait until read
+
+		eject evil spirit
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_END_20"
+		wait until read
+		
+		send good spirit home
+		send evil spirit home
+		
+	end dialogue
+end script BA_FinishSpirtTalk
+
+//------------------------------------------
+// Black Annis Soldiers talk
+//------------------------------------------
+begin help script BA_SoldiersTalk
+start
+	begin dialogue
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_SOLDIERS_10"
+		wait until read
+	end dialogue
+end script BA_SoldiersTalk
+
+//------------------------------------------
+// Black Annis Initial Burn
+//------------------------------------------
+begin help script BA_InitialBurn
+start
+
+	begin dialogue
+		eject good spirit
+		say "Well she doesn't seem to like the feel of your spiritual hand, does she leader?"
+		wait until read
+	end dialogue
+
+end script BA_InitialBurn
+
+//------------------------------------------
+// Raiding House
+//------------------------------------------
+begin help script BA_RaidingHouse
+start
+	begin dialogue
+		eject evil spirit
+		say "Another scream splits the night! I love this town!"
+		wait until read
+
+		eject good spirit
+		say "BW2T_SCRIPT_05NEW_BLACKANNIS_INTRO_70"
+		wait until read
+
+		say "Try and find her in the town"
+		wait until read
+	end dialogue	
+end script BA_RaidingHouse
+
+//---------------------------------------------
+// Scale Annis
+//---------------------------------------------
+begin script BA_ScaleAnnis
+	AlignmentRadius = 5
+	Alignment = -0.7
+	AlterVal = 0.5
+start
+	begin loop
+		SCALE of BA_BlackAnnis = SCALE of BA_BlackAnnis - 0.05
+
+		run background script BA_AlignmentBlender(marker at {BA_BlackAnnis} + {number from -2 to 2, 0, number from -2 to 2}, AlignmentRadius, 1)
+		
+		if AlignmentRadius < 8
+			AlignmentRadius += 1
+			Alignment -= 0.05
+			AlterVal+=0.1
+		end if		
+
+	until SCALE of BA_BlackAnnis < 0.1
+	end loop
+end script BA_ScaleAnnis
+
+//---------------------------------------------
+// Scale Annis
+//---------------------------------------------
+begin script BA_AnnisScroll
+	Scroll = 0
+	ScrollPos = marker at {697.580, 141.939, 938.600}
+start
+	Scroll = create highlight GOLD name "Black Annis" remind "Reminder temp" at {ScrollPos}
+	ALTITUDE of Scroll = 1.5
+	wait until Scroll right clicked
+
+	delete Scroll
+
+	begin cinema
+		say "Black Annis has been terrorising your people at night"
+		wait until read
+
+		say "Her murdering children will impact you harshly if you do not stop her!"
+		wait until read
+	end cinema
+
+	wait 3 seconds
+
+	//Reminder
+	begin loop
+		Scroll = create highlight GOLD name "Balck Annis reminder" remind "Reminder temp" at {ScrollPos}
+		ALTITUDE of Scroll = 1.5
+		wait until Scroll right clicked
+
+		delete Scroll
+
+		begin cinema
+			say "Stop Black Annis before she stops you!!"
+			wait until read
+		end cinema
+
+		wait 3 seconds
+	end loop
+
+end script BA_AnnisScroll
+
+//---------------------------------------------
+// Before Death
+//---------------------------------------------
+begin script BA_BeforeDeath
+	BloodFX = 0
+	BloodLoop = 0
+	DeathPos = 0
+start
+
+	DeathPos = marker at {BA_BlackAnnis}
+
+	begin loop
+		BloodFX = create visual effect "gp_s_blood_cloud_vil.ves" strength 0.5 scale ((number from 30 to 50) /10) at {DeathPos} + {number from -5 to 5, ((number from 5 to 10) /10), number from -5 to 5} time 0.8
+		wait 0.3 seconds
+		BloodLoop++
+	until BloodLoop == 20
+	end loop
+
+end script BA_BeforeDeath
+
+//------------------------------------------
+// Black Annis Alignment
+//------------------------------------------
+begin script BA_AlignmentBlender(Position, Radius, AlterVal)
+	CurrentAlignment = 0.0		//Get alignment at position when Kalev hooks it in
+	CurrentAmount = 0.0
+start
+	begin loop
+		set ground alignment to CurrentAlignment at {Position} radius Radius amount CurrentAmount
+		CurrentAlignment -= AlterVal
+		CurrentAmount += AlterVal
+		wait 0.1 seconds
+	until CurrentAlignment <= -1
+	end loop
+end script BA_AlignmentBlender
+
+//------------------------------------------
+// Annis Hit
+//------------------------------------------
+begin script AnnisHit
+	HitFx = 0
+start
+
+	BA_BurnFXInstances++
+
+	//Decide whether to run 
+	if BA_BurnFXInstances < 5
+		wait 0.2 seconds
+		HitFx = create visual effect "ev_s_rocktrail.ves" strength 0.5 scale 0.4 at {BA_BlackAnnis} time 2
+	end if
+
+	BA_BurnFXInstances--
+end script AnnisHit
+
+//------------------------------------------
+// Teleport
+//------------------------------------------
+begin script BA_Teleport
+	NextInterrupt = 5
+	TeleportFX = 0
+start
+
+	begin loop
+		if BA_AnnisBurnLevel >= NextInterrupt and BA_Finished == BA_FALSE
+			NextInterrupt+=5
+			/*
+			TeleportFX = create visual effect "ev_s_rocktrail.ves" strength 1 scale 2 at {BA_BlackAnnis} time 2
+			move BA_BlackAnnis to limbo
+
+			release BA_BlackAnnis from limbo
+			set BA_BlackAnnis position to {BA_BlackAnnis} + {number from -30 to 30, 0, number from -30 to 30}
+			BA_AnnisInterrupt = BA_TRUE	//Get the chase script to send her away to her current target
+			*/
+			run background script BA_Tunnel
+		end if
+
+	until BA_State == BA_STATE_IN_CAVE
+	end loop
+
+end script BA_Teleport
+
+//------------------------------------------
+// Black Annis Tunnel
+//------------------------------------------
+begin script BA_Tunnel
+	MoveFX = 0
+start
+	ALTITUDE of BA_BlackAnnis = -5
+
+	move BA_BlackAnnis position to {BA_BlackAnnis} + {number from -50 to 50, 0, number from -50 to 50}
+	SPEED of BA_BlackAnnis = 3
+
+	wait 6 seconds
+
+	ALTITUDE of BA_BlackAnnis = 0
+	SPEED of BA_BlackAnnis = 0.2
+
+	BA_AnnisInterrupt = BA_TRUE
+end script BA_Tunnel

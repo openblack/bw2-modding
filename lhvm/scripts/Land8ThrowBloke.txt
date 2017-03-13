@@ -1,0 +1,17 @@
+begin script L8_ThrowBloke
+start
+	TB_BlokeCreate = marker at {2000.780, 189.341, 1281.667}
+	TB_BlokeCamp = marker at {1997.870, 173.602, 1288.550}
+
+	TB_TributeLevel[0] = 100
+	TB_TributeAmount[0] = GLOBAL_VALUE_TRIBUTE_LAND_8_THROWBLOKE2_1
+	TB_TributeLevel[1] = 200
+	TB_TributeAmount[1] = GLOBAL_VALUE_TRIBUTE_LAND_8_THROWBLOKE2_2
+	TB_TributeLevel[2] = 300
+	TB_TributeAmount[2] = GLOBAL_VALUE_TRIBUTE_LAND_8_THROWBLOKE2_3
+
+	TB_LandNumber = 8
+	TB_PlayerTown = L8_GreekTown
+
+	run script TB_GlobalThrowBloke
+end script L8_ThrowBloke

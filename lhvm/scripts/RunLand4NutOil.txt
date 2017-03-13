@@ -1,0 +1,6 @@
+run script RunLand4NutOil
+
+begin script RunLand4NutOil
+start
+	run script Land4NutOil
+end script RunLand4NutOil

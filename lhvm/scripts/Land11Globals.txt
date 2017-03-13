@@ -1,0 +1,28 @@
+//-----------------------------------------------------------
+// Land 11 Globals
+//-----------------------------------------------------------
+
+global L11GreekTown			= 0
+global L11AztecCapital		= 0
+global L11AztecTown1		= 0
+global L11AztecTown2		= 0
+global L11Complete			= 0
+
+begin script Land11Globals
+start
+
+	L11GreekTown	= get town with id 3
+	L11AztecCapital = get town with id 0
+	L11AztecTown1	= get town with id 1
+	L11AztecTown2	= get town with id 2
+
+	set town L11AztecCapital maximum population to 100
+	set town L11AztecTown1 maximum population to 50
+	set town L11AztecTown2 maximum population to 50
+
+	wait until PLAYER of L11AztecCapital == 0 or variable get town L11AztecCapital status == variable TOWN_STATUS_MIGRATION_STARTED
+	
+	L11Complete = 1
+	
+	
+end script Land11Globals

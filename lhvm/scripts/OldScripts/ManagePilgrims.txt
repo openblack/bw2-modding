@@ -1,0 +1,401 @@
+global AcceptScroll  = 0
+global DeclineScroll = 0
+global PilgrimsActive = 1
+global MyPilgrims = 0
+
+begin script ManagePilgrims(Pilgrims, TownGlobalNumber)
+
+RelCamPos=0
+RelCamFoc=0
+PilgrimsAccepted = 0
+MG_Dimitrios=0
+MG_GreekTC=0
+AcceptScrollPos=0
+DeclineScrollPos=0
+MG_DimitriosStart=0
+FirstScroll=0
+FlockSpokesman=0
+CurrentTechlevel=0
+
+TechLevel[10]
+
+start
+
+	wait until pilgrims Pilgrims ready
+
+	disable pilgrims Pilgrims //ready
+
+	begin dialogue
+		eject good spirit
+			say "BW2T_SCRIPT_GLOBAL_MIGRATION_ADVISOR_10"
+			make good spirit point at {Pilgrims}
+			wait until read
+			stop good spirit pointing
+			send good spirit home
+	end dialogue
+
+	MyPilgrims = Pilgrims
+	if PilgrimsAccepted == 0
+		PilgrimsAccepted = 1
+		
+		///TOWN ID STUFF NOT WORKING AGAIN!
+		MG_GreekTC=get HOUSE at {885.000, 86.500, 743.890}//building TOWN_CENTRE in get town with id 0 min built 0.0// excluding scripted
+		//CurrentTechlevel = 2//get tech level of town get town with id 0
+
+		//if CurrentTechlevel == 0
+
+			//AcceptScroll
+			TechLevel[0]= marker at {-4.591, 12.493, -8.374}
+			//DeclineScroll
+			TechLevel[1]= marker at {4.620, 12.184, -8.923}
+			//DimStart
+			TechLevel[2]= marker at {0.053, 14.799, -8.138}
+			//DimFoc
+			TechLevel[3]= marker at {-0.121, 0.000, -10.074}
+			//DimClosePos
+			TechLevel[4]= marker at {-0.984, 15.895, -9.362}
+			//DimCloseFoc
+			TechLevel[5]= marker at {-0.258, 16.038, -8.688}
+			//WideScrollsPos
+			TechLevel[6]= marker at {-0.303, 15.153, -18.049}
+			//WideScrollsFoc		
+			TechLevel[7]= marker at {-0.269, 15.142, -17.050}
+			//MoveDimTo
+			TechLevel[8]= marker at {-1.363, 17.656, 6.553}
+
+		/*elsif CurrentTechlevel == 1
+
+			//AcceptScroll
+			TechLevel[0]= marker at {4.976, 20.263, -8.574}
+			//DeclineScroll
+			TechLevel[1]= marker at {-4.469, 20.013, -7.777}
+			//DimStart
+			TechLevel[2]= marker at {-0.110, 17.797, -12.807}
+			//DimFoc
+			TechLevel[3]= marker at {-1.068, 0.107, 3.066}
+			//DimClosePos
+			TechLevel[4]= marker at {1.334, 19.185, -11.767}
+			//DimCloseFoc
+			TechLevel[5]= marker at {0.462, 19.126, -12.254}
+			//WideScrollsPos
+			TechLevel[6]= marker at {-0.193, 20.257, 0.362}
+			//WideScrollsFoc		
+			TechLevel[7]= marker at {-0.174, 20.296, -0.637}
+			//MoveDimTo
+			TechLevel[8]= marker at {-0.364, 0.031, -22.458}
+
+		elsif CurrentTechlevel == 2
+
+			//AcceptScroll
+			TechLevel[0]= marker at {4.976, 20.263, -8.574}
+			//DeclineScroll
+			TechLevel[1]= marker at {-4.469, 20.013, -7.777}
+			//DimStart
+			TechLevel[2]= marker at {-0.091, 19.906, -12.880}
+			//DimFoc
+			TechLevel[3]= marker at {-0.641, 0.000, 0.371}
+			//DimClosePos
+			TechLevel[4]= marker at {0.740, 21.265, -11.519}
+			//DimCloseFoc
+			TechLevel[5]= marker at {0.106, 21.211, -12.291}
+			//WideScrollsPos
+			TechLevel[6]= marker at {-0.193, 21.644, 0.362}
+			//WideScrollsFoc		
+			TechLevel[7]= marker at {-0.174, 21.683, -0.637}
+			//MoveDimTo
+			TechLevel[8]= marker at {-0.364, 0.031, -22.458}
+
+		end if
+*/
+		FirstScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {Pilgrims}+{0,3,0}
+		wait until FirstScroll right clicked
+		delete FirstScroll
+
+		AcceptScrollPos = marker at get world position from MG_GreekTC to {TechLevel[0]}
+		DeclineScrollPos = marker at get world position from MG_GreekTC to {TechLevel[1]}
+
+		AcceptScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {AcceptScrollPos}
+		DeclineScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {DeclineScrollPos}
+
+		ALTITUDE of AcceptScroll = ALTITUDE of AcceptScrollPos
+		ALTITUDE of DeclineScroll = ALTITUDE of DeclineScrollPos
+
+		MG_DimitriosStart = marker at get world position from MG_GreekTC to {TechLevel[2]}
+
+		MG_Dimitrios = create VILLAGER DIMITRIOUS at {MG_DimitriosStart}
+		disable MG_Dimitrios set on fire
+		disable MG_Dimitrios pickup
+
+		ALTITUDE of MG_Dimitrios = ALTITUDE of MG_DimitriosStart
+		set MG_Dimitrios focus to get world position from MG_GreekTC to {TechLevel[3]}
+		
+		begin cinema
+
+			enable highlight draw
+
+			set camera lens 37.000		
+			RelCamPos=marker at get world position from MG_GreekTC to {TechLevel[4]}
+			RelCamFoc=marker at get world position from MG_GreekTC to {TechLevel[5]}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}	
+
+			play anim "a_p_paternity_talking_to_god_calmly" on MG_Dimitrios
+			say "BW2T_SCRIPT_GLOBAL_MIGRATION_INTRO_10"
+			wait until read
+			
+			set camera lens 70.000
+			RelCamPos=marker at get world position from MG_GreekTC to {TechLevel[6]}
+			RelCamFoc=marker at get world position from MG_GreekTC to {TechLevel[7]}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}	
+
+			eject evil spirit
+			eject good spirit
+
+			say "BW2T_SCRIPT_GLOBAL_MIGRATION_INTRO_20"
+			make good spirit point at {AcceptScroll}
+
+			wait until read
+			stop good spirit pointing
+			say "BW2T_SCRIPT_GLOBAL_MIGRATION_INTRO_30"
+			make evil spirit point at {DeclineScroll}
+
+			wait until read
+			send evil spirit home
+			send good spirit home
+
+			disable highlight draw
+		
+		end cinema
+
+		while PilgrimsActive == 1
+			if get object hand is over == AcceptScroll
+			begin dialogue
+				say "BW2T_SCRIPT_GLOBAL_MIGRATION_HANDOVERSCROLL_10"
+				wait until AcceptScroll right clicked or get object hand is over != AcceptScroll
+			end dialogue
+
+			if AcceptScroll right clicked
+					begin cinema
+						//thanks for letting us in
+						set camera lens 37.000
+						RelCamPos=marker at get world position from MG_GreekTC to {TechLevel[4]}
+						RelCamFoc=marker at get world position from MG_GreekTC to {TechLevel[5]}
+						set camera position to {RelCamPos}
+						set camera focus to {RelCamFoc}
+
+						play anim "a_p_paternity_talking_to_god_calmly" on MG_Dimitrios
+						say "BW2T_SCRIPT_GLOBAL_MIGRATION_ACCEPT_10"
+						wait until read
+
+						FlockSpokesman = get VILLAGER in Pilgrims
+
+						say "BW2T_SCRIPT_GLOBAL_MIGRATION_ACCEPT_20"
+						play anim "a_p_paternity_talking_to_god_calmly" on FlockSpokesman
+
+						set camera lens 70.000					
+						RelCamPos = marker at get world position from FlockSpokesman to {1.175, 1.918, 1.759}
+						RelCamFoc = marker at get world position from FlockSpokesman to {0.459, 1.558, 1.161}
+						set camera position to {RelCamPos}
+						set camera focus to {RelCamFoc}
+						wait until read
+						clear dialogue
+                            
+						set camera lens 70.000
+						RelCamPos=marker at get world position from MG_GreekTC to {TechLevel[6]}
+						RelCamFoc=marker at get world position from MG_GreekTC to {TechLevel[7]}
+						set camera position to {RelCamPos}
+						set camera focus to {RelCamFoc}
+
+						move MG_Dimitrios position to get world position from MG_GreekTC to {TechLevel[8]}
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						delete MG_Dimitrios
+
+					end cinema
+				
+					accept pilgrims MyPilgrims
+					TownPilgrimageStatus[TownGlobalNumber] = 1
+					PilgrimsAccepted = 2 // 2 means always accept
+					PilgrimsActive = 0
+					delete AcceptScroll
+					delete DeclineScroll
+				end if
+				
+			elsif get object hand is over == DeclineScroll
+			begin dialogue
+				say "BW2T_SCRIPT_GLOBAL_MIGRATION_HANDOVERSCROLL_20"
+				wait until DeclineScroll right clicked or get object hand is over != DeclineScroll
+			end dialogue
+				if DeclineScroll right clicked
+				
+					begin cinema
+
+						set camera lens 37.000
+						RelCamPos=marker at get world position from MG_GreekTC to {TechLevel[4]}
+						RelCamFoc=marker at get world position from MG_GreekTC to {TechLevel[5]}
+						set camera position to {RelCamPos}
+						set camera focus to {RelCamFoc}	
+
+						play anim "a_p_paternity_talking_to_god_calmly" on MG_Dimitrios
+						say "BW2T_SCRIPT_GLOBAL_MIGRATION_REFUSE_10"
+						wait until read
+						decline pilgrims MyPilgrims
+
+						say "BW2T_SCRIPT_GLOBAL_MIGRATION_REFUSE_20"
+						FlockSpokesman = get VILLAGER in Pilgrims
+
+						play anim "a_p_paternity_shouting_to_god_accusingly" on FlockSpokesman
+						set camera lens 70.000						
+						RelCamPos = marker at get world position from FlockSpokesman to {1.175, 1.918, 1.759}
+						RelCamFoc = marker at get world position from FlockSpokesman to {0.459, 1.558, 1.161}
+						set camera position to {RelCamPos}
+						set camera focus to {RelCamFoc}
+						wait until read
+						clear dialogue
+
+						set camera lens 70.000
+						RelCamPos=marker at get world position from MG_GreekTC to {TechLevel[6]}
+						RelCamFoc=marker at get world position from MG_GreekTC to {TechLevel[7]}
+						set camera position to {RelCamPos}
+						set camera focus to {RelCamFoc}
+
+						move MG_Dimitrios position to get world position from MG_GreekTC to {-0.364, 0.031, -22.458}
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						ALTITUDE of MG_Dimitrios = ALTITUDE of MG_Dimitrios-0.1
+						wait 0.1 seconds
+						delete MG_Dimitrios
+									 
+					end cinema
+
+					TownPilgrimageStatus[TownGlobalNumber] = 2
+					PilgrimsAccepted = 3 // 3 means always decline
+					PilgrimsActive = 0
+					delete AcceptScroll
+					delete DeclineScroll
+
+				end if
+			end if
+
+			begin dialogue
+				clear dialogue
+			end dialogue
+
+		end while
+	elsif PilgrimsAccepted > 0
+		if PilgrimsAccepted == 2
+			accept pilgrims MyPilgrims
+		else
+			decline pilgrims MyPilgrims
+		end if
+	end if
+	PilgrimsActive = 1
+
+end script ManagePilgrims

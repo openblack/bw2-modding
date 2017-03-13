@@ -1,0 +1,6 @@
+run script RunLand9SunDial
+
+begin script RunLand9SunDial
+start
+	run script Land9SunDial
+end script RunLand9SunDial

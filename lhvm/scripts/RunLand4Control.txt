@@ -1,0 +1,21 @@
+//------------------------------------------------------------------------------------------------------------------------
+run script RunLand4Control
+//------------------------------------------------------------------------------------------------------------------------
+begin script RunLand4Control
+
+ MyCreaturePos = marker at {675.170, 60.063, 693.322}
+
+start
+///	set game time 15.00
+
+///	MyCreature = create CREATURE CREATURE_TYPE_LION at {MyCreaturePos}
+///	SCALE of MyCreature = 0.6
+///	ALIGNMENT of MyCreature = 0
+///	set player 0 creature to MyCreature
+///	PLAYER of MyCreature = 0
+///	set MyCreature DEVELOPMENT_PHASE_FULLY_MATURE development
+///	release MyCreature
+
+	run script Land4Control
+	
+end script RunLand4Control

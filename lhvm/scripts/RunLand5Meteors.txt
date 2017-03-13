@@ -1,0 +1,6 @@
+run script RunLand5Meteors
+
+begin script RunLand5Meteors
+start
+	run script Land5Meteors
+end script RunLand5Meteors

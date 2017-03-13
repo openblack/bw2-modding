@@ -1,0 +1,6 @@
+run script RunLand7Archeologists
+
+begin script RunLand7Archeologists
+start
+	run script Land7Archeologists
+end script RunLand7Archeologists

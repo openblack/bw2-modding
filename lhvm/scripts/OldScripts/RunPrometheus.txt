@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Prometheus script
+//-----------------------------------------------------------------------------
+run script RunPrometheus
+
+begin script RunPrometheus
+
+start
+
+	run script Land4Prometheus
+
+end script RunPrometheus

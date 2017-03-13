@@ -1,0 +1,436 @@
+//-------------------------//
+//  Constants & Variables  //
+//-------------------------//
+define GCFalse					= 0
+define GCTrue					= 1
+
+define GCNumberOfRocks			= 3
+define GCNumberOfRocksPlusOne	= 4
+
+define GCNumberOfLevels			= 5
+define GCNumberOfLevelsPlusOne	= 6
+global GCCurrentLevel				= 0
+
+global GCQuitGame				= GCFalse
+global GCGameComplete			= GCFalse
+global GCBloke					= 0
+
+define GCGravityOn				= 0
+define GCGravityOff				= 1
+global GCGravityState			= GCGravityOff
+
+global GCHouseMass				= 50
+global GCHouse					= 0
+
+global GCStartingPositions[GCNumberOfLevelsPlusOne]
+global GCStartingFocus[GCNumberOfLevels]
+
+global GCRocks[GCNumberOfRocks]
+global GCRockMasses[GCNumberOfRocks]
+global GCRockTypes[GCNumberOfRocks]
+
+global GCRocksOnThisLevel[GCNumberOfLevels]
+
+
+//----------------------//
+//  Script definitions  //
+//----------------------//
+define script GravityChallenge
+define script GCDistanceMonitor(Object1, Object2)
+define script GCKeepRocksAlive
+define script GCMainGame
+define script GCMakeBlokeWalk
+define script GCShowIntro
+define script GCShowNextLevelCinema(CurrentLevel)
+
+
+//-------------------------------------------------------------------------//
+//  GravityChallenge:  Main script.  Controls the flow of everything else  //
+//-------------------------------------------------------------------------//
+begin script GravityChallenge
+  Scroll = 0
+start
+	GCStartingPositions[0] = marker at {1012.888,13.592,1196.306}
+	GCStartingPositions[1] = marker at {1035.056,7.476,1256.552}
+	GCStartingPositions[2] = marker at {1079.328,10.050,1236.137}
+	GCStartingPositions[3] = marker at {1066.231,13.930,1300.857}
+	GCStartingPositions[4] = marker at {1010.964,9.265,1335.517}
+	GCStartingPositions[5] = marker at {1006.649,13.400,1433.339}
+	
+	GCStartingFocus[0] = marker at {1004.233,9.663,1207.475}
+	GCStartingFocus[1] = marker at {1028.411,7.650,1259.191}
+	GCStartingFocus[2] = marker at {1084.925,10.050,1242.143}
+	GCStartingFocus[3] = marker at {1068.339,11.453,1276.551}
+	GCStartingFocus[4] = marker at {990.602,8.040,1344.741}
+	
+	GCRockMasses[0] = 50
+	GCRockMasses[1] = 50
+	GCRockMasses[2] = 50
+	
+	GCRocksOnThisLevel[0] = 1
+	GCRocksOnThisLevel[1] = 1
+	GCRocksOnThisLevel[2] = 2
+	GCRocksOnThisLevel[3] = 2
+	GCRocksOnThisLevel[4] = 3
+
+	GCRockTypes[0] = variable MOBILE_STATIC_INFO_FLATROCK_VOLCANIC
+	GCRockTypes[1] = variable ROCK
+	GCRockTypes[2] = variable MOBILE_STATIC_INFO_BOULDER2_LIME
+	
+	begin loop
+		Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {GCStartingPositions[0]} + {0.000,5.000,0.000}
+		wait until Scroll right clicked
+		clear right clicked object
+		delete Scroll
+		
+		GCQuitGame = GCFalse
+		GCGameComplete = GCFalse
+		
+		run script GCShowIntro
+		
+		GCGravityState = GCGravityOff
+		run background script GCMakeBlokeWalk
+		run background script GCMainGame
+		
+		wait until ((GCQuitGame == GCTrue) or (GCGameComplete == GCTrue))
+	end loop
+end script GravityChallenge
+
+
+//---------------------------------------------------------------------------------//
+//  GCDistanceMonitor(Object1, Object2):  Monitors the distance between 2 objects  //
+//---------------------------------------------------------------------------------//
+begin script GCDistanceMonitor(Object1, Object2)
+  Distance = 0
+start
+	begin loop
+		Distance = get distance from {Object1} to {Object2}
+	end loop
+end script GCDistanceMonitor
+
+
+//---------------------------------------------------//
+//  GCKeepRocksAlive:  Keeps the rocks alive (duh!)	 //
+//---------------------------------------------------//
+begin script GCKeepRocksAlive
+  CurrentLevel = GCCurrentLevel
+  Counter = 0
+  RockAngle = 0
+start
+	begin loop
+		Counter = 0
+		while Counter < GCRocksOnThisLevel[CurrentLevel]
+			if not (GCRocks[Counter] exists)
+				RockAngle = ((360 / GCRocksOnThisLevel[CurrentLevel]) * Counter)
+				GCRocks[Counter] = create OBJECT constant GCRockTypes[Counter] at get target from {GCBloke} - {5.000,2.500,0.000} to {GCBloke} distance 10 angle RockAngle
+				enable GCRocks[Counter] indestructible
+			end if
+		end while
+	end loop
+end script GCKeepRocksAlive
+
+
+//---------------------------------------------------------------------------------------------------//
+//  GCMainGame:  Creates the space dude, and fires him off.  Sets you in control of the planets etc  //
+//---------------------------------------------------------------------------------------------------//
+begin script GCMainGame
+  Counter	= 0
+  RockAngle	= 0
+  
+  JumpOutDont			= 0
+  JumpOutBlokeClicked	= 1
+  JumpOutReachedHut		= 2
+  JumpOutReachedRock	= 3
+  JumpOutQuitGame		= 4
+  JumpOut				= JumpOutDont
+  
+  LevelComplete			= GCFalse
+start
+	begin loop
+		LevelComplete = GCFalse
+		
+		if not (GCBloke exists)
+			GCBloke = create VILLAGER VILLAGER_INFO_SHAOLIN at {GCStartingPositions[GCCurrentLevel]}
+			set GCBloke focus to {GCStartingFocus[GCCurrentLevel]}
+			disable GCBloke pickup
+			enable GCBloke indestructible
+			disable GCBloke set on fire
+			SPEED of GCBloke = 0.8
+		else
+			set GCBloke focus to {GCStartingFocus[GCCurrentLevel]}
+		end if
+
+		if (GCCurrentLevel > 0)
+			run script GCShowNextLevelCinema(GCCurrentLevel)
+		end if
+
+		Counter = 0
+		while Counter < GCRocksOnThisLevel[GCCurrentLevel]
+			RockAngle = ((360 / GCRocksOnThisLevel[GCCurrentLevel]) * Counter)
+			GCRocks[Counter] = create OBJECT constant GCRockTypes[Counter] at get target from {GCBloke} - {5.000,2.500,0.000} to {GCBloke} distance 10 angle RockAngle
+			enable GCRocks[Counter] indestructible
+			
+			Counter ++
+		end while
+		run background script GCKeepRocksAlive
+
+		GCHouse = create HOUSE ABODE_INFO_JAPANESE_SHACK_Y at {GCStartingPositions[GCCurrentLevel + 1]}
+		disable GCHouse set on fire
+		enable GCHouse indestructible
+
+		begin loop
+			if not (GCBloke exists)
+				GCBloke = create VILLAGER VILLAGER_INFO_SHAOLIN at {GCStartingPositions[GCCurrentLevel]}
+				set GCBloke focus to {GCStartingFocus[GCCurrentLevel]}
+				disable GCBloke pickup
+				enable GCBloke indestructible
+				disable GCBloke set on fire
+				SPEED of GCBloke = 0.8
+			else
+				set GCBloke position to {GCStartingPositions[GCCurrentLevel]}
+			end if
+		
+			wait until ((GCBloke right clicked) or (GCHouse right clicked))
+			clear right clicked object
+			GCGravityState = GCGravityOn
+		
+			Counter = 0
+			while (Counter < GCNumberOfRocks)
+				if (GCRocks[Counter] exists)
+					disable GCRocks[Counter] pickup
+				end if
+				
+				Counter ++
+			end while
+		
+			JumpOut = JumpOutDont
+			while (JumpOut == JumpOutDont)
+				if ({GCBloke} near {GCHouse} radius 4)
+					JumpOut = JumpOutReachedHut
+					LevelComplete = GCTrue
+				elsif ((GCBloke right clicked) or (GCRocks[0] right clicked) or (GCRocks[1] right clicked) or (GCRocks[2] right clicked))
+					JumpOut = JumpOutBlokeClicked
+				elsif (({GCBloke} near {GCRocks[0]} radius 2) or ({GCBloke} near {GCRocks[1]} radius 2) or ({GCBloke} near {GCRocks[2]} radius 2))
+					JumpOut = JumpOutReachedRock
+				elsif (GCHouse right clicked)
+					JumpOut = JumpOutQuitGame
+					GCQuitGame = GCTrue
+				end if
+			end while
+			clear right clicked object
+			
+			GCGravityState = GCGravityOff
+			
+			delete GCBloke with fade
+			Counter = 0
+			while (Counter < GCNumberOfRocks)
+				if (GCRocks[Counter] exists)
+					enable GCRocks[Counter] pickup
+				end if
+				
+				Counter ++
+			end while
+				
+			until ((GCQuitGame == GCTrue) or (LevelComplete == GCTrue))
+		end loop
+		
+		delete GCHouse with fade
+
+		stop script "GCKeepRocksAlive"
+		Counter = 0
+		while (Counter < GCNumberOfRocks)
+			if (GCRocks[Counter] exists)
+				delete GCRocks[Counter]
+			end if
+			
+			Counter ++
+		end while
+
+		GCCurrentLevel ++
+		if (GCCurrentLevel == GCNumberOfLevels)
+			GCGameComplete = GCTrue
+		end if
+		GCGravityState = GCGravityOff
+		
+		until ((GCQuitGame == GCTrue) or (GCGameComplete == GCTrue))
+	end loop
+	
+	if (GCQuitGame == GCFalse)
+		begin cinema
+			say "Congratulations.  You win"
+			wait until read
+		end cinema
+	else
+		begin cinema
+			say "You Loser"
+			wait until read
+		end cinema
+	end if
+	
+	GCCurrentLevel = 0
+	
+	delete GCBloke with fade
+
+	stop script "GCKeepRocksAlive"
+	Counter = 0
+	while (Counter < GCNumberOfRocks)
+		if (GCRocks[Counter] exists)
+			delete GCRocks[Counter]
+		end if
+		
+		Counter ++
+	end while
+end script GCMainGame
+
+
+//---------------------------------------------------------------//
+//  GCMakeBlokeWalk:  Makes the bloke walk, affected by gravity  //
+//---------------------------------------------------------------//
+begin script GCMakeBlokeWalk
+  GravitationalConstant = 1
+  BlokeMass = 10
+
+  Counter = 0
+  Distance = 0
+  ResultantForce = 0
+  WhereToWalkTo = 0
+
+  Mass[GCNumberOfRocks]
+  Gravity[GCNumberOfRocks]
+  Targets[GCNumberOfRocksPlusOne]
+start
+	begin loop
+		Targets[GCNumberOfRocks] = marker at get target from {GCBloke} - {5.000,0.000,0.000} to {GCBloke} distance 20 angle ANGLE of GCBloke
+
+		Counter = 0
+		while Counter < GCRocksOnThisLevel[GCCurrentLevel]
+			Distance = get distance from {GCBloke} to {GCRocks[Counter]}
+			Gravity[Counter] = (GravitationalConstant * GCRockMasses[Counter] * BlokeMass) / (Distance * Distance)
+			Targets[Counter] = marker at get target from {GCRocks[Counter]} to {GCBloke} distance Gravity[Counter] angle 180
+			Targets[Counter] = marker at {Targets[Counter]} - {GCBloke}
+			
+			Targets[GCNumberOfRocks] = marker at {Targets[GCNumberOfRocks]} + {Targets[Counter]}
+			
+			Counter ++
+		end while
+		
+		//Calculate the gravitational pull from the house
+		Distance = get distance from {GCBloke} to {GCHouse}
+		Gravity[0] = (GravitationalConstant * GCHouseMass * BlokeMass) / (Distance * Distance)
+		Targets[0] = marker at get target from {GCHouse} to {GCBloke} distance Gravity[0] angle 180
+		Targets[0] = marker at {Targets[0]} - {GCBloke}
+		Targets[GCNumberOfRocks] = marker at {Targets[GCNumberOfRocks]} + {Targets[0]}
+			
+		if (GCGravityState == GCGravityOn)
+			move GCBloke position to {Targets[GCNumberOfRocks]}
+		end if
+		
+		until ((GCQuitGame == GCTrue) or (GCGameComplete == GCTrue))
+	end loop
+end script GCMakeBlokeWalk
+
+
+//------------------------------------------------------//
+//  GCShowIntro:  Does exactly what it says on the tin  //
+//------------------------------------------------------//
+begin script GCShowIntro
+  CameraPosition = 0
+start
+	GCBloke = create VILLAGER VILLAGER_INFO_SHAOLIN at {GCStartingPositions[0]}
+	set GCBloke focus to {GCStartingFocus[0]}
+	disable GCBloke pickup
+	enable GCBloke indestructible
+	disable GCBloke set on fire
+	SPEED of GCBloke = 0.8
+
+	CameraPosition = marker at get target from {GCStartingFocus[0]} to {GCBloke} distance 10 angle 180
+	CameraPosition = marker at {CameraPosition} + {0.000,1.000,0.000}
+	begin cinema
+		move camera position to {CameraPosition} time 3
+		move camera focus to {GCBloke} time 3
+		wait until camera ready
+		
+		say "Hi, I'm Mr Lizard and I'm lost.  I need you to help me find my way home"
+		wait until read
+		say "My house is nearby, but I can't remember exactly where it is"
+		wait until read
+		say "I feel strangely obliged to tell you that I'm attracted to big stones that glitter"
+		wait until read
+		say "It's because they smell nice.  I just head towards them in a 'gravitational pull' kind of way"
+		wait until read
+		say "Maybe you can use that to your advantage when you're guiding me home"
+		wait until read
+		say "Click on me or my home, and I'll start my journey"
+		wait until read
+		say "If you click on a stone when I'm travelling, I'll teleport back here"
+		wait until read
+		say "I can do that because I'm a wizard, but I can't teleport to houses because I'm not that good"
+		wait until read
+		say "If you want to give up on me, click on my house when I'm travelling"
+		wait until read
+		say "Obviously when I'm close to my house, I'd head straight towards it..."
+		wait until read
+		say "But I'm blind"
+		wait until read
+		say "So good luck.  Hopefully I'll be home in no time at all"
+		wait until read
+		
+		move camera position to {GCBloke} + {0.000,7.500,0.000} time 2
+		move camera focus to {GCBloke} time 2
+	end cinema
+end script GCShowIntro
+
+
+//-------------------------------------------------------------------------------------------//
+//  GCShowNextLevelCinema(CurrentLevel):	The guy explains why you need to help him again	 //
+//-------------------------------------------------------------------------------------------//
+begin script GCShowNextLevelCinema(CurrentLevel)
+  CameraPosition = 0
+start
+	move GCBloke position to {GCStartingPositions[CurrentLevel]}
+
+	CameraPosition = marker at get target from {GCStartingFocus[0]} to {GCBloke} distance 10 angle 180
+	CameraPosition = marker at {CameraPosition} + {0.000,1.000,0.000}
+
+	wait until {GCBloke} near {GCStartingPositions[CurrentLevel]} radius 1
+	set GCBloke focus to {CameraPosition}
+	begin cinema
+		move camera position to {CameraPosition} time 3
+		move camera focus to {GCBloke} time 3
+		wait until camera ready
+		
+		if CurrentLevel > 1
+			say "Hmm.  Just when I though I was home, it was snatched out from under me..."
+			wait until read
+			say "Again!"
+			wait until read
+		else
+			say "Hmm.  Just when I though I was home, it was snatched out from under me!"
+			wait until read
+		end if
+		
+		say "It's probably down to me being quite bad at magic.  I must have magic'd it away."
+		wait until read
+		
+		if (CurrentLevel == 1)
+			say "Ah well... You've helped me once, you'll help me again"
+		elsif (CurrentLevel == 2)
+			say "Ah well... You've helped me twice, you'll help me again"
+		elsif (CurrentLevel == 3)
+			say "Ah well... You've helped me three times, you'll help me again"
+		elsif (CurrentLevel == 4)
+			say "Ah well... You've helped me four times, you'll help me again"
+		end if
+		wait until read
+		
+		move camera position to {GCBloke} + {0.000,7.500,0.000} time 2
+		move camera focus to {GCBloke} time 2
+	end cinema
+	
+	set GCBloke focus to {GCStartingFocus[CurrentLevel]}
+end script GCShowNextLevelCinema
+
+//TODO:
+//	Scores
+//	More levels
+//	Obstacles

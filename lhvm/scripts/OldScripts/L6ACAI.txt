@@ -1,0 +1,7 @@
+//------------------------------------------------
+//  LAND 6 AZTEC CREATURE AI
+//------------------------------------------------
+
+begin script L6ACAI
+start
+end script L6ACAI

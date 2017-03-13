@@ -1,0 +1,12 @@
+run script RunGravityChallenge
+
+begin script RunGravityChallenge
+  ScrollPosition = marker at {1012.888,13.592,1196.306}
+start
+	begin camera
+		set camera position to {ScrollPosition} + {10.000,10.000,10.000}
+		set camera focus to {ScrollPosition}
+	end camera
+	
+	run script GravityChallenge
+end script RunGravityChallenge

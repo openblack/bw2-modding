@@ -1,0 +1,187 @@
+//------------------------------------------------
+//  LAND 3 PROPOGANDA SPEECH CUT-SCENE
+//------------------------------------------------
+
+
+begin script PropogandaSpeech
+
+Boystart = marker at {863.394,36.694,956.507}
+ HPStart = marker at {860.073,37.379,952.850}
+ HPPos2 = marker at {860.729,36.928,955.969}
+ HPPos3 = marker at {862.239,36.831,956.328}
+ Passby1 = marker at {865.564,36.511,956.979}
+ Passby2 = marker at {861.514,36.825,956.859}
+
+ HPNewStart = marker at {320.297,89.022,287.038}
+ HPNewEnd = marker at {320.475,89.063,307.326}
+ KidLies = marker at {320.496,89.063,307.316}
+ NorseGuard1 =marker at {318.457,89.063,295.509}
+ NorseGuard2 =marker at {323.284,89.034,295.980}
+ NorseGuard3 =marker at {322.174,89.032,292.166}
+ NorseGuard4 =marker at {317.600,89.051,291.671}
+ NorseGuard5 =marker at {316.128,89.063,300.672}
+ NorseGuard6 =marker at {322.624,89.063,301.132}
+ MoreGuards=marker at {321.193,89.063,306.279}
+ Boy = 0
+ Fenrik = 0
+ Passer1 = 0
+ Passer2 = 0
+ Guard1 = 0
+ Guard2 = 0
+ Guard3 = 0
+ Guard4 = 0
+ Guard5 = 0
+ Guard6 = 0
+ Guard7 = 0
+ Guard8 = 0
+ Guard9 = 0
+ Guard10 = 0
+ Guard11 = 0
+ Guard12 = 0
+ 
+start
+
+	Boy = create random villager of tribe TRIBE_TYPE_NORSE at {Boystart}
+	set Boy focus to {864.351,36.768,978.654}
+	Boy play anim "M_P_SITTING_DOWN1_SITTING" loop 10
+	wait 2 seconds
+
+	begin cinema
+
+		set camera lens 43.000
+		set camera position to {863.473,36.979,957.975}
+		set camera focus to {862.323,36.731,934.123}
+		Passer1 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {Passby1}
+		Passer2 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {Passby2}
+		move Passer1 position to {Passby2}
+		wait until {Passer1} near {Passby2} radius 0.1
+		delete Passer1
+		move Passer2 position to {Passby1}
+		wait until {Passer2} near {Passby1} radius 0.1
+		delete Passer2
+		//wait 2 seconds
+		set camera position to {860.410,37.776,954.022}
+		set camera focus to {879.360,34.671,968.219}
+
+		move camera position to {860.370,37.776,955.395} time 4
+		move camera focus to {882.110,34.671,964.776} time 4
+		//wait until camera ready
+		wait 2 seconds
+
+		Fenrik = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {HPStart}
+		move Fenrik position to {HPPos2}
+		wait until {Fenrik} at {HPPos2}
+		move Fenrik position to {HPPos3}
+		wait until {Fenrik} at {HPPos3}
+		set camera position to {861.622,37.189,956.693}
+		set camera focus to {885.005,34.939,952.395}
+		say "Hello little boy..."
+		wait 1 second
+		set Boy focus to {Fenrik}
+		wait until read
+		say "Here's a coin for you. I'm such a nice guy"
+		wait until read
+		set camera position to {862.823,37.241,956.537}
+		set camera focus to {844.321,47.014,945.029}
+		say "Insert anim of me stabbing the kid here"
+		Fenrik play anim "M_P_INTO_HAMMERING" loop 1
+		wait until Fenrik played
+		Fenrik play anim "M_P_OUT_OF_HAMMERING" loop 1		
+			
+		wait until read
+		clear dialogue
+
+		//end of first scene
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		set camera lens 70.000
+
+		Guard1 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {NorseGuard1}
+		Guard2 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {NorseGuard2}
+		Guard3 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {NorseGuard3}
+		Guard4 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {NorseGuard4}
+		Guard5 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {NorseGuard5}
+		Guard6 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {NorseGuard6}
+		Guard7 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MoreGuards}
+		Guard8 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MoreGuards}+{0.500,0.000,-0.500}
+		Guard9 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MoreGuards}+{1.000,0.000,-1.000}
+		Guard10 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MoreGuards}+{1.500,0.000,-1.500}
+		Guard11 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MoreGuards}+{2.000,0.000,-2.000}
+		Guard12 = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MoreGuards}+{2.500,0.000,-2.500}
+
+		set Boy position to {KidLies}
+		set Fenrik position to {HPNewStart}
+
+		set fade in time 2
+		set camera position to {327.340,95.064,291.461}
+		set camera focus to {-94.733,-311.737,818.011}
+		override Fenrik anim "M_P_CARRYING_STICKS"
+
+		move Fenrik position to {HPNewEnd}
+		wait 7 seconds
+
+		set camera position to {320.747,89.784,293.873}
+		set camera focus to {-85.360,-90.230,944.688}
+		wait 2 seconds
+
+		set camera lens 27.000
+		set camera position to {319.130,89.908,295.091}
+		set camera focus to {-277.518,-80.887,780.608}
+		wait 2 seconds
+		
+		set camera lens 70.000
+		set camera position to {327.340,95.064,291.461}
+		set camera focus to {-94.733,-311.737,818.011}
+
+		wait until {Fenrik} at {HPNewEnd}
+		//set camera lens 46.000
+		//set camera position to {320.597,91.764,306.418}
+		//set camera focus to {130.395,3.852,719.996}
+		ALTITUDE of Fenrik = 4.1
+		HEALTH of Boy = 0
+		ALTITUDE of Boy = 4.1
+		Boy play anim "M_P_DEAD1" loop 10
+		set Fenrik focus to {Guard4}
+		Fenrik play anim "M_P_PUT_DOWN_STICKS" loop 1
+		set camera lens 23.000
+		set camera position to {321.094,91.686,307.823}
+		set camera focus to {-19.285,70.009,-6.227}
+
+		move camera focus to {22.510,-131.718,32.335} time 2
+
+		wait until Fenrik played
+		wait 1 seconds
+		Fenrik play anim "M_P_TALK1_MALE" loop 2
+			
+		//wait 2 seconds
+		set camera lens 70.000
+		set camera position to {320.863,92.160,307.948}
+		set camera focus to {220.079,-81.003,-110.154}
+		wait 2 seconds
+		set camera position to {320.597,91.764,306.418}
+		set camera focus to {130.395,3.852,719.996}
+		wait 2 seconds
+
+		wait 7 seconds
+
+		//wait 5000 seconds
+	end cinema
+
+/*begin dialogue
+	say "The Propoganda Speech Cut-Scene has not been implemented yet."
+	wait until read
+	say "It will show Fenrick killing a beggar child late at night..."
+	wait until read
+	say "The next scene he is presenting the corpse to the Norse warriors..."
+	wait until read
+	say "and claims the boy was murdered by a Greek hand!"
+	wait until read
+	say "This whips the Viking army into a frenzy against the Greeks..."
+	wait until read
+	say "It ends viewing a column of torches leaving the Norse City..."
+	wait until read
+	say "and heading for your town! Get ready to defend"
+	wait until read
+end dialogue*/
+
+end script PropogandaSpeech

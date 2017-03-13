@@ -1,0 +1,906 @@
+//===============================================================
+// Land 1 Waterfall
+//===============================================================
+
+//---------------------------------------------------------------
+// Cosntants
+//---------------------------------------------------------------
+define EL_MIN_ROCKS							= 5
+define EL_HURRYUPTIME_SETTER				= 30
+
+//Islander reaction defines
+define EL_ISLANDER_REACTION_NONE			= 0
+define EL_ISLANDER_REACTION_FASTTHROW		= 1
+define EL_ISLANDER_REACTION_HURRYUP			= 2
+define EL_ISLANDER_REACTION_MISSED			= 3
+define EL_ISLANDER_REACTION_IDLE			= 4
+
+define EL_THROWADVISORS_MISSED				= 0
+define EL_THROWADVISORS_USE_INFINATE_ROCKS	= 1
+
+//---------------------------------------------------------------
+// Globals
+//---------------------------------------------------------------
+global EL_GoGoWaterfall				= L1_FALSE
+global EL_NumRocks					= 0
+global EL_IslanderRection			= EL_ISLANDER_REACTION_NONE
+global EL_BlockageExists			= L1_TRUE
+global EL_HurryTimer				= 0
+global EL_ThrowStarted				= L1_FALSE
+global EL_ThrownRock				= 0
+global EL_LastMissed				=  0
+global CameraReady					= L1_FALSE
+
+//---------------------------------------------------------------
+// Script Defines
+//---------------------------------------------------------------
+define script EL_Waterfall
+define script EL_ThrowChallenge
+define script EL_SpawnRocks
+define script EL_Blockage
+define script EL_IslandElois
+define script EL_SpawnedRock(Pos)
+define script EL_ThrowingDemo
+define script EL_ThrowingAdvisors(ID)
+define script EL_ThrowReminder
+define script EL_StopPlayerCheatThrowing(Rock)
+define script EL_TapTest
+define script EL_MountainWaterfalls
+
+//---------------------------------------------------------------
+// Waterfall
+//---------------------------------------------------------------
+begin script EL_Waterfall
+	PlopFX			= 0
+	PlopPos			= marker at {1295.499, 71.4, 2050.634}
+
+	SplasherFX		= 0
+	SplasherPos		= marker at {1297.976, 70.8, 2052.922}
+
+	SpoutFX1		= 0	
+	Spout1Pos		= marker at {1300, 70.8, 2054.7}
+	Spout1Dir		= marker at {1331.117, 50, 2096.054}
+
+	BottomFX		= 0
+	BottomPos		= marker at {1302.00, 57, 2058}
+	BottomRippleFX	= 0
+	BottomRipplePos		= marker at {1302.00, 57.5, 2058}
+start
+
+	begin loop
+		PlopFX			= create visual effect "gp_s_waterripple.ves" strength 1 scale ((number from 10 to 20) / 10) at {PlopPos} + {number from -2 to 2, 0, number from -2 to 2} time 5
+		set PlopFX colour red 200 green 230 blue 250
+		wait 1 seconds
+	until EL_GoGoWaterfall == L1_TRUE
+	end loop
+
+	SplasherFX = create visual effect "gp_s_waterfall_ground.ves" strength 1 scale 0.4 at {SplasherPos} time -1
+	set SplasherFX colour red 200 green 230 blue 250
+
+	BottomFX = create visual effect "gp_s_waterfall_ground.ves" strength 1 scale 2 at {BottomPos} time -1
+	set BottomFX colour red 200 green 230 blue 250
+
+	SpoutFX1 = create visual effect "gp_s_waterfall.ves" strength 1 scale 1 at {Spout1Pos} time -1 direction {Spout1Dir}
+	set SplasherFX colour red 200 green 230 blue 250
+
+	begin loop
+		PlopFX			= create visual effect "gp_s_waterripple.ves" strength 1 scale ((number from 5 to 10) / 10) at {PlopPos} + {number from -2 to 2, 0, number from -2 to 2} time 3
+		set PlopFX colour red 200 green 230 blue 250
+		
+		BottomRippleFX	= create visual effect "gp_s_waterripple.ves" strength 1 scale ((number from 20 to 30) / 10) at {BottomRipplePos} + {number from -4 to 4, 0, number from -5 to 4} time 3
+		wait 0.4 seconds
+	end loop
+
+end script EL_Waterfall
+
+//---------------------------------------------------------------
+// MountainWaterfalls
+//---------------------------------------------------------------
+begin script EL_MountainWaterfalls
+	Waterfall[13]
+	Waterfall2[16]
+	WaterRipples[10]
+	SplashBack_1	= 0
+	SplashBack_2	= 0
+	SplashBack_3	= 0
+	SplashBottom_1	= 0
+	SplashBottom_2	= 0
+	Seasprayfierce[13]
+	Waterstart		= 0
+
+start
+
+	run background script EL_Blockage
+	Waterfall[0] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1349.8,248,1850.2} time -1
+	Waterfall[1] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1324.2,184.9,1884.4} time -1
+	Waterfall[2] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1316.9,141.6,1903.1} time -1
+	Waterfall[3] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1347.6,97.2,1962.8} time -1
+	Waterfall[4] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1233.8,160.9,1894.1} time -1
+	Waterfall[5] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1218.7,145,1904.2} time -1
+	Waterfall[6] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1216.4,144.7,1902.2} time -1
+	Waterfall[7] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1228.5,144.6,1906.7} time -1
+	Waterfall[8] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1246.1,119.3,1940.3} time -1
+	Waterfall[9] = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1296.4,74.6,2036.5} time -1
+
+	WaterRipples[0] = create visual effect "gp_s_waterripple.ves" strength 1 scale 8 at {1300.697, 74.327, 2021.029} time -1
+	WaterRipples[1] = create visual effect "gp_s_waterripple.ves" strength 1 scale 6 at {1301.126, 74.315, 2021.761} time -1
+	//WaterRipples[2] = create visual effect "gp_s_waterripple.ves" strength 1 scale 8 at {1354.452, 97.443, 1946.468} time -1
+	WaterRipples[3] = create visual effect "gp_s_waterripple.ves" strength 1 scale 10 at {1345.711, 97.402, 1941.192} time -1
+	WaterRipples[4] = create visual effect "gp_s_waterripple.ves" strength 1 scale 10 at {1233.400, 119.729, 1918.461} time -1
+	WaterRipples[2] = create visual effect "gp_s_waterripple.ves" strength 1 scale 10 at {1222.633, 119.779, 1925.578}time -1
+	//WaterRipples[5] = create visual effect "gp_s_waterripple.ves" strength 1 scale 11 at {1249.112, 119.7, 1927.457} time -1
+	WaterRipples[6] = create visual effect "gp_s_waterripple.ves" strength 1 scale 9 at {1316.620, 141.450, 1889.374}time -1
+	WaterRipples[7] = create visual effect "gp_s_waterripple.ves" strength 1 scale 8 at {1336.718, 184.851, 1870.489} time -1
+	WaterRipples[9] = create visual effect "gp_s_waterripple.ves" strength 1 scale 8 at {1335.230, 184.889, 1868.144} time -1
+	WaterRipples[10] = create visual effect "gp_s_waterripple.ves" strength 1 scale 6 at {1228.417, 144.871, 1900.259} time -1
+
+	Waterfall2[0] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1348.8,246.1,1850.9} time -1
+	Waterfall2[1] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1323.4,183.3,1885} time -1
+	Waterfall2[2] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1317.1,140.5,1903.4} time -1
+	Waterfall2[3] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1335.6,127.7,1914.9} time -1
+	Waterfall2[4] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1346.7,94.85,1964.7} time -1
+	Waterfall2[5] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1332.7,88.8,1985.3} time -1
+	Waterfall2[6] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1321.2,85.45,1993.4} time -1
+	Waterfall2[7] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1300.1,83.4,2000.3} time -1
+	Waterfall2[8] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1233.3,158.9,1895.3} time -1
+	Waterfall2[9] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1228.8,143.45,1908} time -1
+	Waterfall2[10] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1214.6,139.5,1909.8} time -1
+	Waterfall2[11] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1246.2,117.3,1941.5} time -1
+	Waterfall2[12] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1255.5,105.8,1970.6} time -1
+	Waterfall2[13] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1273.5,89.9,1989.8} time -1
+
+	SplashBack_1 = create visual effect "gp_s_Seaspray.ves" strength 1 scale 1 at {1339.2,184.9,1867.5} time -1
+	SplashBack_2 = create visual effect "gp_s_Seaspray.ves" strength 1 scale 1 at {1336.9,185.4,1869.4} time -1
+	SplashBack_3 = create visual effect "gp_s_Seaspray.ves" strength 1 scale 1 at {1316.5,140.8,1890.9} time -1
+	
+	Seasprayfierce[0] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at { 1345.5,97.9,1938.9} time -1
+	Seasprayfierce[1] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1344.2,97.9,1939.4} time -1
+	Seasprayfierce[2] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1334.5,89.5,1986.4} time -1
+	Seasprayfierce[3] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1319.7,84.9,1994} time -1
+	Seasprayfierce[4] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1300.8,84.2,1998.8} time -1
+	Seasprayfierce[5] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1299.7,74.2,2018.7} time -1
+	Seasprayfierce[6] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1228.9,120.4,1916.3} time -1
+	Seasprayfierce[7] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1221.8,120.1,1922.6} time -1
+	Seasprayfierce[8] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1214.7,124.6,1926.7} time -1
+	Seasprayfierce[9] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1269,95.2,1985} time -1
+	Seasprayfierce[10] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1254.7,106.8,1966.7} time -1
+
+	wait until EL_GoGoWaterfall == L1_TRUE
+
+	//Last
+	Waterfall[14] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1292.4,72.8,2039.3} time -1
+	Waterfall[15] = create visual effect "gp_s_physwaterfall.ves" strength 1 scale 1 at {1300,68.6,2056.1} time -1
+
+	SplashBottom_1 = create visual effect "gp_s_Seaspray.ves" strength 1 scale 1 at {1303.8,55.5,2057.1} time -1
+	SplashBottom_1 = create visual effect "gp_s_Seaspray.ves" strength 1 scale 1 at {1300.6,55.5,2058.9} time -1
+
+	Seasprayfierce[11] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1291.3,73.4,2043} time -1
+	Seasprayfierce[12] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1298.5,70.2,2055} time -1
+
+	Waterstart = create visual effect "gp_s_physwaterfall_start.ves" strength 1 scale 1 at {1295.8,73.8,2036.9} time -1
+
+	wait 2 seconds
+
+	Seasprayfierce[13] = create visual effect "gp_s_seaspray_fierce.ves" strength 1 scale 1 at {1300.784, 59.076, 2057.680} time -1
+	WaterRipples[8] = create visual effect "gp_s_waterripple.ves" strength 1 scale 12 at {1300.983, 57.263, 2057.561} time -1
+
+	wait 10 seconds
+	stop visual effect SplashBack_1
+	stop visual effect SplashBack_2
+
+end script EL_MountainWaterfalls
+
+//---------------------------------------------------------------
+// Throw Challenge
+//---------------------------------------------------------------
+begin script EL_ThrowChallenge
+	Scroll			= 0
+	ScrollPos		= marker at {1347.456, 70.154, 2160.894}
+	ReminderTimer	= create timer for 0 seconds
+start	
+
+	wait until L1_DiscipleTutorialComplete == 1 or SkippedTutorials == 1
+
+
+
+	//run scripts	
+	//run background script EL_Waterfall
+
+	begin loop
+		if L1_InAScroll == 0
+			if Scroll not exists
+				Scroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_ELOI_MISC_30" remind "BW2T_SCRIPT_01FINAL_ELOI_MISC_40" at {ScrollPos}	
+				ALTITUDE of Scroll = 1.5
+				set ReminderTimer time to 10 seconds
+			end if
+			if get ReminderTimer time remaining == 0 and camera position near {Scroll} radius 35
+				begin dialogue
+					eject good spirit
+					//make good spirit point at {Scroll}
+					make good spirit point at {Scroll}
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_190"
+					wait until read or Scroll right clicked
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 30 seconds
+			end if
+
+			if get object hand is over == Scroll
+				enable hand icon draw
+				set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+				wait until not get object hand is over == Scroll
+				disable hand icon draw
+			end if
+		elsif Scroll exists
+			delete Scroll
+		end if
+	until Scroll right clicked
+	end loop
+
+	disable hand icon draw	
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+
+	delete Scroll
+	L1_InAScroll = 1
+	
+	EL_HurryTimer = create timer for EL_HURRYUPTIME_SETTER seconds	
+
+	wait until dialogue ready
+
+	run background script EL_TapTest
+	run background script EL_ThrowingDemo
+	run background script EL_IslandElois
+
+	enable objectives window
+
+	//Objectives
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_20"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_30"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 parent objective TRIBUTE_OBJECTIVE_LAND_15
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 parent objective TRIBUTE_OBJECTIVE_LAND_15
+
+	//Reset timer
+	set EL_HurryTimer time to EL_HURRYUPTIME_SETTER seconds
+
+	run background script EL_ThrowReminder
+
+end script EL_ThrowChallenge
+
+//---------------------------------------------------------------
+// Spawn Rocks
+//---------------------------------------------------------------
+begin script EL_SpawnRocks
+	Rocks[5]
+	Looper		= 0
+	SpawnPos	= marker at {1356.084, 64.875, 2146.655}
+	NewPos		= marker at {0,0,0} //Generated
+start
+	
+	begin loop
+		if EL_NumRocks < EL_MIN_ROCKS
+			NewPos = marker at {SpawnPos} + {number from -6 to 6, 0, number from -6 to 6}
+			run background script EL_SpawnedRock(marker at {NewPos})
+		end if
+		wait 1 seconds
+	until EL_BlockageExists == L1_FALSE
+	end loop
+
+end script EL_SpawnRocks
+
+//---------------------------------------------------------------
+// Blockage
+//---------------------------------------------------------------
+begin script EL_Blockage
+	Blockers[4]
+
+	Target		= 0
+	Looper		= 0
+	Quitter		= L1_FALSE
+	NumHits		= 0
+	Target2		= 0
+	Target3		= 0
+	Target4		= 0
+	Target5		= 0
+	PhyPos		= 0
+
+	MovePos		= marker at {1315.390, 55, 2081.017}
+
+	LastHitObject = 0
+	GetPos		= marker at {1295.059, 70.739, 2045.386}
+	CommentTimer = create timer for 0 seconds
+	noinfluence = 0
+
+start
+	
+	PhyPos = marker at {1295.059, 70.739, 2045.386} + {0,-3,0}
+
+	force while Looper < 4
+		//Blockers[Looper] = create ROCK_OBJECT ROUND_ROCK_LARGE at {BlockerPos[Looper]}
+		Blockers[Looper] = get ROCK_OBJECT at {GetPos} radius 15 excluding scripted
+		//ALTITUDE of Blockers[Looper] = Alt[Looper]
+		disable Blockers[Looper] pickup
+		disable Blockers[Looper] moveable
+		ALTITUDE of Blockers[Looper] = -1
+		Looper++
+	end while
+
+	noinfluence = create anti influence on Blockers[2] radius 10
+
+	wait until EL_ThrowStarted == L1_TRUE
+
+	Target = create visual effect VISUAL_EFFECT_TOWN_BEAM at {GetPos} time -1
+	set Target colour red 255 green 0 blue 0
+
+//		disable Blockers[0] moveable
+//		disable Blockers[1] moveable
+//		disable Blockers[2] moveable
+//		disable Blockers[3] moveable
+
+	begin loop
+		//Player throws again
+		wait until EL_ThrownRock exists
+
+		disable EL_ThrownRock pickup
+
+		//while not LastHitObject exists and EL_ThrownRock exists
+		LastHitObject = EL_ThrownRock hit object
+
+		//Bad bodge
+		if EL_ThrownRock exists
+			if EL_ThrownRock hit land
+				LastHitObject = EL_ThrownRock
+			end if
+		end if
+
+		if LastHitObject exists
+
+			if Blockers[0] == LastHitObject or Blockers[1] == LastHitObject or Blockers[2] == LastHitObject or Blockers[3] == LastHitObject
+				Quitter = L1_TRUE
+
+				// Blow up!
+			elsif get CommentTimer time remaining == 0
+				run background script EL_ThrowingAdvisors(EL_THROWADVISORS_MISSED)
+				set CommentTimer time to 7 seconds
+			end if
+
+		end if
+
+		if EL_ThrownRock exists
+			if (EL_ThrownRock hit land and {EL_ThrownRock} near {Blockers[1]} radius 5) or (EL_ThrownRock hit land and {EL_ThrownRock} near {Blockers[2]} radius 5)  or (EL_ThrownRock hit land and {EL_ThrownRock} near {Blockers[3]} radius 5) or (EL_ThrownRock hit land and {EL_ThrownRock} near {Blockers[4]} radius 5)
+				Quitter = L1_TRUE
+			end if
+		end if
+
+	until Quitter == L1_TRUE 
+	end loop
+
+	enable Blockers[0] moveable
+	enable Blockers[1] moveable
+	enable Blockers[2] moveable
+	enable Blockers[3] moveable
+
+	set Blockers[0] velocity heading {1329.236,88,2086.690} speed 50
+	set Blockers[1] velocity heading {1318.867,88,2114.369} speed 50
+	set Blockers[2] velocity heading {1310.411,88,2101.421} speed 50
+	set Blockers[3] velocity heading {1344.213,88,2092.037} speed 50
+
+	set Target colour red 0 green 255 blue 0
+	stop visual effect Target
+
+	//No blockage anymore
+	EL_BlockageExists = L1_FALSE
+
+	wait 2 seconds
+
+	//set physics at position {GetPos} with strength {0,100,0} radius 50 random 1	
+	CameraReady = L1_TRUE
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 0.5
+		wait 0.5 seconds
+
+		disable hand icon draw
+
+		set camera position to {1326.562, 70.228, 2120.428}
+		set camera focus to {1331.261, 59.990, 2219.793}
+
+		set fade in time 1
+
+		delete Blockers[0] with fade
+		delete Blockers[1] with fade
+		delete Blockers[2] with fade
+		delete Blockers[3] with fade
+
+		EL_GoGoWaterfall = L1_TRUE
+		wait 3.2 seconds
+
+		set camera position to {1330.826, 80.332, 2066.932}
+		set camera focus to {1246.145, 31.240, 2046.473}
+		
+		eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_70"
+			wait until read
+		send good spirit home
+
+		move camera position to {1351.251, 92.026, 2107.013} time 4
+		move camera focus to {1267.022, 69.249, 2058.160} time 4
+		wait 1.5 seconds		
+
+		wait 2.5 seconds
+
+
+	end cinema
+
+	//bug 2545 - NW - Only reset the objectives related to this script
+	//reset all objectives for player 0
+
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_16
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_17
+
+	L1_WaterfallComplete = 1
+
+	wait 1 seconds
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_WATERFALL
+
+	if SkippedTutorials == 0
+		if L1_RockManComplete == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 amount 1 force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ROCKMAN_10"
+		end if
+
+		if L1_EloiComplete == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 amount 1 force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_30"
+		end if
+	end if
+	L1_InAScroll = 0
+end script EL_Blockage
+
+//---------------------------------------------------------------
+// Throw Hand Demo
+//---------------------------------------------------------------
+begin script EL_ThrowingDemo
+	RockPos		= marker at {1341.244, 68.151, 2133.988}
+	Rock		= 0
+	WaterfallVid	= 0
+start
+
+	//Rock = create ROCK_OBJECT ROUND_ROCK_LARGE at {RockPos}
+	//wait 1 seconds
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+
+	begin cinema
+
+		start music "cut_scene_sad_34s_01"
+
+		//
+		set camera position to {1327.964, 69.375, 2120.741}
+		set camera focus to {1301.927, 75.062, 2217.128}
+		move camera focus to {1298.936, 75.387, 2216.249} time 8
+
+		/*
+		set camera position to {1330.378, 69.681, 2127.888}
+		set camera focus to {1280.476, 77.506, 2041.585}
+
+		move camera position to {1330.721, 69.666, 2129.681} time 4
+		move camera focus to {1269.723, 74.898, 2050.604} time 4
+		*/
+		//set fade in time 1
+
+		wait 1 seconds
+		
+		say "BW2T_SCRIPT_01FINAL_PICKUP159"
+		wait 6 seconds
+
+
+		set camera position to {1307.799, 73.199, 2072.078}
+		set camera focus to {1261.486, 74.562, 1983.455}
+		wait until read
+		//Move camera
+		
+		say "BW2T_SCRIPT_01FINAL_PICKUP160"
+		wait 2 seconds
+		
+		set camera position to {1329.902, 69.653, 2126.241}
+		set camera focus to {1283.588, 71.016, 2037.618}
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_PICKUP161"
+		wait until read
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		set camera position to {1352.387, 77.260, 2171.130}
+		set camera focus to {1326.301, 55.182, 2077.160}
+		
+		wait 1 seconds
+
+		set fade in time 1
+
+		eject evil spirit
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_20"
+		wait until read
+		
+		WaterfallVid = create video window with left 0.55 top 0.15 width 0.4 height 0.35 with border
+		set WaterfallVid clipping window left 0 top 0 width 1 height 1
+		play video "waterfall"
+
+		eject good spirit
+		make good spirit fly across 0.7 down 0.8
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_30"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_40"
+		wait until read
+
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_50"
+		wait until read
+		send good spirit home
+		send evil spirit home
+
+		move camera position to {1356.346, 82.992, 2176.115} time 2
+		move camera focus to {1324.485, 52.151, 2086.491} time 2
+
+		wait 1 seconds
+
+		//set fade red 0 green 0 blue 0 time 1
+		stop music
+		//wait 1 seconds
+		//set fade in time 1
+		//wait 1 seconds
+
+		//wait until hand demo played
+		//wait until not video is playing
+	end cinema	
+	wait until not Rock is FLYING
+
+	EL_ThrowStarted = L1_TRUE
+
+end script EL_ThrowingDemo
+
+//---------------------------------------------------------------
+// Throw Hand Demo
+//---------------------------------------------------------------
+begin script EL_IslandElois
+	EloiA		= 0	//Adult
+	EloiC		= 0	//Child
+
+	AdultPos	= marker at {1327.026, 68.529, 2128.612}
+	ChildPos	= marker at {1327.780, 68.552, 2125.259}
+	
+	Rand = 0
+start
+
+	wait 1 second
+
+	EloiA = create VILLAGER INDIGENOUS_FISHERMAN at {AdultPos}
+	enable EloiA alternative mesh
+	EloiC = create VILLAGER INDIGENOUS_FISHERMAN at {ChildPos}
+	disable EloiC alternative mesh
+
+	//wait 1 seconds
+
+	disable EloiA reactable
+	disable EloiC reactable
+	disable EloiA moveable
+	disable EloiC moveable
+	disable EloiA pickup
+	disable EloiC pickup
+	enable EloiA indestructible
+	enable EloiC indestructible
+
+
+	set EloiA focus to {1296.272, 77.416, 2041.451}
+	play paired anim VILLAGER_PAIRED_ACTION_ELOI_CHATTING_ANGRY using EloiA with EloiC snap to position
+	set fade in time 1
+	wait 15 seconds
+
+	delete EloiA
+	delete EloiC
+
+	set fade in time 2
+
+	//Adviors tell the player to use the infinate rock pile
+	run background script EL_SpawnRocks
+
+	EloiA = create VILLAGER INDIGENOUS_FISHERMAN at {1357.612, 74.259, 2137.559}
+	enable EloiA alternative mesh
+	EloiC = create VILLAGER INDIGENOUS_FISHERMAN at {1356.569, 74.794, 2137.640}
+	disable EloiC alternative mesh
+	set EloiA focus to {1296.272, 77.416, 2041.451}
+	set EloiC focus to {1296.272, 77.416, 2041.451}
+
+	move EloiA position to {EloiA}
+	move EloiC position to {EloiC}
+
+	disable EloiA reactable
+	disable EloiC reactable
+	disable EloiA moveable
+	disable EloiC moveable
+	disable EloiA pickup
+	disable EloiC pickup
+	enable EloiA indestructible
+	enable EloiC indestructible
+
+	wait until EL_BlockageExists == L1_FALSE 
+	wait until CameraReady == L1_TRUE
+
+	set EloiA position to {1326.642, 68.532, 2125.575}
+	set EloiC position to {1327.833, 69.125, 2124.359}
+	set EloiC focus to {1296.734, 70.932, 2050.928}
+	set EloiA focus to {1296.734, 70.932, 2050.928}
+
+	wait 0.5 second
+
+	play anim "A_p_crowd_won_2" on EloiC loop 8
+	play anim "A_P_clap2_loop" on EloiA loop 8
+	wait 10 seconds
+	delete EloiA
+	delete EloiC
+
+end script EL_IslandElois
+
+//---------------------------------------------------------------
+// Spawned Rocks
+//---------------------------------------------------------------
+begin script EL_SpawnedRock(Pos)
+	Rock	= 0
+	HitPos	= marker at {0,0, 0} //gen
+	Type	= 0
+	ThrowPos = 0
+start
+
+	Type = number from 0 to 1
+
+	if Type == 0
+		Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_ELOI_ROCK at {Pos}
+		SCALE of Rock = 0.5
+	elsif Type == 1
+		Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_ELOI_ROCK at {Pos}
+		SCALE of Rock = 0.3
+	end if
+	
+	ALTITUDE of Rock = 7
+	set Rock velocity heading {Rock} speed 0
+	
+	EL_NumRocks++
+	
+	//run background script EL_StopPlayerCheatThrowing(Rock)
+	
+	begin loop
+		
+		if get object hand is over == Rock and variable get hand state != variable HAND_STATE_OBJECT_IN_HAND
+			enable hand icon draw
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+			wait until get object hand is over != Rock
+			disable hand icon draw
+		end if
+
+		if Rock is HELD
+			//reset player 0 objective TRIBUTE_OBJECTIVE_LAND_
+			//reset player 0 objective TRIBUTE_OBJECTIVE_LAND_3			
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 amount 1 force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_40"
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 value 1
+		end if
+
+		wait 0.2 seconds
+	until not {Rock} near {Pos} radius 15 or EL_GoGoWaterfall == L1_TRUE
+	end loop
+
+
+	//If the challeneg is complete, delete the rocks
+	if EL_GoGoWaterfall == L1_TRUE
+		delete Rock
+	else
+		set EL_HurryTimer time to EL_HURRYUPTIME_SETTER seconds
+
+		if Rock exists
+			wait until not Rock is HELD
+			ThrowPos = marker at hand position
+
+			enable Rock physics tracking
+			if Rock is FLYING
+
+				if not {ThrowPos} near {1297.967, 1, 2051.828} radius 30
+					EL_ThrownRock = Rock
+				end if
+
+				//Speed reaction check
+				if SPEED of Rock > 200
+					EL_IslanderRection = EL_ISLANDER_REACTION_FASTTHROW
+				end if
+
+				wait until ALTITUDE of Rock < 3 //or SPEED of Rock == 0
+				/*
+				begin loop
+					HitPos = marker at Rock hit land position
+				until {HitPos} not near {0, 0, 0} radius 1
+				end loop
+				*/
+
+				wait 1.5 seconds
+
+				if EL_BlockageExists == L1_TRUE
+					EL_IslanderRection = EL_ISLANDER_REACTION_MISSED
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 value 0
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_30"
+				else
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 value 1
+				end if
+
+				wait until not Rock is FLYING
+			end if
+
+			disable Rock physics tracking
+			delete Rock with fade
+
+			//run background script EL_ThrowingAdvisors(EL_THROWADVISORS_MISSED)
+
+			EL_ThrownRock = 0
+		end if
+	
+		EL_NumRocks--
+		wait 5 seconds	//Make sure the object has faded out properly as the script will override deletion
+	end if
+
+end script EL_SpawnedRock
+
+//---------------------------------------------------------------
+// Throwing Advisors
+//---------------------------------------------------------------
+begin script EL_ThrowingAdvisors(ID)
+start
+
+	begin dialogue
+
+		if ID == EL_THROWADVISORS_MISSED
+
+			eject evil spirit
+
+			if EL_LastMissed == 0
+				say "BW2T_SCRIPT_GENERIC_13"
+			elsif EL_LastMissed == 1
+				say "BW2T_SCRIPT_GENERIC_14"
+			elsif EL_LastMissed == 2
+				say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_OUTRO_30"
+			end if
+
+			wait until read
+
+			EL_LastMissed++
+			if EL_LastMissed == 3
+				EL_LastMissed = 0
+			end if
+
+		elsif ID == EL_THROWADVISORS_USE_INFINATE_ROCKS
+
+			eject evil spirit
+			make good spirit point at {1355.543, 66.936, 2143.690}
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_60"
+			wait until read
+
+		end if
+
+		//Send home
+		send good spirit home
+		send evil spirit home
+
+	end dialogue
+
+end script EL_ThrowingAdvisors
+
+//---------------------------------------------------------------
+// Throwing Advisors
+//---------------------------------------------------------------
+begin script EL_ThrowReminder
+	Scroll		= 0
+	ScrollPos	= marker at {1335.890, 69.584, 2154.445}
+start
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_20" remind "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_20" at {ScrollPos}	
+
+	begin loop		
+		wait until Scroll right clicked
+
+		begin dialogue
+			
+			eject good spirit
+
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_REMIDNER_10"
+			wait until read
+
+			eject evil spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_THROWTUTORIAL_REMIDNER_20"
+			wait until read
+
+		end dialogue
+
+		clear right clicked position 
+		clear right clicked object	
+
+	until EL_BlockageExists == L1_FALSE
+	end loop
+
+	delete Scroll
+
+end script EL_ThrowReminder
+//---------------------------------------------------------------
+// Throwing Advisors
+//---------------------------------------------------------------
+begin script EL_StopPlayerCheatThrowing(Rock)
+	AntiInfluence = 0
+start
+	/*while Rock exists
+		if not {Rock} on land and Rock is HELD
+			if AntiInfluence not exists
+				AntiInfluence = create anti influence on Rock radius 15
+			end if
+		else
+			if AntiInfluence exists
+				delete AntiInfluence
+			end if	
+		end if 
+	end while*/
+end script EL_StopPlayerCheatThrowing
+
+begin script EL_TapTest
+	TotalTaps = 0
+	NewTotalTaps = 0
+	TapsInARow = 0
+	SecondsCounter = 0
+start
+	TotalTaps = get total of stat STATS_EVT_TAP_ROCK
+	while EL_BlockageExists == L1_TRUE
+		wait 1 seconds
+		NewTotalTaps = get total of stat STATS_EVT_TAP_ROCK
+		if NewTotalTaps > TotalTaps
+			if hand position near {1356.084, 64.875, 2146.655} radius 30
+				SecondsCounter = 0
+				TapsInARow += NewTotalTaps - TotalTaps
+				if TapsInARow >= 3
+					TapsInARow = 0
+					begin dialogue
+						eject good spirit
+
+						//GA: 	Hmm. To pick up a rock, move the hand over it and hold down the Action button.
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_THROW_TUT_30"
+						wait until read
+
+						eject evil spirit
+
+						//GA: 	Once the rock is in the hand, release the button. It'll stay safely in the hand.
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_THROW_TUT_40"
+						wait until read
+
+						//EA: 	To throw it, hold down the Action button and drag the mouse back.
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_THROW_TUT_50"
+						wait until read
+
+						send good spirit home
+
+						//EA: 	Then in a quick smooth motion move the mouse towards a target and release the button.
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_THROW_TUT_60"
+						wait until read
+
+						send evil spirit home
+					end dialogue
+				end if
+			end if
+			TotalTaps = NewTotalTaps
+		else
+			SecondsCounter++
+			if SecondsCounter >= 10
+				TapsInARow = 0
+			end if
+		end if
+	end while
+end script EL_TapTest

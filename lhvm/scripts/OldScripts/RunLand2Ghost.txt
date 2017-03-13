@@ -1,0 +1,9 @@
+run script RunLand2Ghost
+
+begin script RunLand2Ghost
+
+start
+	
+	run script Land2Ghost
+
+end script RunLand2Ghost

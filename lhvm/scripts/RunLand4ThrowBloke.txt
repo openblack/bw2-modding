@@ -1,0 +1,12 @@
+run script RunLand4ThrowBloke
+
+begin script RunLand4ThrowBloke
+
+
+start
+
+
+run script L4_ThrowBloke
+
+
+end script RunLand4ThrowBloke

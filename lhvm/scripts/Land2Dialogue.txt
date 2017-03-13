@@ -1,0 +1,281 @@
+define ADVISORS_START_LAND	= 0
+define WOMAN_PRAYER	=1
+define ADVISORS_COMMENT_ON_ARMY	=	2
+define WOMAN_PRAYER_PART2	=	3
+define BI_ADVISORS_MORE_PEOPLE_NEED_HELP			= 3
+define BI_ADVISORS_OH_NO_THE_BARRELS				= 4
+define BI_ADVISORS_GENERAL_WERE_SCREWED_DIALOGUE	= 5
+define BI_ADVISORS_RELEASE_THE_BARRELS_SUGGESTION	= 6
+define BI_ADVISORS_RELEASE_THE_BARRELS_SUCCESS		= 7
+define BI_ADVISORS_SET_HAY_ON_FIRE					= 8
+define BI_ADVISORS_FIRST_ONE_SET					= 9
+define BI_ADVISORS_TAKING_A_WHILE					= 10
+define BI_ADVISORS_HAY_SUCCESS						= 11
+define BI_ADVISORS_FINAL_VOLCANO					= 12
+define BI_ADVISORS_NONE								= 99
+define CF_ADVISORS_VILLAGERS_BY_WALL_ALERT = 13
+define CF_ADVISORS_VILLAGERS_BY_WALL_PICKUP = 14
+define CF_ADVISORS_VILLAGERS_BY_WALL_PUTDOWN = 15
+define CF_ADVISORS_RING_OF_FIRE = 16
+define CF_ADVISORS_SMASHWALL = 17
+define CF_ADVISORS_SMASHWALLURGENT = 18
+define CF_ADVISORS_SMASHWALLSUCCESS = 19
+define CF_ADVISORS_VOLCANO_TWO = 20
+define CF_ADVISORS_NONE = 98
+define CF_ADVISORS_VILLAGERS_BY_WALL_ALERT_PT2	=	25
+
+begin script Land2Dialogue(ID)
+
+SetFlag = 0
+
+start
+
+	Land2_CurrentAdvisorComment = ID
+	SetFlag = 1
+
+	begin known cinema
+
+		if ID == ADVISORS_START_LAND
+
+			eject good spirit
+			eject evil spirit
+
+			make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_02FINAL_PDMRON_PICKUP_E_94_95_96_97
+			make good spirit play across 0.5 down 0.5 HELPDUDE_KM_02FINAL_PDMRON_PICKUP_G_94_95_96_97
+/*
+			eject good spirit
+
+			say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP94"
+			//	GOOD_ADVISOR	Now you've had a taste of your powers, we're ready to visit our mighty Greek capital.
+			wait until read
+
+			eject evil spirit
+
+			say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP95"	
+			//EVIL_ADVISOR	Yeah, full of people that worship US!
+			wait 3 seconds
+			play string sound "BW2T_SCRIPT_02FINAL_PICKUP145"
+			wait until read
+
+			say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP96"	
+			//GOOD_ADVISOR	Listen! Can you hear that? That's a pure prayer.
+			wait 4 seconds
+			play string sound "BW2T_SCRIPT_02FINAL_PICKUP148"
+			wait until read
+
+
+			say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP97"	
+			//GOOD_ADVISOR	It sounds like something terrible has happened!
+		*/	
+		
+			wait 20 seconds
+
+		
+			wait until read			
+/*
+			say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP98"	
+			//GOOD_ADVISOR	Look! There she is!
+			wait until read
+*/
+		elsif ID == WOMAN_PRAYER
+/*
+			say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP99"	
+			//L2_PRAYING_WOMAN	Save us! Help us! Save us! Help us!
+			wait until read
+*/
+			//Save us! Save our people!			
+			say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_10"
+			wait until read
+			//Please, we pray! Save us!			
+			say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_20"
+			wait until read
+			//Boss, you are the god of the Greeks.			
+			say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_25"
+			wait until read
+
+		elsif ID == ADVISORS_COMMENT_ON_ARMY
+/*
+			eject evil spirit
+
+			say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP100"	
+			//EVIL_ADVISOR	Where are these Aztecs?
+			wait until read			
+*/
+//			eject good spirit
+
+			say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_7"
+			wait until read
+
+			say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_8"
+			wait until read
+
+		elsif ID == WOMAN_PRAYER_PART2
+
+			//The Aztecs have killed all our troops!			
+			say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_80"
+			wait until read
+			//We're all going to die!			
+			say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_95"
+			wait until read
+			//We're going to be wiped out by the brutal Aztecs!			
+			say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_100"
+			wait until read
+
+		elsif ID == BI_ADVISORS_MORE_PEOPLE_NEED_HELP
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_10"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_20"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_OH_NO_THE_BARRELS
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_30"			
+			wait until read
+			wait 2 seconds
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_40"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_GENERAL_WERE_SCREWED_DIALOGUE
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_50"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_60"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_70"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_RELEASE_THE_BARRELS_SUGGESTION
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_80"			
+			wait until read
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_90"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_RELEASE_THE_BARRELS_SUCCESS
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_100"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_SET_HAY_ON_FIRE
+			eject good spirit
+			make good spirit point at {2133.117, 90.725, 882.113}
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_120"			
+			wait until read
+			stop good spirit pointing
+			make good spirit fly across 0.8 down 0.15
+
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_130"			
+			wait until read
+			BI_ShowStickWorldIcon	= 1
+
+			eject evil spirit
+			make evil spirit point at {BI_FlamingStickObject}
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_140"	
+			wait 2 seconds
+			stop evil spirit pointing
+			wait until read
+
+		elsif ID == BI_ADVISORS_FIRST_ONE_SET
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_150"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_TAKING_A_WHILE
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_170"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_HAY_SUCCESS
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_160"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_FINAL_VOLCANO
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_190"			
+			wait until read
+		
+		elsif ID == CF_ADVISORS_VILLAGERS_BY_WALL_ALERT
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_PICKUP157"
+			wait until read
+			eject good spirit
+			make good spirit point at {1800.247, 116.263, 1713.672}
+			say "BW2T_SCRIPT_02FINAL_PICKUP149"
+			wait until read
+		elsif ID == CF_ADVISORS_VILLAGERS_BY_WALL_ALERT_PT2
+			eject good spirit
+			make good spirit point at {1800.247, 116.263, 1713.672}
+			say "BW2T_SCRIPT_02FINAL_PICKUP149"
+			wait until read
+			/*say "BW2T_SCRIPT_02FINAL_FIELDS_100"
+			wait until read
+*/
+		elsif ID == CF_ADVISORS_VILLAGERS_BY_WALL_PICKUP
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_110"
+			wait until read
+
+		elsif ID == CF_ADVISORS_VILLAGERS_BY_WALL_PUTDOWN
+			eject good spirit
+			make good spirit fly across 0.8 down 0.15
+			say "BW2T_SCRIPT_02FINAL_FIELDS_120"
+			wait until read
+
+		elsif ID == CF_ADVISORS_RING_OF_FIRE
+			eject good spirit
+			make good spirit fly across 0.8 down 0.15
+			say "BW2T_SCRIPT_02FINAL_PICKUP150"
+			wait until read
+
+		elsif ID == CF_ADVISORS_SMASHWALL
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_160"
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_FIELDS_170"
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_FIELDS_180"
+			wait until read
+
+		elsif ID == CF_ADVISORS_SMASHWALLURGENT
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_200"
+			wait until read
+
+		elsif ID == CF_ADVISORS_SMASHWALLSUCCESS
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_210"
+			wait until read
+
+		elsif ID == CF_ADVISORS_VOLCANO_TWO
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_80"
+			wait until read
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_83"
+			wait until read
+			send good spirit home
+			send evil spirit home
+			wait 10 seconds
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_87"
+			wait until read
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_100"
+			wait until read
+			//eject good spirit
+			say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_110"
+			wait until read
+			
+		end if
+
+		send good spirit home
+		send evil spirit home
+	end known cinema
+
+until Land2_CurrentAdvisorComment != ID and SetFlag == 1
+
+
+end script Land2Dialogue

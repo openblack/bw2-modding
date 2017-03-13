@@ -1,0 +1,6 @@
+run script RunLand3CreatureTutorial
+
+begin script RunLand3CreatureTutorial
+start
+	run script Land3CreatureTutorial
+end script RunLand3CreatureTutorial

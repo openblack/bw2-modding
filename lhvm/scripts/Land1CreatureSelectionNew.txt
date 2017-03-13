@@ -1,0 +1,1228 @@
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+define CLION = 0
+define CWOLF = 1
+define CAPE = 2
+define CCOW = 3
+define CTIGER = 4
+define LAST = 5
+
+define False = 0
+define True = 1
+
+global RandomNumberLand1 = 0
+global SelectedCreature
+global TempMyCreature
+global MoveOffPos[5]
+global SpecialEdition = False
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+define script LookAfterCreature(Creature, MIXER_CHANNEL, CSMixer)
+define script AdvisorComments
+define script TalkAboutSelectedCreature(Creature)
+define script ResolveSoundLevels(Creature, CSMixer)
+define script PlaySelectedAnimation(Creature)
+define script PlayNotPickedAnimation(Creature)
+define script PlayHandOverAnimation(Creature)
+define script PlaySadAnimsOnCreature(Creature)
+define script PlayHappyAnimsOnCreature(Creature, StartAnim)
+define script PlaySelectedAnims(Creature)
+define script RemoveRejected(Creature, ID)
+define script SoundLevelsWhileThereIsNotSelectedCreature(CSMixer)
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script PlayFidgetThenStand(Creature, AnimToPlay)
+start
+	
+	play anim constant AnimToPlay on Creature loop 1 blend time 0.466666
+	wait until Creature played
+	play anim C_CS_MOVE_STAND on Creature loop -1 blend time 0.466666
+		
+end script PlayFidgetThenStand
+
+begin script RollTheCamera
+start
+	begin known cinema
+		wait 12 seconds
+		set camera roll -5 time 3
+		wait 3 seconds
+		set camera roll 5 time 3
+		wait 6 seconds
+		set camera roll -6 time 3
+		wait 6 seconds
+		set camera roll 0 time 3
+	end known cinema
+end script RollTheCamera
+
+
+begin script Background
+ExitVid = False
+start
+	begin known cinema
+	
+	begin loop
+		
+		
+		
+		wait 2 seconds
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVENEW_5"
+		wait until read
+		//wait 8 seconds
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVENEW_55"
+		wait until read
+		//wait 3 seconds
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVENEW_6"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVENEW_7"
+		wait until read
+		//wait 10 seconds
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVENEW_10"
+		wait until read
+		
+		
+		//CLOUD
+		//wait 8 seconds
+		wait 5 seconds
+		say "BW2T_SCRIPT_02FINAL_PICKUP147"
+		wait until read
+		say "BW2T_SCRIPT_02FINAL_PICKUP146"
+		wait until read
+		wait until not video is playing
+		ExitVid = True
+		until key KB_ESC down or ExitVid == True
+		
+	end loop
+	end known cinema
+
+end script Background 
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script Land1CreatureSelectionNew
+Video1 = 0
+Video2 = 0
+Video3 = 0
+HandCreature = 0
+SelectedObject = 0
+ScrollBeam = 0
+CSMixer = 0
+
+AdvisorTimer = create timer for 0 seconds
+FirstSelectionTextSaid = False
+TempObject = 0
+Type = 0
+IntroVid = 0
+L2CreatureStatueCheck=0
+ReminderTimer = create timer for 0 seconds
+SkipIntro = 0
+TempCameraMarker1 = 0
+TempCameraMarker2 = 0
+start
+
+	MoveOffPos[0] = marker at {1537.619,112.552,880.348}
+	MoveOffPos[1] = marker at {1527.461,113.467,878.220}
+	MoveOffPos[2] = marker at {1516.687,114.360,871.542}
+	MoveOffPos[3] = marker at {1515.404,112.731,854.728}
+	CSMixer = create mixer
+	//set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+	
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_MAP to 0.0
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 0.0
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_SFX to 0.0
+	
+	SpecialEdition = False
+	if creature CREATURE_TYPE_TIGER is available	
+		SpecialEdition = True
+	end if
+ 
+	
+	begin cinema
+	set fade red 0 green 0 blue 0 time 0
+	set game time 10.45
+		
+	//Disable creature fisting
+	enable interface action MANACOST_BALANCE_TYPE_INITIATECREATUREFIST
+
+	TempMyCreature = 0
+	
+	CreatureArray[CLION] = create DUMB_CREATURE CREATURE_TYPE_LION at {1575.928, 111.473, 838.692}
+	CreatureArray[CWOLF] = create DUMB_CREATURE CREATURE_TYPE_WOLF at {1573.192, 111.470, 835.167}
+	CreatureArray[CAPE] = create DUMB_CREATURE CREATURE_TYPE_APE at {1576.496, 111.441, 843.982}
+	CreatureArray[CCOW] = create DUMB_CREATURE CREATURE_TYPE_COW at {1569.293, 111.469, 834.635}
+	if SpecialEdition == True
+		CreatureArray[CTIGER] = create DUMB_CREATURE CREATURE_TYPE_TIGER at {1620.378, 102.356, 826.953}
+		set creature CreatureArray[CTIGER] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.4 time 0
+		wait until CreatureArray[CTIGER] exists
+		snap creature CreatureArray[CTIGER] focus to {1566.054, 116.043, 843.902}
+		set CreatureArray[CTIGER] focus to {1566.054, 116.043, 843.902}
+		enable CreatureArray[CTIGER] indestructible
+		disable tooltip on creature CreatureArray[CTIGER]
+	end if 
+	
+	set creature CreatureArray[CLION] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.4 time 0
+	set creature CreatureArray[CWOLF] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.4 time 0
+	set creature CreatureArray[CAPE] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+	set creature CreatureArray[CCOW] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+
+	wait until CreatureArray[CLION] exists
+	wait until CreatureArray[CWOLF] exists
+	wait until CreatureArray[CAPE] exists
+	wait until CreatureArray[CCOW] exists
+	
+	enable CreatureArray[CLION] indestructible
+	enable CreatureArray[CWOLF] indestructible
+	enable CreatureArray[CAPE] indestructible
+	enable CreatureArray[CCOW] indestructible
+	disable tooltip on creature CreatureArray[CLION]
+	disable tooltip on creature CreatureArray[CWOLF]
+	disable tooltip on creature CreatureArray[CAPE]
+	disable tooltip on creature CreatureArray[CCOW]
+
+	wait until widescreen transition complete
+	//Intro vid
+		
+	IntroVid = create video window with left 0 top 0.125 width 1 height 0.75
+	set IntroVid clipping window left 0 top 0 width 1 height 1
+	start music "FrontendMovie"
+	run script LandStart
+	play video "Land1 BW1 Intro" 
+	set fade red 144 green 141 blue 150 time 1	
+		
+	run script Background
+	
+	stop video
+    delete IntroVid	
+
+	end cinema
+	begin fullscreen cinema
+	
+	begin loop
+	
+		reset camera path 
+ 		queue camera move with position {1130.403, 684.380, 2877.988} focus {1126.485, 638.714, 2789.121} time 0.0
+ 		
+ 		queue camera move with position {1191.874, 347.592, 2247.750} focus {1168.827, 311.892, 2157.223} time 6.0
+ 		queue camera move with position {1078.647, 193.726, 1872.830} focus {1056.406, 191.579, 1775.357} time 4.0
+ 		queue camera move with position {1070.858, 267.778, 1625.060} focus {1092.917, 243.922, 1530.480} time 5.0
+ 		queue camera move with position {1100.013, 231.508, 1472.254} focus {1097.132, 201.555, 1376.893} time 4.5
+		play camera path with easein 0 easeout 12 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		
+		set fade in time 1
+
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.6 
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_MAP to 1.0
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 1.0
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_SFX to 1.0
+				
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.6
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.6
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.6
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.6	
+		
+		//set camera position to {1140.735, 462.465, 2687.948}
+		//set camera focus to {1137.781, 444.179, 2589.681}
+		
+		stop music with fadetime 3
+		start music "cut_scene_mystery_01" loop -1	
+
+		
+		//wait 1 seconds
+		//wait 2 seconds
+ 		snap creature CreatureArray[CLION] focus to {1566.054, 116.043, 843.902}
+		set CreatureArray[CLION] focus to {1566.054, 116.043, 843.902}
+		snap creature CreatureArray[CWOLF] focus to {1566.054, 116.043, 843.902}
+		set CreatureArray[CWOLF] focus to {1566.054, 116.043, 843.902}
+		snap creature CreatureArray[CAPE] focus to {1572.288, 116.457, 843.210}
+		//{1566.054, 116.043, 843.902}
+		set CreatureArray[CAPE] focus to {1572.288, 116.457, 843.210}
+		snap creature CreatureArray[CCOW] focus to {1568.671, 111.473, 839.544}
+		set CreatureArray[CCOW] focus to {1568.671, 116.473, 839.544}
+		
+		
+
+		wait 5 seconds
+		eject good spirit
+		eject evil spirit
+		
+		
+		
+		//Start the flyby here.
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ARRIVENEW_G_20_30_40_50_60
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ARRIVENEW_E_20_30_40_50_60
+		wait until read
+		send good spirit home
+		send evil spirit home
+
+		play anim C_CS_MOVE_STAND on CreatureArray[CLION] loop -1
+		play anim C_CS_MOVE_STAND on CreatureArray[CAPE] loop -1
+		play anim C_CS_MOVE_STAND on CreatureArray[CCOW] loop -1
+		play anim C_CS_MOVE_STAND on CreatureArray[CWOLF] loop -1
+		
+		
+		
+ 		reset camera path 
+ 			
+ 			
+ 		queue camera move with position {1100.013, 231.508, 1472.254} focus {1097.132, 201.553, 1376.893} time 0.0
+		queue camera move with position {1154.848, 168.987, 1226.262} focus {1214.590, 153.887, 1147.502} time 4.0
+		queue camera move with position {1483.408, 134.190, 913.582} focus {1558.432, 123.191, 848.385} time 4
+		queue camera move with position {1565.711, 116.095, 844.141} focus {1647.401, 105.640, 787.421} time 4.0
+		play camera path with easein 6 easeout 12 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+	
+	
+
+		wait 6 seconds
+		//stop music with fadetime 3
+		wait 2 seconds
+   		
+		eject good spirit
+		eject evil spirit
+		
+   		make evil spirit fly across 0.25 down 0.2
+   		make good spirit fly across 0.8 down 0.2
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_10"
+		run background script PlayFidgetThenStand(CreatureArray[CAPE], variable C_IDLE_FIDGET01)
+		wait 1.5 seconds
+		start music "worshipperchant_aztec" loop -1
+		wait until read
+		
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_20"
+		
+		wait until read
+		
+		run background script PlayFidgetThenStand(CreatureArray[CLION], variable C_IDLE_FIDGET03)
+		
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_30"
+		wait until read
+		run background script PlayFidgetThenStand(CreatureArray[CCOW], variable C_IDLE_FIDGET02)
+	
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_40"
+		wait 1 seconds
+		
+		run background script PlayFidgetThenStand(CreatureArray[CAPE], variable C_IDLE_FIDGET02)
+	
+		
+		wait until read
+		
+		run background script PlayFidgetThenStand(CreatureArray[CWOLF], variable C_IDLE_FIDGET01)
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_50"
+		wait until read
+		
+		run background script PlayFidgetThenStand(CreatureArray[CLION], variable C_IDLE_FIDGET02)
+		//play anim C_IDLE_FIDGET02 on CreatureArray[CLION]
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_60"
+		wait until read
+		
+		run background script PlayFidgetThenStand(CreatureArray[CWOLF], variable C_IDLE_FIDGET02)
+		//play anim C_IDLE_FIDGET02 on CreatureArray[CWOLF]
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_70"
+		wait until read
+		
+		
+	
+		
+		set camera position to {1570.845, 114.502, 843.967}
+		set camera focus to {1669.356, 97.693, 847.422}
+		set camera lens 64.000
+		
+		
+		//APE
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.1
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_80"
+		
+		play anim C_INDIVIDUAL_FRIENDLY_WAVE on CreatureArray[CAPE]
+		wait until read
+		wait until creature CreatureArray[CAPE] finished script action
+		set CreatureArray[CAPE] focus to camera position
+		play anim C_CS_GROWING on CreatureArray[CAPE]
+		wait 0.2 seconds
+		set creature CreatureArray[CAPE] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.8 time 6
+		
+		make evil spirit fly across 0.15 down 0.75
+   		make good spirit fly across 0.85 down 0.75
+   		
+		play sound "SCRIPT28_Creatureswap" at {CreatureArray[CAPE]}
+		play sound "SCRIPT28_Creatureswap2" at {CreatureArray[CAPE]}
+		wait 0.5 seconds
+		
+		//move camera position to {1570.735, 114.527, 843.287} time 6
+		//move camera focus to {1653.425, 170.255, 850.807} time 6
+		move camera position to {1569.603, 113.787, 843.157} time 6
+		move camera focus to {1654.454, 164.579, 858.025} time 6
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_90"
+		wait until read
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_100"
+		wait 2 seconds
+		play anim C_CONCURRENT_NOD on CreatureArray[CAPE]
+		
+		
+		wait until read
+		
+		
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_110"	
+		
+		play anim C_CS_FIGHT_THREAT4 on CreatureArray[CAPE]
+		
+		
+		
+		send evil spirit home
+		send good spirit home
+		
+		//LION
+		wait until creature CreatureArray[CAPE] finished script action
+		play anim C_CS_R_STAND_LOOP on CreatureArray[CAPE] loop -1 blend time 0.3
+		wait until read
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.1
+		
+		move camera position to {1570.297, 114.366, 841.452} time 5
+		move camera focus to {1661.264, 111.812, 799.990} time 5
+		
+		wait 1 seconds
+		set creature CreatureArray[CAPE] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 8
+		play anim C_CS_GROWING on CreatureArray[CAPE]
+		
+		wait 2 seconds
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_120" 
+		wait 3 seconds
+		set CreatureArray[CAPE] position to {1576.496, 111.441, 843.982}
+		snap creature CreatureArray[CAPE] focus to {1567.651, 115.587, 842.597}
+		
+		
+		//reset the cows position
+		set CreatureArray[CCOW] position to {1569.293, 111.469, 834.635}
+		snap creature CreatureArray[CCOW] focus to {1567.651, 115.587, 842.597}
+	
+		
+		play anim C_INDIVIDUAL_FRIENDLY_WAVE on CreatureArray[CLION]
+		
+		wait 1 seconds
+			
+		wait 1 seconds
+		set creature CreatureArray[CLION] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 1 time 3
+		
+		wait until creature CreatureArray[CLION] finished script action
+		
+		
+		play anim C_INDIVIDUAL_HAPPY2 on CreatureArray[CLION]
+		wait until creature CreatureArray[CLION] finished script action
+		play anim C_INDIVIDUAL_HAPPY3 on CreatureArray[CLION]
+		wait until creature CreatureArray[CLION] finished script action
+		
+		set CreatureArray[CWOLF] focus to {1568.773, 114.070, 842.608}
+		
+		//WOLF
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 1
+
+		move camera position to {1569.866, 114.389, 840.639} time 5
+		move camera focus to {1625.530, 102.616, 758.400} time 5
+	
+		wait 1 seconds
+		play anim C_CS_R_STAND_LOOP on CreatureArray[CLION] loop -1 blend time 0.466666
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_130"
+		
+		wait 2 seconds
+		set creature CreatureArray[CWOLF] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT -1 time 6
+		
+		
+		
+		play anim C_IDLE_FIDGET03 on CreatureArray[CWOLF]
+		wait 0.5 seconds
+		
+		
+		
+		
+		//play anim C_LOOK_STAND_RIGHT_LEFT on CreatureArray[CLION] blend time 3.0
+		
+		
+		
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_140"
+		wait until CreatureArray[CWOLF] played
+		play anim C_INDIVIDUAL_ANGRY on CreatureArray[CWOLF]
+		wait until read
+		
+		set creature CreatureArray[CWOLF] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 0 time 1
+		
+		wait 0.5 seconds
+		play anim C_CS_R_STAND_LOOP_OUTOF on CreatureArray[CLION] loop 1
+		wait 0.5 seconds
+		
+		
+		
+		
+		//So the feet come back together
+		play anim C_INDIVIDUAL_SAD on CreatureArray[CAPE]
+		
+	
+		wait until creature CreatureArray[CWOLF] finished script action
+		play anim C_INDIVIDUAL_SHAKEOFF on CreatureArray[CWOLF]
+		wait until read
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_150"
+		wait until read
+		
+		//COW
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.1
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.1
+
+		//move camera position to {1567.829, 114.327, 839.567} time 5
+		//move camera focus to {1594.147, 104.016, 743.644} time 5
+		
+		//move camera position to {1568.505, 114.313, 839.611} time 5
+		//move camera focus to {1592.578, 104.521, 743.047} time 5
+		move camera position to {1568.813, 114.111, 839.680} time 5
+		move camera focus to {1576.723, 115.525, 740.003} time 5
+		//set camera lens 18 time 6
+		wait 2 seconds
+		
+		//WEIRD COW ANIM
+		play anim C_INDIVIDUAL_DONE_IT on CreatureArray[CCOW]
+		wait 2 seconds
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_160"
+		wait 4 seconds
+		//play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[CCOW] 
+		
+		//Reset the lions focus
+		set CreatureArray[CLION] focus to {1566.054, 116.043, 843.902}
+	
+		wait until read
+		//wait 2 seconds
+		
+		//move camera position to {1566.870, 114.192, 841.342} time 4
+		//move camera focus to {1596.569, 103.306, 746.476} time 4
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_170"
+		play anim C_INDIVIDUAL_FRIENDLY_WAVE on CreatureArray[CCOW]
+		wait 2 seconds
+		set creature CreatureArray[CCOW] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS 1 time 2
+		play anim C_IDLE_FIDGET03 on CreatureArray[CCOW] 
+		//wait until read
+		//wait 0.5 seconds
+		
+		wait until CreatureArray[CCOW] played
+		play anim C_IDLE_FIDGET01 on CreatureArray[CCOW] 
+		
+		//move camera position to {1564.680, 114.949, 837.377} time 4
+		//move camera focus to {1647.725, 115.896, 781.677} time 4
+		//set camera lens 27 time 3
+		//wait 2 seconds
+		
+		set creature CreatureArray[CCOW] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS 0.5 time 2
+		
+		wait 1.5 seconds
+		
+		set creature CreatureArray[CAPE] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+	
+		set creature CreatureArray[CWOLF] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 0 time 3
+		set creature CreatureArray[CLION] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 0 time 0.1
+		
+		
+		//Reset all the creature positions here...
+		set CreatureArray[CLION] position to {1575.928, 111.473, 838.692}
+		snap creature CreatureArray[CLION] focus to {1567.651, 115.587, 842.597}
+		set CreatureArray[CAPE] position to {1576.496, 111.441, 843.982}
+		snap creature CreatureArray[CAPE] focus to {1567.651, 115.587, 842.597}
+		//set CreatureArray[CWOLF] position to {1572.620, 111.469, 836.308}
+		//snap creature CreatureArray[CWOLF] focus to {1567.651, 115.587, 842.597}
+
+		
+		play anim C_CS_MOVE_STAND on CreatureArray[CLION] loop -1
+		play anim C_CS_MOVE_STAND on CreatureArray[CAPE] loop -1
+		
+		play anim C_CS_MOVE_STAND on CreatureArray[CWOLF] loop -1
+		
+		SkipIntro = True
+		until SkipIntro == True or key KB_ESC down
+		
+	end loop		
+	end cinema
+	begin fullscreen cinema
+	if SkipIntro == False
+		
+		////////////////////////////////
+		//The user has skipped the fly by - make sure we:
+		//1. Reset the creature sizes
+		//2. Reset the creature alignment
+		//3. Any other things we have changed in the meantime. 
+		
+		//Reset the apes size. 
+		set creature CreatureArray[CAPE] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 2
+		
+		//Reset the lions alignment.
+		set creature CreatureArray[CLION] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 0 time 2
+		
+		//Reset the wolfs alignment
+		set creature CreatureArray[CWOLF] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 0 time 2
+		
+		//Reset the cows fatness.
+		set creature CreatureArray[CCOW] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS 0.5 time 2
+		//reset camera path 
+		
+		TempCameraMarker1 = marker at camera position +  {0, 300, 0}
+		
+		TempCameraMarker2 = marker at camera focus +  {0, 300, 0}
+		
+		reset camera path 
+		
+		queue camera move with position camera position focus camera focus time 0
+		queue camera move with position {TempCameraMarker1} focus {TempCameraMarker2} time 3
+		queue camera move with position {1566.054, 216.043, 843.902} focus {1645.876, 192.784, 788.336} time 2
+		queue camera move with position {1566.054, 116.043, 843.902} focus {1645.876, 92.784, 788.336} time 2
+		
+		play camera path with easein 0 easeout 12 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		wait 7 seconds
+		reset camera path
+	end if 
+	
+	
+		move camera position to {1566.054, 116.043, 843.902} time 8
+		move camera focus to {1645.876, 92.784, 788.336} time 8
+		wait 1 seconds
+		eject good spirit
+		eject evil spirit
+			
+		set camera lens 72 time 8
+		
+		
+		
+		wait 1 seconds
+		make evil spirit fly across 0.25 down 0.15
+   		make good spirit fly across 0.7 down 0.15
+   		
+   		if SpecialEdition == True
+			move CreatureArray[CTIGER] position to {1597.919, 112.711, 835.351}
+		end if
+		
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.6 // ape
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.6 // cow
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.6 // lion
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.6 // wolf
+
+   		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_280"
+		wait until read
+		
+		
+		
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_290"
+		wait until read
+		send good spirit home
+		send evil spirit home
+		
+		
+		play anim C_IDLE_FIDGET01 on CreatureArray[CCOW]
+		
+		
+		
+		
+		//play anim C_IDLE_FIDGET01 on CreatureArray[CWOLF]
+		
+		play anim C_INDIVIDUAL_PULLING_FACES3 on CreatureArray[CAPE]
+		wait 0.75 seconds
+		play anim C_CS_REACT1 on CreatureArray[CLION]
+		wait 0.1 seconds
+		
+		
+		
+		
+		
+		
+		
+		play anim C_IDLE_FIDGET02 on CreatureArray[CCOW]
+		
+		wait until read
+		wait 2 seconds
+
+		set fade in time 1
+
+		set camera position to {1566.054, 116.043, 843.902}
+		set camera focus to {1645.876, 92.784, 788.336}
+	
+		if SpecialEdition == True
+			play anim C_INDIVIDUAL_FRIENDLY_WAVE on CreatureArray[CTIGER]
+			wait 2.5 seconds
+		end if
+	end cinema
+
+	start music "worshipperchant_aztec" loop -1
+	run background script LookAfterCreature(CreatureArray[CLION], variable AUDIO_MIXER_CHANNEL_ASSET_3, CSMixer)
+	run background script LookAfterCreature(CreatureArray[CWOLF], variable AUDIO_MIXER_CHANNEL_ASSET_4, CSMixer)
+	run background script LookAfterCreature(CreatureArray[CAPE], variable AUDIO_MIXER_CHANNEL_ASSET_1, CSMixer)
+	run background script LookAfterCreature(CreatureArray[CCOW], variable AUDIO_MIXER_CHANNEL_ASSET_2, CSMixer)
+	run background script SoundLevelsWhileThereIsNotSelectedCreature(CSMixer)
+	if SpecialEdition == True
+		run background script LookAfterCreature(CreatureArray[CTIGER], variable AUDIO_MIXER_CHANNEL_ASSET_3, CSMixer)
+	end if 
+	
+	
+	set AdvisorTimer time to 5 seconds
+	
+		
+	begin interactive camera
+		while TempMyCreature not exists
+			SelectedObject = 0
+			
+			clear right clicked object
+			clear right clicked position
+			while not SelectedObject exists
+				SelectedObject = get object right clicked
+				Type = variable get SelectedObject type
+				if Type != variable DUMB_CREATURE
+					SelectedObject = 0
+				end if 
+				
+				if get AdvisorTimer time remaining == 0 and SelectedCreature == 0
+					if read
+						run script AdvisorComments
+					end if
+					set AdvisorTimer time to number from 10 to 15 seconds
+				end if 
+				
+				if FirstSelectionTextSaid == True and get ReminderTimer time remaining == 0
+					if read
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_310"
+					end if
+					set ReminderTimer time to 20 seconds
+				end if
+			
+			end while
+			
+			if SelectedCreature == SelectedObject 
+				//Made the choice
+				TempMyCreature = SelectedCreature
+				
+			else
+				if SelectedCreature exists
+					run background script PlaySadAnimsOnCreature(SelectedCreature)
+				end if
+				SelectedCreature = SelectedObject
+				if ScrollBeam exists
+					delete ScrollBeam
+				end if
+				
+				ScrollBeam = create visual effect VISUAL_EFFECT_CREATURE_SELECT at {SelectedCreature} time 600000
+				SCALE of ScrollBeam = 0.7
+				play sound "Script28_Creatureselect1" at {SelectedCreature}
+
+				run script PlaySelectedAnims(SelectedCreature)
+				//play sound "Creatureselect2" at camera position
+				run script ResolveSoundLevels(SelectedCreature, CSMixer)
+				
+				//run script PlaySelectedAnimation(SelectedCreature)
+				if FirstSelectionTextSaid == False
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_310"
+					set ReminderTimer time to 20 seconds
+					FirstSelectionTextSaid = True
+				else
+					if read
+						run script TalkAboutSelectedCreature(SelectedCreature)
+					end if
+				end if 
+
+				
+				
+			end if 
+		end while
+	
+	end camera
+	
+		
+	begin fullscreen cinema
+		play sound "Challengesuccess2" at camera position
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_220"
+		play sound "SCRIPT13_REWARDSTING" at camera position	// changed this if we get a better sound - Tid
+		disable hand icon draw
+		//The beam will exist here.
+		delete ScrollBeam
+		
+		if TempMyCreature == CreatureArray[CTIGER] 
+			//SPECIAL CASE TIGER
+			play anim C_INDIVIDUAL_FEEL_PLAYFUL on TempMyCreature
+		else
+			play anim C_INDIVIDUAL_DONE_IT on TempMyCreature
+		end if 
+		
+		MoveOffPos[CTIGER]	= marker at {1620.378, 102.356, 826.953}
+		
+		
+		if TempMyCreature == CreatureArray[CAPE] 
+
+			MoveOffPos[CLION]	= marker at {1543.990, 108.790, 848.426}
+			MoveOffPos[CWOLF]	= marker at {1541.501, 107.979, 842.319}
+			MoveOffPos[CAPE]	= marker at {0, 0, 0}
+			MoveOffPos[CCOW]	= marker at {1535.184, 107.599, 833.138}
+
+			move camera position to {1568.893, 114.821, 845.825} time 6
+			move camera focus to {1663.962, 100.060, 818.530} time 6
+
+		elsif TempMyCreature == CreatureArray[CLION] 
+
+			MoveOffPos[CLION]	= marker at {0, 0, 0}
+			MoveOffPos[CWOLF]	= marker at {1545.170, 109.619, 841.316}
+			MoveOffPos[CAPE]	= marker at {1562.020, 111.105, 865.898}
+			MoveOffPos[CCOW]	= marker at {1545.025, 107.482, 828.082}
+
+			move camera position to {1568.470, 115.318, 841.708} time 6
+			move camera focus to {1661.866, 101.225, 808.865} time 6
+
+		elsif TempMyCreature == CreatureArray[CWOLF]
+
+			MoveOffPos[CLION]	= marker at {1550.316, 108.774, 865.894}
+			MoveOffPos[CWOLF]	= marker at {0, 0, 0}
+			MoveOffPos[CAPE]	= marker at {1566.080, 105.927, 875.238}
+			MoveOffPos[CCOW]	= marker at {1543.178, 108.348, 838.079}
+
+			move camera position to {1568.470, 115.318, 841.708} time 6
+			move camera focus to {1637.952, 97.933, 771.926} time 6
+
+		elsif TempMyCreature == CreatureArray[CCOW]
+
+			MoveOffPos[CLION]	= marker at {1554.050, 106.695, 879.017}
+			MoveOffPos[CWOLF]	= marker at {1550.099, 107.265, 878.137}
+			MoveOffPos[CAPE]	= marker at {1563.581, 105.972, 881.560}
+			MoveOffPos[CCOW]	= marker at {0, 0, 0}
+
+			move camera position to {1566.859, 115.669, 842.688} time 6
+			move camera focus to {1603.773, 90.953, 753.094} time 6
+
+		else //TIGER
+			MoveOffPos[CLION]	= marker at {1554.050, 106.695, 879.017}
+			MoveOffPos[CWOLF]	= marker at {1550.099, 107.265, 878.137}
+			MoveOffPos[CAPE]	= marker at {1563.581, 105.972, 881.560}
+			MoveOffPos[CCOW]	= marker at {1543.178, 108.348, 838.079}
+			
+			move camera position to {1588.779, 116.008, 837.863} time 6
+			move camera focus to {1684.470, 104.126, 811.356} time 6
+		end if
+
+		wait 6 seconds
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_CHOOSE_CREATURE
+
+	
+	
+//	play anim C_LOOK_STAND_RIGHT_LEFT on CreatureArray[CLION]
+
+	if CreatureArray[CLION] != TempMyCreature
+		run background script RemoveRejected(CreatureArray[CLION], 0)
+	end if 
+
+	if CreatureArray[CWOLF] != TempMyCreature
+		run background script RemoveRejected(CreatureArray[CWOLF], 1)
+	end if 
+
+	if CreatureArray[CAPE] != TempMyCreature
+		run background script RemoveRejected(CreatureArray[CAPE], 2)
+	end if 
+
+	if CreatureArray[CCOW] != TempMyCreature
+		run background script RemoveRejected(CreatureArray[CCOW], 3)
+	end if 
+	
+	if CreatureArray[CTIGER] != TempMyCreature
+		if SpecialEdition == True
+			run background script RemoveRejected(CreatureArray[CTIGER], 4)
+		end if
+	end if 
+
+	disable hand icon draw
+	
+	wait 2.5 seconds
+
+	MyCreature = TempMyCreature
+	set player 0 creature to MyCreature
+	play anim C_INDIVIDUAL_HAPPY3 on MyCreature
+	
+	cancel MyCreature anim override
+
+
+		release MyCreature focus
+		//wait 7 seconds
+		//say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_220"
+		wait creature MyCreature finished script action
+
+		wait 2 seconds
+
+		set creature MyCreature happiness to maximum
+		cancel MyCreature anim override
+		move MyCreature position to {1573.000, 111.402, 845.000}		
+
+		wait 1 seconds
+
+		move camera position to {1567.258, 117.022, 846.843} time 4
+		move camera focus to {1663.059, 94.102, 829.595} time 4
+
+		wait creature MyCreature finished script action
+		wait until camera ready
+
+		set MyCreature focus to camera position
+		wait creature MyCreature finished script action		
+
+	end cinema
+
+
+	/*
+	begin known cinema
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_220"
+		wait until read
+	end known cinema
+	*/	
+	
+	L2CreatureStatueCheck = variable get MyCreature sub type
+	set persistent data "PLAYER_CREATURE_TYPE" to L2CreatureStatueCheck
+	L1_SetStatue = 1
+
+end script Land1CreatureSelectionNew
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+begin script SoundLevelsWhileThereIsNotSelectedCreature(CSMixer)
+HC = 0
+start
+	while not SelectedCreature exists
+		HC=get object hand is over
+		
+		if HC exists and (HC == CreatureArray[CWOLF] or HC == CreatureArray[CAPE] or HC == CreatureArray[CCOW] or HC == CreatureArray[CLION] or HC == CreatureArray[CTIGER])
+			run script ResolveSoundLevels(HC, CSMixer)
+		else
+			set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.6 // ape
+			set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.6 // cow	
+			set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.6 // lion
+			set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.6 // wolf
+		end if 
+	end while
+end script SoundLevelsWhileThereIsNotSelectedCreature
+
+begin script LookAfterCreature(Creature, MIXER_CHANNEL, CSMixer)
+DoProcessing = False
+TempHandCreature = 0
+OldHandCreature = 0
+HandCreature = 0
+AnimTimer = create timer for 0 seconds
+SadTimer = create timer for 0 seconds
+
+PlayFirstAnim = True
+StartPos = 0
+start
+	StartPos = marker at {Creature}
+	wait number from 0 to 2 seconds
+	
+	play anim C_CS_SAD_INTO on Creature loop 1
+	wait 0.5 seconds
+	play anim C_CS_SAD_LOOP on Creature loop -1 blend time 0.466666
+	
+	while TempMyCreature not exists
+		DoProcessing = False
+		OldHandCreature = HandCreature
+		TempHandCreature = 0
+		while DoProcessing == False
+			TempHandCreature=get object hand is over
+			if TempHandCreature != HandCreature
+				HandCreature = TempHandCreature 
+				DoProcessing = True
+			end if 
+			
+			if TempHandCreature exists and (TempHandCreature == CreatureArray[CWOLF] or HandCreature == CreatureArray[CAPE] or HandCreature == CreatureArray[CCOW] or HandCreature == CreatureArray[CLION] or HandCreature == CreatureArray[CTIGER])
+				enable hand icon draw
+				set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+			else
+				disable hand icon draw
+			end if
+			
+			/*if not SelectedCreature exists
+				if TempHandCreature exists and (TempHandCreature == CreatureArray[CWOLF] or HandCreature == CreatureArray[CAPE] or HandCreature == CreatureArray[CCOW] or HandCreature == CreatureArray[CLION] or HandCreature == CreatureArray[CTIGER])
+					run script ResolveSoundLevels(Creature, CSMixer)
+				else
+					set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.6 // ape
+					set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.6 // cow	
+					set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.6 // lion
+					set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.6 // wolf
+				end if 
+			end if*/
+		end while 
+
+		disable hand icon draw
+		
+		if SelectedCreature == Creature
+		elsif HandCreature == Creature and SelectedCreature != Creature 
+			
+			
+			set Creature position to {StartPos}
+			snap creature Creature focus to {1567.651, 115.587, 842.597}
+			play anim C_CS_REACT on Creature
+			wait until Creature played
+			if Creature == get object hand is over
+				play anim C_CS_MOVE_STAND on Creature loop -1
+			end if
+		elsif (SelectedCreature != Creature or not HandCreature exists)
+			if OldHandCreature == Creature 
+				set Creature position to {StartPos}
+				snap creature Creature focus to {1567.651, 115.587, 842.597}
+				play anim C_CS_SAD_LOOP on Creature loop -1 blend time 0.53333
+				//run background script PlaySadAnimsOnCreature(Creature)
+			end if
+		end if 
+	end while
+end script LookAfterCreature
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script PlaySelectedAnims(Creature)
+start
+	snap creature Creature focus to {1567.651, 115.587, 842.597}
+	if Creature == CreatureArray[CLION]
+		run background script PlayHappyAnimsOnCreature(Creature, variable C_INDIVIDUAL_HAPPY3)
+	elsif Creature == CreatureArray[CCOW]
+		run background script PlayHappyAnimsOnCreature(Creature, variable C_INDIVIDUAL_HAPPY3)
+	elsif Creature == CreatureArray[CAPE]
+		run background script PlayHappyAnimsOnCreature(Creature, variable C_DANCE_B)
+	elsif Creature == CreatureArray[CWOLF]
+		run background script PlayHappyAnimsOnCreature(Creature, variable C_INDIVIDUAL_FEEL_PLAYFUL)
+	else
+		run background script PlayHappyAnimsOnCreature(Creature, variable C_INDIVIDUAL_DONE_IT)
+	end if 
+	
+	
+end script PlaySelectedAnims
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script PlaySadAnimsOnCreature(Creature)
+start
+	//play anim C_CS_SAD_INTO on Creature loop 1
+	//wait until Creature played
+	//if SelectedCreature != Creature
+	play anim C_CS_SAD_LOOP on Creature loop -1
+	//end if
+end script PlaySadAnimsOnCreature
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script PlayHappyAnimsOnCreature(Creature, StartAnim)
+start
+	//The tempmycreature stuff is so the anims don;t play on the selected creature after we have selected him.
+	if TempMyCreature == 0
+		play anim constant StartAnim on Creature loop 1
+		wait until Creature played
+		if TempMyCreature == 0
+			if SelectedCreature == Creature
+				play anim C_CS_DANCE_BASIC on Creature loop -1
+			end if
+		end if 
+	end if 
+
+end script PlayHappyAnimsOnCreature
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script AdvisorComments
+
+start
+	if RandomNumberLand1 == 4
+		RandomNumberLand1 = 0
+	end if
+	
+	begin known cinema
+		if RandomNumberLand1 == 0
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_240"
+		elsif RandomNumberLand1 == 1
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_250"
+		elsif RandomNumberLand1 == 2
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_260"
+		elsif RandomNumberLand1 == 3
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_270"
+		end if
+	end known cinema
+	
+	RandomNumberLand1++
+	
+end script AdvisorComments
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script TalkAboutSelectedCreature(Creature)
+start
+	begin known cinema
+		if Creature == CreatureArray[CLION]
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_190"
+		elsif Creature == CreatureArray[CCOW]
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_210"
+		elsif Creature == CreatureArray[CAPE]
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_180"
+		elsif Creature == CreatureArray[CWOLF]
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_200"
+		else 
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_CHOOSE_CREATURENEW_PICKUP_44"
+		end if 
+	end known cinema
+end script TalkAboutSelectedCreature
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script PlaySelectedAnimation(Creature)
+start
+
+	if Creature == CreatureArray[CLION]
+		set Creature position to {1575.928, 111.473, 838.692}
+		snap creature Creature focus to {1567.651, 115.587, 842.597}
+		play anim C_INDIVIDUAL_HAPPY3 on CreatureArray[CLION]
+	elsif Creature == CreatureArray[CCOW]
+		set Creature position to {1569.293, 111.469, 834.635}
+		snap creature Creature focus to {1567.651, 115.587, 842.597}
+		play anim C_INDIVIDUAL_DONE_IT on CreatureArray[CCOW]
+	elsif Creature == CreatureArray[CAPE]
+		set Creature position to {1576.496, 111.441, 843.982}
+		snap creature Creature focus to {1567.651, 115.587, 842.597}
+		play anim C_INDIVIDUAL_HAPPY on CreatureArray[CAPE]
+	else
+		set Creature position to {1573.192, 111.470, 835.167}
+		snap creature Creature focus to {1567.651, 115.587, 842.597}
+		play anim C_INDIVIDUAL_DONE_IT on CreatureArray[CWOLF]
+	end if 
+end script PlaySelectedAnimation
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script PlayNotPickedAnimation(Creature)
+RandomNumber = 0
+start
+	RandomNumber = number from 0 to 2
+	if Creature == CreatureArray[CLION]
+		if RandomNumber == 0
+			play anim C_CONCURRENT_SHAKE on CreatureArray[CLION]
+		elsif RandomNumber == 1
+			play anim C_INDIVIDUAL_SAD on CreatureArray[CLION]
+		elsif RandomNumber == 2
+			play anim C_INDIVIDUAL_SCRATCH on CreatureArray[CLION]
+		end if 
+	elsif Creature == CreatureArray[CCOW]
+		if RandomNumber == 0
+			play anim C_INDIVIDUAL_PULLING_FACES2 on CreatureArray[CCOW]
+		elsif RandomNumber == 1
+			play anim C_CONCURRENT_SHAKE on CreatureArray[CCOW]
+		else
+			play anim C_INDIVIDUAL_CONFUSED on CreatureArray[CCOW]
+		end if 
+	elsif Creature == CreatureArray[CAPE]
+		if RandomNumber == 0
+			play anim C_INDIVIDUAL_SAD on CreatureArray[CAPE]
+		elsif RandomNumber == 1
+			play anim C_INDIVIDUAL_SAD2 on CreatureArray[CAPE]
+		else
+			play anim C_INDIVIDUAL_PULLING_FACES3 on CreatureArray[CAPE]
+		end if 
+	else
+		if RandomNumber == 0
+			play anim C_INDIVIDUAL_SAD on CreatureArray[CWOLF]
+		elsif RandomNumber == 1
+			play anim C_INDIVIDUAL_SAD2 on CreatureArray[CWOLF]
+		else
+			play anim C_INDIVIDUAL_SAD2 on CreatureArray[CWOLF]
+		end if 
+	end if 
+end script PlayNotPickedAnimation
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script PlayHandOverAnimation(Creature)
+RandomNumber = 0
+start
+	RandomNumber = number from 0 to 3
+	if Creature == CreatureArray[CLION]
+		if RandomNumber == 0
+			play anim C_INDIVIDUAL_HAPPY on CreatureArray[CLION]
+		else
+			play anim C_INDIVIDUAL_HAPPY2 on CreatureArray[CLION]
+		end if 
+	elsif Creature == CreatureArray[CCOW]
+		if RandomNumber == 0
+			play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[CCOW]
+		elsif RandomNumber == 1
+			play anim C_DANCE_B on CreatureArray[CCOW]
+		elsif RandomNumber == 2 
+			play anim C_INDIVIDUAL_HAPPY3 on CreatureArray[CCOW]
+		else
+			play anim C_INDIVIDUAL_HAPPY2 on CreatureArray[CCOW]
+		end if 
+	elsif Creature == CreatureArray[CAPE]
+		if RandomNumber == 0
+			play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[CAPE]
+		elsif RandomNumber == 1
+			play anim C_CONCURRENT_NOD on CreatureArray[CAPE]
+		elsif RandomNumber == 2 
+			play anim C_DANCE_D on CreatureArray[CAPE]
+		else
+			play anim C_DANCE_C on CreatureArray[CAPE]
+		end if 
+	else
+		if RandomNumber == 0
+			play anim C_INDIVIDUAL_FRIENDLY_WAVE on CreatureArray[CWOLF]
+		elsif RandomNumber == 1
+			play anim C_INDIVIDUAL_FEEL_PLAYFUL on CreatureArray[CWOLF]
+		else
+			play anim C_INDIVIDUAL_HAPPY2 on CreatureArray[CWOLF]
+		end if 
+	end if 
+end script PlayHandOverAnimation
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script ResolveSoundLevels(Creature, CSMixer)
+start
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.0 // ape
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.0 // cow
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.0 // lion
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.0 // wolf
+	
+	if Creature == CreatureArray[CLION] or Creature == CreatureArray[CTIGER]
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 1.0 // lion
+	elsif Creature == CreatureArray[CCOW]
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 1.0 // cow
+	elsif Creature == CreatureArray[CAPE]
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 1.0 // ape
+	else
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 1.0 // wolf
+	end if 
+end script ResolveSoundLevels
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script RemoveRejected(Creature, ID)
+start
+
+	force Creature finish
+	play anim C_FACE_SAD on Creature
+	wait until creature Creature finished script action
+
+	wait 1 seconds
+
+	set creature Creature walk override sad
+	move Creature position to {MoveOffPos[ID]}
+
+	wait 7 seconds
+	delete Creature
+
+end script RemoveRejected
+///////////////////////////////////////////////////////////////////////////////////////////////

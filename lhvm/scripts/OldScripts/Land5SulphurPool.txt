@@ -1,0 +1,184 @@
+//================================================================
+// Sulphur Pool
+// Matt.L
+//================================================================
+
+//------------------------------------------------------------
+// Global
+//------------------------------------------------------------
+global SP_CurrentAlignment = 1
+global SP_SwimWaypoints[5]
+global SP_RippleSpawmWait = 0
+
+//------------------------------------------------------------
+// Script defines
+//------------------------------------------------------------
+//Evil scripts
+define script SP_PoolFX
+define script SP_SteamFX
+define script SP_CookAVillager(Me)
+
+//Good scripts
+define script SP_VillagerSwim(Me)
+
+//------------------------------------------------------------
+// Sulphur Pool
+//------------------------------------------------------------
+begin script Land5SulphurPool
+	PoolPos = marker at {1233.176, 2.442, 450.547}
+	Object = 0
+	Type = 0
+start
+
+	set game time 14.00	
+
+	//Setup swimming waypoints
+	SP_SwimWaypoints[0] = marker at {1243.215, 4.543, 448.580}
+	SP_SwimWaypoints[1] = marker at {1230.930, 3.242, 448.432}
+	SP_SwimWaypoints[2] = marker at {1238.478, 5.783, 438.922}
+	SP_SwimWaypoints[3] = marker at {1225.977, 5.815, 452.747}
+	SP_SwimWaypoints[4] = marker at {1248.677, 8.358, 454.694}
+
+	begin loop
+		
+		//Get alignment
+		if alignment of player < 0
+			if SP_CurrentAlignment == 1 
+				run background script SP_PoolFX				
+			end if
+			SP_CurrentAlignment = -1
+			SP_RippleSpawmWait = (alignment of player + 1.1)
+		else
+			SP_CurrentAlignment = 1
+		end if
+
+		if SP_CurrentAlignment == -1
+			if hand position near {PoolPos} radius 15
+				Object = get object held
+				if Object exists
+					Type = variable get Object type
+					if Type == variable VILLAGER
+						wait until not Object is HELD
+						run background script SP_CookAVillager(Object)
+					end if	//Type is Villager
+				end if	//Object exists
+			end if //hand near poool
+		else
+			Object = get VILLAGER at {PoolPos} radius 80 excluding scripted
+			//run background script SP_VillagerSwim(Object)
+		end if
+
+	end loop
+
+end script Land5SulphurPool
+
+//------------------------------------------------------------
+// SP_PoolFX
+//------------------------------------------------------------
+begin script SP_PoolFX
+	BubblesFX = 0
+	SplashCentre = marker at {1233.176, 10.442, 450.547}
+	SplashPos = marker at {0.000,0.000,0.000} //generated
+	RippleScale = 0
+start	
+
+	run background script SP_SteamFX
+
+
+	begin loop
+		SplashPos = marker at {SplashCentre} + {number from -15 to 15, 0, number from -15 to 15}
+		RippleScale = (number from 10 to 30) / 10
+		BubblesFX = create visual effect "gp_s_waterripple.ves" strength 1 scale RippleScale at {SplashPos} time 3
+		SplashPos = marker at {SplashCentre} + {number from -15 to 15, 0, number from -15 to 15}
+		RippleScale = (number from 10 to 30) / 10
+		BubblesFX = create visual effect "gp_s_waterripple.ves" strength 1 scale RippleScale at {SplashPos} time 3
+		SplashPos = marker at {SplashCentre} + {number from -15 to 15, 0, number from -15 to 15}
+		RippleScale = (number from 10 to 30) / 10
+		BubblesFX = create visual effect "gp_s_waterripple.ves" strength 1 scale RippleScale at {SplashPos} time 3
+		wait SP_RippleSpawmWait seconds
+	until SP_CurrentAlignment != -1
+	end loop
+
+end script SP_PoolFX
+
+//------------------------------------------------------------
+// Sulphur Pool
+//------------------------------------------------------------
+begin script SP_SteamFX
+	SteamCentre = marker at {1233.176, 2.442, 450.547}
+	SteamPos = marker at {0.000,0.000,0.000} //generated
+	SP_SteamFX = 0
+	Scale = 0
+start
+
+	begin loop
+		Scale = (number from 20 to 35) / 10
+		SteamPos = marker at {SteamCentre} + {number from -14 to 14, 0, number from -14 to 14}
+		SP_SteamFX = create visual effect "gp_s_steam.ves" strength 1 scale Scale at {SteamPos} time 3
+		wait (SP_RippleSpawmWait*4) seconds
+	until SP_CurrentAlignment != -1
+	end loop
+
+end script SP_SteamFX
+
+//------------------------------------------------------------
+// Sulphur Pool
+//------------------------------------------------------------
+begin script SP_CookAVillager(Me)
+	BloodFX = 0
+start
+	if not {Me} on land
+		wait 1 seconds
+		BloodFX = create visual effect "gp_s_blood_vilpool.ves" strength 1 scale 3 at {Me} + {0.000,1.000,0.000} time 8
+		wait 1 seconds
+		HEALTH of Me = 0
+		enable Me skeleton
+
+		BloodFX = create visual effect "gp_s_blood_cloud.ves" strength 1 scale 3 at {Me} + {0.000,1.000,0.000} time 8
+		BloodFX = create visual effect "gp_s_steam.ves" strength 5 scale 3 at {Me} time 3
+		set BloodFX colour red 128 green 0 blue 0
+	end if
+end script SP_CookAVillager
+
+//------------------------------------------------------------
+// Villager Swim
+//------------------------------------------------------------
+begin script SP_VillagerSwim(Me)
+	WayPoint = 0
+	ShowFX = 0
+start
+
+	Me = create VILLAGER GREEK_FARMER at {1254.023, 13.092, 459.835}
+	set Me position to {SP_SwimWaypoints[number from 0 to 4]}	
+
+	play anim "a_p_swim2" on Me loop -1
+
+	begin loop
+		WayPoint = marker at {SP_SwimWaypoints[number from 0 to 4]}
+		ShowFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 1 at {WayPoint} time 2
+
+		set Me focus to {WayPoint}
+
+		ALTITUDE of Me = (ALTITUDE of WayPoint - ALTITUDE of Me)
+
+		begin loop
+			
+			if XPOS of Me < XPOS of WayPoint
+				XPOS of Me += 0.1
+			else
+				XPOS of Me -= 0.1
+			end if
+
+			if ZPOS of Me < ZPOS of WayPoint
+				ZPOS of Me += 0.1
+			else
+				ZPOS of Me -= 0.1
+			end if
+
+			wait 0.1 seconds
+		until {Me} near {WayPoint} radius 3
+		end loop
+
+	end loop	//Choose a waypoint
+	
+end script SP_VillagerSwim

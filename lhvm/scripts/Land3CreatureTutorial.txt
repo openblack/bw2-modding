@@ -1,0 +1,832 @@
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script Creature_TUT_AddObjective(Objective, State)
+define script Creature_TUT_RemoveObjective(Objective)
+define script VillagerToBeEaten
+define script CT_FieldCheck
+define script CT_FieldClicked(Field)
+define script MoveCreature
+define script EA_DoubleClickOnTheRock
+define script GA_GrabTheLeash
+define script PickupTheVillager
+define script CT_PunishRewardCreature
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CT_False = 0
+define CT_True = 1
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CT_PickupVillager = 0
+global CT_VillagerPickedUp = CT_False
+global CT_CreatureMoved = CT_False
+global CT_Field = 0
+global CT_VillagerPos = 0
+global CT_CreatureAction = 0
+global CT_StopTalking = CT_False
+global LeashDialogueFinished = 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define GRAB_CREATURE_FLAG_FIELD = 0
+define GRAB_CREATURE_FLAG_BUILDING = 1
+define BUILDING_CHEATED = 2
+define GRAB_CREATURE_FLAG_ENTERTAIN = 3
+define GRAB_CREATURE_LEASH = 4
+define CLICK_CREATURE_LEASH_HIGHLIGHT = 5
+define CLICK_CREATURE_LEASH_GOOD = 6
+define MOVE_CREATURE_LEASH_HIGHLIGHT = 7
+define CLICK_CREATURE_LEASH_TREE = 8
+define CREATURE_LEASH_PLANT_TREE = 9
+define CREATURE_DROPPED_TREE = 10
+define LEASH_CREATURE_TREE = 11
+define PUT_VILLAGER_DOWN = 12
+define ATE_VILLAGER = 13
+
+define TUT_LEASH_ON_CREATURE						= 14
+define TUT_MOVE_CREATURE							= 15
+define TUT_FEED_CREATURE							= 16
+define TUT_LEASH_CREATURE_TO_ROCK					= 17
+define TUT_PUNISH_OR_REWARD							= 18
+define CREATURE_TUT_OBJECTIVE_PRIMARY				= 19
+//-----------------------------------------------------------------------------
+//----Land3CreatureTutorial----// Master script that activates all the others. 
+//-----------------------------------------------------------------------------
+begin script Land3CreatureTutorial
+	CreatureScroll = 0
+	CreatureEatenFromField = 0
+	ExampleVideo = 0
+	Counter = 0
+	Counter2 = 0
+	ReminderTimer = create timer for 0 seconds
+	CommentTimer2 = create timer for 0 seconds
+	DeleteCounter = 0
+	CreatureBeenPunished = 0
+	CreatureBeenRewarded = 0
+	MyCreatureLeashed = 0
+	MyVillagerMarker = 0
+	VillagerPos = 0
+	MyCreatureCameraPos = 0
+	CreatureIcon = 0
+	ObjectUnderHand = 0
+	CreatureStartPos = 0
+	Remind = 0
+	CommentTimer = create timer for 60 seconds
+	Field = 0
+	End = CT_False
+start
+	if L3GreekTown not exists
+		run script Land3Globals
+	end if
+	Field = get SCRIPT_OBJECT_TYPE_FIELD at {1137.313, 363.595, 1574.343} radius 30
+	VillagerPos = marker at {1074.438,363.639,1665.998}
+	
+	CreatureStartPos = marker at {MyCreature}
+	wait until L3_InAScroll == 0
+	run background script Creature_TUT_AddObjective(CREATURE_TUT_OBJECTIVE_PRIMARY, 0)
+	
+	
+	begin loop
+		if L3_InAScroll == 0
+			if CreatureScroll not exists
+				if L3CreaturePen exists
+					CreatureScroll = create highlight GOLD name "BW2T_SCRIPT_03FINAL_CREATURE_TUT_MISC_10" remind "BW2T_SCRIPT_03FINAL_CREATURE_TUT_MISC_20" at {L3CreaturePen}
+				else
+					CreatureScroll = create highlight GOLD name "BW2T_SCRIPT_03FINAL_CREATURE_TUT_MISC_10" remind "BW2T_SCRIPT_03FINAL_CREATURE_TUT_MISC_20" at {MyCreature} 
+					ALTITUDE of CreatureScroll = 10
+				end if
+			end if
+			
+			if get CommentTimer time remaining == 0
+				begin dialogue
+					eject good spirit 
+						make good spirit point at {CreatureScroll}
+						// GA: Click on the Gold Scroll.
+						say "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL"
+						wait until read
+					send good spirit home
+				end dialogue
+				if Remind == 0
+					set CommentTimer time to 180 seconds
+					Remind++
+				else
+					set CommentTimer time to 300 seconds
+				end if
+			end if
+			
+		elsif CreatureScroll exists
+			delete CreatureScroll
+		end if
+	until CreatureScroll right clicked
+	end loop
+	delete CreatureScroll
+	L3_InAScroll = 1
+	
+// Turn off the tooltip
+	L3CreatureSleeping = CT_False
+	
+	L3TimeForCreatureToWake = 1
+
+	
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	begin cinema
+		start music "cut_scene_happy_02"
+		set MyCreature position to {1140.992, 363.662, 1537.468}
+		snap creature MyCreature focus to {1142.272, 376.357, 1535.856}
+		set MyCreature focus to {1142.272, 376.357, 1535.856}
+		wait 0.1 seconds
+		
+		play anim C_STATIC_SLEEP on MyCreature loop -1
+	
+		wait 2 seconds
+		set camera position to {1142.272, 376.357, 1535.856}
+		set camera focus to {1206.053, 365.324, 1459.624}
+		move camera position to {1136.016, 371.272, 1543.007} time 15
+		move camera focus to {1179.144, 298.759, 1489.320} time 15
+		set fade in time 2
+		wait 5 seconds
+
+		eject evil spirit 
+		
+		
+	//GA: "Hey. Our Creature's waking up!"
+		say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_380"
+		wait 4 seconds
+		wait until read
+		send evil spirit home
+		wait 3 seconds
+		
+		move camera position to {1134.505, 373.812, 1544.888} time 12
+		move camera focus to {1177.633, 301.300, 1491.201} time 12
+		play anim C_STATIC_END_SLEEP on MyCreature 
+		wait until MyCreature played
+		set MyCreature focus to {1127.513, 381.057, 1554.081}
+		wait until creature MyCreature finished script action
+		
+		
+		play anim C_INDIVIDUAL_TIRED2 on MyCreature 
+		wait until MyCreature played
+		wait until camera ready
+		send evil spirit home
+		stop music with fadetime 4
+	end cinema
+
+	begin dialogue
+		eject good spirit
+		play anim C_IDLE_FIDGET01 on MyCreature 
+		wait until read
+	//GA: "He's scared. He doesn't want to leave the pen."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_30"
+		wait until read
+		wait until MyCreature played
+		eject evil spirit
+	//EA: "Let's use the Leash to get him to move."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_40"
+		wait until read
+	begin loop
+		enable leash on MyCreature
+	//GA: "To grab the Leash, click on the Creature with the Action button."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_50"
+		wait until read
+	//GA: "Or click on the Leash button in the Creature menu."
+		//say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_60"
+		//wait until read
+	//GA: "Or you can just press the L key."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_70"
+		wait until read	
+		wait until not video is playing
+	//GA: "Now grab the Creature's Leash."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_400"	
+		wait until read
+		End = CT_True
+	until MyCreature leashed or End == CT_True
+	end loop
+		End = CT_False
+		send good spirit home
+		send evil spirit home
+	end dialogue
+	
+	set ReminderTimer time to 40 seconds
+
+	run	background script Creature_TUT_AddObjective(TUT_LEASH_ON_CREATURE, 0)
+	//CreatureIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on MyCreature
+	if not MyCreature leashed
+		begin loop
+			ObjectUnderHand = get object hand is over
+			if ObjectUnderHand == MyCreature
+				enable hand icon draw
+				set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+			else
+				disable hand icon draw
+			end if
+
+			if get ReminderTimer time remaining == 0
+				begin dialogue
+					eject good spirit
+						play anim C_INDIVIDUAL_CONFUSED on MyCreature
+					//GA: "Now grab the Creature's Leash."
+						say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_400"	
+						wait until read
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 40 seconds
+			end if
+			
+			if bindable action BINDABLE_ACTION_TYPE_ACTION performed and not MyCreature leashed and get CommentTimer2 time remaining == 0
+				begin dialogue
+					eject good spirit
+					//GA: "No. That's not right!" 
+						say "BW2T_HELP_TEXT_GUIDANCE_RANDOM_ADVISOR_26"
+						wait until read	
+					//GA: "To grab the Leash, click on the Creature with the Action button."
+						say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_50"
+						wait until read	
+					send good spirit home		
+				end dialogue
+				set CommentTimer2 time to 20 seconds
+			end if
+		until MyCreature leashed
+		end loop
+	end if
+	
+	disable hand icon draw
+	//remove world icon CreatureIcon
+	run background script Creature_TUT_RemoveObjective(TUT_LEASH_ON_CREATURE)
+	
+	clear right button clicked
+
+	begin interactive camera
+		move camera position to {1116.542, 382.554, 1565.588} time 3
+		move camera focus to {1169.227, 323.790, 1504.186} time 3
+		eject good spirit
+		eject evil spirit
+		//GA: "He's been in the pen for ages. Make him come outside for a bit."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_140"
+			wait until read
+			run background script MoveCreature
+		CreatureIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {1126.464, 363.650, 1554.870} + {0,1.5,0} time -1 
+		begin loop
+		//GA: "Move him outside by clicking the Action button once on the ground."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_150"
+			wait until read
+			End = CT_True
+		until End == CT_True or MyCreature leashed and mouse right button clicked
+		end loop
+		End = CT_False
+		send good spirit home
+		send evil spirit home
+		wait until camera ready
+	end camera
+	
+	//set CreatureIcon colour red 192 green 128 blue 0
+	//set CreatureIcon alpha 0.7
+	
+	run background script Creature_TUT_AddObjective(TUT_MOVE_CREATURE, 0)
+	
+	wait until CT_CreatureMoved == CT_True
+	stop visual effect CreatureIcon
+	delete CreatureIcon
+	set creature MyCreature happiness to maximum
+	
+	run background script Creature_TUT_RemoveObjective(TUT_MOVE_CREATURE)
+	
+	wait until camera ready 
+	set MyCreature focus to camera position
+	wait until creature MyCreature finished script action
+
+	play anim C_INDIVIDUAL_DONE_IT on MyCreature
+
+	wait until LeashDialogueFinished == 1
+
+	begin dialogue
+		eject good spirit
+		//GA: "Well done! That's how you get the Creature to move."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_160"
+			wait until read
+		//GA: "If you want to cancel an action and empty your Hand, simply shake it briskly left and right."
+			//say "BW2T_SCRIPT_03FINAL_PICKUP1"
+			//wait until read
+			play anim C_INDIVIDUAL_HUNGRY on MyCreature 
+		//GA: "The Creature's hungry. Let's feed him."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_170"
+			wait until read
+			wait until MyCreature played
+		//GA: "We wouldn't want him to starve. Why don't you try feeding him?"
+			//say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_180"
+			//wait until read
+		send good spirit home
+	end dialogue
+	
+	if Field exists
+		begin interactive camera
+			move camera position to {1140.155, 377.483, 1592.788} time 3
+			move camera focus to {1121.430, 318.975, 1513.882} time 3
+			set MyCreature focus to {1141.502, 367.479, 1573.616}
+			CreatureIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {Field} + {0,3,0} time -1 
+			wait until camera ready
+			eject evil spirit
+			//EA: "With the Leash in the Hand, click on the field."
+				say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_190"
+				wait 2 seconds
+				make evil spirit point to Field
+				wait until read
+				run background script CT_FieldCheck
+				run background script CT_FieldClicked(Field)
+			send evil spirit home
+		end camera
+	else
+		begin dialogue
+			eject evil spirit
+			//EA: "With the Leash in the Hand, click on the field."
+				say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_190"
+				wait until read
+				run background script CT_FieldCheck
+			send evil spirit home
+		end dialogue
+	end if
+	
+	run background script Creature_TUT_AddObjective(TUT_FEED_CREATURE, 0)
+	
+	set ReminderTimer time to 40 seconds
+	begin loop
+		if get ReminderTimer time remaining == 0
+			begin dialogue
+				eject evil spirit
+				//EA: "With the Leash in the Hand, click on the field."
+					say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_190"
+					wait until read
+				send evil spirit home
+			end dialogue
+			set ReminderTimer time to 40 seconds
+		end if
+	until CT_Field exists
+	end loop
+	
+	stop visual effect CreatureIcon
+	delete CreatureIcon
+	//remove world icon CreatureIcon
+	release MyCreature focus
+	enable script creature MyCreature run
+	force MyCreature CREATURE_EAT_FROM_FIELD CT_Field
+	wait until creature MyCreature finished script action
+	set MyCreature focus to camera position
+	run background script Creature_TUT_RemoveObjective(TUT_FEED_CREATURE)
+	wait until creature MyCreature finished script action
+	
+	run background script VillagerToBeEaten
+	
+	begin fullscreen cinema
+		disable force tooltip draw
+		eject good spirit
+		eject evil spirit
+		//GA: "That's better. He doesn't look as hungry now."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_200"
+			wait until read
+			move camera position to {1183.413, 389.093, 1587.022} time 5
+			move camera focus to {1109.475, 325.024, 1566.306} time 5
+			release MyCreature focus
+		//GA: "Whenever you click the Action button on something with the Leash the Creature will try and find something to do with it."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_210"
+			wait until read
+		//GA: "The other thing you can do with the Leash is tie the Creature to things."
+			//say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_220"
+			//wait until read
+		//EA: "To attach the Creature to an object, double-click on the object."
+			//say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_240"
+			//wait until read
+		//GA: "This will stop him from wandering."
+			//say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_230"
+			//wait until read
+			make evil spirit point to ObjectForLeash
+		//EA: "Double-click the Action button on that rock by the field and he will be leashed to it."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_250"
+			wait 2 seconds or read
+			stop evil spirit pointing
+			wait until read
+		send evil spirit home
+		send good spirit home
+		wait until camera ready
+	end cinema
+	enable force tooltip draw
+	
+	CreatureIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {ObjectForLeash} + {0,8,0} time -1  //create world icon BINDABLE_ACTION_TYPE_ACTION on ObjectForLeash
+	//release MyCreature
+	
+	run background script Creature_TUT_AddObjective(TUT_LEASH_CREATURE_TO_ROCK, 0)
+	set ReminderTimer time to 40 seconds
+	
+	
+	clear right button double clicked
+	clear right clicked object
+	begin loop
+		if get ReminderTimer time remaining == 0
+			if MyCreature leashed
+				run background script EA_DoubleClickOnTheRock
+				set ReminderTimer time to 40 seconds
+			else
+				run background script GA_GrabTheLeash
+				set ReminderTimer time to 20 seconds
+			end if
+		end if
+		if MyCreature leashed and ObjectForLeash double right clicked
+			attach MyCreature leash to ObjectForLeash
+			clear right button double clicked
+			clear right clicked object
+		elsif ObjectForLeash double right clicked
+			clear right button double clicked
+			clear right clicked object
+		end if
+	until MyCreature leashed to ObjectForLeash 
+	end loop
+	disable leash on MyCreature
+	delete CreatureIcon
+	
+	//move MyCreature position to {1155.579, 363.598, 1574.525}
+	
+	run background script PickupTheVillager
+	
+	begin dialogue
+		eject good spirit
+		//GA: "That's right."
+			say "BW2T_SCRIPT_GENERIC_07"
+			wait until read
+		//GA: "Marvellous."
+			say "BW2T_SCRIPT_GENERIC_08"
+			wait until read
+		send good spirit home
+	end dialogue
+	
+	run background script Creature_TUT_RemoveObjective(TUT_LEASH_CREATURE_TO_ROCK)
+	enable script creature MyCreature run
+	//wait until {MyCreature} near {ObjectForLeash} radius 20 and creature MyCreature finished script action
+	//force MyCreature finish
+	//wait 0.1 seconds
+	//move MyCreature position to {MyCreature}
+	
+	wait until CT_VillagerPickedUp == CT_True
+	//T_GET T_HELD T_BY object
+	
+	set creature MyCreature script thought text "BW2T_SCRIPT_03FINAL_CREATURE_TUT_10"
+	//CreatureIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on MyCreature
+	//set MyCreature focus to camera position
+	
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		//CreatureBeenPunished = get total of stat STATS_ACC_CREATURE_PUNISHED_BY_PLAYER
+		//CreatureBeenPunished += 1
+
+		//CreatureBeenRewarded = get total of stat STATS_ACC_CREATURE_REWARDED_BY_PLAYER
+		//CreatureBeenRewarded += 1
+		//GA: "You should now teach your creature whether what he does is good or bad."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_260"
+			wait until read
+		//GA: "Oh dear! He's going to eat a villager. You should teach him not to do that."
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_270"
+			wait until read
+		//EA: "Nonsense! Eating villagers will make him strong!"
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_280"
+			wait until read
+			run background script CT_PunishRewardCreature
+		End = CT_False	
+		begin loop
+		//GA: "Click and hold the Action button on him. Move the mouse quickly from side to side to punish him for eating that person."
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_390"
+			wait until read
+		//EA: "Nah, move the mouse slowly. Pet him and reward him. Eating people is fine by me, you see."
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_400"
+			wait until read
+			End = CT_True
+		until CT_CreatureAction > 0 or End == CT_True //CT_StopTalking == CT_True 
+		end loop
+		send good spirit home
+		send evil spirit home
+	end dialogue
+	
+	wait until CT_CreatureAction > 0
+
+	begin dialogue
+			if CT_CreatureAction == PUT_VILLAGER_DOWN
+				enable MyCreature can drop
+				force MyCreature CREATURE_PUT_DOWN CT_PickupVillager
+				wait until creature MyCreature finished script action
+				eject good spirit
+			//GA: "You are well on your way to making your Creature nice."
+				say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_340"
+				wait until read
+				eject evil spirit
+			//EA: "Come on - we're meant to be bad."
+				say "BW2T_HELP_TEXT_GUIDANCE_OPPOSITE_EA_06"
+				wait until read
+			//GA: "Very good."
+				//say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_350"
+				//wait until read
+				
+			elsif CT_CreatureAction == ATE_VILLAGER
+				//disable CT_PickupVillager indestructible
+				force MyCreature CREATURE_EAT_OBJECT CT_PickupVillager
+				wait until creature MyCreature finished script action
+				enable MyCreature can drop
+				eject evil spirit
+			//EA: "You're on the road to making a nasty Creature."
+				say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_360"
+				wait until read
+				eject good spirit
+			//GA: "What a senseless waste of human life!"
+				say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_01"
+				wait until read
+			//EA: "Great stuff, I say."
+				//say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_370"
+				//wait until read
+			end if
+
+		run background script Creature_TUT_RemoveObjective(CREATURE_TUT_OBJECTIVE_PRIMARY)
+
+		play anim C_INDIVIDUAL_DONE_IT on MyCreature
+
+	//GA: "If you want to cancel an action and empty your Hand, simply shake it briskly left and right."
+		say "BW2T_SCRIPT_03FINAL_PICKUP1"
+		wait until read
+	//GA: "Double-click the Action button on the Creature or press the L key to grab the Leash."
+		//say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_18"
+		//wait until read
+	//GA: "That is just about everything you need to know right now."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_380"
+		wait until read
+		send evil spirit home
+	//GA: "Why don't you try experimenting with your Creature?"
+			say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_390"
+		enable leash on MyCreature
+		release MyCreature
+		//disable MyCreature indestructible
+		
+		if MyCreature leashed to ObjectForLeash 
+			attach MyCreature leash to hand
+		end if
+		wait until read
+		send good spirit home
+	end dialogue
+	
+	if CT_PickupVillager exists
+		//disable CT_PickupVillager indestructible
+		enable CT_PickupVillager set on fire
+		enable CT_PickupVillager reactable		
+		set villager CT_PickupVillager default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_WALKING
+		release CT_PickupVillager
+	end if 
+	
+	enable creature icon visible
+	
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_CREATURETUTORIAL
+	L3CreatureTutorial = 1
+	L3_InAScroll = 0
+end script Land3CreatureTutorial
+
+//*********************************************
+
+begin script Creature_TUT_AddObjective(Objective, State)
+
+start
+
+	if Objective == CREATURE_TUT_OBJECTIVE_PRIMARY
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_CREATURE_10"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 amount 1 force open
+	elsif Objective == TUT_LEASH_ON_CREATURE
+//Put the leash on the Creature.
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 with amount 1 text "BW2T_SCRIPT_03FINAL_CREATURE_OBJECTIVE_10" parent TRIBUTE_OBJECTIVE_LAND_6 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 value State
+	elsif Objective == TUT_MOVE_CREATURE
+//Move Creature.
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 with amount 1 text "BW2T_SCRIPT_03FINAL_CREATURE_OBJECTIVE_20" parent TRIBUTE_OBJECTIVE_LAND_6 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value State		
+	elsif Objective == TUT_FEED_CREATURE
+//Feed the Creature.
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 with amount 1 text "BW2T_SCRIPT_03FINAL_CREATURE_OBJECTIVE_30" parent TRIBUTE_OBJECTIVE_LAND_6 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value State
+	elsif Objective == TUT_LEASH_CREATURE_TO_ROCK
+//Leash the Creature to an object.
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 with amount 1 text "BW2T_SCRIPT_03FINAL_CREATURE_OBJECTIVE_40" parent TRIBUTE_OBJECTIVE_LAND_6 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value State
+	elsif Objective == TUT_PUNISH_OR_REWARD
+//Punish or reward the Creature.
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 with amount 1 text "BW2T_SCRIPT_03FINAL_CREATURE_OBJECTIVE_50" parent TRIBUTE_OBJECTIVE_LAND_6 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 value State
+	end if
+
+	// Put the objectives window up on screen
+	enable objective window
+
+end script Creature_TUT_AddObjective
+
+//*************************************
+
+//-----------------------------------------------------------------
+// Remove the objective from the list
+//-----------------------------------------------------------------
+begin script Creature_TUT_RemoveObjective(Objective)
+start
+
+if Objective == CREATURE_TUT_OBJECTIVE_PRIMARY
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+elsif Objective == TUT_LEASH_ON_CREATURE
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_1
+elsif Objective == TUT_MOVE_CREATURE
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+elsif Objective == TUT_FEED_CREATURE
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_2	
+elsif Objective == TUT_LEASH_CREATURE_TO_ROCK
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_4
+elsif Objective == TUT_PUNISH_OR_REWARD
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+end if
+
+end script Creature_TUT_RemoveObjective
+
+begin script VillagerToBeEaten
+start
+	CT_VillagerPos = marker at {1159.461, 363.586, 1569.544}
+
+	begin loop 
+		//if CT_PickupVillager not exists
+		//	CT_PickupVillager = get VILLAGER at {CT_VillagerPos} radius 100 excluding scripted
+		//	disable CT_PickupVillager reactable
+		//	//enable CT_PickupVillager indestructible
+		//	disable CT_PickupVillager set on fire	
+		//	set villager CT_PickupVillager default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_RUNNING
+		//	move CT_PickupVillager position to {CT_VillagerPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		//end if
+		if CT_PickupVillager not exists 
+			CT_PickupVillager = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {CT_VillagerPos}
+			attach CT_PickupVillager to L3GreekTown
+			//enable CT_PickupVillager indestructible
+			disable CT_PickupVillager reactable	
+			disable CT_PickupVillager set on fire	
+			set villager CT_PickupVillager default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_RUNNING
+			move CT_PickupVillager position to {CT_VillagerPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		end if
+		while CT_PickupVillager exists and not {CT_PickupVillager} at {CT_VillagerPos} and not CT_PickupVillager is HELD
+			if HEALTH of CT_PickupVillager == 0 or not {CT_PickupVillager} near {CT_VillagerPos} radius 110
+				release CT_PickupVillager
+				CT_PickupVillager = 0
+			end if
+			if variable get CT_PickupVillager navigation state != variable NAV_STATE_NAVIGATING 
+				move CT_PickupVillager position to {CT_VillagerPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+			end if
+		end while
+	until CT_VillagerPickedUp == CT_True
+	end loop
+end script VillagerToBeEaten
+
+begin script CT_FieldCheck
+	Field = 0
+start
+	begin loop
+		Field = get SCRIPT_OBJECT_TYPE_FIELD in L3GreekTown excluding scripted
+		if Field exists
+			run background script CT_FieldClicked(Field)
+		end if
+	until CT_Field exists
+	end loop
+end script CT_FieldCheck
+
+begin script CT_FieldClicked(Field)
+start
+	clear right clicked object
+	begin loop
+		if Field right clicked and MyCreature leashed
+			CT_Field = Field
+		elsif Field right clicked
+			clear right clicked object
+		end if
+	until CT_Field exists
+	end loop
+	clear right clicked object
+end script CT_FieldClicked
+
+begin script MoveCreature
+	LeftPos = marker at {1134.279, 363.636, 1552.734}
+	RightPos = marker at {1126.208, 363.730, 1546.566}
+	GoodCommentSaid = CT_False
+start
+	clear right button clicked
+	begin loop
+		if MyCreature leashed and mouse right button clicked
+			move MyCreature position to hand position
+			clear right button clicked
+			if GoodCommentSaid == CT_False
+				GoodCommentSaid = CT_True
+				begin dialogue
+					eject good spirit
+					eject evil spirit
+					//GA: "Excellent! With your Creature on the Leash you can move him or get him to do things."
+						say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_120"
+						wait until read
+					//EA: "And more importantly, to do what you want him to do."
+						say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_130"
+						wait until read
+						LeashDialogueFinished = 1
+					send good spirit home
+					send evil spirit home
+				end dialogue
+			end if
+		end if
+	until {MyCreature} and {L3GreekTown} on same side of line between {LeftPos} and {RightPos} and LeashDialogueFinished == 1
+	end loop
+	
+	force MyCreature finish
+
+	CT_CreatureMoved = CT_True
+end script MoveCreature
+
+begin script EA_DoubleClickOnTheRock
+start
+	begin dialogue
+		eject evil spirit
+	//EA: "Double-click the Action button on that rock by the field and he will be leashed to it."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_250"
+		wait until read
+		send evil spirit home
+	end dialogue
+end script EA_DoubleClickOnTheRock
+
+begin script GA_GrabTheLeash
+start
+	begin dialogue
+		eject good spirit
+	//GA: "To grab the Leash, click on the Creature with the Action button."
+		say "BW2T_SCRIPT_03FINAL_CREATURE_TUT_50"
+		wait until read
+		send good spirit home
+	end dialogue
+end script GA_GrabTheLeash
+
+begin script PickupTheVillager
+start
+	enable script creature MyCreature run
+	begin loop
+		if CT_PickupVillager exists and HEALTH of CT_PickupVillager != 0 and not CT_PickupVillager is HELD and {CT_PickupVillager} near {CT_VillagerPos} radius 5
+			force MyCreature CREATURE_PICK_UP CT_PickupVillager
+			wait until creature MyCreature finished script action or CT_PickupVillager not exists or HEALTH of CT_PickupVillager == 0 or not {CT_PickupVillager} near {CT_VillagerPos} radius 110 or CT_PickupVillager is HELD
+		elsif variable get MyCreature current action == variable CREATURE_PICK_UP
+			force MyCreature finish
+		end if
+	until get held by MyCreature == CT_PickupVillager and HEALTH of CT_PickupVillager > 0
+	end loop
+	disable MyCreature can drop
+	disable CT_PickupVillager pickup
+	CT_VillagerPickedUp = CT_True
+end script PickupTheVillager
+
+begin script CT_PunishRewardCreature
+start
+	wait until get object hand is over == MyCreature//bindable action BINDABLE_ACTION_TYPE_ACTION performed  
+	
+	clear creature MyCreature script thought
+	enable script creature MyCreature interaction
+	run background script Creature_TUT_AddObjective(TUT_PUNISH_OR_REWARD, 0)
+	
+	begin loop
+		if bindable action BINDABLE_ACTION_TYPE_ACTION performed and get object hand is over == MyCreature
+			wait until not bindable action BINDABLE_ACTION_TYPE_ACTION performed
+			if get creature MyCreature feedback == 0
+				//CT_StopTalking = CT_True
+				if dialogue ready
+					begin dialogue
+						eject good spirit
+						//GA: "Try again."
+							say "BW2T_HELP_TEXT_GUIDANCE_RANDOM_ADVISOR_23"
+							wait until read
+						send good spirit home
+					end dialogue
+				end if
+			end if
+		end if
+	until get creature MyCreature feedback != 0 and not bindable action BINDABLE_ACTION_TYPE_ACTION performed
+	end loop
+	
+	disable script creature MyCreature interaction
+
+	if get creature MyCreature feedback < 0
+		CT_CreatureAction = PUT_VILLAGER_DOWN
+	else
+		CT_CreatureAction = ATE_VILLAGER
+	end if
+
+	run background script Creature_TUT_RemoveObjective(TUT_PUNISH_OR_REWARD)
+end script CT_PunishRewardCreature
+//-----------------------------------------------------------------------------

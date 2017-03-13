@@ -1,0 +1,527 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L8_WAR								= 1
+define L8_CITY								= 2
+define L8_NUM_BUILDING_TYPES				= 34
+define L8_NUM_EMBELLISHMENT_TYPES			= 8
+
+define L8_SET_NEUTRAL						= 1
+define L8_SET_LOW_IMPRESS					= 2
+define L8_SET_MED_IMPRESS					= 3
+define L8_SET_HIGH_IMPRESS					= 4
+define L8_SET_WAR_SET						= 5
+
+define L8_BUILDING_TYPE_HOUSE_A					= 0
+define L8_BUILDING_TYPE_HOUSE_B					= 1
+define L8_BUILDING_TYPE_HOUSE_C					= 2
+define L8_BUILDING_TYPE_HOUSE_D					= 3
+define L8_BUILDING_TYPE_HOUSE_E					= 4
+define L8_BUILDING_TYPE_SKYSCRAPER				= 5
+define L8_BUILDING_TYPE_ALTAR					= 6
+define L8_BUILDING_TYPE_STORAGE_PIT				= 7
+define L8_BUILDING_TYPE_CRECHE					= 8
+define L8_BUILDING_TYPE_SHRINE					= 9
+define L8_BUILDING_TYPE_TEMPLE					= 10
+define L8_BUILDING_TYPE_PUB						= 11
+define L8_BUILDING_TYPE_TOWN_CENTRE				= 12
+define L8_BUILDING_TYPE_CREATURE_PEN			= 13
+define L8_BUILDING_TYPE_FIELD					= 14
+define L8_BUILDING_TYPE_MELEE_ARMOURY			= 15
+define L8_BUILDING_TYPE_RANGED_ARMOURY			= 16
+define L8_BUILDING_TYPE_WORKSHOP				= 17
+define L8_BUILDING_TYPE_STUDY					= 18
+define L8_BUILDING_TYPE_UNIVERSITY				= 19
+define L8_BUILDING_TYPE_PRISON					= 20
+define L8_BUILDING_TYPE_SMELTER					= 21
+define L8_BUILDING_TYPE_GRANARY					= 22
+define L8_BUILDING_TYPE_LUMBERMILL				= 23
+define L8_BUILDING_TYPE_MARKET_POT				= 24
+define L8_BUILDING_TYPE_MARKET_STATUE			= 25
+define L8_BUILDING_TYPE_MARKET_PLANT			= 26
+define L8_BUILDING_TYPE_AMPITHEATRE				= 27
+define L8_BUILDING_TYPE_GRAVEYARD				= 28
+define L8_BUILDING_TYPE_OLD_PERSONS_HOME		= 29
+define L8_BUILDING_TYPE_BATHHOUSE				= 30
+define L8_BUILDING_TYPE_WALLTOWER_TECH0			= 31
+define L8_BUILDING_TYPE_WALLTOWER_TECH1			= 32
+define L8_BUILDING_TYPE_GATEHOUSE				= 33
+
+define L8_EMBELLISHMENT_TYPE_FOUNTAIN_GOOD		= 0
+define L8_EMBELLISHMENT_TYPE_FOUNTAIN_NEUTRAL	= 1
+define L8_EMBELLISHMENT_TYPE_FOUNTAIN_EVIL		= 2
+define L8_EMBELLISHMENT_TYPE_STATUE_GOOD		= 3
+define L8_EMBELLISHMENT_TYPE_STATUE_NEUTRAL		= 4
+define L8_EMBELLISHMENT_TYPE_STATUE_EVIL		= 5
+define L8_EMBELLISHMENT_TYPE_GARDEN_NEUTRAL		= 6
+define L8_EMBELLISHMENT_TYPE_GARDEN_EVIL		= 7
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global L8_BuildingType[L8_NUM_BUILDING_TYPES]
+global L8_EmbellishmentType[L8_NUM_EMBELLISHMENT_TYPES]
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script L8_Towns
+define script L8_WarTownBuild
+define script L8_CityTownBuild
+
+//-----------------------------------------------------------------------------
+//	Town building script for both brothers
+//-----------------------------------------------------------------------------
+begin script L8_Towns
+start
+
+	// List the building types
+	set research ARTEFACT_ABODE_NUMBER_CREATURE_PEN available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_ALTAR available to RESEARCH_AVAILABILITY_RESEARCHED
+	L8_BuildingType[0] = variable ABODE_NUMBER_A
+	L8_BuildingType[1] = variable ABODE_NUMBER_B
+	L8_BuildingType[2] = variable ABODE_NUMBER_C
+	L8_BuildingType[3] = variable ABODE_NUMBER_D
+	L8_BuildingType[4] = variable ABODE_NUMBER_E
+	L8_BuildingType[5] = variable ABODE_NUMBER_SKYSCRAPER
+	L8_BuildingType[6] = variable ABODE_NUMBER_ALTAR
+	L8_BuildingType[7] = variable ABODE_NUMBER_STORAGE_PIT
+	L8_BuildingType[8] = variable ABODE_NUMBER_CRECHE
+	L8_BuildingType[9] = variable ABODE_NUMBER_SHRINE
+	L8_BuildingType[10] = variable ABODE_NUMBER_TEMPLE
+	L8_BuildingType[11] = variable ABODE_NUMBER_PUB
+	L8_BuildingType[12] = variable ABODE_NUMBER_TOWN_CENTRE
+	L8_BuildingType[13] = variable ABODE_NUMBER_CREATURE_PEN
+	L8_BuildingType[14] = variable ABODE_NUMBER_FIELD
+	L8_BuildingType[15] = variable ABODE_NUMBER_MELEE_ARMOURY
+	L8_BuildingType[16] = variable ABODE_NUMBER_RANGED_ARMOURY
+	L8_BuildingType[17] = variable ABODE_NUMBER_WORKSHOP
+	L8_BuildingType[18] = variable ABODE_NUMBER_STUDY
+	L8_BuildingType[19] = variable ABODE_NUMBER_UNIVERSITY
+	L8_BuildingType[20] = variable ABODE_NUMBER_PRISON
+	L8_BuildingType[21] = variable ABODE_NUMBER_SMELTER
+	L8_BuildingType[22] = variable ABODE_NUMBER_GRANARY
+	L8_BuildingType[23] = variable ABODE_NUMBER_LUMBERMILL
+	L8_BuildingType[24] = variable ABODE_NUMBER_MARKET_POT
+	L8_BuildingType[25] = variable ABODE_NUMBER_MARKET_STATUE
+	L8_BuildingType[26] = variable ABODE_NUMBER_MARKET_PLANT
+	L8_BuildingType[27] = variable ABODE_NUMBER_AMPITHEATRE
+	L8_BuildingType[28] = variable ABODE_NUMBER_GRAVEYARD
+	L8_BuildingType[29] = variable ABODE_NUMBER_OLD_PERSONS_HOME
+	L8_BuildingType[30] = variable ABODE_NUMBER_BATHHOUSE
+	L8_BuildingType[31] = variable ABODE_NUMBER_WALLTOWER_TECH0
+	L8_BuildingType[32] = variable ABODE_NUMBER_WALLTOWER_TECH1
+	L8_BuildingType[33] = variable ABODE_NUMBER_GATEHOUSE
+
+	// List the embellishment types
+	L8_EmbellishmentType[0] = variable JAPANESE_FOUNTAIN_GOOD
+	L8_EmbellishmentType[1] = variable JAPANESE_FOUNTAIN_NEUTRAL
+	L8_EmbellishmentType[2] = variable JAPANESE_FOUNTAIN_EVIL
+	L8_EmbellishmentType[3] = variable JAPANESE_STATUE_GOOD
+	L8_EmbellishmentType[4] = variable JAPANESE_STATUE_NEUTRAL
+	L8_EmbellishmentType[5] = variable JAPANESE_STATUE_EVIL
+	L8_EmbellishmentType[6] = variable JAPANESE_GARDEN_NEUTRAL
+	L8_EmbellishmentType[7] = variable JAPANESE_GARDEN_EVIL
+
+	// Handle the war and city brothers town building
+	run background script L8_WarTownBuild
+	run background script L8_CityTownBuild
+
+end script L8_Towns
+
+
+//-----------------------------------------------------------------------------
+// War brother town building
+//-----------------------------------------------------------------------------
+begin script L8_WarTownBuild
+
+	MaxAmountOfBuildingType[L8_NUM_BUILDING_TYPES]
+
+	GreekCapacity						= 0
+	GreekHousesPlaced					= 0
+	GreekHousesBuilt					= 0
+
+	JapaneseCapacity					= 0
+	JapaneseHousesPlaced				= 0
+	JapaneseHousesBuilt					= 0
+
+	GreekTroopSize						= 0
+	JapaneseTroopSize					= 0
+	BiggestTroopAmount					= 0
+
+	Building							= 0
+	BuildingNum							= 0
+	BuildHouse							= 0
+	BuildBuilding						= 0
+
+	JapaneseCapital						= 0
+	JapanesePlayerNo					= 0
+	BuildingSetToUse					= L8_SET_WAR_SET
+
+	GetHouse							= L8_FALSE
+	GotHouse							= L8_FALSE
+
+	BuildTimer							= 0
+
+	Ctr									= 0
+
+start
+
+	// Sets the maximum amount of buildings the Japanese general will build, -1 will be unlimited amount
+	MaxAmountOfBuildingType[0] = -1							// ABODE_NUMBER_A
+	MaxAmountOfBuildingType[1] = -1							// ABODE_NUMBER_B
+	MaxAmountOfBuildingType[2] = -1							// ABODE_NUMBER_C
+	MaxAmountOfBuildingType[3] = -1							// ABODE_NUMBER_D
+	MaxAmountOfBuildingType[4] = -1							// ABODE_NUMBER_E
+	MaxAmountOfBuildingType[5] = -1							// ABODE_NUMBER_SKYSCRAPER
+	MaxAmountOfBuildingType[6] = 1							// ABODE_NUMBER_ALTAR
+	MaxAmountOfBuildingType[7] = 1							// ABODE_NUMBER_STORAGE_PIT
+	MaxAmountOfBuildingType[8] = 1							// ABODE_NUMBER_CRECHE
+	MaxAmountOfBuildingType[9] = 1							// ABODE_NUMBER_SHRINE
+	MaxAmountOfBuildingType[10] = 1							// ABODE_NUMBER_TEMPLE
+	MaxAmountOfBuildingType[11] = 1							// ABODE_NUMBER_PUB
+	MaxAmountOfBuildingType[12] = 1							// ABODE_NUMBER_TOWN_CENTRE
+	MaxAmountOfBuildingType[13] = 1							// ABODE_NUMBER_CREATURE_PEN
+	MaxAmountOfBuildingType[14] = -1						// ABODE_NUMBER_FIELD
+	MaxAmountOfBuildingType[15] = 1							// ABODE_NUMBER_MELEE_ARMOURY
+	MaxAmountOfBuildingType[16] = 1							// ABODE_NUMBER_RANGED_ARMOURY
+	MaxAmountOfBuildingType[17] = 1							// ABODE_NUMBER_WORKSHOP
+	MaxAmountOfBuildingType[18] = 1							// ABODE_NUMBER_STUDY
+	MaxAmountOfBuildingType[19] = 1							// ABODE_NUMBER_UNIVERSITY
+	MaxAmountOfBuildingType[20] = 1							// ABODE_NUMBER_PRISON
+	MaxAmountOfBuildingType[21] = 1							// ABODE_NUMBER_SMELTER
+	MaxAmountOfBuildingType[22] = 1							// ABODE_NUMBER_GRANARY
+	MaxAmountOfBuildingType[23] = 1							// ABODE_NUMBER_LUMBERMILL
+	MaxAmountOfBuildingType[24] = 1							// ABODE_NUMBER_MARKET_POT
+	MaxAmountOfBuildingType[25] = 1							// ABODE_NUMBER_MARKET_STATUE
+	MaxAmountOfBuildingType[26] = 1							// ABODE_NUMBER_MARKET_PLANT
+	MaxAmountOfBuildingType[27] = 1							// ABODE_NUMBER_AMPITHEATRE
+	MaxAmountOfBuildingType[28] = 1							// ABODE_NUMBER_GRAVEYARD
+	MaxAmountOfBuildingType[29] = 1							// ABODE_NUMBER_OLD_PERSONS_HOME
+	MaxAmountOfBuildingType[30] = 1							// ABODE_NUMBER_BATHHOUSE
+	MaxAmountOfBuildingType[31] = -1						// ABODE_NUMBER_WALLTOWER_TECH0
+	MaxAmountOfBuildingType[32] = -1						// ABODE_NUMBER_WALLTOWER_TECH1
+	MaxAmountOfBuildingType[33] = 3							// ABODE_NUMBER_GATEHOUSE
+
+
+	// Set the correct flags / timers
+	JapaneseCapital			= L8_JapaneseWarCapital
+	BuildingSetToUse		= L8_SET_WAR_SET
+	JapanesePlayerNo		= L8_WAR_JAPANESE
+	BuildTimer				= create timer for 120 seconds			// 2 mins - used for building non house buildings
+
+	// Disable to town manager so that the armies are not interfered with
+	disable JapaneseCapital town manager
+
+
+	// Initial buildings to start building
+	// Storage pit
+	BuildBuilding = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_STORAGE_PIT] in group BuildingSetToUse
+
+
+	wait until L8_StartEnemyActions == L8_TRUE
+
+	// Keep looping while the brother is alive
+	begin loop
+		wait until PLAYER of JapaneseCapital == 1
+		begin loop
+
+			// Keep track of the capacities of the towns and the troop sizes
+			GreekCapacity			= capacity of L8_GreekTown
+			JapaneseCapacity		= capacity of JapaneseCapital			// This is possibly being overwritten below
+			GreekTroopSize			= get number of platoon warriors belonging to player L8_GREEK
+			JapaneseTroopSize		= get number of platoon warriors belonging to player JapanesePlayerNo
+
+
+			// Hack to get a capacity of abodes being built
+			if JapaneseCapacity <= 0
+				BuildingNum = 0
+				Ctr = L8_BUILDING_TYPE_HOUSE_A
+				while Ctr < L8_BUILDING_TYPE_SKYSCRAPER
+					BuildingNum += get number of unbuilt constant L8_BuildingType[Ctr] in JapaneseCapital
+					Ctr++
+				end while
+
+				// Get a building
+				Building = get HOUSE at {JapaneseCapital} radius 100
+
+				// If the building exists use the capacity of it in the capacity calculation otherwise use a hard coded figure
+				if Building exists
+					if capacity of Building > 0				// Might get a building that doesn't have a capacity
+						JapaneseCapacity = BuildingNum * capacity of Building
+					else
+						JapaneseCapacity = BuildingNum * 4
+					end if
+				else
+					JapaneseCapacity = BuildingNum * 4
+				end if
+			end if
+
+
+			// Build the next building for the good guy if the timer has run out
+			// Do we need to build another house?
+			if JapaneseTroopSize >= GreekTroopSize
+				BiggestTroopAmount = JapaneseTroopSize
+			else
+				BiggestTroopAmount = GreekTroopSize
+			end if
+
+			// Do the building by building the smallest houses first
+			if BiggestTroopAmount >= JapaneseCapacity
+				BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_HOUSE_A] in group BuildingSetToUse
+				if BuildHouse not exists
+					BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_HOUSE_B] in group BuildingSetToUse
+					if BuildHouse not exists
+						BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_HOUSE_C] in group BuildingSetToUse
+						if BuildHouse not exists
+							BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_HOUSE_D] in group BuildingSetToUse
+							if BuildHouse not exists
+								BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_HOUSE_E] in group BuildingSetToUse
+								if BuildHouse not exists
+									BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_SKYSCRAPER] in group BuildingSetToUse
+									if BuildHouse not exists
+
+	//									say "ERROR: No more houses in WAR brother town to build!"
+	//									wait until read
+
+									end if
+								end if
+							end if
+						end if
+					end if
+				end if
+			end if
+
+
+			// Build the other civic type buildings on a timer
+			GetHouse = L8_FALSE
+			GotHouse = L8_FALSE
+			if get BuildTimer time remaining <= 0
+				Ctr = L8_BUILDING_TYPE_ALTAR
+				force while Ctr < L8_NUM_BUILDING_TYPES and GotHouse == L8_FALSE
+					// Should we get a building?
+					BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[Ctr] in group BuildingSetToUse
+					if BuildHouse exists
+						GotHouse = L8_TRUE
+					end if
+					Ctr++
+				end while
+
+				if GotHouse == L8_TRUE
+					set BuildTimer time to 120 seconds
+				end if
+			end if
+
+			wait 1 seconds
+		until PLAYER of JapaneseCapital == 0
+		end loop
+	end loop
+
+end script L8_WarTownBuild
+
+
+//-----------------------------------------------------------------------------
+// City brother town building
+//-----------------------------------------------------------------------------
+begin script L8_CityTownBuild
+
+	MaxAmountOfBuildingType[L8_NUM_BUILDING_TYPES]
+
+	LEVEL_1								= 30
+	LEVEL_2								= 20
+	LEVEL_3								= 10
+	LEVEL_4								= 5
+
+	GreekCapacity						= 0
+	GreekHousesPlaced					= 0
+	GreekHousesBuilt					= 0
+
+	JapaneseCapital						= 0
+	JapanesePlayerNo					= 0
+
+	JapaneseCapacity					= 0
+	JapaneseHousesPlaced				= 0
+	JapaneseHousesBuilt					= 0
+
+	Building							= 0
+	BuildHouse							= 0
+	BuildBuilding						= 0
+	BuildingSetToUse					= 0
+
+	Wonder								= 0
+	Embellishment						= 0
+	BuildEmbellishment					= 0
+
+	GotHouse							= L8_FALSE
+	OkToBuild							= L8_FALSE
+
+	BuildingTimer						= 0
+
+	WonderTimer							= create timer for GLOBAL_VALUE_LAND_8_WONDER_MAX_BUILD_TIME / 100 seconds
+	WonderDesiredBuilt					= 0
+	WonderCurrentBuilt					= 0
+	WonderCurrentHealth					= 0
+	WonderCurrentCharge					= 0
+
+	Ctr									= 0
+
+start
+
+	// Sets the maximum amount of buildings the Japanese general will build, -1 will be unlimited amount
+	MaxAmountOfBuildingType[0] = -1							// ABODE_NUMBER_A
+	MaxAmountOfBuildingType[1] = -1							// ABODE_NUMBER_B
+	MaxAmountOfBuildingType[2] = -1							// ABODE_NUMBER_C
+	MaxAmountOfBuildingType[3] = -1							// ABODE_NUMBER_D
+	MaxAmountOfBuildingType[4] = -1							// ABODE_NUMBER_E
+	MaxAmountOfBuildingType[5] = -1							// ABODE_NUMBER_SKYSCRAPER
+	MaxAmountOfBuildingType[6] = 1							// ABODE_NUMBER_ALTAR
+	MaxAmountOfBuildingType[7] = 1							// ABODE_NUMBER_STORAGE_PIT
+	MaxAmountOfBuildingType[8] = 1							// ABODE_NUMBER_CRECHE
+	MaxAmountOfBuildingType[9] = 1							// ABODE_NUMBER_SHRINE
+	MaxAmountOfBuildingType[10] = 1							// ABODE_NUMBER_TEMPLE
+	MaxAmountOfBuildingType[11] = 1							// ABODE_NUMBER_PUB
+	MaxAmountOfBuildingType[12] = 1							// ABODE_NUMBER_TOWN_CENTRE
+	MaxAmountOfBuildingType[13] = 1							// ABODE_NUMBER_CREATURE_PEN
+	MaxAmountOfBuildingType[14] = -1						// ABODE_NUMBER_FIELD
+	MaxAmountOfBuildingType[15] = 1							// ABODE_NUMBER_MELEE_ARMOURY
+	MaxAmountOfBuildingType[16] = 1							// ABODE_NUMBER_RANGED_ARMOURY
+	MaxAmountOfBuildingType[17] = 1							// ABODE_NUMBER_WORKSHOP
+	MaxAmountOfBuildingType[18] = 1							// ABODE_NUMBER_STUDY
+	MaxAmountOfBuildingType[19] = 1							// ABODE_NUMBER_UNIVERSITY
+	MaxAmountOfBuildingType[20] = 1							// ABODE_NUMBER_PRISON
+	MaxAmountOfBuildingType[21] = 1							// ABODE_NUMBER_SMELTER
+	MaxAmountOfBuildingType[22] = 1							// ABODE_NUMBER_GRANARY
+	MaxAmountOfBuildingType[23] = 1							// ABODE_NUMBER_LUMBERMILL
+	MaxAmountOfBuildingType[24] = 1							// ABODE_NUMBER_MARKET_POT
+	MaxAmountOfBuildingType[25] = 1							// ABODE_NUMBER_MARKET_STATUE
+	MaxAmountOfBuildingType[26] = 1							// ABODE_NUMBER_MARKET_PLANT
+	MaxAmountOfBuildingType[27] = 1							// ABODE_NUMBER_AMPITHEATRE
+	MaxAmountOfBuildingType[28] = 1							// ABODE_NUMBER_GRAVEYARD
+	MaxAmountOfBuildingType[29] = 1							// ABODE_NUMBER_OLD_PERSONS_HOME
+	MaxAmountOfBuildingType[30] = 1							// ABODE_NUMBER_BATHHOUSE
+	MaxAmountOfBuildingType[31] = -1						// ABODE_NUMBER_WALLTOWER_TECH0
+	MaxAmountOfBuildingType[32] = -1						// ABODE_NUMBER_WALLTOWER_TECH1
+	MaxAmountOfBuildingType[33] = 3							// ABODE_NUMBER_GATEHOUSE
+
+	// Set the correct flags / timers
+	JapaneseCapital			= L8_JapaneseCityCapital
+	BuildingSetToUse		= L8_SET_NEUTRAL
+	JapanesePlayerNo		= L8_CITY_JAPANESE
+	BuildingTimer			= create timer for LEVEL_1 seconds		// Start off with normal building rate
+
+	
+	// Disable to town manager so that the armies are not interfered with
+	disable JapaneseCapital town manager
+
+
+	// Initial buildings to start building
+	// Storage pit
+	BuildBuilding = build town JapaneseCapital buildings of type constant L8_BuildingType[L8_BUILDING_TYPE_STORAGE_PIT] in group L8_SET_NEUTRAL
+	Wonder = build town JapaneseCapital epic wonders of type WONDER_EARTHQUAKE in group L8_SET_NEUTRAL
+
+
+	// Keep looping while the brother is alive
+	begin loop
+		wait until PLAYER of JapaneseCapital == 1
+		begin loop
+			if L8_StartEnemyActions == L8_TRUE
+				// Keep track of the capacities of the towns and the troop sizes
+				GreekCapacity			= capacity of L8_GreekTown
+				JapaneseCapacity		= capacity of JapaneseCapital
+
+
+				// Build the next building for the good guy if the timer has run out
+				if get BuildingTimer time remaining <= 0
+					// Build the next building
+					Building = 0
+					GotHouse = L8_FALSE
+					force while Building < L8_NUM_BUILDING_TYPES and GotHouse == L8_FALSE
+						BuildHouse = build town JapaneseCapital buildings of type constant L8_BuildingType[Building] in group BuildingSetToUse
+						if BuildHouse exists
+							GotHouse = L8_TRUE
+						end if
+						Building++
+					end while
+
+					// Build the next embellishment
+					if BuildHouse not exists
+						Embellishment = 0
+						GotHouse = L8_FALSE
+						force while Embellishment < L8_NUM_EMBELLISHMENT_TYPES and GotHouse == L8_FALSE
+							BuildEmbellishment = build town JapaneseCapital embellishments of type constant L8_EmbellishmentType[Embellishment] in group BuildingSetToUse
+							if BuildEmbellishment exists
+								GotHouse = L8_TRUE
+							end if
+							Embellishment++
+						end while
+					end if
+
+					// Do we need to move onto the next set?
+					if BuildHouse not exists and BuildEmbellishment not exists
+						// We've used up all of the buildings in this set so move onto the next one
+						if BuildingSetToUse == L8_SET_NEUTRAL
+							BuildingSetToUse = L8_SET_LOW_IMPRESS
+						elsif BuildingSetToUse == L8_SET_LOW_IMPRESS
+							BuildingSetToUse = L8_SET_MED_IMPRESS
+						elsif BuildingSetToUse == L8_SET_MED_IMPRESS
+							BuildingSetToUse = L8_SET_HIGH_IMPRESS
+						elsif BuildingSetToUse == L8_SET_HIGH_IMPRESS
+							// We've nothing else to build
+						end if
+					end if
+
+					// Reset the build timer depending on what building set we're using
+					if L8_JapaneseWarCapital not exists or PLAYER of L8_JapaneseWarCapital == L8_GREEK
+						// Build at max speed if the other brother is dead
+						set BuildingTimer time to LEVEL_4 seconds
+					else
+						// The other brother is alive so continue to build up the speed of building slowly
+						if BuildingSetToUse == L8_SET_NEUTRAL
+							set BuildingTimer time to LEVEL_1 seconds		// Slowest
+						elsif BuildingSetToUse == L8_SET_LOW_IMPRESS
+							set BuildingTimer time to LEVEL_2 seconds
+						elsif BuildingSetToUse == L8_SET_MED_IMPRESS
+							set BuildingTimer time to LEVEL_3 seconds
+						elsif BuildingSetToUse == L8_SET_HIGH_IMPRESS
+							set BuildingTimer time to LEVEL_4 seconds		// Fastest
+						end if
+					end if
+				end if
+			end if
+
+			if L8_Wonder == 0
+				if Wonder exists
+					WonderCurrentBuilt = BUILT of Wonder
+					if WonderCurrentBuilt >= 1.0
+						L8_Wonder = Wonder
+					elsif get WonderTimer time remaining <= 0
+						WonderDesiredBuilt += 0.01
+						set WonderTimer time to GLOBAL_VALUE_LAND_8_WONDER_MAX_BUILD_TIME / 100 seconds
+						if WonderCurrentBuilt < WonderDesiredBuilt
+							BUILT of Wonder = WonderDesiredBuilt
+						end if
+					end if
+				end if
+			elsif get WonderTimer time remaining <= 0
+				WonderCurrentHealth = HEALTH of L8_Wonder
+				if WonderCurrentHealth < 1.0
+					WonderCurrentHealth += 0.01
+					HEALTH of L8_Wonder = WonderCurrentHealth
+					set WonderTimer time to GLOBAL_VALUE_LAND_8_WONDER_MAX_BUILD_TIME / 100 seconds
+				else
+					WonderCurrentCharge = CHARGE of L8_Wonder
+					if WonderCurrentCharge < 1.0
+						WonderCurrentCharge += 0.01
+						CHARGE of L8_Wonder = WonderCurrentCharge
+						set WonderTimer time to GLOBAL_VALUE_LAND_8_FIRE_WONDER_DELAY / 100 seconds
+					end if
+				end if
+			end if
+
+		until PLAYER of JapaneseCapital == 0
+		end loop
+	end loop
+
+end script L8_CityTownBuild

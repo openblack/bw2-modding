@@ -1,0 +1,453 @@
+//=============================================================================
+// Land 10 Aztec Creature AI
+// Lenny
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
+define AC_FALSE		= 0
+define AC_TRUE		= 1
+
+//Stuff
+define AC_MAX_SEARCH_RADIUS			= 70
+
+//Gorilla Actions
+define AC_ACTION_NONE						= 0
+define AC_ACTION_RESPOND_TO_JAILBREAK		= 1
+define AC_ACTION_ATTACK_PRISONERS			= 2
+define AC_ACTION_PATROL_HOME				= 3
+define AC_ACTION_FIGHT_PLAYERS_CREATURE		= 4
+define AC_ACTION_PATROL						= 5
+define AC_ACTION_ATTACK_PLAYERTOWN			= 6
+
+//Patrol home minor actions
+define AC_ACTION_PATROL_HOME_SUB_PATROL		= 0
+define AC_ACTION_PATROL_HOME_SUB_SLEEP		= 1
+define AC_ACTION_PATROL_HOME_SUB_ROLEGATHER	= 2
+define AC_ACTION_PATROL_KILL_VILLAGER		= 3
+define AC_ACTION_PATROL_SCARE_VILLAGER		= 4
+
+define AC_NUM_TO_KILL_IN_BAD_DEATH_BODGE	= 8
+
+//-----------------------------------------------------------------------------
+// Script defines
+//-----------------------------------------------------------------------------
+define script AC_Action_AttackPrisoners
+define script AC_Action_PatrolHome
+define script AC_Action_RespondToJailbreak
+define script AC_Action_FightPlayerCreature
+define script AC_Action_Patrol
+define script AC_Action_Attack_Playertown
+
+define script AC_CheckForCreatureFight
+
+define script AC_BodgeMoveCreatureToPosition(Pos)
+define script AC_KillBodge(Pos)
+
+//-----------------------------------------------------------------------------
+// Land10Creature AI
+//-----------------------------------------------------------------------------
+begin script Land10CreatureAI
+	GorillaCreatePos		= marker at {2234.095, 225.669, 976.127}
+	//
+	//marker at {1997.898, 308.867, 1740.412}
+start
+
+	//If the creature does not exist, create him	
+	L10_Gorilla = get player 1 creature
+	if not L10_Gorilla exists
+		L10_Gorilla = create CREATURE CREATURE_TYPE_GORILLA at {GorillaCreatePos}
+		//L10_Gorilla = create CREATURE CREATURE_TYPE_LION at {GorillaCreatePos}
+		SCALE of L10_Gorilla = 1.0
+		ALIGNMENT of L10_Gorilla = 0
+		set player 1 creature to L10_Gorilla
+		//release L10_Gorilla
+	end if
+
+	/*
+	C_FIGHT_ATTACK1			- Smashing ground + physics = fun
+	C_FIGHT_ATTACK2			- Smashing ground + physics = even more fun		AAAA!!!! - brilliant
+	C_FIGHT_ATTACK3_B_LEFT	- simple hit
+	C_FIGHT_MULTISTOMP_BACK - cool
+	C_FIGHT_MULTISTOMP_FRONTLEFT - cooler stomp
+
+
+	C_FIGHT_SPITTING_BLOOD - nice for when loosing the creature fight
+
+
+	C_FIGHT_THREAT1 - taunt
+	C_FIGHT_THREAT2 - taunt
+
+	*/
+
+	//play anim C_POINT_HI_LEFT on L10_Gorilla
+	//wait until creature L10_Gorilla finished script action
+
+	//Check conditiosn for creature fight in the background
+	//run background script AC_CheckForCreatureFight
+
+	//First action
+	L10_GorillaAction = AC_ACTION_PATROL_HOME
+
+
+	//set MyCreature position to {L10_Gorilla} + {0, 20}
+
+	begin loop
+
+		//Attack escaping prisoners
+		if L10_GorillaAction == AC_ACTION_ATTACK_PRISONERS
+			run script AC_Action_AttackPrisoners
+		end if
+
+		//Patrol home base area
+		if L10_GorillaAction == AC_ACTION_PATROL_HOME
+			run script AC_Action_PatrolHome
+		end if
+
+		//Respond to jailbreak
+		if L10_GorillaAction == AC_ACTION_RESPOND_TO_JAILBREAK			
+			run script AC_Action_RespondToJailbreak
+		end if
+
+		//Fight players creature if they are close
+		if L10_GorillaAction == AC_ACTION_FIGHT_PLAYERS_CREATURE
+			run script AC_Action_FightPlayerCreature
+		end if
+
+		//Patrol
+		if L10_GorillaAction == AC_ACTION_PATROL
+			run script AC_Action_Patrol
+		end if
+
+		//Attack player town if close
+		if L10_GorillaAction == AC_ACTION_ATTACK_PLAYERTOWN
+			run script AC_Action_Attack_Playertown
+		end if
+
+	end loop
+
+end script Land10CreatureAI
+
+//-----------------------------------------------------------------------------
+// Land10Creature AI
+//-----------------------------------------------------------------------------
+begin script AC_Action_AttackPrisoners
+	Target				= 0
+	Villager			= 0
+	Rand				= 0
+	SearchRad			= 0
+
+	CapturePoint		= marker at {1718.816, 213.388, 1272.932}
+
+	CatchUpAttampts = 0
+start
+
+	run script AC_BodgeMoveCreatureToPosition(marker at {CapturePoint})
+
+	begin loop
+
+		//Search and find a target to attack
+		SearchRad	= 0
+		Villager	= 0
+		Target		= 0
+		begin loop
+			Villager = get VILLAGER at {L10_Gorilla} radius SearchRad
+
+			if HEALTH of Villager > 0 and PLAYER of Villager == 0
+				//if PLAYER of Villager == 0
+					Target = Villager
+				//end if
+			end if
+
+			SearchRad+= 10
+		until Target exists or SearchRad >= AC_MAX_SEARCH_RADIUS
+		end loop
+	
+		//Target exists - Attack the bugger(s)
+		if Target exists
+			
+			CatchUpAttampts = 0
+			begin loop
+				move L10_Gorilla position to {Target}
+				wait 2 seconds
+				CatchUpAttampts++
+			until {L10_Gorilla} near {Target} radius 7 or CatchUpAttampts == 3
+			end loop
+
+			Rand = number from 1 to 3
+
+			if Rand == 1
+				play anim C_FIGHT_ATTACK2 on L10_Gorilla
+			elsif Rand == 2
+				play anim C_FIGHT_ATTACK3_B_LEFT on L10_Gorilla
+			elsif Rand == 3
+				play anim C_FIGHT_MULTISTOMP_BACK on L10_Gorilla
+			//elsif Rand == 4
+			//	force L10_Gorilla CREATURE_KICK Target
+			end if		
+			
+			wait 2 seconds
+			run background script AC_KillBodge(marker at {L10_Gorilla})
+
+			/*
+			set physics at position {L10_Gorilla} with strength {65,70,65} radius 35 random 1
+			if camera position near {L10_Gorilla} radius 70
+				begin cinema
+					shake camera strength 8.0
+				end cinema
+			end if
+
+			wait 1.5 seconds
+			begin cinema
+				stop camera shake
+			end cinema
+			*/
+			
+			wait until creature L10_Gorilla finished script action
+
+		end if
+
+		wait 1.5 seconds
+
+	end loop
+
+until L10_GorillaAction != AC_ACTION_ATTACK_PRISONERS
+end script AC_Action_AttackPrisoners
+
+//-----------------------------------------------------------------------------
+// Land10Creature AI
+//-----------------------------------------------------------------------------
+begin script AC_Action_PatrolHome
+	SubAction			= 0
+	LastSubAction		= -1
+
+	//Sub Action Markers
+	SleepPos			= marker at {2275.074, 225.342, 971.036}
+	GatherStart			= marker at {2212.130, 221.459, 966.953}
+	MoveOutFromSleep	= marker at {2245.169, 225.511, 974.609}
+	PatrolPoints[3]
+	Waypoint			= 0		//Current patro point
+
+
+start
+
+	PatrolPoints[0] = marker at {2224.027, 227.655, 995.027}
+	PatrolPoints[1] = marker at {2216.922, 220.723, 953.808}
+	PatrolPoints[2] = marker at {2187.803, 212.950, 965.189}
+
+	begin loop
+
+		begin loop
+			SubAction = number from AC_ACTION_PATROL_HOME_SUB_PATROL to AC_ACTION_PATROL_HOME_SUB_SLEEP
+		until SubAction != LastSubAction
+		end loop
+
+		//SubAction = AC_ACTION_PATROL_HOME_SUB_PATROL
+
+		if SubAction == AC_ACTION_PATROL_HOME_SUB_PATROL
+			Waypoint = number from 0 to 2
+
+			move L10_Gorilla position to {PatrolPoints[Waypoint]}
+			wait until {L10_Gorilla} near {PatrolPoints[Waypoint]} radius 5
+
+			play anim C_INDIVIDUAL_ANGRY on L10_Gorilla
+			wait until creature L10_Gorilla finished script action
+
+		elsif SubAction == AC_ACTION_PATROL_HOME_SUB_ROLEGATHER
+
+			move L10_Gorilla position to {GatherStart}
+			wait until {L10_Gorilla} near {GatherStart} radius 5
+
+			//Set his role to gatherer
+			set creature L10_Gorilla role to CR_GATHERER radius 65
+			
+			wait 40 seconds
+
+			set creature L10_Gorilla role to CR_NONE radius 65
+
+		elsif SubAction == AC_ACTION_PATROL_HOME_SUB_SLEEP
+				
+			move L10_Gorilla position to {SleepPos}
+			wait until {L10_Gorilla} near {SleepPos} radius 5
+				
+			play anim C_STATIC_START_SLEEP on L10_Gorilla
+			wait until creature L10_Gorilla finished script action
+
+			play anim C_STATIC_SLEEP on L10_Gorilla loop 5
+			wait until creature L10_Gorilla finished script action
+
+			play anim C_STATIC_END_SLEEP on L10_Gorilla
+			wait until creature L10_Gorilla finished script action
+
+			move L10_Gorilla position to {MoveOutFromSleep}
+			wait until {L10_Gorilla} near {MoveOutFromSleep} radius 5
+			
+		elsif SubAction	== AC_ACTION_PATROL_KILL_VILLAGER
+
+		elsif SubAction	== AC_ACTION_PATROL_SCARE_VILLAGER
+
+		end if
+
+	end loop
+
+until L10_GorillaAction != AC_ACTION_PATROL_HOME
+end script AC_Action_PatrolHome
+
+//-----------------------------------------------------------------------------
+// Respond to Jailbreak
+//-----------------------------------------------------------------------------
+begin script AC_Action_RespondToJailbreak
+	JailPos				= marker at {1988.872, 267.946, 1477.630}
+	CutOffWaypoint_1	= marker at {1854.831, 223.299, 1270.646}
+	CutOffWaypoint_2	= marker at {1727.244, 212.989, 1269.055}
+start
+	//Look round for horn being blown
+	set L10_Gorilla focus to {JailPos}
+	wait 4 seconds	
+
+	release L10_Gorilla focus
+
+	play anim C_POINT_HI_LEFT on L10_Gorilla
+
+	wait 3 seconds
+
+	//Run to Jail
+	run script AC_BodgeMoveCreatureToPosition(marker at {JailPos})
+
+	set L10_Gorilla focus to {1885.093, 307.672, 1695.756}
+	wait 3 seconds
+
+	play anim C_GO_LOOKTOSEA_LOOP on L10_Gorilla loop 5
+	wait until creature L10_Gorilla finished script action
+
+	release L10_Gorilla focus 
+
+	run script AC_BodgeMoveCreatureToPosition(marker at {CutOffWaypoint_1})
+	run script AC_BodgeMoveCreatureToPosition(marker at {CutOffWaypoint_2})
+
+	L10_GorillaAction = AC_ACTION_ATTACK_PRISONERS
+
+until L10_GorillaAction != AC_ACTION_RESPOND_TO_JAILBREAK
+end script AC_Action_RespondToJailbreak
+
+//-----------------------------------------------------------------------------
+// Fight player creature
+//-----------------------------------------------------------------------------
+begin script AC_Action_FightPlayerCreature
+start
+
+	MyCreature = get player 0 creature
+
+	force L10_Gorilla CREATURE_FIGHT MyCreature
+	release MyCreature
+
+	wait until HEALTH of MyCreature <= 0 or HEALTH of L10_Gorilla <= 0
+
+until L10_GorillaAction != AC_ACTION_FIGHT_PLAYERS_CREATURE
+end script AC_Action_FightPlayerCreature
+
+//-----------------------------------------------------------------------------
+// Kill bodge
+//-----------------------------------------------------------------------------
+begin script AC_KillBodge(Pos)
+	Villager		= 0
+	DeadCount		= 0
+start
+
+	begin loop
+
+		Villager = get VILLAGER at {Pos} + {number from -4 to 4, number from -4 to 4} radius 10
+	
+		if Villager exists
+			HEALTH of Villager = 0
+			DeadCount++
+		end if
+
+	until DeadCount >= AC_NUM_TO_KILL_IN_BAD_DEATH_BODGE
+	end loop
+
+end script AC_KillBodge
+
+//-----------------------------------------------------------------------------
+// Move creature to position
+//-----------------------------------------------------------------------------
+begin script AC_BodgeMoveCreatureToPosition(Pos)
+start
+
+	begin loop
+		move L10_Gorilla position to {Pos}
+		wait 3 seconds
+	until {L10_Gorilla} near {Pos} radius 10
+	end loop
+
+end script AC_BodgeMoveCreatureToPosition
+
+//-----------------------------------------------------------------------------
+// Check for Creature Fight
+//-----------------------------------------------------------------------------
+begin script AC_CheckForCreatureFight
+start
+
+	MyCreature = get player 0 creature
+	release MyCreature
+
+	begin loop
+		
+		if {L10_Gorilla} near {MyCreature} radius 30
+			L10_AztecGeneralCommentID = ST_GENERAL_CREATURE_FIGHT
+			L10_GorillaAction = AC_ACTION_FIGHT_PLAYERS_CREATURE
+
+			wait until HEALTH of MyCreature == 0 or HEALTH of L10_Gorilla == 0
+
+			if HEALTH of L10_Gorilla <= 0
+				L10_AztecGeneralCommentID = ST_GENERAL_PLAYER_CREATURE_WON
+			elsif HEALTH of MyCreature <= 0
+				L10_AztecGeneralCommentID = ST_GENERAL_PLAYER_CREATURE_LOST
+			end if
+
+		end if
+
+		wait 2 seconds
+
+	end loop
+
+end script AC_CheckForCreatureFight
+
+//-----------------------------------------------------------------------------
+// Check for Creature Fight
+//-----------------------------------------------------------------------------
+begin script AC_Action_Patrol
+
+PatrolPos1 = 0
+PatrolPos2 = 0
+
+start
+
+	PatrolPos1 = marker at {1790.689, 207.059, 1247.625}
+	PatrolPos2 = marker at {731.254, 396.427, 1753.034}
+	
+	run script AC_BodgeMoveCreatureToPosition(PatrolPos1)
+	run script AC_BodgeMoveCreatureToPosition(PatrolPos2)
+	
+
+until L10_GorillaAction != AC_ACTION_PATROL
+end script AC_Action_Patrol
+
+//-------------------------
+//---Attack_playertown---//
+//-------------------------
+begin script AC_Action_Attack_Playertown
+
+TempAnger = 0
+
+start
+
+	run script AC_BodgeMoveCreatureToPosition(L10GreekTown)
+	set L10_Gorilla desire CREATURE_DESIRE_ANGER to 1.0
+
+until L10_GorillaAction != AC_ACTION_ATTACK_PLAYERTOWN
+
+	set L10_Gorilla desire CREATURE_DESIRE_ANGER to 0.2
+
+end script AC_Action_Attack_Playertown

@@ -1,0 +1,854 @@
+//==================================================================
+// Land 2 Aztec Attacks
+// Lenny
+//==================================================================
+
+//---------------------------------------------------------
+// Cosntants
+//---------------------------------------------------------
+define AA_FALSE = 0
+define AA_TRUE = 1
+
+define AA_MAX_PLATOONS = 25
+
+//---------------------------------------------------------
+// Globals
+//---------------------------------------------------------
+
+//---------------------------------------------------------
+// Script defines
+//---------------------------------------------------------
+define script AA_MajorBattle
+define script AA_SmallVillageAttack
+define script AA_CreateBattle(NumPlatoons, Position, Radius, WaitTime)
+define script AA_CityBattle
+define script AA_IntroFight
+define script AA_IntroAlley
+
+//Attack scripts
+define script AA_SmallPlatoonGroup(Pos, Size, Trigger)
+define script AA_SmallMeleePlatoon(Pos, Size, Player, Trigger)
+define script AA_SmallArcherPlatoon(Pos, Size, Fire, Player, Trigger)
+
+//Wall villagers attacks
+
+define script AA_WallVillagersBackground
+define script AA_WallVillagersSmallPlatoonFight
+
+define script AA_RoofTopFight(House, Del)
+define script AA_ROFAttacks
+
+//Barel run attacks
+define script AA_BarrelRunAttacks
+define script AA_MoveToHayBalesAttacks
+
+define script AA_Alignment(Object)
+define script LennysSplineTest
+
+//---------------------------------------------------------
+// Aztec Attacks
+//---------------------------------------------------------
+begin script Land2AztecAttacks
+	IntroArmy[20]
+	count=0
+	HOWMANYPLATOOOOONS = 0
+	HOWMANYPEOPLEPERPLATOOOOONS = 0
+
+start
+
+	if game is min spec
+		HOWMANYPLATOOOOONS = 8
+		HOWMANYPEOPLEPERPLATOOOOONS = 30
+	else
+		HOWMANYPLATOOOOONS = 14
+		HOWMANYPEOPLEPERPLATOOOOONS = 40
+	end if
+
+	run background script AA_WallVillagersBackground
+
+	// --- Ring of Fire Platoons
+	run background script AA_ROFAttacks
+	run background script AA_IntroAlley
+
+
+	begin loop
+		IntroArmy[count] = create platoon PLATOON_INFO_AZTEC_MELEE_CINEMA at {1511.638, 152.227, 1886.779}/*{1515.425, 151.703, 1853.888}*/ with HOWMANYPEOPLEPERPLATOOOOONS men and 0 women
+		PLAYER of IntroArmy[count] = 1	
+
+		move IntroArmy[count] to limbo
+		IntroArmy[count+1] = create platoon PLATOON_INFO_AZTEC_MELEE_CINEMA at {1521.954, 152.966, 1916.156}/*{1514.052, 151.586, 1884.435}*/ with HOWMANYPEOPLEPERPLATOOOOONS men and 0 women
+
+		PLAYER of IntroArmy[count+1] = 1
+		move IntroArmy[count+1] to limbo
+
+		count+=2
+		until count == HOWMANYPLATOOOOONS
+	end loop
+
+	wait until HugeArmyCreateDelete == 1
+	
+	count=0
+	begin loop
+		release IntroArmy[count] from limbo
+		move IntroArmy[count] position to {1661.577, 122.966, 1805.495}//{1691.680, 117.047, 1791.195}
+		release IntroArmy[count+1] from limbo
+		move IntroArmy[count+1] position to {1671.972, 122.055, 1826.550}//{1704.209, 116.240, 1821.790}
+		//run background script AA_Alignment(IntroArmy[count])
+		//run background script AA_Alignment(IntroArmy[count+1])
+		wait 1 seconds
+		count+=2		
+		until count == HOWMANYPLATOOOOONS
+	end loop
+
+	//attach atmos "battle_atmos_" to IntroArmy[0]
+	//set IntroArmy[0] atmos group 4 time 1 seconds
+	wait until HugeArmyCreateDelete == 2
+	
+
+	count=0
+	force while count < HOWMANYPLATOOOOONS
+		if IntroArmy[count] exists
+			delete IntroArmy[count]
+		end if
+		count++
+	end while
+
+end script Land2AztecAttacks
+
+//---------------------------------------------------------
+// Aztec Attacks
+//---------------------------------------------------------
+begin script AA_SmallVillageAttack
+	CreatePos[3]
+	AttackPlatoon[3]
+	AttackArea = marker at {785.968,144.410,1934.501}
+	House = 0
+start
+
+	CreatePos[0] = marker at {785.526,143.631,1919.566}
+	CreatePos[1] = marker at {829.275,132.516,1869.170}
+	CreatePos[2] = marker at {857.404,143.626,1914.845}
+
+	House = get HOUSE at {791.104,143.599,1929.119} radius 20
+
+	AttackPlatoon[0] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {CreatePos[0]} with 15 men and 0 women
+	PLAYER of AttackPlatoon[0] = 1
+	set AttackPlatoon[1] attack buildings near {AttackArea} radius 50
+
+	AttackPlatoon[1] = create platoon PLATOON_INFO_AZTEC_RANGED_9 at {CreatePos[1]} with 25 men and 0 women
+	PLAYER of AttackPlatoon[1] = 1
+	set AttackPlatoon[1] attack buildings near {AttackArea} radius 50
+
+	AttackPlatoon[2] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {CreatePos[2]} with 15 men and 0 women
+	PLAYER of AttackPlatoon[2] = 1
+	set AttackPlatoon[2] attack buildings near {AttackArea} radius 50
+
+	wait 5000000 seconds
+
+end script AA_SmallVillageAttack
+
+//---------------------------------------------------------
+// Aztec Attacks
+//---------------------------------------------------------
+begin script AA_MajorBattle
+	AztecPositions[5]
+	AztecPlatoon[5]
+	GreekPositions[5]
+	GreekPlatoon[5]	
+	Looper = 0
+	RandomMovePos = 0
+start
+	
+	AztecPositions[0] = marker at {1177.031,145.602,1957.127}
+	AztecPositions[1] = marker at {1216.360,123.946,2045.201}
+	AztecPositions[2] = marker at {1244.923,114.119,2116.257}
+	AztecPositions[3] = marker at {1223.058,115.305,2093.095}
+	AztecPositions[4] = marker at {1181.022,139.183,1978.507}
+
+	GreekPositions[0] = marker at {1346.511,119.293,2010.213}
+	GreekPositions[1] = marker at {1352.630,109.386,2048.938}
+	GreekPositions[2] = marker at {1345.234,131.236,1984.330}
+	GreekPositions[3] = marker at {1362.081,103.842,2081.862}
+	GreekPositions[4] = marker at {1334.017,140.650,1951.053}
+
+	//Deal with these funky Aztecs first
+	force while Looper < 5
+		AztecPlatoon[Looper] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {AztecPositions[Looper]} with (number from 15 to 35) men and 0 women
+		PLAYER of AztecPlatoon[Looper] = 1		
+		add action PLATOON_AGENDA_ACTION_ATTACK using {GreekPositions[Looper]} to front of AztecPlatoon[Looper] action queue
+		Looper++
+	end while
+
+	Looper = 0
+
+	//Deal with the looser Greeks
+	force while Looper < 5
+		GreekPlatoon[Looper] = create platoon PLATOON_INFO_GREEK_MELEE_5 at {GreekPositions[Looper]} with (number from 15 to 35) men and 0 women
+		PLAYER of GreekPlatoon[Looper] = 0
+		add action PLATOON_AGENDA_ACTION_ATTACK using {AztecPositions[Looper]} to front of GreekPlatoon[Looper] action queue
+		Looper++
+	end while
+
+	//wait for a while
+	wait 500000000 seconds
+
+end script AA_MajorBattle
+
+//---------------------------------------------------------
+// Create Battle
+//---------------------------------------------------------
+begin script AA_CreateBattle(NumPlatoons, Position, Radius, WaitTime)
+	Fighters[AA_MAX_PLATOONS]
+	CreateLoop = 0
+	GreekType = AA_FALSE
+	CreatePos = marker at {0,0, 0} // genrated
+start
+
+	force while CreateLoop < NumPlatoons
+		CreatePos = marker at {Position} + {number from -(Radius) to Radius, number from -(Radius) to Radius}
+
+		if GreekType == AA_FALSE
+			Fighters[CreateLoop] = create platoon PLATOON_INFO_AZTEC_MELEE_5 at {CreatePos} with 15 men and 0 women
+			PLAYER of Fighters[CreateLoop] = 0
+			GreekType = AA_TRUE
+		else
+			Fighters[CreateLoop] = create platoon PLATOON_INFO_GREEK_MELEE_5 at {CreatePos} with 15 men and 0 women
+			PLAYER of Fighters[CreateLoop] = 1
+			GreekType = AA_FALSE
+		end if
+		
+		CreateLoop++
+	end while
+
+	wait WaitTime seconds
+
+	CreateLoop = 0
+	while CreateLoop < NumPlatoons
+		delete Fighters[CreateLoop]
+		CreateLoop++
+	end while
+
+end script AA_CreateBattle
+
+//---------------------------------------------------------
+// City Battle
+//---------------------------------------------------------
+begin script AA_CityBattle
+	Greeks[5]
+	Aztecs[5]
+	Positions[10]
+	CreateLoop = 0
+start
+
+	Positions[0] = marker at {1732.257, 160.097, 1111.926}
+	Positions[1] = marker at {1747.035, 155.357, 909.273}
+	Positions[2] = marker at {1772.319, 160.912, 1039.888}
+	Positions[3] = marker at {1695.070, 155.548, 831.347}
+	Positions[4] = marker at {1749.903, 159.608, 1024.471}
+	Positions[5] = marker at {1737.001, 148.289, 788.765}
+	Positions[6] = marker at {1722.752, 157.805, 982.182}
+	Positions[7] = marker at {1674.398, 145.217, 743.798}
+	Positions[8] = marker at {1791.099, 157.008, 940.134}
+	Positions[9] = marker at {1623.071, 155.970, 792.567}
+
+	force while CreateLoop < 5
+		Aztecs[CreateLoop] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {Positions[CreateLoop]} with 15 men and 0 women
+		PLAYER of Aztecs[CreateLoop] = 1
+		set Aztecs[CreateLoop] attack buildings near {Positions[CreateLoop]} radius 10
+		CreateLoop++
+	end while
+
+	CreateLoop = 0
+
+	force while CreateLoop < 5
+		Greeks[CreateLoop] = create platoon PLATOON_INFO_GREEK_MELEE_9 at {Positions[CreateLoop+5]} with 15 men and 0 women
+		PLAYER of Greeks[CreateLoop] = 0
+		add action PLATOON_AGENDA_ACTION_ATTACK using Aztecs[CreateLoop] to front of Greeks[CreateLoop] action queue
+		CreateLoop++
+	end while
+
+	wait until L2DeleteCityArmies == 1
+
+	CreateLoop = 0
+	while CreateLoop < 5
+		delete Aztecs[CreateLoop]
+		CreateLoop++
+	end while
+
+	CreateLoop = 0
+	while CreateLoop < 5
+		delete Greeks[CreateLoop]
+		CreateLoop++
+	end while
+
+end script AA_CityBattle
+
+//---------------------------------------------------------
+// City Battle
+//---------------------------------------------------------
+begin script AA_IntroFight
+	GreeksCreate[5]
+	AztecCreate[3]
+	CreatureCreate = marker at {1121.330, 143.643, 1896.215}
+	Greeks[3]
+	Aztecs[3]
+	Creator = 0
+start
+
+	GreeksCreate[0] = marker at {1125.321, 143.763, 1891.019}
+	GreeksCreate[1] = marker at {1103.769, 143.698, 1889.057}
+	GreeksCreate[2] = marker at {1127.607, 143.681, 1916.917}
+	AztecCreate[0] = marker at {1084.160, 157.920, 1903.926}
+	AztecCreate[1] = marker at {1116.224, 143.723, 1906.277}
+	AztecCreate[2] = marker at {1133.148, 144.308, 1889.375}
+
+	while Creator < 2
+		Aztecs[Creator] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {AztecCreate[Creator]} with 35 men and 0 women
+		PLAYER of Aztecs[Creator] = 1
+		Creator++
+	end while
+
+	Aztecs[2] = create platoon PLATOON_INFO_AZTEC_RANGED_9 at {AztecCreate[Creator]} with 35 men and 0 women
+	PLAYER of Aztecs[2] = 1	
+
+	Creator = 0
+	while Creator < 2
+		Greeks[Creator] = create platoon PLATOON_INFO_GREEK_MELEE_9 at {GreeksCreate[Creator]} with 20 men and 0 women
+		PLAYER of Greeks[Creator] = 0
+		Creator++
+	end while
+
+	while Creator < 3
+		Greeks[Creator] = create platoon PLATOON_INFO_GREEK_RANGED_9 at {GreeksCreate[Creator]} with 30 men and 0 women
+		PLAYER of Greeks[Creator] = 0
+		Creator++
+	end while
+
+	L2Creature = create CREATURE CREATURE_TYPE_LION at {CreatureCreate}
+	set player 1 creature to L2Creature
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 1 time 0
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_STRENGTH 0.7 time 0	
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT -1 time 5
+
+	set creature L2Creature role to CR_SOLDIER radius 50
+
+	release L2Creature
+
+	wait 20 seconds
+
+	Creator = 0
+	while Creator < 5
+		delete Greeks[Creator]
+		Creator++
+	end while
+
+	Creator = 0
+	while Creator < 3
+		delete Aztecs[Creator]
+		Creator++
+	end while
+
+end script AA_IntroFight
+
+//---------------------------------------------------------
+// Small Melee Platoon Group
+//---------------------------------------------------------
+begin script AA_SmallPlatoonGroup(Pos, Size, Trigger)
+	Platoon1		= 0
+	Platoon2		= 0
+start
+
+	Platoon1 = create platoon PLATOON_INFO_AZTEC_MELEE_6 at {Pos} with Size men and 0 women
+	PLAYER of Platoon1 = 1	
+
+	Platoon2 = create platoon PLATOON_INFO_GREEK_MELEE_6 at {Pos} with Size men and 0 women
+	PLAYER of Platoon2 = 0
+
+	move Platoon1 to limbo
+	move Platoon2 to limbo	
+
+	wait until L2_SceneryPlatoonTrigger[Trigger] == 1
+
+	release Platoon1 from limbo
+	release Platoon2 from limbo
+
+	add action PLATOON_AGENDA_ACTION_ATTACK using Platoon2 to front of Platoon1 action queue
+	add action PLATOON_AGENDA_ACTION_ATTACK using Platoon1 to front of Platoon2 action queue
+
+	wait until L2_SceneryPlatoonDelete[Trigger] == 1
+
+	delete Platoon1
+	delete Platoon2
+
+end script AA_SmallPlatoonGroup
+
+//---------------------------------------------------------
+// Small Melee Platoon
+//---------------------------------------------------------
+begin script AA_SmallMeleePlatoon(Pos, Size, Player, Trigger)
+	Platoon		= 0
+	Type		= 0
+start
+
+	//Greek archer platoon
+	if Player == 0
+		Type = variable PLATOON_INFO_GREEK_MELEE_4
+	else
+		Type = variable PLATOON_INFO_AZTEC_MELEE_4
+	end if
+
+	//Create platoon and assign player
+	Platoon = create platoon constant Type at {Pos} with Size men and 0 women
+	PLAYER of Platoon = 0
+
+	wait until L2_SceneryPlatoonTrigger[Trigger] == 1
+	PLAYER of Platoon = 1
+
+	wait until L2_SceneryPlatoonDelete[Trigger] == 1
+	delete Platoon
+
+end script AA_SmallMeleePlatoon
+
+//---------------------------------------------------------
+// Small Archer Platoon
+//---------------------------------------------------------
+begin script AA_SmallArcherPlatoon(Pos, Size, Fire, Player, Trigger)
+	Type	= 0
+	Platoon = 0
+start
+
+	//Greek archer platoon
+	if Player == 0
+		if Fire == 0
+			Type = variable PLATOON_INFO_GREEK_RANGED_3
+		else
+			Type = variable PLATOON_INFO_GREEK_RANGED_4
+		end if
+	else
+		if Fire == 0
+			Type = variable PLATOON_INFO_AZTEC_RANGED_3
+		else
+			Type = variable PLATOON_INFO_AZTEC_RANGED_4
+		end if
+	end if
+
+	//Create platoon and assign player
+	Platoon = create platoon constant Type at {Pos} with Size men and 0 women
+	PLAYER of Platoon = Player
+
+	move Platoon to limbo
+
+	wait until L2_SceneryPlatoonTrigger[Trigger] == 1
+	
+	release Platoon from limbo
+
+	wait until L2_SceneryPlatoonDelete[Trigger] == 1
+	delete Platoon
+
+end script AA_SmallArcherPlatoon
+
+//---------------------------------------------------------
+// Wall Villagers Background
+//---------------------------------------------------------
+begin script AA_WallVillagersBackground
+	AttackPlatoons_1			= 0
+	AttackPlatoons_1Pos			= marker at {1697.329, 116.038, 1769.269}
+	AttackPlatoons_1MovePos		= marker at {1710.170, 116.904, 1714.786}
+	ScaredTimer					= create timer for 0 seconds
+	ExplodeTimer				= create timer for 0 seconds
+	Rand						= 0
+start
+
+	run background script AA_WallVillagersSmallPlatoonFight
+
+	run background script AA_RoofTopFight(marker at {1767.186, 116.232, 1701.856}, 0)
+	run background script AA_RoofTopFight(marker at {1721.005, 115.970, 1711.792}, 0)
+	run background script AA_RoofTopFight(marker at {1715.828, 116.225, 1727.312}, 0)
+	run background script AA_RoofTopFight(marker at {1700.925, 118.480, 1710.558}, 0)
+	run background script AA_RoofTopFight(marker at {1693.511, 118.376, 1736.887}, 0)
+
+	run background script Land2_HouseFire(marker at {1701.431, 118.150, 1718.689}, 0)
+	run background script Land2_HouseFire(marker at {1682.993, 119.447, 1733.845}, 5)
+	run background script Land2_HouseFire(marker at {1708.107, 117.099, 1730.477}, 6)
+	run background script Land2_HouseFire(marker at {1689.536, 117.703, 1753.375}, 12)
+	run background script Land2_HouseFire(marker at {1725.806, 113.745, 1744.231}, 18)
+
+	//grrr closer houses on fire
+	run background script Land2_HouseFire(marker at {1773.231, 118.100, 1673.664}, 0)
+	run background script Land2_HouseFire(marker at {1773.099, 116.247, 1710.166}, 1)
+	run background script Land2_HouseFire(marker at {1770.942, 116.094, 1688.882}, 4)
+
+	wait until L2_Trigger_StartWallVillagers == 1
+
+	begin loop
+
+		if get ScaredTimer time remaining == 0
+			set ScaredTimer time to 20 seconds
+			run background script Land2ScaredVillagers(marker at {1738.647, 112.462, 1765.042}, marker at {1718.012, 116.999, 1669.796}, (number from 15 to 30), 0.5, 18)
+		end if
+		
+		if get ExplodeTimer time remaining == 0
+			set ExplodeTimer time to (number from 4 to 15) seconds
+
+			Rand = number from 0 to 4
+			if Rand == 0
+				run background script Land2FlyingCrap(marker at {1710.116, 116.900, 1737.891}, 0)
+			elsif Rand == 1
+				run background script Land2FlyingCrap(marker at {1667.171, 120.681, 1726.190}, 0)
+			elsif Rand == 2
+				run background script Land2FlyingCrap(marker at {1649.818, 121.016, 1768.714}, 0)
+			elsif Rand == 3
+				run background script Land2FlyingCrap(marker at {1681.702, 118.188, 1755.897}, 0)
+			elsif Rand == 4
+				run background script Land2FlyingCrap(marker at {1634.388, 123.492, 1759.671}, 0)
+			end if
+
+		end if
+
+	end loop
+
+	//Debug wait forever
+	wait until 1 == 0
+
+end script AA_WallVillagersBackground
+
+//---------------------------------------------------------
+// Roof Top Fight
+//---------------------------------------------------------
+begin script AA_RoofTopFight(HousePos, Del)
+	Fighter_1		= 0
+	Fighter_2		= 0
+
+	FighterPos_1	= 0
+	FighterPos_2	= 0
+
+	Rand			= 0
+	House			= 0
+start
+
+	House = get HOUSE at {HousePos} radius 3
+
+	if House exists
+		//enable House indestructible
+
+		FighterPos_1	= marker at get world position from House to {0, 0.016, 0}
+		FighterPos_2	= marker at get world position from House to {0, 0.016, 1}
+
+		Fighter_1 = create SOLDIER PLATOON_INFO_AZTEC_MELEE_3 at {FighterPos_1}
+		set Fighter_1 carrying CARRIED_OBJECT_AZTEC_CLUB
+		disable Fighter_1 moveable
+		disable Fighter_1 pickup
+
+		Fighter_2 = create SOLDIER PLATOON_INFO_GREEK_MELEE_3 at {FighterPos_2}
+		set Fighter_2 carrying CARRIED_OBJECT_GREEK_SMALL_SWORD	
+		disable Fighter_2 moveable
+		disable Fighter_2 pickup
+
+		begin loop
+
+			set Fighter_1 position to {FighterPos_1}
+			set Fighter_2 position to {FighterPos_2}
+			ALTITUDE of Fighter_1 = 3.4
+			ALTITUDE of Fighter_2 = 3.4
+			set Fighter_1 focus to {Fighter_2}
+			set Fighter_2 focus to {Fighter_1}
+
+			Rand = number from 1 to 7
+
+			if Rand == 1
+				play anim "a_p_meleecombat_pairedfight_b1" on Fighter_1 disable stand blend time 0
+				play anim "a_p_meleecombat_pairedfight_b2" on Fighter_2 disable stand blend time 0
+
+			elsif Rand == 2
+				play anim "a_p_meleecombat_pairedfight_c1" on Fighter_1 disable stand blend time 0
+				play anim "a_p_meleecombat_pairedfight_c2" on Fighter_2 disable stand blend time 0
+
+			elsif Rand == 3
+				play anim "a_p_meleecombat_pairedfight_d1" on Fighter_1 disable stand blend time 0
+				play anim "a_p_meleecombat_pairedfight_d2" on Fighter_2 disable stand blend time 0
+
+			elsif Rand == 4
+				play anim "a_p_meleecombat_pairedfight_e1" on Fighter_1 disable stand blend time 0
+				play anim "a_p_meleecombat_pairedfight_e2" on Fighter_2 disable stand blend time 0
+
+			elsif Rand == 5
+				play anim "a_p_meleecombat_pairedfight_f1" on Fighter_1 disable stand blend time 0
+				play anim "a_p_meleecombat_pairedfight_f2" on Fighter_2 disable stand blend time 0
+
+			elsif Rand == 6
+				play anim "a_p_meleecombat_pairedfight_g1" on Fighter_1 disable stand blend time 0
+				play anim "a_p_meleecombat_pairedfight_g2" on Fighter_2 disable stand blend time 0
+
+			elsif Rand == 7
+				play anim "a_p_fight01_b" on Fighter_1 disable stand blend time 0
+				play anim "a_p_fight01_a" on Fighter_2 disable stand blend time 0
+
+			end if
+
+			wait until Fighter_1 played and Fighter_2 played
+
+		until L2_RoofPlatoonDelete[Del] == 1 or not House exists
+		end loop
+
+	end if
+
+	delete Fighter_1
+	delete Fighter_2
+
+end script AA_RoofTopFight
+
+//---------------------------------------------------------
+// Ring of Fire Attacks
+//---------------------------------------------------------
+begin script AA_ROFAttacks
+start
+
+	run background script AA_SmallPlatoonGroup(marker at {1721.356,120.554,1659.522}, 10, 2)
+	run background script AA_SmallPlatoonGroup(marker at {1719.551,120.929,1626.434}, 10, 2)
+	run background script AA_SmallPlatoonGroup(marker at {1732.252,121.228,1638.084}, 10, 2)
+	run background script AA_SmallPlatoonGroup(marker at {1679.849,134.120,1607.042}, 10, 2)
+	run background script AA_SmallPlatoonGroup(marker at {1667.623, 138.717, 1621.042}, 20, 2)
+	run background script AA_SmallPlatoonGroup(marker at {1701.773, 121.048, 1645.201}, 15, 2)
+
+	run background script AA_SmallArcherPlatoon(marker at {1683.276,131.061,1639.681}, 20, 0, 1, 2)
+	run background script AA_SmallArcherPlatoon(marker at {1693.421, 130.001, 1614.487}, 20, 0, 1, 2)
+
+	wait until L2_SceneryPlatoonTrigger[2] == 1
+
+	run background script Land2ScaredVillagersWithCreateRadius(marker at {1654.060, 141.012, 1619.388}, marker at {1716.660, 120.962, 1585.657}, 35, 0.5, 10)
+	run background script Land2ScaredVillagersWithCreateRadius(marker at {1682.445, 131.146, 1624.130}, marker at {1740.163, 117.804, 1656.754}, 45, 0.5, 20)
+
+end script AA_ROFAttacks
+
+//---------------------------------------------------------
+// Alignment Test
+//---------------------------------------------------------
+begin script AA_Alignment(Object)
+	EffectTimer		= create timer for 15 seconds
+start
+
+	begin loop
+		set ground alignment to -1 at {Object} radius 30 amount 0.3
+		wait 1 seconds
+	until get EffectTimer time remaining == 0
+	end loop
+
+end script AA_Alignment
+
+//---------------------------------------------------------
+// Wall Villagers Small Platoon fight
+//---------------------------------------------------------
+begin script AA_WallVillagersSmallPlatoonFight
+	Aztecs1		= 0
+	Aztecs2		= 0
+	Greeks		= 0
+start
+
+	wait until L2_Trigger_Wall_Villagers == 1
+
+	Aztecs1 = create platoon PLATOON_INFO_AZTEC_MELEE_6 at {1762.409, 115.590, 1716.179} with 15 men and 0 women
+	PLAYER of Aztecs1 = 1
+	Aztecs2 = create platoon PLATOON_INFO_AZTEC_RANGED_1 at {1706.965, 115.663, 1806.246} with 10 men and 0 women
+	PLAYER of Aztecs2 = 1
+
+	Greeks = create platoon PLATOON_INFO_GREEK_MELEE_6 at {1716.335, 118.306, 1664.377} with 21 men and 0 women
+	PLAYER of Greeks = 0
+	
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {1740.494, 114.288, 1722.885} to front of Aztecs2 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {1760.616, 115.588, 1714.044} to front of Greeks action queue
+
+	wait until L2_Trigger_Wall_Villagers == 2
+
+	delete Aztecs1
+	delete Aztecs2
+	delete Greeks
+
+end script AA_WallVillagersSmallPlatoonFight
+
+//---------------------------------------------------------
+// Wall Villagers House Fires
+//---------------------------------------------------------
+begin script AA_BarrelRunAttacks
+start
+
+	run background script AA_RoofTopFight(marker at {2044.834, 102.443, 930.704}, 1)
+	run background script AA_RoofTopFight(marker at {2006.704, 100.532, 943.032}, 1)
+	run background script AA_RoofTopFight(marker at {1990.300, 101.111, 929.100}, 1)
+	
+	//run background script AA_SmallPlatoonGroup(marker at {2042.386, 102.349, 919.811}, 15, 5)
+
+	wait until L2_SceneryPlatoonTrigger[5] == 1
+
+	run background script Land2ScaredVillagersWithCreateRadiusAndNavAndSmallEndPos(marker at {2065.155, 111.734, 1008.759}, marker at {2010.473, 101.405, 972.111}, 35, 0.5, 15)
+
+end script AA_BarrelRunAttacks
+
+//---------------------------------------------------------
+// Move to Hay Bales
+//---------------------------------------------------------
+begin script AA_MoveToHayBalesAttacks
+start
+	run background script AA_SmallPlatoonGroup(marker at {2076.673, 101.338, 891.540}, 10, 3)
+	run background script AA_SmallPlatoonGroup(marker at {2078.510, 101.443, 901.762}, 10, 3)
+	run background script AA_SmallPlatoonGroup(marker at {2096.408, 100.729, 887.058}, 10, 3)	
+	run background script AA_SmallArcherPlatoon(marker at {2090.814, 100.588, 874.933}, 20, 0, 1, 3)
+end script AA_MoveToHayBalesAttacks
+
+//---------------------------------------------------------
+// Intro Catapults
+//---------------------------------------------------------
+begin script AA_IntroCatapults
+	Cata[5]
+	CPos[5]
+	MPos[5]
+	Loop	= 0
+start
+
+	CPos[0] = marker at {1685.720,127.103,1891.481}
+	CPos[1] = marker at {1876.742,130.899,1881.161}
+	CPos[2] = marker at {1772.992,120.050,1908.592}
+	CPos[3] = marker at {1647.224,129.182,1832.770}
+	CPos[4] = marker at {1619.207,133.592,1805.253}
+
+	MPos[0] = marker at {1713.996,116.571,1841.117}
+	MPos[1] = marker at {1826.520,122.801,1824.713}
+	MPos[2] = marker at {1758.774,118.106,1861.915}
+	MPos[3] = marker at {1685.414,121.409,1815.880}
+	MPos[4] = marker at {1642.816,126.751,1796.749}
+
+	if not L2GreekTown exists
+		run script Land2Globals
+	end if
+
+	while Loop < 5
+		Cata[Loop] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1 belonging to L2GreekTown at {CPos[Loop]}
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {MPos[Loop]} to siege weapon Cata[Loop] action queue
+		Loop++
+	end while
+
+	wait until L2_Trigger_DeleteIntroStuff == 1
+
+	Loop = 0
+	while Loop < 5
+		delete Cata[Loop]
+		Loop++
+	end while
+
+end script AA_IntroCatapults
+
+//---------------------------------------------------------
+// Intro Alley
+//---------------------------------------------------------
+begin script AA_IntroAlley
+	
+	Soldier = 0
+
+start
+
+	//--- Intro Platoons
+
+	//Group 0 platoons
+	run background script AA_SmallPlatoonGroup(marker at {1738.432, 159.299, 1108.729}, 3, 0)
+	run background script AA_SmallPlatoonGroup(marker at {1733.406, 159.591, 1092.560}, 4, 0)
+
+	//Group 1 platoons
+	run background script AA_SmallPlatoonGroup(marker at {1735.136, 160.447, 1066.013}, 4, 0)
+	run background script AA_SmallArcherPlatoon(marker at {1749.837, 160.902, 1072.787}, 10, 0, 1, 0)
+
+	//Group 2 platoons	
+	run background script AA_SmallPlatoonGroup(marker at {1747.974, 161.632, 1040.819}, 6, 0)
+	run background script AA_SmallArcherPlatoon(marker at {1750.799, 162.386, 1017.744}, 10, 0, 1, 0)
+	run background script AA_SmallMeleePlatoon(marker at {1746.074, 160.713, 1004.475}, 5, 0, 0)
+
+	//Group 3 platoons	
+	run background script AA_SmallPlatoonGroup(marker at {1751.333, 157.891, 946.852}, 12, 1)
+	run background script AA_SmallArcherPlatoon(marker at {1726.418, 157.255, 945.642}, 18, 0, 1, 1)
+
+	// <end> Intro Platoons
+
+
+	Soldier = create SOLDIER PLATOON_INFO_GREEK_MELEE_3 at {1754.341, 157.161, 943.846}
+	move Soldier position to {Soldier}
+	play anim "a_p_meleecombat_pairedfight_b1" on Soldier loop -1
+    
+	wait until L2_SceneryPlatoonTrigger[1] == 1
+
+	run background script Land2ScaredVillagers(marker at {1738.679, 160.485, 1064.251}, marker at {1740.987, 159.855, 1088.115}, 10, 0.4, 6)
+	run background script Land2ScaredVillagers(marker at {1753.452, 160.278, 976.167}, marker at {1743.482, 161.227, 1041.761}, 11, 0.45, 6)
+	run background script Land2ScaredVillagers(marker at {1747.927, 161.470, 1013.662}, marker at {1743.482, 161.227, 1041.761}, 8, 0.4, 4)
+
+	run background script Land2_SmallExplosion(marker at {1731.729, 159.517, 1091.582})
+	wait 1.5 seconds
+
+	run background script Land2_AwesomeExplosion(marker at {1739.050, 160.315, 1016.843}, marker at {1752.256, 170.438, 1020.970}, 1)
+
+	run background script Land2_SmallExplosion(marker at {1753.377, 157.436, 957.132})	
+	run background script Land2_SmallExplosion(marker at {1753.405, 159.500, 1039.432})				
+
+	run background script Land2BackgroundChaos(marker at {1672.389, 138.016, 713.776}, 35, 10)
+	wait 1 seconds		
+
+	run background script Land2_SmallExplosion(marker at {1754.138, 163.555, 973.617})
+
+	wait 0.5 seconds		
+	run background script Land2_SmallExplosion(marker at {1742.979, 134.281, 862.893})
+	wait 0.5 seconds		
+	
+	set Soldier focus to {1750.097, 157.262, 941.210}
+
+	wait 2 seconds
+
+	wait 4 seconds
+	
+	play anim "a_p_meleecombat_militia_staticpaired11b" on Soldier
+
+	wait 499 seconds
+
+end script AA_IntroAlley
+
+//---------------------------------------------------------
+// Spline test
+//---------------------------------------------------------
+begin script LennysSplineTest
+start	
+
+	begin fullscreen cinema
+
+		//Barrel run
+		/*
+		queue camera move with position {2024.151, 112.558, 1006.357} focus {2112.652, 73.248, 981.430} time 4.0
+		queue camera move with position {2031.061, 107.295, 993.574} focus {2067.841, 85.371, 903.205} time 4.0 
+		queue camera move with position {2048.286, 115.067, 965.487} focus {2034.565, 85.968, 870.803} time 3.0 
+		queue camera move with position {2068.465, 116.851, 954.844} focus {2013.729, 63.548, 890.318} time 4.0 
+		*/	
+
+		queue camera move with position {1733.300, 162.975, 1109.723} focus {1752.416, 166.123, 1011.615} time 0.0
+		queue camera move with position {1737.627, 164.224, 1075.306} focus {1745.293, 167.828, 975.660} time 3.0
+		queue camera move with position {1748.254, 165.317, 1011.802} focus {1763.476, 162.282, 913.017} time 3.0
+		queue camera move with position {1756.371, 168.655, 962.832} focus {1713.451, 119.972, 886.752} time 2.0//queue camera move with position {1751.304, 162.264, 958.535} focus {1742.979, 134.281, 862.893} time 2.0
+		queue camera move with position {1761.941, 162.080, 948.349} focus {1675.906, 118.418, 922.049} time 2.5
+
+		play camera path with easein 0 easeout 0 method SCRIPT_CAMERAPATH_SMOOTHEST
+		wait 10 seconds
+		shake camera strength 6.0
+		wait until camera ready
+
+
+		reset camera path 
+
+		queue camera move with position {1831.125, 143.295, 1704.154} focus {1744.419, 96.597, 1686.820} time 0.0
+		queue camera move with position {1815.011, 145.781, 1698.068} focus {1740.756, 79.837, 1686.373} time 4.0
+
+		play camera path with easein 0 easeout 2 
+		wait 0.5 seconds
+		shake camera strength 0.0
+
+
+   				//set fade red 0 green 0 blue 0 time 0
+		
+
+		wait until 1 == 0
+
+	end cinema
+
+end script LennysSplineTest

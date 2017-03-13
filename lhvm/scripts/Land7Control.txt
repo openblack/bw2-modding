@@ -1,0 +1,45 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 7 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land7Control
+	AlignmentComment = 0
+start
+
+	set fade red 0 green 0 blue 0 time 0
+
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	run script Land7DidYouKnow
+
+	run script Land7Globals
+	run background script SetupBuildingsLand4Onwards
+	//Load the creature and get it into global
+	
+	load my_creature at {L7GreekTown} + {20,20}
+	MyCreature =  get player 0 creature
+	if not MyCreature exists
+		MyCreature = create CREATURE CREATURE_TYPE_LAST at {L7GreekTown} + {20,20}
+		set player 0 creature to MyCreature
+		release MyCreature
+	end if
+
+
+	//Cheaty tribute value for playthroughs
+	//increment tribute by 100000
+	run background script SetupBuildingsLand4Onwards
+
+	run background script Land7SevenSamurai
+	run background script Land7SickTown
+	run background script Land7NutOil2
+	run background script Land7Archeologists
+	run background script Land7JapanCapital
+	run script Land7Intro
+	run background script Land7Objectives
+
+	release MyCreature
+
+	enable game can be lost
+
+	run background script Land7Departure
+
+
+end script Land7Control

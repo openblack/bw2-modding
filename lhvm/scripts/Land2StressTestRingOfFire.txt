@@ -1,0 +1,246 @@
+//==================================================================
+// Land 2 Ring Of Fire
+// Matt.L
+//==================================================================
+
+//---------------------------------------------------------
+// Constants
+//---------------------------------------------------------
+define RF_FALSE = 0
+define RF_TRUE = 1
+
+define RF_TIME_BEFORE_CAM_MOVE = 30
+define RF_NUM_VILLAGES_TO_RESCUE = 5
+define RF_IMMUNE_TIME = 25
+
+//Advisors
+define RF_ADVISORS_RING_OF_FIRE_PICKUP = 7
+define RF_ADVISORS_RING_OF_FIRE_PUTDOWN = 8
+
+//---------------------------------------------------------
+// Globals
+//---------------------------------------------------------
+global RF_Buildings[12]
+global RF_RunRing = 0
+global RF_NumVillagersSaved = 0
+
+global RF_MoveCameraToShowRescuePos = 0
+
+global RF_ClearExit = RF_FALSE
+global RF_SayPickup = RF_TRUE
+global RF_SayPutDown = RF_TRUE
+
+//---------------------------------------------------------
+// Script defines
+//---------------------------------------------------------
+define script RF_BlockPassage
+define script RF_Villager(Position)
+define script RF_MoveOn
+define script RF_Advisors(ID)
+
+//---------------------------------------------------------
+// Land2RingOfFire
+//---------------------------------------------------------
+begin script Land2RingOfFire
+	BuildLoop = 0
+	GetHousePos = marker at {1594.673, 149.816, 1608.909}
+	FireVal = 0
+	RescueFX = 0
+start
+
+	run background script RF_BlockPassage
+
+	run background script RF_Villager(marker at {1586.430, 149.807, 1592.488})
+	run background script RF_Villager(marker at {1594.770, 149.806, 1587.953})
+	run background script RF_Villager(marker at {1581.983, 149.816, 1617.301})
+	run background script RF_Villager(marker at {1588.891, 149.812, 1609.052})
+	run background script RF_Villager(marker at {1606.754, 149.802, 1627.952})
+	run background script RF_Villager(marker at {1606.575, 149.817, 1620.526})
+	run background script RF_Villager(marker at {1604.892, 149.803, 1607.701})
+	run background script RF_Villager(marker at {1602.188, 149.813, 1597.185})
+	run background script RF_Villager(marker at {1601.539, 149.809, 1600.749})	
+	
+	//Wait until the camera is ready
+	wait until RF_RunRing == 1
+
+	//Camera trigger script
+	run background script RF_MoveOn
+
+	RescueFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.5 at {1604.023, 152.00, 1577.411} time -1 
+	set RescueFX colour red 0 green 255 blue 0	
+
+	//Get all the buildings and enable them indestructible
+	force while BuildLoop < 12		
+		RF_Buildings[BuildLoop] = get HOUSE at {GetHousePos} radius 35
+		
+		if RF_Buildings[BuildLoop] exists and variable get RF_Buildings[BuildLoop] sub type != variable ABODE_INFO_GREEK_MARKET_STATUE
+			disable RF_Buildings[BuildLoop] hurt by fire
+			FireVal = (number from 6 to 10) / 10
+			disable RF_Buildings[BuildLoop] hurt by fire
+			enable RF_Buildings[BuildLoop] indestructible
+			enable RF_Buildings[BuildLoop] on fire FireVal			
+		end if
+
+		BuildLoop++
+	end while
+ 
+end script Land2RingOfFire
+
+//---------------------------------------------------------
+// Block Passage
+//---------------------------------------------------------
+begin script RF_BlockPassage
+	Statue = 0
+	CreatePos = marker at {1616.357, 149.816, 1616.195}
+	HeadPos = marker at {1613.856, 149.814, 1604.719}
+	RandomObjects[15]
+	RandType = 0
+	CurrObj = 0
+	CreateObjPos = marker at {1613.856, 149.814, 1604.719}
+	StatueStablePos = 0
+start
+
+	Statue = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {CreatePos}
+	override mesh for Statue with "m_greekbeautificationstatueneutral.bwm"
+	SCALE of Statue = 0.7
+	ANGLE of Statue = -5
+	PITCH of Statue = 20
+	ALTITUDE of Statue = 0.4
+	enable Statue indestructible		
+
+	force while CurrObj < 15
+		RandType = number from 1 to 4
+
+		if RandType == 1
+			RandomObjects[CurrObj] = create OBJECT GREEK_URN_01 at {CreateObjPos} + {number from -4 to 4, 0, number from -4 to 4}
+		elsif RandType == 2
+			RandomObjects[CurrObj] = create OBJECT GREEK_URN_03 at {CreateObjPos} + {number from -4 to 4, 0, number from -4 to 4}
+		elsif RandType == 3
+			RandomObjects[CurrObj] = create OBJECT GREEK_BARREL_01 at {CreateObjPos} + {number from -4 to 4, 0, number from -4 to 4}
+		elsif RandType == 4
+			RandomObjects[CurrObj] = create OBJECT GREEK_URN_04 at {CreateObjPos} + {number from -4 to 4, 0, number from -4 to 4}
+		end if
+
+		CurrObj++
+	end while
+	
+	wait until RF_RunRing == 1
+
+	set Statue velocity heading {HeadPos} speed 3
+
+	//wait until not Statue is MOVING
+	wait until PITCH of Statue > 60
+	//wait 1.8 seconds
+	//disable Statue moveable
+	set physics at position {CreateObjPos} with strength {number from -12 to 12, number from 30 to 40, number from -12 to 12}  radius 5 random 1
+	//enable Statue moveable
+
+	wait until not Statue is MOVING
+	
+	wait until not {StatueStablePos} near {Statue} radius 1
+	RF_ClearExit = RF_TRUE
+
+end script RF_BlockPassage
+
+//---------------------------------------------------------
+// RF_Villager
+//---------------------------------------------------------
+begin script RF_Villager(Position)
+	MoveCentre = marker at {1594.381, 149.793, 1609.343}
+	MovePos = marker at {0.000,0.000,0.000} //generated
+	Me = 0
+	Type = 0
+	RescuePos = marker at {1605.810, 150.816, 1573.687}
+	ImmuneTimer = create timer for RF_IMMUNE_TIME seconds
+	ExitPos = marker at {1627.210, 149.900, 1610.282}
+	RemoveMe = RF_FALSE
+start
+
+	Type = number from 1 to 2
+
+	if Type == 1
+		Me = create VILLAGER GREEK_FARMER at {Position}
+	else
+		Me = create VILLAGER GREEK_HOUSEWIFE at {Position}
+	end if
+
+	disable Me set on fire
+
+	begin loop
+		MovePos = marker at {MoveCentre} + {number from -10 to 10, 0, number from -10 to 10}
+		move Me position to {MovePos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+		wait 0.5 seconds or not Me is MOVING
+	until RF_RunRing == 1
+	end loop
+
+	SPEED of Me = 0.4
+
+	begin loop
+		MovePos = marker at {MoveCentre} + {number from -10 to 10, 0, number from -10 to 10}
+		move Me position to {MovePos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+
+		if get ImmuneTimer time remaining == 0
+			enable Me set on fire
+			ImmuneTimer = create timer for 500 seconds
+		end if
+
+		//held and nav
+		begin loop
+			if Me is HELD
+				if RF_SayPickup == RF_TRUE
+					RF_SayPickup = RF_FALSE
+					run background script RF_Advisors(RF_ADVISORS_RING_OF_FIRE_PICKUP)					
+				end if
+				wait until not Me is HELD
+			end if
+		until {Me} near {MovePos} radius 2
+		end loop
+
+	until {Me} near {RescuePos} radius 10 and not Me is HELD or not Me exists or L2Events >= 1
+	end loop
+
+	if {Me} near {RescuePos}
+		if RF_SayPutDown == RF_TRUE
+			RF_SayPutDown = RF_FALSE
+			run background script RF_Advisors(RF_ADVISORS_RING_OF_FIRE_PUTDOWN)			
+		end if
+		RF_NumVillagersSaved++
+		run background script LT_Villager(-1, Me)
+	else
+		if Me exists
+			delete Me
+		end if
+	end if
+
+end script RF_Villager
+
+//---------------------------------------------------------
+// Camera Move on 
+//---------------------------------------------------------
+begin script RF_MoveOn
+	MoveOnTimer = create timer for RF_TIME_BEFORE_CAM_MOVE seconds
+start
+	wait until get MoveOnTimer time remaining == 0 or RF_NumVillagersSaved >= RF_NUM_VILLAGES_TO_RESCUE
+	RF_MoveCameraToShowRescuePos = 1
+end script RF_MoveOn
+
+//---------------------------------------------------------
+// Ring of Fire Advisors
+//---------------------------------------------------------
+begin script RF_Advisors(ID)
+start
+	begin known cinema
+		if ID == RF_ADVISORS_RING_OF_FIRE_PICKUP
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_140"
+			wait until read
+		elsif ID == RF_ADVISORS_RING_OF_FIRE_PUTDOWN
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_150"
+			wait until read
+		end if
+
+		send good spirit home
+		send evil spirit home
+	end known cinema
+end script RF_Advisors

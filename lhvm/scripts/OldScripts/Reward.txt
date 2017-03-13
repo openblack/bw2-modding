@@ -1,0 +1,70 @@
+//challenge DID_YOU_KNOW
+
+global	DispenserRewardCount
+
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+begin script GiveSpellDispenserReward(pos, magic_type, tangle, dont_tell, every_nseconds)
+start
+/*	spell_dispenser = 0
+	signpost = 0
+	firsthelptextenum = 0
+	lasthelptextenum = 0
+	DidYouKnowPos = marker at {pos}+{0.000,0.000,-2.500}
+start
+
+	spell_dispenser = create with angle tangle and scale 1.0 SCRIPT_OBJECT_TYPE_SPELL_DISPENSER ABODE_INFO_NORSE_SPELL_DISPENSER at {pos}
+	set spell_dispenser magic properties constant magic_type
+	enable spell_dispenser active
+	if(time > 0)
+		set spell_dispenser time to every_nseconds seconds
+	end if
+
+	if dont_tell == 0
+		DispenserRewardCount++
+		begin cinema
+			play sound LH_SAMPLE_G_REWARDSTING
+			move camera focus to {spell_dispenser} time 4
+			move camera position to {spell_dispenser}+{21.5, 14.0 ,0} time 4
+			wait until camera ready
+
+			eject evil spirit
+			if DispenserRewardCount == 1
+			
+				run background script DidYouKnow(DidYouKnowPos, variable get text id from "HELP_TEXT_DYK_11", variable DYK_MIRACLES)			// miracles everywhere
+
+				signpost = create highlight CHALLENGE_NONE HIGHLIGHT_TIPS at {spell_dispenser}+{0.000,0.000,2.500}
+				set signpost text property text get text id from "HELP_TEXT_DYK_90" category DYK_MIRACLES
+				ALTITUDE of signpost = 0
+
+				make evil spirit point at {spell_dispenser}
+				// "Ahh Great! a miracle dispenser, this generates miracule one shots"
+				say "HELP_TEXT_SPELL_DISPENSER_01"
+				wait until read
+				stop evil spirit pointing
+				// "Click on the signpost to find out more" with interaction
+				say "HELP_TEXT_SPELL_DISPENSER_02" with interaction
+				wait 1 second
+				make evil spirit point at {signpost}+{0.000,0.500,0.000}
+				wait until read
+				release signpost
+			else
+				make evil spirit point at {spell_dispenser}
+				// "Nice! an other of those cool miracle dispensers"
+				say single line "HELP_TEXT_SPELL_DISPENSER_03"
+				wait until read
+			end if
+
+			make evil spirit point at {spell_dispenser}+{0.000,0.600,0.000}
+			//sy "This miracle is"
+			//wait until read
+			// The above two lines were commented out by Ken and James.
+		end cinema
+
+		firsthelptextenum = get spell_dispenser first help
+		lasthelptextenum = get spell_dispenser last help
+		run script HelpJustTalkMaybeWithSpirits(firsthelptextenum, lasthelptextenum)
+	end if
+*/
+end script GiveSpellDispenserReward

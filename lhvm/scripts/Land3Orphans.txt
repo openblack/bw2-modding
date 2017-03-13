@@ -1,0 +1,556 @@
+//===============================================================
+// Land 3 Orphan script
+// By. Lenny
+//===============================================================
+
+//---------------------------------------------------------------
+// Cosntants
+//---------------------------------------------------------------
+define GP_FALSE				= 0
+define GP_TRUE				= 1
+
+define GP_ACTION_BEG		= 0
+define GP_ACTION_ATTRACT	= 1
+define GP_ACTION_WALK		= 2
+
+
+define GP_ADVISORS_NONE				= 0
+define GP_ADVISORS_INTRO			= 1
+define GP_ADVISORS_SPOT_LOST_CHILD	= 2
+define GP_ADVISORS_STOLEN_CHILD		= 3
+
+//---------------------------------------------------------------
+// Globals
+//---------------------------------------------------------------
+global GP_CampPos			= 0
+global GP_Complete			= GP_FALSE
+global GP_OutroStart		= GP_FALSE
+global Mother				= 0
+global Farther				= 0
+global Statue				= 0
+global GP_HeldOrphan		= 0
+
+//---------------------------------------------------------------
+// Script Defines
+//---------------------------------------------------------------
+define script GP_LostChild(Pos)
+define script GP_FamilyCamp
+define script GP_Intro
+define script GP_OutroStolenChild
+define script GP_OutroLostChild
+define script GP_Advisors(ID)
+
+//---------------------------------------------------------------
+// Land 3 Orphans
+//---------------------------------------------------------------
+begin script Land3Orphans
+	Scroll			= 0
+	ScrollPos		= marker at {1038.091, 370.128, 1720.774}
+	Building		= 0
+	SearchPos		= marker at {989.196, 365.064, 1642.881}
+	StatuePos		= marker at {1038.091, 367.128, 1720.774}
+
+	Object			= 0
+	Inf				= 0
+start
+
+	GP_CampPos = marker at {1037.483, 366.955, 1718.090}
+
+	Statue = create FEATURE FAMILYSTATUE at {StatuePos}
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_03FINAL_ORPHANS_10" remind "BW2T_SCRIPT_03FINAL_ORPHANS_20" at {ScrollPos}
+	ALTITUDE of Scroll = 10
+	wait until Scroll right clicked
+	
+	delete Scroll
+
+	Inf = create influence at {Statue} radius 30
+
+	//Create the lost childeren
+	run background script GP_LostChild(marker at {977.715, 368.645, 1681.592})
+	run background script GP_LostChild(marker at {985.877, 367.190, 1680.827})
+	run background script GP_LostChild(marker at {1031.829, 363.588, 1624.830})
+	run background script GP_LostChild(marker at {1043.668, 373.886, 1528.607})
+	run background script GP_LostChild(marker at {1043.385, 374.589, 1522.994})
+
+	run script GP_Intro
+	
+	run background script GP_FamilyCamp
+
+	begin loop
+
+		if get object held exists
+			Object = get object held
+			wait 2 seconds
+			if variable get Object type == variable CHILD and Object != GP_HeldOrphan
+				//run background script GP_Advisors(GP_ADVISORS_STOLEN_CHILD)
+				wait until not Object is HELD
+				if {Object} near {Statue} radius 20
+					GP_HeldOrphan = Object
+					run script GP_OutroStolenChild
+				end if
+			end if
+		end if
+
+		wait 0.4 seconds
+
+	until GP_Complete == GP_TRUE
+	end loop
+
+	delete Inf
+
+	wait 100 seconds
+end script Land3Orphans
+
+//---------------------------------------------------------------
+// Orphan Control
+//---------------------------------------------------------------
+begin script GP_FamilyCamp
+	//Mother				= 0
+	//Farther				= 0
+
+	RandAction			= 0
+	LastAction			= 0
+
+	SitPos_1			= marker at {992.125, 364.919, 1654.966}
+	SitPos_2			= marker at {992.850, 364.851, 1655.435}
+	AttractPos_1		= marker at {1038.498, 366.833, 1714.827}
+	AttractPos_2		= marker at {1039.264, 366.963, 1715.412}
+
+	WalkPos[4]
+
+	MotherWalkPos	= marker at {0, 0, 0}
+	FartherWalkPos	= marker at {0, 0, 0}
+
+	Rand			= 0 
+
+	BegPos_1 = marker at {1038.812, 367.125, 1718.522}
+	BegPos_2 = marker at {1036.234, 366.865, 1719.858}
+
+start
+
+	//Setup walk positions
+	//Mother
+	WalkPos[0]	= marker at {1042.617, 367.433, 1717.280}
+	WalkPos[1]	= marker at {1040.096, 366.684, 1711.513}
+
+	//Farther
+	WalkPos[2]	= marker at {1031.493, 366.073, 1722.848}
+	WalkPos[3]	= marker at {1041.439, 366.915, 1712.582}
+
+	wait 0.3 seconds
+
+	begin loop
+
+		//Choose action
+		LastAction = RandAction
+
+		while RandAction == LastAction
+			RandAction = number from GP_ACTION_BEG to GP_ACTION_WALK
+		end while
+
+		if RandAction == GP_ACTION_BEG
+					
+			move Mother position to {BegPos_1}
+			move Farther position to {BegPos_2}
+
+			wait until {Mother} at {BegPos_1} and {Farther} at {BegPos_2}
+
+			move villager Mother focus to {1038.384, 367.166, 1721.284}
+			move villager Farther focus to {1038.384, 367.166, 1721.284}
+
+			play anim "a_p_pray_into" on Mother
+			play anim "a_p_pray_into" on Farther
+
+			wait until Mother played and Farther played
+
+			play anim "a_p_pray" on Mother loop 4
+			play anim "a_p_pray" on Farther loop 4
+
+			wait until Mother played and Farther played
+
+			play anim "a_p_pray_outof" on Mother
+			play anim "a_p_pray_outof" on Farther
+
+			wait until Mother played and Farther played
+
+		elsif RandAction == GP_ACTION_ATTRACT
+
+			move villager Mother focus to camera position
+			move villager Mother focus to camera position
+
+			play anim "a_p_attract_your_attention" on Mother
+			play anim  "a_p_attract_your_attention" on Farther
+			wait until Mother played and Farther played
+
+		elsif RandAction == GP_ACTION_WALK
+			
+			Rand = number from 0 to 1
+
+			MotherWalkPos	= marker at {WalkPos[Rand]}
+			FartherWalkPos	= marker at {WalkPos[Rand+2]}
+
+			wait 1 seconds
+			//wait until Farther played
+			//wait until Mother played
+
+			move Mother position to {MotherWalkPos}
+			override Mother anim "a_p_walk_crying"
+
+			move Farther position to {FartherWalkPos}
+			override Farther anim "a_p_walk_crying"
+
+			wait until {Farther} at {FartherWalkPos}
+			wait until {Mother} at {MotherWalkPos}
+
+			play anim "a_p_looking_for_something" on Mother
+			play anim  "a_p_look_at_creature" on Farther
+			wait until Mother played and Farther played
+
+		end if
+
+	until GP_OutroStart == GP_TRUE
+	end loop
+
+end script GP_FamilyCamp
+
+//---------------------------------------------------------------
+// Orphan Intro
+//---------------------------------------------------------------
+begin script GP_Intro
+
+//Mother=0
+//Fa=0
+
+start
+
+begin cinema
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+
+	Mother = create VILLAGER GREEK_HOUSEWIFE at {1039.124, 367.112, 1717.387}
+	Farther = create VILLAGER GREEK_FARMER at {1039.124, 367.112, 1717.387}
+	set Mother focus to {1038.091, 367.128, 1720.774}
+	play paired anim VILLAGER_PAIRED_ACTION_FAMILY_MOTHER_CHILD_HUG using Mother with Farther
+
+	set fade in time 1
+	set camera position to {1036.673, 369.826, 1719.604}
+	set camera focus to {1120.145, 372.097, 1774.621}
+	wait 2 seconds
+	move camera position to {1036.656, 370.840, 1721.138} time 4
+	move camera focus to {1108.092, 320.398, 1672.640} time 4
+	wait 5 seconds
+	set camera position to {1036.758, 368.220, 1719.171}
+	set camera focus to {1121.182, 362.053, 1665.923}
+	eject good spirit
+	//GA: Oh dear, these people look terribly sad	
+		say "BW2T_SCRIPT_03FINAL_FAMILY_20"
+		
+	
+	wait until read
+		//GA: They long for a child	
+		say "BW2T_SCRIPT_03FINAL_FAMILY_30"
+		wait until read
+
+	eject evil spirit
+
+		//EA: Yeah, we can steal a child from the creche	
+		say "BW2T_SCRIPT_03FINAL_FAMILY_40"
+
+		wait 2 seconds
+
+		//make evil spirit fly across 0.25 down 0.15
+   		make good spirit fly across 0.8 down 0.15
+
+		set camera position to {1036.119, 369.229, 1714.748}
+		set camera focus to {1081.651, 352.863, 1802.260}
+		move camera position to {1035.966, 369.284, 1714.454} time 10
+		move camera focus to {1081.498, 352.918, 1801.966} time 10
+		wait until read
+
+		
+
+		//GA: Oh no, we should find an orphan and unite it with these people	
+		say "BW2T_SCRIPT_03FINAL_FAMILY_50"
+		wait until read
+
+		//GA: There are some wandering in the forest nearby	
+		say "BW2T_SCRIPT_03FINAL_FAMILY_60"
+		set fade red 0 green 0 blue 0 time 3
+
+	wait 4 seconds
+	send good spirit home
+	send evil spirit home
+
+	set fade in time 1
+	wait 1 seconds
+end cinema
+
+end script GP_Intro
+
+//---------------------------------------------------------------
+// Land 3 Orphans
+//---------------------------------------------------------------
+begin script GP_LostChild(Pos)
+	Child			= 0
+
+	MovePos = marker at {0, 0, 0} //generated
+
+	Rand			= 0
+	SITT			= 0
+start
+
+	Child = create CHILD GREEK_HOUSEWIFE at {Pos}
+
+	MovePos = marker at {Pos}
+
+	begin loop
+		
+		if {Child} at {MovePos}
+			
+			//Be sad
+			Rand = number from 1 to 4
+
+			if Rand == 1
+				play anim "a_p_mafiadeal_shocked" on Child
+			elsif Rand == 2
+				play anim "a_p_crowd_lost" on Child
+			elsif Rand == 3
+				play anim "a_p_crying" on Child
+			elsif Rand == 4
+				play anim "a_p_crying" on Child
+			end if
+
+			wait until Child played or Child is HELD
+
+			//Move around position
+			MovePos	= marker at {Pos} + {number from -5 to 5, 0, number from -5 to 5}
+			move Child position to {MovePos}
+		end if
+
+		if Child is HELD
+			GP_HeldOrphan = Child
+
+			wait until not Child is HELD
+
+			if {Child} near {GP_CampPos} radius 20
+				run script GP_OutroLostChild
+			end if
+
+			GP_HeldOrphan = 0
+		end if
+
+		if hand position near {Child} radius 8
+			SITT = create tooltip on Child with text "BW2T_SCRIPT_03FINAL_FAMILY_10"
+			wait until not hand position near {Child} radius 5 or Child is HELD
+			delete SITT
+		end if
+
+	until GP_OutroStart == GP_TRUE
+	end loop
+
+end script GP_LostChild
+
+//---------------------------------------------------------------
+// Orphan Stolen Child Outro
+//---------------------------------------------------------------
+begin script GP_OutroStolenChild
+
+OCS_Mother=0
+OCS_Father=0
+OCS_Kid=0
+
+KidType=0
+
+start
+
+	begin cinema		
+
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		KidType = variable get GP_HeldOrphan sub type
+		OCS_Kid = create CHILD constant KidType at {1037.945, 368.320, 1717.912}
+		
+		GP_OutroStart = 1
+		
+		delete GP_HeldOrphan
+
+		set camera position to {1041.238, 368.400, 1716.598}
+		set camera focus to {958.670, 365.656, 1772.958}
+
+		set Mother position to {1037.945, 368.320, 1717.912}
+		move Mother position to {1037.945, 368.320, 1717.912}
+		set OCS_Kid position to {1039.660, 369.317, 1717.620}
+		move OCS_Kid position to {1039.660, 369.317, 1717.620}
+		set Farther position to {1038.703, 367.953, 1719.268}
+		move Farther position to {1038.703, 367.953, 1719.268}
+
+		set Mother focus to {OCS_Kid}
+		set OCS_Kid focus to {Mother}
+		set Farther focus to {OCS_Kid}
+
+		play anim "a_p_crying" on OCS_Kid loop 2
+		play anim "a_p_l3family_mother_shouting" on Mother
+		play anim "a_p_l3family_father_disapprove" on Farther
+
+		set fade in time 2
+
+		move camera position to {1041.498, 368.408, 1716.420} time 12
+		move camera focus to {958.930, 365.665, 1772.780} time 12
+
+		eject evil spirit
+		eject good spirit
+		
+		// Stealing children today. Mass destruction tomorrow
+		say "BW2T_SCRIPT_03FINAL_FAMILY_80"
+		wait until read
+		// Way to go, you received tribute. 
+		say "BW2T_SCRIPT_03FINAL_FAMILY_90"
+		wait until read
+
+		send good spirit home
+		send evil spirit home
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		set fade in time 1
+		wait 1 seconds
+/*
+		// Oh thank you ever so much for giving us this child.
+		say "BW2T_SCRIPT_03FINAL_FAMILY_STOLEN_20"
+		wait until read
+		// Here, holy one. Here's some Tribute
+		say "BW2T_SCRIPT_03FINAL_FAMILY_STOLEN_30"
+		wait until read
+*/
+	end cinema
+
+		GP_Complete = GP_TRUE
+
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_ORPHANS_STOLEN
+
+end script GP_OutroStolenChild
+
+//---------------------------------------------------------------
+// Orphan Stolen Child Outro
+//---------------------------------------------------------------
+begin script GP_OutroLostChild
+MotherStart = marker at {1038.276, 367.090, 1718.616}
+FatherStart = marker at {1037.146, 372.723, 1718.446}
+
+
+OCS_Mother=0
+OCS_Father=0
+OCS_Kid=0
+
+KidType=0
+
+start
+
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		KidType = variable get GP_HeldOrphan sub type
+		OCS_Kid = create CHILD constant KidType at {1039.520, 440.013, 1718.194}
+		GP_OutroStart = 1
+		delete GP_HeldOrphan
+
+		set Mother position to {MotherStart}
+		set Farther position to {FatherStart}
+		set OCS_Kid position to {MotherStart}
+		move OCS_Kid position to {MotherStart}
+		set Mother focus to {1039.976, 366.905, 1713.902}
+		set Farther focus to {1039.501, 368.345, 1717.748}
+		
+		play paired anim VILLAGER_PAIRED_ACTION_FAMILY_PARENTS_PRAYING using Mother with OCS_Kid snap to position
+		play anim "a_p_l3family_father_approve" on Farther
+		set camera focus to {946.181, 365.206, 1745.764}
+		set camera position to {1041.945, 368.660, 1717.175}
+
+		set fade in time 2
+
+		move camera position to {1041.760, 368.531, 1716.655} time 12
+		move camera focus to {954.700, 365.009, 1765.727} time 12
+		
+		eject evil spirit
+		// Oh how lovely, everyone's happy. Makes me sick
+		say "BW2T_SCRIPT_03FINAL_FAMILY_100"
+		wait until read
+
+		eject good spirit
+		// Good job boss, you received tribute
+		say "BW2T_SCRIPT_03FINAL_FAMILY_110"
+		wait until read
+
+		send good spirit home
+		send evil spirit home
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+/*
+		// Oh thank you ever so much for giving us this child.
+		say "BW2T_SCRIPT_03FINAL_FAMILY_STOLEN_20"
+		wait until read
+		// Here, holy one. Here's some Tribute
+		say "BW2T_SCRIPT_03FINAL_FAMILY_STOLEN_30"
+		wait until read
+*/
+		GP_Complete = GP_TRUE
+
+		set fade in time 2
+		wait 2 seconds
+
+	end cinema
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_ORPHANS_LOST
+
+end script GP_OutroLostChild
+
+//---------------------------------------------------------------
+// Advisors
+//---------------------------------------------------------------
+begin script GP_Advisors(ID)
+start
+
+	begin dialogue
+
+		if ID == GP_ADVISORS_INTRO
+			eject good spirit
+			// Oh how my Mother and I long for a child
+			say "BW2T_SCRIPT_03FINAL_FAMILY_INTRO_40"
+			wait until read
+
+			eject evil spirit
+			// But we can't have children
+			say "BW2T_SCRIPT_03FINAL_FAMILY_INTRO_50"
+			wait until read
+
+		elsif ID == GP_ADVISORS_SPOT_LOST_CHILD
+			//say "BW2T_SCRIPT_03FINAL_FAMILY_LOST_10"
+			// Ooh a lost child. I wonder if this will satisfy the family?
+			eject good spirit
+			say "BW2T_SCRIPT_03FINAL_FAMILY_70"
+			wait until read
+
+		elsif ID == GP_ADVISORS_STOLEN_CHILD
+			// Stealing children today. Mass destruction tomorrow
+			eject evil spirit
+			say "BW2T_SCRIPT_03FINAL_FAMILY_STOLEN_10"
+			wait until read
+
+		end if
+
+		send good spirit home
+		send evil spirit home
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set fade in time 1
+
+	end dialogue
+
+end script GP_Advisors

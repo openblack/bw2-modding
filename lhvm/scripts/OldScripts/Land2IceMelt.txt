@@ -1,0 +1,319 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define IM_FALSE = 0
+define IM_TRUE = 1
+
+define RANDOM_GEYSER_MIN = 2	//the minimum time a geyser must wait before being set off (enviroment stuff)
+define RANDOM_GEYSER_MAX = 5	// ^^ Max
+
+define GEYSER_ERUPT_TIME_MIN = 3
+define GEYSER_ERUPT_TIME_MAX = 7
+
+define ROCK_BLOCK_TIME = 20
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global IM_GeyserPos[8]
+global IM_GeyserBlocked[8]
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script IM_GiveRocks
+define script IM_GeyserBlocks
+
+define script IM_ExplodeGeyser(ID)
+define script IM_TrackRock(Rock)
+define script IM_MaintainGeyserHeat
+
+//-----------------------------------------------------------------------------
+//	Land 2 Ice Melt
+//-----------------------------------------------------------------------------
+begin script Land2IceMelt
+	RandomGeyser = 0
+	GeyserWait = create timer for 0 seconds
+	Sigved = 0
+	IceMeltInfluence = 0
+
+	Scroll = 0
+	ScrollPos = marker at {1403.959351,100.883720,1447.523804}	
+start
+
+	IM_GeyserPos[0] = marker at {1352.276855,97.235519,1492.572632}
+	IM_GeyserPos[1] = marker at {1276.807861,142.463074,1537.760620}
+	IM_GeyserPos[2] = marker at {1379.539551,85.047684,1529.882568}
+	IM_GeyserPos[3] = marker at {1432.900269,90.197189,1527.837402}
+	IM_GeyserPos[4] = marker at {1082.456055,150.674042,1762.151855}
+	IM_GeyserPos[5] = marker at {738.411987,27.615200,488.358002}
+	IM_GeyserPos[6] = marker at {716.442993,34.230301,448.018951}
+	IM_GeyserPos[7] = marker at {677.322693,16.335611,455.202484}
+
+	//Create some mist around the geysers too
+
+	run background script IM_MaintainGeyserHeat
+
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	//Random geyser eruptions
+	begin loop
+
+		RandomGeyser = number from 0 to 7
+		run background script IM_ExplodeGeyser(RandomGeyser)
+		GeyserWait = create timer for number from RANDOM_GEYSER_MIN to RANDOM_GEYSER_MAX seconds
+
+		wait until get GeyserWait time remaining == 0
+
+	until Scroll right clicked
+	end loop
+
+	delete Scroll
+	
+	begin cinema
+		eject good spirit
+		say "GA: Leader Sigved is trapped in that geyser"	
+		//good sirit point
+		wait until read
+
+		eject evil spirit
+		say "EA: I say we leave him there, whoever he is."
+		wait until read
+
+		say "EA: I'd rather concentrate on the finer things in life, such as putting people in the Geysers!"
+		wait until read
+
+		say "GA: Throw the rocks from that pile into the erupting geyser holes on this hill side."
+		wait until read
+		
+		say "GA: If we get it right then the pressure will build up and force Sigveds geyser to erupt and free him"
+		wait until read
+	end cinema
+	
+	//Sigved = create VILLAGER VILLAGER_INFO_SIGVED at {SigvedPos}
+
+	IceMeltInfluence = create influence at {ScrollPos} radius 30
+
+	run background script IM_GiveRocks
+	run background script IM_GeyserBlocks
+
+	begin loop
+
+		RandomGeyser = number from 0 to 3
+
+		run background script IM_ExplodeGeyser(RandomGeyser)
+		GeyserWait = create timer for number from RANDOM_GEYSER_MIN to RANDOM_GEYSER_MAX seconds
+
+		wait until get GeyserWait time remaining == 0
+
+	until IM_GeyserBlocked[0] == IM_TRUE and IM_GeyserBlocked[1] == IM_TRUE and IM_GeyserBlocked[2] == IM_TRUE and IM_GeyserBlocked[3] == IM_TRUE
+	end loop
+
+	begin cinema
+		say "Guy has melted"
+		wait until read
+	end cinema
+
+	//Random geyser eruptions
+	begin loop
+
+		RandomGeyser = number from 0 to 7
+		run background script IM_ExplodeGeyser(RandomGeyser)
+		GeyserWait = create timer for number from RANDOM_GEYSER_MIN to RANDOM_GEYSER_MAX seconds
+
+		wait until get GeyserWait time remaining == 0
+
+	until Scroll right clicked
+	end loop
+
+
+end script Land2IceMelt
+
+//-----------------------------------------------------------------------------
+//	Land 2 Ice Melt - Give Rocks
+//-----------------------------------------------------------------------------
+begin script IM_GiveRocks
+	RockPos = marker at {1409.437378,100.311279,1448.053955}
+	Rock = 0
+start
+	begin loop
+		Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {RockPos}
+		wait until not {Rock} near {RockPos} radius 10 or not Rock exists
+		//run background script IM_TrackRock(Rock)
+		wait 1 seconds
+	end loop
+end script IM_GiveRocks
+
+//-----------------------------------------------------------------------------
+//	Explode Gesa
+//-----------------------------------------------------------------------------
+begin script IM_ExplodeGeyser(ID)
+	GeyserFX = 0
+	RandomFX = 0
+	EruptTime = 0
+	EruptionTimer = create timer for 0 seconds
+	Object = 0
+	RockBlock = 0
+	Position = 0
+start
+
+	Position = marker at {IM_GeyserPos[ID]}
+	RockBlock = get OBJECT at {Position} radius 5
+	
+	if not RockBlock exists
+		RandomFX = number from 1 to 2
+		EruptTime = number from GEYSER_ERUPT_TIME_MIN to GEYSER_ERUPT_TIME_MAX
+		EruptionTimer = create timer for EruptTime seconds
+
+		if RandomFX == 1
+			GeyserFX = create visual effect VISUAL_EFFECT_GEYSER_LARGE at {Position} time 5
+		else
+			GeyserFX = create visual effect VISUAL_EFFECT_GEYSER at {Position} time 5
+		end if
+
+		begin loop
+			
+			set physics at position {Position} with strength {number from -10 to 10, number from 20 to 35,number from -10 to 0} radius 15 random 1
+			//Excess heat when the geyser errupts
+			add effect EFFECT_TYPE_BURN at {Position} strength 0.8 radius 10
+
+			//also create some heat around the geyser.. test this out. It may need a seperate background script to cosntantly set it which would be bad.
+/*
+			//General objects
+			Object = get TREE at {Position} radius 10		
+
+			if Object exists
+				set Object velocity heading {Position} + {0.000000,50.000000,0.000000} speed 30
+				enable Object on fire 0.5
+			end if
+			
+			//Villagers
+			Object = get VILLAGER at {Position} radius 10
+			if Object exists
+				set Object velocity heading {Position} + {0.000000,50.000000,0.000000} speed 30
+				enable Object on fire 0.5
+				HEALTH of Object = 0.3
+			end if
+*/			
+			RockBlock = get OBJECT at {Position} radius 5
+
+		until get EruptionTimer time remaining == 0 or RockBlock exists
+		end loop
+
+		if RockBlock exists
+			//Makke sure to stop the FX
+			delete GeyserFX
+		end if
+
+	end if
+
+	//Wait a short few seconds then explode the rock out
+	if RockBlock exists
+		IM_GeyserBlocked[ID] = IM_TRUE
+		
+		begin dialogue
+			say "You blocked a geyser"
+			wait until read
+		end dialogue
+
+		wait ROCK_BLOCK_TIME seconds
+
+		RandomFX = number from 1 to 2
+		EruptTime = number from GEYSER_ERUPT_TIME_MIN to GEYSER_ERUPT_TIME_MAX
+		EruptionTimer = create timer for EruptTime seconds
+
+		IM_GeyserBlocked[ID] = IM_FALSE
+
+		if RandomFX == 1
+			GeyserFX = create visual effect VISUAL_EFFECT_GEYSER_LARGE at {Position} time 5
+		else
+			GeyserFX = create visual effect VISUAL_EFFECT_GEYSER at {Position} time 5
+		end if
+
+		set RockBlock velocity heading {Position} + {0.000000,50.000000,0.000000} speed 30
+		enable RockBlock on fire 0.5
+	end if
+
+end script IM_ExplodeGeyser
+
+//-----------------------------------------------------------------------------
+//	Track Rock
+//-----------------------------------------------------------------------------
+begin script IM_TrackRock(Rock)
+start
+
+	begin loop
+		
+		if not Rock is HELD
+
+			//Guide the rock ni for now because they are difficult to hit  
+			//Also check for geyser blocked so as not to pull multipule rocks in
+			if {Rock} near {IM_GeyserPos[0]} radius 10 and IM_GeyserBlocked[0] == IM_FALSE
+				ALTITUDE of Rock = ALTITUDE of Rock
+				set Rock target {IM_GeyserPos[0]} time 1
+				wait 1 seconds
+
+			elsif {Rock} near {IM_GeyserPos[1]} radius 10 and IM_GeyserBlocked[1] == IM_FALSE	
+				ALTITUDE of Rock = ALTITUDE of Rock
+				set Rock target {IM_GeyserPos[1]} time 1
+				wait 1 seconds
+
+			elsif {Rock} near {IM_GeyserPos[2]} radius 10 and IM_GeyserBlocked[2] == IM_FALSE
+				ALTITUDE of Rock = ALTITUDE of Rock
+				set Rock target {IM_GeyserPos[2]} time 1
+				wait 1 seconds
+
+			elsif {Rock} near {IM_GeyserPos[3]} radius 10 and IM_GeyserBlocked[3] == IM_FALSE
+				ALTITUDE of Rock = ALTITUDE of Rock
+				set Rock target {IM_GeyserPos[3]} time 1
+				wait 1 seconds
+
+			end if
+		end if
+
+	until not Rock is MOVING
+	end loop
+
+end script IM_TrackRock
+
+//-----------------------------------------------------------------------------
+//	Geyser Blocks
+//-----------------------------------------------------------------------------
+begin script IM_GeyserBlocks
+	GeyserID = 0
+	RockBlock = 0
+start
+	begin loop
+		
+		RockBlock = get OBJECT at {IM_GeyserPos[GeyserID]} radius 5
+		if RockBlock exists
+			IM_GeyserBlocked[GeyserID] = IM_TRUE
+		else
+			IM_GeyserBlocked[GeyserID] = IM_FALSE
+		end if
+		
+		GeyserID++
+
+		if GeyserID == 4
+			GeyserID = 0
+		end if
+	end loop
+end script IM_GeyserBlocks
+
+//-----------------------------------------------------------------------------
+//	Maintain Geyser Heat
+//-----------------------------------------------------------------------------
+begin script IM_MaintainGeyserHeat
+	GeyserLoop = 0
+start
+	begin loop
+
+		add effect EFFECT_TYPE_BURN at {IM_GeyserPos[GeyserLoop]} strength 0.1 radius 10
+
+		GeyserLoop++
+		if GeyserLoop == 8
+			GeyserLoop = 0
+		end if
+
+	end loop
+end script IM_MaintainGeyserHeat

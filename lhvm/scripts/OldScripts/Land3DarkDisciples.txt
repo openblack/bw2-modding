@@ -1,0 +1,302 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define DD_True = 1
+define DD_False = 0
+define RECRUITMENT_REST_TIME = 100
+define MAX_NUMBER_OF_DISCIPLES = 7
+define MAX_NUMBER_OF_RECRUITED_DISCIPLES = 8
+define DD_EVIL = 1
+define DD_GOOD = 2
+define DD_NEUTRAL = 3
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global DD_Victims = 0 
+global DD_VictimsSaved = 0
+global DD_VillagersEnslaved = DD_True
+global DD_WorshipPlatformFull[MAX_NUMBER_OF_DISCIPLES]
+global DD_WorshipPos[MAX_NUMBER_OF_DISCIPLES]
+global DD_Statue= 0
+global DD_StatueEffect= 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script DD_DarkDisciple(Victim)
+//-----------------------------------------------------------------------------
+//----Land3DarkDisciples----// 
+//-----------------------------------------------------------------------------
+begin script Land3DarkDisciples
+	DD_StatueSpawnPos = marker at {870.422, 446.930, 1428.747}
+	AlignmentTimer = create timer for 0 seconds
+	RestTimer = create timer for 0 seconds
+	DD_EVILRadius = 0
+	NumberOfVictims = 1
+	Victim = 0
+	Solution = 0
+	PlayersPlatoon = 0
+	PlatoonAction = 0
+	Action = 0
+	Scroll = 0
+	ScrollCreated = DD_False
+	Town = get TOWN at {787.835, 151.897, 1420.411} radius 50
+start
+
+//----Initialise variables----//
+
+	DD_WorshipPlatformFull[0] = DD_False
+	DD_WorshipPlatformFull[1] = DD_False
+	DD_WorshipPlatformFull[2] = DD_False
+	DD_WorshipPlatformFull[3] = DD_False
+	DD_WorshipPlatformFull[4] = DD_False
+	DD_WorshipPlatformFull[5] = DD_False
+	DD_WorshipPlatformFull[6] = DD_False
+	DD_WorshipPlatformFull[7] = DD_False
+	
+	
+	//if L3GreekTown not exists
+		//run script Land3Globals
+	//end if
+	
+//----Create DD_Statue----//
+
+	
+	DD_Statue = create FEATURE ICE_CAVE at {DD_StatueSpawnPos}
+	DD_StatueEffect = create visual effect VISUAL_EFFECT_GROUND_RUNE at {DD_StatueSpawnPos} time -1
+	SCALE of DD_Statue = 0.2
+	disable DD_Statue pickup
+	PLAYER of DD_Statue = 0
+	wait until PLAYER of Town == 0
+	
+	
+
+//----Initialise Positions----//
+	
+	DD_WorshipPos[0] = marker at get world position from DD_Statue to {1.422, -1.002, 4.442}
+	DD_WorshipPos[1] = marker at get world position from DD_Statue to {-0.554, 0.832, -4.237}
+	DD_WorshipPos[2] = marker at get world position from DD_Statue to {-4.384, -0.508, 1.044}
+	DD_WorshipPos[3] = marker at get world position from DD_Statue to {3.980, 0.815, -1.484}
+	DD_WorshipPos[4] = marker at get world position from DD_Statue to {-1.953, -0.772, 4.275}
+	DD_WorshipPos[5] = marker at get world position from DD_Statue to {2.606, 1.319, -3.560}
+	DD_WorshipPos[6] = marker at get world position from DD_Statue to {4.788, -0.790, 2.966}
+	DD_WorshipPos[7] = marker at get world position from DD_Statue to {-3.209, -0.156, -2.293}
+
+//----Wait for the first nightfall----//
+
+	//wait until get game time == 10
+	
+	//Scroll = create highlight GOLD name "Sick Town" remind "Reminder temp" at {866.251, 152.284, 1428.939}
+	//ALTITUDE of Scroll = 3	
+	//wait until Scroll right clicked	
+	//delete Scroll
+	
+	
+	
+//----DD_Statue Behaviour----//
+	
+	begin loop
+	
+	//----Make DD_Statue DD_EVIL----//
+		if (DD_Victims > 0 and ScrollCreated == DD_False)
+			Scroll = create highlight GOLD name "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_10" remind "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_20" at {866.251, 152.284, 1428.939}
+			ALTITUDE of Scroll = 3	
+			//wait until Scroll right clicked	
+			ScrollCreated = DD_True
+		end if
+		
+		if Scroll right clicked	
+			begin cinema
+				start music "GHOST_LEGION_MUSIC"
+				set camera position to {870.254, 156.946, 1422.052}	
+				set camera focus to {866.598, 121.886, 1515.631}
+				move camera position to {870.363, 157.995, 1419.252} time 10
+				move camera focus to {866.707, 122.935, 1512.831} time 10
+				wait 3 seconds
+				eject good spirit
+				eject evil spirit
+				say "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_30"
+				wait until read
+				say "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_40"
+				wait until read	
+				say "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_50"
+				wait until read
+				say "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_60"
+				wait until read
+				stop music
+				
+			end cinema
+			delete Scroll
+		end if
+		
+		if get AlignmentTimer time remaining == 0
+			DD_EVILRadius = 2
+			DD_EVILRadius += NumberOfVictims
+			set ground alignment to -1 at {DD_Statue} radius DD_EVILRadius amount 1
+			set AlignmentTimer time to 1.5 seconds
+		end if	
+	
+	//----Make DD_Statue Recruit Victims----//
+	
+		if DD_Victims < NumberOfVictims and get RestTimer time remaining == 0
+			Victim = get VILLAGER in Town excluding scripted
+			if Victim exists
+				run background script DD_DarkDisciple(Victim)
+				wait 0.5 seconds
+			end if
+		end if
+	
+	//----Stop DD_Statue Recruiting----//
+	
+		if DD_Victims == NumberOfVictims
+			set RestTimer time to RECRUITMENT_REST_TIME seconds
+			if NumberOfVictims < 8
+				NumberOfVictims++
+				DD_EVILRadius += 1
+			end if
+		end if
+
+	//----Check if player creates a Dark Disciple----//
+		
+		Victim = get VILLAGER in state VILLAGER_SUBSTATE_LANDED at {DD_Statue} radius 20 excluding scripted
+		if Victim exists
+			NumberOfVictims++
+			DD_EVILRadius += 1
+			run background script DD_DarkDisciple(Victim)
+		end if
+
+	//----Check for DD_EVIL conditions----//
+			
+		if DD_Victims >= MAX_NUMBER_OF_DISCIPLES
+			Solution = DD_EVIL
+		end if
+	
+	//----Check for DD_GOOD conditions----//
+	
+		PlayersPlatoon = get platoon of player 0 nearest {DD_Statue} radius 20 
+		if PlayersPlatoon exists
+			PlatoonAction = get current PlayersPlatoon action
+			if PlatoonAction == variable PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING
+				wait 5 seconds
+				delete DD_Statue
+				Solution = DD_GOOD
+			end if
+			PlayersPlatoon = 0
+		end if
+		
+	//----Check for DD_NEUTRAL conditions----//	
+	
+		if DD_VictimsSaved >= 5
+			Solution = DD_NEUTRAL
+		end if
+				
+	until Solution > 0
+	end loop
+	
+//----End Cutscene----//
+
+	if Solution == DD_EVIL
+		begin cinema
+			set camera position to {870.254, 156.946, 1422.052}	
+			set camera focus to {866.598, 121.886, 1515.631}
+				
+			say "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_70"
+			wait until read
+			wait 5 seconds
+		end cinema
+	else
+		begin cinema
+			set camera position to {870.254, 156.946, 1422.052}	
+			set camera focus to {866.598, 121.886, 1515.631}
+				
+			say "BW2T_SCRIPT_03FINAL_DARKDISCIPLE_80"
+			wait until read
+			wait 5 seconds
+		end cinema
+	end if
+	wait 2 seconds
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_DARKDISCIPLES
+	DD_VillagersEnslaved = DD_False
+	
+end script Land3DarkDisciples
+//-----------------------------------------------------------------------------
+//----DD_DarkDisciple----//
+//-----------------------------------------------------------------------------
+begin script DD_DarkDisciple(Victim)
+	End = DD_False
+	Victim_Praying = DD_False
+	Counter = 0
+	Random = 0
+	DroppedTotal = 0
+start
+	DD_Victims++
+	
+	set Victim carrying CARRIED_OBJECT_NONE
+	
+	Random = number from 0 to 1
+	
+//----Assign Disciple a worship position----//
+	
+	while DD_WorshipPlatformFull[Counter] != DD_False
+		Counter++
+	end while
+	
+	DD_WorshipPlatformFull[Counter] = DD_True
+	
+	move Victim position to {DD_WorshipPos[Counter]}
+	
+	
+	begin loop
+	
+	//----Check if the Dark Disciple is still under spell----//
+	
+		if HEALTH of Victim == 0 or DD_VillagersEnslaved == DD_False or Victim not exists
+			DD_Victims--
+			release Victim
+			End = DD_True
+		end if
+		
+	//----Move Disciple to Worship site----//
+
+		if Victim is HELD
+			DroppedTotal = get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+			DroppedTotal += 1
+			
+			wait until Victim is not HELD
+			
+			//----Check if player frees a Disciple----//
+		
+				if DroppedTotal == get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+					DD_Victims--
+					DD_VictimsSaved++
+					release Victim
+					End = DD_True
+				end if
+			
+				if not {Victim} at {DD_WorshipPos[Counter]}
+					move Victim position to {DD_WorshipPos[Counter]}
+					Victim_Praying = DD_False
+				end if
+		end if
+		
+	//----Make Disciple kneel----//
+	
+		if {Victim} at {DD_WorshipPos[Counter]} and (Victim_Praying == DD_False or  Victim played)
+			move villager Victim focus to {DD_Statue}
+			Victim_Praying = DD_True
+			if Random == 0
+				play anim "a_p_aztec_prayer_into" on Victim 
+				wait until Victim played
+				play anim "a_p_aztec_prayer_loop" on Victim loop 100
+			elsif Random == 1
+				play anim "a_p_pray_into" on Victim 
+				wait until Victim played
+				play anim "a_p_pray" on Victim loop 1000
+			end if
+		end if
+	
+	until End == DD_True
+	end loop
+		
+	DD_WorshipPlatformFull[Counter] = DD_False
+	
+end script DD_DarkDisciple

@@ -1,0 +1,550 @@
+define script ResetChallenge
+define script Intro
+define script ResetScroll
+define script Outro
+
+define WCG_True = 1
+define WCG_False = 0
+
+global WolfNearField = WCG_True
+global ChickNearField = WCG_True
+global GrainNearField = WCG_True
+global FarmerNearField = WCG_True
+global CartLoaded = 0
+global WolfPos = 0
+global ChickPos = 0
+global GrainPos = 0
+global FarmerPos = 0
+global FarmerEndPos = 0
+global GrainEndPos = 0
+global ChickEndPos = 0
+global WolfEndPos = 0
+global Wolf = 0
+global Chicken = 0
+global Grain = 0
+global Farmer = 0
+global CamPos2 = 0
+global CamFoc2 = 0
+
+
+begin script ResetScroll
+
+ScrollNew = 0
+
+start
+	ScrollNew = create highlight SILVER name "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_40" remind "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_40" at {FarmerPos}
+	ALTITUDE of ScrollNew  = 5
+	//Loop to make sure player doesn't kill the farmer
+	begin loop
+
+	if HEALTH of Farmer <= 0
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ROCKMAN_ADVISOR_MANDEAD_10"
+				wait until read
+				send good spirit home
+			end dialogue
+			delete Farmer with fade
+			wait 1 second
+			Farmer = create VILLAGER GREEK_FARMER at {FarmerPos}
+			disable Farmer moveable
+			disable Farmer pickup
+			disable Farmer hurt by fire
+		end if
+	until ScrollNew right clicked
+	end loop
+end script ResetScroll
+
+
+begin script Intro
+
+start
+
+	CamPos2 = marker at {1341.385, 196.149, 747.040}
+	CamFoc2 = marker at {1307.193, 126.595, 810.230}
+
+	begin cinema
+		move camera position to {1342.171, 193.134, 754.120} time 4
+		move camera focus to {1252.730, 166.265, 718.366} time 4
+		wait 4 seconds
+		//say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_60"
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_10"
+		wait until read
+		//say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_80"
+		//wait until read
+		wait 2 seconds
+		move camera position to {CamPos2} time 2
+		move camera focus to {CamFoc2} time 2
+		wait 2 seconds
+		eject good spirit
+		//say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_70"
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_20"
+		wait until read
+		wait 1 second
+		make good spirit point at {Grain}
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_10"
+		wait 6 seconds
+		make good spirit point at {Wolf}
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_20"
+		wait 6 seconds
+		make good spirit point at {Farmer}
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_30"
+		wait 3 seconds
+		send good spirit home
+	end cinema
+end script Intro
+
+begin script Land8ChickenWolfGrain
+
+	TempAnimal = 0
+	Counter = 0
+	ChallengeComplete = 0
+	Scroll = 0
+	mouseObject = 0
+	WolfHigh = 0
+	ChickenHigh = 0
+	FarmerHigh = 0
+	GrainHigh = 0
+	
+
+	start
+	WolfPos = marker at {1332.290, 190.738, 754.749}
+	ChickPos = marker at {1334.690,191.188,751.299}
+	GrainPos = marker at {1337.125, 191.500, 748.468}
+	FarmerPos = marker at {1336.755,190.657,753.870}
+	FarmerEndPos = marker at {1339.833, 190.167, 756.086}
+	GrainEndPos =  marker at {1342.867, 190.258, 754.794}
+	ChickEndPos =  marker at {1342.423, 189.825, 757.137}
+	WolfEndPos = marker at {1341.929, 188.540, 763.073}
+
+	Wolf = create ANIMAL WOLF at {WolfPos}
+	Chicken = create ANIMAL CHICKEN at {ChickPos}
+	Grain = create ANIMAL CHICKEN at {GrainPos}
+	detach reaction Grain
+	override mesh for Grain with "m_genericgrainpileground"
+	SCALE of Grain = 0.2
+	Farmer = create VILLAGER GREEK_FARMER at {FarmerPos}
+
+	while Counter < 2
+		TempAnimal = create ANIMAL PIG at {FarmerEndPos} + {number from 10 to 18, number from -5 to 5}
+		Counter++
+	end while
+	while Counter < 4
+		TempAnimal = create ANIMAL COW at {FarmerEndPos} + {number from 10 to 18, number from -5 to 5}
+		Counter++
+	end while
+	while Counter < 6
+		TempAnimal = create ANIMAL CHICKEN at {FarmerEndPos} + {number from 10 to 18, number from -5 to 5}
+		Counter++
+	end while
+
+	
+	disable Wolf moveable
+	disable Chicken moveable
+	disable Grain moveable
+	disable Farmer moveable
+	disable Wolf pickup
+	disable Chicken pickup
+	disable Grain pickup
+	disable Farmer pickup
+	disable Wolf hurt by fire
+	disable Chicken hurt by fire
+	disable Grain hurt by fire
+	disable Farmer hurt by fire
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_40" remind "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_50" at {FarmerPos}
+	ALTITUDE of Scroll  = 5
+
+	//Loop to make sure player doesn't kill the farmer
+	begin loop
+
+		if HEALTH of Farmer <= 0
+			delete Farmer with fade
+			wait 1 second
+			Farmer = create VILLAGER GREEK_FARMER at {FarmerPos}
+			disable Farmer moveable
+			disable Farmer pickup
+			disable Farmer hurt by fire
+		end if
+	until Scroll right clicked
+	end loop
+
+	delete Scroll
+	run script Intro
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_REMINDER" remind "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_REMINDER" at {FarmerPos}
+	ALTITUDE of Scroll = 8.0
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 with amount 1 text "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_MISC_40" amount 1 description "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_8_CHICKENWOLFGRAIN
+	L9ShowingChickenWolfGrainObjective = 1
+
+	begin loop
+		//clear right clicked object
+		//clear right clicked position
+		//wait until mouse right button clicked
+		if mouse right button clicked
+			mouseObject = get object right clicked
+		end if
+
+		if get object hand is over == Wolf and WolfHigh == 0
+			enable Wolf pulse
+			WolfHigh = 1
+		end if
+		if get object hand is over != Wolf and WolfHigh == 1
+			disable Wolf pulse
+			WolfHigh = 0
+		end if
+
+		if get object hand is over == Grain and GrainHigh == 0
+			enable Grain pulse
+			GrainHigh = 1
+		end if
+		if get object hand is over != Grain and GrainHigh == 1
+			disable Grain pulse
+			GrainHigh = 0
+		end if
+
+		if get object hand is over == Chicken and ChickenHigh == 0
+			enable Chicken pulse
+			ChickenHigh = 1
+		end if
+		if get object hand is over != Chicken and ChickenHigh == 1
+			disable Chicken pulse
+			ChickenHigh = 0
+		end if
+
+
+		if get object hand is over == Farmer and FarmerHigh == 0
+			enable Farmer pulse
+			FarmerHigh = 1
+		end if
+		if get object hand is over != Farmer and FarmerHigh == 1
+			disable Farmer pulse
+			FarmerHigh = 0
+		end if
+		
+		if CartLoaded == 0
+			if mouseObject == Wolf and WolfNearField == FarmerNearField
+				//Load wolf
+				clear right clicked object
+				if WolfHigh == 1
+					disable Wolf pulse
+					WolfHigh = 0
+				end if
+				move Farmer position to {Wolf}
+				wait 2 seconds
+				delete Wolf with fade
+				wait 1 second
+				if FarmerNearField == WCG_True
+					move Farmer position to {FarmerPos}
+				else
+					move Farmer position to {FarmerEndPos}
+				end if
+
+				CartLoaded = 1
+				
+				begin dialogue
+					say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_30"
+					wait until read
+				end dialogue
+				
+			end if
+
+			if mouseObject == Chicken and ChickNearField == FarmerNearField
+			//Load chick
+				clear right clicked object
+				if ChickenHigh == 1
+					disable Chicken pulse
+					ChickenHigh = 0
+				end if
+				move Farmer position to {Chicken}
+				wait 2 seconds
+				delete Chicken with fade
+				wait 1 second
+				if FarmerNearField == WCG_True
+					move Farmer position to {FarmerPos}
+				else
+					move Farmer position to {FarmerEndPos}
+				end if
+				
+				CartLoaded = 2
+				
+				begin dialogue
+					say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_40"
+					wait until read
+				end dialogue
+				
+			end if
+
+			if mouseObject == Grain and GrainNearField == FarmerNearField
+			//Load grain
+				clear right clicked object
+				if GrainHigh == 1
+					disable Grain pulse
+					GrainHigh = 0
+				end if
+				move Farmer position to {Grain}
+				wait 2 seconds
+				delete Grain with fade
+				wait 1 second
+				if FarmerNearField == WCG_True
+					move Farmer position to {FarmerPos}
+				else
+					move Farmer position to {FarmerEndPos}
+				end if
+				
+				CartLoaded = 3
+				
+				begin dialogue
+					say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_50"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if mouseObject == Farmer
+			//Move farmer to field
+			if FarmerHigh == 1
+				disable Farmer pulse
+				FarmerHigh = 0
+			end if
+			if FarmerNearField == WCG_True
+				FarmerNearField = WCG_False
+				begin fullscreen cinema
+					move camera position to {CamPos2} time 1
+					move camera focus to {CamFoc2} time 1
+					wait until camera ready
+					move Farmer position to {FarmerEndPos}
+					clear right clicked object
+					mouseObject = 0
+					wait 4 seconds
+				end cinema
+
+				if CartLoaded == 1
+					Wolf = create ANIMAL WOLF at {WolfEndPos}
+					disable Wolf moveable
+					disable Wolf pickup
+					disable Wolf hurt by fire
+					WolfNearField = WCG_False
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 2
+					Chicken = create ANIMAL CHICKEN at {ChickEndPos}
+					disable Chicken moveable
+					disable Chicken pickup
+					disable Chicken hurt by fire
+					ChickNearField = WCG_False
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 3
+					Grain = create ANIMAL CHICKEN at {GrainEndPos}
+					detach reaction Grain
+					override mesh for Grain with "m_genericgrainpileground"
+					SCALE of Grain = 0.2
+					disable Grain moveable
+					disable Grain pickup		
+					disable Grain hurt by fire
+					GrainNearField = WCG_False
+					CartLoaded = 0
+				end if
+			end if
+		end if
+
+		if mouseObject == Farmer
+			if FarmerNearField == WCG_False
+				FarmerNearField = WCG_True
+				begin fullscreen cinema
+					move camera position to {CamPos2} time 1
+					move camera focus to {CamFoc2} time 1
+					wait until camera ready
+					move Farmer position to {FarmerPos}
+					clear right clicked object
+					mouseObject = 0
+					wait 4 seconds
+				end cinema
+
+				if CartLoaded == 1
+					Wolf = create ANIMAL WOLF at {WolfPos}
+					disable Wolf moveable
+					disable Wolf pickup
+					disable Wolf hurt by fire
+					WolfNearField = WCG_True
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 2
+					Chicken = create ANIMAL CHICKEN at {ChickPos}
+					disable Chicken moveable
+					disable Chicken pickup
+					disable Chicken hurt by fire
+					ChickNearField = WCG_True
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 3
+					Grain = create ANIMAL CHICKEN at {GrainPos}
+					detach reaction Grain
+					override mesh for Grain with "m_genericgrainpileground"
+					SCALE of Grain = 0.2
+					disable Grain moveable
+					disable Grain pickup
+					disable Grain hurt by fire
+					GrainNearField = WCG_True
+					CartLoaded = 0
+				end if
+			end if
+		end if
+
+		if (ChickNearField == WCG_True and WolfNearField == WCG_True and GrainNearField == WCG_False and FarmerNearField == WCG_False) or (ChickNearField == WCG_False and WolfNearField == WCG_False and GrainNearField == WCG_True and FarmerNearField == WCG_True)
+			begin cinema
+				if WolfNearField == WCG_True
+					move Wolf position to {ChickPos}
+				else
+					move Wolf position to {ChickEndPos}
+				end if
+				say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_60"
+				wait until read
+				
+				eject good spirit
+				say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_70"
+				wait until read
+				say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_100"
+				wait until read
+				send good spirit home
+				run script ResetChallenge
+			end cinema
+		end if
+
+		if (ChickNearField == WCG_True and GrainNearField == WCG_True and WolfNearField == WCG_False and FarmerNearField == WCG_False) or (ChickNearField == WCG_False and GrainNearField == WCG_False and WolfNearField == WCG_True and FarmerNearField == WCG_True)
+			begin cinema
+				if ChickNearField == WCG_True
+					move Chicken position to {GrainPos}
+				else
+					move Chicken position to {GrainEndPos}
+				end if
+				say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_80"
+				wait until read
+				wait 2 seconds
+				eject good spirit
+				say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_90"
+				wait until read
+				say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_100"
+				wait until read
+				send good spirit home
+				run script ResetChallenge
+			end cinema
+		end if
+
+		if WolfNearField == WCG_False and ChickNearField == WCG_False and GrainNearField == WCG_False
+			
+			run script Outro		
+			
+			if L8_GreekTown not exists
+				run script Land8Globals
+			end if
+			attach Farmer to L8_GreekTown
+			enable Farmer moveable
+			enable Farmer pickup
+			enable Farmer hurt by fire
+			release Farmer
+			delete Wolf with fade
+			delete Grain with fade
+			delete Chicken with fade
+			ChallengeComplete = 1
+		end if
+
+		if HEALTH of Farmer <= 0
+
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ROCKMAN_ADVISOR_MANDEAD_10"
+				wait until read
+				send good spirit home
+			end dialogue
+
+			if WolfHigh == 1
+				disable Wolf pulse
+				WolfHigh = 0
+			end if
+			if ChickenHigh == 1
+				disable Chicken pulse
+				ChickenHigh = 0
+			end if
+			if FarmerHigh == 1
+				disable Farmer pulse
+				FarmerHigh = 0
+			end if
+			if GrainHigh == 1
+				disable Grain pulse
+				GrainHigh = 0
+			end if
+
+			run script ResetChallenge
+			run script ResetScroll
+			run script Intro
+		end if
+
+	until ChallengeComplete == 1
+	end loop
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_8_CHICKENWOLFGRAIN
+	delete Scroll
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	wait 2.5 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+end script Land8ChickenWolfGrain
+
+begin script ResetChallenge
+
+start
+
+	WolfNearField = WCG_True
+	ChickNearField = WCG_True
+	GrainNearField = WCG_True
+	FarmerNearField = WCG_True
+	
+	delete Wolf with fade
+	delete Chicken with fade
+	delete Grain with fade
+	delete Farmer with fade
+
+	Wolf = create ANIMAL WOLF at {WolfPos}
+	Chicken = create ANIMAL CHICKEN at {ChickPos}
+	Grain = create ANIMAL CHICKEN at {GrainPos}
+	detach reaction Grain
+	override mesh for Grain with "m_genericgrainpileground"
+	SCALE of Grain = 0.2
+	Farmer = create VILLAGER VILLAGER_INFO_GREEK_FARMER_MALE at {FarmerPos}
+	
+	disable Wolf moveable
+	disable Chicken moveable
+	disable Grain moveable
+	disable Farmer moveable
+	disable Wolf pickup
+	disable Chicken pickup
+	disable Grain pickup
+	disable Farmer pickup
+	disable Wolf hurt by fire
+	disable Chicken hurt by fire
+	disable Grain hurt by fire
+	disable Farmer hurt by fire
+
+end script ResetChallenge
+
+begin script Outro
+
+start
+	begin cinema
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_110"
+		wait until read
+		eject good spirit
+			say "BW2T_SCRIPT_08FINAL_CHALLENGE_CHICKEN_WOLF_GRAIN_120"
+			wait until read
+		send good spirit home
+	end cinema
+
+end script Outro
+
+	

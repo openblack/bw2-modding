@@ -1,0 +1,147 @@
+begin script Land4Outro
+
+L4TownConversionMethod = 0
+GateHouse = 0
+Counter = 0
+CreationPos = 0
+Vagrants[100]
+CheckWhatconversionmethodwas=0
+start
+
+if variable get town L4NorseCity status == variable TOWN_STATUS_CAPTURED
+	L4TownConversionMethod = 1
+else
+	L4TownConversionMethod = 2
+end if
+
+set persistent data "LAND4METHODOFCONVERSION" to L4TownConversionMethod
+
+if L4TownConversionMethod == 1 //aggressive
+
+begin cinema
+	//AGC: Moved fade out & wait inside the cinema block
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	
+	wait 2 seconds
+	
+	reset camera path 
+       
+	set camera position to {1642.175, 390.662, 1719.754}
+	set camera focus to {1732.726, 353.403, 1699.465}
+	
+	queue camera move with position {1642.175, 390.662, 1719.754} focus {1732.726, 353.403, 1699.465} time 0.0
+	
+		queue camera move with position {1472.416, 487.100, 1752.822} focus {1555.107, 433.111, 1737.087} time 7.0
+			queue camera move with position {1293.902, 683.376, 1763.284} focus {1370.489, 623.159, 1740.750} time 8.0
+				queue camera move with position {1008.860, 808.947, 1637.237} focus {1083.610, 748.321, 1610.089} time 15.0
+	queue camera move with position {961.669, 380.576, 645.530} focus {1021.508, 300.650, 639.939} time 12.0
+	set fade in time 2
+	wait 2 seconds
+	
+	play camera path with easein 20 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+
+	
+
+
+			
+	say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_20"
+	//My people bow low before the Greeks. 
+	wait until read
+	say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_30"
+	//Their brutality knows no equal. Not even the Aztecs.
+	wait until read
+	say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_40"
+	//We respect this power, this strength. But will the Japanese? And will our rulers, the Aztecs?
+	wait until read
+	say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_50"
+	//I wonder if the old Prophesy is true? If the Greeks are the weak race brought to strength by a god?
+	wait until read
+	say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_60"
+	//If so, will they fulfill the next chapter and go to Honshai, where their separated Greek brethren wait for them?
+	wait until read
+	
+	eject good spirit
+	eject evil spirit
+	
+	//say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_10"
+	make good spirit play across 0.5 down 0.5 HELPDUDE_KM_04FINAL_PDM_ENDLAND_WAR_WIN_G_10
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_04FINAL_PDM_ENDLAND_WAR_WIN_E_10
+	
+	wait until read
+	
+	
+	send evil spirit home
+	send good spirit home
+	wait until camera ready
+	wait 2 seconds
+	end cinema
+
+elsif L4TownConversionMethod == 2 //impressiveness
+	begin cinema
+		//AGC: Moved fade out & wait inside the cinema block
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+	
+		wait 2 seconds
+		
+		force while Counter < 100
+			CreationPos = marker at get target from {1024.052, 208.273, 903.469} to {990.245, 184.885, 816.392} distance -Counter-20 angle 0
+			CreationPos = marker at {CreationPos} + {number from -3 to 3, 0, number from -3 to 3}
+			Vagrants[Counter] = create VILLAGER GREEK_FARMER at {CreationPos}
+			move Vagrants[Counter] position to {934.544, 185.094, 682.778}
+			SPEED of Vagrants[Counter] = 0.1
+			Counter++
+		end while
+		
+		
+		GateHouse = get HOUSE GATEHOUSE at {990.662, 184.871, 816.280} radius 10
+		set gate GateHouse open
+		
+		reset camera path 
+   		queue camera move with position {953.909, 246.203, 842.031} focus {1030.325, 188.846, 871.536} time 0.0
+		queue camera move with position {880.986, 222.267, 618.972} focus {942.277, 186.585, 689.473} time 30.0
+		play camera path with easein 12 easeout 4 method SCRIPT_CAMERAPATH_EQUALTIME
+		set fade in time 2
+		//GEN:I have never seen such nobility in a tribe. The Greeks have shown a way other than war.		
+		say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_10"
+		wait until read
+		//GEN:I am inspired by their fairness and their civilisation.		
+		say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_20"
+		wait until read
+		//GEN:I shall consider allying with these Greeks. They have culture far beyond that of the Aztecs.		
+		say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_30"
+		wait until read
+		//GEN:And maybe the Prophesy is true. A returning god saving a weak tribe.		
+		say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_40"
+		wait until read
+		//GEN:It will be interesting to see how they fare against the strong Japanese. And the brutal Aztecs.		
+		say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_50"
+		wait until read
+		//GEN:I wonder if the Greeks will follow the Prophesy and go to Honshai, where some of their brethren survive?
+		say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_60"
+		wait until read	
+		eject good spirit
+		//GA:Hurrah! Goodness and impressing has won the day!		
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_04FINAL_PDM_ENDLAND_IMPRESS_WIN_G_70
+		wait until read
+		send good spirit home
+		
+		
+		reset camera path 
+		queue camera move with position {880.986, 222.267, 618.972} focus {942.277, 186.585, 689.473} time 0.0
+			queue camera move with position {798.919, 267.845, 531.194} focus {863.531, 232.093, 598.631} time 12.0
+		queue camera move with position {968.076, 246.373, 559.030} focus {1052.139, 210.097, 599.246} time 6.0
+		play camera path with easein 12 easeout 4 method SCRIPT_CAMERAPATH_EQUALTIME
+		wait 18 seconds
+		Counter = 0
+		force while Counter < 100
+			delete Vagrants[Counter] 
+			Counter++
+		end while
+	end cinema
+
+end if
+
+
+end script Land4Outro

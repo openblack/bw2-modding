@@ -1,0 +1,480 @@
+//run script Land1CreatureSelection
+
+define script PlayanimsWhileWaitingForChoice(whichcreature)
+
+begin script Land1CreatureSelection
+
+	VidCreature=0
+	CreatureVidPlatoon=0
+	Over=0
+
+	CentralCamPos = marker at {1560.597, 122.378, 847.006}
+	CentralCamFoc = marker at {1633.631, 65.883, 808.609}
+
+	DisappearEffect[4]	
+	StoreAttributes[12]
+	count =0
+
+	CSMixer=0
+	SoundCreature=0
+	ExcessiveSoundCheck[4]
+
+start	
+
+	begin fullscreen cinema
+
+		CSMixer = create mixer
+		//set mixer CSMixer channel AUDIO_MIXER_CHANNEL_PHYSICS_SFX to 0.0
+		
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0
+
+		//////////////////////////////////////////////////////////////////////////////////////////////
+		//Store creatures attributes
+
+		StoreAttributes[0] = get creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE
+		StoreAttributes[1] = get creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT
+		StoreAttributes[2] = get creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS
+
+		StoreAttributes[3] = get creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE
+		StoreAttributes[4] = get creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT
+		StoreAttributes[5] = get creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS
+
+		StoreAttributes[6] = get creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE
+		StoreAttributes[7] = get creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT
+		StoreAttributes[8] = get creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS
+
+		StoreAttributes[9] = get creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE
+		StoreAttributes[10] = get creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT
+		StoreAttributes[11] = get creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS
+
+		//////////////////////////////////////////////////////////////////////////////////////////////
+
+		start music "worshipperchant_aztec"
+
+		eject good spirit
+		eject evil spirit
+
+		//wait 10 seconds
+
+		//ONE - LION		
+		
+		move camera position to {CentralCamPos} time 2 easein 2 easeout 0
+		move camera focus to {CentralCamFoc} time 2 easein 2 easeout 0
+		wait until camera ready
+
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.2 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.2 with fadetime 2
+		//set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.2 with fadetime 2
+
+		play anim C_FIGHT_EXTRA_CREATION on CreatureArray[0]// loop 3
+		wait 4 seconds
+
+		set camera position to {1573.262, 115.453, 845.267}
+		set camera focus to {1638.155, 89.716, 916.861}
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_LION_10"
+		wait 2 seconds
+
+		set camera position to {1572.461, 118.353, 847.133}
+		set camera focus to {1645.704, 61.593, 884.730}
+
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.5 time 1
+		wait 1 seconds
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_LION_20"
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.8 time 2
+		wait 0.5 seconds
+		set camera position to {1572.656, 120.373, 844.605}
+		set camera focus to {1639.185, 116.608, 919.165}
+		wait 1 seconds
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 1 time 2
+		wait 2 seconds
+		
+		
+		set creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.7 time 0
+		wait 0.2 seconds
+
+
+		//play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[2]
+		//play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[3]
+
+		//////////////////////////////////////////////////////////////////////////////////////
+		//TWO - WOLF
+		
+		/*move camera position to {CentralCamPos} time 2 easein 2 easeout 0
+		move camera focus to {CentralCamFoc} time 2 easein 2 easeout 0
+		wait until camera ready
+*/
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 1
+
+		//set camera position to get world position from CreatureArray[1] to {-2.044, 3.802, 6.603}
+		//set camera focus to get world position from CreatureArray[1] to {28.094, -4.782, -88.364}
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_WOLF_10"
+		//move camera position to get world position from CreatureArray[1] to {-0.748, 4.219, 7.530}  time 3 catmullrom bias  0.0 tension 0.0
+		//move camera focus to get world position from CreatureArray[1] to {22.701, -4.711, -89.270} time 3 catmullrom bias  0.0 tension 0.0
+		
+		set creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 1 time 6
+		play anim C_INDIVIDUAL_FEEL_PLAYFUL on CreatureArray[1]// loop 3
+		wait 1 seconds
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.0 time 1
+
+		set camera position to {1571.967, 113.240, 843.536}
+		set camera focus to {1670.367, 114.346, 825.726}
+		wait 1 seconds
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_WOLF_20"
+		wait 0.5 seconds
+		wait 0.5 seconds
+
+		set camera position to {1574.180, 117.678, 841.805}
+		set camera focus to {1672.874, 112.992, 857.259}
+		wait 2 seconds
+		
+		set creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.0 time 1
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.7 time 0
+		wait 0.2 seconds
+
+		//play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[3]
+		//play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[0]
+
+		//////////////////////////////////////////////////////////////////////////////////////
+		//THREE - APE
+/*
+		move camera position to {CentralCamPos} time 2 easein 2 easeout 0
+		move camera focus to {CentralCamFoc} time 2 easein 2 easeout 0
+		wait until camera ready
+*/
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 1 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.2 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.2 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.2 with fadetime 2
+
+		set camera position to {1569.240, 115.540, 840.700}
+		set camera focus to {1640.687, 119.251, 770.833}
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_APE_10"
+
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT 0 time 0
+		play anim C_FIGHT_THREAT2 on CreatureArray[2]// loop 3
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT -0.8 time 6
+		wait 2 seconds
+
+		set camera position to get world position from CreatureArray[2] to {-2.594, 7.953, 2.837}
+		set camera focus to get world position from CreatureArray[2] to {32.921, -40.101, -77.347}
+
+
+		wait 2.5 seconds
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_APE_20"
+
+		set camera position to {1569.483, 115.629, 842.549}
+		set camera focus to {1631.702, 110.812, 764.412}
+		wait 1 seconds
+
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT -1 time 1
+		wait 2 seconds
+
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.0 time 1
+		set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.7 time 0
+		wait 0.2 seconds
+		
+		//play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[1]
+		//play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[0]
+
+
+		//////////////////////////////////////////////////////////////////////////////////////
+		//FOUR - COW
+
+		/*
+		move camera position to {CentralCamPos} time 2 easein 2 easeout 0
+		move camera focus to {CentralCamFoc} time 2 easein 2 easeout 0
+		wait until camera ready
+*/
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.2 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 1 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.2 with fadetime 2
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.2 with fadetime 2
+
+		set camera position to {1566.790, 116.079, 839.330}
+		set camera focus to {1578.911, 113.930, 740.093}
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_COW_10"
+		set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS 0 time 2
+		play anim C_INDIVIDUAL_TIRED2 on CreatureArray[3]// loop 3
+
+		wait 2 seconds
+		say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_COW_20"
+
+		set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS 1 time 3
+		set camera position to {1570.498, 115.611, 835.172}
+		set camera focus to {1498.379, 101.345, 767.386}
+		wait 4 seconds
+		set camera position to {1567.617, 116.829, 838.755}
+		set camera focus to {1570.657, 105.723, 739.420}
+		wait 2 seconds
+
+
+
+		clear dialogue
+
+		snap creature CreatureArray[0] focus to {1529.114, 108.999, 869.431}
+		snap creature CreatureArray[1] focus to {1529.114, 108.999, 869.431}
+		snap creature CreatureArray[2] focus to {1529.114, 108.999, 869.431}
+		snap creature CreatureArray[3] focus to {1529.114, 108.999, 869.431}
+
+		//set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+
+		
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+		//Restore creatures starting attributes
+
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT StoreAttributes[1] time 0
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS StoreAttributes[2] time 0
+
+		set creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT StoreAttributes[4] time 0
+		set creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS StoreAttributes[5] time 0
+
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT StoreAttributes[7] time 0
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS StoreAttributes[8] time 0
+
+		set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT StoreAttributes[10] time 0
+		set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_FATNESS StoreAttributes[11] time 0
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		set camera position to {CentralCamPos}
+		set camera focus to {CentralCamFoc}
+
+		set CreatureArray[0] focus to camera position 
+		set CreatureArray[1] focus to camera position 
+		set CreatureArray[2] focus to camera position 
+		set CreatureArray[3] focus to camera position 
+
+		play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[0]// loop -1
+		play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[1]// loop -1
+		play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[2]// loop -1
+		play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[3]// loop -1
+
+		send good spirit home
+		send evil spirit home
+
+	end cinema
+
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 1 with fadetime 2
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 1 with fadetime 2
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 1 with fadetime 2
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 1 with fadetime 2
+
+	
+
+	begin interactive camera
+
+		//////////////////////////////////////////////////////////////////////////////////////
+		//Check for player selecting creature. Add time and advisor comments? more creature actions?
+
+		say "Right click the creature you want."
+
+		run background script PlayanimsWhileWaitingForChoice(0)
+		run background script PlayanimsWhileWaitingForChoice(1)
+		run background script PlayanimsWhileWaitingForChoice(2)
+		run background script PlayanimsWhileWaitingForChoice(3)
+
+		while MyCreature not exists
+
+			MyCreature = get player 0 creature
+
+			ExcessiveSoundCheck[0] = get distance from hand position to {CreatureArray[0]}
+			ExcessiveSoundCheck[1] = get distance from hand position to {CreatureArray[1]}
+			ExcessiveSoundCheck[2] = get distance from hand position to {CreatureArray[2]}
+			ExcessiveSoundCheck[3] = get distance from hand position to {CreatureArray[3]}
+
+			SoundCreature = CreatureArray[0] 
+			if ExcessiveSoundCheck[1] > ExcessiveSoundCheck[0]
+				SoundCreature = CreatureArray[1]
+			elsif ExcessiveSoundCheck[2] > ExcessiveSoundCheck[1]
+				SoundCreature = CreatureArray[2]
+			elsif ExcessiveSoundCheck[3] > ExcessiveSoundCheck[2]
+				SoundCreature = CreatureArray[3]
+			end if
+
+			if SoundCreature == CreatureArray[0] 
+
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 1 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.2 with fadetime 2
+
+			elsif SoundCreature == CreatureArray[1] 
+
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 1 with fadetime 2
+
+			elsif SoundCreature == CreatureArray[2] 
+
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 1 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.2 with fadetime 2
+
+			elsif SoundCreature == CreatureArray[3] 
+
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_1 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 1 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_3 to 0.2 with fadetime 2
+				set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ASSET_4 to 0.2 with fadetime 2
+
+			end if
+
+		end while
+
+		while count < 4
+			if CreatureArray[count] == MyCreature
+				play anim C_INDIVIDUAL_HAPPY on CreatureArray[count]
+			else
+				play anim C_INDIVIDUAL_SAD on CreatureArray[count]
+			end if
+			count++
+		end while
+			
+		wait 3 seconds
+
+		count = 0
+
+		while count < 4
+			if CreatureArray[count] != MyCreature
+				DisappearEffect[count] = create visual effect "gp_s_gapuff.ves" strength 0.3 scale 0.5 at {CreatureArray[count]} time 1
+				delete CreatureArray[count]
+			end if
+			count++
+		end while				
+
+	end interactive camera
+	
+end script Land1CreatureSelection
+///////////////////////////////////////////////////////////////////////////////////////////////
+begin script PlayanimsWhileWaitingForChoice(whichcreature)
+
+HLCreature=0
+RandomAnimGenerator=0
+DoubleCheck=0
+StartPos=0
+CreatureVideo = 0
+
+start
+
+	StartPos=marker at {CreatureArray[whichcreature]}
+
+	//disable CreatureArray[whichcreature] moveable
+
+	while MyCreature not exists
+
+		HLCreature=get object hand is over
+
+		wait until CreatureArray[whichcreature] right clicked or creature CreatureArray[whichcreature] finished script action
+
+		if CreatureArray[whichcreature] right clicked
+
+			if DoubleCheck == whichcreature+1
+				//back into main for end. give player creature
+
+				//BODGE - player can only select LION for pre-alpha!
+				//set player 0 creature to CreatureArray[whichcreature]
+
+				set player 0 creature to CreatureArray[0]
+				if whichcreature != 0
+					begin dialogue
+						say "Creature unavailble for pre-alpha. Selecting Lion"
+						wait until read
+					end dialogue
+				end if
+
+
+			elsif DoubleCheck != 0
+				DoubleCheck = 0
+			else
+				DoubleCheck = whichcreature+1
+
+				begin known cinema
+				
+					eject good spirit
+						play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[whichcreature]
+						
+						if whichcreature == 0
+							say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_LION_50"
+						
+							CreatureVideo = create video window with left 0.1 top 0.1 width 0.3 height 0.225
+							set CreatureVideo clipping window left 0 top 0 width 1 height 1
+							play video "lion pick"
+						
+						elsif whichcreature == 1
+							say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_WOLF_50"
+							
+							CreatureVideo = create video window with left 0.1 top 0.1 width 0.3 height 0.225
+							set CreatureVideo clipping window left 0 top 0 width 1 height 1
+							play video "siren"
+							
+						elsif whichcreature == 2
+							say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_APE_50"
+
+							CreatureVideo = create video window with left 0.675 top 0.1 width 0.3 height 0.225
+							set CreatureVideo clipping window left 0 top 0 width 1 height 1
+							play video "ape poo"
+							
+						elsif whichcreature == 3
+							say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_COW_50"
+							
+							CreatureVideo = create video window with left 0.675 top 0.1 width 0.3 height 0.225
+							set CreatureVideo clipping window left 0 top 0 width 1 height 1
+							play video "siren"
+						end if
+
+						wait until read
+						play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[whichcreature]
+
+						say "BW2T_SCRIPT_01FINAL_CREATURESELECTION_OTHER_20"
+						wait until read
+					send good spirit home
+
+				end known cinema
+				
+			end if
+
+			clear right clicked object
+            
+		elsif creature CreatureArray[whichcreature] finished script action
+
+			set CreatureArray[whichcreature] position to {StartPos}
+			snap creature CreatureArray[whichcreature] focus to camera position
+
+
+			if HLCreature == CreatureArray[whichcreature]// and creature whichcreature finished script action
+				play anim C_INDIVIDUAL_FRIENDLY_WAVE on CreatureArray[whichcreature]
+			else
+				RandomAnimGenerator = number from 0 to 3
+				if RandomAnimGenerator == 0
+					play anim C_INDIVIDUAL_LOOK_AT_ME on CreatureArray[whichcreature]
+
+				elsif RandomAnimGenerator == 1
+				
+					play anim C_INDIVIDUAL_CONFUSED on CreatureArray[whichcreature]
+				elsif RandomAnimGenerator == 2
+					play anim C_INDIVIDUAL_PULLING_FACES1 on CreatureArray[whichcreature]
+
+				end if
+
+			end if
+
+		end if
+
+	end while
+
+	//enable CreatureArray[whichcreature] moveable
+
+end script PlayanimsWhileWaitingForChoice

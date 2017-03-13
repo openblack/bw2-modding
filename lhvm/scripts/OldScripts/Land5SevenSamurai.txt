@@ -1,0 +1,967 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NUMBER_OF_STATUES = 7
+define SS_True = 1
+define SS_False = 0
+define SS_GLOW_TIME = 10000
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SS_SamStat[NUMBER_OF_STATUES]
+global SS_StatueAtPos[NUMBER_OF_STATUES]
+global SS_Prism_Effect[NUMBER_OF_STATUES]
+global SS_RayEffect[NUMBER_OF_STATUES]
+global SS_BallEffect[NUMBER_OF_STATUES]
+global SS_SamStatPos[NUMBER_OF_STATUES]
+global SS_Prism = 0
+global SS_SamStatTime[8]
+global SS_SamStatLit[NUMBER_OF_STATUES]
+global SS_SamStatsLit = SS_False
+global SS_SamStatsSet = SS_False
+global SS_EndConMet = SS_False
+global SS_End = SS_False
+global SS_PrismPos = 0
+global SS_RayNotFired[NUMBER_OF_STATUES]
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script Land5SevenSamurai
+define script SS_CreateStatues
+define script SS_LightStatues
+define script SS_CheckSamPos
+define script SS_EndCondition
+define script SS_Advisors
+define script SS_Advisors2
+define script SS_LightStatuesWithBeams
+define script SS_SuccessCutscene
+define script CheatCosICantBeArsedWithTheScript
+define script SS_Looktherightwaymate(bloke)
+define script SS_StatueHeld
+// talk scripts
+define script SS_ClearTalk
+define script SS_EndReminderTalk
+define script SS_IntroLitFarTalk
+define script SS_IntroLitNearTalk
+define script SS_IntroUnlitTalk
+define script SS_SecondStatueTalk
+define script SS_AllStatuesTalk
+define script SS_StatuesLitWrongTalk
+
+//-----------------------------------------------------------------------------
+///run script SS_Main	//Seven Samurai Prototype
+
+begin script Land5SevenSamurai //Calls all of the scripts
+i = 0
+	start
+		run background script SS_CreateStatues
+		run background script SS_LightStatues
+		run background script SS_CheckSamPos
+		run background script SS_LightStatuesWithBeams
+		run background script SS_EndCondition
+		run background script SS_StatueHeld
+		run background script SS_Advisors
+		run background script SS_Advisors2
+
+		//If you wanna cheat comment this in - PJ
+		//wait 10 seconds
+		//run script CheatCosICantBeArsedWithTheScript
+		
+		wait until SS_EndConMet == SS_True
+			i = 0
+			while i < NUMBER_OF_STATUES
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+				stop visual effect SS_BallEffect[i]
+				i++
+			end while
+
+			i = 0
+			while i < NUMBER_OF_STATUES
+				if SS_SamStat[i] exists
+					delete SS_SamStat[i]
+				end if
+				i++
+			end while
+			SS_End = SS_True
+		
+			run script SS_SuccessCutscene
+		
+		run script SS_ClearTalk
+
+		if SS_Prism exists
+			delete SS_Prism
+		end if
+		
+end script Land5SevenSamurai
+
+begin script SS_CreateStatues	//Creates/respawns statues
+
+	i = 0
+	SS_SamSpawnPos[NUMBER_OF_STATUES]
+		
+	start
+		SS_PrismPos = marker at {1128.615, 49.056, 598.829}
+		
+		SS_SamSpawnPos[0] = marker at {1111.686, 50.908, 594.739}
+		SS_SamSpawnPos[1] = marker at {648.066, 86.614, 1160.023}
+		SS_SamSpawnPos[2] = marker at {801.540, 66.456, 1261.026}
+		SS_SamSpawnPos[3] = marker at {1044.109, 65.945, 1297.012}
+		SS_SamSpawnPos[4] = marker at {715.790, 74.537, 1602.766}
+		SS_SamSpawnPos[5] = marker at {899.953, 70.827, 1756.742}
+		SS_SamSpawnPos[6] = marker at {1181.353, 66.775, 1570.906}
+		
+		i = 0
+		while i < NUMBER_OF_STATUES 
+			if SS_SamStat[i] not exists
+				SS_SamStat[i] = create OBJECT MOBILE_STATIC_INFO_NORSE_STATUE at {SS_SamSpawnPos[i]} //Create Statue
+				BUILT of SS_SamStat[i] = 1
+				SCALE of SS_SamStat[i] = 0.1
+				enable SS_SamStat[i] indestructible
+				disable SS_SamStat[i] set on fire	
+				enable SS_SamStat[i] pickup
+			end if
+			i++
+		end while
+			
+		if SS_Prism not exists 
+			SS_Prism = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {SS_PrismPos} // Create Prism
+			disable SS_Prism moveable
+			disable SS_Prism pickup
+			enable SS_Prism indestructible
+		end if
+		
+		begin loop	
+			i = 0
+			while i < NUMBER_OF_STATUES 
+				if not {SS_SamStat[i]} on land and SS_SamStat[i] is not HELD and not {SS_SamStat[i]} viewed //Check if statue is in the water
+					wait 5 seconds
+					if not {SS_SamStat[i]} on land and SS_SamStat[i] is not HELD and not {SS_SamStat[i]} viewed //Check if statue is in the water
+						delete SS_SamStat[i]
+						SS_SamStat[i] = create OBJECT MOBILE_STATIC_INFO_NORSE_STATUE at {SS_SamStatPos[i]} //Respawn Statue
+						SCALE of SS_SamStat[i] = 2
+						enable SS_SamStat[i] indestructible
+						disable SS_SamStat[i] set on fire	
+						enable SS_SamStat[i] pickup	
+					end if
+				end if
+				i++
+			end while
+
+		//until SS_EndConMet == SS_True
+			
+		until SS_End == SS_True //-PJ changed this and probably broke the script
+		end loop
+end script SS_CreateStatues
+
+begin script SS_LightStatues	//Applies glow/sound effect on statues at certain Game time
+	
+SS_Effect_Focus[NUMBER_OF_STATUES]
+i = 0
+sum = 0
+realtime = 0
+MyTimer = 0
+SS_Stat_Temp_Pos = 0
+		
+start
+	SS_SamStatTime[0] = 12.5
+	SS_SamStatTime[1] = 13
+	SS_SamStatTime[2] = 13.5
+	SS_SamStatTime[3] = 14
+	SS_SamStatTime[4] = 14.5
+	SS_SamStatTime[5] = 15
+	SS_SamStatTime[6] = 15.5
+	SS_SamStatTime[7] = 16
+	
+	begin loop
+		i = 0
+		while i < NUMBER_OF_STATUES
+			if SS_SamStatTime[i] <= get game time and (SS_SamStatTime[i+1]) >= get game time
+				if SS_SamStat[i] exists and SS_SamStatLit[i] == SS_False
+					SS_BallEffect[i] = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.6 on SS_SamStat[i] time SS_GLOW_TIME // Create Ball
+					if i == 0
+						set SS_BallEffect[i] colour red 255 green 0 blue 0
+						if not sound "VOLCANOWHOOSH1" playing
+							play sound "SCRIPT10_VOLCANOWHOOSH1" at {SS_SamStat[i]}
+						end if
+						SS_SamStatLit[i] = SS_True
+					elsif i == 1
+						set SS_BallEffect[i] colour red 255 green 128 blue 0
+						if not sound "VOLCANOWHOOSH1" playing
+							play sound "SCRIPT10_VOLCANOWHOOSH1" at {SS_SamStat[i]}
+						end if
+						SS_SamStatLit[i] = SS_True
+					elsif i == 2
+						set SS_BallEffect[i] colour red 255 green 255 blue 0
+						if not sound "VOLCANOWHOOSH1" playing
+							play sound "SCRIPT10_VOLCANOWHOOSH1" at {SS_SamStat[i]}
+						end if
+						SS_SamStatLit[i] = SS_True
+					elsif i == 3
+						set SS_BallEffect[i] colour red 0 green 255 blue 0
+						if not sound "VOLCANOWHOOSH1" playing
+							play sound "SCRIPT10_VOLCANOWHOOSH1" at {SS_SamStat[i]}
+						end if
+						SS_SamStatLit[i] = SS_True
+					elsif i == 4
+						set SS_BallEffect[i] colour red 0 green 0 blue 255
+						if not sound "VOLCANOWHOOSH1" playing
+							play sound "SCRIPT10_VOLCANOWHOOSH1" at {SS_SamStat[i]}
+						end if
+						SS_SamStatLit[i] = SS_True
+					elsif i == 5
+						set SS_BallEffect[i] colour red 255 green 0 blue 192
+						if not sound "VOLCANOWHOOSH1" playing
+							play sound "SCRIPT10_VOLCANOWHOOSH1" at {SS_SamStat[i]}
+						end if
+						SS_SamStatLit[i] = SS_True
+					elsif i == 6
+						set SS_BallEffect[i] colour red 128 green 0 blue 192
+						if not sound "VOLCANOWHOOSH1" playing
+							play sound "SCRIPT10_VOLCANOWHOOSH1" at {SS_SamStat[i]}
+						end if
+						SS_SamStatLit[i] = SS_True
+						if SS_SamStatLit[0] == SS_True and SS_SamStatLit[0] == SS_True and SS_SamStatLit[1] == SS_True and SS_SamStatLit[2] == SS_True and SS_SamStatLit[3] == SS_True and SS_SamStatLit[4] == SS_True and SS_SamStatLit[5] == SS_True and SS_SamStatLit[6] == SS_True
+							SS_SamStatsLit = SS_True
+						end if
+						wait until get game time >= 18
+						SS_SamStatsLit = SS_False
+						i = 0
+						while i < NUMBER_OF_STATUES
+							wait 3 seconds
+							stop visual effect SS_BallEffect[i]
+							stop visual effect SS_RayEffect[i]
+							stop visual effect SS_Prism_Effect[i]
+							SS_SamStatLit[i] = SS_False
+							SS_RayNotFired[i] = SS_True
+							i++
+						end while
+						i = 6
+					end if
+				end if
+			end if
+			i++
+		end while
+	until SS_EndConMet == SS_True
+	end loop
+end script SS_LightStatues
+
+begin script SS_CheckSamPos	//Checks Statues position
+	
+	i = 0
+	sum = 0
+				
+	start
+		SS_SamStatPos[0] = marker at {1120.087, 51.046, 582.626}
+		SS_SamStatPos[1] = marker at {1114.718, 49.622, 587.297}
+		SS_SamStatPos[2] = marker at {1111.686, 50.908, 594.739}
+		SS_SamStatPos[3] = marker at {1111.463, 51.472, 602.804}
+		SS_SamStatPos[4] = marker at {1114.352, 50.855, 610.573}
+		SS_SamStatPos[5] = marker at {1119.560, 50.860, 615.732}
+		SS_SamStatPos[6] = marker at {1124.740, 50.066, 618.221}
+		
+		begin loop
+			i = 0
+			sum = 0
+						
+			while i < NUMBER_OF_STATUES
+				SS_StatueAtPos[i] = get OBJECT MOBILE_STATIC_INFO_NORSE_STATUE at {SS_SamStatPos[i]} radius 3
+					if SS_StatueAtPos[i] exists
+						set SS_StatueAtPos[i] position to {SS_SamStatPos[i]}
+						set SS_StatueAtPos[i] focus to {SS_Prism}
+					end if
+								
+				if  SS_StatueAtPos[i] == SS_SamStat[i]
+					sum++
+				end if
+				i++
+			end while
+					
+			if sum == NUMBER_OF_STATUES
+				SS_SamStatsSet = SS_True
+			else
+				SS_SamStatsSet = SS_False
+			end if
+		until SS_End == SS_True
+		end loop
+end script SS_CheckSamPos
+
+begin script SS_EndCondition
+	Camera_Height = 0
+start
+	begin loop
+		if SS_SamStatsSet == SS_True 
+			if SS_SamStatsLit == SS_True
+				Camera_Height = get camera altitude
+				if camera position near {SS_Prism} radius 60 and {SS_Prism} viewed and Camera_Height < 100
+					SS_EndConMet = SS_True
+					wait until read
+				else
+					SS_EndConMet = SS_False
+					wait until read
+					begin loop
+					run script SS_EndReminderTalk
+					until (camera position near {SS_Prism} radius 60 and {SS_Prism} viewed and ALTITUDE of marker at camera position < 100) 
+					end loop
+				end if
+			end if
+		end if
+	until SS_EndConMet == SS_True
+	end loop
+end script SS_EndCondition
+
+begin script SS_Advisors
+SS_Count = 0
+SS_Lit_Flag = 0
+Camera_Height = 0
+SS_Radius = 85
+SS_Height = 140
+IdleTimer = create timer for 0 seconds
+RepeatTimer = create timer for 300 seconds
+start
+	while SS_Lit_Flag == SS_False
+		if SS_Count > 0
+			set IdleTimer time to 300 seconds
+			SS_Count = 0
+		end if
+		if SS_SamStatLit[0] == SS_True
+			if {SS_SamStat[0]} viewed and (not camera position near {SS_SamStat[0]} radius SS_Radius or get camera altitude > 100)
+				if get RepeatTimer time remaining <= 0
+					run script SS_IntroLitFarTalk
+					set RepeatTimer time to 300 seconds
+				end if
+			elsif {SS_SamStat[0]} viewed and camera position near {SS_SamStat[0]} radius SS_Radius and get camera altitude < 100
+				if SS_SamStatsSet == SS_False
+					run script SS_IntroLitNearTalk
+					SS_Lit_Flag = SS_True
+				end if
+			end if
+		elsif get IdleTimer time remaining == 0 and {SS_SamStat[0]} viewed and camera position near {SS_SamStat[0]} radius SS_Radius and get camera altitude < 100
+			run script SS_IntroUnlitTalk
+			SS_Count = 1
+		end if
+	end while
+end script SS_Advisors
+
+begin script SS_LightStatuesWithBeams
+SS_Effect_Focus[NUMBER_OF_STATUES]
+i = 0
+SS_Stat_Temp_Pos = 0
+		
+start
+	begin loop
+		i = 0
+		while i < NUMBER_OF_STATUES
+			if SS_SamStat[i] exists and SS_SamStatLit[i] == SS_True and SS_RayNotFired[i] == SS_False and not SS_SamStat[i] is HELD
+				if {SS_SamStat[i]} near {SS_SamStatPos[0]} radius 3 or {SS_SamStat[i]} near {SS_SamStatPos[1]} radius 3 or {SS_SamStat[i]} near {SS_SamStatPos[2]} radius 3 or {SS_SamStat[i]} near {SS_SamStatPos[3]} radius 3 or {SS_SamStat[i]} near {SS_SamStatPos[4]} radius 3 or {SS_SamStat[i]} near {SS_SamStatPos[5]} radius 3 or {SS_SamStat[i]} near {SS_SamStatPos[6]} radius 3
+					stop visual effect SS_RayEffect[i]
+					stop visual effect SS_Prism_Effect[i]
+					SS_RayNotFired[i] = SS_True
+					SS_RayEffect[i] = create visual effect "gp_s_rayfx.ves" strength 0.6 scale 0.3 at {SS_SamStat[i]} + {0,1.5,0} time SS_GLOW_TIME//Create Ray
+					SS_Stat_Temp_Pos = marker at {SS_SamStat[i]}
+					SS_Effect_Focus[i] = marker at ({SS_Stat_Temp_Pos} + ({SS_Stat_Temp_Pos} - {SS_PrismPos}) + {0,3,0}) //Aim the ray
+					set SS_RayEffect[i] focus to {SS_Effect_Focus[i]}
+					if i == 0
+						set SS_RayEffect[i] colour red 255 green 0 blue 0
+						if {SS_SamStat[i]} near {SS_SamStatPos[i]} radius 2.5
+							SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME // Add glow on target
+							set SS_Prism_Effect[i] colour red 255 green 0 blue 0
+						end if
+					elsif i == 1
+						set SS_RayEffect[i] colour red 255 green 128 blue 0
+						if {SS_SamStat[i]} near {SS_SamStatPos[i]} radius 2.5
+							SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+							set SS_Prism_Effect[i] colour red 255 green 128 blue 0
+						end if
+					elsif i == 2
+						set SS_RayEffect[i] colour red 255 green 255 blue 0
+						if {SS_SamStat[i]} near {SS_SamStatPos[i]} radius 2.5
+							SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+							set SS_Prism_Effect[i] colour red 255 green 255 blue 0
+						end if
+					elsif i == 3
+						set SS_RayEffect[i] colour red 0 green 255 blue 0
+						if {SS_SamStat[i]} near {SS_SamStatPos[i]} radius 2.5
+							SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+							set SS_Prism_Effect[i] colour red 0 green 255 blue 0
+						end if
+					elsif i == 4
+						set SS_RayEffect[i] colour red 0 green 0 blue 255
+						if {SS_SamStat[i]} near {SS_SamStatPos[i]} radius 2.5
+							SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+							set SS_Prism_Effect[i] colour red 0 green 0 blue 255
+						end if
+					elsif i == 5
+						set SS_RayEffect[i] colour red 255 green 0 blue 192
+						if {SS_SamStat[i]} near {SS_SamStatPos[i]} radius 2.5
+							SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+							set SS_Prism_Effect[i] colour red 255 green 0 blue 192
+						end if
+					elsif i == 6
+						set SS_RayEffect[i] colour red 128 green 0 blue 192
+						if {SS_SamStat[i]} near {SS_SamStatPos[i]} radius 2.5
+							SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+							set SS_Prism_Effect[i] colour red 128 green 0 blue 192
+						end if
+					end if
+				end if
+			end if
+			i++
+		end while
+	until SS_EndConMet == SS_True
+	end loop
+end script SS_LightStatuesWithBeams
+
+begin script SS_StatueHeld
+i = 0
+j = 0
+SS_Effect_Focus[NUMBER_OF_STATUES]
+SS_Stat_Temp_Pos = 0
+start
+	begin loop
+		wait until SS_SamStat[0] is HELD or SS_SamStat[1] is HELD or SS_SamStat[2] is HELD or SS_SamStat[3] is HELD or SS_SamStat[4] is HELD or SS_SamStat[5] is HELD or SS_SamStat[6] is HELD
+			if SS_SamStat[0] is HELD and SS_SamStatLit[0] == SS_True
+				i = 0
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+			elsif SS_SamStat[1] is HELD and SS_SamStatLit[1] == SS_True
+				i = 1
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+			elsif SS_SamStat[2] is HELD and SS_SamStatLit[2] == SS_True
+				i = 2
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+			elsif SS_SamStat[3] is HELD and SS_SamStatLit[3] == SS_True
+				i = 3
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+			elsif SS_SamStat[4] is HELD and SS_SamStatLit[4] == SS_True
+				i = 4
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+			elsif SS_SamStat[5] is HELD and SS_SamStatLit[5] == SS_True
+				i = 5
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+			elsif SS_SamStat[6] is HELD and SS_SamStatLit[6] == SS_True
+				i = 6
+				stop visual effect SS_RayEffect[i]
+				stop visual effect SS_Prism_Effect[i]
+			end if
+			j = 0
+			wait until not SS_SamStat[i] is HELD
+				while j < NUMBER_OF_STATUES
+					if {SS_SamStat[i]} near {SS_SamStatPos[j]} radius 3
+						stop visual effect SS_RayEffect[i]
+						stop visual effect SS_Prism_Effect[i]
+						SS_RayEffect[i] = create visual effect "gp_s_rayfx.ves" strength 0.6 scale 0.3 at {SS_SamStatPos[j]} + {0,1.5,0} time SS_GLOW_TIME //Create Ray
+						SS_Effect_Focus[i] = marker at ({SS_SamStatPos[j]} + ({SS_SamStatPos[j]} - {SS_PrismPos}) + {0,3,0}) //Aim the ray
+						set SS_RayEffect[i] focus to {SS_Effect_Focus[i]}
+						if i == 0
+							set SS_RayEffect[i] colour red 255 green 0 blue 0
+							if i == j
+								SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME // Add glow on target
+								set SS_Prism_Effect[i] colour red 255 green 0 blue 0
+							end if
+						elsif i == 1
+							set SS_RayEffect[i] colour red 255 green 128 blue 0
+							if i == j
+								SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME // Add glow on target
+								set SS_Prism_Effect[i] colour red 255 green 128 blue 0
+							end if
+						elsif i == 2
+							set SS_RayEffect[i] colour red 255 green 255 blue 0
+							if i == j
+								SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME // Add glow on target
+								set SS_Prism_Effect[i] colour red 255 green 255 blue 0
+							end if
+						elsif i == 3
+							set SS_RayEffect[i] colour red 0 green 255 blue 0
+							if i == j
+								SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME // Add glow on target
+								set SS_Prism_Effect[i] colour red 0 green 255 blue 0
+							end if
+						elsif i == 4
+							set SS_RayEffect[i] colour red 0 green 0 blue 255
+							if i == j
+								SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+								set SS_Prism_Effect[i] colour red 0 green 0 blue 255
+							end if
+						elsif i == 5
+							set SS_RayEffect[i] colour red 255 green 0 blue 192
+							if i == j	
+								SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+								set SS_Prism_Effect[i] colour red 255 green 0 blue 192
+							end if
+						elsif i == 6
+							set SS_RayEffect[i] colour red 128 green 0 blue 192
+							if i == j
+								SS_Prism_Effect[i] = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 at {SS_PrismPos} time SS_GLOW_TIME// Add glow on target
+								set SS_Prism_Effect[i] colour red 128 green 0 blue 192
+							end if
+						end if
+					end if
+					j++
+				end while
+	until SS_EndConMet == SS_True
+	end loop
+end script SS_StatueHeld
+
+begin script SS_Advisors2
+Counter1 = 0
+Counter2 = 0
+Sum = 0
+Flag = SS_False
+start
+	begin loop
+		Counter1 = 0
+		Sum = 0
+		while Counter1 < NUMBER_OF_STATUES
+			Counter2 = 0
+			while Counter2 < NUMBER_OF_STATUES
+				if {SS_SamStat[Counter1]} at {SS_SamStatPos[Counter2]}
+				Sum++
+				if Sum == 2 and Flag == SS_False
+					run script SS_SecondStatueTalk
+					Flag = SS_True
+				end if
+				end if
+				Counter2++
+			end while
+			Counter1++
+		end while
+	until Flag == SS_True
+	end loop
+	
+	begin loop
+		Counter1 = 0
+		Sum = 0
+		while Counter1 < NUMBER_OF_STATUES
+			Counter2 = 0
+			while Counter2 < NUMBER_OF_STATUES
+				if {SS_SamStat[Counter1]} at {SS_SamStatPos[Counter2]}
+					Sum++
+				end if
+				Counter2++
+			end while
+			Counter1++
+		end while
+	
+	until Sum == NUMBER_OF_STATUES
+	end loop
+	if SS_SamStatsLit == SS_False
+		run script SS_AllStatuesTalk
+	end if
+	wait until SS_SamStatsLit == SS_True and get camera altitude < 100 and camera position near {SS_Prism} radius 70 and {SS_Prism} viewed
+		wait 2 seconds
+		if SS_SamStatsSet == SS_False
+			run script SS_StatuesLitWrongTalk
+		end if
+end script SS_Advisors2
+
+begin script SS_SuccessCutscene
+
+RelCamPos=0
+RelCamFoc=0
+locccc[7]
+Dude[7]
+counter=0
+beammeup[10]
+
+FocusPos=0
+SSFormationPos[7]
+
+Samuraiiiii=0
+
+start
+
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	set game time 04.00
+
+	locccc[0] = marker at {1120.087, 51.046, 582.626}
+	locccc[1] = marker at {1114.718, 49.622, 587.297}
+	locccc[2] = marker at {1111.686, 50.908, 594.739}
+	locccc[3] = marker at {1111.463, 51.472, 602.804}
+	locccc[4] = marker at {1114.352, 50.855, 610.573}
+	locccc[5] = marker at {1119.560, 50.860, 615.732}
+	locccc[6] = marker at {1124.740, 50.066, 618.221}
+
+	while counter < 7
+		Dude[counter] = create VILLAGER TARANAGA at {locccc[counter]}
+		set Dude[counter] focus to {SS_Prism}
+		beammeup[counter] = create visual effect "gp_s_rayfx.ves" strength 1.6 scale 0.3 at {locccc[counter]} + {0,1.5,0} time 12//get MyTimer time remaining
+		set beammeup[counter] focus to ({locccc[counter]} + ({locccc[counter]} - {SS_PrismPos}) - {0,1,0})
+		set beammeup[counter] colour red 255 green 255 blue 255
+		counter++
+	end while
+
+	counter =0
+
+	SSFormationPos[3] = marker at {1123.841, 48.632, 600.159}
+	FocusPos = marker at get target from {SS_Prism} to {SSFormationPos[3]} distance 1 angle 0
+
+		SSFormationPos[0] = marker at get target from {SSFormationPos[3]} to {FocusPos} distance 2 angle 220
+		SSFormationPos[1] = marker at get target from {SSFormationPos[3]} to {FocusPos} distance 2 angle 200
+		SSFormationPos[2] = marker at get target from {SSFormationPos[3]} to {FocusPos} distance 3 angle 220
+		SSFormationPos[4] = marker at get target from {SSFormationPos[3]} to {FocusPos} distance 2 angle 140
+		SSFormationPos[5] = marker at get target from {SSFormationPos[3]} to {FocusPos} distance 2 angle 160
+		SSFormationPos[6] = marker at get target from {SSFormationPos[3]} to {FocusPos} distance 3 angle 140
+
+//	FrontDudePos = marker at {1128.756, 49.021, 599.078}//marker at get world position from SS_Prism to {-5.673, 1.268, 1.987}
+
+
+	begin cinema
+
+		store camera details
+		play string sound "SCRIPT10_SAMURAILOOP1"
+
+		//pan round to show prism glow
+		RelCamPos = marker at get world position from SS_Prism to {5.055, 8.782, -21.456}
+		RelCamFoc = marker at get world position from SS_Prism to {5.136, 8.363, -20.552}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		set fade in time 2
+		wait 2 seconds
+
+		RelCamPos = marker at get world position from SS_Prism to {-1.664, 11.243, -19.838}
+		RelCamFoc = marker at get world position from SS_Prism to {-1.166, 10.730, -19.138}
+		move camera position to {RelCamPos} time 5
+		move camera focus to {RelCamFoc} time 5
+		wait 2 seconds
+		play string sound "SCRIPT10_SAMURAITHUNDER2"
+		play string sound "SCRIPT10_SAMURAIELECTRIC2"
+		wait 1 seconds
+		play string sound "SCRIPT10_SAMURAIELECTRIC1"
+		play string sound "SCRIPT10_SAMURAITHUNDER1"
+
+		wait until camera ready
+		wait 2 seconds
+
+		//jump cuts
+		play string sound "SCRIPT10_SAMURAISHOTBEAM1"
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+
+		set camera lens 37.000
+		RelCamPos = marker at get world position from SS_Prism to {3.943, 2.006, 14.933}
+		RelCamFoc = marker at get world position from SS_Prism to {4.863, 1.628, 15.031}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 0.5 seconds
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM2"
+
+		RelCamPos = marker at get world position from SS_Prism to {9.882, 1.850, 8.145}
+		RelCamFoc = marker at get world position from SS_Prism to {10.489, 1.296, 8.715}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 0.5 seconds
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM3"
+
+		RelCamPos = marker at get world position from SS_Prism to {4.725, 6.130, 8.443}
+		RelCamFoc = marker at get world position from SS_Prism to {5.607, 5.836, 8.075}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 0.4 seconds
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM4"
+
+		RelCamPos = marker at get world position from SS_Prism to {1.743, 10.883, -3.529}
+		RelCamFoc = marker at get world position from SS_Prism to {2.663, 10.492, -3.506}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 0.4 seconds
+
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM5"
+
+		RelCamPos = marker at get world position from SS_Prism to {11.215, 5.644, -10.209}
+		RelCamFoc = marker at get world position from SS_Prism to {12.211, 5.576, -10.168}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 0.4 seconds
+
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM6"
+
+		RelCamPos = marker at get world position from SS_Prism to {4.046, 8.531, -5.622}
+		RelCamFoc = marker at get world position from SS_Prism to {4.715, 8.280, -6.321}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 0.4 seconds
+
+		play string sound "SCRIPT10_SAMURAIEXPLOSION"
+		start music "creaturefightmain_02" with fadetime 7
+
+		//wide overhead
+		set camera lens 60.000
+		RelCamPos = marker at get world position from SS_Prism to {-17.291, 21.248, 8.926}
+		RelCamFoc = marker at get world position from SS_Prism to {-16.503, 20.722, 8.608}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//set camera lens 60.000 time 0.5 easein 0.1 easeout 0
+		wait 3 seconds
+
+		//close reactions
+
+		//hand
+		set camera lens 40.000
+		RelCamPos = marker at get world position from Dude[1] to {0.095, 1.206, 0.843}
+		RelCamFoc = marker at get world position from Dude[1] to {-0.346, 0.782, 0.052}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		play string sound "SCRIPT10_SAMURAITHUNDER3"
+		wait 3 seconds
+		move Dude[1] position to {SSFormationPos[1]}
+
+		move Dude[0] position to {SSFormationPos[0]}
+		move Dude[2] position to {SSFormationPos[2]}
+		move Dude[5] position to {SSFormationPos[5]}
+		move Dude[6] position to {SSFormationPos[6]}
+		SPEED of Dude[0] = 0.5
+		SPEED of Dude[2] = 0.5
+		SPEED of Dude[5] = 0.5
+		SPEED of Dude[6] = 0.5
+
+		//head
+		set camera lens 40.000
+		RelCamPos = marker at get world position from Dude[3] to {0.196, 1.359, 0.771}
+		RelCamFoc = marker at get world position from Dude[3] to {-0.101, 1.416, -0.182}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		play string sound "SCRIPT10_SAMURAITHUNDER4"
+		wait 3 seconds
+		move Dude[3] position to {SSFormationPos[3]}
+		SPEED of Dude[0] = 0.3
+		SPEED of Dude[2] = 0.3
+		SPEED of Dude[5] = 0.3
+		SPEED of Dude[6] = 0.3
+
+		//weapon
+		set camera lens 40.000
+		RelCamPos = marker at get world position from Dude[4] to {0.734, 0.483, 0.632}
+		RelCamFoc = marker at get world position from Dude[4] to {0.023, 0.518, -0.071}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		play string sound "SCRIPT10_SAMURAITHUNDER1"
+		wait 3 seconds
+		move Dude[4] position to {SSFormationPos[4]}
+
+		//fall
+
+		//end
+
+		//wack
+		set camera lens 40.000
+		set camera position to {1117.984, 51.401, 598.956}
+		set camera focus to {1117.603, 51.416, 599.881}
+		wait 2 seconds
+
+		while counter < 7
+			run background script SS_Looktherightwaymate(Dude[counter])
+			counter++
+		end while
+
+		/*set camera lens 40.000
+		RelCamPos = marker at get world position from SS_Prism to {-7.436, 8.153, 4.759}
+		RelCamFoc = marker at get world position from SS_Prism to {-6.609, 7.880, 4.267}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 4 seconds
+*/
+		set camera lens 70.000
+		set camera position to {1128.734, 51.910, 598.806}
+		set camera focus to {1127.799, 51.737, 599.117}
+
+		delete SS_Prism
+
+		move camera position to {1128.397, 50.669, 598.828} time 6
+		move camera focus to {1127.458, 50.506, 599.131} time 6
+
+		wait 4 seconds
+
+		set Dude[3] focus to camera position
+		play anim "a_p_biting_flying_kick" on Dude[3]
+		wait 2.3 seconds
+		set fade red 0 green 0 blue 0 time 0
+
+		Samuraiiiii = create platoon PLATOON_INFO_GREEK_MELEE_1 at {Dude[3]} with 0 men and 0 women
+		add villager Dude[0] to platoon Samuraiiiii
+		add villager Dude[1] to platoon Samuraiiiii
+		add villager Dude[2] to platoon Samuraiiiii
+		add villager Dude[3] to platoon Samuraiiiii
+		add villager Dude[4] to platoon Samuraiiiii
+		add villager Dude[5] to platoon Samuraiiiii
+		add villager Dude[6] to platoon Samuraiiiii
+
+		set Samuraiiiii player 0
+		release Samuraiiiii
+
+		stop sound "SCRIPT10_SAMURAILOOP1"
+
+		restore camera details
+
+		set fade in time 2
+		wait 2 seconds
+
+	end cinema
+
+end script SS_SuccessCutscene
+
+begin script CheatCosICantBeArsedWithTheScript
+
+start
+
+	set SS_SamStat[0] position to {SS_SamStatPos[0]}
+	set SS_SamStat[1] position to {SS_SamStatPos[1]}
+	set SS_SamStat[2] position to {SS_SamStatPos[2]}
+	set SS_SamStat[3] position to {SS_SamStatPos[3]}
+	set SS_SamStat[4] position to {SS_SamStatPos[4]}
+	set SS_SamStat[5] position to {SS_SamStatPos[5]}
+	set SS_SamStat[6] position to {SS_SamStatPos[6]}
+
+end script CheatCosICantBeArsedWithTheScript
+
+begin script SS_Looktherightwaymate(bloke)
+
+start
+
+wait until bloke is not MOVING
+set bloke focus to {1143.411, 53.342, 595.022}
+
+end script SS_Looktherightwaymate
+
+//------------------------------------------
+// SS_ClearTalk
+//------------------------------------------
+begin help script SS_ClearTalk
+start
+	begin dialogue
+		clear dialogue
+	end dialogue
+end script SS_ClearTalk
+
+//------------------------------------------
+// SS_EndReminderTalk
+//------------------------------------------
+begin help script SS_EndReminderTalk
+start
+	begin dialogue
+		eject good spirit
+		make good spirit point at {SS_Prism}
+		say "GA:There's something going on over there"
+		wait until read
+		make evil spirit appear
+		say "EA:The beardy ones right, maybe you should check it out"
+		wait until read
+		stop good spirit pointing
+		make evil spirit disappear
+		make good spirit disappear
+		wait 20 seconds
+	end dialogue
+end script SS_EndReminderTalk
+
+//------------------------------------------
+// SS_IntroLitFarTalk
+//------------------------------------------
+begin help script SS_IntroLitFarTalk
+start
+	begin dialogue 
+		eject good spirit
+		say "Whats that near the coast?"
+		make good spirit point at {SS_SamStat[0]}
+		wait until read
+		stop good spirit pointing
+		send good spirit home
+	end dialogue
+end script SS_IntroLitFarTalk
+
+//------------------------------------------
+// SS_IntroLitNearTalk
+//------------------------------------------
+begin help script SS_IntroLitNearTalk
+start
+	begin dialogue
+		eject good spirit
+		say "GA:Pretty, i wonder if it does that everyday."
+		make good spirit point at {SS_SamStat[0]}
+		wait until read
+		stop good spirit pointing
+		eject evil spirit
+		say "EA:Red is my favourite colour."
+		wait until read
+		say "GA:I never would have guessed."
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+end script SS_IntroLitNearTalk
+
+//------------------------------------------
+// SS_IntroUnlitTalk
+//------------------------------------------
+begin help script SS_IntroUnlitTalk
+start
+	begin dialogue
+		eject good spirit
+		make good spirit point at {SS_SamStat[0]}
+		say "GA:Hmm thats an interesting statue, seems a bit lonely."
+		wait until read
+		send good spirit home						
+	end dialogue
+end script SS_IntroUnlitTalk
+
+//------------------------------------------
+// SS_SecondStatueTalk
+//------------------------------------------
+begin help script SS_SecondStatueTalk
+start
+	begin dialogue
+		eject good spirit
+		say "GA:Ah you found another statue."
+		wait until read
+		say "GA:Well done Leader."
+		wait until read
+	end dialogue
+end script SS_SecondStatueTalk
+
+//------------------------------------------
+// SS_AllStatuesTalk
+//------------------------------------------
+begin help script SS_AllStatuesTalk
+start
+	begin dialogue
+		eject good spirit
+		say "GA:Well done Leader, you've collected all the statues"
+		wait until read
+		eject evil spirit
+		say "EA:Now, how do we get them to light up?"
+		wait until read
+		say "GA:Patience, all good things come to those who wait"
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+end script SS_AllStatuesTalk
+
+//------------------------------------------
+// SS_StatuesLitWrongTalk
+//------------------------------------------
+begin help script SS_StatuesLitWrongTalk
+start
+	begin dialogue
+		eject evil spirit
+		say "EA:Very nice their all lit, but something doesn't look right."
+		wait until read
+		eject good spirit
+		say "GA:Hmm... these colours seem familiar."
+		wait until read
+		say "EA:Having flashbacks to your hippy days?"
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+end script SS_StatuesLitWrongTalk

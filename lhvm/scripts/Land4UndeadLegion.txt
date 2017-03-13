@@ -1,0 +1,903 @@
+//------------------------------------------------
+//  LAND 3 UNDEAD LEGION
+//------------------------------------------------
+
+//Defines
+define GL_TRUE = 1
+define GL_FALSE = 0
+
+define script AreTorchesOnFire
+define script CheckSequence
+define script GetTime
+define script TidyUpGhosts
+define script CheckTombs
+define script GL_GhostSuccessOutro
+define script SoundFX
+define script MoveMeNow(whichdude)
+define script ResetGhostLegionStats
+define script TombTooltips
+define script StrikeAPose(whichdude)
+define script MaintainAtmos
+
+
+
+//Globals
+global Torch[5]
+global TorchOnFire[5]
+global FirePoint[5]
+global CorrectSequence = 0
+global Ctr = 0
+global TorchCtr = 0
+
+global QuestComplete = 0
+global GhostLegion = 0
+
+global Day = GL_FALSE
+global Night = GL_FALSE
+global GL_Time = 0
+
+global MyHighlight = 0
+global PlatoonHealth = 0
+global GraveCentre = 0
+global GhostsOut = 0
+global LastClicked = 0
+global GL_Skull = 0
+
+global MoveThoseBadBoys = 0
+
+begin script Land4UndeadLegion
+Triggered = GL_FALSE
+GoodAdvisorCommentSaid = GL_FALSE
+ScrollPos = marker at {2231.510, 160.080, 1657.503}
+Scroll = 0
+AttachedAtmos = 0
+
+start
+
+GL_Skull = get OBJECT at {2231.700, 154.048, 1663.460} radius 5
+
+	//Get the torches
+	Torch[0] = get FEATURE at {2222.476, 160.280, 1655.730}
+	Torch[1] = get FEATURE at {2243.514, 159.137, 1669.507}
+	Torch[2] = get FEATURE at {2219.287, 159.406, 1669.709}
+	Torch[3] = get FEATURE at {2238.864, 159.907, 1653.645}
+	Torch[4] = get FEATURE at {2231.063, 158.655, 1677.297}
+
+enable GL_Skull indestructible
+disable GL_Skull pickup
+disable GL_Skull moveable
+
+///BODGE: disable trees as pickups and make them so clicking on them ignites them
+disable Torch[0] pickup
+disable Torch[1] pickup
+disable Torch[2] pickup
+disable Torch[3] pickup
+disable Torch[4] pickup
+
+FirePoint[0] = marker at extra position 0 of Torch[0]
+FirePoint[1] = marker at extra position 0 of Torch[1]
+FirePoint[2] = marker at extra position 0 of Torch[2]
+FirePoint[3] = marker at extra position 0 of Torch[3]
+FirePoint[4] = marker at extra position 0 of Torch[4]
+
+run background script SoundFX
+run background script TombTooltips
+//run background script AreTorchesOnFire
+
+while Triggered == GL_FALSE
+	if get game time >= 21 or get game time <= 3
+		if AttachedAtmos == 0
+			attach atmos "ghost_legion" to GL_Skull// range 100
+			set GL_Skull atmos group 0 time 1.5 seconds
+			AttachedAtmos = 1
+		end if
+
+		if Scroll not exists
+			Scroll = create highlight SILVER name "BW2T_SCRIPT_04FINAL_CHALLENGENAME_UNDEAD_LEGION" remind "BW2T_SCRIPT_04FINAL_CHALLENGENAME_UNDEAD_LEGION" at {ScrollPos}
+			ALTITUDE of Scroll = 10
+		else
+			if Scroll right clicked
+				Triggered = GL_TRUE								
+			end if
+		end if
+	else
+		if Scroll exists
+			delete Scroll
+			if AttachedAtmos == 1
+				//detach atmos from GL_Skull// range 100
+				AttachedAtmos = 0
+			end if
+		end if
+		
+		if GoodAdvisorCommentSaid == GL_FALSE
+			if camera position near {2231.668, 159.629, 1663.218} radius 50 and {2231.668, 159.629, 1663.218} viewed
+				begin dialogue
+					eject good spirit
+					//GA: "I wouldn’t like to be around this place at night…"
+						say "BW2T_SCRIPT_04FINAL_GHOSTLEGION_80"
+						wait until read
+					send good spirit home
+				end dialogue
+				GoodAdvisorCommentSaid = GL_TRUE
+			end if
+		end if
+	end if
+end while
+
+run background script CheckTombs
+run background script CheckSequence
+//run background script GetTime
+//run background script TidyUpGhosts
+
+
+end script Land4UndeadLegion
+
+//===========================================================================
+begin script AreTorchesOnFire
+
+start
+
+//if Night == GL_TRUE
+	while QuestComplete != 1
+		if Torch[Ctr] on fire
+			TorchOnFire[Ctr] = 1
+		end if
+		Ctr++
+		if Ctr == 5
+			Ctr = 0
+		end if
+	end while
+//end if
+
+end script AreTorchesOnFire
+
+//===========================================================================
+begin script CheckSequence
+
+PlatoonPos = marker at {1983.483, 51.750, 881.247}
+PlatoonFacing = marker at {1966.740, 51.965, 888.466}
+FirstClickCorrect = 0
+
+start
+
+while QuestComplete != 1
+	if LastClicked == 1 and CorrectSequence == 0
+		CorrectSequence = 1
+		TorchOnFire[0] = create visual effect "gp_s_fire_vil.ves" strength 0.9 scale 0.9 at {FirePoint[0]} time 1000
+		attach 3d sound "SCULLFIRE" to Torch[0]
+		play string sound "PRESSSKULL1"
+		if FirstClickCorrect == 0
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_04FINAL_GHOSTLEGION_40"
+				wait until read
+				send evil spirit home
+			end dialogue
+			FirstClickCorrect = 1
+		end if
+		
+		//play string sound "SCULLFIRE"
+	else
+		if LastClicked == 1 and CorrectSequence != 1
+			CorrectSequence = 0
+			delete TorchOnFire[0]
+			delete TorchOnFire[1]
+			delete TorchOnFire[2]
+			delete TorchOnFire[3]
+			delete TorchOnFire[4]
+			detach sound "SCULLFIRE" from Torch[0]
+			detach sound "SCULLFIRE" from Torch[1]
+			detach sound "SCULLFIRE" from Torch[2]
+			detach sound "SCULLFIRE" from Torch[3]
+			detach sound "SCULLFIRE" from Torch[4]
+			
+		end if
+	end if
+
+	if LastClicked == 2 and CorrectSequence == 1
+		CorrectSequence++
+		TorchOnFire[1] = create visual effect "gp_s_fire_vil.ves" strength 0.9 scale 0.9 at {FirePoint[1]} time 1000
+		set GL_Skull atmos group 1 time 1.5 seconds
+		//attach 3d sound "SCULLFIRE" to Torch[1]
+		play string sound "PRESSSKULL2"
+
+	else
+		if LastClicked == 2 and CorrectSequence != 2
+			CorrectSequence = 0
+			delete TorchOnFire[0]
+			delete TorchOnFire[1]
+			delete TorchOnFire[2]
+			delete TorchOnFire[3]
+			delete TorchOnFire[4]
+			detach sound "SCULLFIRE" from Torch[0]
+			detach sound "SCULLFIRE" from Torch[1]
+			detach sound "SCULLFIRE" from Torch[2]
+			detach sound "SCULLFIRE" from Torch[3]
+			detach sound "SCULLFIRE" from Torch[4]
+			
+			set GL_Skull atmos group 0 time 1.5 seconds
+		end if
+	end if
+
+	if LastClicked == 3 and CorrectSequence == 2
+		CorrectSequence++
+		TorchOnFire[2] = create visual effect "gp_s_fire_vil.ves" strength 0.9 scale 0.9 at {FirePoint[2]} time 1000
+		set GL_Skull atmos group 2 time 1.5 seconds
+		attach 3d sound "SCULLFIRE" to Torch[2]
+		play string sound "PRESSSKULL3"
+
+	else
+		if LastClicked == 3 and CorrectSequence != 3
+			CorrectSequence = 0
+			delete TorchOnFire[0]
+			delete TorchOnFire[1]
+			delete TorchOnFire[2]
+			delete TorchOnFire[3]
+			delete TorchOnFire[4]
+			detach sound "SCULLFIRE" from Torch[0]
+			detach sound "SCULLFIRE" from Torch[1]
+			detach sound "SCULLFIRE" from Torch[2]
+			detach sound "SCULLFIRE" from Torch[3]
+			detach sound "SCULLFIRE" from Torch[4]
+			set GL_Skull atmos group 0 time 1.5 seconds
+		end if
+	end if
+
+	if LastClicked == 4 and CorrectSequence == 3
+		CorrectSequence++
+		TorchOnFire[3] = create visual effect "gp_s_fire_vil.ves" strength 0.9 scale 0.9 at {FirePoint[3]} time 1000
+		set GL_Skull atmos group 3 time 1.5 seconds
+		attach 3d sound "SCULLFIRE" to Torch[3]
+		play string sound "PRESSSKULL4"
+
+	else
+		if LastClicked == 4 and CorrectSequence != 4
+			CorrectSequence = 0
+			delete TorchOnFire[0]
+			delete TorchOnFire[1]
+			delete TorchOnFire[2]
+			delete TorchOnFire[3]
+			delete TorchOnFire[4]
+			detach sound "SCULLFIRE" from Torch[0]
+			detach sound "SCULLFIRE" from Torch[1]
+			detach sound "SCULLFIRE" from Torch[2]
+			detach sound "SCULLFIRE" from Torch[3]
+			detach sound "SCULLFIRE" from Torch[4]
+			set GL_Skull atmos group 0 time 1.5 seconds
+		end if
+	end if
+
+	if LastClicked == 5 and CorrectSequence == 4
+		play string sound "PRESSSKULL5"
+		QuestComplete = 1
+
+		run script GL_GhostSuccessOutro
+	else
+		if LastClicked == 5 and CorrectSequence != 5
+			CorrectSequence = 0
+			delete TorchOnFire[0]
+			delete TorchOnFire[1]
+			delete TorchOnFire[2]
+			delete TorchOnFire[3]
+			delete TorchOnFire[4]
+			detach sound "SCULLFIRE" from Torch[0]
+			detach sound "SCULLFIRE" from Torch[1]
+			detach sound "SCULLFIRE" from Torch[2]
+			detach sound "SCULLFIRE" from Torch[3]
+			detach sound "SCULLFIRE" from Torch[4]
+			set GL_Skull atmos group 0 time 1.5 seconds
+			
+		end if
+	end if
+end while
+
+end script CheckSequence
+
+//=========================================================================
+
+begin script GetTime
+
+start
+
+while QuestComplete != 1
+	GL_Time = get game time
+
+	if GL_Time < 5.99 or GL_Time > 18.01
+		Day = GL_FALSE
+		Night = GL_TRUE
+	end if
+
+	if GL_Time < 18.00 and GL_Time > 6.00
+		Day = GL_TRUE
+		Night = GL_FALSE
+	end if
+end while
+
+end script GetTime
+
+//=========================================================================
+
+begin script TidyUpGhosts
+
+start
+
+if Day == GL_TRUE
+	if QuestComplete != 1
+		delete GhostLegion
+	end if
+end if
+
+end script TidyUpGhosts
+
+//=========================================================================
+
+begin script CheckTombs
+
+FirstTime=0
+
+start
+	begin cinema
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		set game time 21.00
+		set camera position to {2231.168, 171.461, 1644.300}	
+		set camera focus to {2235.221, 121.177, 1730.640}
+		set fade in time 2
+		wait 2 seconds
+	end cinema
+	
+		begin dialogue
+			eject evil spirit
+		//EA: "Hey! I bet there's a ton of secrets waiting to be found here."
+			say "BW2T_SCRIPT_04FINAL_GHOSTLEGION_10"
+			wait until read
+		//EA: "Why don't you click on the tombstones and see what happens?"
+			say "BW2T_SCRIPT_04FINAL_GHOSTLEGION_20"
+			wait until read
+			send evil spirit home
+		end dialogue
+		
+		wait 2 seconds
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 with amount 1 text "BW2T_SCRIPT_04FINAL_CHALLENGENAME_UNDEAD_LEGION" amount 1 description "BW2T_SCRIPT_04FINAL_GHOSTLEGION_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_4_UNDEADLEGION		
+		L4ShowingUndeadLegion = 1
+				
+
+while QuestComplete != 1
+	if Torch[0] right clicked
+		clear right clicked object
+	//	play string sound "PRESSSKULL1"
+		LastClicked = 1
+	end if
+
+	if Torch[1] right clicked
+		clear right clicked object
+	//	play string sound "PRESSSKULL2"
+		LastClicked = 2
+	end if
+
+	if Torch[2] right clicked
+		clear right clicked object
+	//	play string sound "PRESSSKULL3"
+		LastClicked = 3
+	end if
+
+	if Torch[3] right clicked
+		clear right clicked object
+	//	play string sound "PRESSSKULL4"
+		LastClicked = 4
+	end if
+
+	if Torch[4] right clicked
+		clear right clicked object
+	//	play string sound "PRESSSKULL5"
+		LastClicked = 5
+	end if
+end while
+end script CheckTombs
+
+//================================================================================
+begin script GL_GhostSuccessOutro
+
+	BrightEffect=0
+
+	EffectedDude=0
+
+	Clickedhere = marker at {2107.145, 270.838, 1484.271}
+
+	//PlatoonPos = marker at {1947.769,52.688,801.049}
+	PlatoonFacing = marker at {2087.145, 270.838, 1484.271}
+
+	counter=0
+	count=0
+
+	Behindme=0
+
+	effecttt=0
+	effecttt2=0
+	effecttt3=0
+
+	HeresMeMan=0
+
+	PseudoActorArray[12]
+	ScaredShitless=0
+	GL_GhostLegionStartPos=0
+	GhostlyDestination=0
+
+	RelCamPos=0
+	RelCamFoc=0
+
+	GL_GhostLegion=0
+	FINALTORCH=0
+
+	Ghost[12]
+
+start
+
+begin cinema
+
+	set camera lens 38.000
+	RelCamPos = marker at get world position from GL_Skull to {4.258, 5.436, -10.960}
+	RelCamFoc = marker at get world position from GL_Skull to {-74.331, -39.248, -53.709}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	
+	RelCamPos = marker at get world position from GL_Skull to {1.732, 4.192, -11.754}
+	RelCamFoc = marker at get world position from GL_Skull to {-67.140, -41.015, -68.444}
+	move camera position to {RelCamPos} time 5
+	move camera focus to {RelCamFoc} time 5
+	set GL_Skull atmos group 4 time 1.5 seconds
+	wait until camera ready
+
+	FINALTORCH = create visual effect "gp_s_fire_vil.ves" strength 0.9 scale 0.9 at {FirePoint[4]} time 1000
+	//attach 3d sound "SCULLFIRE" to GL_Torch[4]
+
+	set fade red 255 green 255 blue 255 time 3	
+	play string sound "SCRIPT24_CHURCHBELL"
+	play string sound "SCRIPT24_SPOOKYLOOP"
+	wait 0.5 seconds
+	detach atmos from GL_Skull
+
+	wait 2.5 seconds
+	
+	set camera lens 45.000
+	RelCamPos = marker at get world position from GL_Skull to {0.610, 5.504, 20.177}
+	RelCamFoc = marker at get world position from GL_Skull to {0.583, 5.367, 19.187}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	set camera lens 24.000 time 10
+	set fade in time 2
+	effecttt = create visual effect "sc_s_glfog.ves" strength 1.0 scale 4.0 at {GL_Skull} time 60
+
+	//move game time 21.00 time 5
+	//play sound "CHURCHBELL"
+/*
+	GL_GhostLegionStartPos= marker at get world position from GL_Skull to {-0.250, 0.025, -2.750}
+	GL_GhostLegion = create platoon PLATOON_INFO_SKELETON_MELEE at {GL_GhostLegionStartPos} with 12 men and 0 women
+	PLAYER of GL_GhostLegion = 0
+	//run script ResetGL_GhostLegionStats
+	//set GL_GhostLegion ghost alpha 0.4 red 0.1 green 0.2 blue 0.6 specular 0.1
+	set platoon GL_GhostLegion formation to 3 wide by 4 deep with 1 spacing
+	set GL_GhostLegion position to {GL_GhostLegionStartPos}
+	GhostlyDestination = marker at get world position from GL_Skull to {2.502, -0.170, 18.126}
+	set GL_GhostLegion focus to {GhostlyDestination}
+	set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_MASS of GL_GhostLegion to 2.50
+	set platoon movement value FORMATION_MOVEMENT_STAT_DECELLERATION_DIST of GL_GhostLegion to 1.00
+	set platoon movement value FORMATION_MOVEMENT_STAT_ACCELERATION_MAX of GL_GhostLegion to 1.00
+	set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MAX of GL_GhostLegion to 2.00
+	set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MIN of GL_GhostLegion to 0.20
+	set platoon movement value FORMATION_MOVEMENT_STAT_PLATOON_SPEED of GL_GhostLegion to 1.80
+	set platoon movement value FORMATION_MOVEMENT_STAT_POSITION_ACCURACY of GL_GhostLegion to 0.01
+	*/
+
+	GhostlyDestination = marker at get world position from GL_Skull to {-0.530, 0.037, 16.435}
+
+	GL_GhostLegion = create platoon PLATOON_INFO_SKELETON_MELEE at {2268.760, 160.292, 1632.993} with 12 men and 0 women
+	PLAYER of GL_GhostLegion = 0
+
+	while counter <12
+		Ghost[counter] = get villager from platoon GL_GhostLegion nearest {GL_GhostLegion} excluding scripted
+		remove villager Ghost[counter] from platoon
+		effecttt2 = create visual effect "sc_s_glfog.ves" strength 1.0 scale 1.0 on Ghost[counter] time 20
+
+	counter++
+	end while
+
+	wait 1 seconds
+	play string sound "SCRIPT24_chanting"
+
+	wait 4 seconds
+	//play sound "CHURCHBELL"	
+	wait 2 seconds
+
+	set GL_Skull atmos group 5 time 1.5 seconds
+	//effecttt2 = create visual effect "sc_s_glfog.ves" strength 1.0 scale 0.5 on GL_GhostLegion time 2
+	wait 1 seconds		
+
+	start music "GHOST_LEGION_MUSIC"
+
+	play string sound "SCRIPT24_MARCHING" loop -1
+	set camera lens 21.000
+	RelCamPos = marker at get world position from GL_Skull to {2.953, 1.610, 4.108}
+	RelCamFoc = marker at get world position from GL_Skull to {2.201, 1.378, 3.490}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	
+	RelCamPos = marker at get world position from GL_Skull to {3.310, 1.610, 3.674}
+	RelCamFoc = marker at get world position from GL_Skull to {2.558, 1.378, 3.056}
+	move camera position to {RelCamPos} time 4 easein 0 easeout 0
+	move camera focus to {RelCamFoc} time 4 easein 0 easeout 0
+
+	while count < 4
+	set Ghost[count] position to {2230.905, 154.098, 1663.037}
+	set Ghost[count+1] position to {2231.804, 154.098, 1663.338}
+	SPEED of Ghost[count] = 0.1
+	SPEED of Ghost[count+1] = 0.1
+	move Ghost[count] position to {2230.510, 160.423, 1650.631}
+	override Ghost[count] anim "a_p_l7sevensamurai_soldier_walk"
+	move Ghost[count+1] position to {2231.015, 160.422, 1649.778}
+	override Ghost[count+1] anim "a_p_l7sevensamurai_soldier_walk"
+	wait 1 seconds
+	count++
+	count++
+	end while
+
+	stop sound "SCRIPT24_CHANTING"
+	stop sound "SCRIPT24_SPOOKYLOOP"
+
+	wait 2 seconds
+
+	effecttt3 = create visual effect "sc_s_glfog.ves" strength 0.3 scale 0.2 on GL_GhostLegion time 15
+	
+	set camera lens 2.000
+	RelCamPos = marker at get world position from GL_Skull to {23.519, 15.741, 4.397}
+	RelCamFoc = marker at get world position from GL_Skull to {-59.049, -39.290, 16.762}
+	//set camera position to {RelCamPos}
+	//set camera focus to {RelCamFoc}
+	set camera position to {2208.009, 169.789, 1657.508}
+	set camera focus to {2290.626, 113.674, 1652.271}
+	
+	RelCamPos = marker at get world position from GL_Skull to {23.754, 15.741, 6.003}
+	RelCamFoc = marker at get world position from GL_Skull to {-58.815, -39.290, 18.368}
+	//move camera position to {RelCamPos} time 6  easein 0 easeout 0
+	//move camera focus to {RelCamFoc} time 6 easein 0 easeout 0
+	move camera position to {2207.933, 169.789, 1656.279} time 6 easein 0 easeout 0
+	move camera focus to {2290.550, 113.674, 1651.042} time 6 easein 0 easeout 0
+	
+	wait 1 seconds	
+	set fade red 255 green 255 blue 255 time 4
+	wait 2 seconds	
+	///speed those badboys up here
+	/*set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MAX of GL_GhostLegion to 100.7
+	//set platoon movement value FORMATION_MOVEMENT_STAT_PLATOON_SPEED of GL_GhostLegion to 100.7
+	set platoon movement value FORMATION_MOVEMENT_STAT_ACCELERATION_MAX of GL_GhostLegion to 100.7
+	set platoon movement value FORMATION_MOVEMENT_STAT_DECELLERATION_DIST of GL_GhostLegion to 0
+	set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MIN of GL_GhostLegion to 80*/
+
+	//set platoon movement value FORMATION_MOVEMENT_STAT_POSITION_ACCURACY of GL_GhostLegion to 0
+
+	wait 2 seconds	
+
+	delete Ghost[0]
+	delete Ghost[1]
+	delete Ghost[2]
+	delete Ghost[3]
+	delete Ghost[4]
+	delete Ghost[5]
+	delete Ghost[6]
+	delete Ghost[7]
+	delete Ghost[8]
+	delete Ghost[9]
+	delete Ghost[10]
+	delete Ghost[11]
+
+	//delete GL_GhostLegion
+	GL_GhostLegion = create platoon PLATOON_INFO_SKELETON_MELEE at {GhostlyDestination} with 12 men and 0 women
+	PLAYER of GL_GhostLegion = 0
+	disable platoon GL_GhostLegion eating
+	disable platoon GL_GhostLegion can disband
+	//set GL_GhostLegion ghost alpha 0.4 red 0.1 green 0.2 blue 0.6 specular 0.1
+	set GL_GhostLegion position to {GhostlyDestination}
+	set GL_GhostLegion focus to get world position from GL_Skull to {2.262, 1.662, 23.964}
+	wait 0.2 seconds
+	set platoon GL_GhostLegion formation to 4 wide by 3 deep with 1.5 spacing
+
+
+	set camera lens 43.000
+	set fade in time 5
+	set camera position to {2233.536, 157.039, 1646.149}
+	set camera focus to {2224.649, 154.129, 1745.710}
+	
+	RelCamPos = marker at {2229.316, 164.334, 1628.772}
+	RelCamFoc = marker at {2229.381, 164.236, 1629.765}
+	move camera position to {2234.176, 156.462, 1637.679} time 10 easein 0 easeout 0
+	move camera focus to {2226.632, 154.399, 1737.374} time 10 easein 0 easeout 0
+	
+	wait 3 seconds
+	wait 1 seconds
+	stop sound "SCRIPT24_MARCHING"
+	wait 1 seconds
+
+	///use the new get soldier function here
+
+	PseudoActorArray[0] = get platoon GL_GhostLegion member at offset 8
+	
+	PseudoActorArray[1] = get platoon GL_GhostLegion member at offset 0
+	PseudoActorArray[2] = get platoon GL_GhostLegion member at offset 1
+	PseudoActorArray[3] = get platoon GL_GhostLegion member at offset 2
+	PseudoActorArray[4] = get platoon GL_GhostLegion member at offset 9
+	PseudoActorArray[5] = get platoon GL_GhostLegion member at offset 3
+	PseudoActorArray[6] = get platoon GL_GhostLegion member at offset 5
+	PseudoActorArray[7] = get platoon GL_GhostLegion member at offset 6
+	PseudoActorArray[8] = get platoon GL_GhostLegion member at offset 4
+	PseudoActorArray[9] = get platoon GL_GhostLegion member at offset 10
+	PseudoActorArray[10] = get platoon GL_GhostLegion member at offset 11
+	PseudoActorArray[11] = get platoon GL_GhostLegion member at offset 7
+
+	//play anim "a_p_ambient2" on PseudoActorArray[0]
+	//play anim "a_p_ambient2" on PseudoActorArray[7] loop -1
+	//play anim "a_p_ambient2" on PseudoActorArray[10] loop -1	
+	//run background script StrikeAPose(PseudoActorArray[5])
+	run background script StrikeAPose(PseudoActorArray[7])
+	run background script StrikeAPose(PseudoActorArray[10])
+
+	wait 0.2 seconds
+	//play anim "a_p_ambient2" on PseudoActorArray[1] loop -1
+	//play anim "a_p_ambient2" on PseudoActorArray[11] loop -1
+	//play anim "a_p_ambient2" on PseudoActorArray[2] loop -1
+	run background script StrikeAPose(PseudoActorArray[1])
+	run background script StrikeAPose(PseudoActorArray[11])
+	run background script StrikeAPose(PseudoActorArray[2])
+	wait 0.2 seconds
+	run background script StrikeAPose(PseudoActorArray[6])
+	//play anim "a_p_ambient2" on PseudoActorArray[6] loop -1	
+	wait 0.2 seconds
+	//play anim "a_p_ambient2" on PseudoActorArray[9] loop -1
+	//play anim "a_p_ambient2" on PseudoActorArray[5] loop -1	
+	run background script StrikeAPose(PseudoActorArray[9])
+	run background script StrikeAPose(PseudoActorArray[0])
+	run background script StrikeAPose(PseudoActorArray[5])
+	wait 0.2 seconds
+	//play anim "a_p_ambient2" on PseudoActorArray[8] loop -1
+	//play anim "a_p_ambient2" on PseudoActorArray[4] loop -1
+	run background script StrikeAPose(PseudoActorArray[8])
+	run background script StrikeAPose(PseudoActorArray[4])
+	wait 0.2 seconds
+	run background script StrikeAPose(PseudoActorArray[3])
+	run background script StrikeAPose(PseudoActorArray[9])
+	//play anim "a_p_ambient2" on PseudoActorArray[3] loop -1
+	//play anim "a_p_ambient2" on PseudoActorArray[9] loop -1
+
+	//wait until PseudoActorArray[5] played
+	wait 6 seconds
+
+	play anim "a_p_land3ghost_skeleton_scary_gesture" on PseudoActorArray[5] blend time 0
+	wait 0.2 seconds
+	play string sound "SCRIPT24_BREATH4"
+	set camera lens 32.000
+	RelCamPos = marker at get world position from PseudoActorArray[5] to {0.873, 1.235, 1.014}
+	RelCamFoc = marker at get world position from PseudoActorArray[5] to {-62.915, 9.874, -75.512}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 2 seconds
+	play string sound "SCRIPT24_NECKCREAK3"
+	play string sound "SCRIPT24_BREATH1"	
+	wait 2 seconds
+	stop sound  "NECKCREAK2"
+	wait 1 seconds
+
+	//play string sound "SCRIPT24_NECKCREAK2"
+	wait 0.5 seconds
+	//wait until PseudoActorArray[0] played
+	
+	attach atmos "ghost_legion" to GL_GhostLegion// range 30
+	set GL_GhostLegion atmos group 5 time 1.5 seconds
+	
+	set camera lens 51.000
+	RelCamPos = marker at get world position from GL_Skull to {6.785, 6.363, 16.326}
+	RelCamFoc = marker at get world position from GL_Skull to {-63.112, -43.717, -34.736}
+	//set camera position to {RelCamPos}
+	//set camera focus to {RelCamFoc}
+	set camera position to {2225.596, 158.503, 1644.456}
+	set camera focus to {2295.884, 110.183, 1696.641}
+	
+	RelCamPos = marker at get world position from GL_Skull to {16.683, 12.629, 21.082}
+	RelCamFoc = marker at get world position from GL_Skull to {-57.438, -34.951, -26.257}
+	//move camera position to {RelCamPos} time 5
+	//move camera focus to {RelCamFoc} time 5
+	move camera position to {2211.993, 165.828, 1639.915} time 5
+	move camera focus to {2289.361, 123.601, 1687.168} time 5
+	wait until PseudoActorArray[5] played
+	run background script StrikeAPose(PseudoActorArray[5])	
+	
+	wait until camera ready
+	detach atmos from GL_Skull
+	stop music
+	
+	wait 2 seconds
+
+	stop sound "SCRIPT24_SCULLFIRE"
+
+	set GL_GhostLegion player 0
+	attach GL_GhostLegion to L4GreekTown
+	release GL_GhostLegion
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+
+	set camera lens 70.000
+	set fade in time 1
+	wait 1 seconds
+
+
+end cinema
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+
+begin dialogue
+
+	eject evil spirit
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_04FINAL_GHOSTLEGION_E_50_60
+	
+/*
+	say "BW2T_SCRIPT_04FINAL_GHOSTLEGION_50"
+	wait until read
+	say "BW2T_SCRIPT_04FINAL_GHOSTLEGION_60"
+*/	wait until read
+	
+	send evil spirit home
+	
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+	run background script MaintainAtmos
+
+end dialogue
+
+end script GL_GhostSuccessOutro
+
+
+//===============================================================================
+begin script SoundFX
+
+start
+
+	//if camera position near {GraveCentre} radius 200
+		// AUDIO_TODO play string sound constant 2 SOUND_BANK_TYPE_BW2_GHOST_LEGION at {GraveCentre}
+	//end if
+
+end script SoundFX
+//=================================================================================
+begin script MoveMeNow(whichdude)
+
+myfocus=0
+whereamigoing=0
+effecttt=0
+effecttt2 = 0
+
+start
+
+	ALTITUDE of whichdude = 0.5
+	//set whichdude ghost alpha 0.4 red 0.1 green 0.2 blue 0.6 specular 0.1
+	//myfocus = marker at focus position of whichdude
+	effecttt = create visual effect "sc_s_glfog.ves" strength 0.3 scale 2.0 at {whichdude} time 20
+	whereamigoing = marker at get target from {whichdude} to {myfocus} distance 8 angle 315
+	wait until MoveThoseBadBoys == 1
+	
+	move whichdude position to {whereamigoing}
+	effecttt2 = create visual effect "sc_s_glfog.ves" strength 0.3 scale 1.0 on whichdude time 10	
+	wait until {whichdude} at {whereamigoing}
+	
+
+end script MoveMeNow
+
+//==================================================================================
+// Matthew: Script to reset GhostLegion stats
+//==================================================================================
+begin script ResetGhostLegionStats
+
+start
+	if GhostLegion exists
+		// Set all movement stats to reasonable values.
+
+		set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_MASS of GhostLegion to 5.00
+		set platoon movement value FORMATION_MOVEMENT_STAT_DECELLERATION_DIST of GhostLegion to 1.50
+		set platoon movement value FORMATION_MOVEMENT_STAT_ACCELERATION_MAX of GhostLegion to 3.00
+		set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MAX of GhostLegion to 6.00
+		set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MIN of GhostLegion to 0.20
+		set platoon movement value FORMATION_MOVEMENT_STAT_PLATOON_SPEED of GhostLegion to 5.80
+		set platoon movement value FORMATION_MOVEMENT_STAT_POSITION_ACCURACY of GhostLegion to 0.40
+		set platoon movement value FORMATION_MOVEMENT_STAT_FLIP_ANGLE of GhostLegion to 1.57
+		set platoon movement value FORMATION_MOVEMENT_STAT_TURNS_BETWEEN_RANDOM_AGENT_SPEED_CHANGE of GhostLegion to 0.00
+		set platoon movement value FORMATION_MOVEMENT_STAT_RANDOM_AGENT_SPEED_MAX_CHANGE of GhostLegion to 0.00
+
+		// Set legion to be hard as nails
+		/*
+		set platoon value PLATOON_STAT_MELEE_ATTACK_SKILL of GhostLegion to 1.00
+		set platoon value PLATOON_STAT_DEFENCE of GhostLegion to 1.00
+		set platoon value PLATOON_STAT_STRENGTH of GhostLegion to 1.00
+		
+		set platoon value PLATOON_STAT_MELEE_DEFEND_SKILL of GhostLegion to 1.00
+		set platoon value PLATOON_STAT_RANGED_SKILL of GhostLegion to 1.00
+		set platoon value PLATOON_STAT_DEFENCE of GhostLegion to 1.00
+		set platoon value PLATOON_STAT_STRENGTH of GhostLegion to 1.00
+		set platoon value PLATOON_STAT_TARGET_SEARCH_RADIUS of GhostLegion to 5.00
+		set platoon value PLATOON_STAT_AGENT_TARGET_SEARCH_RADIUS  of GhostLegion to 15.00
+		set platoon value PLATOON_STAT_AGENT_ATTACHMENT_TO_FORMATION_DIST of GhostLegion to 10.00
+		set platoon value PLATOON_STAT_AGENT_ATTACHMENT_TO_FRIENDS_DIST of GhostLegion to 5.00
+		set platoon value PLATOON_STAT_MOVE_TO_ATTACK_DIST of GhostLegion to 50.00
+		set platoon value PLATOON_STAT_MELEE_TURNS_BETWEEN_ATTACKS of GhostLegion to 10.00
+		set platoon value PLATOON_STAT_RANGED_TURNS_BETWEEN_ATTACKS of GhostLegion to 10.00
+		*/
+	end if
+	
+end script ResetGhostLegionStats
+
+// =============================================
+
+begin script TombTooltips
+
+TombUnderHand = 0
+TombTooltip = 0
+
+start
+
+while QuestComplete != 1
+	TombUnderHand = get object hand is over
+
+	if TombUnderHand == Torch[0]
+		TombTooltip = create tooltip on Torch[0] with text "BW2T_SCRIPT_04FINAL_GHOSTLEGION_DATES_110"
+		wait until hand position not near {Torch[0]} radius 5 or QuestComplete == 1
+		delete TombTooltip
+	elsif TombUnderHand == Torch[1]
+		TombTooltip = create tooltip on Torch[1] with text "BW2T_SCRIPT_04FINAL_GHOSTLEGION_DATES_120"
+		wait until hand position not near {Torch[1]} radius 5 or QuestComplete == 1
+		delete TombTooltip
+	elsif TombUnderHand == Torch[2]
+		TombTooltip = create tooltip on Torch[2] with text "BW2T_SCRIPT_04FINAL_GHOSTLEGION_DATES_130"
+		wait until hand position not near {Torch[2]} radius 5 or QuestComplete == 1
+		delete TombTooltip
+	elsif TombUnderHand == Torch[3]
+		TombTooltip = create tooltip on Torch[3] with text "BW2T_SCRIPT_04FINAL_GHOSTLEGION_DATES_140"
+		wait until hand position not near {Torch[3]} radius 5 or QuestComplete == 1
+		delete TombTooltip
+	elsif TombUnderHand == Torch[4]
+		TombTooltip = create tooltip on Torch[4] with text "BW2T_SCRIPT_04FINAL_GHOSTLEGION_DATES_150"
+		wait until hand position not near {Torch[4]} radius 5 or QuestComplete == 1
+		delete TombTooltip
+	end if
+
+end while
+
+end script TombTooltips
+
+begin script StrikeAPose(whichdude)
+
+start
+
+	play anim "a_p_l4undeadlegion_endmove" on whichdude disable stand
+	wait until whichdude played
+	play anim "a_p_l4undeadlegion_endmove_loop" on whichdude loop -1
+	wait 10 seconds
+
+end script StrikeAPose
+
+//======================================
+
+begin script MaintainAtmos
+
+SkullAttachedAtmos = 0
+
+start
+
+begin loop
+	if get game time >= 21 or get game time <= 3
+		if SkullAttachedAtmos == 0
+			attach atmos "ghost_legion" to GL_Skull// range 100
+			set GL_Skull atmos group 0 time 1.5 seconds
+			SkullAttachedAtmos = 1
+		end if
+	end if
+until L4Complete == 1
+end loop
+
+end script MaintainAtmos

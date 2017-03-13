@@ -1,0 +1,313 @@
+//=================================================================
+// Land 3 Army Tutorial
+// Matt.L 
+//=================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+
+//Advisor defines
+define AT_ADVISORS_NONE = 0
+define AT_ADVISORS_RECRUITING_EXPLAIN = 1
+define AT_ADVISORS_RECRUITING_TENT = 2
+define AT_ADVISORS_MOVE = 3
+define AT_ADVISORS_TAKE_OVER_TOWN = 4
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global AT_MyPlatoon = 0
+global AT_CurrentAdvisorLine = AT_ADVISORS_NONE
+
+//-----------------------------------------------------------------
+// Script defines
+//-----------------------------------------------------------------
+define script AT_ArmyIntro
+define script AT_Advisors(ID)
+define script AT_MovePlatoon
+define script AT_Attack
+define script AT_TakeOverTown
+
+//-----------------------------------------------------------------
+// Land 3 Army Tutorial
+//-----------------------------------------------------------------
+begin script Land3ArmyTutorial
+	Armoury = 0
+	ScrollPos = marker at {1116.951,363.656,1569.466} //rel position from aroury
+	Scroll = 0
+start
+
+	if not L3GreekTown exists
+		run script Land3Globals
+	end if	
+
+	while not Armoury exists and BUILT of Armoury != 1.00
+		Armoury = get HOUSE ABODE_INFO_GREEK_MELEE_ARMOURY in L3GreekTown
+	end while
+	
+	ScrollPos = marker at get world position from Armoury to {9.213, 0.067, -5.848}
+	Scroll = create highlight GOLD name "Army tutorial" remind "Reminder temp" at {ScrollPos}
+	//wait until Scroll right clicked
+	delete Scroll 
+
+	//run script AT_ArmyIntro
+
+	run background script AT_Advisors(AT_ADVISORS_RECRUITING_EXPLAIN)
+
+	begin loop	
+		AT_MyPlatoon = get platoon of player 0 nearest {L3GreekTown} radius 100
+		wait 0.5 seconds
+	until AT_MyPlatoon exists
+	end loop	
+
+	run background script AT_Advisors(AT_ADVISORS_MOVE)
+	run script AT_MovePlatoon
+	
+	run script AT_Attack
+
+	run background script AT_Advisors(AT_ADVISORS_TAKE_OVER_TOWN)
+	run script AT_TakeOverTown
+
+	wait 50000000000000000000 seconds
+end script Land3ArmyTutorial
+
+//-----------------------------------------------------------------
+// Land 3 Army Intro
+//-----------------------------------------------------------------
+begin script AT_ArmyIntro
+start
+
+	begin fullscreen cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		set camera position to {841.358,230.240,1904.316}
+		set camera focus to {899.421,162.214,1949.055}
+		
+		set fade in time 1
+		wait 1 seconds
+
+		move camera position to {841.755,228.546,1921.156} time 5
+		move camera focus to {910.553,160.024,1897.242} time 5
+		wait 4 seconds
+
+		move camera position to {861.579,225.929,1925.901} time 5
+		move camera focus to {829.011,159.923,1858.201} time 5
+		wait 4 seconds
+
+		move camera position to {864.156,231.967,1927.793} time 5
+		move camera focus to {819.752,159.587,1874.973} time 5
+		wait 4 seconds
+
+		set fade red 255 green 255 blue 255 time 1
+		wait 1 seconds
+		set camera position to {838.528,231.371,1906.389}
+		set camera focus to {903.982,171.163,1952.116}
+		set fade in time 1
+
+	end cinema
+
+end script AT_ArmyIntro
+
+//-----------------------------------------------------------------
+// Move Platoon
+//-----------------------------------------------------------------
+begin script AT_MovePlatoon
+	MovePos = marker at {746.369,255.000,1849.010} 
+	MoveFX = 0
+	Object = 0
+	Type = 0
+	SubType = 0
+start
+
+	MoveFX = create visual effect "gp_s_rayfxball.ves" strength 0.2 scale 0.5 at {MovePos} time -1 
+	set MoveFX colour red 0 green 255 blue 0
+
+/*
+	begin loop
+		Object = get object held
+		if Object exists
+			Type = variable get Object type
+			SubType = variable get Object sub type
+		end if
+
+	end loop
+*/
+
+	wait until {AT_MyPlatoon} near {MovePos} radius 10
+	stop visual effect MoveFX
+
+end script AT_MovePlatoon
+
+//-----------------------------------------------------------------
+// Taker Over Town
+//-----------------------------------------------------------------
+begin script AT_TakeOverTown
+	DoomedTown = 0
+	DefenderPlatoon = 0
+	DefenderCreatePos = marker at {1151.551,363.602,1588.060}
+
+	NorseGuy = 0
+	NorseOffset = 0
+start
+
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		set camera position to {743.691,313.478,1705.239}
+		set camera focus to {662.618,257.161,1721.243}
+
+		DefenderPlatoon = create platoon PLATOON_INFO_NORSE_MELEE_2 at {DefenderCreatePos} with 10 men and 0 women
+		PLAYER of DefenderPlatoon = 1
+		disable platoon DefenderPlatoon camp
+
+		set fade in time 1
+
+		eject evil spirit
+		say "BW2T_SCRIPT_03FINAL_ARMYTUTORIAL_CAPTURETOWN_10"
+
+		move camera position to {659.981,264.709,1705.701} time 5
+		move camera focus to {595.143,211.236,1759.888} time 5
+		wait 4 seconds
+
+		set camera position to {590.061,269.801,1701.015}
+		set camera focus to {653.934,217.775,1757.705}
+
+		move camera position to {725.771,328.398,1901.204} time 5
+		move camera focus to {719.503,251.301,1837.825} time 5
+		wait 4 seconds
+
+	end cinema
+
+	//Make the Norse guys low on health
+	NorseGuy = get platoon DefenderPlatoon member at offset NorseOffset
+	force while NorseGuy exists
+		NorseGuy = get platoon DefenderPlatoon member at offset NorseOffset
+		if NorseGuy exists
+			HEALTH of NorseGuy = 0.2
+		end if
+		NorseOffset++
+	end while
+
+
+	DoomedTown = get TOWN at {1108.277,337.238,1248.590}
+
+
+	wait until PLAYER of DoomedTown == 0
+
+end script AT_TakeOverTown
+
+//-----------------------------------------------------------------
+// Advisors
+//-----------------------------------------------------------------
+begin help script AT_Advisors(ID)
+start
+	AT_CurrentAdvisorLine = ID
+	begin dialogue
+		if ID == AT_ADVISORS_RECRUITING_EXPLAIN
+			eject evil spirit
+			say "BW2T_SCRIPT_03FINAL_ARMYTUTORIAL_RECRUITING_10"
+			wait until read
+
+		elsif ID == AT_ADVISORS_RECRUITING_TENT
+			eject evil spirit
+			say "BW2T_SCRIPT_03FINAL_ARMYTUTORIAL_RECRUITING_20"
+			wait until read
+
+		elsif ID == AT_ADVISORS_MOVE
+			eject evil spirit
+			say "BW2T_SCRIPT_03FINAL_ARMYTUTORIAL_MOVE_10"
+			wait until read
+
+			say "BW2T_SCRIPT_03FINAL_ARMYTUTORIAL_MOVE_20"
+			wait until read
+
+			say "BW2T_SCRIPT_03FINAL_ARMYTUTORIAL_MOVE_30"
+			wait until read
+		elsif ID == AT_ADVISORS_TAKE_OVER_TOWN
+			
+		end if
+
+		send good spirit home
+		send evil spirit home
+
+		ID++ //Quit	
+	end dialogue
+
+until AT_CurrentAdvisorLine == (ID+1)
+end script AT_Advisors
+
+//-----------------------------------------------------------------
+// Attack
+//-----------------------------------------------------------------
+begin script AT_Attack
+	NorsePlatoonCreatePos = marker at {1220.035,313.206,1240.245}
+	Attackers = 0
+	MovePos = marker at {1168.403,332.207,1286.391}
+	MyPlatoonSize = 0
+	NorseGuy = 0
+	NorseOffset = 0
+start
+
+	MyPlatoonSize = get number of villagers in platoon AT_MyPlatoon
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		set game time 22.40
+		wait 1 seconds
+
+		Attackers = create platoon PLATOON_INFO_NORSE_MELEE_2 at {NorsePlatoonCreatePos} with (MyPlatoonSize-10) men and 0 women
+		PLAYER of Attackers = 1
+		disable platoon Attackers camp
+
+		//Make the Norse guys low on health
+		NorseGuy = get platoon Attackers member at offset NorseOffset
+		force while NorseGuy exists
+			NorseGuy = get platoon Attackers member at offset NorseOffset
+			if NorseGuy exists
+				HEALTH of NorseGuy = 0.2
+			end if
+			NorseOffset++
+		end while
+
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {MovePos} to front of Attackers action queue
+
+		set camera position to {753.116,260.381,1859.417}
+		set camera focus to {690.262,220.836,1792.449}
+		set fade in time 1
+		wait 0.5 seconds
+
+		move camera position to {737.203,274.982,1859.538} time 6
+		move camera focus to {709.804,211.343,1787.431} time 6
+		wait 5 seconds
+
+		set camera position to {646.777,286.838,1802.389}
+		set camera focus to {720.923,222.794,1822.408}
+
+		move camera position to {685.551,259.783,1790.833} time 4
+		move camera focus to {757.237,220.613,1848.511} time 4
+		wait 3 seconds
+
+		move camera position to {733.611,260.820,1811.318} time 3
+		move camera focus to {755.303,215.190,1897.622} time 3
+		wait 2 seconds
+
+		move camera position to {773.622,291.270,1841.520} time 3
+		move camera focus to {706.691,220.148,1820.035} time 3
+		wait 3 seconds
+
+		set fade red 255 green 255 blue 255 time 1
+		wait 0.2 seconds
+		set fade in time 0.5
+
+	end cinema
+
+	clear Attackers action queue
+	add action PLATOON_AGENDA_ACTION_ATTACK using AT_MyPlatoon to front of Attackers action queue
+
+	wait until not Attackers exists
+
+end script AT_Attack

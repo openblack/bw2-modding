@@ -1,0 +1,420 @@
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define False = 0
+define True = 1
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global JapanMeleePlatoon_1 = 0
+global JapanMeleePlatoon_2 = 0
+global JapanMeleePlatoon_3 = 0
+global JapanMeleePlatoon_4 = 0 
+global JapanMeleePlatoon_5 = 0
+
+global JapanArcherPlatoon_1 = 0
+global JapanArcherPlatoon_2 = 0
+global JapanArcherPlatoon_3 = 0
+global JapanArcherPlatoon_4 = 0
+global JapanArcherPlatoon_5 = 0
+
+global GreekMeleePlatoon_1 = 0
+global GreekMeleePlatoon_2 = 0
+global GreekMeleePlatoon_3 = 0
+global GreekMeleePlatoon_4 = 0
+global GreekMeleePlatoon_5 = 0
+
+global GreekArcherPlatoon_1 = 0
+global GreekArcherPlatoon_2 = 0
+global GreekArcherPlatoon_3 = 0
+global GreekArcherPlatoon_4 = 0
+global GreekArcherPlatoon_5 = 0
+
+global JapaneseFocus = 0
+
+global PlayerAggresive = False
+
+global ChallengeOver = False
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CreateArmies
+define script MoveArmy
+define script SetFocus
+define script CanArmyAttack
+define script Defensive
+define script WhoWon
+//-----------------------------------------------------------------------------
+run script ArmyDemo // Main function
+//-----------------------------------------------------------------------------
+begin script ArmyDemo
+	ArmyScrollPos = marker at {980.139, 89.090, 1569.213}
+	ArmyScroll = 0
+start
+	ArmyScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ArmyScrollPos}
+	ALTITUDE of ArmyScroll = 5
+	wait until ArmyScroll right clicked
+	delete ArmyScroll
+	//run background script CanArmyAttack
+	run script CreateArmies
+	wait 5 seconds
+	run script MoveArmy
+//	run script SetFocus
+	run background script Defensive
+	run script WhoWon
+end script ArmyDemo
+//-----------------------------------------------------------------------------
+// CreateArmies Create a Greek and Japanese army
+//-----------------------------------------------------------------------------
+begin script CreateArmies
+	JapanTown = 0
+	GreekTown = 0
+start
+	JapaneseFocus = marker at {991.027, 80.101, 1606.261}
+	JapanTown = get TOWN at {738.763, 125.000, 2114.377} radius 100
+	GreekTown = get TOWN at {939.149, 66.125, 723.014} radius 100
+	
+	JapanMeleePlatoon_1 = create platoon PLATOON_INFO_JAPANESE_MELEE_6 at {961.088, 99.797, 1788.695} with 50 men and 0 women
+	PLAYER of JapanMeleePlatoon_1 = 1
+	disable platoon JapanMeleePlatoon_1 camp
+	set JapanMeleePlatoon_1 focus to {JapaneseFocus}
+	
+	JapanMeleePlatoon_2 = create platoon PLATOON_INFO_JAPANESE_MELEE_6 at {990.675, 103.078, 1796.596} with 50 men and 0 women
+	PLAYER of JapanMeleePlatoon_2 = 1
+	disable platoon JapanMeleePlatoon_2 camp
+	set JapanMeleePlatoon_2 focus to {JapaneseFocus}
+	
+	JapanMeleePlatoon_3 = create platoon PLATOON_INFO_JAPANESE_MELEE_6 at {1018.795, 103.110, 1796.627} with 50 men and 0 women
+	PLAYER of JapanMeleePlatoon_3 = 1
+	disable platoon JapanMeleePlatoon_3 camp
+	set JapanMeleePlatoon_3 focus to {JapaneseFocus}
+	
+	JapanMeleePlatoon_4 = create platoon PLATOON_INFO_JAPANESE_MELEE_6 at {992.511, 100.648, 1783.943} with 50 men and 0 women
+	PLAYER of JapanMeleePlatoon_4 = 1
+	disable platoon JapanMeleePlatoon_4 camp
+	set JapanMeleePlatoon_4 focus to {JapaneseFocus}
+	
+	JapanMeleePlatoon_5 = create platoon PLATOON_INFO_JAPANESE_MELEE_6 at {993.484, 98.589, 1771.538} with 50 men and 0 women
+	PLAYER of JapanMeleePlatoon_5 = 1
+	disable platoon JapanMeleePlatoon_5 camp
+	set JapanMeleePlatoon_5 focus to {JapaneseFocus}
+	
+	JapanArcherPlatoon_1 = create platoon PLATOON_INFO_JAPANESE_RANGED_6 at {966.126, 98.625, 1779.539} with 50 men and 0 women
+	PLAYER of JapanArcherPlatoon_1 = 1
+	disable platoon JapanArcherPlatoon_1 camp
+	set JapanArcherPlatoon_1 focus to {JapaneseFocus}
+	
+	JapanArcherPlatoon_2 = create platoon PLATOON_INFO_JAPANESE_RANGED_6 at {1017.867, 102.553, 1783.929} with 50 men and 0 women
+	PLAYER of JapanArcherPlatoon_2 = 1
+	disable platoon JapanArcherPlatoon_2 camp
+	set JapanArcherPlatoon_2 focus to {JapaneseFocus}
+	
+	JapanArcherPlatoon_3 = create platoon PLATOON_INFO_JAPANESE_RANGED_6 at {958.864, 101.260, 1800.630} with 50 men and 0 women
+	PLAYER of JapanArcherPlatoon_3 = 1
+	disable platoon JapanArcherPlatoon_3 camp
+	set JapanArcherPlatoon_3 focus to {JapaneseFocus}
+	
+	JapanArcherPlatoon_4 = create platoon PLATOON_INFO_JAPANESE_RANGED_6 at {990.939, 103.279, 1808.102} with 50 men and 0 women
+	PLAYER of JapanArcherPlatoon_4 = 1
+	disable platoon JapanArcherPlatoon_4 camp
+	set JapanArcherPlatoon_4 focus to {JapaneseFocus}
+	
+	JapanArcherPlatoon_5 = create platoon PLATOON_INFO_JAPANESE_RANGED_6 at {1021.148, 103.227, 1808.530} with 50 men and 0 women
+	PLAYER of JapanArcherPlatoon_5 = 1
+	disable platoon JapanArcherPlatoon_5 camp
+	set JapanArcherPlatoon_5 focus to {JapaneseFocus}
+	
+	GreekMeleePlatoon_1 = create platoon PLATOON_INFO_GREEK_MELEE_10 at {954.848, 72.378, 1629.461} with 50 men and 0 women
+	PLAYER of GreekMeleePlatoon_1 = 0
+	disable platoon GreekMeleePlatoon_1 camp
+	set GreekMeleePlatoon_1 focus to {994.995, 100.514, 1782.843}
+	
+	GreekMeleePlatoon_2 = create platoon PLATOON_INFO_GREEK_MELEE_10 at {977.885, 74.159, 1623.508} with 50 men and 0 women
+	PLAYER of GreekMeleePlatoon_2 = 0
+	disable platoon GreekMeleePlatoon_2 camp
+	set GreekMeleePlatoon_2 focus to {994.995, 100.514, 1782.843}
+	
+	GreekMeleePlatoon_3 = create platoon PLATOON_INFO_GREEK_MELEE_10 at {1001.655, 77.306, 1622.203} with 50 men and 0 women
+	PLAYER of GreekMeleePlatoon_3 = 0
+	disable platoon GreekMeleePlatoon_3 camp
+	set GreekMeleePlatoon_3 focus to {994.995, 100.514, 1782.843}
+	
+	GreekMeleePlatoon_4 = create platoon PLATOON_INFO_GREEK_MELEE_10 at {1024.759, 77.344, 1623.218} with 50 men and 0 women
+	PLAYER of GreekMeleePlatoon_4 = 0
+	disable platoon GreekMeleePlatoon_4 camp
+	set GreekMeleePlatoon_4 focus to {994.995, 100.514, 1782.843}
+	
+	GreekMeleePlatoon_5 = create platoon PLATOON_INFO_GREEK_MELEE_10 at {1049.482, 72.574, 1628.305} with 50 men and 0 women
+	PLAYER of GreekMeleePlatoon_5 = 0
+	disable platoon GreekMeleePlatoon_5 camp
+	set GreekMeleePlatoon_5 focus to {994.995, 100.514, 1782.843}
+
+	GreekArcherPlatoon_1 = create platoon PLATOON_INFO_GREEK_RANGED_10 at {963.478, 80.109, 1600.642} with 50 men and 0 women
+	PLAYER of GreekArcherPlatoon_1 = 0
+	disable platoon GreekArcherPlatoon_1 camp
+	set GreekArcherPlatoon_1 focus to {994.995, 100.514, 1782.843}
+	
+	GreekArcherPlatoon_2 = create platoon PLATOON_INFO_GREEK_RANGED_10 at {987.534, 82.908, 1596.792} with 50 men and 0 women
+	PLAYER of GreekArcherPlatoon_2 = 0
+	disable platoon GreekArcherPlatoon_2 camp
+	set GreekArcherPlatoon_2 focus to {994.995, 100.514, 1782.843}
+	
+	GreekArcherPlatoon_3 = create platoon PLATOON_INFO_GREEK_RANGED_10 at {1012.496, 84.399, 1596.911} with 50 men and 0 women
+	PLAYER of GreekArcherPlatoon_3 = 0
+	disable platoon GreekArcherPlatoon_3 camp
+	set GreekArcherPlatoon_3 focus to {994.995, 100.514, 1782.843}
+	
+	GreekArcherPlatoon_4 = create platoon PLATOON_INFO_GREEK_RANGED_10 at {940.047, 80.594, 1605.737} with 50 men and 0 women
+	PLAYER of GreekArcherPlatoon_4 = 0
+	disable platoon GreekArcherPlatoon_4 camp
+	set GreekArcherPlatoon_4 focus to {994.995, 100.514, 1782.843}
+	
+	GreekArcherPlatoon_5 = create platoon PLATOON_INFO_GREEK_RANGED_10 at {1035.424, 80.156, 1599.492} with 50 men and 0 women
+	PLAYER of GreekArcherPlatoon_5 = 0
+	disable platoon GreekArcherPlatoon_5 camp
+	set GreekArcherPlatoon_5 focus to {994.995, 100.514, 1782.843}
+		
+end script CreateArmies
+//-----------------------------------------------------------------------------
+// CreateArmies Moves Japanese army
+//-----------------------------------------------------------------------------
+begin script MoveArmy
+start
+//----Front Row----//
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.425, 84.763, 1706.693} to front of JapanMeleePlatoon_5 action queue
+	wait until not {JapanMeleePlatoon_5} near {JapanMeleePlatoon_4} radius 25
+//----Second Row----//
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.685, 87.090, 1719.575} to front of JapanMeleePlatoon_4 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {971.789, 85.376, 1718.025} to front of JapanArcherPlatoon_1 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1021.159, 87.676, 1718.932} to front of JapanArcherPlatoon_2 action queue
+	wait until not {JapanMeleePlatoon_4} near {JapanMeleePlatoon_2} radius 25
+//----Third Row----//
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.887, 89.725, 1732.982} to front of JapanMeleePlatoon_2 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {971.370, 88.271, 1730.290} to front of JapanMeleePlatoon_1 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1023.353, 90.416, 1731.509} to front of JapanMeleePlatoon_3 action queue
+	wait until not {JapanMeleePlatoon_2} near {JapanArcherPlatoon_4} radius 25
+//----Fourth Row----//
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {970.610, 93.433, 1742.262} to front of JapanArcherPlatoon_3 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {998.243, 93.313, 1744.620} to front of JapanArcherPlatoon_4 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1026.106, 93.450, 1743.582} to front of JapanArcherPlatoon_5 action queue
+end script MoveArmy
+//-----------------------------------------------------------------------------
+//  SetFocus Sets the focus of the Japanese army
+//-----------------------------------------------------------------------------
+begin script SetFocus
+start
+		set JapanMeleePlatoon_1 focus to {JapaneseFocus}
+		set JapanMeleePlatoon_2 focus to {JapaneseFocus}
+		set JapanMeleePlatoon_3 focus to {JapaneseFocus}
+		set JapanMeleePlatoon_4 focus to {JapaneseFocus}
+		set JapanMeleePlatoon_5 focus to {JapaneseFocus}
+		set JapanArcherPlatoon_1 focus to {JapaneseFocus}
+		set JapanArcherPlatoon_2 focus to {JapaneseFocus}
+		set JapanArcherPlatoon_3 focus to {JapaneseFocus}
+		set JapanArcherPlatoon_4 focus to {JapaneseFocus}
+		set JapanArcherPlatoon_5 focus to {JapaneseFocus}
+end script SetFocus
+//-----------------------------------------------------------------------------
+//  CanArmyAttack Checks if the player has given an order to any of there units
+//-----------------------------------------------------------------------------
+begin script CanArmyAttack
+start
+	while PlayerAggresive == False
+		if get size of GreekArcherPlatoon_1 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekArcherPlatoon_2 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekArcherPlatoon_3 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekArcherPlatoon_4 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekArcherPlatoon_5 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekMeleePlatoon_1 action queue > 0	
+			PlayerAggresive = True
+		elsif get size of GreekMeleePlatoon_2 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekMeleePlatoon_3 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekMeleePlatoon_4 action queue > 0
+			PlayerAggresive = True
+		elsif get size of GreekMeleePlatoon_5 action queue > 0
+			PlayerAggresive = True
+		end if
+	end while
+end script CanArmyAttack
+//-----------------------------------------------------------------------------
+//  Defensive Orders the japanese platoons to defend each other
+//-----------------------------------------------------------------------------
+begin script Defensive
+	Column1Fighting = False
+	Column2Fighting = False
+	Column3Fighting = False
+start
+	while ChallengeOver == False
+	
+//---------Center Column---------//
+		if Column1Fighting == False and platoon JapanMeleePlatoon_5 melee fighting
+			Column1Fighting = True
+			add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using JapanMeleePlatoon_5 to front of JapanMeleePlatoon_4 action queue
+			add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using JapanMeleePlatoon_5 to front of JapanMeleePlatoon_2 action queue
+			add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using JapanMeleePlatoon_5 to front of JapanArcherPlatoon_4 action queue
+		elsif Column1Fighting == True and not platoon JapanMeleePlatoon_5 melee fighting
+			Column1Fighting = False
+			clear JapanMeleePlatoon_5 action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.425, 84.763, 1706.693} to front of JapanMeleePlatoon_5 action queue
+			if not platoon JapanMeleePlatoon_4 melee fighting
+				clear JapanMeleePlatoon_4 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.685, 87.090, 1719.575} to front of JapanMeleePlatoon_4 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.685, 87.090, 1719.575} to next in JapanMeleePlatoon_4 action queue
+			end if
+			if not platoon JapanMeleePlatoon_2 melee fighting
+				clear JapanMeleePlatoon_2 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.887, 89.725, 1732.982} to front of JapanMeleePlatoon_2 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.887, 89.725, 1732.982} to next in JapanMeleePlatoon_2 action queue
+			end if	
+			if not platoon JapanArcherPlatoon_4 melee fighting and not platoon JapanArcherPlatoon_4 ranged fighting
+				clear JapanArcherPlatoon_4 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {998.243, 93.313, 1744.620} to front of JapanArcherPlatoon_4 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {998.243, 93.313, 1744.620} to next in JapanArcherPlatoon_4 action queue
+			end if
+		end if 
+		if not {JapanMeleePlatoon_5} near {996.425, 84.763, 1706.693} radius 20
+			clear JapanMeleePlatoon_5 action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {996.425, 84.763, 1706.693} to front of JapanMeleePlatoon_5 action queue
+		end if
+//---------Left Column---------//	
+		if Column2Fighting == False and (platoon JapanArcherPlatoon_1 ranged fighting or platoon JapanArcherPlatoon_1 melee fighting)
+			Column2Fighting = True
+				add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using JapanArcherPlatoon_1 to front of JapanMeleePlatoon_1 action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using JapanArcherPlatoon_1 to front of JapanArcherPlatoon_3 action queue
+		elsif Column2Fighting == True and not platoon JapanArcherPlatoon_1 melee fighting and not platoon JapanArcherPlatoon_1 ranged fighting
+			Column2Fighting = False
+			clear JapanArcherPlatoon_1 action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {971.789, 85.376, 1718.025} to front of JapanArcherPlatoon_1 action queue
+			if not platoon JapanMeleePlatoon_1 melee fighting
+				clear JapanMeleePlatoon_1 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {971.370, 88.271, 1730.290} to front of JapanMeleePlatoon_1 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {971.370, 88.271, 1730.290} to next in JapanMeleePlatoon_1 action queue
+			end if
+			if not platoon JapanArcherPlatoon_3 melee fighting and not platoon JapanArcherPlatoon_3 ranged fighting
+				clear JapanArcherPlatoon_3 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {970.610, 93.433, 1742.262} to front of JapanArcherPlatoon_3 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {970.610, 93.433, 1742.262} to next in JapanArcherPlatoon_3 action queue
+			end if	
+		end if 
+		if not {JapanArcherPlatoon_1} near {971.789, 85.376, 1718.025} radius 20
+			clear JapanArcherPlatoon_1 action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {971.789, 85.376, 1718.025} to front of JapanArcherPlatoon_1 action queue
+		end if
+//---------Right Column---------//		
+		if Column3Fighting == False and (platoon JapanArcherPlatoon_2 ranged fighting or platoon JapanArcherPlatoon_2 melee fighting)
+			Column3Fighting = True
+				add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using JapanArcherPlatoon_2 to front of JapanMeleePlatoon_3 action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using JapanArcherPlatoon_2 to front of JapanArcherPlatoon_5 action queue
+		elsif Column3Fighting == True and not platoon JapanArcherPlatoon_2 melee fighting and not platoon JapanArcherPlatoon_2 ranged fighting
+			Column3Fighting = False
+			clear JapanArcherPlatoon_2 action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1021.159, 87.676, 1718.932} to front of JapanArcherPlatoon_2 action queue
+			if not platoon JapanMeleePlatoon_3 melee fighting
+				clear JapanMeleePlatoon_3 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1023.353, 90.416, 1731.509} to front of JapanMeleePlatoon_3 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1023.353, 90.416, 1731.509} to next in JapanMeleePlatoon_3 action queue
+			end if
+			if not platoon JapanArcherPlatoon_5 melee fighting and not platoon JapanArcherPlatoon_3 ranged fighting
+				clear JapanArcherPlatoon_5 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1026.106, 93.450, 1743.582} to front of JapanArcherPlatoon_5 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1026.106, 93.450, 1743.582} to next in JapanArcherPlatoon_5 action queue
+			end if	
+		end if 
+		if not platoon JapanArcherPlatoon_2 ranged fighting and not {JapanArcherPlatoon_2} near {1021.159, 87.676, 1718.932} radius 20
+			clear JapanArcherPlatoon_2 action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1021.159, 87.676, 1718.932} to front of JapanArcherPlatoon_2 action queue
+		end if		
+	end while
+end script Defensive
+//-----------------------------------------------------------------------------
+//  WhoWon Decides who won the battle
+//-----------------------------------------------------------------------------
+begin script WhoWon
+start
+	while ChallengeOver == False
+	//Greeks Lost
+		if GreekMeleePlatoon_3 not exists and GreekMeleePlatoon_4 not exists and GreekMeleePlatoon_5 not exists and GreekArcherPlatoon_1 not exists and GreekArcherPlatoon_2 not exists and GreekArcherPlatoon_3 not exists and GreekArcherPlatoon_4 not exists and GreekArcherPlatoon_5 not exists
+			ChallengeOver = True
+			wait 10 seconds
+			if JapanMeleePlatoon_1 exists
+				delete JapanMeleePlatoon_1
+			end if	
+			if JapanMeleePlatoon_2 exists
+				delete JapanMeleePlatoon_2
+			end if	
+			if JapanMeleePlatoon_3 exists
+				delete JapanMeleePlatoon_3
+			end if	
+			if JapanMeleePlatoon_4 exists
+				delete JapanMeleePlatoon_4
+			end if	
+			if JapanMeleePlatoon_5 exists
+				delete JapanMeleePlatoon_5
+			end if	
+			if JapanArcherPlatoon_1 exists
+				delete JapanArcherPlatoon_1
+			end if		
+			if JapanArcherPlatoon_2 exists
+				delete JapanArcherPlatoon_2
+			end if	
+			if JapanArcherPlatoon_3 exists
+				delete JapanArcherPlatoon_3
+			end if	
+			if JapanArcherPlatoon_4 exists
+				delete JapanArcherPlatoon_4
+			end if	
+			if JapanArcherPlatoon_5 exists
+				delete JapanArcherPlatoon_5
+			end if					
+	//Japanese Lost	
+		elsif JapanMeleePlatoon_1 not exists and JapanMeleePlatoon_2 not exists and JapanMeleePlatoon_3 not exists and JapanMeleePlatoon_4 not exists and JapanMeleePlatoon_5 not exists and JapanArcherPlatoon_1 not exists and JapanArcherPlatoon_2 not exists and JapanArcherPlatoon_3 not exists and JapanArcherPlatoon_4 not exists and JapanArcherPlatoon_5 not exists
+			ChallengeOver = True
+			wait 5 seconds
+			if GreekMeleePlatoon_1 exists
+				delete GreekMeleePlatoon_1
+			end if	
+			if GreekMeleePlatoon_2 exists
+				delete GreekMeleePlatoon_2
+			end if	
+			if GreekMeleePlatoon_3 exists
+				delete GreekMeleePlatoon_3
+			end if	
+			if GreekMeleePlatoon_4 exists
+				delete GreekMeleePlatoon_4
+			end if	
+			if GreekMeleePlatoon_5 exists
+				delete GreekMeleePlatoon_5
+			end if	
+			if GreekArcherPlatoon_1 exists
+				delete GreekArcherPlatoon_1
+			end if		
+			if GreekArcherPlatoon_2 exists
+				delete GreekArcherPlatoon_2
+			end if	
+			if GreekArcherPlatoon_3 exists
+				delete GreekArcherPlatoon_3
+			end if	
+			if GreekArcherPlatoon_4 exists
+				delete GreekArcherPlatoon_4
+			end if	
+			if GreekArcherPlatoon_5 exists
+				delete GreekArcherPlatoon_5
+			end if	
+		end if
+	end while
+end script WhoWon

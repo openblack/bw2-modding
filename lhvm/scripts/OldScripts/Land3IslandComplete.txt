@@ -1,0 +1,29 @@
+//------------------------------------------------
+//  LAND 3 ISLAND COMPLETE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land3IslandComplete
+start
+
+begin cinema
+	
+	set camera position to {1489.805, 605.758, 39.148}
+	set camera focus to {1489.774, 605.350, 40.061}
+	move camera position to {1128.641, 677.632, 125.239} time 10
+	move camera focus to {1128.862, 677.173, 126.099} time 10
+	say "The L3 Island Complete Cut-Scene has not been implemented yet."
+	wait until read
+	say "The player learns the location of the Japanese Capitol City"
+	wait until read
+	say "Conquering this city would make the entire race submissive"
+	wait until read
+	say "And so Dimitrios decides to head off there."
+	wait until read
+	set camera position to {880.427,204.363,734.162}
+	set camera focus to {-765.482,0.041,-480.725}
+	say "Click this scroll by the Boat Master when you want to leave for Japan."
+	wait until read
+end cinema
+
+end script Land3IslandComplete

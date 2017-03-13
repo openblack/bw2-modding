@@ -1,0 +1,1162 @@
+//================================================================
+// Land 1 Villager Tutorial
+// Matt.L
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+define VC_FALSE		= 0
+define VC_TRUE		= 1
+
+//Action defines
+define VC_ACTION_NONE				= 0
+define VC_ACTION_FORESTER			= 1
+define VC_ACTION_FARMER				= 2
+define VC_ACTION_BUILDER			= 3
+define VC_ACTION_BREEDER			= 4
+define VC_ACTION_MOVE_IN_HOUSE		= 5
+
+//Advisor defines
+define VC_ADVISOR_NONE				= 0
+
+//Hand overs
+define VC_ADVISOR_OVER_FORESTER		= 1
+define VC_ADVISOR_OVER_FARMER		= 2
+define VC_ADVISOR_OVER_BREEDER		= 3
+define VC_ADVISOR_OVER_BUILDER		= 4
+define VC_ADVISOR_OVER_HOUSE		= 5
+
+//Doings
+define VC_ADVISOR_DOING_FORESTER	= 6
+define VC_ADVISOR_DOING_FARMER		= 7
+define VC_ADVISOR_DOING_BREEDER 	= 8
+define VC_ADVISOR_DOING_BUILDER 	= 9
+define VC_ADVISOR_DOING_HOUSE		= 10
+
+define VC_ADVISOR_DROP				= 11
+define VC_ADVISOR_PICKUP			= 12
+
+define VC_DEBUG_SHOW_INTRO			= VC_TRUE
+
+define VC_TIMER_WAIT_SECONDS		= 8
+define VC_REGROW_TIME				= 8
+define VC_MOUSE_HELPER_TIME			= 2.5
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global VC_Completed				= VC_FALSE
+global VC_ReleaseWoman			= VC_FALSE
+global VC_DoneBreeding			= VC_FALSE
+global VC_WomanReady			= VC_FALSE
+global VC_DropFlag				= VC_FALSE
+global VC_ReleaseNow			= VC_FALSE
+global VC_BuildNow				= VC_FALSE
+global VC_CurrentAdvisor		= VC_ADVISOR_NONE
+global VC_CurrentAction			= VC_ACTION_NONE
+global VC_House					= 0
+global VC_BuildHouse			= 0
+global VC_Woman					= 0
+global VC_A_Man					= 0
+global VC_ActionsDone			= 0
+global VC_Field					= 0
+global VC_FieldGrowth			= 1
+global VC_TreePos				= 0
+global VC_FoodStore				= 0
+global VC_FinishedBuilding		= 0
+global VC_BreedingNow			= 0
+global VC_IntroDone				= 0
+global VC_RepeatTimers[6]
+global VC_ActionHighlights[7]
+global VC_Actions[6]
+global AntiInfluence2			= 0
+global VC_BuilderDead			= VC_FALSE
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+define script VC_Intro
+define script VC_ManControl
+define script VC_WomanControl
+define script VC_ActionTracker
+define script VC_Advisors(ID)
+define script VC_BuildHouseNow(Me)
+define script VC_SpawnTrees
+define script VC_RegrowField
+define script VC_VillagerIndestructible(Me)
+
+//-----------------------------------------------------------------
+// Land 1 Stone Circle
+//-----------------------------------------------------------------
+begin script Land1VillagerTutorial
+	ScrollPos		= marker at {884.318, 66.576, 1483.716}
+	Scroll			= 0
+	ReminderTimer	= create timer for 0 seconds
+start
+	
+	if not L1_Town exists
+		run script Land1Globals
+	end if
+
+	VC_TreePos = marker at {873.749, 69.4, 1505.541}  //marker at {885.943, 69.200, 1501.205}
+
+	//Get the main house
+	VC_House = get HOUSE at {895.339, 66.942, 1488.741} radius 5
+	enable VC_House indestructible
+	BUILT of VC_House = 1
+	HEALTH of VC_House = 1
+	AntiInfluence2 = create anti influence on VC_House radius 15
+
+	wait until L1_ShowDiscipleTutorialScroll == 1 or SkippedTutorials == 1
+
+	Scroll = create highlight BRONZE name "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_MISC_10" remind "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_MISC_20" at {ScrollPos}	
+	
+	if SkippedTutorials == 0
+		reset all objectives for player 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_60"
+	end if
+
+	//Wait to start
+	begin loop
+		if get distance from camera position to {Scroll} < 40 and {Scroll} viewed and get ReminderTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_200"
+				wait 0.4 seconds
+				make good spirit point at {Scroll}
+				wait until read
+				set ReminderTimer time to 120 seconds
+			end dialogue
+		end if
+
+		//if TutScroll == 1 and Scroll exists
+		//	delete Scroll
+		//elsif Scroll not exists and L1_InAScroll != 1 and InRockMan == 0 and TutScroll == 0
+		//	Scroll = create highlight BRONZE name "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_MISC_10" remind "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_MISC_20" at {ScrollPos}	
+		//end if
+
+
+	until Scroll right clicked
+	end loop
+
+	delete AntiInfluence2
+
+	TutScroll = 1
+
+	VC_Field = get FIELD_OBJECT at {870.006, 66.566, 1486.216} radius 15
+	set field VC_Field height to 1
+
+	delete Scroll
+
+	//Disable god building for this tutorial
+	disable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+	run background script VC_SpawnTrees
+
+	run background script VC_WomanControl
+	run script VC_Intro
+
+	//Uncomment is not using intro
+	//run background script VC_ManControl
+	//VC_ActionHighlights[VC_ACTION_FARMER] = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {871.787, 69.50, 1489.836}  time -1
+	////create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.15 at {871.787, 69.50, 1489.836}  time -1
+	//SCALE of VC_ActionHighlights[VC_ACTION_FARMER] = 0.15
+	//set VC_ActionHighlights[VC_ACTION_FARMER] colour red 255 green 0 blue 0
+
+	//VC_ActionHighlights[VC_ACTION_FORESTER] = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {VC_TreePos}  time -1
+	////create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.15 at {VC_TreePos} time -1
+	//SCALE of VC_ActionHighlights[VC_ACTION_FORESTER] = 0.15
+	//set VC_ActionHighlights[VC_ACTION_FORESTER]colour red 255 green 0 blue 0
+
+	//VC_ActionHighlights[VC_ACTION_BUILDER] = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {886.735, 68.000, 1491.574}  time -1
+	////create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.15 at {886.735, 68.000, 1491.574} time -1
+	//SCALE of VC_ActionHighlights[VC_ACTION_BUILDER] = 0.15
+	//set VC_ActionHighlights[VC_ACTION_BUILDER] colour red 255 green 0 blue 0
+
+	if SkippedTutorials == 0
+		reset all objectives for player 0
+		enable objectives window
+	end if
+	//Objectives
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_50"
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_10"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 parent objective TRIBUTE_OBJECTIVE_LAND_21
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_20"	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 parent objective TRIBUTE_OBJECTIVE_LAND_21
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_40"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 parent objective TRIBUTE_OBJECTIVE_LAND_21
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_25 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_25 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_30"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_25 parent objective TRIBUTE_OBJECTIVE_LAND_21
+
+	//disable player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+
+	//Get the building house
+	VC_BuildHouse = get HOUSE at {884.067, 67.166, 1492.506} radius 2
+	BUILT of VC_BuildHouse = 0.01
+
+	run background script VC_ActionTracker
+
+	begin loop
+		if VC_ReleaseNow == VC_TRUE
+			VC_ReleaseNow = VC_FALSE
+			VC_ActionsDone++
+			if VC_ActionsDone != 4
+				run background script VC_ManControl
+			end if
+			/*if VC_Actions[VC_ACTION_FORESTER] == VC_TRUE and VC_Actions[VC_ACTION_FARMER] == VC_TRUE and VC_Actions[VC_ACTION_BUILDER] == VC_TRUE
+				VC_ReleaseWoman = VC_TRUE				
+			end if*/
+		end if
+	until VC_Completed == VC_TRUE
+	end loop
+
+	//Re-enable god building
+	//enable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_VILLAGERTUTORIAL
+	TutScroll = 0
+	//disable VC_House indestructible
+	///disable VC_BuildHouse indestructible
+
+	wait 2 seconds
+	begin dialogue
+		eject evil spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_190"
+		wait until read
+		send evil spirit home
+
+		if SkippedTutorials == 0
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_PICKUP158"
+			wait until read
+			send good spirit home
+		end if
+		
+	end dialogue
+
+	L1_ShowEloi = 1
+
+	L1_DiscipleTutorialComplete = 1
+	L1_DisplayRockManScroll = RM_TRUE
+
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_21
+
+	//if SkippedTutorials == 1
+	//	reset all objectives for player 0	
+	//	set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 amount 1 force open
+	//	set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_LEAVE_10"
+	//end if
+
+end script Land1VillagerTutorial
+
+//-----------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------
+begin script VC_Intro
+	TutVid=0
+	farmerpos = marker at {875.549, 67.432, 1486.542} + {0,0.9,0}
+	forestpos = marker at {VC_TreePos} + {0,0.5,0}
+start
+	begin fullscreen cinema 	
+		//set fade red 0 green 0 blue 0 time 1
+		//wait 1 seconds
+		run background script VC_ManControl	
+		stop music
+		start music "farming_success_land2" loop 3
+		wait 1 seconds
+		move camera position to {890.787, 77.148, 1471.431} time 4
+		move camera focus to {860.074, 27.229, 1552.449} time 4
+		set fade in time 1
+
+		eject good spirit
+		make good spirit fly across 0.7 down 0.53
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_40"				
+		wait 4 seconds	
+		wait until read
+
+		eject evil spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_60"		
+
+		VC_ActionHighlights[VC_ACTION_FARMER] = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {farmerpos} time -1//{872.144, 68, 1487.434}  time -1
+		SCALE of VC_ActionHighlights[VC_ACTION_FARMER] = 0.8
+		set VC_ActionHighlights[VC_ACTION_FARMER] colour red 255 green 0 blue 0
+
+		VC_ActionHighlights[VC_ACTION_FORESTER] = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {forestpos}  time -1
+		SCALE of VC_ActionHighlights[VC_ACTION_FORESTER] = 0.5
+		set VC_ActionHighlights[VC_ACTION_FORESTER]colour red 255 green 0 blue 0
+
+		VC_ActionHighlights[VC_ACTION_BUILDER] = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {886.010, 68.3, 1490.883}  time -1
+		SCALE of VC_ActionHighlights[VC_ACTION_BUILDER] = 0.5
+		set VC_ActionHighlights[VC_ACTION_BUILDER] colour red 255 green 0 blue 0
+
+		move camera position to {890.601, 76.844, 1471.923} time 20 easein 0 easeout 1
+		move camera focus to {890.294, 76.345, 1472.733} time 20 easein 0 easeout 1
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_70"
+		wait until read
+
+		//Lenny - please don't change this position. It's setup for the tutorial
+		move camera position to {902.395, 81.419, 1463.941} time 6
+		move camera focus to {846.731, 51.480, 1541.431} time 6
+
+		make evil spirit fly across 0.2 down 0.3
+		make good spirit fly across 0.8 down 1
+
+		TutVid = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+		play video "Land1 Pick Up Villager"
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_80"
+		wait until read
+
+		wait until not video is playing
+
+		make good spirit fly across 0.75 down 0.4
+
+		wait until camera ready
+		send good spirit home
+		send evil spirit home
+		wait 2 seconds
+
+		VC_IntroDone = VC_TRUE
+
+		stop music with fadetime 2
+
+	end cinema
+
+end script VC_Intro
+
+//-----------------------------------------------------------------
+// Land 1 Man Control
+//-----------------------------------------------------------------
+begin script VC_ManControl
+	HouseDoorPos	= marker at {0, 0, 0} //marker at {894.568, 66.937, 1488.600}
+	MeIdlePos		= marker at {891.392, 66.859, 1480.789}
+	PutDownPos		= marker at {893.044, 67.086, 1485.980}	
+	BuildPos[2]
+
+	RandomAction	= 0
+	RandomPosition	= 0
+
+	Me				= 0
+	Action			= VC_ACTION_NONE
+
+	FieldPos		= marker at {871.881, 66.768, 1487.622}
+	Tree			= 0
+	WoodStore		= 0
+	WoodStorePos	= 0
+	ChoppedTrees	= 0
+
+	FoodStorePos	= marker at {882.806, 66.938, 1485.358}
+
+	RelPos			= 0
+
+	ChopWoodPos		= marker at {889.114, 70.085, 1508.096}	
+	BuildBetweenPos = marker at {886.956, 67.155, 1489.534} //stop him walking through the building
+
+	LastPosition	= 0
+	ReminderTimer	= create timer for 37 seconds
+	IconHelperTimer = create timer for VC_MOUSE_HELPER_TIME seconds
+	MyHelperIcon	= 0
+	TeleportFX		= 0
+	Influence		= 0
+
+start
+
+	HouseDoorPos = marker at extra position 0 of VC_House
+
+	BuildPos[0] = marker at {887.727, 67.159, 1492.262}
+	BuildPos[1] = marker at {885.686, 67.165, 1491.140}
+
+	//Completed loop
+	while VC_Completed == VC_FALSE
+		
+		Me = create VILLAGER INDIGENOUS_FARMER at {VC_House}
+		//Me = create VILLAGER INDIGENOUS_FARMER at {HouseDoorPos}
+		disable Me reactable
+
+			//BODGE
+		enable Me indestructible
+		attach Me to L1_Town
+		VC_A_Man = Me
+
+		//if MyHelperIcon exists
+		//	delete MyHelperIcon
+		//end if
+
+		//Health loop
+		begin loop
+
+			run background script VC_VillagerIndestructible(Me)
+			//Reset current action
+			VC_CurrentAction = VC_ACTION_NONE
+
+			//Move to idle position
+			move Me position to {MeIdlePos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+			SPEED of Me = 0.2
+			wait until {Me} at {MeIdlePos} or Me is HELD
+
+			//Idle loop
+			begin loop
+				RandomAction = number from 1 to 2
+				move villager Me focus to camera position
+
+				if RandomAction == 1
+					play anim "a_p_beckon" on Me
+				elsif RandomAction == 2
+					play anim "a_p_attract_your_attention" on Me
+				end if
+
+				wait until Me played
+
+				if get ReminderTimer time remaining == 0
+					run background script VC_Advisors(VC_ADVISOR_PICKUP)
+					set ReminderTimer time to 30 seconds
+				end if
+
+				//Check helper timer
+				if SkippedTutorials == 0
+					if get IconHelperTimer time remaining == 0 and VC_IntroDone == VC_TRUE
+						MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Me x offset 0.05 y offset -0.03
+						set IconHelperTimer time to 500000 seconds
+					end if
+				end if
+
+			until Me is HELD or VC_Woman is HELD
+			end loop //end of idle loop
+
+			//remove helper icon
+			remove world icon MyHelperIcon
+			set IconHelperTimer time to VC_MOUSE_HELPER_TIME seconds
+
+			if VC_DropFlag == VC_FALSE
+				run background script VC_Advisors(VC_ADVISOR_DROP)
+				VC_DropFlag = VC_TRUE
+			end if
+
+			while Action == VC_ACTION_NONE and HEALTH of Me > 0
+
+				if not {Me} near {MeIdlePos} radius 60 and not Me is HELD and not Me is FLYING or not {Me} on land and not Me is HELD and not Me is FLYING
+
+					begin fullscreen cinema
+
+						move camera focus to {Me} time 1.5						
+						TeleportFX = create visual effect "gp_s_samurai_teleport.ves" strength 1 scale 0.6 at {Me} time 5 target {Me} + {0, 2, 0}
+						set TeleportFX colour red 155 green 255 blue 255
+						wait 4 seconds
+
+						TeleportFX = create visual effect "gp_s_samurai_teleport.ves" strength 1 scale 0.6 at {MeIdlePos} time 5 target {MeIdlePos} + {0, 2, 0}
+						set TeleportFX colour red 155 green 255 blue 255
+
+						move camera position to {890.860, 77.266, 1471.239} time 3
+						move camera focus to {860.117, 27.323, 1552.233} time 3
+
+						set Me position to {MeIdlePos}						
+						play anim "a_p_beckon" on Me
+						wait until Me played
+						wait until camera ready
+
+					end cinema
+
+				end if
+
+				if not Me is HELD				
+					
+					begin loop
+
+						if {Me} at {MeIdlePos}
+							move villager Me focus to camera position
+							play anim "a_p_beckon" on Me
+							wait until Me played
+
+						elsif not {Me} at {MeIdlePos} and variable get Me navigation state != variable NAV_STATE_NAVIGATING 
+							move Me position to {MeIdlePos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation	
+							
+						end if
+
+					until Me is HELD or not {Me} near {MeIdlePos} radius 60
+					end loop
+
+				end if
+
+				if not Me is FLYING
+
+					//Get a tree
+					Tree = get TREE at {Me} radius 5
+
+					//Build action
+					if {Me} near {VC_BuildHouse} radius 5 and VC_Actions[VC_ACTION_BUILDER] == VC_FALSE
+
+						//Set some groovy stuff
+						set VC_ActionHighlights[VC_ACTION_BUILDER] colour red 0 green 255 blue 0
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+
+						begin loop
+							set Me disciple VILLAGER_DISCIPLE_BUILDER
+						until not {Me} near {VC_BuildHouse} radius 5 or not Me is HELD
+						end loop
+
+						wait until Me is not FLYING
+
+						if not Me is HELD and HEALTH of Me > 0 and {Me} near {VC_BuildHouse} radius 5
+							Action = VC_ACTION_BUILDER
+							run background script VC_Advisors(VC_ADVISOR_DOING_BUILDER)
+						else
+							set VC_ActionHighlights[VC_ACTION_BUILDER] colour red 255 green 0 blue 0
+							disable hand icon draw
+						end if
+
+					//Forest action					
+					elsif (Tree exists or {Me} near {ChopWoodPos} radius 5 or {Me} near {VC_TreePos} radius 5) and VC_Actions[VC_ACTION_FORESTER] == VC_FALSE and {Me} near {MeIdlePos} radius 60
+						
+
+						//Get a tree
+						if not Tree exists
+							Tree = get TREE at {Me} radius 30
+						end if
+						disable Tree pickup
+
+						//Set some groovy stuff
+						set VC_ActionHighlights[VC_ACTION_FORESTER] colour red 0 green 255 blue 0
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+						
+						begin loop
+							set Me disciple VILLAGER_DISCIPLE_FORESTER		
+						until not {Me} near {Tree} radius 5 and not {Me} near {VC_TreePos} radius 5 or not Me is HELD
+						end loop
+
+						wait until Me is not FLYING
+
+						if not Me is HELD and HEALTH of Me > 0 and (Tree exists or {Me} near {ChopWoodPos} radius 5 or {Me} near {VC_TreePos} radius 5)
+							Action = VC_ACTION_FORESTER
+							run background script VC_Advisors(VC_ADVISOR_DOING_FORESTER)
+						else
+							set VC_ActionHighlights[VC_ACTION_FORESTER] colour red 255 green 0 blue 0
+							disable hand icon draw
+						end if
+					
+					//Farmer action
+					elsif {Me} near {FieldPos} radius 7 and VC_Actions[VC_ACTION_FARMER] == VC_FALSE
+
+						//Set some groovy stuff
+						set VC_ActionHighlights[VC_ACTION_FARMER] colour red 0 green 255 blue 0
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+						
+						begin loop
+							set Me disciple VILLAGER_DISCIPLE_FARMER
+						until not {Me} near {FieldPos} radius 7 or not Me is HELD
+						end loop
+						
+						wait until Me is not FLYING
+
+						if not Me is HELD and HEALTH of Me > 0 and {Me} near {FieldPos} radius 7
+							Action = VC_ACTION_FARMER
+							run background script VC_Advisors(VC_ADVISOR_DOING_FARMER)
+						else
+							set VC_ActionHighlights[VC_ACTION_FARMER] colour red 255 green 0 blue 0
+							disable hand icon draw
+						end if
+
+					//Breeding action
+					elsif VC_Woman exists and VC_Actions[VC_ACTION_BREEDER] == VC_FALSE
+						if {Me} near {VC_Woman} radius 5 and VC_WomanReady == VC_TRUE and VC_BreedingNow == VC_FALSE
+
+							//Set some groovy stuff
+							set VC_ActionHighlights[VC_ACTION_BREEDER] colour red 0 green 255 blue 0
+							enable hand icon draw
+							set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+
+							begin loop
+								set Me disciple VILLAGER_DISCIPLE_BREEDER
+							until not {Me} near {VC_Woman} radius 5 or (not Me is HELD and not VC_Woman is HELD)
+							end loop
+
+							wait until Me is not FLYING
+
+							if not Me is HELD and HEALTH of Me > 0 and {Me} near {VC_Woman} radius 5
+								disable VC_Woman pickup
+								VC_BreedingNow = VC_TRUE
+								Action = VC_ACTION_BREEDER
+							else
+								set VC_ActionHighlights[VC_ACTION_BREEDER] colour red 255 green 0 blue 0
+							end if
+
+						end if
+
+					end if
+			
+				end if
+
+			end while
+
+			VC_CurrentAction = Action
+
+			//Stop the visual FX
+			stop visual effect VC_ActionHighlights[Action]
+
+			disable hand icon draw
+
+			//-- Perform specific action --
+			disable Me pickup
+			disable Me moveable
+			enable Me indestructible
+
+
+			//Chop the tree
+			if Action == VC_ACTION_FORESTER
+
+				//Set objective
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_LAND_23
+
+				VC_ReleaseNow = VC_TRUE
+				VC_Actions[VC_ACTION_FORESTER] = VC_TRUE
+
+				while ChoppedTrees < 5
+
+					move Me position to {Tree}
+					wait until {Me} near {Tree} radius 1.5
+
+					set Me carrying CARRIED_OBJECT_AXE
+					play anim "a_p_chopping_tree" on Me loop 2
+					wait until Me played
+					set Me carrying CARRIED_OBJECT_NONE
+
+					disable Me reactable
+					move Me position to {MeIdlePos}
+					SPEED of Me = 0.4
+					WoodStorePos = marker at {Me}
+
+					enable Tree indestructible
+					set Tree velocity heading {Tree} + {0, 0, 3} speed 2
+
+					wait 2 seconds
+					reset Me anim speed				
+					wait 1 seconds
+					
+					delete Tree
+					WoodStore = create STORE WOOD at {WoodStorePos}
+					add resource WOOD 400 to WoodStore
+					
+					wait 2 seconds
+
+					enable Me reactable
+					SPEED of Me = 0.2
+
+					ChoppedTrees++
+					Tree = get TREE at {Me} radius 30
+					if not Tree exists
+						ChoppedTrees = 5
+					end if
+
+				end while
+
+				move Me position to extra position 1 of VC_House
+				wait until {Me} at extra position 1 of VC_House
+
+				move Me to limbo
+
+			//Farm the field
+			elsif Action == VC_ACTION_FARMER
+
+				//Set objective	
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_LAND_22
+
+				VC_ReleaseNow = VC_TRUE
+				VC_Actions[VC_ACTION_FARMER] = VC_TRUE
+
+				begin loop
+					move Me position to {FieldPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+					wait until {Me} at {FieldPos} or Me is HELD
+
+					set Me carrying CARRIED_OBJECT_SCYTHE
+					play anim "a_p_farmer_harvesting" on Me loop 2
+					wait until Me played or Me is HELD
+					set Me carrying CARRIED_OBJECT_BAG
+
+					VC_FieldGrowth -= 0.3
+					set field VC_Field height to VC_FieldGrowth
+
+					move Me position to {FoodStorePos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+					wait until {Me} near {FoodStorePos} radius 2 or Me is HELD
+
+					if not VC_FoodStore exists
+						VC_FoodStore = create STORE FOOD at {FoodStorePos}
+					end if
+
+					stop Me moving
+
+					add resource FOOD 400 to VC_FoodStore
+
+					set Me carrying CARRIED_OBJECT_NONE
+
+					wait 1 seconds				
+				end loop
+
+			//Build the house
+			elsif Action == VC_ACTION_BUILDER
+
+				//Make sure the house is un-built
+				BUILT of VC_BuildHouse = 0
+
+				//run background script VC_BuildHouseNow(Me)
+
+				//Set objective
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_LAND_24
+
+				VC_ReleaseNow = VC_TRUE
+				VC_Actions[VC_ACTION_BUILDER] = VC_TRUE
+
+				begin loop
+					VC_BuildNow = VC_FALSE					
+					RandomPosition = number from 0 to 1
+
+					if RandomPosition != LastPosition
+						move Me position to {BuildBetweenPos}
+						wait until {Me} at {BuildBetweenPos}
+					end if
+
+					LastPosition = RandomPosition
+
+					move Me position to {BuildPos[RandomPosition]}
+					wait until {Me} at {BuildPos[RandomPosition]}
+
+					move villager Me focus to {VC_BuildHouse}
+					wait 1 seconds
+
+					VC_BuildNow = VC_TRUE
+					RandomAction = number from 1 to 3
+
+					//Hammer
+					if RandomAction == 1
+
+						set Me carrying CARRIED_OBJECT_HAMMER
+						play anim "a_p_hammering_into" on Me
+						wait until Me played
+						BUILT of VC_BuildHouse += 0.03
+
+						play anim "a_p_hammering" on Me loop 3
+						wait until Me played
+						BUILT of VC_BuildHouse += 0.03
+
+						play anim "a_p_hammering_outof" on Me
+						wait until Me played
+						set Me carrying CARRIED_OBJECT_NONE
+						BUILT of VC_BuildHouse += 0.03
+
+					//Hammer 2
+					elsif RandomAction == 2
+
+						set Me carrying CARRIED_OBJECT_MALLET_HEAVY
+						play anim "a_p_sledgehammer_into" on Me
+						wait until Me played
+						BUILT of VC_BuildHouse += 0.03
+
+						play anim "a_p_sledgehammer" on Me loop 3
+						wait until Me played
+						BUILT of VC_BuildHouse += 0.03
+
+						play anim "a_p_sledgehammer_outof" on Me
+						wait until Me played
+						set Me carrying CARRIED_OBJECT_NONE
+						BUILT of VC_BuildHouse += 0.03
+
+					//Saw
+					elsif RandomAction == 3
+
+						set Me carrying CARRIED_OBJECT_SAW
+						play anim "a_p_saw_wood_into" on Me
+						wait until Me played
+						BUILT of VC_BuildHouse += 0.03
+
+						play anim "a_p_saw_wood" on Me loop 3
+						wait until Me played
+						BUILT of VC_BuildHouse += 0.03
+
+						play anim "a_p_saw_wood_outof" on Me
+						wait until Me played
+						set Me carrying CARRIED_OBJECT_NONE
+						BUILT of VC_BuildHouse += 0.03
+
+					end if //Random Action					
+					
+					wait 0.1 seconds
+				until BUILT of VC_BuildHouse >= 1.00 or HEALTH of Me <= 0
+				end loop
+
+				if HEALTH of Me <= 0
+					VC_BuilderDead = VC_TRUE
+				end if
+				
+				if HEALTH of Me > 0
+					VC_FinishedBuilding = 1
+
+					set Me carrying CARRIED_OBJECT_NONE				
+
+					wait until BUILT of VC_BuildHouse == 1
+
+					move Me position to {BuildBetweenPos}
+					wait until {Me} at {BuildBetweenPos}
+		
+					move Me position to extra position 1 of VC_BuildHouse
+					wait until {Me} at extra position 1 of VC_BuildHouse
+
+					move Me to limbo
+				end if
+
+			//Breed
+			elsif Action == VC_ACTION_BREEDER
+
+				VC_ReleaseNow = VC_TRUE
+
+				//Set objective
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_25 value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_LAND_25
+
+				run background script VC_Advisors(VC_ADVISOR_DOING_BREEDER)
+
+				wait until VC_Woman played
+
+				play paired anim VILLAGER_PAIRED_ACTION_BREED using Me with VC_Woman
+
+				//wait 1.5 seconds
+
+				wait until Me played
+
+				wait 1 seconds
+				move Me position to {878.490, 66.286, 1480.646}			
+
+				move VC_Woman position to extra position 0 of VC_House using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+				move Me position to extra position 0 of VC_House using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+
+				wait until variable get Me navigation state != variable NAV_STATE_NAVIGATING 
+				wait until variable get VC_Woman navigation state != variable NAV_STATE_NAVIGATING 
+
+				//wait until {VC_Woman} at extra position 1 of VC_House and {Me} at extra position 1 of VC_House
+
+				delete VC_Woman
+				move Me to limbo
+
+				VC_Actions[VC_ACTION_BREEDER] = VC_TRUE
+
+				wait until {Me} at {878.490, 66.286, 1480.646}
+				begin loop
+					play anim "a_p_dance_celebrate03" on Me
+					wait until Me played
+				end loop
+
+			end if
+
+			enable Me pickup
+			Action = VC_ACTION_NONE
+
+		until HEALTH of Me == 0 or L1_LandEnd == 1
+		end loop
+
+		remove world icon MyHelperIcon
+
+	end while
+
+end script VC_ManControl
+
+//-----------------------------------------------------------------
+// Action Tracker
+//-----------------------------------------------------------------
+begin script VC_ActionTracker
+start
+
+	begin loop
+
+		wait 1 seconds
+
+		if VC_Actions[VC_ACTION_FORESTER] == VC_TRUE
+			if VC_Actions[VC_ACTION_FARMER] == VC_TRUE
+				if VC_Actions[VC_ACTION_BUILDER] == VC_TRUE
+					if VC_Actions[VC_ACTION_BREEDER] == VC_TRUE
+						VC_Completed = VC_TRUE
+					end if
+				end if
+			end if
+		end if
+
+	until VC_Completed == VC_TRUE
+	end loop
+
+end script VC_ActionTracker
+
+//-----------------------------------------------------------------
+// Woman control
+//-----------------------------------------------------------------
+begin script VC_WomanControl
+	WomanPos		= marker at {896.966, 67.500, 1483.284}
+	RandomAction	= 0	
+start	
+
+	//wait until VC_ReleaseWoman == VC_TRUE
+	
+	wait 1.5 seconds
+
+	//Completed loop
+	begin loop
+
+		VC_Woman = create VILLAGER INDIGENOUS_HOUSEWIFE at {VC_House}
+		run background script VC_VillagerIndestructible(VC_Woman)
+		disable VC_Woman reactable
+		disable VC_Woman pickup
+		disable VC_Woman moveable
+		enable VC_Woman indestructible
+
+		wait 1 seconds
+		move VC_Woman position to {WomanPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		wait until {VC_Woman} at {WomanPos} or VC_Woman is HELD or HEALTH of VC_Woman <= 0
+
+		VC_WomanReady = VC_TRUE
+
+		VC_ActionHighlights[VC_ACTION_BREEDER] = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {898.5, 67.8, 1483.284} time -1
+		SCALE of VC_ActionHighlights[VC_ACTION_BREEDER] = 0.5
+		//create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.15 at {898.5, 66.717, 1483.284} time -1
+		set VC_ActionHighlights[VC_ACTION_BREEDER] colour red 255 green 0 blue 0
+
+		//Health loop
+		begin loop
+
+			//Near Man loop
+			begin loop
+				RandomAction = number from 1 to 2
+				if RandomAction == 1
+					move villager VC_Woman focus to camera position
+					play anim "a_p_beckon" on VC_Woman
+					wait until VC_Woman played
+
+				elsif RandomAction == 2
+					move villager VC_Woman focus to {VC_A_Man}
+					play anim "a_p_pointing" on VC_Woman
+					wait until VC_Woman played
+				end if
+				until {VC_Woman} near {VC_A_Man} radius 5
+			end loop			
+
+			if not VC_Woman is HELD
+				//Random idleness
+				begin loop
+					RandomAction = number from 1 to 4
+					if RandomAction == 1
+						play anim "a_p_jump_at_hand" on VC_Woman
+					elsif RandomAction == 2
+						play anim "a_p_excited_2" on VC_Woman
+					elsif RandomAction == 3
+						play anim "a_p_excited_1" on VC_Woman
+					elsif RandomAction == 4
+						play anim "a_p_islandcomp_excited" on VC_Woman
+					end if
+					wait until VC_Woman played
+				until not {VC_Woman} near {VC_A_Man} radius 5
+				end loop
+			end if
+
+		until HEALTH of VC_Woman <= 0
+		end loop
+
+		//delete VC_Woman with fade
+		VC_Woman = 0
+
+	until VC_BreedingNow == VC_TRUE
+	end loop
+
+end script VC_WomanControl
+
+//-----------------------------------------------------------------
+// Advisor comments
+//-----------------------------------------------------------------
+begin script VC_Advisors(ID)
+	Quitter		= 0
+	Rand		= 0
+start
+
+	VC_CurrentAdvisor = ID
+	begin loop
+		begin dialogue
+
+			if ID == VC_ADVISOR_OVER_FORESTER and get VC_RepeatTimers[0] time remaining == 0
+				VC_RepeatTimers[0] = create timer for VC_TIMER_WAIT_SECONDS seconds
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_90"
+				wait until read
+
+			elsif ID == VC_ADVISOR_OVER_FARMER and get VC_RepeatTimers[1] time remaining == 0
+				VC_RepeatTimers[1] = create timer for VC_TIMER_WAIT_SECONDS seconds
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_100"
+				wait until read
+
+			elsif ID == VC_ADVISOR_OVER_BREEDER and get VC_RepeatTimers[2] time remaining == 0
+				VC_RepeatTimers[2] = create timer for VC_TIMER_WAIT_SECONDS seconds
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_120"
+				wait until read
+
+			elsif ID == VC_ADVISOR_OVER_BUILDER and get VC_RepeatTimers[3] time remaining == 0
+				VC_RepeatTimers[3] = create timer for VC_TIMER_WAIT_SECONDS seconds
+				eject evil spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_110"
+				wait until read
+
+			elsif ID == VC_ADVISOR_OVER_HOUSE and get VC_RepeatTimers[4] time remaining == 0
+				VC_RepeatTimers[4] = create timer for VC_TIMER_WAIT_SECONDS seconds
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_130"
+				wait until read
+
+			elsif ID == VC_ADVISOR_DOING_FORESTER
+
+				wait 2 seconds
+				eject evil spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_140"
+				wait until read
+
+			elsif ID == VC_ADVISOR_DOING_FARMER
+
+				wait 2 seconds
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_150"
+				wait until read
+
+			elsif ID == VC_ADVISOR_DOING_BREEDER
+
+				wait 1 seconds
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_170"
+				wait until read
+
+			elsif ID == VC_ADVISOR_DOING_BUILDER
+
+				wait 2 seconds
+				eject evil spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_160"
+				wait until read
+
+			elsif ID == VC_ADVISOR_DOING_HOUSE
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_180"
+				wait until read
+
+			elsif ID == VC_ADVISOR_DROP
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_210"
+				wait until read
+
+			elsif ID == VC_ADVISOR_PICKUP
+				
+				Rand = number from 1 to 2
+				if Rand == 1
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_220"
+				else
+					eject evil spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_VILLAGER_CIRCLE_230"
+				end if
+				wait until read
+			end if
+
+			send good spirit home
+			send evil spirit home
+
+			clear dialogue
+		end dialogue
+		Quitter = 1
+	until Quitter == 1 or ID != VC_CurrentAdvisor
+	end loop
+
+end script VC_Advisors
+
+//-----------------------------------------------------------------
+// Build House
+//-----------------------------------------------------------------
+begin script VC_BuildHouseNow(Me)
+start
+
+	enable VC_BuildHouse indestructible
+
+	begin loop
+		wait until VC_BuildNow == VC_TRUE
+		BUILT of VC_BuildHouse += 0.01
+		wait 0.5 seconds
+		if Me is HELD or Me is FLYING
+			wait until not Me is HELD and not Me is FLYING and {Me} near {VC_BuildNow} radius 10
+		end if
+	until VC_FinishedBuilding == 1 or VC_BuilderDead == VC_TRUE
+	end loop
+
+end script VC_BuildHouseNow
+
+//-----------------------------------------------------------------
+// Spawn Trees
+//-----------------------------------------------------------------
+begin script VC_SpawnTrees
+	Tree	= 0
+	GetPos	= marker at {876.094, 70.260, 1512.046}
+start
+
+	begin loop
+		Tree = get TREE at {GetPos} radius 10
+
+		if not Tree exists
+			//Plant a tree
+			Tree = create TREE TREE_INFO_PALM at {GetPos} + {number from -5 to 5, number from -5 to 5}
+		end if
+
+		wait 1 seconds
+	until VC_CurrentAction == VC_ACTION_FORESTER
+	end loop
+
+end script VC_SpawnTrees
+
+//-----------------------------------------------------------------
+// Regrow Field
+//-----------------------------------------------------------------
+begin script VC_RegrowField
+start
+	begin loop
+		if VC_FieldGrowth < 1
+			VC_FieldGrowth += 0.05
+		else
+			VC_FieldGrowth = 1
+		end if
+		set field VC_Field height to VC_FieldGrowth
+		wait VC_REGROW_TIME seconds
+	end loop
+end script VC_RegrowField
+
+// Checks until tutorial has been completed, allowing player to kill them all...
+begin script VC_VillagerIndestructible(Me)
+
+start
+	enable Me indestructible
+	wait until L1_DiscipleTutorialComplete == 1
+	disable Me indestructible
+	enable Me pickup
+	enable Me moveable
+	enable Me reactable
+end script VC_VillagerIndestructible

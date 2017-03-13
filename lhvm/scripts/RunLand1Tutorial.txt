@@ -1,0 +1,6 @@
+run script RunLand1Tutorial
+
+begin script RunLand1Tutorial
+start
+	run script Land1Tutorial
+end script RunLand1Tutorial

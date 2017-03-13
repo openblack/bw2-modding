@@ -1,0 +1,78 @@
+//===========================================================================
+// Land 11 Objectives
+// By Lenny
+//===========================================================================
+
+//---------------------------------------------------------------
+// Land 11 objectives
+//---------------------------------------------------------------
+begin script Land11Objectives
+	AztecSettlments	= 0
+	PlayerAlignment = 0
+start
+
+	reset all objectives for player 0
+	
+	
+	//PRIMARYOBJECTIVES
+	//These are controlled by SCRIPT ONLY
+	
+	//PRIMARY - Dominate Land by Impressiveness or Force
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" start value 0 reward 500000 alignment 0.2
+	
+	//SECONDARY OBJECTIVES
+	//These are COMPLETELY controlled by code - so don't touch after setting them up!	
+
+	//PICK THE CORRECT change alignment!
+	PlayerAlignment = alignment of player
+
+
+	//SPECIAL OBJECTIVES
+	
+	if PlayerAlignment > 0
+		//Change of heart - convert from GOOD to EVIL
+		set player 0 objective TRIBUTE_OBJECTIVE_AS_SOON_AS_CONVERT_ALIGMNENT_TO_EVIL with amount 1 text "BW2T_SCRIPT_07FINAL_OBJECTIVE_EVIL_60" amount 1 description "BW2T_SCRIPT_07FINAL_OBJECTIVE_EVIL_61" start value 0 reward 100000
+	end if
+	if PlayerAlignment < 0
+		//Change of heart - convert from Good to EVIL    
+		set player 0 objective TRIBUTE_OBJECTIVE_AS_SOON_AS_CONVERT_ALIGMNENT_TO_GOOD with amount 1 text "BW2T_SCRIPT_07FINAL_OBJECTIVE_GOOD_10" amount 1 description "BW2T_SCRIPT_07FINAL_OBJECTIVE_GOOD_11" start value 0 reward 100000
+	end if
+	
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_GOLD amount 20
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_SPECIAL amount 0
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_TOWN amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_ARMY amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_CREATURE amount 1
+	
+	/*
+	begin loop
+		
+		
+		// ---- Capture settlments objective
+		AztecSettlments = 0
+		if PLAYER of L11AztecCapital == 0
+			AztecSettlments++
+		end if
+		if PLAYER of L11AztecTown1 == 0
+			AztecSettlments++
+		end if
+		if PLAYER of L11AztecTown2 == 0
+			AztecSettlments++
+		end if
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_11FINAL_OBJECTIVES_LAND_20" amount AztecSettlments
+
+		if AztecSettlments == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+			increment tribute by 50000
+		end if		
+
+		// ---- Birth spurt
+
+
+	wait 1 seconds
+	until PLAYER of L11AztecCapital == 0
+	end loop
+	*/
+
+end script Land11Objectives

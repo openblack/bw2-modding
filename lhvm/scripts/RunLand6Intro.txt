@@ -1,0 +1,6 @@
+run script RunLand6Intro
+
+begin script RunLand6Intro
+start
+	run script Land6Intro
+end script RunLand6Intro

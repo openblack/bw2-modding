@@ -1,0 +1,48 @@
+////=========================================================
+//// Land 2 Aztec Wall
+//// Matt. L
+////=========================================================
+//define script AW_Platoon(Amount, CreatePos, WallPos)
+//
+////-----------------------------------------------------------------
+//// Land2 Scared Villagers
+////-----------------------------------------------------------------
+//begin script Land2AztecWall
+//start
+//
+//	run background script AW_Platoon(5, marker at {1553.698, 142.844, 1719.282}, marker at {1552.292, 150.059, 1697.671})
+//	run background script AW_Platoon(5, marker at {1609.359, 134.741, 1748.295}, marker at {1611.780, 141.008, 1704.028})
+//	run background script AW_Platoon(5, marker at {1591.304, 140.344, 1719.425}, marker at {1678.563, 132.755, 1693.738})
+//	
+//	wait until 1 == 0 //Wait forever
+//
+//end script Land2AztecWall
+//
+////-----------------------------------------------------------------
+//// Platoon
+////-----------------------------------------------------------------
+//begin script AW_Platoon(Amount, CreatePos, WallPos)
+//	AttackPlatoon = 0
+//
+//	WallSeg = 0
+//	RecruitSize=0
+//start
+//
+////	RecruitSize = how many soldiers can get on wall WallSeg
+//
+//	//PJ -ignoring Amount and using the maximum size for now! - tell a lie. I'm not
+//	
+//	AttackPlatoon = create platoon PLATOON_INFO_AZTEC_RANGED_2 at {CreatePos} with Amount men and 0 women
+//	PLAYER of AttackPlatoon = 1
+//	disable platoon AttackPlatoon camp
+//
+//	WallSeg = get wall segment nearest {WallPos} radius 30
+//
+//
+//
+//	if WallSeg exists
+//		add action PLATOON_AGENDA_ACTION_GET_ON_WALL using WallSeg to front of AttackPlatoon action queue
+//	end if
+//
+//	wait 5000000000 seconds
+//end script AW_Platoon

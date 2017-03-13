@@ -1,0 +1,64 @@
+//-----------------------------------------------------------
+
+begin script Land10Intro
+start
+
+//latest dialogue discussed with james
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 0
+		set fade in time 2
+		set camera position to {1147.473, 715.495, -441.551}
+		set camera focus to {1176.025, 678.838, -353.001}
+		eject good spirit
+		eject evil spirit
+
+		move camera position to {1880.464, 335.360, 1744.947} time 30
+		move camera focus to {1913.216, 306.405, 1834.888} time 30
+		wait 2 seconds
+
+
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_3"
+		wait until read
+
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_5"
+		wait until read
+		
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_10"
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_20"
+		wait until read
+
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_30"
+		wait until read
+
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_8"
+		wait until read
+
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_35"
+		wait until read
+
+					/*	
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_INTRO_50"
+		wait until read
+*/
+		
+
+
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 1 seconds
+        
+		send good spirit home
+		send evil spirit home
+		wait 1 seconds
+
+		set camera position to {1232.131, 261.757, 698.258}
+		set camera focus to {1303.347, 234.401, 762.913}
+		set fade in time 2
+		wait 2 seconds
+		
+	end cinema
+end script Land10Intro
+
+//-----------------------------------------------------------

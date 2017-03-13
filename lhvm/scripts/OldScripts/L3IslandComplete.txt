@@ -1,0 +1,22 @@
+//------------------------------------------------
+//  LAND 3 ISLAND COMPLETE CUT-SCENE
+//------------------------------------------------
+
+
+begin script L3IslandComplete
+start
+
+begin dialogue
+	say "The L3 Island Complete Cut-Scene has not been implemented yet."
+	wait until read
+	say "The player learns the location of the Japanese Capitol City"
+	wait until read
+	say "Conquering this city would make the entire race submissive"
+	wait until read
+	say "And so Dimitrios decides to head off there."
+	wait until read
+	say "Click this scroll by the Boat Master when you want to leave for Japan."
+	wait until read
+end dialogue
+
+end script L3IslandComplete

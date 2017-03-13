@@ -1,0 +1,61 @@
+begin script Land4Intro
+start
+	set fade red 0 green 0 blue 0 time 0
+	set game time 06.00
+
+	begin cinema
+		start music "cut_scene_sad_34s_01" loop 3
+		wait 2 seconds
+		queue camera move with position {3009.962, 1340.543, 914.517} focus {2933.790, 1280.375, 938.596} time 0.0
+		queue camera move with position {2163.884, 672.206, 1181.974} focus {2087.712, 612.043, 1206.046} time 8.0
+		//queue camera move with position {2060.354, 590.443, 1214.687} focus {1981.497, 541.511, 1251.918} time 1.5
+		queue camera move with position {1849.849, 506.076, 1349.068} focus {1780.367, 471.264, 1411.995} time 5.0
+		queue camera move with position {1737.678, 456.868, 1519.379} focus {1701.082, 418.566, 1604.194} time 5.0
+		queue camera move with position {1685.094, 418.222, 1633.760} focus {1680.065, 378.388, 1725.350} time 5.0
+		
+		run background script LandStart
+		set fade in time 5	
+		play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALTIME
+		wait 4 seconds
+		make good spirit appear
+		make evil spirit appear
+		wait 1 seconds
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_160"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_170"
+		wait until read
+		
+		/*say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_180"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_190"
+		wait until read*/
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_04FINAL_INTRO_G_180_190
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_04FINAL_INTRO_E_180_190
+
+
+		wait until read
+
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_200"
+		wait until read
+		
+		reset camera path 
+       	queue camera move with position {1583.580, 447.660, 1610.196} focus {1641.246, 398.893, 1675.748} time 5.0
+       	queue camera move with position {1442.468, 401.576, 1477.114} focus {1475.769, 368.751, 1565.505} time 5.0
+       	queue camera move with position {1259.096, 385.497, 1183.542} focus {1292.129, 360.165, 1274.472} time 4.0
+       	queue camera move with position {1047.323, 274.758, 917.997} focus {1077.486, 240.679, 1007.041} time 4.0
+       	queue camera move with position {898.702, 263.380, 529.495} focus {926.381, 236.359, 621.713} time 4.0
+		play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALTIME
+		wait 4 seconds
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_210"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_220"
+		wait until read
+		make evil spirit disappear
+		make good spirit disappear
+
+		wait 9 seconds
+			
+	
+		stop music with fadetime 4
+	end cinema
+end script Land4Intro

@@ -1,0 +1,948 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Farming_Experts Event - Land 2
+//	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//	
+//	A group of farming experts have been allowed by the Norse to have their own farming 
+//	village to the North of the creature's chasm.  They hold the key to the "Field Blueprint"
+//	which would allow the player to grow crops well even in the land's harsh cold conditions.
+//		If the player kills one of the farmers the others will start to provide you with food; however
+//	they won't give you that blueprint. If the player continues down this path, the Norse
+//	will threaten the farmers to stop giving you food; the farmers will then refuse to give you more food; 
+//	so the player will be forced to bully them by killing another (which slows down their food production).
+//	Killing more of the farmers will result in the others attempting to retreat back to the Norse town.
+//		If the player manages to figure out one of the ways to stop the creature's attacks; then the
+//	farmers will reward the player with the blueprint and provide some regular food as well, which the Norse 
+//	eventually find out about and threaten the farmers to stop. The farmers may then ask for asylum and
+//	become additional farmers in your city.
+//		When the creature attacks the farmers retreat into their tent-type buildings; or possibly into a 
+//	central and more sturdy structure, waiting there until it retreats. I envisage that the Norse will 
+//	place a few troops to try and stop the attacks at first, but they will fail miserably; this will provide 
+//	the player with something amusing to watch as the creature eats/mashes them to a pulp.
+//
+//	
+//	Rewards:			Given the field blueprint - allows crops to grow well in cold conditions.
+//	Drawbacks:			Depends what you do... read the above!
+//
+//	Start date:			Friday 21/Monday 24-03-03	By:	Phil
+//	Last Update:		26-03-03					By: Phil
+//
+//	Requires:			Norse creature in and AI created so it attacks the farm now and again.
+//						All onto Level 2 rather than on 3 which is where I'm creating this (all waypoints etc)
+//						Ability to increase the speed of food production of the player's town
+//
+//	Work Needed:		Rest of script...
+//
+//	Questions:			What happens if you destroy the centre building?
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FE_FALSE					= 0
+define FE_TRUE					= 1
+define FE_WAYPOINT_RADIUS		= 20
+define FE_Target				= 0
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FE_Farm_Field[4]						//... Array of Fields.
+global FE_Norse_Soldier[12]					//... Array of Norse soldiers.
+global FE_Farmer[3]							//... Array of Farmers.
+global FE_Farmers_Helped					= FE_FALSE
+global FE_Need_Delivery_To_Player			= FE_FALSE
+global FE_Need_Delivery_To_Norse			= FE_FALSE
+global Main_Creature_Attacking				= FE_FALSE
+global FE_Creature_Attacking				= FE_FALSE
+global FE_Norse_In_Control_Of_Farmers		= FE_TRUE
+global FE_In_Cutscene						= FE_FALSE
+global FE_Initial_Scroll_Used				= FE_FALSE
+global FE_Farmers_Need_Asylum				= FE_FALSE
+global FE_Attacking_Norse_Destroyed			= FE_FALSE
+global FE_Farming_Centre_Position			= 0
+global FE_Farm_Centre_Building				= 0
+global FE_Players_Town						= 0
+global FE_Fake_Creature						= 0
+global FE_Scroll							= 0
+global FE_Reminder_Scroll					= 0
+global FE_Dead_Farmer_Counter				= 0
+global FE_Field_0_Location					= 0
+global FE_Field_1_Location					= 0
+global FE_Field_2_Location					= 0
+global FE_Field_3_Location					= 0
+global FE_Field_4_Location					= 0
+global FE_Farmers_Delivery_Waypoint_A		= 0
+global FE_Greek_Storage_Pit_Position		= 0 
+global FE_Norse_Storage_Pit_Position		= 0 
+global FE_Greek_Storage_Pit					= 0
+global FE_Norse_Storage_Pit					= 0
+global FE_Position_Outside_Players_Town		= 0
+global FE_No_Of_Deliveries_To_Player		= 0
+global FE_Farmer_Retreat_Position			= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FE_Create_Village
+define script FE_Create_Expert_Farmers
+define script FE_Setup_Norse_Soldiers
+define script FE_Farmers_Hide_From_Creature
+define script FE_Farmers_Work
+define script FE_Initiate_Scrolls
+define script FE_Farmers_Reward_Player_With_Blueprint
+define script FE_Farmers_Deliver_Food_To_Player
+define script FE_Farmers_Deliver_Food_To_Norse
+define script FE_Norse_Threaten_Farmers
+define script FE_Farmers_Ask_For_Asylum
+define script FE_Farmers_Revolt_As_Creature_Still_Attacks
+define script FE_Check_If_Farmers_Being_Killed
+define script FE_Check_If_Creature_Is_Attacking
+define script FE_Scene_Explaining_The_Farmers_Situation
+define script FE_Fake_Creature_Attacks
+define script FE_Calculate_Food_Production
+define script FE_Reminder_Explanation
+
+
+//... Run the main script not required.
+//run script Farming_Experts
+
+
+//========================================================================================
+//	MAIN script
+//========================================================================================
+
+//==========================
+begin script Farming_Experts
+
+start
+
+	FE_Players_Town					= get town with id 0
+	FE_Farmers_Delivery_Waypoint_A	= marker at {1163.986,4.690,1401.668}
+	FE_Greek_Storage_Pit_Position	= marker at {987.500,2.500,1287.500}
+	FE_Norse_Storage_Pit_Position	= marker at {1445.000,32.160,1500.000}
+
+
+	run script FE_Create_Village
+	run script FE_Create_Expert_Farmers
+	run script FE_Setup_Norse_Soldiers		
+
+	run background script FE_Farmers_Work
+	run background script FE_Check_If_Creature_Is_Attacking
+	run background script FE_Fake_Creature_Attacks
+	run background script FE_Farmers_Hide_From_Creature
+	run background script FE_Check_If_Farmers_Being_Killed
+	run background script FE_Calculate_Food_Production
+	run background script FE_Farmers_Deliver_Food_To_Norse
+	run background script FE_Initiate_Scrolls
+	run background script FE_Farmers_Deliver_Food_To_Player
+	run background script FE_Scene_Explaining_The_Farmers_Situation
+	run background script FE_Reminder_Explanation
+	run background script FE_Norse_Threaten_Farmers
+	run background script FE_Farmers_Ask_For_Asylum
+	run background script FE_Farmers_Reward_Player_With_Blueprint
+
+	while FE_Farmers_Helped == FE_FALSE
+		wait 30 seconds
+	end while
+
+end script Farming_Experts
+//==========================
+
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Create_Village
+//-----------------------------------------------------------------------------
+begin script FE_Create_Village
+
+start
+
+	//... Create the centre house/hut of the farming village
+	FE_Farming_Centre_Position	= marker at {1251.792,3.254,1479.886}
+	FE_Farm_Centre_Building = create HOUSE ABODE_INFO_NORSE_HUT at {FE_Farming_Centre_Position}
+
+	//... Create the locations for the fields to be created.
+	FE_Field_0_Location = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 12 + number from 2.8 to 4.8 angle 36  + number from -7 to 7
+	FE_Field_1_Location = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 11 + number from 2.8 to 4.8 angle 108 + number from -7 to 7
+	FE_Field_2_Location = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 9  + number from 2.8 to 4.8 angle 180 + number from -7 to 7
+	FE_Field_3_Location = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 12 + number from 2.8 to 4.8 angle 252 + number from -7 to 7
+	FE_Field_4_Location = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 9  + number from 2.8 to 4.8 angle 324 + number from -7 to 7
+
+	//... Create the fields that make up the farming village.
+	FE_Farm_Field[0] = create SCRIPT_OBJECT_TYPE_FIELD FIELD_INFO_TYPE_WHEAT at {FE_Field_0_Location}
+	FE_Farm_Field[1] = create SCRIPT_OBJECT_TYPE_FIELD FIELD_INFO_TYPE_WHEAT at {FE_Field_1_Location}
+	FE_Farm_Field[2] = create SCRIPT_OBJECT_TYPE_FIELD FIELD_INFO_TYPE_WHEAT at {FE_Field_2_Location}
+	FE_Farm_Field[3] = create SCRIPT_OBJECT_TYPE_FIELD FIELD_INFO_TYPE_WHEAT at {FE_Field_3_Location}
+	FE_Farm_Field[4] = create SCRIPT_OBJECT_TYPE_FIELD FIELD_INFO_TYPE_WHEAT at {FE_Field_4_Location}
+
+	HEIGHT of FE_Farm_Field[0] = 0.7
+	HEIGHT of FE_Farm_Field[1] = 0.6
+	HEIGHT of FE_Farm_Field[2] = 0.7
+	HEIGHT of FE_Farm_Field[3] = 0.6
+	HEIGHT of FE_Farm_Field[4] = 0.7
+
+
+end script FE_Create_Village
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Create_Expert_Farmers
+//-----------------------------------------------------------------------------
+begin script FE_Create_Expert_Farmers
+
+	FE_Farmer_0_Spawn_Position = 0
+	FE_Farmer_1_Spawn_Position = 0
+	FE_Farmer_2_Spawn_Position = 0
+	FE_Farmer_3_Spawn_Position = 0
+
+start
+
+	//... Create farmer spawn locations
+	FE_Farmer_0_Spawn_Position = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 12 + number from 2.8 to 4.8 angle 36  + number from -7 to 7
+	FE_Farmer_1_Spawn_Position = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 12 + number from 2.8 to 4.8 angle 108 + number from -7 to 7
+	FE_Farmer_2_Spawn_Position = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 12 + number from 2.8 to 4.8 angle 180 + number from -7 to 7
+	FE_Farmer_3_Spawn_Position = marker at get target from {FE_Target} to {FE_Farming_Centre_Position} distance 12 + number from 2.8 to 4.8 angle 252 + number from -7 to 7
+
+	//... Create all farm characters
+    FE_Farmer[0] = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Farmer_0_Spawn_Position}
+	FE_Farmer[1] = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Farmer_1_Spawn_Position}
+	FE_Farmer[2] = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Farmer_2_Spawn_Position}
+	FE_Farmer[3] = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Farmer_3_Spawn_Position}
+
+
+end script FE_Create_Expert_Farmers
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Farmers_Work
+//-----------------------------------------------------------------------------
+begin script FE_Farmers_Work
+
+start
+
+	begin loop
+
+		begin loop
+
+			while FE_Creature_Attacking == FE_TRUE
+				wait 3 seconds
+			end while
+
+			//... Check the farmers are in their fields; if not, move them there.
+			if {FE_Farmer[0]} not near {FE_Field_0_Location} radius 3
+				move FE_Farmer[0] position to {FE_Field_0_Location} radius 3
+			end if
+			if {FE_Farmer[1]} not near {FE_Field_1_Location} radius 3
+				move FE_Farmer[1] position to {FE_Field_1_Location} radius 3
+			end if
+			if {FE_Farmer[2]} not near {FE_Field_2_Location} radius 3
+				move FE_Farmer[2] position to {FE_Field_2_Location} radius 3
+			end if
+			if {FE_Farmer[3]} not near {FE_Field_3_Location} radius 3
+				move FE_Farmer[3] position to {FE_Field_3_Location} radius 3
+			end if
+
+			//... Wait until Farmers are in their fields.
+			wait until {FE_Farmer[0]} near {FE_Field_0_Location} radius 3
+			wait until {FE_Farmer[1]} near {FE_Field_1_Location} radius 3
+			wait until {FE_Farmer[2]} near {FE_Field_2_Location} radius 3
+			wait until {FE_Farmer[3]} near {FE_Field_3_Location} radius 3
+
+			//... Set the farmers working in the fields.
+			/*
+			play anim "M_P_FARMER_SOWING_SEEDS" on FE_Farmer[0] loop 1
+			play anim "M_P_FARMER_SOWING_SEEDS" on FE_Farmer[1] loop 1
+			play anim "M_P_FARMER_SOWING_SEEDS" on FE_Farmer[2] loop 1
+			play anim "M_P_FARMER_SOWING_SEEDS" on FE_Farmer[3] loop 1
+			wait until FE_Farmer[0] played
+			wait until FE_Farmer[1] played
+			wait until FE_Farmer[2] played
+			wait until FE_Farmer[3] played
+			*/
+			play anim "M_P_FARMER_HARVESTING" on FE_Farmer[0] loop 1
+			play anim "M_P_FARMER_HARVESTING" on FE_Farmer[1] loop 1
+			play anim "M_P_FARMER_HARVESTING" on FE_Farmer[2] loop 1
+			play anim "M_P_FARMER_HARVESTING" on FE_Farmer[3] loop 1
+			
+			/*
+			wait until FE_Farmer[0] played
+			wait until FE_Farmer[1] played
+			wait until FE_Farmer[2] played
+			wait until FE_Farmer[3] played
+			*/
+
+			until FE_Creature_Attacking == FE_TRUE
+		end loop
+		
+		wait 0.5 seconds
+
+	end loop
+
+end script FE_Farmers_Work
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Setup_Norse_Soldiers
+//-----------------------------------------------------------------------------
+begin script FE_Setup_Norse_Soldiers
+
+	FE_Norse_Soldiers_Spawn_Position	= 0
+	FE_Counter_A						= 0
+	FE_Soldier_Flock					= 0
+
+start
+	
+	//... Create spawn positions for the Norse soldiers
+	FE_Norse_Soldiers_Spawn_Position = marker at {1209.870,6.558,1487.771}
+	
+	//FE_Norse_Soldier[0] = create VILLAGER VILLAGER_INFO_NORSE_TRADER_MALE at {FE_Norse_Soldiers_Spawn_Position}
+	// SOLDIER_INFO_NORSE_MELEE_1  ???
+
+	//... define Norse soldier flock properties
+	FE_Soldier_Flock = flock at {FE_Norse_Soldiers_Spawn_Position}
+	set FE_Soldier_Flock properties inner 5 outer 15
+	
+	//... Create all initial Norse soldiers who will die when creature first attacks.
+	while FE_Counter_A < 12
+		FE_Norse_Soldier[FE_Counter_A] = create VILLAGER VILLAGER_INFO_AZTEC_SHEPHERD_MALE at {FE_Norse_Soldiers_Spawn_Position}
+		HEALTH of FE_Norse_Soldier[FE_Counter_A] = 1
+		//move FE_Norse_Soldier[FE_Counter_A] position to {FE_Norse_Soldiers_Spawn_Position} + {number from -16 to 16, number from -17 to 17}
+		attach FE_Norse_Soldier[FE_Counter_A] to FE_Soldier_Flock
+		FE_Counter_A++
+		FE_Norse_Soldiers_Spawn_Position = marker at {1209.870,6.558,1487.771} + {number from -5 to 5, number from -5 to 5}
+	end while
+
+	state FE_Soldier_Flock LIVING_MOVE_IN_FLOCK
+
+
+end script FE_Setup_Norse_Soldiers
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Farmers_Hide_From_Creature
+//-----------------------------------------------------------------------------
+begin script FE_Farmers_Hide_From_Creature
+
+start
+
+	//... Create the retreat position...
+	FE_Farmer_Retreat_Position = marker at {1251.230,3.426,1479.229}
+
+	begin loop
+
+		wait until FE_Creature_Attacking == FE_TRUE
+		
+		//... Increase the farmers speed to a fast fleeing speed.
+		SPEED of FE_Farmer[0] = 0.8
+		SPEED of FE_Farmer[1] = 0.8
+		SPEED of FE_Farmer[2] = 0.8 
+		SPEED of FE_Farmer[3] = 0.8
+
+		//... Add screaming etc
+		//... Voices: Argh the monster is attacking.. etc
+
+		//... The farmers flee into the central building.
+		move FE_Farmer[0] position to {FE_Farmer_Retreat_Position} radius 3
+		move FE_Farmer[1] position to {FE_Farmer_Retreat_Position} radius 3
+		move FE_Farmer[2] position to {FE_Farmer_Retreat_Position} radius 3
+		move FE_Farmer[3] position to {FE_Farmer_Retreat_Position} radius 3
+
+		wait until FE_Creature_Attacking == FE_FALSE
+
+		//... Reset the farmers speed.
+		SPEED of FE_Farmer[0] = 0.5
+		SPEED of FE_Farmer[1] = 0.5
+		SPEED of FE_Farmer[2] = 0.5
+		SPEED of FE_Farmer[3] = 0.5
+
+		wait 0.5 seconds
+
+	end loop
+
+end script FE_Farmers_Hide_From_Creature
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Initiate_Scrolls
+//-----------------------------------------------------------------------------
+begin script FE_Initiate_Scrolls
+
+	FE_Scroll_Position			= 0
+		
+start
+
+	//... Create scroll creation position just above the farming village hut/building.
+	FE_Scroll_Position = marker at {1251.792,7.754,1479.886}
+
+
+	begin loop
+
+		if FE_Creature_Attacking == FE_FALSE		//... If the creature isn't attacking
+			if FE_Initial_Scroll_Used == FE_FALSE	//...If not started this event/challenge
+				if FE_Scroll not exists
+					FE_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FE_Scroll_Position}
+				end if
+			else									//... Already used the main scroll, so create a reminder.
+				if FE_Reminder_Scroll not exists
+					FE_Reminder_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FE_Scroll_Position}
+				end if		
+			end if
+		else										//... If the creature is attacking
+			if FE_Scroll exists
+				delete FE_Scroll
+			end if
+			if FE_Reminder_Scroll exists
+				delete FE_Reminder_Scroll
+			end if
+		end if
+
+		wait 0.6 seconds
+
+		//... Once farmers helped, or all dead; stop all scrolls
+		until FE_Farmers_Helped == FE_TRUE or FE_Dead_Farmer_Counter > 3
+
+	end loop
+
+	
+	if FE_Scroll exists
+		delete FE_Scroll
+	end if
+	if FE_Reminder_Scroll exists
+		delete FE_Reminder_Scroll
+	end if
+	
+
+end script FE_Initiate_Scrolls
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Scene_Explaining_The_Farmers_Situation
+//-----------------------------------------------------------------------------
+begin script FE_Scene_Explaining_The_Farmers_Situation
+
+	FE_Farmer_Giles_Spawn_Position		= 0
+	FE_Farmer_Giles_Destination			= 0
+	FE_Farmer_Giles						= 0
+
+start
+	
+	//... Wait for the player to initialise the explanation of the event taking place.
+	wait until FE_Scroll right clicked
+	delete FE_Scroll
+
+	FE_In_Cutscene = FE_TRUE
+    FE_Initial_Scroll_Used = FE_TRUE
+
+	//... Create the positions required for the farmer.
+	FE_Farmer_Giles_Spawn_Position = marker at {1251.230,3.426,1479.229}
+	FE_Farmer_Giles_Destination = marker at {1254.925,3.500,1478.538}
+
+	//...Creation of Farmer Giles.
+    FE_Farmer_Giles = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Farmer_Giles_Spawn_Position}
+	
+	//...Destination of Farmer Giles.
+	move FE_Farmer_Giles position to {FE_Farmer_Giles_Destination}
+
+	//... Cinema section in which a farmer comes out from the central building and explains the problem.
+	begin cinema
+		move camera position to {1258.485,5.800,1478.097} time 6
+		move camera focus to {1254.359,3.740,1478.581} time 6
+		wait until camera ready
+		say "Hi, I'm farmer Giles, oooh arrrr."
+		wait until read
+		clear dialogue
+		say "That huge creature keeps coming over to our farm and wrecking things, oooh arrr."
+		wait until read
+		clear dialogue
+		say "It gets through one of the gaps in the chasm wall over there. Can you stop it? Ohhh arrr."
+		wait until read
+		clear dialogue
+		//... move him back inside the building, wait until he gets there.
+		move FE_Farmer_Giles position to {FE_Farmer_Giles_Spawn_Position}
+		wait until {FE_Farmer_Giles} near {FE_Farmer_Giles_Spawn_Position} radius 2
+		delete FE_Farmer_Giles
+	end cinema
+
+	FE_In_Cutscene = FE_FALSE
+
+end script FE_Scene_Explaining_The_Farmers_Situation
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Reminder_Explanation
+//-----------------------------------------------------------------------------
+begin script FE_Reminder_Explanation
+
+start
+
+	begin loop
+
+		wait until FE_Reminder_Scroll exists
+
+		//... Wait for the player to click on the reminder scroll.
+		wait until FE_Reminder_Scroll right clicked
+		
+		delete FE_Reminder_Scroll
+
+		begin dialogue
+			say "The farmers need you to somehow stop the Norse creature mashing their farm."
+			wait until read
+			clear dialogue
+		end dialogue
+
+	end loop
+
+end script FE_Reminder_Explanation
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Farmers_Reward_Player_With_Blueprint
+//-----------------------------------------------------------------------------
+begin script FE_Farmers_Reward_Player_With_Blueprint
+
+	FE_Farmer_Giles_2_Spawn_Position	= marker at {1251.230,3.426,1479.229}
+	FE_Farmer_Giles_2_Destination		= marker at {1254.925,3.500,1478.538}
+	FE_Farmer_Giles_2					= 0
+
+start
+
+	//... Wait until the player has helped the farmers by stopping the creature attacks.
+	wait until FE_Farmers_Helped == FE_TRUE
+
+	FE_In_Cutscene = FE_TRUE
+
+	//...Creation of Farmer Giles.
+    FE_Farmer_Giles_2 = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Farmer_Giles_2_Spawn_Position}
+	
+	//...Destination of Farmer Giles.
+	move FE_Farmer_Giles_2 position to {FE_Farmer_Giles_2_Destination}
+
+	//... Cinema of the farmers thanking the player for stopping the creature.
+	begin cinema
+		move camera position to {1258.485,5.800,1478.097} time 6
+		move camera focus to {1254.359,3.740,1478.581} time 6
+		wait until camera ready
+		say "Thanks for stopping that creature. Now we can do what we do best! Farm crops and say oooohh arrrr!"
+		wait until read
+		say "Here's a blueprint for making fields of crops that grow well in these harsh conditions, oooh arrr."
+		wait until read
+		//... move him back inside the building, wait until he gets there.
+		move FE_Farmer_Giles_2 position to {FE_Farmer_Giles_2_Spawn_Position}
+		wait until {FE_Farmer_Giles_2} near {FE_Farmer_Giles_2_Spawn_Position} radius 2
+		delete FE_Farmer_Giles_2
+	end cinema
+
+	//... FARMERS GIVE PLAYER THE BLUEPRINT
+	//... Not sure how to script this atm...
+
+	//... Give control of the farmer's food supply to the player.
+	FE_Norse_In_Control_Of_Farmers = FE_FALSE
+
+	FE_In_Cutscene = FE_FALSE
+
+end script FE_Farmers_Reward_Player_With_Blueprint
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Calculate_Food_Production
+//-----------------------------------------------------------------------------
+begin script FE_Calculate_Food_Production
+
+	FE_Food_Just_Produced		= 0
+	FE_No_Of_Farmers			= 0
+	FE_Food_Supply_Ready		= 0
+	FE_Food_Level				= 0
+
+start
+
+	begin loop
+
+		while FE_Food_Level < 250
+
+			//... Important delay that controls food production
+			wait 10 seconds
+			
+			//... see how many farmers are alive
+			if FE_Dead_Farmer_Counter > 3		//... all farmers are dead
+				FE_No_Of_Farmers = 0
+			elsif FE_Dead_Farmer_Counter == 3	//... 3 farmers are dead
+				FE_No_Of_Farmers = 1
+			elsif FE_Dead_Farmer_Counter == 2	//... 2 farmers are dead
+				FE_No_Of_Farmers = 2
+			elsif FE_Dead_Farmer_Counter == 1	//... 1 farmers are dead
+				FE_No_Of_Farmers = 3
+			elsif FE_Dead_Farmer_Counter == 0	//... 0 farmers are dead
+				FE_No_Of_Farmers = 4
+			end if
+
+			//... Calculate the food produced over the last period.
+			FE_Food_Just_Produced = FE_No_Of_Farmers * 5
+
+			//... Add the food just produced to the current food level
+			FE_Food_Level = FE_Food_Level + FE_Food_Just_Produced
+
+			//... Reset Food just produced to 0.
+			FE_Food_Just_Produced = 0
+
+		end while
+
+		//... Who's in control of the farmers? Food will be delivered to whoever is in control.
+		if FE_Norse_In_Control_Of_Farmers == FE_TRUE
+			FE_Need_Delivery_To_Norse = FE_TRUE
+		else
+			FE_Need_Delivery_To_Player = FE_TRUE
+		end if
+
+		wait 0.5 seconds
+	
+		//... Wait until food has been delivered to either the Norse of the player's people.
+		wait until FE_Need_Delivery_To_Norse == FE_FALSE and FE_Need_Delivery_To_Player == FE_FALSE
+
+		//... Reset total food level.
+		FE_Food_Level = 0
+
+	end loop
+
+end script FE_Calculate_Food_Production
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Farmers_Deliver_Food_To_Player
+//-----------------------------------------------------------------------------
+begin script FE_Farmers_Deliver_Food_To_Player
+
+	FE_Delivery_Farmer_Spawn_Position	= marker at {1251.230,3.426,1479.229}
+	FE_Delivery_Farmer					= 0
+
+start
+
+	FE_Greek_Storage_Pit = get STORE at {FE_Greek_Storage_Pit_Position} radius 10
+
+	//... Wait until a need to deliver food to the player's people exists
+	wait until FE_Need_Delivery_To_Player == FE_TRUE
+
+	//... Create a delivery farmer inside the farming village centre building.
+    FE_Delivery_Farmer = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Delivery_Farmer_Spawn_Position}
+	
+	//... Move the delivery farmer to a waypoint halfway to the player's storage pit.
+	move FE_Delivery_Farmer position to {FE_Farmers_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Delivery_Farmer} near {FE_Farmers_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+
+	//... Move them right to the storage pit.
+	move FE_Delivery_Farmer position to {FE_Greek_Storage_Pit_Position} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Delivery_Farmer} near {FE_Greek_Storage_Pit_Position} radius FE_WAYPOINT_RADIUS
+
+	//... Pretend they are adding the food to the storage pit.
+	add resource RESOURCE_TYPE_FOOD 20 to FE_Greek_Storage_Pit
+
+	//... Add one to the number of deliveries made to the player and not the Norse.
+	FE_No_Of_Deliveries_To_Player++
+
+	//... Anims?
+
+	//... Move the delivery farmer to a waypoint halfway back to the farm.
+	move FE_Delivery_Farmer position to {FE_Farmers_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Delivery_Farmer} near {FE_Farmers_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+
+	//... Send the delivery farmer back into the farming centre building.
+	move FE_Delivery_Farmer position to {FE_Delivery_Farmer_Spawn_Position} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Delivery_Farmer} near {FE_Delivery_Farmer_Spawn_Position} radius 3
+
+	//... kill off the delivery guy
+	delete FE_Delivery_Farmer
+	
+	wait 0.6 seconds
+
+	FE_Need_Delivery_To_Player = FE_FALSE
+
+end script FE_Farmers_Deliver_Food_To_Player
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Farmers_Deliver_Food_To_Norse
+//-----------------------------------------------------------------------------
+begin script FE_Farmers_Deliver_Food_To_Norse
+		
+	FE_Farmers_Norse_Delivery_Waypoint_A		= marker at {1359.728,28.792,1467.305}
+	FE_Norse_Delivery_Farmer_Spawn_Position		= marker at {1251.230,3.426,1479.229}
+	FE_Norse_Delivery_Farmer					= 0
+
+start
+
+	FE_Norse_Storage_Pit = get STORE at {FE_Norse_Storage_Pit_Position} radius 10
+
+	//... Wait until a need to Norse_Deliver food to the Norse exists
+	wait until FE_Need_Delivery_To_Norse == FE_TRUE
+
+	//... Create a Norse_Delivery farmer inside the farming village centre building.
+    FE_Norse_Delivery_Farmer = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {FE_Norse_Delivery_Farmer_Spawn_Position}
+	
+	//... Move the Norse_Delivery farmer to a waypoint halfway to the player's storage pit.
+	move FE_Norse_Delivery_Farmer position to {FE_Farmers_Norse_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Norse_Delivery_Farmer} near {FE_Farmers_Norse_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+
+	//... Move them right to the storage pit.
+	move FE_Norse_Delivery_Farmer position to {FE_Norse_Storage_Pit_Position} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Norse_Delivery_Farmer} near {FE_Norse_Storage_Pit_Position} radius FE_WAYPOINT_RADIUS
+
+	//... Pretend they are adding the food to the storage pit.
+	add resource RESOURCE_TYPE_FOOD 20 to FE_Norse_Storage_Pit
+
+	//... Anims?
+
+	//... Move the Norse_Delivery farmer to a waypoint halfway back to the farm.
+	move FE_Norse_Delivery_Farmer position to {FE_Farmers_Norse_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Norse_Delivery_Farmer} near {FE_Farmers_Norse_Delivery_Waypoint_A} radius FE_WAYPOINT_RADIUS
+
+	//... Send the Norse_Delivery farmer back into the farming centre building.
+	move FE_Norse_Delivery_Farmer position to {FE_Norse_Delivery_Farmer_Spawn_Position} radius FE_WAYPOINT_RADIUS
+	wait until {FE_Norse_Delivery_Farmer} near {FE_Norse_Delivery_Farmer_Spawn_Position} radius 3
+
+	//... kill off the Norse_Delivery guy
+	delete FE_Norse_Delivery_Farmer
+	
+	wait 0.6 seconds
+
+	FE_Need_Delivery_To_Norse = FE_FALSE
+
+end script FE_Farmers_Deliver_Food_To_Norse
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Norse_Threaten_Farmers
+//-----------------------------------------------------------------------------
+begin script FE_Norse_Threaten_Farmers
+
+start
+
+	wait until FE_No_Of_Deliveries_To_Player > 2
+	//... if the player keeps getting food from the farmers then the 
+	//... Norse send people to kill them. The farmers flee to your base.
+	FE_Farmers_Need_Asylum = FE_TRUE
+
+
+	//... Create a small Norse army which bombard the village house.
+	//... Must be slow enough to allow the player to get troops there to save the farmers.
+
+
+end script FE_Norse_Threaten_Farmers
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Farmers_Ask_For_Asylum
+//-----------------------------------------------------------------------------
+begin script FE_Farmers_Ask_For_Asylum
+
+start
+
+	FE_Position_Outside_Players_Town = marker at {1028.068,3.145,1331.552}
+
+	wait until FE_Farmers_Need_Asylum == FE_TRUE
+
+	//... Although this isn't a cutscene, I'm using this to stop the creature attacking whilst in this section.
+	FE_In_Cutscene = FE_TRUE
+
+	//... Increase the farmers speed to a fast fleeing speed.
+	SPEED of FE_Farmer[0] = 0.8
+	SPEED of FE_Farmer[1] = 0.8
+	SPEED of FE_Farmer[2] = 0.8 
+	SPEED of FE_Farmer[3] = 0.8
+
+	//... The farmers flee into the central building.
+	move FE_Farmer[0] position to {FE_Farmer_Retreat_Position} radius 3
+	move FE_Farmer[1] position to {FE_Farmer_Retreat_Position} radius 3
+	move FE_Farmer[2] position to {FE_Farmer_Retreat_Position} radius 3
+	move FE_Farmer[3] position to {FE_Farmer_Retreat_Position} radius 3
+
+	//... Good spirit explains that the farmers are in trouble
+	begin dialogue
+		eject good spirit
+    	say "The Norse are attacking those farmers! If you can protect them they might join our people."
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+	//... wait until the player saves the house?
+	wait until FE_Attacking_Norse_Destroyed == FE_TRUE
+
+	begin dialogue
+		say "Thank you lord! We owe you everything; we will work for you in your town."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	//... Release into town.  (as farmers????)
+	attach FE_Farmer[0] to FE_Players_Town
+	release FE_Farmer[0]
+	attach FE_Farmer[1] to FE_Players_Town
+	release FE_Farmer[1]
+	attach FE_Farmer[2] to FE_Players_Town
+	release FE_Farmer[2]
+	attach FE_Farmer[3] to FE_Players_Town
+	release FE_Farmer[3]
+
+	
+	//... Increase the speed of food production of the player's town once the farmers have joined.
+	//... NEEDED !!!!!!!!!!!!!
+
+
+end script FE_Farmers_Ask_For_Asylum
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Farmers_Revolt_As_Creature_Still_Attacks
+//-----------------------------------------------------------------------------
+begin script FE_Farmers_Revolt_As_Creature_Still_Attacks
+
+start
+
+	//FE_In_Cutscene = FE_TRUE
+	
+	begin cinema
+		say "Hey! That creature is still attacking us! We will go back to giving the Norse our food!"
+		wait until read
+		clear dialogue
+	end cinema
+
+	//... Give control of the farmer's food supply back to the Norse
+	FE_Norse_In_Control_Of_Farmers = FE_TRUE
+
+
+end script FE_Farmers_Revolt_As_Creature_Still_Attacks
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Check_If_Farmers_Being_Killed
+//-----------------------------------------------------------------------------
+begin script FE_Check_If_Farmers_Being_Killed
+
+	FE_Counter_B				= 0
+
+start
+
+	begin loop
+
+		while FE_Dead_Farmer_Counter < 5
+			if HEALTH of FE_Farmer[FE_Counter_B] < 0.1	//... TEMP - REQUIRES PROPER EXIST CHECKING?
+				FE_Dead_Farmer_Counter++
+			end if
+			FE_Counter_B++
+			if FE_Counter_B > 3
+				FE_Counter_B = 0
+			end if
+		end while
+		
+		wait 0.4 seconds
+
+	end loop
+
+end script FE_Check_If_Farmers_Being_Killed
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Check_If_Creature_Is_Attacking
+//-----------------------------------------------------------------------------
+begin script FE_Check_If_Creature_Is_Attacking
+
+start
+
+	begin loop
+		if Main_Creature_Attacking == FE_TRUE
+			FE_Creature_Attacking = FE_TRUE
+		else
+			FE_Creature_Attacking = FE_FALSE
+		end if
+		wait 0.5 seconds
+		until FE_Farmers_Helped == FE_TRUE
+	end loop
+	
+end script FE_Check_If_Creature_Is_Attacking
+
+
+
+//-----------------------------------------------------------------------------
+//	FE_Fake_Creature_Attacks
+//-----------------------------------------------------------------------------
+begin script FE_Fake_Creature_Attacks
+
+start
+
+	//... Fake the Creature attacking the farming village
+
+	begin loop
+		
+		wait 60 seconds
+		
+		while FE_In_Cutscene == FE_TRUE
+			wait 5 seconds
+			until FE_In_Cutscene == FE_FALSE
+		end while
+		
+		Main_Creature_Attacking = FE_TRUE
+		
+		begin dialogue
+			say "...Norse Creature is attacking now..."
+			wait until read
+			clear dialogue
+		end dialogue
+		
+		wait 20 seconds
+		
+		begin dialogue
+			say "...Norse Creature goes away..."
+			wait until read
+			clear dialogue
+		end dialogue
+		
+		Main_Creature_Attacking = FE_FALSE
+		
+		wait 16 seconds
+
+		until FE_Farmers_Helped == FE_TRUE
+	end loop
+
+end script FE_Fake_Creature_Attacks
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+/*
+
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+
+*/
+

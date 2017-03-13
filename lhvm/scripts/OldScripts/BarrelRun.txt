@@ -1,0 +1,290 @@
+
+global BarrelCrusader
+global BarrelRunActive
+global BarrelRunComplete
+global QuitBarrelRun
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** SHRAPNEL BLAST SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script BarrelRollerBlast (BarrelPos)
+
+ AimPos = 0
+ Boulder = 0
+ Power = 0
+ Smoke = 0
+ ExplodeBoulder = 0
+ RandomTime = 0
+ ShrapnelTimer = create timer for 0 seconds
+ Spangle = 0
+
+ 
+start
+ AimPos = marker at {BarrelPos}+{number from -10 to 10, number from -10 to 10}
+ ALTITUDE of AimPos = number from 4 to 15
+ 
+ Boulder = create with angle 0 and scale 0.2 ROCK_OBJECT ROCK at {BarrelPos}
+ enable Boulder on fire 1
+ disable Boulder affected by wind
+ set Boulder temperature 2000
+ Power = number from 20 to 40
+ set Boulder velocity heading {AimPos} speed Power angular x number from 1 to 10 y 10 z number from 1 to 10 
+ 
+ RandomTime = number from 0 to 2
+ set ShrapnelTimer time to RandomTime seconds
+ while Boulder exists and Boulder is not HELD_ANY and Boulder is FLYING and ExplodeBoulder == 0
+ 	Smoke = create special effect SPOT_VISUAL_BONFIRE at {Boulder} time 0.1
+	SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of Smoke = 8.0
+//	if ALTITUDE of Boulder < 2
+//		delete Boulder with explosion
+//		ExplodeBoulder = 1
+	if get ShrapnelTimer time remaining <= 0
+		Spangle = create special effect SPOT_VISUAL_COMMAND_SUCCEED at {Boulder} time 0.5
+		delete Boulder with explosion
+		ExplodeBoulder = 1
+	end if
+ end while
+
+end script BarrelRollerBlast
+
+
+//-----------------------------------------------------------------------------------------
+// ** BARREL ROLLING SCRIPT **
+//-----------------------------------------------------------------------------------------
+
+begin script HandleBarrelRoll (LaunchPos, TargetPos, ShortFuse)
+
+ BarrelDetectionRadius = 2.5 // any smaller and there'll be a gap between lanes
+ MaxBarrelSpin = 10 // currently appears inaffective on barrels
+ FuseLength = 0
+ Barrel = 0
+ FuseTimer = create timer for 0 seconds
+ FlingAim = 0
+ DistanceAway = 0
+ BarrelPos = 0
+ Count = 0
+ RandomShrapnel = 0
+ Explosive = 0
+ Flamer = 0
+ NoBlowUp = 0
+
+start
+	Barrel = create MOBILE_OBJECT MOBILE_OBJECT_INFO_EGPT_BARREL at {LaunchPos}
+	enable Barrel indestructible
+	disable Barrel pickup
+	set Barrel velocity heading {TargetPos} speed 15 angular x number from 1 to MaxBarrelSpin y 10 z number from 1 to MaxBarrelSpin
+	
+	if ShortFuse == 1
+		FuseLength = number from 4 to 20
+		set FuseTimer time to FuseLength seconds
+		enable Barrel on fire 1
+		wait until {Barrel} near {BarrelCrusader} radius BarrelDetectionRadius or get FuseTimer time remaining <= 0 or QuitBarrelRun != 0 or BarrelRunComplete != 0
+	else
+		set FuseTimer time to 30 seconds
+		wait until {Barrel} near {BarrelCrusader} radius BarrelDetectionRadius or get FuseTimer time remaining <= 0 or QuitBarrelRun != 0 or BarrelRunComplete != 0
+		if get FuseTimer time remaining <= 0
+			NoBlowUp = 1
+		end if
+	end if
+
+	if QuitBarrelRun == 0 and BarrelRunComplete == 0 and NoBlowUp == 0
+		BarrelPos = marker at {Barrel}
+		// EXPLODE BARREL
+		Explosive = cast SPELL_FIREBALL_LEVEL_1 spell at {Barrel} + {number from -2 to 2,2,number from -2 to 2} from {Barrel} radius 1.0 time 2 curl 0
+		play sound LH_SAMPLE_G_CITADELEXPLODE_01_C2
+		delete Barrel with explosion
+		Flamer = create special effect SPOT_VISUAL_BONFIRE at {BarrelPos} time 2
+		SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of Flamer = 40.0
+		
+		if {BarrelCrusader} near {BarrelPos} radius 5
+			DistanceAway = get distance from {BarrelPos} to {BarrelCrusader}
+			FlingAim = marker at get target from {BarrelPos} to {BarrelCrusader} distance DistanceAway angle 0
+			FlingAim = marker at {FlingAim} + {0.000,5.000,0.000}
+			set BarrelCrusader velocity heading {FlingAim} speed 15 angular x number from 1 to 10 y 10 z number from 1 to 10
+		end if		
+		
+		RandomShrapnel = number from 5 to 10
+		Count = 0
+		while Count < RandomShrapnel
+			run background script BarrelRollerBlast (BarrelPos)
+			Count++
+		end while
+		Count = 0
+	else
+		delete Barrel with fade
+	end if
+
+end script HandleBarrelRoll
+
+
+//-----------------------------------------------------------------------------------------
+// ** BARREL LAUNCHING SCRIPT **
+//-----------------------------------------------------------------------------------------
+
+begin script BarrelRoller
+
+ BarrelLaunchPos[5]
+ BarrelTargetPos[5]
+ RandomNum = 0
+ Count = 0
+ ShortFuse = 0
+ RandomFusing = 0
+ LastRandomNumOne = 0
+ LastRandomNumTwo = 0
+
+start
+
+BarrelLaunchPos[0] = marker at {1309.410,25.645,1620.450}
+BarrelLaunchPos[1] = marker at {1307.501,25.684,1620.334}
+BarrelLaunchPos[2] = marker at {1305.097,25.632,1620.495}
+BarrelLaunchPos[3] = marker at {1302.356,25.618,1620.528}
+BarrelLaunchPos[4] = marker at {1300.483,25.540,1620.769}
+
+BarrelTargetPos[0] = marker at {1309.410,25.645,1625.450}
+BarrelTargetPos[1] = marker at {1307.501,25.684,1625.334}
+BarrelTargetPos[2] = marker at {1305.097,25.632,1625.495}
+BarrelTargetPos[3] = marker at {1302.356,25.618,1625.528}
+BarrelTargetPos[4] = marker at {1300.483,25.540,1625.769}
+
+begin loop
+	wait 3 seconds
+	
+	// Fire Barrel One	
+	RandomNum = number from 0 to 4
+	run background script HandleBarrelRoll (BarrelLaunchPos[RandomNum], BarrelTargetPos[RandomNum], 0)
+
+	// Fire Barrel Two	
+	LastRandomNumOne = RandomNum
+	while RandomNum == LastRandomNumOne
+		RandomNum = number from 0 to 4
+	end while
+	RandomFusing = number from 0 to 9
+	if RandomFusing < 4	// 50% chance of barrel being fused
+		ShortFuse = 1
+	else
+		ShortFuse = 0
+	end if
+	run background script HandleBarrelRoll (BarrelLaunchPos[RandomNum], BarrelTargetPos[RandomNum], ShortFuse)
+	
+/*	
+	// 50% chance of firing 3rd fused barrel
+	RandomFusing = number from 1 to 2
+	if RandomFusing == 1
+		LastRandomNumTwo = RandomNum
+		while RandomNum == LastRandomNumOne or RandomNum == LastRandomNumTwo
+			RandomNum = number from 0 to 4
+		end while	
+		run background script HandleBarrelRoll (BarrelLaunchPos[RandomNum], BarrelTargetPos[RandomNum], 1)
+	end if	
+*/
+	
+until QuitBarrelRun != 0 or BarrelRunComplete != 0
+end loop
+
+
+
+
+end script BarrelRoller
+
+
+//-----------------------------------------------------------------------------------------
+// ** MAIN SCRIPT **
+//-----------------------------------------------------------------------------------------
+
+begin script BarrelRun
+
+ Highlight = 0
+ HighlightPos = marker at {1307.063,6.365,1683.120}
+ CancelScroll = 0
+ CancelScrollPos = marker at {1319.313,26.507,1629.705}
+ Count = 0
+ CrusaderPos = marker at {1305.729,6.407,1679.846}
+ MovePos = 0
+ InitialPos = marker at {1305.249,11.424,1693.009}
+ InitialFoc = marker at {1304.559,10.597,1666.915}
+ FinishPos = marker at {1308.097,26.431,1615.271}
+
+start
+
+begin loop
+	if CancelScroll exists
+		delete CancelScroll
+	end if
+	Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of Highlight = 10
+	wait until Highlight right clicked
+	delete Highlight
+	if BarrelCrusader exists
+		delete BarrelCrusader
+	end if
+	
+	CancelScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CANCEL_QUEST at {CancelScrollPos}
+	ALTITUDE of CancelScroll = 15	
+	
+	QuitBarrelRun = 0
+	BarrelRunComplete = 0
+	
+	BarrelCrusader = create VILLAGER VILLAGER_INFO_CRUSADER at {CrusaderPos}
+	disable BarrelCrusader pickup
+	set BarrelCrusader focus to {FinishPos}
+	
+	run background script BarrelRoller
+	
+	begin cinema
+		set camera position to {InitialPos}
+		set camera focus to {InitialFoc}
+		say "The crusader will move wherever you tap the ground."
+		wait until read
+		say "Get him to the top of the hill (using RMB!)."
+		wait until read
+	end cinema
+	
+	move BarrelCrusader position to {FinishPos}
+	clear right clicked position
+	while QuitBarrelRun == 0 and BarrelRunComplete == 0
+		if BarrelCrusader is FLYING or BarrelCrusader on fire or HEALTH of BarrelCrusader <= 0
+			if BarrelCrusader on fire
+				BarrelCrusader play ANM_P_ON_FIRE_DIE loop 1
+			end if
+			begin cinema
+				say "YOU DIED!"
+				wait until read
+				set camera position to {InitialPos}
+				set camera focus to {InitialFoc}
+			end cinema
+			HEALTH of BarrelCrusader = 0
+			BarrelRunComplete = 1
+		elsif not right clicked position near {0.000,0.000,0.000} radius 10
+			MovePos = marker at right clicked position
+			if {MovePos} near {FinishPos} radius 200
+				move BarrelCrusader position to {MovePos}
+			end if
+			clear right clicked position
+		elsif CancelScroll right clicked
+			delete BarrelCrusader with fade
+			begin dialogue
+				say "YOU QUIT"
+				wait until read
+			end dialogue
+			QuitBarrelRun = 1
+		elsif {BarrelCrusader} near {FinishPos} radius 10
+			BarrelRunComplete = 2
+			BarrelRunActive = 1
+		end if
+	end while
+	
+until BarrelRunActive == 1
+end loop
+
+if CancelScroll exists
+	delete CancelScroll
+end if
+
+begin cinema
+	say "CONGRATULATIONS! YOU MADE IT!"
+	wait until read
+end cinema
+	
+end script BarrelRun

@@ -1,0 +1,558 @@
+
+global MessengerKilled = 0
+global MessengerBoatSunk = 0
+global MessengerBoatArrived = 0
+global MessengerAboard = 0
+
+define script MessengerLoiters (Messenger, MessengerPos)
+define script MessengerGuardsProtect (MessengerGuards, MessengerGuardPos)
+define script AztecArrival
+define script L4AdviseMe (Messenger)
+///define script ShootMessengerIntro // not required anymore?
+
+
+//------------------------------------------------------------
+// MAIN
+//------------------------------------------------------------
+
+begin script Land4ShootMessenger
+
+ MessengerBoat = 0
+ BoatPath[5]
+ Messenger = 0
+ MessengerPos = marker at {1235.534, 54.110, 1850.411} // on sunken causeway peninsula
+ MessengerGuards = 0
+ MessengerGuardPos = marker at {1240.527, 55.139, 1854.595} // on sunken causeway peninsula
+ BoardingPos = marker at {1222.204, 50.656, 1833.210} // end of sunken causeway peninsula
+ BoatRespawnTime = 300
+ AztecArrivalDelay = 30 /// 900
+ MessengerSuccessful = 0
+ BoatNumber = 0
+ ObjectInHand = 0
+ AwaitingCutSceneOpportunity = 0
+ InitialTimer = create timer for 0 seconds
+ InitialDelay = 30
+ MessengerBoatSpeed = 1
+ GuardPosInL4JapanOutpost2 = marker at {1184.459, 120.656, 2032.733}
+ InitialBoatSunk = 0
+
+
+start
+
+BoatPath[0] = marker at {1706.704, 34.408, 949.174} // near Capital beach
+BoatPath[1] = marker at {1429.663, 30.348, 1599.139} // near isle
+BoatPath[2] = marker at {1192.489, 42.765, 1788.011} // near end of peninsula
+BoatPath[3] = marker at {1374.766, 35.850, 1091.304} // near end of bay
+BoatPath[4] = marker at {971.460, 0.341, 115.247} // off the greek coast out at sea
+
+Messenger = create VILLAGER MALE at {MessengerPos}
+run background script MessengerLoiters (Messenger, MessengerPos)
+
+MessengerGuards = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {MessengerGuardPos} with 12 men and 0 women
+attach MessengerGuards to L4JapanCapitol
+run background script MessengerGuardsProtect (MessengerGuards, MessengerGuardPos)
+
+MessengerBoat = create SHIP JAPANESE_SHIP at {BoatPath[0]}
+
+begin cinema
+	set camera position to {Messenger}+{-15,10,-15}
+	set camera focus to {Messenger}
+	move camera position to {1222.588, 196.885, 1660.483} time 5
+	eject evil spirit
+	make evil spirit point at {Messenger}
+	/// PLAY ANIM ON MESSENGER
+	say "Boss, the Aztec Ambassador and his entourage are on a beach near the Fortified Town."
+	wait until read
+	stop evil spirit pointing
+	set camera position to {MessengerBoat}+{-15,10,-15}
+	set camera focus to {MessengerBoat}
+	eject good spirit
+	make good spirit point at {MessengerBoat}
+	say "He is waiting for a boat to arrive from the capital to pick him up."
+	wait 2 seconds
+	move camera position to {617.340, 221.734, 593.338} time 10
+	wait until read
+	stop good spirit pointing
+	say "We've got to stop that sneaky Aztec getting word to his buddies abroad!"
+	wait until camera ready
+	move camera position to {836.098, 100.946, 615.203} time 5
+	move camera focus to {835.734, 100.383, 615.946} time 2
+	wait until read
+	say "Let's sneak over there and kick his head in!"
+	wait until read
+	say "Don't be so aggressive. We'll have time to build walls before the Aztecs can get here."
+	wait until read
+	wait until camera ready
+end cinema
+
+// ADVISORS - INTRODUCE PLAYER TO GREEK LOCAL
+begin dialogue
+	eject good spirit
+	say "Our Greek followers have started work on their town."
+	wait until read
+	say "We should get to work helping them to grow."
+	wait until read
+	eject evil spirit
+	say "Yeah! We need more troops!"
+	wait until read
+end dialogue
+
+run background script L4AdviseMe (Messenger)	// Pops advisor comments when approaching POI
+
+set InitialTimer time to InitialDelay seconds
+while get InitialTimer time remaining > 0
+	if MessengerBoat not exists or HEALTH of MessengerBoat <= 0
+		begin dialogue
+			eject evil spirit
+			say "That will buy us some time whilst they find another boat"
+			wait until read
+			InitialBoatSunk = 1
+		end dialogue
+	end if
+end while
+
+begin loop
+	// create a boat and sail to the pickup point. If it is sunk en route create another after a while.
+	BoatNumber++
+	if BoatNumber > 1 or InitialBoatSunk == 1
+		wait BoatRespawnTime seconds
+	end if
+
+	if MessengerBoat not exists
+		MessengerBoat = create SHIP JAPANESE_SHIP at {BoatPath[0]}
+	end if
+	//add {BoatPath[0]} to MessengerBoat waypoint schedule
+	add {BoatPath[1]} to MessengerBoat waypoint schedule
+	add {BoatPath[2]} to MessengerBoat waypoint schedule
+	SPEED of MessengerBoat = MessengerBoatSpeed
+	enable MessengerBoat waypoint schedule
+
+	// Advisors warn player about the Messenger Boat
+	begin dialogue
+		say "A Japanese boat has left the capitol to pick up the Aztec Ambassador."
+		wait until read
+		say "We can't let him get word to the Aztecs abroad about our presence here."
+		wait until read
+	end dialogue
+
+	wait until MessengerBoat at final destination or MessengerBoat not exists or HEALTH of MessengerBoat <= 0
+
+	if MessengerBoat exists and HEALTH of MessengerBoat > 0
+		// make M get on boat, if Messenger picked up drop out of loop
+		move Messenger position to {BoardingPos}
+		wait until {Messenger} at {BoardingPos} or HEALTH of Messenger <= 0 or HEALTH of MessengerBoat <= 0 
+		if HEALTH of Messenger > 0 and HEALTH of MessengerBoat > 0
+			delete Messenger with fade
+			MessengerAboard = 1
+		elsif HEALTH of Messenger > 0
+			// if boat sunk before M boards then reinitiate loitering behaviour and wait for another boat
+			run background script MessengerLoiters (Messenger, MessengerPos)
+			if MessengerGuards exists
+				run background script MessengerGuardsProtect (MessengerGuards, MessengerGuardPos)
+			end if
+		else
+			MessengerKilled = 1
+		end if
+	end if
+
+until MessengerKilled == 1 or MessengerAboard == 1
+end loop
+
+if MessengerKilled == 1 and MessengerBoat exists and HEALTH of MessengerBoat > 0
+	HEALTH of MessengerBoat = 0
+end if
+
+if MessengerAboard == 1
+	MessengerBoatArrived = 1
+	// Sail the last few waypoints and see if the boat is sunk
+	if PLAYER of L4JapanOutpost2 != 0
+		attach MessengerGuards to L4JapanOutpost2
+	end if
+
+	add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {GuardPosInL4JapanOutpost2} to front of MessengerGuards action queue // makes them head home or attack depending on town owner
+
+	clear MessengerBoat waypoint schedule
+	add {BoatPath[3]} to MessengerBoat waypoint schedule
+	add {BoatPath[4]} to MessengerBoat waypoint schedule
+	SPEED of MessengerBoat = MessengerBoatSpeed
+	enable MessengerBoat waypoint schedule
+	wait until MessengerBoat at final destination or MessengerBoat not exists or HEALTH of MessengerBoat <= 0
+	if MessengerBoat exists and HEALTH of MessengerBoat > 0
+		MessengerSuccessful = 1
+		delete MessengerBoat with fade
+	end if
+end if
+
+if MessengerSuccessful == 1
+	begin dialogue
+		say "The Messenger got away. Expect trouble sometime soon."
+		wait until read
+	end dialogue
+	// wait for a while then trigger AztecBoat to appear
+	wait AztecArrivalDelay seconds
+	run script AztecArrival
+else
+	// if the MessengerBoat sinks congratulate player
+	begin dialogue
+		say "Congratulations! You prevented the message getting to the Aztecs."
+		wait until read
+	end dialogue
+end if
+
+end script Land4ShootMessenger
+
+
+//-----------------------------------------------------------
+// MESSENGER LOITERS
+//-----------------------------------------------------------
+begin script MessengerLoiters (Messenger, MessengerPos)
+
+ RandomPos = 0
+
+start
+	begin loop
+		RandomPos = marker at {MessengerPos}+{number from -5 to 5, number from -5 to 5}
+		move Messenger position to {RandomPos}
+		wait until {Messenger} at {RandomPos} or HEALTH of Messenger <= 0
+		if HEALTH of Messenger > 0
+			play anim "A_P_looking_for_something" on Messenger loop 1
+		elsif MessengerAboard == 0
+			MessengerKilled = 1
+		end if
+	until MessengerBoatArrived == 1 or MessengerKilled == 1 or MessengerAboard == 1
+	end loop
+
+end script MessengerLoiters
+
+//-----------------------------------------------------------
+// MESSENGER GUARDS PROTECT
+//-----------------------------------------------------------
+begin script MessengerGuardsProtect (MessengerGuards, MessengerGuardPos)
+
+start
+	begin loop
+		wait 3 seconds
+		if {MessengerGuards} not near {MessengerGuardPos} radius 10 ///and MessengerGuards not fighting
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {MessengerGuardPos} to front of MessengerGuards action queue
+		end if
+	until MessengerBoatArrived == 1
+	end loop
+
+end script MessengerGuardsProtect
+
+//-----------------------------------------------------------
+// AZTEC ARRIVAL
+//-----------------------------------------------------------
+begin script AztecArrival
+
+ArrivalPos = marker at {2.301, 13.161, 1207.134}
+WaypointPos = marker at {163.810, 25.719, 658.008}
+WaypointPos2 = marker at {512.326, 34.281, 397.680}
+WaypointPos3 = marker at {926.691, 31.438, 422.670}
+WaypointPos4 = marker at {1061.543, 34.807, 535.136}
+LandingPos = marker at {1045.719, 34.120, 571.039}
+AztecBoat = 0
+AztecBoatSpeed = 2
+AztecArmyPos = marker at {1058.193, 46.386, 680.733}
+AztecArcherPos = marker at {1067.041, 45.765, 679.815}
+AztecArmy = 0
+AztecArchers = 0
+NumAztecWarriors = 40
+NumAztecArchers = 20
+
+start
+
+	AztecBoat = create SHIP AZTEC_SHIP at {ArrivalPos}
+	add {WaypointPos} to AztecBoat waypoint schedule
+	add {WaypointPos2} to AztecBoat waypoint schedule
+	add {WaypointPos3} to AztecBoat waypoint schedule
+	add {WaypointPos4} to AztecBoat waypoint schedule
+	add {LandingPos} to AztecBoat waypoint schedule
+	SPEED of AztecBoat = AztecBoatSpeed
+	enable AztecBoat waypoint schedule
+
+	begin dialogue
+		say "An Aztec Boat has appeared on the horizon."
+		wait until read
+	end dialogue
+
+	wait until AztecBoat at final destination or AztecBoat not exists or HEALTH of AztecBoat <= 0
+
+	if AztecBoat exists and HEALTH of AztecBoat > 0
+		AztecArmy = create platoon PLATOON_INFO_AZTEC_MELEE_3 at {AztecArmyPos} with NumAztecWarriors men and 0 women
+		set AztecArmy player 3
+		///attach AztecArmy to L4JapanCapitol
+
+		AztecArchers = create platoon PLATOON_INFO_AZTEC_RANGED_1 at {AztecArcherPos} with NumAztecArchers men and 0 women
+		set AztecArchers player 3
+		///attach AztecArchers to L4JapanCapitol
+		add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using AztecArmy to front of AztecArchers action queue
+
+		// send army to attack Greeks
+		//set platoon AztecArmy take over town L4GreekTown
+		add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4GreekTown to front of AztecArmy action queue
+
+		begin dialogue
+			eject evil spirit
+			make evil spirit point at {AztecArmy}
+			say "Aztecs have landed near the Greek Settlement!"
+			wait until read
+			say "They don't look friendly."
+			wait until read
+		end dialogue
+	else
+		begin dialogue
+			eject evil spirit
+			say "Nice work, Boss! Sinking that boat saved us a battle with the Aztecs."
+			wait until read
+		end dialogue
+	end if
+
+end script AztecArrival
+
+//-------------------------------------------------------------------------------------
+// ADVISORS - LANDSCAPE COMMENTS
+//-------------------------------------------------------------------------------------
+
+begin script L4AdviseMe (Messenger)
+
+ Eternity = 0
+ MessengerComment = 0
+
+start
+	begin loop
+		if camera position near {Messenger} radius 100 and {Messenger} viewed and MessengerComment == 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {Messenger}
+				say "There's that Aztec Messenger, Motec!"
+				wait until read
+				stop good spirit pointing
+				eject evil spirit
+				say "Let's get over there and kick his head in."
+				wait until read
+				send evil spirit home
+				say "There's no need for that kind of attitude."
+				wait until read
+			end dialogue
+			MessengerComment = 1
+		end if
+	until Eternity == 1
+	end loop
+
+end script L4AdviseMe
+
+/*
+//-------------------------------------------------------------------------------------
+//Intro cutscene
+//-------------------------------------------------------------------------------------
+
+begin script ShootMessengerIntro
+
+OutPostPos = marker at {1754.805,33.750,1706.630}
+OutPost = 0
+RelCamPos=0
+RelCamFoc=0
+
+Hiroku=0
+Messenger=0
+Motec=0
+JapAdvisor=0
+
+HirokuPos=0
+MessengerPos[2]
+MotecPos[2]
+JapAdvisorPos=0
+
+
+
+start
+
+OutPost = get HOUSE at {OutPostPos}
+
+HirokuPos = marker at get world position from OutPost to {0.840,-0.150,-3.469}
+JapAdvisorPos = marker at get world position from OutPost to {1.021,-0.068,-2.967}
+
+MessengerPos[0] = marker at get world position from OutPost to {1.878,-0.296,-4.431}
+
+MotecPos[0] = marker at get world position from OutPost to {-0.669,-0.084,-3.104}
+
+MotecPos[1] = marker at get world position from OutPost to {4.434,-0.735,-9.008}
+MessengerPos[1] = marker at get world position from OutPost to {4.434,-0.735,-9.008}
+
+	Hiroku = create VILLAGER VILLAGER_INFO_JAPANESE_LEADER_MALE at {HirokuPos}	
+	Messenger = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {MessengerPos[0]}	
+	Motec = create VILLAGER VILLAGER_INFO_AZTEC_LEADER_MALE at {MotecPos[0]}	
+	JapAdvisor = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {JapAdvisorPos}
+
+	set Messenger focus to {Hiroku}
+	set Hiroku focus to {Messenger}
+	set Motec focus to {Hiroku}
+	set JapAdvisor focus to {Hiroku}
+
+    begin cinema
+		//wide
+		set camera lens 50.000
+		RelCamPos=marker at get world position from OutPost to {3.717,3.428,-9.543}
+		RelCamFoc=marker at get world position from OutPost to {-1.276,0.213,-2.356}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 50.000 time 3
+		wait 3 seconds
+
+		say "My Daughter --"
+		//on hiroku with motec in back ground
+		set camera lens 32.000
+		RelCamPos=marker at get world position from OutPost to {1.402,0.506,-4.088}
+		RelCamFoc=marker at get world position from OutPost to {-5.556,0.244,2.112}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until read
+
+		say "Yes.  How very sad."
+		wait until read
+
+		//Hiroku crushes the paper in his hand, spinning on Motec.
+		//close-up hir turning into shot
+		set Hiroku focus to {Motec}
+		play anim "A_P_TURN_180" on Hiroku 
+
+		set camera lens 32.000
+		RelCamPos=marker at get world position from OutPost to {0.073,0.498,-3.740}
+		RelCamFoc=marker at get world position from OutPost to {8.229,0.235,0.771}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until Hiroku played
+		set Hiroku focus to {Motec}
+		wait 2 seconds
+
+		//motec central
+		set camera lens 32.000
+		RelCamPos=marker at get world position from OutPost to {0.007,0.544,-3.622}
+		RelCamFoc=marker at get world position from OutPost to {-7.236,0.282,2.244}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		say "Are you so naïve that you don’t see this “message” for what it is?  He probably murdered her himself"
+		wait until read
+
+		//hiroku close
+		set camera lens 32.000
+		RelCamPos=marker at get world position from OutPost to {0.149,0.470,-3.586}
+		RelCamFoc=marker at get world position from OutPost to {9.201,0.544,-1.351}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+
+		say "No."
+		//(skaking head dismissively)
+		wait until read
+
+		say "I’ve met Dimitrios --"
+		wait until read
+
+		//motec central
+		set camera lens 32.000
+		RelCamPos=marker at get world position from OutPost to {0.007,0.544,-3.622}
+		RelCamFoc=marker at get world position from OutPost to {-7.236,0.282,2.244}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		say "I’m done talking with you, Hiroku.  Now burn this man alive and launch the attack."
+		wait until read
+
+		//Hiroku turns his head slightly towards the messenger but keeps his eyes locked on Motec.
+
+		//hiroku w messenger at side
+		set camera lens 32.000
+		RelCamPos=marker at get world position from OutPost to {0.117,0.470,-3.223}
+		RelCamFoc=marker at get world position from OutPost to {8.153,0.544,-7.948}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "Tell Dimitrios that he is welcome to stay," 
+		wait until read
+		say "but if I hear that he’s approached my people, moved even an inch further into my lands… "
+		wait until read
+		say "I guarantee he won’t enjoy my reaction."
+		wait until read
+
+		//messenger close
+		set camera lens 40.000
+		RelCamPos=marker at get world position from OutPost to {1.367,0.389,-4.096}
+		RelCamFoc=marker at get world position from OutPost to {9.200,-0.672,-9.039}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		//The messenger bows and leaves quickly, warily keeping his eyes on the Aztec.  Hiroku and the Motec glare at each other.
+
+		//motec close(r)
+		set camera lens 26.000
+		RelCamPos=marker at get world position from OutPost to {0.075,0.609,-3.462}
+		RelCamFoc=marker at get world position from OutPost to {-8.200,-0.119,0.770}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "You’re walking a very dangerous path, Hiroku."
+		wait until read
+	
+		//hiroku close
+		set camera lens 16.000
+		RelCamPos=marker at get world position from OutPost to {-0.239,0.534,-3.531}
+		RelCamFoc=marker at get world position from OutPost to {9.009,0.141,-2.413}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		say "Is there something Tezozomoc is doing that I should know about?"
+		wait until read
+
+		say "What your master does is no concern of yours."
+		wait until read
+
+		say "Because Dimitrios seems to think so."
+		wait until read
+
+		//motec close
+		set camera lens 26.000
+		RelCamPos=marker at get world position from OutPost to {1.339,0.405,-3.951}
+		RelCamFoc=marker at get world position from OutPost to {-6.540,0.795,1.021}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "You’re a fool.  Lead astray by a child. "
+		wait until read
+
+		say "I will pass on your request for information to his eminence."
+		wait until read
+		move Motec position to {MotecPos[1]}
+		wait 2 seconds
+
+		//hiroku and messenger
+		set camera lens 26.000
+		RelCamPos=marker at get world position from OutPost to {-0.085,0.455,-3.756}
+		RelCamFoc=marker at get world position from OutPost to {8.286,0.845,0.331}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "He’ll be back with soldiers."
+		wait until read
+		say "Of course.  But that’s Dimitrios’ problem."
+		wait until read
+
+		//wide
+		set camera lens 50.000
+		RelCamPos=marker at get world position from OutPost to {3.717,3.428,-9.543}
+		RelCamFoc=marker at get world position from OutPost to {-1.276,0.213,-2.356}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		say "We can’t let the Aztec get away."
+		wait until read
+
+		say "Now you’re talking.  Sink his ship and drown him."
+		wait until read
+
+	end cinema
+
+
+
+end script ShootMessengerIntro
+
+
+*/

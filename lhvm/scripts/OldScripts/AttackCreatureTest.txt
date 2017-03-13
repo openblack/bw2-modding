@@ -1,0 +1,20 @@
+//global Creature
+
+run script AttackCreatureTest
+
+begin script AttackCreatureTest
+
+	Creature		= 0
+	CreaturePos		= marker at {1444.849,9.538,1492.485}
+
+start
+
+	Creature = create CREATURE CREATURE_TYPE_CHICKEN at {CreaturePos}
+	set player 2 creature to Creature
+	Creature = get player 2 creature
+	set Creature DEVELOPMENT_PHASE_FULLY_MATURE development
+	SCALE of Creature = 1
+	STRENGTH of Creature = 1
+	ALIGNMENT of Creature = 0.51
+
+end script AttackCreatureTest

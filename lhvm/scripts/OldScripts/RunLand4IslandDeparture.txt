@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land4Departure
+//-----------------------------------------------------------------------------
+run script RunLand4IslandDeparture
+
+begin script RunLand4IslandDeparture
+
+start
+
+	run script Land4IslandDeparture
+
+end script RunLand4IslandDeparture

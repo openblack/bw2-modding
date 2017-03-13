@@ -1,0 +1,6 @@
+run script RunLand5Traders
+
+begin script RunLand5Traders
+start
+	run script Land5Traders
+end script RunLand5Traders

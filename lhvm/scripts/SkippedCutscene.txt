@@ -1,0 +1,20 @@
+begin script SkippedCutscene
+start
+
+begin cinema
+
+set camera lens 70.00
+set camera roll 0.000 time 0.01
+set fade in time 0
+enable influence
+enable simulation sound
+stop camera shake
+
+if WhiChEpicSpellIsBeingCast exists
+	set auto mixer override on WhiChEpicSpellIsBeingCast channel AUDIO_MIXER_CHANNEL_ASSET_16 min 100 max 400
+end if
+
+
+end cinema
+
+end script SkippedCutscene

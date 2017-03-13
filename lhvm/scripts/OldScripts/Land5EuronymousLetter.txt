@@ -1,0 +1,119 @@
+////////////////////////////////////////////////////////////////////////////////////////////////
+//Dimitrios receives Euronymous's letter cutscene
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script Land5EuronymousLetter
+
+RelCamPos=0
+RelCamFoc=0
+TheJapTownCentre=0
+TheJapTownCentrePos=0
+Dimitrios=0
+Hiroku=0
+Messenger=0
+
+DimitriosPos=0
+HirokuPos=0
+MessengerPos=0
+
+LetterScrollPos = marker at {1263.744,58.287,608.269}
+LetterScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {LetterScrollPos}
+
+start
+
+wait until LetterScroll right clicked or PLAYER of L5AztecTown == 0
+/// DO WE WANT TO HAVE MORE ATTENTION DRAWN TO THIS SCROLL THAN OTHER SCROLLS?
+
+if LetterScroll right clicked
+
+	TheJapTownCentrePos = marker at {1249.170,58.114,608.695}
+	TheJapTownCentre = get HOUSE at {TheJapTownCentrePos}
+
+	DimitriosPos = marker at get world position from TheJapTownCentre to {-0.057,5.194,-9.751}
+	HirokuPos = marker at get world position from TheJapTownCentre to {0.953,5.785,-8.328}
+	MessengerPos = marker at get world position from TheJapTownCentre to {0.086,5.972,-7.553}
+
+	Dimitrios = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {DimitriosPos}
+
+	Hiroku = create VILLAGER VILLAGER_INFO_JAPANESE_LEADER_MALE at {HirokuPos}
+
+	Messenger = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {MessengerPos}
+
+	ALTITUDE of Hiroku = 7.9
+	ALTITUDE of Dimitrios = 7.9
+	ALTITUDE of Messenger = 7.9
+
+	//ALTITUDE of Dimitrios = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of DimitriosPos - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Dimitrios)
+	//ALTITUDE of Hiroku = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of HirokuPos - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Hiroku)
+	//ALTITUDE of Messenger = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of MessengerPos - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Messenger)
+
+	set Dimitrios focus to get world position from TheJapTownCentre to {-0.356,-0.426,-18.122}
+	set Hiroku focus to {Dimitrios}
+
+	begin cinema
+
+		//behind dim looking at map
+		set camera lens 23.000
+		RelCamPos = marker at get world position from TheJapTownCentre to {-0.436,4.769,-9.330}
+		RelCamFoc = marker at get world position from TheJapTownCentre to {4.812,0.222,-17.243}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 5 seconds
+
+		move Messenger position to get target from {Messenger} to {Hiroku} distance 0.5 angle 180
+
+		//in front of dim hiroku in background
+		set camera lens 27.000
+		RelCamPos = marker at get world position from TheJapTownCentre to {-0.350,4.394,-10.684}
+		RelCamFoc = marker at get world position from TheJapTownCentre to {3.474,5.003,-1.542}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 2 seconds
+		set Hiroku focus to {Messenger}
+		move Messenger position to {MessengerPos}
+		wait 1 seconds
+		move Hiroku position to get target from {Hiroku} to {Dimitrios} distance 1 angle 180
+		wait 2 seconds
+		say "Not now Hiroku."
+		wait until read
+		say "From the governor of the Greek settlement."	
+		wait until read
+
+		set Dimitrios focus to {Hiroku}
+
+		//close-up of dim reading letter
+		set camera lens 32.000
+		RelCamPos = marker at get world position from TheJapTownCentre to {0.429,4.506,-9.435}
+		RelCamFoc = marker at get world position from TheJapTownCentre to {-8.239,4.282,-14.271}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "Oh my god."
+		wait 3 seconds
+
+		//close-up of hiroku
+		set camera lens 34.000
+		RelCamPos = marker at get world position from TheJapTownCentre to {0.088,4.506,-10.134}
+		RelCamFoc = marker at get world position from TheJapTownCentre to {0.852,4.282,-0.237}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "What is it?"
+		wait 3 seconds
+
+		//close-up of dim reading letter
+		set camera lens 32.000
+		RelCamPos = marker at get world position from TheJapTownCentre to {0.429,4.506,-9.435}
+		RelCamFoc = marker at get world position from TheJapTownCentre to {-8.239,4.282,-14.271}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "My master Euronymous, he’s still alive."
+		wait 3 seconds
+		delete Hiroku
+		delete Dimitrios
+		delete Messenger
+
+	end cinema
+
+end if
+
+end script Land5EuronymousLetter

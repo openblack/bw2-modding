@@ -1,0 +1,166 @@
+
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 4 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land4Control
+	MyCreaturePos = marker at {966.684, 180.063, 566.517}
+
+start
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	
+//----Fix for skipping lands----//
+	enable creature icon visible
+	enable can use destruction tool	
+	enable toolbar
+	enable interface action MANACOST_BALANCE_TYPE_GODBUILD
+	enable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+	enable interface action MANACOST_BALANCE_TYPE_PERHOURCHANGED
+	enable villager interaction manager
+	enable disciple placedown speech
+	disable script controlled migration player 0
+	
+	run script Land4DidYouKnow
+
+	run script Land4Globals
+	run background script SetupBuildingsLand4
+	run background script Land4Departure	//This checks for winning conditions then rpesents the scroll
+
+	// Reset the players objectives so none get carried over from the previous land
+	reset all objectives for player 0
+
+//----Patch fix for player clicking the creature learning menu----//
+	enable SCRIPT_MENU_TYPE_CREATURE menu
+	
+	enable interface action MANACOST_BALANCE_TYPE_INITIATEFIST
+	enable interface action MANACOST_BALANCE_TYPE_INITIATECREATUREFIST
+//	enable global influence
+
+	//begin cinema
+
+		//start music "creaturefightmain_03" with fadetime 20 loop 1
+		//set fade red 0 green 0 blue 0 time 0
+		//set fade in time 4
+		//set camera position to {2233.370, 766.779, -323.723}
+		//set camera focus to {2187.155, 734.321, -241.197}
+		//wait 2 seconds
+
+
+		//
+		//move camera position to {1850.283, 471.888, -437.036} time 6 easein 0 easeout 0
+		//move camera focus to {1826.382, 462.647, -340.375} time 6 easein 0 easeout 0
+		//wait 2 seconds
+		//say "The Norse were once a proud and honourable people"
+		//wait until read
+		//wait until camera ready
+		//
+		//set camera position to {1176.426, 284.529, 1255.405}
+		//set camera focus to {1171.043, 260.329, 1352.280}
+		//move camera position to {1161.068, 275.640, 1251.711} time 5 easein 0 easeout 0
+		//move camera focus to {1192.281, 274.657, 1346.706} time 5 easein 0 easeout 0
+		//say "But they have now fallen under the shadow of the Aztecs, who rule them through their puppet king"
+		//wait until read
+		//wait until camera ready
+		//
+		//set camera position to {1697.526, 316.154, 1798.420}
+		//set camera focus to {1770.414, 294.996, 1863.533}
+		//say "Their time is coming to an end"
+		////wait until read
+		//move camera position to {1264.860, 305.623, 1399.339} time 7 catmullrom bias  0.0 tension 0.0
+		//move camera focus to {1342.350, 293.813, 1461.437} time 7 catmullrom bias  0.0 tension 0.0
+
+		//move camera position to {1344.391, 175.121, 833.124} time 5 catmullrom bias  0.0 tension 0.0
+		//move camera focus to {1302.692, 143.058, 918.170} time 5 catmullrom bias  0.0 tension 0.0
+
+
+		//say "It is our time now. Time to rebuild and reclaim our glory"
+		////move camera position to {1549.490, 160.279, 1750.943} time 3 easein 0 easeout 2
+		////move camera focus to {1580.386, 150.416, 1845.535}time 4 easein 0 easeout 2
+		//wait 4 seconds
+		//wait 4 seconds
+		////set camera position to {1870.291, 355.537, 2136.130}
+		////set camera focus to {1869.473, 305.814, 2049.362}
+		//say "So the Greeks have returned."
+		//wait until read
+		//
+		////set camera position to {1326.563, 156.707, 863.375}
+		////set camera focus to {1320.826, 115.568, 954.342}
+		//wait 2.3 seconds
+		//set fade red 0 green 0 blue 0 time 0
+		////wait 1 seconds
+
+		////set camera position to {1326.563, 156.707, 863.375}
+		////set camera focus to {1320.826, 115.568, 954.342}
+		//wait 2.3 seconds
+		//set fade red 0 green 0 blue 0 time 0
+		////wait 1 seconds
+
+		//say "Order Hengist to move his company to the Eastern Beach and await my command"
+		//wait until read
+
+		//say "They will all die."
+		//wait until read
+		//set fade in time 2
+		//wait 2 seconds
+	//end cinema
+	
+	/*MyCreature = create CREATURE CREATURE_TYPE_LION at {MyCreaturePos}
+	SCALE of MyCreature = 0.6
+	ALIGNMENT of MyCreature = 0
+	set player 0 creature to MyCreature
+	release MyCreature */
+
+	load my_creature at {MyCreaturePos}
+	MyCreature =  get player 0 creature
+	if not MyCreature exists
+		MyCreature = create CREATURE CREATURE_TYPE_LAST at {MyCreaturePos}
+		set player 0 creature to MyCreature
+		release MyCreature
+	end if
+
+	enable leash on MyCreature
+	enable MyCreature can drop
+	
+	enable game can be lost
+
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+
+	// ------------ create resources -------------------
+	
+	add resource RESOURCE_TYPE_FOOD 5000 to L4GreekTown
+
+    add resource RESOURCE_TYPE_WOOD 2000 to L4GreekTown
+
+    add resource RESOURCE_TYPE_ORE 500 to L4GreekTown
+
+	// ------------ set players default experience level -------------------
+	
+	set initial level of player melee platoon to ARMY_UNIT_TYPE_MELEE_1
+	
+	set initial level of player ranged platoon to ARMY_UNIT_TYPE_RANGED_1
+	
+	set initial level of player siege weapon to SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1
+
+	//--------------------------------------------------
+
+	run background script Land4NorseWolf
+	run background script Land4Geysers
+	//run script Land4CreatureWakes
+	run background script Land4CreatureTutorial
+	run script Land4Intro
+//	run background script SingingPengions
+	run background script Land4NorseCapitalScript
+	run background script Land4TownObjectives //- Disabled until primary objectives are sorted
+	run background script Land4BuildWall
+	run background script Land4AltarAndMagic
+	run background script Land4TownTutorials
+//	run background script Land4Kidnappers
+	run background script Land4NutOil
+	run background script L4_ThrowBloke
+	run background script Land4UndeadLegion
+
+	// run the script for the tombs on this land 0 to 13 are valid values
+	//run background script GT_ActivateTomb(2)
+	//run background script GT_ActivateTomb(3)
+
+
+end script Land4Control

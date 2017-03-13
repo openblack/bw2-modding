@@ -1,0 +1,9 @@
+run script RunLand1RescueThePrincess
+
+begin script RunLand1RescueThePrincess
+
+start
+
+run script Land1RescueThePrincess
+
+end script RunLand1RescueThePrincess

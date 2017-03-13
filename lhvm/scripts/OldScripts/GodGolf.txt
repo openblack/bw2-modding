@@ -1,0 +1,774 @@
+
+//------------------------------------------------------------------------------------------------------------------------
+// GOLF GAME CODE
+//------------------------------------------------------------------------------------------------------------------------
+
+global HoleNumber
+global HoleCompleted
+global PCGolfBall
+global CPGolfBall
+global CourseCompleted
+global PCLastPos
+global CPLastPos
+global PCStrokeTotal
+global CPStrokeTotal
+global PCShotNum
+global CPShotNum
+global PCHoledOut
+global CPHoledOut
+global PCMark
+global CPMark
+global GolfQuit
+global BallType
+global PCClosest
+global CPClosest
+global PCMulligans
+global FirstHoleComment
+
+
+//------------------------------------------------------------------------------------------------------------------------
+// This is a golf game
+//------------------------------------------------------------------------------------------------------------------------
+
+// ------------------------------
+// Select Ball
+//-------------------------------
+
+begin script SelectGolfBall
+
+ SelectCamPos = marker at {850.375,21.115,1588.522}
+ SelectCamFoc = marker at {843.885,0.802,1567.124}
+ BallOne = 0
+ BallOnePos = marker at {860.756,0.879,1560.985}
+ BallTwo = 0
+ BallTwoPos = marker at {854.811,0.000,1556.270}
+ BallThree = 0
+ BallThreePos = marker at {847.492,1.340,1555.088}
+ BallFour = 0
+ BallFourPos = marker at {839.037,1.340,1557.317}
+ BallFive = 0
+ BallFivePos = marker at {832.617,0.596,1564.853}
+ BallSix = 0
+ BallSixPos = marker at {827.099,0.000,1573.162}
+  
+start
+	BallType = 0
+	begin cinema
+		move camera position to {SelectCamPos} time 2
+		move camera focus to {SelectCamFoc} time 2
+		wait until camera ready
+		BallOne = create OBJECT ROCK at {BallOnePos}
+		enable BallOne indestructible
+		BallTwo = create OBJECT MOBILE_STATIC_INFO_BOULDER1_CHALK at {BallTwoPos}
+		enable BallTwo indestructible
+		BallThree = create OBJECT MOBILE_STATIC_INFO_BOULDER2_LIME at {BallThreePos}
+		enable BallThree indestructible
+		BallFour = create OBJECT MOBILE_STATIC_INFO_BOULDER3_SAND at {BallFourPos}
+		enable BallFour indestructible
+		BallFive = create OBJECT MOBILE_STATIC_INFO_FLATROCK_VOLCANIC at {BallFivePos}
+		enable BallFive indestructible
+		BallSix = create OBJECT MOBILE_STATIC_INFO_LONGROCK_CHALK at {BallSixPos}
+		enable BallSix indestructible
+		say "Welcome to God Golf. Blah blah..."
+		wait until read
+		say "Pick up the type of Golfball you want to use."
+		wait until read
+	end cinema
+	
+	while BallType == 0
+		if camera position not near {SelectCamPos} radius 50
+			begin camera
+				move camera position to {SelectCamPos} time 2
+				move camera focus to {SelectCamFoc} time 2
+				say "Pick a ball or quit the game!"
+				wait until read
+				wait until camera ready
+			end camera
+		end if
+		if BallOne is HELD_ANY
+			BallType = variable get BallOne sub type
+		elsif BallTwo is HELD_ANY
+			BallType = variable get BallTwo sub type
+		elsif BallThree is HELD_ANY
+			BallType = variable get BallThree sub type
+		elsif BallFour is HELD_ANY
+			BallType = variable get BallFour sub type
+		elsif BallFive is HELD_ANY
+			BallType = variable get BallFive sub type
+		elsif BallSix is HELD_ANY
+			BallType = variable get BallSix sub type									
+		end if
+	end while
+	
+	/// say "add ball selected comment texts
+
+	delete BallOne
+	delete BallTwo
+	delete BallThree
+	delete BallFour
+	delete BallFive
+	delete BallSix
+
+end script SelectGolfBall
+
+// ------------------------------
+// Player's Go
+//-------------------------------
+
+begin script PCShot (PinHigh, TeeOff)
+
+ Spangle1 = 0
+ Spangle2 = 0
+ Spangle3 = 0
+ Spangle4 = 0
+ Spangle5 = 0
+ Spangle6 = 0
+ Spangle7 = 0
+ Spangle8 = 0
+ Ray1 = 0
+ Ray2 = 0
+ Ray3 = 0
+ Ray4 = 0
+ Ray5 = 0
+ Ray6 = 0
+ Ray7 = 0
+ Ray8 = 0
+ ThrowLoop = 0
+ BallMoving = 0
+ FSize = 3
+ CamPos = 0
+ ReminderTimer = create timer for 0 seconds
+ PCPar = 0
+ BallInf = 0
+ MulliganTaken = 0
+
+start
+	if TeeOff != 0
+		PCLastPos = marker at {TeeOff}
+	end if
+
+	delete PCMark
+
+	Spangle1 = marker at {PCLastPos} + {5*FSize,3,0}
+	Spangle2 = marker at {PCLastPos} + {3.5*FSize,3,3.5*FSize}
+	Spangle3 = marker at {PCLastPos} + {0.000,1.500,2.500}
+	Spangle4 = marker at {PCLastPos} + {-3.5*FSize,3,3.5*FSize}
+	Spangle5 = marker at {PCLastPos} + {-5*FSize,3,0}
+	Spangle6 = marker at {PCLastPos} + {-3.5*FSize,3,-3.5*FSize}
+	Spangle7 = marker at {PCLastPos} + {0.000,1.500,-2.500}
+	Spangle8 = marker at {PCLastPos} + {3.5*FSize,3,-3.5*FSize}
+	Ray1 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle1 time -1
+	add Ray1 target on Spangle2
+	Ray2 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle2 time -1
+	add Ray2 target on Spangle3
+	Ray3 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle3 time -1
+	add Ray3 target on Spangle4
+	Ray4 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle4 time -1
+	add Ray4 target on Spangle5
+	Ray5 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle5 time -1
+	add Ray5 target on Spangle6
+	Ray6 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle6 time -1
+	add Ray6 target on Spangle7
+	Ray7 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle7 time -1
+	add Ray7 target on Spangle8
+	Ray8 = create special effect SPOT_VISUAL_MAGIC_BEAM on Spangle8 time -1
+	add Ray8 target on Spangle1
+
+	begin loop
+		MulliganTaken = 0
+		begin cinema
+			PCGolfBall = create OBJECT constant BallType at {PCLastPos}
+			enable PCGolfBall indestructible
+			BallInf = create influence on PCGolfBall radius 5
+			ALTITUDE of PCGolfBall = 0
+			CamPos = marker at get target from {PinHigh} to {PCGolfBall} distance 35 angle 0
+			move camera position to {CamPos}+{0.000,20.000,0.000} time 3
+			move camera focus to {PCGolfBall}+{0.000,10.000,0.000} time 3
+			if TeeOff != 0 and FirstHoleComment == 0
+				say "This is the first Tee."
+				wait until read
+				say "This hole is a par 3 like every other hole on the course"
+				wait until read
+				say "This means you have 3 throws of the rock to get it to stop in the hole."
+				wait until read
+				say "Your throw must be made within the circle or it won't count."
+				wait until read
+				FirstHoleComment = 1
+			else
+				say "It's your turn."
+				wait until read
+			end if
+			if TeeOff != 0 and (HoleNumber == 3 or HoleNumber == 1)
+				say "Closest to the pin from Tee-Off wins a bonus prize."
+				wait until read
+				PCClosest = 0
+			end if
+			wait until camera ready
+			wait until PCGolfBall is not FLYING
+		end cinema
+
+		set ReminderTimer time to 30 seconds
+		while ThrowLoop == 0
+			if GolfQuit == 1
+				ThrowLoop = 1
+			end if
+			if {PCGolfBall} not near {PCLastPos} radius 20
+				if PCGolfBall is not FLYING
+					delete PCGolfBall
+					PCGolfBall = create OBJECT constant BallType at {PCLastPos}
+					enable PCGolfBall indestructible
+					BallInf = create influence on PCGolfBall radius 5
+					ALTITUDE of PCGolfBall = 0
+				else
+					ThrowLoop = 1
+				end if
+			elsif PCGolfBall is not HELD and PCGolfBall is not FLYING and {PCGolfBall} near {PinHigh} radius 10
+				ThrowLoop = 1
+			end if
+			if get ReminderTimer time remaining <= 0
+				begin dialogue
+					eject evil spirit
+					make evil spirit point at {PCGolfBall}
+					say "It's your turn."
+					wait until read
+					stop evil spirit pointing
+					set ReminderTimer time to 30 seconds
+				end dialogue
+			end if
+		end while
+		ThrowLoop = 0
+
+		if GolfQuit == 0
+			begin cinema
+				set camera heading follow PCGolfBall distance 20
+				BallMoving = 0
+				while BallMoving == 0
+					if {PCGolfBall} near {PinHigh} radius 10 and PCGolfBall is FLYING and ALTITUDE of PCGolfBall < 50
+						wait 1 second
+						if {PCGolfBall} near {PinHigh} radius 10 and ALTITUDE of PCGolfBall < 50
+							BallMoving = 1
+							PCHoledOut = 1
+						end if
+					elsif PCGolfBall is not FLYING
+						BallMoving = 1
+					end if
+					if key KB_ESC down and PCMulligans > 0
+						say "Mulligan Taken."
+						wait until read
+						MulliganTaken = 1
+						PCMulligans--
+						BallMoving = 1
+					end if
+				end while
+				if TeeOff != 0 and (HoleNumber == 1 or HoleNumber == 3) and MulliganTaken == 0
+					PCClosest = get distance from {PCGolfBall} to {PinHigh}
+				end if
+				if {PCGolfBall} near {PinHigh} radius 10 and PCHoledOut == 0 and MulliganTaken == 0
+					PCHoledOut = 1
+				end if
+				wait 1 second
+			end cinema
+			
+			//if MulliganTaken == 1
+				//MulliganTaken = 0
+				//delete PCGolfBall with fade
+			//else
+				//MulliganTaken = 2
+			//end if
+		//end if
+	//until MulliganTaken == 2
+	//end loop
+
+		if MulliganTaken == 1
+			// do nothing except miss what's below
+		elsif PCHoledOut == 0
+			if PCGolfBall exists
+				PCLastPos = marker at {PCGolfBall}
+			else
+				begin dialogue
+					eject good spirit
+					say "Water Hazard. Shot must be retaken."
+					wait until read
+					send good spirit home
+				end dialogue
+			end if
+		else
+			delete PCGolfBall with fade
+			begin dialogue
+				eject evil spirit
+				say "It's in the 'ole. Good Shot."
+				wait until read
+				PCPar = (3 - (PCShotNum + 1))
+				if PCPar <= -3
+					say "Hmm. Not at your best, eh?"
+					wait until read
+				elsif PCPar == -2
+					say "Woah. Double bogie. Not good."
+					wait until read
+				elsif PCPar == -1
+					say "Natch! A bogie."
+					wait until read
+				elsif PCPar == 0
+					say "Par."
+					wait until read
+				elsif PCPar == 1
+					say "A Birdie!"
+					wait until read
+				elsif PCPar == 2
+					say "A HOLE IN ONE!"
+					wait until read
+					say "This earns you a free Mulligan."
+					wait until read
+					say "Just press escape while your shot is in mid air to replay it."
+					wait until read
+					PCMulligans++
+				end if
+				send evil spirit home
+			end dialogue
+		end if
+
+		if PCGolfBall exists and MulliganTaken == 0
+			if {PCGolfBall} near {PinHigh} radius 20 and PCHoledOut == 0
+				begin dialogue
+					say "Close enough for a Tap-in."
+					wait until read
+					PCPar = (3 - (PCShotNum + 2))
+					if PCPar == -3
+						say "Hmm. Not at your best, eh?"
+						wait until read
+					elsif PCPar == -2
+						say "Woah. Double bogie. Not good."
+						wait until read
+					elsif PCPar == -1
+						say "Natch! A bogie."
+						wait until read
+					elsif PCPar == 0
+						say "Par."
+						wait until read
+					elsif PCPar == 1
+						say "A Birdie!"
+						wait until read
+					elsif PCPar == 2
+						say "A Hole in One!" // This line cannot be called on a tap-in
+						wait until read
+					end if
+				end dialogue
+				PCShotNum++ // This adds the extra Tap-In shot
+				PCStrokeTotal++
+				delete PCGolfBall with fade
+				PCHoledOut = 1
+			else
+				PCMark = create special effect SPOT_VISUAL_COMMAND_SUCCEED at {PCGolfBall} time -1
+				delete PCGolfBall with fade
+			end if
+		end if
+	else
+		delete PCGolfBall with fade
+	end if
+	
+	if MulliganTaken == 0
+		MulliganTaken = 2
+	else
+		delete PCGolfBall with explosion
+	end if
+	
+	until MulliganTaken == 2
+	end loop
+	MulliganTaken = 0
+
+	delete Ray1
+	delete Ray2
+	delete Ray3
+	delete Ray4
+	delete Ray5
+	delete Ray6
+	delete Ray7
+	delete Ray8
+
+end script PCShot
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script CPShot (PinHigh, TeeOff)
+
+ Margin = 0
+ TargetPos = 0
+ BallMoving = 0
+ Waypoint[9]
+ DistanceToGo = 0
+ CPPar = 0
+
+start
+	// curently same as Pinpos
+	Waypoint[0] = marker at {904.665,2.010,1412.847}
+	Waypoint[1] = marker at {958.425,8.099,1259.312}
+	Waypoint[2] = marker at {1069.729,14.176,1293.161}
+	Waypoint[3] = marker at {1104.609,26.130,1394.088}
+	Waypoint[4] = marker at {1103.105,26.434,1544.177}
+	Waypoint[5] = marker at {1265.228,26.283,1501.259}
+	Waypoint[6] = marker at {1312.978,26.208,1408.555}
+	Waypoint[7] = marker at {1408.123,5.610,1312.826}
+	Waypoint[8] = marker at {1273.379,31.481,1560.737}
+
+	if TeeOff != 0
+		CPLastPos = marker at {TeeOff}
+	end if
+
+	delete CPMark
+
+	begin cinema
+		CPGolfBall = create OBJECT ROCK at {CPLastPos}
+		enable CPGolfBall indestructible
+		ALTITUDE of CPGolfBall = 0
+		move camera position to {CPGolfBall}+{7.500,5.000,7.500} time 3
+		move camera focus to {CPGolfBall} time 3
+		say "CPs turn."
+		CPClosest = 0
+		wait until read
+		wait until camera ready
+		if TeeOff != 0
+			DistanceToGo = get distance from {CPGolfBall} to {Waypoint[HoleNumber]}
+			Margin = DistanceToGo*0.5 // half the distance so actual_target is half way to targetpos
+			TargetPos = marker at get target from {CPGolfBall} to {Waypoint[HoleNumber]} distance Margin angle 180
+			Margin = Margin*0.1
+			// add a margin of error to CPs shot
+			if HoleNumber == 1 // These holes needs a specific fix to get it over obstacles.
+				TargetPos = marker at {953.744,7.506,1317.981}
+			elsif HoleNumber == 3
+				TargetPos = marker at {1111.008,26.130,1383.984}
+			elsif HoleNumber == 4
+				TargetPos = marker at {1127.871,26.416,1508.375}
+			elsif HoleNumber == 5
+				TargetPos = marker at {1234.740,35.327,1525.569}
+			elsif HoleNumber == 8
+				TargetPos = marker at {1304.671,20.340,1637.290}
+			else
+				TargetPos = marker at {TargetPos}+{number from -Margin to Margin, number from -Margin to Margin}
+			end if
+			set CPGolfBall target {TargetPos} time 6
+		else
+			DistanceToGo = get distance from {CPGolfBall} to {PinHigh}
+			Margin = DistanceToGo*0.33
+			TargetPos = marker at get target from {CPGolfBall} to {PinHigh} distance Margin angle 180
+			Margin = Margin*0.1
+			TargetPos = marker at {TargetPos}+{number from -Margin to Margin, number from -Margin to Margin}
+			if DistanceToGo < 100
+				set CPGolfBall target {TargetPos} time 2
+			elsif DistanceToGo < 200
+				set CPGolfBall target {TargetPos} time 3
+			else
+				set CPGolfBall target {TargetPos} time 4
+			end if
+		end if
+		set camera heading follow CPGolfBall distance 20
+		wait 1 second 
+		while BallMoving == 0
+			if {CPGolfBall} near {PinHigh} radius 10 and CPGolfBall is FLYING and ALTITUDE of CPGolfBall < 50
+				wait 1 second
+				if {CPGolfBall} near {PinHigh} radius 10 and ALTITUDE of CPGolfBall < 50
+					BallMoving = 1
+					CPHoledOut = 1
+				end if
+			elsif CPGolfBall is not FLYING
+				BallMoving = 1
+				wait 1 second
+			end if
+		end while
+		
+		if TeeOff != 0 and (HoleNumber == 3 or HoleNumber == 1)
+			CPClosest = get distance from {CPGolfBall} to {PinHigh}
+		end if
+		
+		if {CPGolfBall} near {PinHigh} radius 10 and CPHoledOut == 0
+			CPHoledOut = 1
+		end if
+	end cinema
+	
+	if CPHoledOut == 0
+		if CPGolfBall exists
+			CPLastPos = marker at {CPGolfBall}
+		else
+			begin dialogue
+				eject good spirit
+				say "Water Hazard. Shot must be retaken."
+				wait until read
+				send good spirit home
+			end dialogue
+		end if
+	else
+		delete CPGolfBall with fade
+		begin dialogue
+			eject evil spirit
+			say "It's in the 'ole."
+			wait until read
+			CPPar = (3 - (CPShotNum + 1))
+			if CPPar == -3
+				say "That's gotta hurt."
+				wait until read
+			elsif CPPar == -2
+				say "Teehee. Double bogie."
+				wait until read
+			elsif CPPar == -1
+				say "He bogied."
+				wait until read
+			elsif CPPar == 0
+				say "He's made Par"
+				wait until read
+			elsif CPPar == 1
+				say "He's got a Birdie!"
+				wait until read
+			elsif CPPar == 2
+				say "He's got a Hole in One!"
+				wait until read
+			end if
+			send evil spirit home
+		end dialogue
+	end if
+
+	if CPGolfBall exists
+		if {CPGolfBall} near {PinHigh} radius 20 and CPHoledOut == 0
+			begin dialogue
+				say "Close enough for a Tap-in."
+				wait until read
+			CPPar = (3 - (CPShotNum + 2))
+			if CPPar == -3
+				say "That's gotta hurt."
+				wait until read
+			elsif CPPar == -2
+				say "Teehee. Double bogie."
+				wait until read
+			elsif CPPar == -1
+				say "He bogied."
+				wait until read
+			elsif CPPar == 0
+				say "He's made Par"
+				wait until read
+			elsif CPPar == 1
+				say "He's got a Birdie!"
+				wait until read
+			elsif CPPar == 2
+				say "He's got a Hole in One!"
+				wait until read
+			end if
+			end dialogue
+			CPShotNum++ // This adds the extra Tap-In shot
+			CPStrokeTotal++
+			delete CPGolfBall with fade
+			CPHoledOut = 1
+		else
+			CPMark = create special effect SPOT_VISUAL_COMMAND_SUCCEED at {CPGolfBall} time -1
+			delete CPGolfBall with fade
+		end if
+	end if
+
+end script CPShot
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script GolfQuitDetect (Highlight)
+start
+	begin loop
+		if Highlight right clicked
+			GolfQuit = 1
+		end if
+	until GolfQuit == 1 or CourseCompleted == 1
+	end loop
+	delete Highlight
+end script GolfQuitDetect
+
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script Godgolf
+
+ GolfEternity = 0
+ TeePos[9]
+ PinPos[9]
+ Highlight = 0
+ HighlightPos = marker at {841.951,4.061,1550.292}
+ PCDistLeft = 0
+ CPDistLeft = 0
+ Flag = 0
+ FirstHole = 0
+ ActualHoleNumber = 0
+ ParStroke = 0
+ PCPar = 0
+ CPPar = 0
+
+start
+ TeePos[0] = marker at {840.607,1.340,1539.594}
+ TeePos[1] = marker at {834.369,2.053,1421.165}
+ TeePos[2] = marker at {963.052,14.036,1180.271}
+ TeePos[3] = marker at {1037.552,44.543,1327.375}
+ TeePos[4] = marker at {1090.960,26.130,1435.167}
+ TeePos[5] = marker at {1120.323,26.277,1530.957}
+ TeePos[6] = marker at {1312.936,26.690,1535.431}
+ TeePos[7] = marker at {1216.828,26.277,1313.911}
+ TeePos[8] = marker at {1312.241,26.130,1798.179}
+
+ PinPos[0] = marker at {904.665,2.010,1412.847}
+ PinPos[1] = marker at {958.425,8.099,1259.312}
+ PinPos[2] = marker at {1069.729,14.176,1293.161}
+ PinPos[3] = marker at {1104.609,26.130,1394.088}
+ PinPos[4] = marker at {1103.105,26.434,1544.177}
+ PinPos[5] = marker at {1265.228,26.283,1501.259}
+ PinPos[6] = marker at {1312.978,26.208,1408.555}
+ PinPos[7] = marker at {1408.123,5.610,1312.826}
+ PinPos[8] = marker at {1273.379,31.481,1560.737}
+
+
+ begin loop // Restart loop
+	Highlight = create highlight CHALLENGE_TIGER_CANNON HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of Highlight = 15
+	wait until Highlight right clicked
+	clear right clicked object
+	delete Highlight
+	run script SelectGolfBall
+	Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CANCEL_QUEST at {HighlightPos}
+	ALTITUDE of Highlight = 15
+	run background script GolfQuitDetect (Highlight)
+	GolfQuit = 0
+	HoleNumber = 0
+	PCStrokeTotal = 0
+	CPStrokeTotal = 0
+	FirstHole = 0
+
+	begin loop // course loop
+		CPShotNum = 0
+		PCShotNum = 0
+		PCHoledOut = 0
+		CPHoledOut = 0
+		Flag = create alex special effect SPOT_VISUAL_ALEX_HULAHOOP at {PinPos[HoleNumber]}
+		HEIGHT of Flag = 15
+		DENSITY of Flag = 5
+		set Flag colour red 100 green 10 blue 255
+		ParStroke = HoleNumber * 3
+		if FirstHole == 1
+			begin dialogue
+				PCPar = PCStrokeTotal - ParStroke
+				say "Your stroke total is: $d" with number PCPar
+				wait until read
+				CPPar = CPStrokeTotal - ParStroke
+				say "The CP's total is: $d" with number CPPar
+				wait until read
+				ActualHoleNumber = HoleNumber + 1
+				say "On to hole: $d" with number ActualHoleNumber
+				wait until read				
+			end dialogue
+		else
+			FirstHole = 1
+			FirstHoleComment = 0
+		end if
+
+
+		// Tee Off
+		run script PCShot (PinPos[HoleNumber], TeePos[HoleNumber])
+		PCShotNum++
+		PCStrokeTotal++
+		run script CPShot (PinPos[HoleNumber], TeePos[HoleNumber])
+		CPShotNum++
+		CPStrokeTotal++
+		
+		if HoleNumber == 3 or HoleNumber == 1
+			if PCClosest > CPClosest
+				begin dialogue
+					say "You were not closest to the pin."
+					wait until read
+				end dialogue
+			else
+				begin dialogue
+					say "Congratulations, you were closest to the pin!"
+					wait until read
+					say "You have won a free mulligan to replay any one shot."
+					wait until read
+					say "Just press escape while your shot is in mid air to replay it."
+					wait until read
+				end dialogue
+				PCMulligans++
+			end if
+		end if
+
+		begin loop //Hole loop
+			if PCHoledOut == 1 and CPHoledOut == 1
+				HoleCompleted = 1
+			elsif PCHoledOut == 1
+				run script CPShot (PinPos[HoleNumber], 0)
+				CPShotNum++
+				CPStrokeTotal++
+			elsif CPHoledOut == 1
+				run script PCShot (PinPos[HoleNumber], 0)
+				PCShotNum++
+				PCStrokeTotal++
+			else
+				PCDistLeft = get distance from {PCLastPos} to {PinPos[HoleNumber]}
+				CPDistLeft = get distance from {CPLastPos} to {PinPos[HoleNumber]}
+				if PCDistLeft >= CPDistLeft
+					run script PCShot (PinPos[HoleNumber], 0)
+					PCShotNum++
+					PCStrokeTotal++
+				else
+					run script CPShot (PinPos[HoleNumber], 0)
+					CPShotNum++
+					CPStrokeTotal++
+				end if
+			end if
+		until HoleCompleted == 1 or GolfQuit == 1
+		end loop
+		delete Flag
+		HoleCompleted = 0
+		HoleNumber++
+		if HoleNumber == 9
+			CourseCompleted = 1
+		end if
+
+	until CourseCompleted == 1 or GolfQuit == 1
+	end loop
+	CourseCompleted = 0
+	if GolfQuit == 1
+		begin dialogue
+			say "YOU QUIT"
+			wait until read
+		end dialogue
+	else
+		if PCStrokeTotal < CPStrokeTotal
+			begin dialogue
+				say "YOU WIN!! YOU WIN!! YOU WIN!! YOU WIN!!"
+				wait until read
+			end dialogue
+		elsif CPStrokeTotal < PCStrokeTotal
+			begin dialogue
+				say "YOU LOSE!! YOU LOSE!! YOU LOSE!! YOU LOSE!!"
+				wait until read
+			end dialogue
+		else
+			begin dialogue
+				say "IT'S A DRAW!! IT'S A DRAW!! IT'S A DRAW!!"
+				wait until read
+			end dialogue
+		end if
+		begin dialogue
+			say "Your Stroke Total was: $d" with number PCStrokeTotal
+			wait until read
+			say "The CP's Stroke Total was: $d" with number CPStrokeTotal
+			wait until read
+		end dialogue
+	end if
+
+ until GolfEternity == 1
+ end loop
+
+
+end script Godgolf
+
+//---------------------------
+
+/*
+   *** To Do ***
+	Comments on shot should be in cinema. Water hazard etc.   
+	Have advisor appear in world above flag when it isn't visible to the player and point down to it
+	Signposts showing Holenumber and par next to tee-off
+	Caddy advisors who tell you distance to pin etc?
+	Wind conditions, create a storm while they're playing.
+	Add secret flaming golfball
+	Add in effects when hole in one (make ball fiery on the next hole?)
+*/

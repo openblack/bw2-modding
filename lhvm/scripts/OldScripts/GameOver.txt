@@ -1,0 +1,116 @@
+//challenge GAME_OVER
+
+//------------------------------------------------------------------------------------------------------------------------
+begin script GameOver
+	TownCentrePos = 0
+	TownCentre = 0
+	Wait = 0
+	StartPos = 0
+	ZoomPos = 0
+start
+	fade all draw text time 1 seconds
+	TownCentre = get town with id 0
+	//TownCentrePos = marker at {TownCentre}
+	StartPos= marker at {TownCentre} + {0.000,10.000,0.000}
+	ZoomPos	= marker at {TownCentre} + {10.000,0.000,0.000}
+
+	begin cinema
+		//// AUDIO_TODO start music SOUND_BANK_TYPE_SCRIPT_FAILURE					// Not used anymore
+		move game time  23.00 time 10
+		
+		shake camera at {TownCentre} radius 200.0 amplitude 0.1 time 1
+
+		set camera position to {StartPos} //start pos
+		//set camera position to {TemplePos} + {-45.000,20.000,45.000} //start pos
+		set camera focus to {TownCentre} + {0.000,5.000,0.000}
+		wait until camera ready
+		
+  		move camera position to {ZoomPos} time 12 // end of initial camera zoom
+		move camera focus to {TownCentre} + {0.000,2.500,0.000} time 12
+		
+		//delete Temple with temple explode
+
+ 
+		shake camera at {TownCentre} radius 100.0 amplitude 0.5 time 2
+
+////	start say sound get text id from "HELP_TEXT_NEW_L5_INTRO_12"//laugh
+
+		wait until camera ready
+
+		set camera position to {TownCentre} + {20.000,7.500,-10.000} //2 pos
+		move camera position to {TownCentre} + {21.000,8.000,-11.000} time 3
+
+		eject evil spirit //evil arrives
+
+		say single line "HELP_TEXT_NEW_DEVELOPMENT_STAGE_MEET_GUIDE_05" //we're all dead
+
+		set camera position to {TownCentre} + {-15.000,10.000,12.500} //3 pos
+		move camera position to {TownCentre} + {-15.500,10.500,12.000} time 2
+
+		eject good spirit //good arrives
+		
+		shake camera at {TownCentre} radius 500.0 amplitude 0.25 time 1
+		//wait until read
+		//start say sound HELP_TEXT_NEW_L5_INTRO_12	//laugh
+
+		set camera position to {TownCentre} + {-10.000,15.000,17.500} //4 pos
+
+		shake camera at {TownCentre} radius 100.0 amplitude 0.5 time 2
+
+		move camera position to {TownCentre} + {-10.500,15.500,17.750} time 1
+ 
+		wait until read
+		say single line "HELP_TEXT_MISSIONARIES_17"  //I hate long goodbyes 
+
+		set camera position to {TownCentre} + {15.000,20.000,-10.000} //5 pos
+		wait 0.5 seconds
+
+		shake camera at {TownCentre} radius 800.0 amplitude 0.5 time 16
+
+		set camera position to {TownCentre} + {7.500,25.000,10.000} //6 pos
+		wait 0.5 seconds
+
+
+
+		set camera position to {TownCentre} + {-5.000,30.000,12.500} //7 pos
+		wait 0.5 seconds
+
+		set camera position to {TownCentre} + {10.000,35.000,4.500} //8 pos
+		wait 0.5 seconds
+
+		make good spirit disappear //good leaves
+
+//		play sound LH_SAMPLE_G_CITADELEXPLODE_01
+		set fade red 0 green 0 blue 0 time 12
+
+		make evil spirit disappear //evil leaves 
+
+		set draw text colour red 255 green 255 blue 255
+		draw text get text id from "HELP_TEXT_GAME_OVER" across 0.25 down 0.45 width 0.5 height 0.1 size 0.075 fade in time 3 seconds
+
+		set camera position to {TownCentre} + {5.000,40.000,-7.500} //9 pos
+
+		wait 0.5 seconds
+// 		play sound LH_SAMPLE_G_CITADELEXPLODE_01
+		set camera position to {TownCentre} + {-6.500,45.000,2.500} //10 pos
+		wait 0.5 seconds
+		//start say sound HELP_TEXT_NEW_L5_INTRO_12	//laugh
+		move camera position to {TownCentre} + {7.000,500.000,-12.000} time 12//out pos
+		//wait until camera ready
+		//wait 
+		//wait until fade ready
+		//set clipping window across 0 down 0 width 0.0001 height 0.0001 time 0.1
+		wait until read
+		//wait until fade ready
+		disable game time
+		wait 2 seconds
+		//wait 0.2 seconds
+		fade all draw text time 5 seconds					
+		wait 2 seconds
+		
+		wait until fade ready
+	//	run SCRIPT_DEV_FUNCTION_ENTER_SAVEGAMEROOM developer function	
+		stop music
+	end cinema
+end script GameOver
+	

@@ -1,0 +1,261 @@
+//=================================================================================================
+// Land 1 Scrolls
+//=================================================================================================
+
+//------------------------------------------------------------------------------------------------
+//	Script defines
+//------------------------------------------------------------------------------------------------
+define script MoveL1EndCamera
+ 
+//------------------------------------------------------------------------------------------------
+// Land1Scrolls
+//------------------------------------------------------------------------------------------------
+begin script Land1Scrolls
+	GoldScroll = 0
+	SilverScrollPos = marker at {1064.430,68.988,906.541}
+	BronzeScrollPos = marker at {981.547,77.376,1523.109}
+	GoldScrollPos = marker at {1286.664,311.914,1553.427}
+
+	ScrollIcon = 0	
+
+	CamPos1 = marker at {1085.648,72.070,893.476} + {0.000,5.000,0.000}
+	CamPos2 = marker at {977.553,72.866,1487.324} + {0.000,5.000,0.000}
+	CamPos3 = marker at {1258.072,66.204,1149.770} + {0.000,5.000,0.000}
+
+	BackupDOPl1[2]
+
+	ScrollMixer=0
+
+	count =0
+	howmanysecs=0
+	
+	TutBronze = 0
+	TutSilver = 0
+	TutGold = 0
+	SayDoneFlag = 0
+
+	QuitConfirm = 0
+	QuitResetTimer = create timer for 0 seconds
+
+	SC_LeaveTimer = create timer for 0 seconds
+start	
+
+	count = 80
+	howmanysecs=0.1	
+		
+	//TutBronze = create highlight BRONZE name "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_MISC_10" remind "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_MISC_20" at {1295.685,190.657,1496.010}
+	//ALTITUDE of TutBronze = 3
+	
+	begin cinema
+
+			enable highlight draw
+
+			//Talk about scrolls.
+		if SkippedTutorials == 0
+			TutSilver = create highlight SILVER name "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_MISC_30" remind "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_MISC_40" at {1533.830, 121.273, 1441.254}
+			ALTITUDE of TutSilver = 3
+		end if
+			TutGold = create highlight GOLD name "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_MISC_50" remind "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_MISC_60" at {GoldScrollPos}	
+			//TutGold = create ROCK_OBJECT ROUND_ROCK_LARGE at {GoldScrollPos}
+			ALTITUDE of TutGold = 3
+
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+
+			set camera position to {1492.604, 381.506, 1442.585}
+			set camera focus to {1408.144, 332.296, 1463.691}
+
+			set fade in time 1
+
+			move camera position to {1290.703,317.661,1543.172} time 8
+			move camera focus to {1254.485,298.802,1634.456} time 8
+			wait 4 seconds
+			eject good spirit 
+			eject evil spirit
+			wait 2 seconds
+			
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_200"
+  			wait until read
+
+			//move camera position to {1327.856,237.313,1511.528} time 4
+			//move camera focus to {1291.638,218.455,1602.812} time 4
+			move camera position to {1542.176, 129.452, 1447.272} time 4
+			move camera focus to {1461.219, 90.123, 1403.693} time 4
+
+			wait 4 seconds
+			
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_210"
+  			wait until read
+
+ 			move camera position to {1101.838, 181.281, 1360.047} time 6
+			move camera focus to {1038.093, 141.344, 1425.928} time 6
+			wait 4 seconds
+
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_220"
+			wait until read
+
+		if SkippedTutorials == 0
+		
+			ScrollIcon = create world icon BINDABLE_ACTION_TYPE_MOVE on BronzeScrollPos 
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_140"
+			wait until read
+
+			//delete TutBronze
+			delete TutSilver
+
+		else
+
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 amount 1 force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_LEAVE_10"
+
+		end if
+
+			delete TutGold
+			send good spirit home
+			send evil spirit home	
+
+		if SkippedTutorials == 0
+			remove world icon ScrollIcon
+		end if
+
+		end cinema
+
+	//run background script FC_CollapseHead(6)
+	//run background script FC_CollapseHead(7)
+	//BW2T_SCRIPT_GENERIC_DEPART_LAND
+	GoldScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {GoldScrollPos}
+	ALTITUDE of GoldScroll = 3
+
+	begin loop
+		if L1_RockManComplete == 1 and L1_RockManEndingPlayed == 1 and L1_WaterfallComplete == 1
+			if L1_EloiComplete == 1 and SayDoneFlag == 0
+				SayDoneFlag = 1
+				begin dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_CONTROL_REMINDER_30"
+					wait until read
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_CONTROL_REMINDER_40"
+					wait until read
+
+					set SC_LeaveTimer time to 240 seconds
+				end dialogue
+			end if
+		end if
+
+		if get SC_LeaveTimer time remaining == 0 and L1_EloiComplete == 1 and L1_RockManComplete == 1 and L1_RockManEndingPlayed == 1 and L1_WaterfallComplete == 1 and SayDoneFlag == 0
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_SCROLLS_REMINDER_10"
+				wait until read
+			end dialogue
+			set SC_LeaveTimer time to 240 seconds
+		end if
+
+		if GoldScroll right clicked and QuitConfirm == 0
+
+			clear right clicked object
+
+			set QuitResetTimer time to 20 seconds
+
+			QuitConfirm = 1
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_934"
+				wait until read or GoldScroll right clicked
+
+				eject evil spirit
+
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_DEPARTURE_11"
+				wait until read or GoldScroll right clicked
+
+			end dialogue
+
+		elsif GoldScroll right clicked and QuitConfirm == 1
+			QuitConfirm = 2
+
+		end if
+
+	until QuitConfirm == 2
+	end loop
+
+	ScrollMixer = create mixer
+	set mixer ScrollMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 4
+
+
+	L1_LandEnd = 1
+	clear right clicked object
+	delete GoldScroll
+	wait 1 seconds
+
+	BackupDOPl1[0] = get depth of field strength multiplier
+	BackupDOPl1[1] = get depth of field distance multiplier
+
+	reset all objectives for player 0
+
+		disable toolbar
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+
+
+	//Eden is complete - load the next land
+	//wait 5 seconds
+	if MyCreature exists
+		enable leash on MyCreature
+		save my_creature
+	end if
+	load map "./Data/Landscape/BW2/Land2.bwe"
+	wait 3 seconds
+
+end script Land1Scrolls
+	
+//-----------------------------------------------------------------------
+// Move L1 End Camera
+//-----------------------------------------------------------------------
+begin script MoveL1EndCamera
+	count=0
+start
+
+	begin known cinema
+		wait 1 seconds
+		play string sound "SCRIPT14_ARMYOFOLD"
+
+		set camera roll -3 time 3
+		eject evil spirit
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_LAND_DONE_40"//
+//		EVIL_ADVISOR             Our people are in trouble! 
+
+		start music "cut_scene_battle_02 " with fadetime 8
+
+		wait 2 seconds
+		
+		set camera roll 3 time 6
+		//wait until read
+		
+		set depth of field strength multiplier to 50
+		set depth of field distance multiplier to 0.001
+		
+
+		wait until read
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_LAND_DONE_50"
+		//GOOD_ADVISOR          Yes. I sense it too. We must go!
+		wait until read
+
+
+		clear dialogue
+		send good spirit home
+		send evil spirit home
+
+		set fade red 255 green 255 blue 255 time 3
+		
+		set camera roll -3 time 3
+		stop sound "ARMYOFOLD"
+
+		wait 5 seconds
+		stop music
+	end known cinema
+
+end script MoveL1EndCamera

@@ -1,0 +1,312 @@
+define script ResetChallenge
+define script Intro
+define WCG_True = 1
+define WCG_False = 0
+
+global WolfNearField = WCG_True
+global ChickNearField = WCG_True
+global GrainNearField = WCG_True
+global FarmerNearField = WCG_True
+global CartLoaded = 0
+global WolfPos = 0
+global ChickPos = 0
+global GrainPos = 0
+global FarmerPos = 0
+global FarmerEndPos = 0
+global GrainEndPos = 0
+global ChickEndPos = 0
+global WolfEndPos = 0
+global Wolf = 0
+global Chicken = 0
+global Grain = 0
+global Farmer = 0
+
+
+begin script Intro
+start
+
+	begin known cinema
+		eject good spirit
+		wait 1 second
+		make good spirit point at {Grain}
+		say "The farmer can only carry one item across at once."
+		wait 6 seconds
+		make good spirit point at {Wolf}
+		say "Click on the item to load it into the farmer's cart."
+		wait 6 seconds
+		make good spirit point at {Farmer}
+		say "Click on the farmer to send him across the road with the item."
+		wait 3 seconds
+		send good spirit home
+	end known cinema
+end script Intro
+
+begin script Land5ChickenWolfGrain
+
+
+	ChallengeComplete = 0
+	Scroll = 0
+	mouseObject = 0
+
+	start
+	WolfPos = marker at {1412.933, 73.164, 733.426}
+	ChickPos = marker at {1412.768, 73.115, 729.658}
+	GrainPos = marker at {1412.428, 73.4, 726.481}
+	FarmerPos = marker at {1415.910, 73.035, 729.955}
+	FarmerEndPos = marker at {1419.4, 73.861, 730.681}
+	GrainEndPos =  marker at {1420.349, 73.648, 727.106}
+	ChickEndPos =  marker at {1421.349, 73.648, 730.106}
+	WolfEndPos = marker at {1421.349, 73.648, 734.106}
+
+	Wolf = create ANIMAL COW at {WolfPos}
+	Chicken = create VILLAGER GREEK_HOUSEWIFE at {ChickPos}
+	Grain = create OBJECT ROUND_ROCK_SMALL at {GrainPos}
+	Farmer = create VILLAGER GREEK_FARMER at {FarmerPos}
+	
+	disable Wolf moveable
+	disable Chicken moveable
+	disable Grain moveable
+	disable Farmer moveable
+	disable Wolf pickup
+	disable Chicken pickup
+	disable Grain pickup
+	disable Farmer pickup
+	disable Wolf hurt by fire
+	disable Chicken hurt by fire
+	disable Grain hurt by fire
+	disable Farmer hurt by fire
+
+	Scroll = create highlight GOLD name "Chicken Wolf Grain" remind "Reminder temp" at {FarmerPos}
+	ALTITUDE of Scroll  = 5
+	wait until Scroll right clicked
+
+	begin cinema
+		delete Scroll
+		move camera position to {1419.509, 75.621, 730.451} time 4
+		move camera focus to {1325.076, 44.666, 719.331} time 4
+		wait 4 seconds
+		say "Oh dear! My horse has bolted and I need to transport these goods onto my farm..."
+		wait until read
+		say "I'm going to have to take them across one by one."
+		wait until read
+		say "This won't be easy..."
+		wait until read
+		wait 2 seconds
+		move camera position to {1417.621, 80.190, 717.807} time 2
+		move camera focus to {1424.115, 38.872, 808.640} time 2
+		wait 2 seconds
+		run script Intro
+	end cinema
+
+
+	begin loop
+		clear right clicked object
+		clear right clicked position
+		wait until mouse right button clicked
+		mouseObject = get object right clicked
+
+		
+		if CartLoaded == 0
+			if mouseObject == Wolf and WolfNearField == FarmerNearField
+				//Load wolf
+				clear right clicked object
+				delete Wolf with fade
+				CartLoaded = 1
+				say "Wolf loaded"
+				wait until read
+			end if
+
+			if mouseObject == Chicken and ChickNearField == FarmerNearField
+			//Load chick
+				clear right clicked object
+				delete Chicken with fade
+				CartLoaded = 2
+				say "Chicken loaded"
+				wait until read
+			end if
+
+			if mouseObject == Grain and GrainNearField == FarmerNearField
+			//Load grain
+				clear right clicked object
+				delete Grain with fade
+				CartLoaded = 3
+				say "Grain loaded"
+				wait until read
+			end if
+		end if
+
+		if mouseObject == Farmer
+			//Move farmer to field
+			if FarmerNearField == WCG_True
+				FarmerNearField = WCG_False
+				begin cinema
+					move camera position to {1417.621, 80.190, 717.807} time 2
+					move camera focus to {1424.115, 38.872, 808.640} time 2
+					wait until camera ready
+					move Farmer position to {FarmerEndPos}
+					clear right clicked object
+					mouseObject = 0
+					wait 4 seconds
+				end cinema
+
+				if CartLoaded == 1
+					Wolf = create ANIMAL COW at {WolfEndPos}
+					disable Wolf moveable
+					disable Wolf pickup
+					WolfNearField = WCG_False
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 2
+					Chicken = create VILLAGER GREEK_HOUSEWIFE at {ChickEndPos}
+					disable Chicken moveable
+					disable Chicken pickup
+					ChickNearField = WCG_False
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 3
+					Grain = create OBJECT ROUND_ROCK_SMALL at {GrainEndPos}
+					disable Grain moveable
+					disable Grain pickup			
+					GrainNearField = WCG_False
+					CartLoaded = 0
+				end if
+			end if
+		end if
+
+		if mouseObject == Farmer
+			if FarmerNearField == WCG_False
+				FarmerNearField = WCG_True
+				begin cinema
+					move camera position to {1417.621, 80.190, 717.807} time 2
+					move camera focus to {1424.115, 38.872, 808.640} time 2
+					wait until camera ready
+					move Farmer position to {FarmerPos}
+					clear right clicked object
+					mouseObject = 0
+					wait 4 seconds
+				end cinema
+
+				if CartLoaded == 1
+					Wolf = create ANIMAL COW at {WolfPos}
+					disable Wolf moveable
+					disable Wolf pickup
+					WolfNearField = WCG_True
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 2
+					Chicken = create VILLAGER GREEK_HOUSEWIFE at {ChickPos}
+					disable Chicken moveable
+					disable Chicken pickup
+					ChickNearField = WCG_True
+					CartLoaded = 0
+				end if
+
+				if CartLoaded == 3
+					Grain = create OBJECT ROUND_ROCK_SMALL at {GrainPos}
+					disable Grain moveable
+					disable Grain pickup
+					GrainNearField = WCG_True
+					CartLoaded = 0
+				end if
+			end if
+		end if
+
+		if (ChickNearField == WCG_True and WolfNearField == WCG_True and GrainNearField == WCG_False and FarmerNearField == WCG_False) or (ChickNearField == WCG_False and WolfNearField == WCG_False and GrainNearField == WCG_True and FarmerNearField == WCG_True)
+			begin cinema
+				if WolfNearField == WCG_True
+					move Wolf position to {ChickPos}
+				else
+					move Wolf position to {ChickEndPos}
+				end if
+				say "Gobble gobble gobble!"
+				wait until read
+				
+				eject good spirit
+				say "Oh dear, the wolf ate the chicken! You shouldn't leave them alone together."
+				wait until read
+				say "You'll have to try again."
+				wait until read
+				send good spirit home
+				run script ResetChallenge
+			end cinema
+		end if
+
+
+		if (ChickNearField == WCG_True and GrainNearField == WCG_True and WolfNearField == WCG_False and FarmerNearField == WCG_False) or (ChickNearField == WCG_False and GrainNearField == WCG_False and WolfNearField == WCG_True and FarmerNearField == WCG_True)
+			begin cinema
+				if ChickNearField == WCG_True
+					move Chicken position to {GrainPos}
+				else
+					move Chicken position to {GrainEndPos}
+				end if
+				say "Cluck cluck CLUCK."
+				wait until read
+				wait 2 seconds
+				eject good spirit
+				say "The chicken has eaten the grain!"
+				wait until read
+				say "You'll have to try again."
+				wait until read
+				send good spirit home
+				run script ResetChallenge
+			end cinema
+		end if
+
+		if WolfNearField == WCG_False and ChickNearField == WCG_False and GrainNearField == WCG_False
+			begin cinema
+				say "Excellent, all my goods have made it across safely!"
+				wait 5 seconds
+				if L5GreekTown not exists
+					run script Land5Globals
+				end if
+				attach Farmer to L5GreekTown
+				enable Farmer moveable
+				enable Farmer pickup
+				enable Farmer hurt by fire
+				release Farmer
+				delete Wolf with fade
+				delete Grain with fade
+				delete Chicken with fade
+			end cinema
+			ChallengeComplete = 1
+		end if
+
+	until ChallengeComplete != 0
+	end loop
+
+end script Land5ChickenWolfGrain
+
+begin script ResetChallenge
+
+start
+
+	WolfNearField = WCG_True
+	ChickNearField = WCG_True
+	GrainNearField = WCG_True
+	FarmerNearField = WCG_True
+	
+	delete Wolf
+	delete Chicken
+	delete Grain
+	delete Farmer
+
+	Wolf = create ANIMAL COW at {WolfPos}
+	Chicken = create VILLAGER GREEK_HOUSEWIFE at {ChickPos}
+	Grain = create OBJECT ROUND_ROCK_SMALL at {GrainPos}
+	Farmer = create VILLAGER VILLAGER_INFO_GREEK_FARMER_MALE at {FarmerPos}
+	
+	disable Wolf moveable
+	disable Chicken moveable
+	disable Grain moveable
+	disable Farmer moveable
+	disable Wolf pickup
+	disable Chicken pickup
+	disable Grain pickup
+	disable Farmer pickup
+
+end script ResetChallenge
+
+	

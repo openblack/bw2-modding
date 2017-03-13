@@ -1,0 +1,12 @@
+run script RunJavelinThrow
+
+begin script RunJavelinThrow
+  ScrollPosition = marker at {980.334,8.295,1255.860}
+start	
+	begin camera
+		set camera position to {ScrollPosition} + {5.000,5.000,5.000}
+		set camera focus to {ScrollPosition}
+	end camera
+	
+	run script JavelinThrow
+end script RunJavelinThrow

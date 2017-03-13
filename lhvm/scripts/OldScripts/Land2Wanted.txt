@@ -1,0 +1,27 @@
+//------------------------------------------------
+//  LAND 2 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land2Wanted
+
+ L2Actor1Pos = marker at {1135.660,85.843,1949.272} // end of peninsula near Greeks
+ L2Actor1 = create VILLAGER MALE at {L2Actor1Pos}
+ PosterPos1 = marker at {1115.420,82.869,1788.469}
+ L2Actor2Pos = marker at {1444.661,98.385,768.788} // between Norse and Creature garden
+ L2Actor2 = create VILLAGER MALE at {L2Actor2Pos}
+ PosterPos2 = marker at {1113.073,83.104,1786.111}
+ L2Actor3Pos = marker at {962.271,100.742,1798.623} // over hill near Greeks
+ L2Actor3 = create VILLAGER MALE at {L2Actor3Pos}
+ PosterPos3 = marker at {1111.215,83.142,1783.245}
+ JailLocation = marker at {1109.069,83.302,1787.635} // hut near Greek TC
+  
+start
+	
+	run background script GlobalWanted (3, L2Actor1, L2Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (4, L2Actor2, L2Actor2Pos, JailLocation, PosterPos2)
+
+	run background script GlobalWanted (5, L2Actor3, L2Actor3Pos, JailLocation, PosterPos3)
+
+end script Land2Wanted
+

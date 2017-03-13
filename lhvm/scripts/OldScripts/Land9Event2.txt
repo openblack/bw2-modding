@@ -1,0 +1,80 @@
+//Land9Event2.txt
+
+/*
+Slave Armies:
+The opponents on this map are always looking for new slaves to add them to their slave armies.
+The opponents try to steal your villagers and convert them into slaves! During the middle of the night small squads 
+of troops will grab anyone outside of your walls. (Villagers only, not troops). They will then hurry them back to 
+their base and convert them into slaves to send out and fight you later on.
+The player will be able to stop this from happening by confronting the villager stealers if within range of a 
+“smash & grab”.
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SA_FALSE			= 0
+define SA_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SA_Waypoints[4]				//... Waypoint array
+global SA_Initial_Scroll_Used		= SA_FALSE
+global SA_Players_Town				= 0
+global SA_Rock						= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SA_Create_Slave_Grabbers
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=======================
+begin script Land9Event2 //Slave nabbing
+
+start
+
+	SA_Players_Town		= get TOWN at {1744.493,26.924,776.366} radius 100
+
+	wait 1000 seconds
+
+end script Land9Event2 //Slave nabbing
+//=======================
+
+
+
+//-----------------------------------------------------------------------------
+//	SA_Create_Slave_Grabbers
+//-----------------------------------------------------------------------------
+begin script SA_Create_Slave_Grabbers
+
+start
+
+
+
+end script SA_Create_Slave_Grabbers
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+/*
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

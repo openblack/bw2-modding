@@ -1,0 +1,9 @@
+run script RunLand2CreatureSeries
+
+begin script RunLand2CreatureSeries
+
+start
+	
+	run script Land2CreatureSeries
+
+end script RunLand2CreatureSeries

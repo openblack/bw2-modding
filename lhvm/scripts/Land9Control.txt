@@ -1,0 +1,166 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 9 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land9Control
+
+FoodFree = 0
+WoodFree = 0
+OreFree = 0
+FoodPos = marker at {1773.691, 100.972, 510.085}
+WoodPos = marker at {1787.629, 100.141, 512.931}
+OrePos = marker at {1780.896, 100.380, 517.597}
+Threshold = 0
+CSMixer = 0
+start
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	
+	run script Land9DidYouKnow
+	run script Land9Globals
+
+	disable migration from LC9_MinorSettlement[0] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[1] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[2] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[3] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[4] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[5] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[6] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[7] to L9AztecCapital
+	disable migration from LC9_MinorSettlement[8] to L9AztecCapital
+
+	set town L9AztecCapital maximum population to 100
+	set town LC9_MinorSettlement[0] maximum population to 50
+	set town LC9_MinorSettlement[1] maximum population to 20
+	set town LC9_MinorSettlement[2] maximum population to 20
+	set town LC9_MinorSettlement[3] maximum population to 20
+	set town LC9_MinorSettlement[4] maximum population to 70
+	set town LC9_MinorSettlement[5] maximum population to 20
+	set town LC9_MinorSettlement[6] maximum population to 20
+	set town LC9_MinorSettlement[7] maximum population to 20
+	set town LC9_MinorSettlement[8] maximum population to 50
+
+	add resource RESOURCE_TYPE_ORE 500 to LC9_MinorSettlement[1]
+	add resource RESOURCE_TYPE_ORE 500 to LC9_MinorSettlement[2]
+	add resource RESOURCE_TYPE_ORE 500 to LC9_MinorSettlement[3]
+	add resource RESOURCE_TYPE_ORE 500 to LC9_MinorSettlement[5]
+	add resource RESOURCE_TYPE_ORE 500 to LC9_MinorSettlement[7]
+	add resource RESOURCE_TYPE_ORE 500 to LC9_MinorSettlement[8]
+
+	//Migration thresholds
+	// Enemy --> Player
+	Threshold = get town L9AztecCapital impressiveness
+	set migration threshold from L9AztecCapital to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_CAPITAL_TO_GREEK - Threshold
+
+	// Centre Town --> Player
+	Threshold = get town LC9_MinorSettlement[0] impressiveness
+	set migration threshold from LC9_MinorSettlement[0] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT1_TO_GREEK - Threshold
+	
+	// West of player --> Player
+	Threshold = get town LC9_MinorSettlement[1] impressiveness
+	set migration threshold from LC9_MinorSettlement[1] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT2_TO_GREEK - Threshold
+
+	// far west of player --> Player
+	Threshold = get town LC9_MinorSettlement[2] impressiveness
+	set migration threshold from LC9_MinorSettlement[2] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT3_TO_GREEK - Threshold
+
+	// North of Player --> Player
+	Threshold = get town LC9_MinorSettlement[3] impressiveness
+	set migration threshold from LC9_MinorSettlement[3] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT4_TO_GREEK - Threshold
+
+	// Town To Build --> Player
+	Threshold = get town LC9_MinorSettlement[4] impressiveness
+	set migration threshold from LC9_MinorSettlement[4] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT5_TO_GREEK - Threshold
+
+	// NorthWestLake --> Player
+	Threshold = get town LC9_MinorSettlement[5] impressiveness
+	set migration threshold from LC9_MinorSettlement[5] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT7_TO_GREEK - Threshold
+
+	// North Lake --> Player
+	Threshold = get town LC9_MinorSettlement[6] impressiveness
+	set migration threshold from LC9_MinorSettlement[6] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT8_TO_GREEK - Threshold
+
+	// warrior town --> Player
+	Threshold = get town LC9_MinorSettlement[7]impressiveness
+	set migration threshold from LC9_MinorSettlement[7] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT6_TO_GREEK - Threshold
+
+	// Fish town --> Player
+	Threshold = get town LC9_MinorSettlement[8] impressiveness
+	set migration threshold from LC9_MinorSettlement[8] to L9GreekTown GLOBAL_VALUE_THRESHOLD_LAND_9_SETTLEMENT9_TO_GREEK - Threshold
+
+	load my_creature at {L9GreekTown} + {20,20}
+	MyCreature =  get player 0 creature
+		if not MyCreature exists
+			MyCreature = create CREATURE CREATURE_TYPE_LAST at {L9GreekTown} + {20,20}
+			set player 0 creature to MyCreature
+			release MyCreature
+		end if
+
+	add resource RESOURCE_TYPE_FOOD 2000 to L9GreekTown
+	add resource RESOURCE_TYPE_WOOD 8000 to L9GreekTown
+	add resource RESOURCE_TYPE_ORE  1600 to L9GreekTown
+
+	run background script SetupBuildingsLand4Onwards
+	run background script Land9SunDial
+	run background script Land9RainDance
+	run background script Land9AztecCapitalScript
+	run background script Land9Objectives
+	run background script Land9Departure
+	run background script Land9Nymphs
+	
+	CSMixer = create mixer
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.7
+	
+	begin cinema
+		start music "creaturefightmain_01" loop -1
+		
+		reset camera path
+		queue camera move with position {2240.333, 189.914, -244.848} focus {2154.347, 188.150, -193.844} time 0.0
+		queue camera move with position {1137.304, 168.921, 414.040} focus {1054.027, 166.626, 469.359} time 8.0
+		queue camera move with position {717.407, 171.315, 1184.181} focus {694.336, 168.862, 1281.458} time 8.0
+		queue camera move with position {900.216, 159.475, 1714.916} focus {980.410, 134.775, 1769.310} time 8.0
+		queue camera move with position {1675.558, 273.525, 2112.053} focus {1729.049, 236.751, 2035.979} time 13.0
+		queue camera move with position {1927.364, 199.274, 901.516} focus {1898.397, 150.414, 819.216} time 7.0
+		queue camera move with position {1817.548, 142.511, 545.973} focus {1776.008, 91.098, 470.936} time 8.0
+		play camera path with easein 20 easeout 8 method SCRIPT_CAMERAPATH_EQUALDISTANCE	
+		
+		set fade red 0 green 0 blue 0 time 0
+		set game time 09.00
+		set camera position to {2042.942, 650.486, -317.598}
+		set camera focus to {2004.062, 607.487, -236.116}
+		move camera position to {1848.227, 190.884, 381.119} time 45
+		move camera focus to {1801.632, 127.024, 442.359} time 45
+		wait 2 seconds
+		run background script LandStart
+		set fade in time 2
+
+		//dialogue verified with james
+
+		wait 4 seconds
+		//GEN:So. The last time we Aztecs saw any Greeks they were under our swords and our volcano fires!		
+		say "BW2T_SCRIPT_09FINAL_PDM_STARTLAND_10"
+		wait until read
+
+		//GEN:Oh, and the Prophesy? Huh. Tribes make their own fate. And this time we will make yours oblivion.		
+		say "BW2T_SCRIPT_09FINAL_PDM_STARTLAND_40"
+		wait until read
+
+		// more dialogue from james about mocking creature?
+		
+		//eject good spirit
+		wait 7 seconds
+		eject evil spirit
+		
+		//say "BW2T_SCRIPT_09FINAL_ADVISORS_INTRO_10"
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_09FINAL_ADVISORS_INTRO_E_10
+		wait until read
+
+		//send good spirit home
+		send evil spirit home
+		wait until camera ready
+		stop music with fadetime 2
+	end cinema
+	wait 2 seconds
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+	enable game can be lost
+	L9GatesCanOpen = 1
+
+end script Land9Control

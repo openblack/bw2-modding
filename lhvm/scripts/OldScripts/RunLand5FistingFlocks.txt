@@ -1,0 +1,8 @@
+run script RunLand5FistingFlocks
+
+begin script RunLand5FistingFlocks
+start
+
+	run script Land5FistingFlocks
+
+end script RunLand5FistingFlocks

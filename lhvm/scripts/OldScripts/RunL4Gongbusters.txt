@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Gongbusters script
+//-----------------------------------------------------------------------------
+run script RunLand4Gongbusters
+
+begin script RunLand4Gongbusters
+
+start
+
+	run script Land4Gongbusters
+
+end script RunLand4Gongbusters

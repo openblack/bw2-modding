@@ -1,0 +1,51 @@
+begin script Land2HidingChildren(housepos)
+
+TheHouse=0
+KidzPos[5]
+Kidz[5]
+count=0
+KidObject=0
+KidType=0
+
+start	
+
+
+	TheHouse = get HOUSE at {1138.414, 123.559, 1722.409}//{housepos}
+
+	if variable get TheHouse sub type == variable ABODE_INFO_GREEK_AMPITHEATRE
+		KidzPos[0] = marker at {2.080, 5.028, 4.155}
+		KidzPos[1] = marker at {2.503, 3.909, -1.235}
+		KidzPos[2] = marker at {3.047, 3.076, -4.073}
+	elsif variable get TheHouse sub type == variable ABODE_INFO_GREEK_STORAGE_PIT
+		KidzPos[0] = marker at {5.872, 1.373, 12.015}
+		KidzPos[1] = marker at {-0.462, 1.271, -7.703}
+	elsif variable get TheHouse sub type == variable ABODE_INFO_GREEK_LUMBERMILL
+		KidzPos[0] = marker at {0.868, 1.065, 5.822}
+		KidzPos[1] = marker at {0.664, 3.181, -4.625}
+	end if
+
+	while KidzPos[count] != 0
+		Kidz[count] = create CHILD GREEK_FARMER at get world position from TheHouse to {KidzPos[count]}
+		count++
+	end while
+
+	while 0 == 0
+
+		KidObject = get object held
+		if KidObject == Kidz[0]
+			play string sound "FINISHEDBUILDINGWALL"
+		elsif KidObject == Kidz[1]
+			play string sound "FINISHEDBUILDINGWALL"
+		end if
+		
+		wait until get object held not exists
+
+	end while
+
+		
+	
+
+
+
+wait 100 seconds
+end script Land2HidingChildren

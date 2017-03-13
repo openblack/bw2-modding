@@ -1,0 +1,99 @@
+//-----------------------------------------------------------
+
+begin script Land8Intro
+JapaneseL = 0
+JapaneseR = 0
+
+CSMixer = 0
+
+start
+	JapaneseL = create VILLAGER VILLAGER_INFO_TARANAGA at {1368.774, 370.212, 1998.744}
+	JapaneseR = create VILLAGER VILLAGER_INFO_HIROKU at {1367.513, 370.241, 1998.609}
+	
+	CSMixer = create mixer
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.7
+	
+	set JapaneseL focus to {1346.012, 136.192, 1168.730}
+	set JapaneseR focus to {1346.012, 136.192, 1168.730}
+	
+	play anim "a_p_chatting_paired01_a" on JapaneseL loop -1
+	play anim "a_p_talk2_male" on JapaneseR loop -1
+	
+	set fade red 0 green 0 blue 0 time 0
+	set game time 06.00
+
+	wait 1 seconds
+	begin cinema
+		wait 2 seconds
+		start music "creaturefightmain_01" loop -1
+		
+		reset camera path
+		queue camera move with position {1366.863, 377.465, 2140.455} focus {1363.470, 352.914, 2043.580} time 0.0
+		queue camera move with position {1362.401, 377.424, 2012.858} focus {1359.008, 352.872, 1915.983} time 24.0
+			queue camera move with position {1362.245, 376.518, 2007.917} focus {1340.773, 351.646, 1913.471} time 14.0
+		
+		//queue camera move with position {1348.470, 366.409, 1969.029} focus {1307.137, 331.830, 1884.801} time 24.0
+		//queue camera move with position {1196.033, 306.546, 1807.846} focus {1129.749, 287.851, 1735.337} time 8.0
+		//queue camera move with position {756.330, 390.260, 1345.381} focus {741.333, 363.694, 1250.142} time 8.0
+		//queue camera move with position {965.262, 390.265, 839.872} focus {1047.262, 353.278, 796.189} time 8.0
+			
+		queue camera move with position {1269.374, 340.042, 1918.403} focus {1223.952, 312.595, 1833.650} time 7.5
+		queue camera move with position {1095.395, 293.781, 1739.669} focus {1035.605, 262.589, 1665.829} time 5.0
+		queue camera move with position {650.566, 315.401, 1235.126} focus {690.690, 283.342, 1149.323} time 7.0
+		queue camera move with position {951.828, 269.502, 797.690} focus {1048.990, 248.933, 786.014} time 7.0
+		queue camera move with position {1356.970, 288.118, 692.521} focus {1450.146, 272.911, 725.474} time 7.0
+		
+		queue camera move with position {1586.991, 381.680, 753.987} focus {1674.247, 344.229, 785.335} time 7.0
+		queue camera move with position {1777.505, 295.067, 811.289} focus {1863.052, 254.698, 843.723} time 7.0
+		play camera path with easein 4 easeout 8 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		set fade in time 2
+		run background script LandStart
+		
+		wait 5 seconds
+		//Gen of war:As we ready ourselves, we will let the Greeks prepare for our storm to come.		
+		say "BW2T_SCRIPT_08FINAL_PDM_STARTLAND_10"
+		wait until read
+		//Gen of war:You are right. They have divine help. But the Prophesy says they will rise against those who nearly destroyed them. The Aztecs.		
+		say "BW2T_SCRIPT_08FINAL_PDM_STARTLAND_20"
+		wait until read
+		//Gen of war:If they can triumph over us, we will have no option but to offer ourselves to their side.		
+		say "BW2T_SCRIPT_08FINAL_PDM_STARTLAND_30"
+		wait until read
+		//Gen of city:You speak sense brother. We have both seen what these Greeks can do. But we must make a stand here first.		
+		say "BW2T_SCRIPT_08FINAL_PDM_STARTLAND_40"
+		wait until read
+
+		
+		
+		
+		eject good spirit
+		eject evil spirit
+		
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_08FINAL_ADVISORS_INTRO_G_10_20_30_40_50
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_08FINAL_ADVISORS_INTRO_E_10_20_30_40_50
+		wait until read
+		
+		
+		/*say "BW2T_SCRIPT_08FINAL_ADVISORS_INTRO_10"
+		wait until read
+		say "BW2T_SCRIPT_08FINAL_ADVISORS_INTRO_20"
+		wait until read
+		say "BW2T_SCRIPT_08FINAL_ADVISORS_INTRO_30"
+		wait until read
+		say "BW2T_SCRIPT_08FINAL_ADVISORS_INTRO_40"
+		wait until read
+		say "BW2T_SCRIPT_08FINAL_ADVISORS_INTRO_50"
+		wait until read*/
+		
+
+		send evil spirit home
+		send good spirit home
+		wait until camera ready
+		delete JapaneseL
+		delete JapaneseR
+		stop music with fadetime 4
+	end cinema
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+end script Land8Intro
+
+//-----------------------------------------------------------

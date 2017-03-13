@@ -1,0 +1,366 @@
+//run script TidTest
+
+define script ResetChallenge(ShipEndPos, ShipFocus)
+define script TGO_IntroTalk
+define TGO_True = 1
+define TGO_False = 0
+
+//global  ThiefFarShore = 0
+global 	ThiefNearShore = TGO_True
+//global 	GuardFarShore = 0
+global 	GuardNearShore = TGO_True
+//global 	OreFarShore = 0
+global 	OreNearShore = TGO_True
+//global 	ShipFarShore = 0
+global 	ShipNearShore = TGO_True
+global 	Loaded = 0
+global 	ThiefPos = 0
+global 	GuardPos = 0
+global 	OrePos = 0
+global 	ShipPos = 0
+global 	Thief = 0
+global 	L5Guard = 0
+global 	Ore = 0
+global 	Ship = 0
+
+//------------------------------------------
+// TGO_IntroTalk
+//------------------------------------------
+begin help script TGO_IntroTalk
+start
+	begin dialogue
+		eject good spirit
+		make good spirit point at {Ore}
+		say "We can load a single item onto the ship with the right mouse button"
+		wait 6 seconds
+		make good spirit point at {Ship}
+		say "and we can also use it to make the ship sail to the other beach"
+		wait 3 seconds
+		send good spirit home
+	end dialogue
+end script TGO_IntroTalk
+
+begin script Land5ThiefGuardOre
+
+PenPusherPos = marker at {1073.219, 53.938, 1202.676}
+OreEndPos = marker at {1152.660, 46.451, 1396.351}
+GuardEndPos = marker at {1148.094, 46.650, 1395.609}
+ThiefEndPos = marker at {1141.246, 46.658, 1392.760}
+ShipEndPos = marker at {1172.879, 40.559, 1374.765}
+MarchOffPos = marker at {1118.736, 60.970, 1433.127}
+ShipFadePos = marker at {2054.092, 31.094, 777.768}
+
+ChallengeComplete = 0
+ShipFocus = marker at {1153.745, 31.406, 1259.415}
+Scroll = 0
+JapPenPusher = create VILLAGER JAPANESE_BOATMASTER at {PenPusherPos}
+
+start
+
+ThiefPos = marker at {1085.238, 46.745, 1188.023}
+GuardPos = marker at {1088.549, 46.847, 1192.506}
+OrePos = marker at {1089.009, 47.858, 1196.146}
+ShipPos = marker at {1106.933, 36.358, 1192.507}
+
+Thief = create VILLAGER ROBINHOOD at {ThiefPos}
+L5Guard = create VILLAGER TARANAGA at {GuardPos}
+Ore = create OBJECT JAPANESE_BARREL_01 at {OrePos}
+Ship = create SHIP JAPANESE_SHIP at {ShipPos}
+
+add {ShipEndPos} to Ship waypoint schedule
+
+enable Ship waypoint schedule
+
+set Ship focus to {ShipFocus}
+
+Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {JapPenPusher}
+ALTITUDE of Scroll  = 5
+wait until Scroll right clicked
+
+begin cinema
+	delete Scroll
+	set camera position to {1074.063, 55.232, 1202.686}
+	set camera focus to {1073.066, 55.238, 1202.765}
+	move camera position to {1073.969, 55.233, 1202.694} time 20
+	move camera focus to {1072.972, 55.239, 1202.773} time 20
+	say "Oh my! I need to get this thief, this Guard and this barrel of stolen evidence to the city"
+	wait until read
+
+	say "But Naval Regulation Four Seven One Bee states that only one thing may be placed in the ship at any given time"
+	wait until read
+
+	say "Oh, what am I to do!"
+	wait until read
+
+	set camera position to {1076.886, 54.179, 1201.144}
+	set camera focus to {1077.637, 53.902, 1200.545}
+	wait 2 seconds
+end cinema
+
+run script TGO_IntroTalk
+
+begin loop
+if Loaded == 0
+	if Thief right clicked and ThiefNearShore == ShipNearShore
+	//Load thief to ship
+		clear right clicked object
+		delete Thief with fade
+		Loaded = 1
+		say "Thief loaded"
+		wait until read
+	end if
+
+	if L5Guard right clicked and GuardNearShore == ShipNearShore
+	//Load L5Guard to ship
+		clear right clicked object
+		delete L5Guard with fade
+		Loaded = 2
+		say "Guard loaded"
+		wait until read
+	end if
+
+	if Ore right clicked and OreNearShore == ShipNearShore
+	//Load ore to ship
+		clear right clicked object
+		delete Ore with fade
+		Loaded = 3
+		say "Ore loaded"
+		wait until read
+	end if
+end if
+
+if Ship right clicked
+	//move Ship to far shore
+		if {Ship} near {ShipPos} radius 10
+		clear right clicked object
+		//ShipFarShore = 1
+		ShipNearShore = TGO_False
+		add {ShipEndPos} to Ship waypoint schedule
+		SPEED of Ship = 1.5
+		begin cinema
+		//	set camera lens 40
+			set camera position to {1080.775, 53.669, 1191.851}
+			set camera focus to {1081.747, 53.451, 1191.760}
+			move camera position to {1080.775, 53.669, 1191.851} time 10
+			move camera focus to {1081.553, 53.590, 1192.475} time 10
+			enable Ship waypoint schedule
+			wait 4 seconds
+			SPEED of Ship = 5.0
+			wait until {Ship} near {ShipEndPos} radius 50
+			clear Ship waypoint schedule
+			set Ship focus to {ShipFocus}
+		end cinema
+
+		if Loaded == 1
+			Thief = create VILLAGER ROBINHOOD at {ThiefEndPos}
+			//ThiefFarShore = 1
+			ThiefNearShore = TGO_False
+			Loaded = 0
+		end if
+
+		if Loaded == 2
+			L5Guard = create VILLAGER TARANAGA at {GuardEndPos}
+			//GuardFarShore = 1
+			GuardNearShore = TGO_False
+			Loaded = 0
+		end if
+
+		if Loaded == 3
+			Ore = create OBJECT GREEK_BARREL_01 at {OreEndPos}			
+			//OreFarShore = 1
+			OreNearShore = TGO_False
+			Loaded = 0
+		end if
+	end if
+end if
+
+if Ship right clicked
+//move Ship to other shore
+	if {Ship} near {ShipEndPos} radius 10
+		clear right clicked object
+		//ShipFarShore = 0
+		ShipNearShore = TGO_True
+
+		add {ShipPos} to Ship waypoint schedule
+		SPEED of Ship = 1.5
+
+		begin cinema
+			//	set camera lens 40
+			set camera position to {1140.936, 51.212, 1396.716}
+			set camera focus to {1141.686, 51.300, 1396.061}
+			move camera position to {1140.936, 51.212, 1396.716} time 10
+			move camera focus to {1141.271, 51.260, 1395.775} time 10
+			enable Ship waypoint schedule
+			wait 4 seconds
+			SPEED of Ship = 5.0
+			wait until {Ship} near {ShipPos} radius 50
+			clear Ship waypoint schedule
+			set Ship focus to {ShipFocus}
+		end cinema
+
+		if Loaded == 1
+			Thief = create VILLAGER ROBINHOOD at {ThiefPos}
+			//ThiefFarShore = 0
+			ThiefNearShore = TGO_True
+			Loaded = 0
+		end if
+
+		if Loaded == 2
+			L5Guard = create VILLAGER TARANAGA at {GuardPos}
+			//GuardFarShore = 0
+			GuardNearShore = TGO_True
+			Loaded = 0
+		end if
+
+		if Loaded == 3
+			Ore = create OBJECT GREEK_BARREL_01 at {OrePos}
+			//OreFarShore = 0
+			OreNearShore = TGO_True
+			Loaded = 0
+		end if
+	end if
+end if
+
+if GuardNearShore == TGO_True and ThiefNearShore == TGO_True and OreNearShore == TGO_False and ShipNearShore == TGO_False
+	begin cinema
+		set camera position to {1085.695, 47.896, 1187.055}
+		set camera focus to {1085.938, 47.900, 1188.025}
+		move camera position to {1085.687, 47.896, 1187.021} time 20
+		move camera focus to {1085.930, 47.900, 1187.991} time 20
+		move L5Guard position to {Thief}
+		say "Come on then! Ya tit!"
+		wait 3 seconds
+		wait until read
+		set camera position to {1074.063, 55.232, 1202.686}
+		set camera focus to {1073.066, 55.238, 1202.765}
+		
+		say "The Guard has beaten the thief! This is no good, I will summon back the evidence!"
+		wait until read
+		run background script ResetChallenge(ShipEndPos, ShipFocus)
+	end cinema
+	GuardNearShore = 0
+end if
+
+if GuardNearShore == TGO_False and ThiefNearShore == TGO_False and OreNearShore == TGO_True and ShipNearShore == TGO_True
+	begin cinema
+		set camera position to {1141.395, 47.729, 1391.536}
+		set camera focus to {1141.923, 47.761, 1392.385}
+		set camera lens 56
+		move camera position to {1141.321, 47.725, 1391.417} time 8
+		move camera focus to {1141.849, 47.756, 1392.265} time 8
+		move L5Guard position to {Thief}
+		say "Come on then! Ya tit!"
+		wait until read
+		wait 3 seconds
+		set camera position to {1074.063, 55.232, 1202.686}
+		set camera focus to {1073.066, 55.238, 1202.765}
+		set camera lens 70
+		
+		say "The Guard has beaten the thief! This is no good, I will summon back the evidence!"
+		wait until read
+		run background script ResetChallenge(ShipEndPos, ShipFocus)
+	end cinema
+	GuardNearShore = TGO_True
+end if
+
+if ThiefNearShore == TGO_True and OreNearShore == TGO_True and GuardNearShore == TGO_False and ShipNearShore == TGO_False
+	begin cinema
+		set camera position to {1090.479, 49.226, 1196.626}
+		set camera focus to {1089.747, 48.973, 1195.994}
+		set camera lens 58
+		move camera position to {1090.269, 49.153, 1196.443} time 20
+		move camera focus to {1089.537, 48.900, 1195.811} time 20
+		move Thief position to {Ore}
+		say "I don't think anyone will miss this barrel of evidence"
+		wait until read
+		wait 2 seconds
+		set camera position to {1074.063, 55.232, 1202.686}
+		set camera focus to {1073.066, 55.238, 1202.765}
+		set camera lens 70
+		say "The thief has stolen the evidence! I'll call back the L5Guard"
+		wait until read
+		run background script ResetChallenge(ShipEndPos, ShipFocus)
+	end cinema
+	ThiefNearShore = TGO_False
+end if
+
+if ThiefNearShore == TGO_False and OreNearShore == TGO_False and GuardNearShore == TGO_True and ShipNearShore == TGO_True
+	begin cinema
+		set camera position to {1153.435, 47.314, 1396.032}
+		set camera focus to {1152.443, 47.276, 1395.916}
+		move camera position to {1153.396, 47.312, 1396.028} time 10
+		move camera focus to {1152.404, 47.275, 1395.912} time 10
+		move Thief position to {Ore}
+		say "I don't think anyone will miss this barrel of evidence"
+		wait until read
+		set camera position to {1074.063, 55.232, 1202.686}
+		set camera focus to {1073.066, 55.238, 1202.765}
+		set camera lens 70
+		say "The thief has stolen the evidence! I'll call back the L5Guard"
+		wait until read
+		run background script ResetChallenge(ShipEndPos, ShipFocus)
+	end cinema
+	ThiefNearShore = TGO_True
+end if
+
+if ThiefNearShore == TGO_False and GuardNearShore == TGO_False and OreNearShore == TGO_False
+	begin cinema
+		set camera position to {1146.665, 48.323, 1392.486}
+		set camera focus to {1146.099, 48.344, 1393.310}
+		move Thief position to {MarchOffPos}
+		move L5Guard position to {MarchOffPos}
+		delete Ore
+		say "Come on, you thieving toerag!"
+		wait until read
+		
+		wait 2 seconds
+		set camera position to {1074.063, 55.232, 1202.686}
+		set camera focus to {1073.066, 55.238, 1202.765}
+		set camera lens 70
+		say "Ah, wonderful providence! I can now clear the rest of the thief's den."
+		wait until read
+	end cinema
+	add {ShipFadePos} to Ship waypoint schedule
+	SPEED of Ship = 1.5
+	enable Ship waypoint schedule
+	wait 6 seconds
+	ChallengeComplete = 1
+end if
+
+until ChallengeComplete != 0
+end loop
+
+end script Land5ThiefGuardOre
+
+//**********************************************************************************************************
+
+begin script ResetChallenge(ShipEndPos, ShipFocus)
+
+start
+
+delete Thief
+delete L5Guard
+delete Ore
+delete Ship
+
+Thief = create VILLAGER ROBINHOOD at {ThiefPos}
+L5Guard = create VILLAGER TARANAGA at {GuardPos}
+Ore = create OBJECT JAPANESE_BARREL_01 at {OrePos}
+Ship = create SHIP JAPANESE_SHIP at {ShipPos}
+
+add {ShipEndPos} to Ship waypoint schedule
+
+enable Ship waypoint schedule
+
+set Ship focus to {ShipFocus}
+
+//ThiefFarShore = 0
+ThiefNearShore = TGO_True
+//GuardFarShore = 0
+GuardNearShore = TGO_True
+//OreFarShore = 0
+OreNearShore = TGO_True
+//ShipFarShore = 0
+ShipNearShore = TGO_True
+
+end script ResetChallenge

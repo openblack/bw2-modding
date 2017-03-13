@@ -1,0 +1,945 @@
+//======================================================================
+// Land 2 Barrel Run
+// Matt.L and PJ
+//======================================================================
+
+//-------------------------------------------
+// Cosntants
+//-------------------------------------------
+define BI_FALSE = 0
+define BI_TRUE = 1
+
+define BI_BARREL_RUN_ROWS = 5
+define BI_BARREL_RUN_COLS = 5
+define BI_BARREL_RUN_BARRELS = 25
+define BI_UNMANNED_NUM_BARRELS = 50
+
+define BI_NUM_SCARED_VILLAGERS = 15
+
+define BI_BALES_TIME = 15
+
+define BI_ADVISORS_MORE_PEOPLE_NEED_HELP = 0
+define BI_ADVISORS_OH_NO_THE_BARRELS = 1
+define BI_ADVISORS_GENERAL_WERE_SCREWED_DIALOGUE = 2
+define BI_ADVISORS_RELEASE_THE_BARRELS_SUGGESTION = 3
+define BI_ADVISORS_RELEASE_THE_BARRELS_SUCCESS = 4
+define BI_ADVISORS_SET_HAY_ON_FIRE = 5
+define BI_ADVISORS_FIRST_ONE_SET = 6
+define BI_ADVISORS_TAKING_A_WHILE = 7
+define BI_ADVISORS_HAY_SUCCESS = 8
+define BI_ADVISORS_FINAL_VOLCANO = 9
+
+define BI_ADVISORS_NONE = 99
+
+//-------------------------------------------
+// Script defines
+//-------------------------------------------
+define script BI_Villagers
+define script BI_WatchBarrel(Barrel)
+define script BI_TavernExplode
+define script BI_Matter
+define script BI_TestCamera
+define script BI_Advisors(ID)
+
+//Unmanned barrl event
+define script BI_CreateUnmannedBarrelStack(Pos, NumRows, NumCols, RelRow, RelCol, Angle, FencePos, FenceAngle)
+define script BI_BarrelPlatoon
+
+//hay bale event
+define script BI_HayRoll
+define script BI_HayBale(Position)
+define script BI_FlamingStick
+define script BI_HayArmies
+define script BI_ArrowBarrage
+
+
+define script L2_SmallExplosion(Position, Fragments)
+
+//-------------------------------------------
+// Globals
+//-------------------------------------------
+global BI_LaunchBarrels = BI_FALSE
+global BI_Fence = 0
+
+//Camera stuff
+global BI_CamTrig_BalesRolling = 0
+global BI_CamTrig_BaleHit = BI_FALSE
+global BI_Bale = 0	//Bale to get rel positions from
+
+global BR_Release = 0 //When to end the script
+
+global BI_CurrentAdvisorComment = BI_ADVISORS_NONE
+
+global BI_StopBarrage = BI_FALSE
+global BI_GateSet = BI_FALSE
+
+global BI_BalesTimer
+
+//-------------------------------------------
+// Land 2 Barrel Run
+//-------------------------------------------
+begin script Land2BarrelRun
+	Barrels[BI_BARREL_RUN_BARRELS]
+	CLoop = 0
+	RLoop = 0
+	MLoop = 0
+	Pos = marker at {2039.979, 107.868, 1028.224}
+	RelCol = marker at {0.895, -1.195, -0.500}
+	RelRow = marker at {-0.214, -1.097, 0.751}
+
+	NewRel = marker at {0, 0, 0} //generated
+	NewRowRel = marker at {0, 0, 0} //generated
+	FinalPos = marker at {0, 0, 0} //final marker		
+
+	MovePos = marker at {2042.935, 106.226, 1021.542}
+	PushLoop = 0
+
+	//Drop the barrels
+	BI_FencePos = marker at {2042.30, 107.689, 1026.4}
+	AztecDude = 0
+	AztecDudeCreatePos = marker at {2056.521,107.838,1023.598}
+	AztecDudeHitPos = marker at {2046.709, 107.741, 1024.124}
+	AztecDudeRunAwayPos = marker at {2057.809,112.007,1031.367}
+
+	AztecDude2 = 0
+	AztecDude2CreatePos = marker at {2032.373,109.392,1028.822}
+	AztecDude2HitPos = marker at {2037.766, 108.094, 1029.298}
+	AztecDude2RunAwayPos = marker at {2030.668,109.589,1039.006}
+
+	ArmyDudes[5]
+	ArmyDudePos[5]
+	DudeLoop = 0
+	DudeFocus = marker at {2036.464,104.342,1008.901}
+start
+	
+	//Villagers running away
+	run background script BI_Villagers
+
+	run background script BI_CreateUnmannedBarrelStack(marker at {2072.878, 106.310, 948.693}, 8, 5, marker at {0.0, -1.490, 1}, marker at {0.8, 0, 0}, 0, marker at {2072.30, 106.909, 951.707}, 90)
+
+	set game time 20.00			
+
+	run background script BI_TestCamera
+
+	ArmyDudePos[0] = marker at {2039.393, 109.447, 1033.004}
+	ArmyDudePos[1] = marker at {2048.196, 108.770, 1026.290}
+	ArmyDudePos[2] = marker at {2042.381, 109.592, 1032.690}
+	ArmyDudePos[3] = marker at {2048.073, 108.786, 1026.657}
+	ArmyDudePos[4] = marker at {2045.312, 109.128, 1029.979}
+
+	force while DudeLoop < 5
+		ArmyDudes[DudeLoop] = create VILLAGER AZTEC_FARMER at {ArmyDudePos[DudeLoop]}
+		disable ArmyDudes[DudeLoop] reactable
+		move villager ArmyDudes[DudeLoop] focus to {DudeFocus}
+		DudeLoop++
+	end while
+
+	//anims	
+	play anim "a_p_meleecombat_antagonise_enemy1" on ArmyDudes[0] loop -1
+	play anim "a_p_meleecombat_antagonise_enemy2" on ArmyDudes[1] loop -1
+	play anim "a_p_meleecombat_antagonise_enemy3" on ArmyDudes[2] loop -1
+	play anim "a_p_meleecombat_antagonise_enemy4" on ArmyDudes[3] loop -1
+	play anim "a_p_meleecombat_celebrate03" on ArmyDudes[4] loop -1
+
+	BI_Fence = create ROCK_OBJECT NORSE_ROCK_LARGE at {BI_FencePos}
+	override mesh for BI_Fence with "..\features\m_greek_tf_wall04_180_n"
+	ANGLE of BI_Fence = -30
+	disable BI_Fence pickup
+
+	AztecDude = create VILLAGER AZTEC_FISHERMAN at {AztecDudeCreatePos}
+	disable AztecDude reactable
+	move AztecDude position to {AztecDudeHitPos}
+	
+	AztecDude2 = create VILLAGER AZTEC_FISHERMAN at {AztecDude2CreatePos}
+	disable AztecDude2 reactable
+	move AztecDude2 position to {AztecDude2HitPos}
+
+	//Create the barrels
+	FinalPos = marker at {Pos}
+
+	force while RLoop < BI_BARREL_RUN_ROWS
+		CLoop = 0
+		force while CLoop < BI_BARREL_RUN_COLS
+			Barrels[MLoop] = create OBJECT NORSE_BARREL_02 at {FinalPos}
+			PITCH of Barrels[MLoop] = 90
+			ANGLE of Barrels[MLoop] = 55
+			ALTITUDE of Barrels[MLoop] = 0.4
+			disable Barrels[MLoop] pickup
+			CLoop++
+			MLoop++
+			NewRel = marker at CLoop *{RelCol}			
+			FinalPos = marker at {Pos} + {NewRel} + {NewRowRel}
+		end while
+		RLoop++
+		NewRowRel = marker at RLoop *{RelRow}
+	end while
+
+	wait until BI_LaunchBarrels == BI_TRUE
+
+	set AztecDude2 carrying CARRIED_OBJECT_MALLET_HEAVY
+	play anim "a_p_sledgehammer_into" on AztecDude2
+	
+	set AztecDude carrying CARRIED_OBJECT_MALLET_HEAVY
+	play anim "a_p_sledgehammer_into" on AztecDude
+
+	play anim "a_p_sledgehammer" on AztecDude2
+	wait 1 seconds
+	play anim "a_p_sledgehammer" on AztecDude
+	wait 0.65 seconds
+	
+	ALTITUDE of BI_Fence = -0.4
+	ZANGLE of BI_Fence = -3
+	wait 1 seconds
+	delete BI_Fence	
+
+	//Set the barrels rolling down the hill	
+	RLoop = 0
+	MLoop = 0
+	CLoop = 0
+	force while RLoop < BI_BARREL_RUN_ROWS
+		CLoop = 0
+		force while CLoop < BI_BARREL_RUN_COLS
+			set Barrels[MLoop] velocity heading {MovePos} speed 8
+			CLoop++
+			MLoop++
+		end while
+		RLoop++
+	end while	
+
+
+	wait until AztecDude played	
+
+	play anim "a_p_sledgehammer_outof" on AztecDude
+	wait until AztecDude played
+	set AztecDude carrying CARRIED_OBJECT_NONE
+
+	move AztecDude position to {AztecDudeRunAwayPos}	
+
+
+	run background script L2_SmallExplosion(marker at {2039.803, 101.970, 988.730}, BI_TRUE)
+	run background script L2_SmallExplosion(marker at {2029.275, 101.397, 973.776}, BI_FALSE)
+
+	wait 1 seconds
+	run background script L2_SmallExplosion(marker at {2040.335, 101.223, 956.302}, BI_FALSE)
+
+	wait 2 seconds
+	run background script L2_SmallExplosion(marker at {2040.509, 101.309, 969.844}, BI_TRUE)
+
+	wait 2 seconds
+	run background script L2_SmallExplosion(marker at {2034.059, 100.658, 949.581}, BI_TRUE)
+
+	wait 1 seconds
+	run background script L2_SmallExplosion(marker at {2051.786, 101.320, 957.190}, BI_TRUE)
+
+	delete AztecDude
+
+	wait until BR_Release == BI_TRUE
+end script Land2BarrelRun
+
+//-------------------------------------------
+// Test Camera
+//-------------------------------------------
+begin script BI_TestCamera
+	CamMove = marker at {0, 0, 0}	//rel
+	CamFoc = marker at {0, 0, 0}	//rel
+start
+	begin interactive camera
+		start music "big_battle_01" loop 2
+
+		InCameraRollMode = 1
+
+		move camera position to {2014.685, 103.929, 1007.847} time 4
+		move camera focus to {1921.741, 101.077, 1044.621} time 4
+
+		move camera position to {2034.896, 104.549, 999.851} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1952.133, 97.861, 1055.576} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2031.146, 112.509, 1022.227} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2116.205, 78.820, 1062.589} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2031.146, 112.509, 1022.227} time 6 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2039.191, 59.797, 937.632} time 6 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2034.428, 104.444, 959.819} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2111.381, 109.923, 896.202} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2060.980, 111.006, 958.617} time 2 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2142.425, 95.458, 902.721} time 2 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2079.213, 118.817, 959.907} time 2 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2009.682, 56.276, 924.513} time 2 catmullrom bias  0.0 tension 0.0
+	
+		/////////////////////////////////////////////////////////////////////////////////////////////
+
+		run background script BI_Advisors(BI_ADVISORS_MORE_PEOPLE_NEED_HELP)
+
+		run background script Land2AudioDistantScreams(2)
+
+		wait 3 seconds
+
+		run background script BI_TavernExplode
+
+		run background script Land2AudioDistantExplosions(5)
+
+		run background script BI_Advisors(BI_ADVISORS_OH_NO_THE_BARRELS)
+
+		wait 3 seconds
+
+		wait 2 seconds
+
+		//Towards the player		
+		run background script Land2ScaredVillagers(marker at {2036.493, 101.310, 962.388}, marker at {2035.061, 101.823, 999.881}, 17, 0.45, 10)
+
+		//From behined the tavern
+		run background script Land2ScaredVillagers(marker at {2018.217, 101.356, 970.562}, marker at {2058.738, 103.802, 982.562}, 17, 0.45, 10)
+
+		wait 2 seconds
+
+		run background script BI_Advisors(BI_ADVISORS_GENERAL_WERE_SCREWED_DIALOGUE)
+
+
+		run background script Land2AudioCameraScreams(3)
+
+		wait 2 seconds
+
+		//Behined the big buildings
+		run background script Land2ScaredVillagers(marker at {2094.606, 99.911, 914.169}, marker at {2049.960, 99.456, 886.803}, 17, 0.45, 10)
+
+		run background script BI_BarrelPlatoon
+
+		wait 2 seconds
+
+		run background script Land2ScaredVillagers(marker at {2072.327, 99.566, 892.779}, marker at {2052.391, 101.140, 954.703}, 17, 0.45, 10)
+
+		wait 4 seconds	
+
+		run background script Land2AudioDistantExplosions(5)
+		run background script Land2AudioDistantScreams(2)
+		
+		wait 2 seconds
+		wait 3 seconds
+		run background script BI_Advisors(BI_ADVISORS_RELEASE_THE_BARRELS_SUGGESTION)
+		wait 7 seconds
+		run background script Land2LadderGuy
+
+		InCameraRollMode = 0
+		//wait til you set the gate off
+		wait until BI_GateSet == BI_TRUE or 10 seconds
+
+		InCameraRollMode = 1
+
+		move camera position to {2062.229, 104.420, 933.555} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2079.539, 96.628, 835.374} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2066.485, 108.895, 920.690} time 3 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2166.070, 102.143, 926.738} time 3 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2083.469, 107.922, 930.903} time 2 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2153.537, 108.391, 859.565} time 2 catmullrom bias  0.0 tension 0.0
+
+		LG_GoTrigger = 1
+		wait 2 seconds
+		//Pull the guy off the ladder now
+
+		run background script Land2AudioDistantExplosions(5)
+		wait 4 seconds
+		run background script Land2ExplodingMan
+		
+		wait 3 seconds
+/*
+	end camera
+
+	begin cinema
+*/
+		set camera position to {2095.731, 107.331, 929.018}
+		set camera focus to {2029.887, 111.576, 853.872}		
+
+		set game speed to 0.2
+
+		wait 0.8 seconds				
+
+		set game speed to 1
+
+	/*end cinema
+
+	begin interactive camera
+*/
+		set camera position to {2083.469, 107.922, 930.903}
+		set camera focus to {2153.537, 108.391, 859.565}
+
+		//set fade red 255 green 255 blue 255 time 0.5
+		
+
+		move camera position to {2091.908, 116.255, 888.719} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2105.531, 90.829, 792.967} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {2122.220, 115.073, 861.243} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {2158.646, 76.403, 945.959} time 4 catmullrom bias  0.0 tension 0.0
+		
+		//Set timer and run hay bales script
+		BI_BalesTimer = create timer for BI_BALES_TIME seconds
+		run background script BI_HayRoll
+
+		wait 0.5 seconds
+		//set fade in time 0.5
+		
+		wait 7.5 seconds	
+		run background script BI_Advisors(BI_ADVISORS_SET_HAY_ON_FIRE)
+		make good spirit point at {2113.387, 93.601, 896.531}
+		InCameraRollMode = 0
+		wait 5 seconds
+		stop good spirit pointing
+
+		wait until BI_CamTrig_BalesRolling == 5	or get BI_BalesTimer time remaining == 0
+
+	end camera
+
+	BR_Release = BI_TRUE
+
+	wait 8 seconds
+	BI_StopBarrage = BI_TRUE
+
+end script BI_TestCamera
+
+//-------------------------------------------
+// Barrel villagers
+//-------------------------------------------
+begin script BI_Villagers
+	StartPos = marker at {2011.421,101.094,1009.137}
+	CreatePos = marker at {2011.696,101.108,1009.437} //generated marker
+	MoveMarker_1 = marker at {2031.978,102.400,1011.028} //Running away from soldiers
+	MoveMarker_2 = marker at {2042.707,109.765,1024.386} //Running up hill
+	MoveMarker_3 = marker at {2032.349,101.195,998.569} //Running down hill
+
+	VillagerType = 0
+	Villagers[BI_NUM_SCARED_VILLAGERS]
+	VillagerLoop = 0
+
+	Aztecs = 0
+	AztecMove_1 = marker at {2052.895,102.728,937.807}
+	AztecMove_2 = marker at {1199.291,64.782,1518.130}
+	PlatoonCreate = marker at {2006.461,100.892,1011.608}
+	
+start
+
+	//Create Aztec platoon
+	Aztecs = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {PlatoonCreate} with 15 men and 0 women
+	PLAYER of Aztecs = 1
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {AztecMove_1} to front of Aztecs action queue
+
+	force while VillagerLoop < BI_NUM_SCARED_VILLAGERS
+
+		//Set create position
+		CreatePos = marker at {StartPos} + {number from -5 to 5, 0, number from -5 to 5}
+
+		VillagerType = number from 1 to 6
+
+		//Adult Male
+		if VillagerType < 2
+			Villagers[VillagerLoop] = create VILLAGER GREEK_TRADER at {CreatePos}
+		//Adult Female
+		elsif VillagerType < 4			
+			Villagers[VillagerLoop] = create VILLAGER GREEK_HOUSEWIFE at {CreatePos}
+		//Child Male
+		elsif VillagerType == 5
+			Villagers[VillagerLoop] = create CHILD GREEK_TRADER at {CreatePos}
+		//Child Female
+		elsif VillagerType == 6
+			Villagers[VillagerLoop] = create CHILD GREEK_HOUSEWIFE at {CreatePos}
+		end if
+		
+		disable Villagers[VillagerLoop] reactable		
+
+		VillagerLoop++
+	end while
+
+	VillagerLoop = 0
+	force while VillagerLoop < BI_NUM_SCARED_VILLAGERS
+		//Move to pos 1
+		if VillagerLoop == 0
+			move Villagers[VillagerLoop] position to {MoveMarker_1}
+		else
+			move Villagers[VillagerLoop] position to {MoveMarker_1} + {number from -5 to 5, 0, number from -5 to 5}
+		end if
+
+		SPEED of Villagers[VillagerLoop] = 0.4		
+		VillagerLoop++
+	end while	
+
+	wait 7.4 seconds
+	BI_LaunchBarrels = BI_TRUE
+	
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {AztecMove_2} to front of Aztecs action queue
+
+	VillagerLoop = 0
+	force while VillagerLoop < BI_NUM_SCARED_VILLAGERS
+		//Move to pos 1
+		if VillagerLoop == 0
+			move Villagers[VillagerLoop] position to {MoveMarker_2}
+		else
+			move Villagers[VillagerLoop] position to {MoveMarker_2} + {number from -5 to 5, 0, number from -5 to 5}
+		end if
+
+		SPEED of Villagers[VillagerLoop] = 0.4		
+		VillagerLoop++
+	end while	
+	
+	wait until not BI_Fence exists
+	wait 1.5 seconds
+
+	VillagerLoop = 0
+	force while VillagerLoop < BI_NUM_SCARED_VILLAGERS
+		//Move to pos 1
+		move Villagers[VillagerLoop] position to {MoveMarker_3} + {number from -5 to 5, 0, number from -5 to 5}
+		SPEED of Villagers[VillagerLoop] = 0.4
+		VillagerLoop++
+	end while
+
+	delete Aztecs
+
+	wait until {Villagers[0]} near {MoveMarker_3} radius 10
+
+	wait 50000000000 seconds
+end script BI_Villagers
+
+//-------------------------------------------
+// Watch Barrel
+//-------------------------------------------
+begin script BI_WatchBarrel(Barrel)
+	GetVillager = 0
+start
+
+	wait 5 seconds
+	wait until Barrel is MOVING
+
+	while Barrel is MOVING
+		GetVillager = get VILLAGER at {Barrel} radius 1
+		if GetVillager exists
+			set GetVillager velocity heading {GetVillager} + {0.000,3.000,0.000} speed 5
+			wait 2 seconds
+		end if
+		wait 0.1 seconds
+	end while
+
+end script BI_WatchBarrel
+
+//-------------------------------------------
+// Tavern Explode
+//-------------------------------------------
+begin script BI_TavernExplode
+	Tavern1ExplodePos = marker at {2087.200, 106.414, 1040.422}
+	FireCracker = 0
+	FX = 0
+	Scaler = 0
+	ObjectSpawn = 0
+	Object = 0
+start
+	
+	//run background script BI_Matter
+
+	while FireCracker < 20
+		Scaler = (number from 15 to 40) / 10
+		FX = create visual effect "eh_s_lsflash.ves" strength 1 scale (Scaler/5) at {Tavern1ExplodePos} - {0, 40, 0} time 5
+		wait ((number from 1 to 15 )/10) seconds
+		FX = create visual effect "fr_s_bounce.ves" strength 1 scale Scaler at {Tavern1ExplodePos} + {number from -10 to 10, number from -10 to 10} time 5
+		FireCracker++
+	end while
+
+	//marker at {2067.207, 110.647, 1023.803}
+
+	//Ooh big fire!
+	FX = create visual effect "gp_s_fire_vil.ves" strength 1 scale 9 at {Tavern1ExplodePos} time 20
+
+	wait 50000 seconds
+end script BI_TavernExplode
+
+//-------------------------------------------
+// Tavern Explode
+//-------------------------------------------
+begin script BI_Matter
+	Projecticles[20]
+	CreateLoop = 0
+	CreatePos = marker at {2077.894, 112.387, 1027.283}
+	ForcePos = marker at {2081.048, 112.389, 1029.903}
+start
+
+	force while CreateLoop < 20
+		Projecticles[CreateLoop] = create OBJECT NORSE_BARREL_02 at {CreatePos} + {number from -2 to 2, number from -2 to 2}		
+		CreateLoop++
+	end while	
+
+	set physics at position {ForcePos} with strength {number from -5 to 5, number from 0 to 1 ,number from -5 to 5} radius 5 random 1
+
+	wait 20 seconds
+	//Clean up redundant barrels
+	CreateLoop = 0
+	force while CreateLoop < 20
+		delete Projecticles[CreateLoop]
+		CreateLoop++
+	end while
+
+end script BI_Matter
+
+//-------------------------------------------
+// Hay Roll
+//-------------------------------------------
+begin script BI_HayRoll
+start
+
+	run background script BI_HayBale(marker at {2120.156, 93.005, 894.561})	
+	run background script BI_HayBale(marker at {2125.393, 93.414, 889.438})
+	run background script BI_HayBale(marker at {2132.006, 93.428, 885.854})
+	run background script BI_HayBale(marker at {2137.940, 93.235, 884.773})
+	run background script BI_HayBale(marker at {2141.614, 93.734, 880.858})
+
+	run background script BI_HayArmies
+	run background script BI_FlamingStick
+	run background script BI_ArrowBarrage
+
+end script BI_HayRoll
+
+//-------------------------------------------
+// Hay Bale
+//-------------------------------------------
+begin script BI_HayBale(Position)
+	Bale = 0
+	Target = marker at {2236.804, 65.266, 939.138}
+	Villager = 0
+	Platoon = 0
+start
+	Bale = create ROCK_OBJECT ROUND_ROCK_LARGE at {Position}
+	enable Bale indestructible
+	wait until Bale on fire
+
+	set Bale velocity heading {Target} speed 10
+	BI_CamTrig_BalesRolling++
+
+	begin loop
+	/*
+		Villager = get VILLAGER at {Bale} radius 10
+		if Villager exists
+			enable Villager on fire 1.0
+		end if
+		*/
+		Platoon = get platoon of player 1 nearest {Bale} radius 5
+	until Platoon exists
+	end loop
+
+	if not BI_Bale exists
+		BI_Bale = Bale
+	end if
+
+	BI_CamTrig_BaleHit = BI_TRUE
+
+	wait 500 seconds
+end script BI_HayBale
+
+//-------------------------------------------
+// Flaming Stick
+//-------------------------------------------
+begin script BI_FlamingStick
+	FlamingStick = 0
+	FlameFX = 0
+	Object = 0
+	FlameTimer = create timer for 0 seconds
+start
+
+	begin loop
+		FlamingStick = create ROCK_OBJECT ROUND_ROCK_LARGE at {2113.387, 93.601, 896.531}
+		override mesh for FlamingStick with "m_aztec_rubble_02"
+		PITCH of FlamingStick = 90
+		enable FlamingStick indestructible
+
+		while FlamingStick exists
+			FlameFX = create visual effect "ev_s_rocktrail.ves" strength 1 scale 1 on FlamingStick time -1
+
+			begin loop
+
+				Object = get ROCK_OBJECT at hand position radius 4
+				if Object exists and Object != FlamingStick and FlamingStick is HELD
+					FlameTimer = create timer for 0.5 seconds
+					
+					wait until get FlameTimer time remaining == 0 or not hand position near {Object} radius 4
+
+					if hand position near {Object} radius 6
+						enable Object on fire 1.0
+					end if
+
+				end if
+
+			end loop
+		end while
+	end loop
+
+end script BI_FlamingStick
+
+//-------------------------------------------
+// Hay Armies
+//-------------------------------------------
+begin script BI_HayArmies
+	GreekPlatoon = 0
+	AztecPlatoon[4]
+start
+
+	GreekPlatoon = create platoon PLATOON_INFO_GREEK_RANGED_8 at {2135.580, 92.143, 1002.100} with 15 men and 0 women
+	PLAYER of GreekPlatoon = 0
+
+	AztecPlatoon[0] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {2212.228, 56.516, 997.974} with 35 men and 0 women
+	PLAYER of AztecPlatoon[0] = 1
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {2114.369, 89.504, 914.157} to front of AztecPlatoon[0] action queue
+
+	AztecPlatoon[1] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {2234.748, 57.921, 981.129} with 35 men and 0 women
+	PLAYER of AztecPlatoon[1] = 1
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {2114.369, 89.504, 914.157} to front of AztecPlatoon[1] action queue
+
+	AztecPlatoon[2] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {2246.349, 57.533, 971.882} with 35 men and 0 women
+	PLAYER of AztecPlatoon[2] = 1
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {2126.508, 92.568, 894.660} to front of AztecPlatoon[2] action queue
+
+	AztecPlatoon[3] = create platoon PLATOON_AGENDA_ACTION_MOVE_TO_POS at {2249.228, 57.880, 953.812} with 35 men and 0 women
+	PLAYER of AztecPlatoon[3] = 1
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {2143.740, 94.442, 873.883} to front of AztecPlatoon[3] action queue
+
+	wait 5000000 seconds
+end script BI_HayArmies
+
+//-------------------------------------------
+// Arrow Barrage
+//-------------------------------------------
+begin script BI_ArrowBarrage
+	FireFromPos = marker at {2088.380, 99.243, 847.165}
+	FireToPos = marker at {2180.273, 72.964, 942.535}
+	Arrows = 0
+	FireLoops = 0
+	WaitTime = 0
+start
+
+	begin loop
+		begin loop
+			Arrows = create missiles MISSILE_ARROW_FLAMING launch MISSILE_LAUNCH_FORTY_FIVE size 10 from {FireFromPos} + {number from -20 to 20, 0, number from -20 to 20} to {FireToPos} + {number from -40 to 40, 0, number from -40 to 40} speed 1.5
+			wait 0.1 seconds
+			FireLoops++
+		until FireLoops >= 15
+		end loop
+		FireLoops = 0
+		WaitTime = (number from 5 to 40) /10
+		wait WaitTime seconds
+	until BI_StopBarrage == BI_TRUE
+	end loop
+
+end script BI_ArrowBarrage
+
+//-------------------------------------------
+// Create Unamanned Barrel stack
+//-------------------------------------------
+begin script BI_CreateUnmannedBarrelStack(BarrelCreatePos, NumRows, NumCols, RelRow, RelCol, Angle, FencePos, FenceAngle)
+	Barrels[BI_UNMANNED_NUM_BARRELS]
+	CLoop = 0
+	RLoop = 0
+	MLoop = 0
+	
+	NewRelCol = marker at {0, 0, 0} //generated
+	NewRelRow = marker at {0, 0, 0} //generated
+	FinalPos = marker at {0, 0, 0} //final marker
+
+	MovePos = marker at {0, 0, 0} //generate
+	Fence = 0
+	NumBarrels = 0
+start
+
+	NumBarrels = NumRows * NumCols
+	//if NumBarrels >= BI_UNMANNED_NUM_BARRELS
+		
+		FinalPos = marker at {BarrelCreatePos}
+
+		force while RLoop < NumRows
+			CLoop = 0
+			force while CLoop < NumCols
+				NewRelCol = marker at CLoop *{RelCol}
+				FinalPos = marker at {BarrelCreatePos} + {NewRelCol} + {NewRelRow}
+				Barrels[MLoop] = create OBJECT NORSE_BARREL_02 at {FinalPos}
+				PITCH of Barrels[MLoop] = 90
+				ANGLE of Barrels[MLoop] = Angle
+				ALTITUDE of Barrels[MLoop] = 0.4
+				disable Barrels[MLoop] pickup
+				CLoop++
+				MLoop++
+			end while
+			RLoop++
+			NewRelRow = marker at RLoop *{RelRow}
+		end while	
+
+		MovePos = marker at get world position from Barrels[0] to {-6.528, -1.997, 1.881}
+
+		Fence = create ROCK_OBJECT NORSE_ROCK_LARGE at {FencePos}
+		override mesh for Fence with "..\features\m_greek_tf_wall04_180_n"
+		ANGLE of Fence = FenceAngle
+
+		wait until Fence is HELD or not {Fence} at {FencePos}
+
+		CLoop = 0
+		RLoop = 0
+		MLoop = 0
+
+		force while RLoop < NumRows
+			CLoop = 0
+			force while CLoop < NumCols
+				set Barrels[MLoop] velocity heading {MovePos} speed 8
+			CLoop++
+			MLoop++
+			end while
+			RLoop++
+		end while	
+
+		BI_GateSet = BI_TRUE
+end script BI_CreateUnmannedBarrelStack
+
+//-------------------------------------------
+// Advisors
+//-------------------------------------------
+begin script BI_BarrelPlatoon
+	Attackers_1 = 0
+	Attackers_2 = 0
+	Attackers_3 = 0
+
+	Start = marker at {2082.554, 99.434, 891.481}
+
+	HalfWayPoint = marker at {2060.920, 100.636, 936.946}
+	3QuaterWayPoint = marker at {2056.495, 101.987, 961.091}
+	FrontPoint = marker at {2032.061, 102.577, 1014.824}
+start
+
+	Attackers_1 = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {Start} with 15 men and 0 women
+	PLAYER of Attackers_1 = 1
+
+	Attackers_2 = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {Start} with 15 men and 0 women
+	PLAYER of Attackers_2 = 1
+	Attackers_3 = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {Start} with 15 men and 0 women
+	PLAYER of Attackers_3 = 1
+
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FrontPoint} to front of Attackers_1 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {3QuaterWayPoint} to front of Attackers_1 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {HalfWayPoint} to front of Attackers_1 action queue
+	wait 5 seconds
+
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FrontPoint} to front of Attackers_2 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {3QuaterWayPoint} to front of Attackers_2 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {HalfWayPoint} to front of Attackers_2 action queue
+	wait 5 seconds
+
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {FrontPoint} to front of Attackers_3 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {3QuaterWayPoint} to front of Attackers_3 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {HalfWayPoint} to front of Attackers_3 action queue
+	wait 5 seconds
+
+end script BI_BarrelPlatoon
+
+//-------------------------------------------
+// Advisors
+//-------------------------------------------
+begin script BI_Advisors(ID)
+	SetFlag = BI_FALSE
+start
+
+	BI_CurrentAdvisorComment = ID
+	SetFlag = BI_TRUE
+
+	begin known cinema
+
+		if ID == BI_ADVISORS_MORE_PEOPLE_NEED_HELP
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_10"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_20"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_OH_NO_THE_BARRELS
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_30"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_40"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_GENERAL_WERE_SCREWED_DIALOGUE
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_50"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_60"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_70"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_RELEASE_THE_BARRELS_SUGGESTION
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_80"			
+			wait until read
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_90"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_RELEASE_THE_BARRELS_SUCCESS
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_100"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_SET_HAY_ON_FIRE
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_120"			
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_130"			
+			wait until read
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_140"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_FIRST_ONE_SET
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_150"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_TAKING_A_WHILE
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_170"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_HAY_SUCCESS
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_160"			
+			wait until read
+
+		elsif ID == BI_ADVISORS_FINAL_VOLCANO
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_BARRELRUN_190"			
+			wait until read
+
+		end if
+
+		send good spirit home
+		send evil spirit home
+	end known cinema
+
+until BI_CurrentAdvisorComment != ID and SetFlag == BI_TRUE
+end script BI_Advisors
+
+//-------------------------------------------
+// Small Explosion
+//-------------------------------------------
+begin script L2_SmallExplosion(Position, Fragments)
+	FX = 0
+	Rubble = 0
+	RubbleLoop = 0
+start
+
+	FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 0.3 at {Position} - {0, 40, 0} time 5
+	wait 0.2 seconds
+	FX = create visual effect "fr_s_bounce.ves" strength 1 scale 1 at {Position} time 5
+
+	if Fragments == BI_TRUE
+		//Rubble me!
+		force while RubbleLoop < 4
+			Rubble = create rubble type 1 scale (number from 1 to 7)/10 at {Position} + {number from -3 to 3, 0, number from -3 to 3} velocity {number from -15 to 15, number from 15 to 50, number from -15 to 15}
+			RubbleLoop++
+		end while
+	end if
+
+end script L2_SmallExplosion

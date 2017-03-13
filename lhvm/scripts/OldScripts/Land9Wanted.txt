@@ -1,0 +1,28 @@
+//Land9Wanted.txt
+//------------------------------------------------
+//  LAND 9 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land9Wanted
+
+ L9Actor1Pos = marker at {1995.364,40.463,1252.926}	// On Coast at Greek Chokepoint
+ L9Actor1 = create VILLAGER MALE at {L9Actor1Pos}
+ PosterPos1 = marker at {1775.677,25.937,793.755}
+ L9Actor2Pos = marker at {1022.124,24.935,1157.365}	// At Oasis
+ L9Actor2 = create VILLAGER MALE at {L9Actor2Pos}
+ PosterPos2 = marker at {1780.409,25.836,799.386}
+ L9Actor3Pos = marker at {1256.451,57.681,1652.802}	// In coastal hills halfway across desert
+ L9Actor3 = create VILLAGER MALE at {L9Actor3Pos}
+ PosterPos3 = marker at {1785.234,25.896,805.386}
+ JailLocation = marker at {1773.293,25.878,802.918} // hut near Greek TC
+
+start
+	
+	run background script GlobalWanted (18, L9Actor1, L9Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (19, L9Actor2, L9Actor2Pos, JailLocation, PosterPos2)
+
+	run background script GlobalWanted (20, L9Actor3, L9Actor3Pos, JailLocation, PosterPos3)
+
+
+end script Land9Wanted

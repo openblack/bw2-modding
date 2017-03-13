@@ -1,0 +1,253 @@
+define script DeleteLamb(Me)
+
+run script ArmyTest
+
+/*
+begin script ArrowLay
+	Arrows[100]
+	Curr = 0
+	LastPos = marker at hand position
+	ArrowPos = marker at {0, 0, 0}
+start
+
+	while Curr < 100		
+
+		Arrows[Curr] = create visual effect "gp_s_rayfxball.ves" strength 10 scale 0.5 at hand position + {0, 2, 0} time -1
+		set Arrows[Curr] focus to {1, 1, 1}
+
+		set Arrows[Curr] colour red 0 green 0 blue 255
+		Curr++
+
+		wait until hand position not near {LastPos} radius 23
+		LastPos = marker at hand position
+
+	end while
+
+end script ArrowLay
+
+*/
+
+begin script ArmyTest
+	Lamb		= 0
+	TrailFX		= 0
+	LambCreate	= marker at {447.457, 71.367, 1983.641}
+	FlyPos[3]
+
+	Rock = 0
+
+	Creature = 0
+
+
+	
+
+	XX = 0
+
+	Town1 = 0
+	Town2 = 0
+	Mi = 0
+
+	AreaFX = 0
+
+	Pos = marker at {965.095, 75.018, 1508.798}
+
+
+	FX = 0
+	X = 0
+	Height = 0
+	HeightHeight = 0
+start	
+
+	attach atmos "battle_one_shot_sfx" to camera
+	set camera atmos group 5 time 1 seconds
+	wait 3 seconds
+
+	attach atmos "battle_atmos_" to camera
+	set camera atmos group 6 time 1 seconds id 1
+	
+	wait 6 seconds
+	
+	detach atmos from camera id 1
+	wait 3 seconds
+	detach atmos from camera
+
+	wait 100 seconds
+
+
+	FX = create visual effect VISUAL_EFFECT_EPIC_VOLCANO_SEED at hand position + {0, 5, 0} time -1
+	Pos = marker at hand position + {0, 5, 0}
+
+	begin loop
+		Height = land height at {Pos} + {X, 0, 0}
+		HeightHeight = land height at hand position
+		set FX position to {Pos} + {X, Height-15, 0}
+		X++
+	end loop
+
+	begin loop
+
+		if bindable action BINDABLE_ACTION_TYPE_MOVE_LEFT performed
+			say "Move Left"
+		elsif bindable action BINDABLE_ACTION_TYPE_MOVE_RIGHT performed
+			say "Move Right"
+		elsif bindable action BINDABLE_ACTION_TYPE_MOVE_FORWARD performed
+			say "Move Forward"
+		elsif bindable action BINDABLE_ACTION_TYPE_MOVE_BACKWARD performed
+			say "Move Back"
+		elsif bindable action BINDABLE_ACTION_TYPE_MOVE performed
+			say "Action Move"
+		elsif bindable action BINDABLE_ACTION_TYPE_ACTION performed
+			say "Action Action"
+		elsif bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+			say "Action Rotate"	
+		end if
+
+
+	end loop
+
+
+	AreaFX = create visual effect VISUAL_EFFECT_AREA_TARGET at {Pos} time -1
+	SCALE of AreaFX = 5.5
+
+
+	begin loop
+
+		if hand position near {Pos} radius 27.5
+			say "in"
+		else
+			say "out"
+		end if
+
+
+	end loop
+
+
+/*
+
+	Mi = create DUMB_CREATURE CREATURE_TYPE_LAST at hand position
+	set creature Mi walk override injured 
+
+	begin loop
+	move Mi position to hand position
+	wait 2 seconds
+	end loop
+
+
+	wait until 1 == 0*/
+
+	Mi = create ROCK_OBJECT ROUND_ROCK_LARGE at hand position
+	set capture radius multiplier 5
+
+	wait until 1 == 0
+
+/*
+	begin loop
+		set mouse position x XX y 300
+		XX++
+	end loop
+
+	wait until 1 == 0
+
+*/
+	begin loop
+		Town1 = get TOWN at hand position radius 20 excluding scripted
+	until Town1 exists
+	end loop
+
+	wait 3 seconds
+
+	begin loop
+		Town2 = get TOWN at hand position radius 20 excluding scripted
+	until Town2 exists and not Town1 == Town2
+	end loop
+
+	start migration from Town1 to Town2
+
+	begin loop
+		Mi = get migration from Town1 to Town2
+	until Mi exists
+	end loop
+	
+	disable migration Mi can be declined
+
+	wait until 1 == 0
+
+	Rock = create VILLAGER GREEK_FARMER at hand position
+
+	move Rock to limbo
+
+	if Rock in limbo
+		say "in limbo"
+	else
+		say "not in limbo"
+	end if
+
+	wait until 1 == 0
+
+/*
+	Creature = create DUMB_CREATURE CREATURE_TYPE_COW at {1573.000, 111.402, 845.000}
+	set creature Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.23 time 0
+
+	wait 2 seconds
+	play anim C_MOVE_WALK_ALT2 on Creature loop 3
+*
+	wait until 1 == 0
+*/
+
+	begin loop
+
+		if hand position near {Pos} radius 30
+			say "in"
+		else
+			say "out"
+		end if
+			
+
+	end loop
+
+
+	Rock = create ROCK_OBJECT ROUND_ROCK_LARGE at hand position
+
+	enable Rock physics tracking
+
+	begin loop		
+
+		say "$d" with number get number of times Rock fisted
+		wait 1 seconds
+
+	end loop
+
+
+	FlyPos[0] = marker at {444.989, 85.000, 1878.213}
+	FlyPos[1] = marker at {455.271, 85.000, 1876.943}
+	FlyPos[2] = marker at {470.269, 85.000, 1877.593}
+
+	begin interactive camera
+
+		set camera position to {450.698, 76.525, 1923.725}
+		set camera focus to {449.190, 55.628, 2021.503}
+
+		begin loop
+
+			Lamb = create ANIMAL SHEEP at {LambCreate}
+			SCALE of Lamb = 0.5
+
+			set Lamb physics balance 17
+			set Lamb velocity heading {FlyPos[number from 0 to 2]} speed 20		
+
+			TrailFX = create visual effect "gp_s_flame_arrow.ves" strength 10 scale 1 on Lamb time -1
+			set TrailFX colour red 255 green 255 blue 255
+		
+			wait 7 seconds
+			run background script DeleteLamb(Lamb)
+
+		end loop
+
+	end camera
+
+end script ArmyTest
+
+begin script DeleteLamb(Me)
+start
+	wait until SPEED of Me == 0 and not Me is HELD
+	delete Me
+end script DeleteLamb

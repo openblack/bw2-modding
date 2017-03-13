@@ -1,0 +1,887 @@
+//===================================================================
+// Land 1 Rock Man
+// Matt.L
+//===================================================================
+//--------------------------------------------------------------------
+// Cosntants
+//--------------------------------------------------------------------
+define RM_FALSE									= 0
+define RM_TRUE									= 1
+
+define RM_END_HITBYROCK							= 0
+define RM_END_ROCKDESTROYED						= 1
+define RM_END_DROWNING							= 2
+
+//Advisor defines
+define RM_ADVISOR_HOUSE_DESTROYED				= 2
+define RM_ADVISOR_ROCK_HELD_ABOVE				= 3
+define RM_ADVISOR_COMPLETED_GOOD				= 4
+define RM_ADVISOR_MOVED_ROCK_BUT_STILL_BLOCKED	= 5
+define RM_ADVISOR_AFTER_HELD					= 6					//Already completed the good way ut now being bad
+define RM_ADVISOR_AFTER_DEAD					= 7
+define RM_ADVISOR_AFTER_HOUSE_DESTROYED 		= 8
+define RM_ADVISOR_MOVE_IT						= 9
+
+//Set to false to disable scroll, intro and pickup/ movement disables when working on this script
+define RM_SHOW_INTRO = RM_TRUE
+
+//--------------------------------------------------------------------
+// Globals
+//--------------------------------------------------------------------
+global RM_StopHammering			= RM_FALSE
+global RM_Man					= 0
+global RM_Rock					= 0
+global RM_House					= 0
+global RM_RockPos				= 0
+global RM_HousePreDestroyed		= RM_FALSE
+global RM_PlayedIntro			= RM_FALSE
+
+//Advisor flags
+global RM_Advisor_AbovePlay		= RM_FALSE
+
+//--------------------------------------------------------------------
+// Script Defines
+//--------------------------------------------------------------------
+define script RM_WatchMan
+define script Ending(End)
+define script RM_Intro
+define script RM_ManStunned
+define script RM_Advisors(ID)
+define script RM_HammerFX
+define script RM_HappyDays
+define script RockChecker
+//--------------------------------------------------------------------
+// INTRO CUT SCENE
+//--------------------------------------------------------------------
+begin script RM_Intro
+	ScrollPos		= marker at {1533.830, 121.273, 1441.254}
+	Scroll			= 0
+	ReminderTimer	= create timer for 0 seconds
+	ReminderPos		= marker at {1510.948, 122.462, 1439.660}
+	ReminderScroll	= 0
+start	
+
+	if RM_SHOW_INTRO == RM_TRUE
+
+   		wait until L1_DisplayRockManScroll == RM_TRUE or SkippedTutorials == 1
+
+	 	//Only show the scroll if the challenge is possible. e.g. the house must be in tact, and the rock man alive
+	 	if L1_RockManComplete == RM_FALSE
+	 		Scroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_MISC_10" remind "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_MISC_20" at {ScrollPos}
+			ALTITUDE of Scroll = 2
+	 	end if
+
+		set ReminderTimer time to 120 seconds
+
+   		begin loop
+   			if get distance from camera position to {Scroll} < 30 and {Scroll} viewed and get ReminderTimer time remaining == 0
+   				begin dialogue
+   					eject good spirit
+   					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_190"
+   					wait until read
+
+   					make good spirit point to Scroll
+
+   					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_200"
+   					wait until read
+					send good spirit home
+   					set ReminderTimer time to 120 seconds
+   				end dialogue
+   			end if
+
+		//if TutScroll == 1 and Scroll exists
+		//	delete Scroll
+		//elsif Scroll not exists and L1_InAScroll != 1 and TutScroll == 0
+		//	Scroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_MISC_10" remind "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_MISC_20" at {ScrollPos}
+		//	ALTITUDE of Scroll = 2
+		//end if
+
+   		until Scroll right clicked or L1_RockManComplete == RM_TRUE
+   		end loop
+
+		InRockMan = 1
+
+		disable RM_House indestructible
+
+   		delete Scroll
+
+		if RM_House has damage cleave
+			RM_HousePreDestroyed = RM_TRUE
+		end if
+
+		//Disable Eloi objectives and reset others which have been used
+		if SkippedTutorials == 0
+			//disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_7
+			//reset player 0 objective TRIBUTE_OBJECTIVE_LAND_18
+			//reset player 0 objective TRIBUTE_OBJECTIVE_LAND_19
+		end if
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ROCKMAN_20"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_19 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_19 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ROCKMAN_30"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_19 parent objective TRIBUTE_OBJECTIVE_LAND_18
+
+   		if L1_RockManComplete == RM_FALSE
+   			//Stop background actions.. ready for cut scene
+   			RM_StopHammering = RM_TRUE
+
+   			begin cinema
+   				//store camera details
+   				set fade red 0 green 0 blue 0 time 1
+
+
+   				wait 1 seconds
+   				set fade in time 1
+				disable RM_Man reactable
+				wait 0.2 seconds
+
+				set RM_Man position to {1526.072, 122.240, 1440.699}				
+   				set RM_Man focus to {1534.609, 125.986, 1439.792}
+   				play anim "a_p_l1rockman_man_talkingtogod" on RM_Man blend time 0
+
+
+   				set camera position to {1539.106, 129.360, 1444.963}
+				set camera focus to {1455.488, 88.332, 1408.550}
+
+   				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_20"
+   				wait 2 seconds
+
+   				move camera position to {1539.041, 128.326, 1439.406} time 8
+   				move camera focus to {1445.035, 94.235, 1439.955} time 8
+
+				//wait until RM_Man played
+   				//play anim "a_p_farm_shouting_to_god_desperately" on RM_Man loop 3
+                
+   				wait until read
+
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_30"
+   				wait until read
+
+   				set camera position to {1529.325, 122.974, 1439.249}
+				set camera focus to {1464.188, 152.898, 1508.975}
+
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_40"
+   				wait until read
+/*
+				set camera position to {1524.556, 123.274, 1438.111}
+				set camera focus to {1613.472, 146.293, 1477.650}
+*/
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_50"
+   				wait until read
+
+				//send good spirit home
+   				//send evil spirit home
+
+   				set fade red 0 green 0 blue 0 time 1
+   				wait 1 seconds
+				set camera position to {1539.198, 133.370, 1448.422}
+				set camera focus to {1459.426, 82.827, 1415.536}
+   				//restore camera details
+				enable RM_Man reactable
+
+   				set fade in time 1
+   				wait 1 seconds
+
+   			end cinema with dialogue
+
+				ReminderScroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_REMINDER" remind "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_REMINDER" at {ReminderPos}
+
+				RM_StopHammering = RM_FALSE
+				RM_PlayedIntro = RM_TRUE
+
+    			//Player can now interact
+   				disable RM_Man indestructible
+   				disable RM_Rock indestructible
+   				enable RM_Man moveable
+   				enable RM_Rock moveable
+   				enable RM_Man pickup
+   				enable RM_Rock pickup
+
+				run background script RockChecker
+
+  				eject evil spirit
+   				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_60"
+   				wait until read
+				send evil spirit home
+
+				if L1_RockManComplete == RM_FALSE
+   					eject good spirit
+   					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_70"
+   					wait until read
+					send good spirit home
+				end if
+
+   			end dialogue			
+   			
+   		end if
+	end if
+
+	wait until L1_RockManComplete == RM_TRUE
+
+	InRockMan = 0
+
+end	script RM_Intro
+
+//--------------------------------------------------------------------
+// RM_Rock Man
+//--------------------------------------------------------------------
+begin script Land1RockMan
+	ManCreate = marker at {1524.433, 122.529, 1437.350}
+	ChipPos = marker at {1526.072, 122.240, 1440.699}
+	PushPos = marker at {1526.072, 122.240, 1440.699}
+	HousePos = marker at {1519.791, 122.568, 1431.058}
+
+	Action = 0
+	Mallet = 0
+	RandomAnim = 0
+start
+
+	RM_House = get HOUSE at {HousePos}
+	enable RM_House indestructible
+	//Try to get the rock
+	RM_RockPos = marker at {1524.931, 121.799, 1444.315}
+	RM_Rock = get ROCK_OBJECT at {RM_RockPos} radius 5
+	disable RM_Rock pickup
+	enable RM_Rock indestructible
+
+	//wait until L1_DisplayRockManScroll == RM_TRUE
+
+	//run script RM_FXTest
+	run background script RM_Intro
+
+	// == Props and setup stuff == 
+
+	//If the rock doesn't exist then create it
+	if not RM_Rock exists
+   		RM_Rock = create ROCK_OBJECT ERODED_ROCK_MEDIUM at {RM_RockPos}
+   		SCALE of RM_Rock = 0.75
+   		ALTITUDE of RM_Rock = 0
+	end if
+
+	Mallet = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {ChipPos}
+	override mesh for Mallet with "m_genericsledgehammer"
+	ALTITUDE of Mallet = 0.1
+
+	RM_Man = create VILLAGER INDIGENOUS_FISHERMAN at {ManCreate}
+
+	disable RM_Man reactable
+
+	//Disable player interactions with these objects
+	if RM_SHOW_INTRO == RM_TRUE
+   		enable RM_Man indestructible
+   		enable RM_Rock indestructible
+   		disable RM_Man moveable
+   		disable RM_Rock moveable
+   		disable RM_Man pickup
+   		disable RM_Rock pickup
+	end if
+
+	move RM_Man position to {ChipPos}
+	wait until {RM_Man} at {ChipPos}	
+
+	//Watch for player interaction
+	run background script RM_WatchMan
+
+	//Overall loop - includes sleep and cut scene stuff
+	begin loop
+   		//Loop through this randomly choosing an action for the Rock Man to perform
+   		begin loop
+   			Action = number from 0 to 5
+
+   			if Action < 2 and RM_PlayedIntro == RM_TRUE
+	   			
+   				play anim "a_p_pick_up_bag" on RM_Man
+   				wait 1 seconds
+	   			
+   				set RM_Man carrying CARRIED_OBJECT_MALLET_HEAVY
+   				//delete Mallet
+   				ALTITUDE of Mallet = -1
+
+   				wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				move villager RM_Man focus to {RM_Rock}
+	   			
+   				play anim "a_p_sledgehammer_into" on RM_Man
+   				wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				run background script RM_HammerFX
+   				play anim "a_p_sledgehammer" on RM_Man loop 5
+   				wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				play anim "a_p_sledgehammer_outof" on RM_Man
+   				wait until RM_Man played or RM_StopHammering == RM_TRUE
+	   			
+   				set RM_Man carrying CARRIED_OBJECT_NONE
+   				ALTITUDE of Mallet = 0.1
+
+   			elsif Action < 4
+	   			
+   				move RM_Man position to {PushPos}
+   				wait until {RM_Man} at {PushPos}
+	   			
+   				move villager RM_Man focus to {RM_Rock}
+
+   				play anim "a_p_shoving_large_rock" on RM_Man// loop 3
+   				wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				move RM_Man position to {ChipPos}
+   				wait until {RM_Man} at {ChipPos}
+
+   			else
+
+   				RandomAnim = number from 1 to 6
+
+   				if RandomAnim == 1
+   					play anim "a_p_wipe_sweat" on RM_Man
+   					wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				elsif RandomAnim == 2
+   					play anim "a_p_kicking_ground" on RM_Man
+   					wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				elsif RandomAnim == 3
+   					play anim "a_p_stamping_ground" on RM_Man
+   					wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				elsif RandomAnim == 4
+   					play anim "a_p_huff" on RM_Man
+   					wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				elsif RandomAnim == 5
+   					play anim "a_p_overworked1" on RM_Man
+   					wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				elsif RandomAnim == 6
+   					play anim "a_p_overworked2" on RM_Man
+   					wait until RM_Man played or RM_StopHammering == RM_TRUE
+
+   				end if
+
+   			end if
+
+   		until RM_StopHammering == RM_TRUE or L1_RockManComplete == RM_TRUE
+   		end loop
+
+   		wait until RM_StopHammering == RM_FALSE
+
+	until L1_RockManComplete == RM_TRUE
+	end loop
+
+	//Re-enable Eloi objective and reset rock man
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_18
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_19
+
+	//if SkippedTutorials == 0
+	//	if L1_EloiComplete == 0
+	//		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 amount 1 force open
+	//		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_30"
+	//	end if
+
+	//	if L1_WaterfallComplete == 0
+	//		set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 amount 1 force open
+	//		set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_20"
+	//	end if
+	//end if
+
+end script Land1RockMan
+
+//--------------------------------------------------------------------
+// Watch RM_Rock Man
+//--------------------------------------------------------------------
+begin script RM_WatchMan	
+	StopTracking		= 0
+	GiveTribute			= RM_FALSE
+	HouseHealth			= 0 //Might want to change this
+	RockHeldTimer		= create timer for 0 seconds	//Reminder timer for pickup
+	RockTimerSet		= RM_FALSE
+	CheckRock			= RM_FALSE
+	LastHeldTimer		= create timer for 0 seconds
+	Ending				= 0
+start
+	wait until RM_PlayedIntro == RM_TRUE
+
+	//HouseHealth = HEALTH of RM_House
+	HEALTH of RM_House = 1.0
+
+	//Use proper collide functions here
+	begin loop	
+
+		if get RockHeldTimer time remaining == 0 and RockTimerSet == RM_TRUE
+			set RockHeldTimer time to 15 seconds
+			run background script RM_Advisors(RM_ADVISOR_MOVE_IT)
+		end if
+
+		if CheckRock == RM_TRUE and get LastHeldTimer time remaining == 0
+			run background script RM_Advisors(RM_ADVISOR_MOVED_ROCK_BUT_STILL_BLOCKED)
+			set RockHeldTimer time to 15 seconds
+			RockTimerSet = RM_TRUE
+			CheckRock = RM_FALSE
+		end if
+
+		//Held
+   		if RM_Rock is HELD
+
+			RockTimerSet = RM_FALSE
+
+   			run background script RM_ManStunned
+   			wait until not RM_Rock is HELD
+
+			//after it is no longer wait for it to come to a halt otherwise the wrong ending could be given
+			wait until SPEED of RM_Rock < 5 or {RM_Rock} under water
+
+			CheckRock = RM_TRUE
+			LastHeldTimer = create timer for 2 seconds
+
+   		else
+
+			//Completed by destroying his house
+   			if RM_House has damage cleave and RM_HousePreDestroyed == RM_FALSE
+   				Ending = RM_ADVISOR_HOUSE_DESTROYED
+   				L1_RockManComplete = RM_TRUE
+   			else
+
+				if RM_Man is FLYING
+					disable RM_Rock pickup
+				else
+					enable RM_Rock pickup
+				end if
+
+				//Completed by killing the Rock Man
+   				if HEALTH of RM_Man < 1
+					HEALTH of RM_Man = 0
+   					Ending = RM_END_HITBYROCK
+   					L1_RockManComplete = RM_TRUE
+					enable RM_Rock pickup
+				end if
+
+				//Completed by moving the rock
+				if not {RM_Rock} near {RM_RockPos} radius 15 and HEALTH of RM_Man > 0
+   					Ending = RM_END_ROCKDESTROYED
+					GiveTribute = RM_TRUE
+   					L1_RockManComplete = RM_TRUE
+   				end if
+
+   			end if
+
+   		end if		
+
+	until L1_RockManComplete == RM_TRUE
+	end loop
+   
+   	run background script Ending(Ending)
+
+		if Ending == RM_ADVISOR_HOUSE_DESTROYED
+
+			begin cinema
+				set fade red 0 green 0 blue 0 time 1
+				wait 1 seconds
+				
+				set camera position to {1526.927, 127.530, 1450.045}
+				set camera focus to {1479.649, 93.120, 1368.917}
+
+				move camera position to {1531.569, 127.983, 1448.470} time 7
+				move camera focus to {1465.029, 97.576, 1380.294} time 7
+				set fade in time 1
+				eject good spirit
+				eject evil spirit
+
+				make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ROCK_MAN_E_90_100
+				make good spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ROCK_MAN_G_90_100
+				wait until read
+
+				send good spirit home
+				send evil spirit home
+
+				wait 1 seconds
+
+				set fade red 0 green 0 blue 0 time 1
+				wait 1 seconds
+
+				set camera position to {1547.369, 181.543, 1510.760}
+				set camera focus to {1500.433, 129.006, 1439.789}
+
+				set fade in time 1
+				wait 1 seconds
+				L1_RockManEndingPlayed = 1
+			end cinema
+
+		elsif Ending == RM_END_HITBYROCK
+			begin cinema
+				set fade red 0 green 0 blue 0 time 1
+				wait 1 seconds
+				set camera position to {1537.029, 133.635, 1461.873}
+				set camera focus to {1495.989, 111.815, 1373.336}
+
+				move camera position to {1543.849, 129.875, 1457.318} time 7
+				move camera focus to {1472.572, 114.837, 1388.812} time 7
+				set fade in time 1
+				eject good spirit
+				eject evil spirit
+
+				make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ROCK_MAN_E_130_140
+				make good spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ROCK_MAN_G_130_140
+				wait until read
+
+				send good spirit home
+				send evil spirit home
+				set fade red 0 green 0 blue 0 time 1
+				wait 1 seconds
+
+				set camera position to {1547.369, 181.543, 1510.760}
+				set camera focus to {1500.433, 129.006, 1439.789}
+
+				set fade in time 1
+				wait 1 seconds
+				L1_RockManEndingPlayed = 1
+			end cinema
+
+		elsif Ending == RM_END_ROCKDESTROYED
+			wait 1 second
+			begin cinema
+				set fade red 0 green 0 blue 0 time 1
+				wait 1 seconds
+				set camera position to {1531.784, 130.202, 1450.842}
+				set camera focus to {1456.759, 98.689, 1392.712}
+
+				move camera position to {1535.330, 126.714, 1445.124} time 7
+				move camera focus to {1442.190, 112.670, 1411.530} time 7
+				set fade in time 1
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_270"
+				wait until read
+			//begin dialogue
+
+				eject good spirit
+				eject evil spirit
+
+				make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ROCK_MAN_E_110_120
+				make good spirit play across 0.5 down 0.5 HELPDUDE_KM_01FINAL_ADVISORS_ROCK_MAN_G_110_120
+				//wait until camera ready			
+				wait until read
+				//send good spirit home
+				//send evil spirit home
+				L1_RockManEndingPlayed = 1
+			//end dialogue
+			end cinema
+
+		end if
+
+
+	if GiveTribute == RM_TRUE
+		wait 1 second
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_ROCKMAN
+
+		begin dialogue
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_210"
+			wait until read
+			send good spirit home
+		end dialogue
+
+	end if
+
+	//Keep watching the man for death after initial complation
+	if Ending == RM_END_ROCKDESTROYED
+		
+		while StopTracking == RM_FALSE
+			//House is destroyed
+			if RM_House has damage cleave and HEALTH of RM_Man > 0
+				run background script RM_Advisors(RM_ADVISOR_AFTER_HOUSE_DESTROYED)
+				StopTracking = RM_TRUE
+			else
+				//Man is held
+				if RM_Man is HELD
+					run background script RM_Advisors(RM_ADVISOR_AFTER_HELD)
+					wait until not RM_Man is HELD
+				else
+					//Man is dead
+					if HEALTH of RM_Man <= 0
+						run background script RM_Advisors(RM_ADVISOR_AFTER_DEAD)
+						StopTracking = RM_TRUE
+					end if
+				end if
+			end if
+		end while
+
+	end if
+
+end script RM_WatchMan
+
+//--------------------------------------------------------------------
+// Ending
+//--------------------------------------------------------------------
+begin script Ending(End)
+	DoorPos = marker at {1520.496, 122.553, 1430.789}
+start
+
+	set RM_Man carrying CARRIED_OBJECT_NONE
+
+	if End == RM_END_HITBYROCK
+
+		if HEALTH of RM_Man > 0
+			wait until not RM_Man is MOVING
+
+			while not {RM_Man} at {DoorPos}
+				move RM_Man position to {DoorPos}
+				override RM_Man anim "a_p_walk_ranting"
+				SPEED of RM_Man = 0.1
+				wait 5 seconds
+			end while
+			delete RM_Man
+		end if
+
+	elsif End == RM_ADVISOR_HOUSE_DESTROYED
+		wait 1 seconds
+		disable RM_Man reactable
+		set RM_Man position to {1526.072, 122.240, 1440.699}				
+   		set RM_Man focus to {1534.609, 125.986, 1439.792}
+		play anim "A_p_crowd_lost_2" on RM_Man loop 2
+		wait until RM_Man played
+
+
+	elsif End == RM_END_ROCKDESTROYED
+		wait 1 seconds
+		disable RM_Man reactable
+		set RM_Man position to {1526.072, 122.240, 1440.699}				
+		set RM_Man focus to {1526.117, 121.541, 1445.941}
+		play anim "A_p_celebration2" on RM_Man
+		wait until RM_Man played
+
+		move RM_Man position to {DoorPos}// extra position 1 of RM_House
+		override RM_Man anim "a_p_walk_cartwheel"
+		wait 5 seconds
+
+		while not {RM_Man} at {DoorPos}
+			move RM_Man position to {DoorPos}
+			override RM_Man anim "a_p_walk_male_good"
+			wait 3 seconds
+		end while
+		cancel RM_Man anim override
+		wait 6 seconds
+
+		//run as background because I want to quit this script
+		run background script RM_HappyDays
+	end if
+
+end script Ending
+
+//--------------------------------------------------------------------
+// Man Stunned - Rock picked up
+//--------------------------------------------------------------------
+begin script RM_ManStunned
+start
+
+	RM_StopHammering = RM_TRUE
+	set RM_Man carrying CARRIED_OBJECT_NONE
+
+	play anim "a_p_react_pleasant" on RM_Man
+	wait until RM_Man played
+	
+	//Check player actions
+	//PJ - changed this to a WHILE loop so stop unwanted animations occurring in the outo
+	while RM_Rock is HELD
+
+		move villager RM_Man focus to {RM_Rock}
+
+		if get distance from {RM_Rock} to {RM_Man} > 5
+			play anim "a_p_look_at_hand" on RM_Man loop -1
+			wait until get distance from {RM_Rock} to {RM_Man} < 5
+		else
+			disable RM_Man reactable
+			if not L1_RockManComplete == RM_TRUE
+				run background script RM_Advisors(RM_ADVISOR_ROCK_HELD_ABOVE)
+			end if
+
+			play anim "a_p_scared_stiff_2_into" on RM_Man
+			wait until RM_Man played
+
+			play anim "a_p_scared_stiff_2" on RM_Man loop -1
+			wait until get distance from {RM_Rock} to {RM_Man} > 5					
+			enable RM_Man reactable
+		end if
+		
+		play anim "a_p_scared_stiff_2_outof" on RM_Man
+		wait until RM_Man played
+
+	end while
+
+	//RM_StopHammering = RM_FALSE
+
+end script RM_ManStunned
+
+//--------------------------------------------------------------------
+// Rock Man Advisors
+//--------------------------------------------------------------------
+begin script RM_Advisors(ID)	
+start
+
+	begin dialogue
+		if ID == RM_ADVISOR_AFTER_DEAD
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_130"
+			wait until read
+
+			eject evil spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_140"
+			wait until read
+			send good spirit home
+			send evil spirit home
+
+		elsif ID == RM_ADVISOR_AFTER_HOUSE_DESTROYED
+			say "BW2T_SCRIPT_01FINAL_PICKUP167"
+			wait until read
+
+		elsif ID == RM_ADVISOR_ROCK_HELD_ABOVE and RM_Advisor_AbovePlay == RM_FALSE
+			RM_Advisor_AbovePlay = RM_TRUE
+			eject good spirit
+
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_150"
+			wait until read
+			send good spirit home
+
+		elsif ID == RM_ADVISOR_COMPLETED_GOOD
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_110"
+			wait until read
+
+			eject evil spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_120"
+			wait until read
+			send good spirit home
+			send evil spirit home
+
+		elsif ID == RM_ADVISOR_MOVED_ROCK_BUT_STILL_BLOCKED
+			say "BW2T_SCRIPT_01FINAL_PICKUP168"
+			wait until read
+
+		elsif ID == RM_ADVISOR_AFTER_HELD
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCK_MAN_180"
+			wait until read
+
+		elsif ID == RM_ADVISOR_MOVE_IT
+			say "BW2T_SCRIPT_01FINAL_PICKUP169"
+			wait until read
+		end if
+	end dialogue
+
+end script RM_Advisors
+
+//--------------------------------------------------------------------
+// Hammer FX
+//--------------------------------------------------------------------
+begin script RM_HammerFX
+	FX			= 0
+	HammerLoop	= 0
+	SparkPos	= marker at {1525.852, 123.00, 1441.533}
+start
+	begin loop
+		wait 1.55 seconds
+		if get distance from camera position to {SparkPos} > 15
+			FX = create visual effect "gp_s_sword_clash.ves" strength 2 scale 2.5 at {SparkPos} time 2
+		else
+			FX = create visual effect "gp_s_sword_clash.ves" strength 1 scale 1.5 at {SparkPos} time 2
+		end if
+		HammerLoop++
+		wait 1.55 seconds
+	until HammerLoop == 5 or RM_Rock is HELD
+	end loop
+end script RM_HammerFX
+
+//--------------------------------------------------------------------
+// Happy Days - Controls the man doing nice things like enjoying the view 
+// after the player has cleard the rock
+//--------------------------------------------------------------------
+begin script RM_HappyDays
+	RandomAnim	= 0	
+	Rand		= 0
+	FocusPoint	= marker at {1540.175, 120.131, 1446.597}
+	WalkPos[5]
+start
+	
+	WalkPos[0] = marker at {1529.045, 121.413, 1445.079}
+	WalkPos[1] = marker at {1530.072, 122.405, 1436.088}
+	WalkPos[2] = marker at {1535.207, 121.040, 1441.524}
+	WalkPos[3] = marker at {1519.669, 121.989, 1444.468}
+	WalkPos[4] = marker at {1524.817, 121.432, 1447.875}
+
+	move RM_Man	position to {WalkPos[0]}
+	wait until {RM_Man} at {WalkPos[0]}
+
+	//Choose anim set
+	RandomAnim = number from 1 to 3
+
+	begin loop
+		if RandomAnim == 1
+
+			play anim "a_p_sitting_down1_into" on RM_Man
+			wait until RM_Man played
+
+			play anim "a_p_sitting_down1_sitting" on RM_Man loop 4 
+			wait until RM_Man played
+
+			play anim "a_p_sitting_down1_outof" on RM_Man
+			wait until RM_Man played
+
+		//elsif RandomAnim == 2
+
+			//play anim "a_p_sitting_down2_into" on RM_Man
+			//wait until RM_Man played
+
+			//play anim "a_p_sitting_down2_sitting" on RM_Man loop 4 
+			//wait until RM_Man played
+
+			//play anim "a_p_sitting_down2_outof" on RM_Man
+			//wait until RM_Man played
+
+		elsif RandomAnim == 2
+
+			play anim "a_p_sitting_down3_into" on RM_Man
+			wait until RM_Man played
+
+			play anim "a_p_sitting_down3_sitting" on RM_Man loop 4 
+			wait until RM_Man played
+
+			play anim "a_p_sitting_down3_outof" on RM_Man
+			wait until RM_Man played
+
+		elsif RandomAnim == 3
+
+			play anim "a_p_sitting_down4_into" on RM_Man
+			wait until RM_Man played
+
+			play anim "a_p_sitting_down4_sitting" on RM_Man loop 4 
+			wait until RM_Man played
+
+			play anim "a_p_sitting_down4_outof" on RM_Man
+			wait until RM_Man played
+
+
+		end if
+
+		Rand = number from 0 to 4
+		move RM_Man position to {WalkPos[Rand]}
+		wait until {RM_Man} at {WalkPos[Rand]}
+
+		move villager RM_Man focus to {FocusPoint}
+
+	until not RM_Man exists
+	end loop
+
+end script RM_HappyDays
+
+begin script RockChecker
+
+start
+
+	while RM_Rock exists and not L1_RockManComplete == RM_TRUE
+		if RM_Rock is HELD or RM_Rock is FLYING
+				disable RM_House indestructible
+		else
+				enable RM_House indestructible
+		end if
+	end while
+
+	disable RM_House indestructible
+
+end script RockChecker

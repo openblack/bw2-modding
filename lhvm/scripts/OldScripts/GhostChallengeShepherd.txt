@@ -1,0 +1,239 @@
+//ForestFireGhostQuest
+
+define GQF_TRUE = 1
+define GQF_FALSE = 0
+
+define GQF_NUMBER_OF_TREES = 20
+define GQF_NUMBER_OF_SHEEP = 5
+
+define script GhostChallengeShepherd
+define script SetUpGhosts
+define script SetUpTrees
+define script StartFire
+define script TidyUpGhosts
+define script GrowTrees
+
+global GQF_GhostShepherd = 0
+global GQF_GhostShepherdStartPos = 0
+
+global GQF_Tree[GQF_NUMBER_OF_TREES]
+global GQF_TreePos[GQF_NUMBER_OF_TREES]
+
+global GQF_GhostSheep[GQF_NUMBER_OF_SHEEP]
+global GQF_GhostSheepPos = 0
+
+global GQF_QuestComplete = GQF_FALSE
+global GQF_GhostsGone = GQF_TRUE
+
+global GQF_Day = GQF_FALSE
+global GQF_Night = GQF_FALSE
+global GQF_Afternoon = GQF_FALSE
+
+global GQF_Time = 0
+global GQF_DeadSheep = 0
+global GQF_TreesGrown = GQF_FALSE
+global GQF_TreeScale = 0.1
+
+//=========================================================================
+
+begin script GhostChallengeShepherd
+
+start
+
+set game time 15.00
+
+run background script GetTime
+
+while GQF_QuestComplete != GQF_TRUE
+
+	if GQF_Afternoon == GQF_TRUE
+		run script SetUpTrees
+		while GQF_TreesGrown != GQF_TRUE
+			run script GrowTrees
+		end while
+	end if 
+
+	if GQF_Night == GQF_TRUE
+		if GQF_GhostsGone == GQF_TRUE
+		   run script SetUpGhosts
+		end if
+	end if
+
+	if GQF_Day == GQF_TRUE
+		if GQF_GhostsGone != GQF_TRUE
+			run script TidyUpGhosts
+		end if
+	end if
+end while
+
+end script GhostChallengeShepherd
+//=========================================================================
+
+begin script SetUpTrees
+
+CTR = 1
+
+start
+
+GQF_TreePos[0] = marker at {1086.363,4.051,1434.135}
+
+while (CTR < GQF_NUMBER_OF_TREES)
+	if GQF_Tree[CTR] not exists
+		GQF_TreePos[CTR] = marker at {GQF_TreePos[0]} + {number from -20 to 20, number from -20 to 20}
+		GQF_Tree[CTR] = create with angle 0 and scale 0.1 TREE TREE_INFO_CEDAR at {GQF_TreePos[CTR]}
+		release GQF_Tree[CTR]
+	end if
+	CTR++
+end while
+
+end script SetUpTrees
+
+//=========================================================================
+
+begin script SetUpGhosts
+
+CTR = 0
+
+start
+
+GQF_GhostShepherdStartPos = marker at {1084.272,4.042,1436.823}
+GQF_GhostSheepPos = marker at {1085.344,4.120,1436.167}
+
+
+GQF_GhostShepherd = create VILLAGER VILLAGER_INFO_GREEK_FARMER_MALE at {GQF_GhostShepherdStartPos}
+disable GQF_GhostShepherd pickup
+
+while (CTR < GQF_NUMBER_OF_SHEEP)
+
+	GQF_GhostSheep[CTR] = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {GQF_TreePos[0]} + {number from -5 to 5, number from -5 to 5}
+	CTR++
+	GQF_GhostsGone = GQF_FALSE
+
+end while
+
+CTR = 0
+
+run script StartFire
+
+end script SetUpGhosts
+//=========================================================================
+
+begin script StartFire
+
+CTR = 0
+SheepCtr = 0
+
+start
+
+wait 5 seconds
+
+while CTR < GQF_NUMBER_OF_TREES
+	if {GQF_Tree[CTR]} near {GQF_TreePos[CTR]} radius 1
+		enable GQF_Tree[CTR] on fire 0.2
+		move GQF_GhostSheep[SheepCtr] position to {GQF_Tree[CTR]}
+	end if
+
+	CTR+=4
+	SheepCtr++
+
+end while
+
+end script StartFire
+
+//=========================================================================
+
+begin script GetTime
+
+Time = 0
+
+start
+
+while GQF_QuestComplete != 1
+	Time = get game time
+	GQF_Time = get game time
+
+	if Time < 5.99 or Time > 18.01
+		GQF_Day = GQF_FALSE
+		GQF_Afternoon = GQF_FALSE
+		GQF_Night = GQF_TRUE
+	end if
+
+	if Time < 18.00 and Time > 15.01
+		GQF_Day = GQF_FALSE
+		GQF_Afternoon = GQF_TRUE
+		GQF_Night = GQF_FALSE
+	end if
+
+	if Time < 15.00 and Time > 6.00
+		GQF_Day = GQF_TRUE
+		GQF_Afternoon = GQF_FALSE
+		GQF_Night = GQF_FALSE
+	end if
+end while
+
+end script GetTime
+
+//==========================================================================
+begin script TidyUpGhosts
+
+CTR = 0
+
+start
+
+while CTR < GQF_NUMBER_OF_SHEEP
+	
+	if HEALTH of GQF_GhostSheep[CTR] == 0
+		GQF_DeadSheep++
+	end if
+
+	CTR++
+end while
+
+CTR = 0
+
+if GQF_DeadSheep == 0
+	GQF_QuestComplete = GQF_TRUE
+	begin cinema
+		say "Ghost shepherd challenge is complete"
+		wait until read
+	end cinema
+end if
+
+delete GQF_GhostShepherd
+
+while CTR < GQF_NUMBER_OF_SHEEP
+	delete GQF_GhostSheep[CTR] with fade
+	CTR++
+	if CTR == GQF_NUMBER_OF_SHEEP
+		GQF_GhostsGone = GQF_TRUE
+	end if
+end while
+
+if GQF_QuestComplete != GQF_TRUE
+	GQF_DeadSheep = 0
+end if
+
+GQF_TreesGrown = GQF_FALSE
+
+end script TidyUpGhosts
+//==========================================================================
+
+begin script GrowTrees
+
+CTR = 0
+
+start
+
+while CTR < GQF_NUMBER_OF_TREES
+	SCALE of GQF_Tree[CTR] = GQF_TreeScale
+	CTR++
+end while
+
+GQF_TreeScale += 0.02
+
+if GQF_TreeScale >= 1.0
+	GQF_TreesGrown = GQF_TRUE
+	GQF_TreeScale = 0.1
+end if
+
+end script GrowTrees

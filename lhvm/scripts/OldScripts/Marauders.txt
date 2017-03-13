@@ -1,0 +1,188 @@
+define MFALSE = 0
+define MTRUE = 1
+
+define NUMBER_OF_MARAUDERS = 5
+define PEOPLE_HUNGRY_BEFORE_RAID = 5
+define INITIAL_FOOD_AMOUNT = 500
+define MIN_FOOD_TO_REMOVE = 0
+define MAX_FOOD_TO_REMOVE = 2
+define MIN_TIME_BETWEEN_MEALS = 2
+define MAX_TIME_BETWEEN_MEALS = 8
+define HUNGER_CONSTANT = 200
+define GREEDINESS_CONSTANT = 100
+define DISTANCE_TO_TAKE_FOOD = 2.5
+define SITTING_DISTANCE_FROM_FOOD = 5
+define FLOCK_INNER_RADIUS = 2
+define FLOCK_OUTER_RADIUS = 7
+
+global MarauderFlock = 0
+global Marauders[NUMBER_OF_MARAUDERS]
+global MarauderFoodStore = 0
+global MaraudersNeedingFood = 0
+global TimeSinceLastMeal[NUMBER_OF_MARAUDERS]
+global AmountOfFoodStolen = 0
+
+define script Marauders
+define script TakeCareOfMaraudersEating(MarauderNumber)
+define script DecayMarauderFoodLevel(MarauderNumber)
+define script InitiateRaid
+define script QuicklyShrinkField(Field)
+define script GetBackToEating(MarauderNumber)
+
+begin script Marauders
+  MarauderFoodStorePosition = 0
+  CreateMarauders = 0
+start
+	MarauderFoodStorePosition = marker at {1613.702,38.682,1076.910}
+	MarauderFoodStore = create STORE FOOD at {MarauderFoodStorePosition}
+	add resource FOOD (INITIAL_FOOD_AMOUNT - 1) to MarauderFoodStore
+	
+	MarauderFlock = flock at {MarauderFoodStore}
+	set MarauderFlock properties inner FLOCK_INNER_RADIUS outer FLOCK_OUTER_RADIUS
+	
+	CreateMarauders = 0
+	while CreateMarauders < NUMBER_OF_MARAUDERS
+		Marauders[CreateMarauders] = create VILLAGER VILLAGER_INFO_MARAUDER at get target from {0.000,0.000,0.000} to {MarauderFoodStore} distance SITTING_DISTANCE_FROM_FOOD angle ((360 / NUMBER_OF_MARAUDERS) * CreateMarauders)
+		attach Marauders[CreateMarauders] to MarauderFlock
+		set Marauders[CreateMarauders] focus to {MarauderFoodStore}
+		Marauders[CreateMarauders] play ANM_P_SITTING_DOWN1_SITTING loop -1
+		TimeSinceLastMeal[CreateMarauders] = create timer for 0 seconds
+		run background script DecayMarauderFoodLevel(CreateMarauders)
+		run background script TakeCareOfMaraudersEating(CreateMarauders)
+				
+		CreateMarauders ++
+	end while 
+end script Marauders
+
+begin script TakeCareOfMaraudersEating(MarauderNumber)
+  PissedOffBecauseImHungry = MFALSE
+  WhereImSitting = 0
+  FoodDesired = 0
+start
+	WhereImSitting = marker at get target from {0.000,0.000,0.000} to {MarauderFoodStore} distance SITTING_DISTANCE_FROM_FOOD angle ((360 / NUMBER_OF_MARAUDERS) * MarauderNumber)
+	while PissedOffBecauseImHungry == MFALSE
+		if FAT_BASTARDNESS of Marauders[MarauderNumber] < (get TimeSinceLastMeal[MarauderNumber] time since set / HUNGER_CONSTANT)
+			move Marauders[MarauderNumber] position to get target from {Marauders[MarauderNumber]} to {MarauderFoodStore} distance DISTANCE_TO_TAKE_FOOD angle 180
+			wait until {Marauders[MarauderNumber]} near {MarauderFoodStore} radius DISTANCE_TO_TAKE_FOOD
+			FoodDesired = (1 - FAT_BASTARDNESS of Marauders[MarauderNumber]) * GREEDINESS_CONSTANT
+			if get resource FOOD in MarauderFoodStore < FoodDesired
+				MaraudersNeedingFood ++
+				PissedOffBecauseImHungry = MTRUE
+			else
+				remove resource FOOD FoodDesired from MarauderFoodStore
+				FAT_BASTARDNESS of Marauders[MarauderNumber] = 1
+				TimeSinceLastMeal[MarauderNumber] = create timer for 0 seconds
+				
+				move Marauders[MarauderNumber] position to {WhereImSitting}
+				wait until {Marauders[MarauderNumber]} at {WhereImSitting}
+				set Marauders[MarauderNumber] focus to {MarauderFoodStore}
+				
+				Marauders[MarauderNumber] play ANM_P_SITTING_DOWN1_INTO loop 1
+				wait until Marauders[MarauderNumber] played
+				Marauders[MarauderNumber] play ANM_P_SITTING_DOWN1_SITTING loop -1
+				
+				run background script DecayMarauderFoodLevel(MarauderNumber)
+			end if
+		end if
+	end while
+	
+	if MaraudersNeedingFood > (PEOPLE_HUNGRY_BEFORE_RAID - 1)
+		MaraudersNeedingFood = 0
+		run script InitiateRaid
+	end if
+end script TakeCareOfMaraudersEating
+
+begin script DecayMarauderFoodLevel(MarauderNumber)
+  ValueToRemove = 0
+start
+	while Marauders[MarauderNumber] exists and not {Marauders[MarauderNumber]} near {MarauderFoodStore} radius DISTANCE_TO_TAKE_FOOD
+		ValueToRemove = (number from (MIN_FOOD_TO_REMOVE * 10) to (MAX_FOOD_TO_REMOVE * 10)) / 1000
+		if FAT_BASTARDNESS of Marauders[MarauderNumber] > ValueToRemove
+			wait number from MIN_TIME_BETWEEN_MEALS to MAX_TIME_BETWEEN_MEALS seconds
+			FAT_BASTARDNESS of Marauders[MarauderNumber] -= ValueToRemove
+		end if
+	end while
+end script DecayMarauderFoodLevel
+
+begin script InitiateRaid
+  ReadyToAttackPosition = marker at {1589.964,46.314,1095.302}
+  AddMaraudersToFlock = 0
+  Fields[2]
+start
+	stop script "TakeCareOfMaraudersEating"
+	stop script "DecayMarauderFoodLevel"
+
+	AddMaraudersToFlock = 0
+	while AddMaraudersToFlock < NUMBER_OF_MARAUDERS
+		attach Marauders[AddMaraudersToFlock] to MarauderFlock
+		state Marauders[AddMaraudersToFlock] LIVING_MOVE_IN_FLOCK
+		
+		AddMaraudersToFlock ++
+	end while
+	
+	move MarauderFlock position to {ReadyToAttackPosition}
+
+	Fields[0] = get FIELD at {1580.271,47.214,1099.806} radius 5
+	Fields[1] = get FIELD at {1570.938,47.400,1105.835} radius 5
+
+	wait until {MarauderFlock} near {ReadyToAttackPosition} radius FLOCK_OUTER_RADIUS
+	if HEIGHT of Fields[0] > 0.099
+//		SPEED of MarauderFlock *= 1.2
+		move MarauderFlock position to {Fields[0]}
+		wait until {MarauderFlock} near {Fields[0]} radius FLOCK_OUTER_RADIUS
+		wait 3 seconds
+		
+		run script QuicklyShrinkField(Fields[0])
+//		SPEED of MarauderFlock /= 1.2
+	end if
+	if HEIGHT of Fields[1] > 0.099
+//		SPEED of MarauderFlock *= 1.2
+		move MarauderFlock position to {Fields[1]}
+		wait until {MarauderFlock} near {Fields[1]} radius FLOCK_OUTER_RADIUS
+		wait 3 seconds
+		
+		run script QuicklyShrinkField(Fields[1])
+//		SPEED of MarauderFlock /= 1.2
+	end if
+	
+//	SPEED of MarauderFlock *= 1.2
+	move MarauderFlock position to {ReadyToAttackPosition}
+	wait until {MarauderFlock} near {ReadyToAttackPosition} radius FLOCK_OUTER_RADIUS
+//	SPEED of MarauderFlock /= 1.2
+	
+	move MarauderFlock position to {MarauderFoodStore}
+	wait until {MarauderFlock} near {MarauderFoodStore} radius FLOCK_OUTER_RADIUS
+	add resource FOOD AmountOfFoodStolen to MarauderFoodStore
+	AmountOfFoodStolen = 0
+	
+	AddMaraudersToFlock = 0
+	while AddMaraudersToFlock < NUMBER_OF_MARAUDERS
+		run background script GetBackToEating(AddMaraudersToFlock)
+
+		AddMaraudersToFlock ++
+	end while	
+end script InitiateRaid
+
+begin script QuicklyShrinkField(Field)
+  SHRINK_TIME = 8
+  WAIT_TIME = 0.25
+  
+  AmountToDecrease = 0
+start
+	AmountToDecrease = HEIGHT of Field / (SHRINK_TIME / WAIT_TIME)
+	while HEIGHT of Field > 0
+		wait WAIT_TIME seconds
+		HEIGHT of Field -= AmountToDecrease
+		AmountOfFoodStolen += AmountToDecrease * 1000
+	end while	
+	AmountOfFoodStolen += HEIGHT of Field * 1000
+	HEIGHT of Field = 0
+end script QuicklyShrinkField
+
+begin script GetBackToEating(MarauderNumber)
+start
+	move Marauders[MarauderNumber] position to get target from {0.000,0.000,0.000} to {MarauderFoodStore} distance SITTING_DISTANCE_FROM_FOOD angle ((360 / NUMBER_OF_MARAUDERS) * MarauderNumber)
+	wait until {Marauders[MarauderNumber]} at get target from {0.000,0.000,0.000} to {MarauderFoodStore} distance SITTING_DISTANCE_FROM_FOOD angle ((360 / NUMBER_OF_MARAUDERS) * MarauderNumber)
+	run background script TakeCareOfMaraudersEating(MarauderNumber)
+	run background script DecayMarauderFoodLevel(MarauderNumber)
+end script GetBackToEating

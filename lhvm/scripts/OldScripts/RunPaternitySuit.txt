@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run PaternitySuit script
+//-----------------------------------------------------------------------------
+run script RunPaternitySuit
+
+begin script RunPaternitySuit
+
+start
+
+run script Land2PaternitySuit
+
+end script RunPaternitySuit

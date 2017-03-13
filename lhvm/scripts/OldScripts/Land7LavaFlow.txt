@@ -1,0 +1,166 @@
+///////////////////////////////////////////////////////////////////////////////
+//	LAVE FLOW
+//	~~~~~~~~~
+//	Description:
+//
+//	Rewards:			None
+//
+//	Start date:			28-10-03			By:	Steve
+//	Update date:		19-11-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define LF_TRUE							= 1
+define LF_FALSE							= 0
+define LF_NUMBER_OF_FISSURES			= 8
+define LF_FREQUENCY_OF_LAVA_FLOW		= 120
+define LF_FREQUENCY_TO_ATTACK_PLAYER	= 600
+define LF_FREQUENCY_TO_ATTACK_AZTECS	= 900
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global LF_FissurePoint[LF_NUMBER_OF_FISSURES]
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script LF_CreateFissure(Pos)
+define script LF_SetupFissurePoints
+define script LF_NormalFissureUse
+define script LF_AttackingPlayerFissureUse
+define script LF_AttackingAztecsFissureUse
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land7LavaFlow
+start
+
+	run script LF_SetupFissurePoints
+	run background script LF_NormalFissureUse
+	run background script LF_AttackingPlayerFissureUse
+	run background script LF_AttackingAztecsFissureUse
+
+end script Land7LavaFlow
+
+
+//-----------------------------------------------------------------------------
+//	Create a lava flow at the designated pos
+//-----------------------------------------------------------------------------
+begin script LF_CreateFissure(Pos)
+
+// <TEMP>
+	LavaFlowRock		= 0
+// </TEMP>
+
+start
+
+// <TEMP>
+	// Do rumbles, screen shakes and other stuff here...
+
+	// Create the lava flow
+	LavaFlowRock = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER2_CHALK at {Pos}
+	SCALE of LavaFlowRock = 10
+	set LavaFlowRock velocity heading {LavaFlowRock} + {0.000,5.000,0.000} speed 30
+
+	// Make the advisors point out the lava flow
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		make good spirit point at {Pos}
+		say "GA: Leader lava is pouring out of the ground we need to be careful it doesn't cause any damage."
+		wait until read
+		say "EA: Hell no boss, steer the flow into a town or something, hehehe."
+		wait until read
+		stop good spirit pointing
+		send good spirit home
+		send evil spirit home
+	end dialogue
+// </TEMP>
+
+end script LF_CreateFissure
+
+
+//-----------------------------------------------------------------------------
+//	Setup the places to make the lava flow from
+//-----------------------------------------------------------------------------
+begin script LF_SetupFissurePoints
+start
+
+	// Setup the fissure points
+	LF_FissurePoint[0] = marker at {1336.896,134.938,1407.104}			// Send the lava towards the player
+	LF_FissurePoint[1] = marker at {1275.608,133.973,1075.800}
+	LF_FissurePoint[2] = marker at {1170.625,129.758,1208.265}
+	LF_FissurePoint[3] = marker at {1089.374,145.003,1524.079}
+	LF_FissurePoint[4] = marker at {1335.611,136.852,1431.385}
+	LF_FissurePoint[5] = marker at {1177.133,130.212,1227.757}
+	LF_FissurePoint[6] = marker at {1089.476,105.644,1300.210}
+	LF_FissurePoint[7] = marker at {1168.392,96.745,943.571}			// Send the lava into the Aztecs
+
+end script LF_SetupFissurePoints
+
+
+//-----------------------------------------------------------------------------
+//	Use the lava flow positions that don't generally impact anything
+//-----------------------------------------------------------------------------
+begin script LF_NormalFissureUse
+
+	LavaFlowPos		= 0
+	RFissure		= 0
+
+start
+
+	begin loop
+		wait LF_FREQUENCY_OF_LAVA_FLOW seconds
+		RFissure = number from 1 to LF_NUMBER_OF_FISSURES - 2
+		say "Using random normal fissure"
+		wait until read
+		LavaFlowPos = marker at {LF_FissurePoint[RFissure]}
+		run script LF_CreateFissure(LavaFlowPos)
+	end loop
+
+end script LF_NormalFissureUse
+
+
+//-----------------------------------------------------------------------------
+//	Use the lava flow point that threatens the players town
+//-----------------------------------------------------------------------------
+begin script LF_AttackingPlayerFissureUse
+start
+
+	begin loop
+		wait LF_FREQUENCY_TO_ATTACK_PLAYER seconds
+		say "Using attack player fissure"
+		wait until read
+		run script LF_CreateFissure(LF_FissurePoint[0])
+	end loop
+
+end script LF_AttackingPlayerFissureUse
+
+
+//-----------------------------------------------------------------------------
+//	Use the lava flow point that threatens the Aztecs town
+//-----------------------------------------------------------------------------
+begin script LF_AttackingAztecsFissureUse
+start
+
+	begin loop
+		wait LF_FREQUENCY_TO_ATTACK_AZTECS seconds
+		say "Using attack Aztecs fissure"
+		wait until read
+		run script LF_CreateFissure(LF_FissurePoint[7])
+	end loop
+
+end script LF_AttackingAztecsFissureUse
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

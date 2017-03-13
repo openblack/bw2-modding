@@ -1,0 +1,76 @@
+//Land1Challenge1.txt
+
+//Land 1 Creature Challenge
+
+// Author: Tid Cooney
+// Date: 8th December 2003
+// Description: The Norse leader of the town has lost his daughter, the Princess Esmerelda. 
+// She is on an island in the middle of a lake. This island is only accessible to the player's
+// creature. The player can send their creature to the island and collect the Princess. They
+// can then either return her to the Norse, or sacrifice her in a fiery pit.
+
+define script IsCreatureNearGreeks
+define script IsCreatureNearNorse
+
+global L1PrincessRescueComplete = 0
+global GotPrincess = 0
+global Princess = 0
+global InHand = 0
+global L1GreekTown = 0
+global L1NorseTown = 0
+
+//===============================================================================================
+begin script Land1RescueThePrincess
+
+PrincessPos = marker at {981.300,25.468,800.758}
+L1NorseTownPos = marker at {1150.291,39.188,606.208}
+L1GreekTownPos = marker at {1156.236,34.933,1024.537}
+
+start
+
+L1GreekTown = get TOWN at {L1GreekTownPos} radius 100
+
+Princess = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {PrincessPos}
+
+run background script IsCreatureNearNorse
+run background script IsCreatureNearGreeks
+
+end script Land1RescueThePrincess
+
+//================================================================================================
+
+begin script IsCreatureNearNorse
+
+start
+
+while L1PrincessRescueComplete != 1
+	InHand = get object in MyCreature hand
+	if InHand == Princess
+		if {MyCreature} near {L1NorseTown} radius 200
+			say "Creature has brought the bitch back to the Norse - how lovely!"
+			wait until read
+			L1PrincessRescueComplete = 1
+		end if
+	end if
+end while
+
+end script IsCreatureNearNorse
+
+//================================================================================================
+
+begin script IsCreatureNearGreeks
+
+start
+
+while L1PrincessRescueComplete != 1
+	InHand = get object in MyCreature hand
+	if InHand == Princess
+		if {MyCreature} near {L1GreekTown} radius 200
+			say "Creature has brought the bitch back to our town - let's burn her!"
+			wait until read
+			L1PrincessRescueComplete = 1
+		end if
+	end if
+end while
+
+end script IsCreatureNearGreeks

@@ -1,0 +1,19 @@
+//
+//This file contains all the scripts to compile in Land 5
+//
+// -Globals-
+//Land5Globals.txt
+//Land5Departure.txt
+//Land5JackFrost.txt
+//Land5NorseCapitalScript.txt
+//Land5ThrowBloke.txt
+//Land5UndeadLegion.txt
+//Land5SulphurPool.txt
+//Land5Intro.txt
+//Land5Objectives.txt
+//Land5Meteors.txt
+
+//Town events
+//TownEventWindowCleaner.txt
+
+//Land5Control.txt

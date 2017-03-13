@@ -1,0 +1,261 @@
+
+
+global FlyerActive
+global IWannaGetOffFlyer
+global FlyerCheckPointsPassed
+global FlyerComplete
+global FlyerRaceIsGo
+global FlyerWhoIsLast
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** FINISH LINE SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleFlyerFinish (FinishLine, TotalCheckPoints)
+
+ RingEffect = 0
+ CamPos = 0
+
+start
+ RingEffect = create alex special effect SPOT_VISUAL_ALEX_HULAHOOP at {FinishLine}
+ HEIGHT of RingEffect = 25
+ DENSITY of RingEffect = 5
+ set RingEffect colour red 0 green 0 blue 255
+
+ wait until FlyerRaceIsGo == 1
+
+ begin loop
+	CamPos = marker at camera position
+	if {CamPos} near {FinishLine} radius 20 and ALTITUDE of CamPos < 30
+		if FlyerCheckPointsPassed >= TotalCheckPoints
+			set RingEffect colour red 0 green 255 blue 0
+			FlyerComplete = 1
+		else
+			begin dialogue
+				eject evil spirit
+				say "You gotta do the checkpoints first, Boss."
+				wait until read
+			end dialogue
+		end if
+	end if
+ until FlyerComplete != 0 or IWannaGetOffFlyer != 0
+ end loop
+ 
+ wait 3 seconds
+ delete RingEffect
+end script HandleFlyerFinish
+
+//-------------------------------------------------------------------------------------------------------
+// ** CHECKPOINT SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleFlyerCheckPoint (CheckPoint)
+
+ RingEffect = 0
+ CamPos = 0
+ CheckPointAlive = 0
+ Count = 0
+
+start
+
+ RingEffect = create alex special effect SPOT_VISUAL_ALEX_HULAHOOP at {CheckPoint}
+ HEIGHT of RingEffect = 25
+ DENSITY of RingEffect = 5
+ set RingEffect colour red 255 green 0 blue 0
+ 
+ wait until FlyerRaceIsGo == 1
+ Count = 0
+ while CheckPointAlive == 0 and IWannaGetOffFlyer == 0
+	if Count > 2
+		if FlyerWhoIsLast > 0 and CheckPointAlive == 0
+			FlyerWhoIsLast = marker at {CheckPoint}
+		end if
+		CamPos = marker at camera position
+		if {CamPos} near {CheckPoint} radius 20 and ALTITUDE of CamPos < 30
+			CheckPointAlive = 1
+		end if
+		Count = 0
+	else
+		Count++
+	end if		
+ end while
+
+ if IWannaGetOffFlyer == 0
+ 	set RingEffect colour red 0 green 255 blue 0
+	begin dialogue
+		eject evil spirit
+		say "Cha-ching!"
+		wait until read
+	end dialogue
+	FlyerCheckPointsPassed++
+ end if
+
+ wait until IWannaGetOffFlyer != 0 or FlyerComplete != 0
+ wait 3 seconds
+ delete RingEffect
+ 
+end script HandleFlyerCheckPoint
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** MAIN SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script Flyer
+
+ Highlight = 0
+ HighlightPos = marker at {950.456,2.044,1320.484}
+ FlyStartPos = marker at {955.403,9.707,1279.261}
+ FlyStartFoc = marker at {1143.095,26.822,1434.212}
+ TotalCheckPoints = 12
+ BirdyCheckPoint[12]
+ BirdyFinishLine = marker at {1000.083,16.750,1629.823} // next to Japanese town centre
+ Count = 0
+ GoForLineComment = 0
+ ThisTime = 0
+ BestTime = 100
+ HighscoreBoard = 0
+ CrashLanding = 0
+ CrashCamPos = 0
+
+start
+ BirdyCheckPoint[0] = marker at {1010.735,0.193,1464.042} // xxxx
+ BirdyCheckPoint[1] = marker at {1149.161,4.907,1396.734} // xxxx
+ BirdyCheckPoint[2] = marker at {1052.606,6.843,1261.659} // xxxx
+ BirdyCheckPoint[3] = marker at {1181.037,19.981,1359.368} // xxxx
+ BirdyCheckPoint[4] = marker at {1335.627,4.481,1384.563} // xxxx
+ BirdyCheckPoint[5] = marker at {1205.422,6.617,1539.038} // xxxx
+ BirdyCheckPoint[6] = marker at {1042.835,32.347,1549.750} // xxxx
+ BirdyCheckPoint[7] = marker at {1076.256,8.557,1710.773} // xxxx
+ BirdyCheckPoint[8] = marker at {1344.314,5.412,1540.623} // xxxx
+ BirdyCheckPoint[9] = marker at {1408.681,21.197,1367.382} // xxxx
+ BirdyCheckPoint[10] = marker at {1544.838,5.049,1485.268} // xxxx
+ BirdyCheckPoint[11] = marker at {1401.632,9.030,1548.632} // xxxx
+
+HighscoreBoard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {HighlightPos}
+set HighscoreBoard score BestTime
+
+
+ begin loop
+	Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of Highlight = 10
+	wait until Highlight right clicked
+	delete Highlight
+	
+	FlyerComplete = 0
+	FlyerRaceIsGo = 0
+	IWannaGetOffFlyer = 0
+	FlyerCheckPointsPassed = 0
+	GoForLineComment = 0
+	FlyerWhoIsLast = 0
+	CrashLanding = 0
+	
+	Count = 0
+	while Count < TotalCheckPoints
+		run background script HandleFlyerCheckPoint (BirdyCheckPoint[Count])
+		Count++
+	end while
+	
+	run background script HandleFlyerFinish (BirdyFinishLine, TotalCheckPoints)
+	
+	begin cinema
+		set camera position to {BirdyCheckPoint[0]}+{12.500,7.500,12.500}
+		set camera focus to {BirdyCheckPoint[0]}
+		say "Fly through all the red checkpoint rings in any order."
+		wait until read
+		wait 1 seconds
+		set camera position to {BirdyFinishLine}+{12.500,7.500,12.500}
+		set camera focus to {BirdyFinishLine}
+		say "Then fly through the blue checkpoint to finish."
+		wait until read
+		wait 1 seconds
+		set camera position to {FlyStartPos}
+		set camera focus to {FlyStartFoc}
+		say "Press Shift F6 to activate BirdCam AFTER this cinema."
+		wait until read
+		say "Then press LMB to fly forwards and steer with the mouse."
+		wait until read
+		FlyerRaceIsGo = 1
+	end cinema
+	
+	begin dialogue
+		say "PRESS SHIFT F6 NOW!!"
+		wait until read
+	end dialogue
+
+	// start upwards timer
+	set countdown timer draw SCRIPT_COUNTDOWN_DRAW_TOP_RIGHT
+	enable countdown timer up with 0 seconds
+
+	
+	while IWannaGetOffFlyer == 0 and FlyerComplete == 0
+		if key KB_ESC down
+			IWannaGetOffFlyer = 1
+		end if
+		
+		CrashCamPos = marker at camera position
+		if ALTITUDE of CrashCamPos < 0
+			IWannaGetOffFlyer = 1
+			CrashLanding = 1
+		end if
+		
+		if FlyerCheckPointsPassed >= (TotalCheckPoints-1) and GoForLineComment == 0
+			FlyerWhoIsLast = 1
+			wait 0.5 seconds
+			GoForLineComment = 1
+			begin dialogue
+				eject evil spirit
+				make evil spirit point at {FlyerWhoIsLast}
+				say "One more to go, Boss!"
+				wait until read
+			end dialogue			
+		elsif FlyerCheckPointsPassed >= TotalCheckPoints and GoForLineComment == 1
+			GoForLineComment = 2
+			begin dialogue
+				eject good spirit
+				make good spirit point at {BirdyFinishLine}
+				say "GO FOR THE FINISH LINE!!!"
+				wait until read or FlyerComplete != 0
+			end dialogue
+		end if
+	end while
+
+	ThisTime = get countdown timer time
+	disable countdown timer
+	if IWannaGetOffFlyer == 0
+		begin cinema
+			move camera position to {BirdyFinishLine} time 4
+			set fade red 0 green 0 blue 0 time 2
+			wait 2 seconds
+			set camera position to {FlyStartPos}
+			set camera focus to {FlyStartFoc}
+			set fade in time 2
+			wait 2 seconds
+			say "You finished in a time of $d" with number ThisTime
+			wait until read
+			if ThisTime < BestTime
+				BestTime = ThisTime
+				say "You've set a new record!!"
+				set HighscoreBoard score BestTime
+				wait until read
+			end if
+		end cinema
+	elsif CrashLanding == 1
+		begin cinema
+			say "YOU CRASHED!!"
+			wait until read		
+			set camera position to {FlyStartPos}
+			set camera focus to {FlyStartFoc}
+		end cinema
+	else
+		begin dialogue
+			say "YOU QUIT"
+			wait until read
+		end dialogue
+	end if
+	
+ until FlyerActive == 1 // Eternity
+ end loop
+	
+end script Flyer

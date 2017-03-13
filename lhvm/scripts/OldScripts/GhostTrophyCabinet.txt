@@ -1,0 +1,67 @@
+//-----------------------------------------------------------------------------
+// Ghost Trophy Cabinet
+//
+// Paul Nettleton
+//
+// Indicator of how many ghosts the player has found.
+//
+//-----------------------------------------------------------------------------
+
+define NUMBER_OF_GRAVES = 10
+
+global ActivateGhost[NUMBER_OF_GRAVES]
+
+begin script GhostTrophyCabinet
+Graves[NUMBER_OF_GRAVES]
+ActivatedGhostCheck[NUMBER_OF_GRAVES]
+Count = 0
+start
+	Graves[0] = create FEATURE FEATURE_INFO_TOMBSTONE at {997.259,13.400,1436.699}
+	Graves[1] = create FEATURE FEATURE_INFO_TOMBSTONE at {998.759,13.400,1437.595}
+	Graves[2] = create FEATURE FEATURE_INFO_TOMBSTONE at {1000.459,13.400,1438.553}
+	Graves[3] = create FEATURE FEATURE_INFO_TOMBSTONE at {1002.362,13.400,1438.336}
+	Graves[4] = create FEATURE FEATURE_INFO_TOMBSTONE at {1003.994,13.400,1438.152}
+	Graves[5] = create FEATURE FEATURE_INFO_TOMBSTONE at {1005.810,13.400,1437.250}
+	Graves[6] = create FEATURE FEATURE_INFO_TOMBSTONE at {1007.112,13.400,1436.308}
+	Graves[7] = create FEATURE FEATURE_INFO_TOMBSTONE at {1008.454,13.400,1435.133}
+	Graves[8] = create FEATURE FEATURE_INFO_TOMBSTONE at {1008.843,13.400,1433.292}
+	Graves[9] = create FEATURE FEATURE_INFO_TOMBSTONE at {1008.924,13.400,1431.187}
+	
+	SCALE of Graves[0]=0.5
+	SCALE of Graves[1]=0.5
+	SCALE of Graves[2]=0.5
+	SCALE of Graves[3]=0.5
+	SCALE of Graves[4]=0.5
+	SCALE of Graves[5]=0.5
+	SCALE of Graves[6]=0.5
+	SCALE of Graves[7]=0.5
+	SCALE of Graves[8]=0.5
+	SCALE of Graves[9]=0.5
+	
+	ANGLE of Graves[0]=35
+	ANGLE of Graves[1]=35
+	ANGLE of Graves[2]=0
+	ANGLE of Graves[3]=0
+	ANGLE of Graves[4]=0
+	ANGLE of Graves[5]=320
+	ANGLE of Graves[6]=320
+	ANGLE of Graves[7]=320
+	ANGLE of Graves[8]=270
+	ANGLE of Graves[9]=270
+	
+	begin loop
+		if ActivatedGhostCheck[Count] != ActivateGhost[Count]
+			//New ghost been activated!
+			//Do code here when I can do it.
+			
+			ActivatedGhostCheck[Count] = ActivateGhost[Count]
+		end if 
+		
+		Count++
+		if not (Count < NUMBER_OF_GRAVES)
+			Count = 0
+		end if
+	end loop
+end script GhostTrophyCabinet
+
+//-----------------------------------------------------------------------------

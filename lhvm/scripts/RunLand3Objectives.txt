@@ -1,0 +1,6 @@
+run script RunLand3Objectives
+
+begin script RunLand3Objectives
+start
+	run script Land3Objectives
+end script RunLand3Objectives

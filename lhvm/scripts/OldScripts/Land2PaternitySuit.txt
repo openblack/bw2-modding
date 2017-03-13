@@ -1,0 +1,400 @@
+//=============================================================================================
+
+define PQ_TRUE = 1
+define PQ_FALSE = 0
+
+//=============================================================================================
+
+define WAITING_TO_START = 0
+define GIRL_AT_HOME = 1
+define GIRL_MOVING_TO_PARTNERS_HOUSE = 2
+define GIRL_IN_PARTNERS_HOUSE = 3
+define GIRL_MOVING_BACK_HOME = 4
+define GIRL_SITTING_DOWN = 5
+define SCRIPT_FINISHED = 6
+
+define script Intro(Dad, StartHouse)
+define script Outro(Dad, Lovenest)
+
+//=============================================================================================
+
+begin script Land2PaternitySuit
+StartHouse = 0
+EndHouse = 0
+Scroll = 0
+IntroDone = PQ_FALSE
+
+FoodAtHouse = 0
+AmountOfFood = 0
+
+Girl = 0
+Dad = 0
+ScriptState = 0
+ShagTimer = create timer for 0 seconds
+HomeTimer = create timer for 0 seconds
+GAToldYouAboutTheFactThatSheCanFeelYou = 0
+PosOnScreen = 0
+
+tempfood = 0
+start
+	//StartHouse = get FEATURE PRISON at {692.743, 66.469, 642.840} radius 10
+	StartHouse = marker at {706.337, 67.573, 638.907}
+	EndHouse = get HOUSE at {881.192, 59.191, 1480.235}
+	Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {StartHouse}
+	
+	tempfood = create STORE FOOD at {716.903, 65.793, 764.628}
+	add resource FOOD 200 to tempfood
+	
+	Girl = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {704.593, 67.510, 638.620}
+	set Girl focus to {704.084, 67.675, 641.152}
+	set housewife Girl pregnant by Girl //Some sort of weird stuff going on here...
+	Dad = create VILLAGER VILLAGER_INFO_GREEK_FARMER_MALE at {706.080, 66.357, 639.706}
+	set Dad focus to {705.124, 67.620, 644.620}
+	
+	ScriptState = WAITING_TO_START
+	
+	while ScriptState != SCRIPT_FINISHED
+		//Main game loop
+		
+		//Scroll actions...
+		if Scroll right clicked
+			clear right clicked object
+			if IntroDone == PQ_FALSE
+				IntroDone = PQ_TRUE
+				//Do main intro...
+				say "PS Intro"
+				run script Intro(Dad, StartHouse)
+			else
+				//Do reminder...
+				say "PS Reminder"
+			end if 
+			
+			//Reset the girl and start her off...
+			//...(is this the required behaviour...?)
+			ScriptState = GIRL_AT_HOME
+			set Girl position to {StartHouse}
+			set HomeTimer time to 10 seconds
+			move Girl to limbo
+		end if 
+		
+		
+		
+		if not Girl exists
+			//Girl dead
+			say "Girl Dead"
+			ScriptState = SCRIPT_FINISHED
+		end if 
+		
+		if not Dad exists
+			//Dad dead
+			say "Dad Dead"
+			ScriptState = SCRIPT_FINISHED
+		end if 
+		
+		FoodAtHouse = get STORE FOODSTORE at {StartHouse} radius 50
+  		AmountOfFood = get resource FOOD in FoodAtHouse
+
+		if AmountOfFood > 50 and {Dad} near {StartHouse} radius 50
+			say "Food dropped off"
+			ScriptState = SCRIPT_FINISHED
+			delete FoodAtHouse
+		end if 
+		
+		if ScriptState == GIRL_AT_HOME
+			if get HomeTimer time remaining <= 0
+				release Girl from limbo
+				move Girl position to {EndHouse}
+				ScriptState = GIRL_MOVING_TO_PARTNERS_HOUSE
+			end if 
+		end if 
+		
+		if ScriptState == GIRL_MOVING_TO_PARTNERS_HOUSE
+			if {Girl} near {EndHouse} radius 2 and Girl != get object held
+				move Girl to limbo
+				ScriptState = GIRL_IN_PARTNERS_HOUSE
+				set ShagTimer time to 10 seconds
+			end if 
+			PosOnScreen = {Girl} percentage across
+			if PosOnScreen > 20.0 and PosOnScreen < 80.0
+				//Girl notices you.
+				ScriptState = GIRL_SITTING_DOWN
+			end if 
+		end if 
+		
+		if ScriptState == GIRL_SITTING_DOWN
+			//Do stuff with girl.
+			play anim "a_p_icemelt_scared" on Girl
+			wait until Girl played
+			
+			if GAToldYouAboutTheFactThatSheCanFeelYou == PQ_FALSE
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Girl}
+					say "She can tell you are watching!"
+					wait until read
+					say "Move away!"
+					wait until read
+					send good spirit home
+				end dialogue
+				GAToldYouAboutTheFactThatSheCanFeelYou = PQ_TRUE
+			end if 
+			
+			PosOnScreen = {Girl} percentage across
+			if not (PosOnScreen > 20.0 and PosOnScreen < 80.0)
+				//Girl not notices you.
+				move Girl position to {EndHouse}
+				ScriptState = GIRL_MOVING_TO_PARTNERS_HOUSE
+			end if 
+		end if 
+		
+		if ScriptState == GIRL_IN_PARTNERS_HOUSE
+			if {Dad} near {EndHouse} radius 10 and Dad != get object held
+				//Been caught! End script.
+				run script Outro(Dad, EndHouse)
+				ScriptState = SCRIPT_FINISHED
+			elsif get ShagTimer time remaining <= 0
+				release Girl from limbo
+				ScriptState = GIRL_MOVING_BACK_HOME
+				move Girl position to {StartHouse}
+			end if 
+		end if 
+		
+		if ScriptState == GIRL_MOVING_BACK_HOME
+			if {Girl} near {StartHouse} radius 2 and Girl != get object held
+				move Girl to limbo
+				set HomeTimer time to 10 seconds
+				ScriptState = GIRL_AT_HOME
+			end if 
+		end if
+	end while
+	
+	delete Scroll
+	
+end script Land2PaternitySuit
+
+//=============================================================================================
+
+begin script Intro(Dad, StartHouse)
+RelCamPos=0
+RelCamFoc=0
+start
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+
+	begin cinema
+		start music "cut_scene_sad_100_01"
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from StartHouse to {-4.497, 4.082, -7.862}
+		RelCamFoc=marker at get world position from StartHouse to {-3.883, 3.725, -7.158}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//move Dad position to get world position from StartHouse to {0.091, 0.000, -3.186}
+
+		set fade in time 1
+		set camera lens 67.000 time 2
+		wait 3 seconds
+
+		play anim "A_P_ATTRACT_YOUR_ATTENTION" on Dad loop 2
+		say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INTRO_10" by Dad
+		set camera lens 45.000
+		RelCamPos=marker at get world position from StartHouse to {-0.858, 1.122, -4.672}
+		RelCamFoc=marker at get world position from StartHouse to {-0.393, 1.280, -3.801}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 2 seconds
+		RelCamPos=marker at get world position from StartHouse to {-0.752, 0.867, -0.767}
+		RelCamFoc=marker at get world position from StartHouse to {-0.484, 1.171, -1.681}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until Dad played
+		play anim "a_p_paternity_shouting_to_god_accusingly" on Dad loop 2
+
+		wait 0.5 second
+
+		say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INTRO_20" by Dad
+		set camera lens 45.000
+		RelCamPos=marker at get world position from StartHouse to {-1.537, 1.025, -4.360}
+		RelCamFoc=marker at get world position from StartHouse to {-0.743, 1.260, -3.799}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until read
+		say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INTRO_30" by Dad
+
+		wait until read
+		
+		clear dialogue
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from StartHouse to {-4.497, 4.082, -7.862}
+		RelCamFoc=marker at get world position from StartHouse to {-3.883, 3.725, -7.158}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		stop music
+	end cinema
+
+	begin dialogue
+
+		eject evil spirit
+		eject good spirit
+
+			say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INTRO_40"
+			wait until read
+			say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INTRO_50"
+			wait until read
+			say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INTRO_60"
+			wait until read
+			clear dialogue
+
+		send evil spirit home
+		send good spirit home
+	end dialogue
+	
+end script Intro
+
+//=============================================================================================
+
+begin script Outro(Dad, Lovenest)
+
+RelCamPos=0
+RelCamFoc=0
+AnnoyedFatherCaughtPos=0
+TurnToGod=0
+
+start
+
+	AnnoyedFatherCaughtPos = marker at get world position from Lovenest to {2.834, -0.619, -5.577}
+	set Dad position to {AnnoyedFatherCaughtPos}
+
+	set Dad focus to get world position from Lovenest to {-1.839, -0.144, -0.297}
+	
+	begin cinema
+
+		store camera details
+		start music "paternityporn_Land2"
+
+		RelCamPos=marker at get world position from Lovenest to {-4.217, 1.189, -6.572}
+		RelCamFoc=marker at get world position from Lovenest to {-3.494, 1.218, -5.881}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		wait 3 seconds
+
+		play string sound "WOMANORGASIM1"
+		set camera roll -3 time 0
+		RelCamPos=marker at get world position from Lovenest to {2.442, 0.963, -4.698}
+		RelCamFoc=marker at get world position from Lovenest to {1.745, 1.058, -3.987}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 65.000 time 0.5
+		wait 0.5 seconds
+
+		set camera lens 50.000
+		RelCamPos=marker at get world position from Dad to {-1.098, 1.501, 1.822}
+		RelCamFoc=marker at get world position from Dad to {-0.582, 1.468, 0.966}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 42.000 time 0.5
+		wait 0.5 seconds
+
+		play string sound "WOMANORGASIM2"
+		set camera lens 65.000	
+		RelCamPos=marker at get world position from Lovenest to {2.442, 0.963, -4.698}
+		RelCamFoc=marker at get world position from Lovenest to {1.745, 1.058, -3.987}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 58.000 time 0.5
+		wait 0.5 seconds
+
+		set camera lens 42.000
+		RelCamPos=marker at get world position from Dad to {-1.098, 1.501, 1.822}
+		RelCamFoc=marker at get world position from Dad to {-0.582, 1.468, 0.966}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 30.000 time 0.5
+		wait 0.5 seconds
+
+		play string sound "WOMANORGASIM3"
+		set camera lens 58.000	
+		RelCamPos=marker at get world position from Lovenest to {2.442, 0.963, -4.698}
+		RelCamFoc=marker at get world position from Lovenest to {1.745, 1.058, -3.987}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 50.000 time 0.5
+		wait 0.5 seconds
+
+		set camera lens 30.000
+		RelCamPos=marker at get world position from Dad to {-1.098, 1.501, 1.822}
+		RelCamFoc=marker at get world position from Dad to {-0.582, 1.468, 0.966}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 15.000 time 0.5
+		wait 0.5 seconds
+
+		play string sound "WOMANORGASIM4"
+		set camera lens 50.000	
+		RelCamPos=marker at get world position from Lovenest to {2.442, 0.963, -4.698}
+		RelCamFoc=marker at get world position from Lovenest to {1.745, 1.058, -3.987}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 27.000 time 1
+		wait 0.7 seconds
+		set fade red 255 green 255 blue 255 time 1
+
+		wait 2 seconds
+		stop sound "WOMANORGASIM"
+		set fade in time 2
+		set camera roll 0 time 0
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from Dad to {-0.404, 1.133, 0.897}
+		RelCamFoc=marker at get world position from Dad to {0.101, 1.154, 0.034}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 1 seconds
+		play anim "A_P_STAND_DESPAIR_2" on Dad 
+		wait until Dad played
+
+		TurnToGod = marker at get world position from Lovenest to {7.290, 1.021, -10.702}
+		//
+		play anim "A_P_TURN_180" on Dad 
+
+		wait 0.2 seconds
+		set camera lens 32.000
+		RelCamPos=marker at get world position from Dad to {-0.893, 0.532, -1.895}
+		RelCamFoc=marker at get world position from Dad to {-0.400, 0.874, -1.095}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait until Dad played
+		set Dad focus to {TurnToGod}
+		play anim "a_p_paternity_talking_to_god_embarrassed" on Dad loop 2
+
+		say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INNOCENT_10" by Dad
+		wait until read
+		say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INNOCENT_20" by Dad
+		wait until read
+		say "BW2T_SCRIPT_02NEW_PATERNITYSUIT_INNOCENT_30" by Dad
+		wait until read
+		clear dialogue
+		set camera lens 60.000
+		RelCamPos=marker at get world position from Lovenest to {4.180, 2.794, -10.585}
+		RelCamFoc=marker at get world position from Lovenest to {3.713, 2.624, -9.718}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		wait 2 seconds
+		set fade red 0 green 0 blue 0 time 3
+		wait 3 seconds
+		restore camera details
+		set fade in time 2
+		wait 2 seconds
+
+	end cinema
+
+end script Outro
+
+//=============================================================================================
+

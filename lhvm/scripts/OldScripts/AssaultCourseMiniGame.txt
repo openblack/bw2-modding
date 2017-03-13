@@ -1,0 +1,990 @@
+//-------------------------//
+//  Constants & Variables  //
+//-------------------------//
+define ACFalse				= 0
+define ACTrue				= 1
+define ACTowardsCheckpoint	= 2
+define ACAwayFromCheckpoint	= 3
+
+global ACBeingDraggedBack	= ACFalse
+
+global ACAssaultCourseComplete	= ACFalse
+global ACAssaultCourseQuit		= ACFalse
+
+//Names of text sections to say (needed for the funky interruption code)
+define Thefirstthingyouhavetodoispressandholdtheleftmousebutton		= 1
+define Younearlyhaditbutyouvegottokeepthebuttonhelddown				= 2
+define VerygoodNowpullthemousetowardsyoutomoveforwards				= 3
+define ThatsitJustkeepmovingtowardsthecheckpoint					= 4
+define Whilstyouaremovingyouarenotmovingintherightdirection			= 5
+define EasyboyYouvegonewaytoofaraway								= 6
+define WelldoneYouvemadeittothefirstcheckpoint						= 7
+define Heyyouremeanttobelearninghowtousethekeyboardtomove			= 8
+define Thatsitjustkeepthatkeypressedtokeepmovingright				= 9
+define Youvegottherightideabutunfortunatelyyouvegotthewrongkey		= 10
+define VerygoodYouvepitchedthecameraup								= 11
+define VerygoodYouvepitchedthecameradown							= 12
+define GoodNowmovethemouseabouttomovethecameraYoullgetafeelforit	= 13
+
+define ACNumberOfCheckpoints		= 4
+global ACNumberOfRaceCheckpoints	= 8
+global ACCurrentCheckpointNumber	= 0
+global ACCurrentSectionCompleted	= ACFalse
+global ACBestTime					= 90
+
+global ACTutorsHutPosition	= 0
+global ACTutor				= 0
+global ACStopSayingLine		= ACFalse
+global ACPlayerHasMoved		= ACFalse
+global ACLineBeingSaid		= ACFalse
+global ACUnlockedRace		= ACFalse
+
+global ACScoreboard			= 0
+global ACScoreboardPosition	= 0
+global ACCheckpointPositions[8]
+global ACCheckpoints[8]
+
+global ACForwardKey		= 0
+global ACBackwardKey	= 0
+global ACLeftKey		= 0
+global ACRightKey		= 0
+global ACShiftKey		= 0
+global ACCtrlKey		= 0
+
+global ACKeyboardMovementsUponActivation = 0
+
+
+//----------------------//
+//  Script definitions  //
+//----------------------//
+define script AssaultCourse
+define script ACActuallySayLine(LineNumber)
+define script ACCheckForMovement
+define script ACCheckForPressingEscape
+define script ACCheckForUsingKeys
+define script ACCheckToSeeIfCourseComplete
+define script ACDistanceMonitor(WhereTo)
+define script ACFinishSectionWhenCameraIsCloseEnough(HowClose)
+define script ACIntroduction
+define script ACKeyboardMovement
+define script ACMouseMovement
+define script ACPitchAndRotate
+define script ACPullBackIfWayTooFarAway(WhereToPullBackTo, HowFarCanTheyBe)
+define script ACQuitCinema
+define script ACRunSection(SectionNumber)
+define script ACSayLine(LineNumber)
+define script ACSendGuyHome
+define script ACWinCinema
+define script ACDoubleClick
+define script ACGenericCheckpointHandler
+define script ACTutorialMode
+define script ACTutorialCompleteCinema
+define script ACRaceMode
+define script ACRaceIntroduction
+define script ACQuitRaceCinema
+
+
+//------------------------------------------------------------------------------//
+//  AssaultCourse:  Takes care of the general running of the game & subscripts	//
+//------------------------------------------------------------------------------//
+begin script AssaultCourse
+  TutorsHut			= 0
+  TutorialScroll	= 0
+  RaceScroll		= 0
+  SectionNumber		= 0
+start
+	ACCheckpointPositions[0] = marker at {1063.557,18.229,1350.757}
+	ACCheckpointPositions[1] = marker at {1045.658,17.755,1391.953}
+	ACCheckpointPositions[2] = marker at {1004.008,13.400,1433.647}
+	ACCheckpointPositions[3] = marker at {968.110,13.455,1182.659}
+	ACCheckpointPositions[4] = marker at {1037.602,0.706,1190.045}
+	ACCheckpointPositions[5] = marker at {1067.203,14.070,1296.366}
+	ACCheckpointPositions[6] = marker at {1120.225,0.000,1309.265}
+	ACCheckpointPositions[7] = marker at {1073.870,10.050,1230.083}
+
+	ACTutorsHutPosition = marker at {1098.953,26.130,1383.401}
+	ACScoreboardPosition = marker at {1096.802,26.470,1379.353}
+
+	TutorsHut = create HOUSE ABODE_INFO_INDIAN_TENT at {ACTutorsHutPosition}
+	ACTutor = create VILLAGER VILLAGER_INFO_SHAOLIN at {ACTutorsHutPosition}
+	
+	//DEBUG
+	run background script ACDistanceMonitor(ACCheckpointPositions[1])
+	
+	begin loop
+		ACAssaultCourseComplete = ACFalse
+		ACAssaultCourseQuit = ACFalse
+		
+		ACCurrentCheckpointNumber = 0
+				
+		TutorialScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ACTutorsHutPosition}
+		ALTITUDE of TutorialScroll = 10
+		
+		if (ACUnlockedRace == ACTrue)
+			RaceScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ACScoreboardPosition}
+			ALTITUDE of RaceScroll = 10
+		end if
+		
+		clear right clicked object
+		wait until ((TutorialScroll right clicked) or (RaceScroll right clicked))
+		if (TutorialScroll right clicked)
+			ACKeyboardMovementsUponActivation = get player 1 stat STATISTICS_TYPE_PLAYER_CURRENT STATISTICS_STAT_KEY_DISTANCE_DRAGGED total events
+			
+			delete TutorialScroll
+			delete RaceScroll
+			run background script ACCheckToSeeIfCourseComplete
+			run script ACTutorialMode
+		else
+			delete TutorialScroll
+			delete RaceScroll
+			run script ACRaceMode
+		end if
+		
+		delete TutorialScroll
+	end loop
+end script AssaultCourse
+
+
+//---------------------------------------------------------------------------------------------------------//
+//  ACActuallySayLine:	This is basically a sub-script of ACSayLine, but this one actually says the line.  //
+//---------------------------------------------------------------------------------------------------------//
+begin script ACActuallySayLine(LineNumber)
+  LineSaid = ACFalse
+start
+	ACLineBeingSaid = LineNumber
+	ACStopSayingLine = ACFalse
+	
+	while (LineSaid == ACFalse)
+		LineSaid = ACTrue
+		
+		if (LineNumber == Thefirstthingyouhavetodoispressandholdtheleftmousebutton)
+			begin dialogue
+				say "The first thing you have to do is press and hold the left mouse button."
+				wait until read
+			end dialogue
+		elsif (LineNumber == Younearlyhaditbutyouvegottokeepthebuttonhelddown)
+			begin dialogue
+				say "You nearly had it then, but you've got to keep the button held down."
+				wait until read
+			end dialogue
+		elsif (LineNumber == VerygoodNowpullthemousetowardsyoutomoveforwards)
+			begin dialogue
+				say "Very good.  Now pull the mouse towards you to move forwards."
+				wait until read
+				say "See if you can make it over to the first checkpoint."
+				wait until read
+			end dialogue
+		elsif (LineNumber == ThatsitJustkeepmovingtowardsthecheckpoint)
+			begin dialogue
+				say "That's it.  Just keep moving towards the checkpoint."
+				wait until read
+				say "You may have to let go, and grab again in order to make the full distance."
+				wait until read
+			end dialogue
+		elsif (LineNumber == Whilstyouaremovingyouarenotmovingintherightdirection)
+			begin dialogue
+				say "No, that's not it.  You've moved away from the checkpoint."
+				wait until read
+				say "Pull the mouse towards you to move towards the checkpoint."
+				wait until read
+			end dialogue
+		elsif (LineNumber == EasyboyYouvegonewaytoofaraway)
+			begin dialogue
+				say "Easy, boy!  You've gone way too far away."
+				wait until read
+				say "I've brought you back, so you don't get lost.  You need to be more gentle."
+				wait until read
+				say "Gently pull the mouse towards you and you'll move towards the checkpoint."
+				wait until read
+			end dialogue
+		elsif (LineNumber == Heyyouremeanttobelearninghowtousethekeyboardtomove)
+			begin dialogue
+				say "Hey, you're meant to be learning how to use the keyboard to move!"
+				wait until read
+				say "You can use the mouse if you like, but bear in mind that the keys are available."
+				wait until read
+			end dialogue
+		elsif (LineNumber == Thatsitjustkeepthatkeypressedtokeepmovingright)
+			begin dialogue
+				say "That's it, just keep that key pressed to keep moving right."
+				wait until read
+			end dialogue
+		elsif (LineNumber == Youvegottherightideabutunfortunatelyyouvegotthewrongkey)
+			begin dialogue
+				say "You've got the right idea, but unfortunately you've got the wrong key."
+				wait until read
+				say "Navigate to the next checkpoint by pressing the right arrow key."
+				wait until read
+			end dialogue
+		elsif (LineNumber == VerygoodYouvepitchedthecameraup)
+			begin dialogue
+				say "Very good.  You've pitched the camera up."
+				wait until read
+				say "Now try to pitch back down to your original position."
+				wait until read
+			end dialogue
+		elsif (LineNumber == VerygoodYouvepitchedthecameradown)
+			begin dialogue
+				say "Very good.  You've pitched the camera down."
+				wait until read
+				say "Now try to pitch back up to your original position."
+				wait until read
+			end dialogue
+		elsif (LineNumber == GoodNowmovethemouseabouttomovethecameraYoullgetafeelforit)
+			begin dialogue
+				say "Good.  Now move the mouse about to move the camera.  You'll get a feel for it."
+				wait until read
+			end dialogue
+		end if
+		
+		until (ACStopSayingLine == ACTrue)
+	end while
+	
+	ACStopSayingLine = ACFalse
+	ACLineBeingSaid = ACFalse
+	
+	if ACStopSayingLine == ACTrue
+		stop script "ACActuallySayLine" ///does this stop the queueing?
+	end if
+end script ACActuallySayLine
+
+
+//------------------------------------------------------------------------------------------------------//
+//  ACCheckForMovement:	 Monitors the distance from the player to the checkpoint.  If they move, text	//
+//						 is said in response to their action (depending on if the move towards or away	//
+//------------------------------------------------------------------------------------------------------//
+begin script ACCheckForMovement
+  OldDistance		= 0
+  NewDistance		= 0
+start
+	NewDistance = get distance from camera position to {ACCheckpointPositions[ACCurrentCheckpointNumber]}
+	OldDistance = NewDistance
+	begin loop
+		OldDistance = NewDistance
+		NewDistance = get distance from camera position to {ACCheckpointPositions[ACCurrentCheckpointNumber]}
+		
+		if (ACBeingDraggedBack == ACFalse)
+			if (NewDistance != OldDistance)
+				if ((NewDistance > OldDistance) and ((NewDistance - OldDistance) > 1))
+					if (ACPlayerHasMoved != ACAwayFromCheckpoint)
+						ACPlayerHasMoved = ACAwayFromCheckpoint
+						run background script ACSayLine(Whilstyouaremovingyouarenotmovingintherightdirection)
+					end if
+				elsif ((OldDistance - NewDistance) > 1)
+					if (ACPlayerHasMoved != ACTowardsCheckpoint)
+						ACPlayerHasMoved = ACTowardsCheckpoint
+						run background script ACSayLine(ThatsitJustkeepmovingtowardsthecheckpoint)
+					end if
+				end if
+			end if
+		end if
+		
+		until ((ACAssaultCourseQuit == ACTrue) or (ACCurrentSectionCompleted == ACTrue))
+	end loop	
+end script ACCheckForMovement
+
+
+//--------------------------------------------------------------------------------------//
+//  ACCheckForPressingEscape:  When they press escape, they are quitting the tutorial.	//
+//--------------------------------------------------------------------------------------//
+begin script ACCheckForPressingEscape
+start
+	begin loop
+		if (key KB_SPACE down)
+			ACAssaultCourseQuit = ACTrue
+		end if
+		
+		until ((ACAssaultCourseQuit == ACTrue) or (ACAssaultCourseComplete == ACTrue))
+	end loop
+end script ACCheckForPressingEscape
+
+
+//------------------------------------------------------------------------------------------------------//
+//  ACCheckForUsingKeys:  Checks to see if the player has used the keys in the mouse movement section.	//
+//------------------------------------------------------------------------------------------------------//
+begin script ACCheckForUsingKeys
+  hackfixVERYTEMPORARY = ACFalse
+start
+	//find out what keys are being used
+	ACLeftKey = variable get key for interface action BINDABLE_ACTION_TYPE_MOVE_LEFT
+	ACCtrlKey = variable get key for interface action BINDABLE_ACTION_TYPE_TILT_ROTATE_ON
+	ACShiftKey = variable get key for interface action BINDABLE_ACTION_TYPE_ZOOM_ON
+	ACRightKey = variable get key for interface action BINDABLE_ACTION_TYPE_MOVE_RIGHT
+	ACForwardKey = variable get key for interface action BINDABLE_ACTION_TYPE_MOVE_FORWARD
+	ACBackwardKey = variable get key for interface action BINDABLE_ACTION_TYPE_MOVE_BACKWARD
+	
+	begin loop
+		if ((not key constant ACShiftKey down) and (not key constant ACCtrlKey down))
+			if ((key constant ACLeftKey down) or (key constant ACRightKey down) or (key constant ACForwardKey down) or (key constant ACBackwardKey down))
+				begin dialogue
+					say "Ah, I see you've discovered how to use the keys."
+					wait until read
+					say "You'll learn how to use these when navigating to the next checkpoint."
+					wait until read
+				end dialogue
+				hackfixVERYTEMPORARY = ACTrue
+			end if
+		end if
+		
+		until hackfixVERYTEMPORARY == ACTrue ///needs to be there -> (get player 1 stat STATISTICS_TYPE_PLAYER_CURRENT STATISTICS_STAT_KEY_DISTANCE_DRAGGED total events > ACKeyboardMovementsUponActivation)
+	end loop
+end script ACCheckForUsingKeys
+
+
+//------------------------------------------------------------------------------------------------------//
+//  ACCheckToSeeIfCourseComplete:  If they reach the last checkpoint, the assault course is completed.	//
+//------------------------------------------------------------------------------------------------------//
+begin script ACCheckToSeeIfCourseComplete
+start
+	begin loop
+		if (ACCurrentCheckpointNumber == ACNumberOfCheckpoints)
+			ACAssaultCourseComplete = ACTrue
+		end if
+		
+		until ((ACAssaultCourseComplete == ACTrue) or (ACAssaultCourseQuit == ACTrue))
+	end loop
+end script ACCheckToSeeIfCourseComplete
+
+
+//----------------//
+//  DEBUG SCRIPT  //
+//----------------//
+begin script ACDistanceMonitor(WhereTo)
+  Distance = 0
+start
+	begin loop
+		Distance = get distance from camera position to {WhereTo}
+	end loop
+end script ACDistanceMonitor
+
+
+//--------------------------------------------------------------------------------------------------------------//
+//  ACFinishSectionWhenCameraIsCloseEnough:  When the player reaches the checkpoint, they move on to the next.	//
+//--------------------------------------------------------------------------------------------------------------//
+begin script ACFinishSectionWhenCameraIsCloseEnough(HowClose)
+  CheckpointNumber = ACCurrentCheckpointNumber
+start
+	begin loop
+		if camera position near {ACCheckpointPositions[CheckpointNumber]} radius HowClose
+			ACCurrentCheckpointNumber ++
+		end if
+		
+		until (ACCurrentCheckpointNumber != CheckpointNumber)
+	end loop
+	ACCurrentSectionCompleted = ACTrue
+end script ACFinishSectionWhenCameraIsCloseEnough
+
+
+//-----------------------------------------------------------------------------------------------//
+//  ACIntroduction:  Plays the introduction.  There is no actual learning element to this part.	 //
+//-----------------------------------------------------------------------------------------------//
+begin script ACIntroduction
+start
+	begin cinema
+		enable ACTutor high graphics detail
+		
+		move camera position to {1099.577,27.389,1370.493} time 2
+		move camera focus to {ACTutor} time 2
+		wait until camera ready
+		
+		set camera focus follow ACTutor
+		move ACTutor position to {1099.415,26.130,1375.184}
+		wait until {ACTutor} at {1099.415,26.130,1375.184}
+		set ACTutor focus to camera position
+	
+		say "Ah... I see we have a new God joining us."
+		wait until read
+		say "If you're going to be able to do anything in this world,"
+		wait until read
+		say "You're going to have to know how to move around."
+		wait until read
+		say "That's where I come in.  I am the tutor of Gods."
+		wait until read
+		say "It is my job to teach newcomers like yourself to be skilled in the art of flying."
+		wait until read
+		
+		set ACTutor focus to {1094.574,25.252,1372.208}
+		say "Around this section of the island, there is a series of checkpoints."
+		wait until read
+		set ACTutor focus to camera position
+		
+		say "I will teach you how to navigate through them with ease."
+		wait until read
+		say "Once you have completed my training, there will be nothing standing in your way."
+		wait until read
+		say "Your first task will be to move forward to the first checkpoint."
+		
+		move camera position to {1115.292,31.896,1372.105} time 2
+		move camera focus to {1098.790,25.060,1363.535} time 2
+		move ACTutor position to {1101.798,26.226,1372.843}
+		
+		wait until {ACTutor} at {1101.798,26.226,1372.843}
+		set ACTutor focus to camera position
+		
+		disable ACTutor high graphics detail
+	end cinema with widescreen
+end script ACIntroduction
+
+
+//--------------------------------------------------------------------------------------//
+//  ACKeyboardMovement:	 Teaches the player how to move (drag) around using the keys.	//
+//--------------------------------------------------------------------------------------//
+begin script ACKeyboardMovement
+start
+	begin cinema
+		say "Well done!  You've made it to the first checkpoint."
+		wait until read
+		say "The next thing you will learn is how to move using the keys."
+		wait until read
+		
+		move camera focus to {ACCheckpointPositions[1]} time 2
+		say "As you can see, the next checkpoint is directly to your right."
+		wait until read
+		move camera position to {1064.021,25.122,1350.693} time 2
+		move camera focus to {1054.293,20.518,1345.741} time 2
+	
+		if ((get player 1 stat STATISTICS_TYPE_PLAYER_CURRENT STATISTICS_STAT_KEY_DISTANCE_DRAGGED total events - ACKeyboardMovementsUponActivation) == 0)
+			say "In addition to using your hand to move yourself around, you can use the keys."
+		else
+			say "You've already used the keys, but you may not know how easy they are to use."
+		end if
+		wait until read and camera ready
+		
+		say "You can move in a given direction by pressing the corresonding arrow key."
+		wait until read
+		say "Give it a go.  Move to the next checkpoint by moving right using the keys."
+		wait until read
+	end cinema
+
+	run background script ACFinishSectionWhenCameraIsCloseEnough(12)	///distance needs to be fiddled a bit I think
+	
+	begin loop
+		if (key KB_RIGHT down)
+			run background script ACSayLine(Thatsitjustkeepthatkeypressedtokeepmovingright)
+		elsif ((key KB_LEFT down) or (key KB_DOWN down) or (key KB_UP down))
+			run background script ACSayLine(Youvegottherightideabutunfortunatelyyouvegotthewrongkey)
+		elsif ((mouse left button down) or (mouse right button down))
+			run background script ACSayLine(Heyyouremeanttobelearninghowtousethekeyboardtomove)
+		end if
+	
+		until ((ACCurrentCheckpointNumber > 1) or (ACAssaultCourseQuit == ACTrue))
+	end loop
+end script ACKeyboardMovement
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------//
+//  ACMouseMovement:  Mouse movement is the first thing that the player needs to learn.	 It is easier to have each section as a different	//
+//					  script, rather than trying to have them combined in a general script.  This allows great variation between sections.	//
+//------------------------------------------------------------------------------------------------------------------------------------------//
+begin script ACMouseMovement
+  PassedSection	= ACFalse
+  Distance		= 0
+start
+	begin cinema
+		say "The first thing you're going to learn is how to move using your hand."
+		wait until read
+		say "Moving the mouse moves your hand around.  You can also use it to drag yourself around."
+		wait until read
+		say "If you click and hold the left mouse button,"
+		wait until read
+		say "you will see that your hand holds onto the landscape."
+		wait until read
+		say "By moving your hand now, you will pull and push yourself around."
+		wait until read
+		
+		say "Now you give it a go.  See if you can make it over to that first checkpoint."
+		wait until read
+	end cinema
+	
+	set interaction SCRIPT_INTERFACE_LEVEL_JUST_GRAB		//Only if the number of drags is 0
+	
+	ACPlayerHasMoved = ACFalse
+	
+	run background script ACPullBackIfWayTooFarAway(marker at camera position, 150)					//Don't let the player wonder too far
+	run background script ACCheckForMovement														//Check to see if they are moving towards/ away from the checkpoint
+	run background script ACFinishSectionWhenCameraIsCloseEnough(8)
+	run background script ACCheckForUsingKeys
+
+	begin loop
+		begin loop
+			begin loop
+				wait until (mouse left button down) or (15 seconds)
+		
+				if (mouse left button down)
+					wait 1 second
+					if not (mouse left button down)
+						run background script ACSayLine(Younearlyhaditbutyouvegottokeepthebuttonhelddown)
+					else
+						PassedSection = ACTrue
+					end if
+				else
+					run background script ACSayLine(Thefirstthingyouhavetodoispressandholdtheleftmousebutton)
+				end if
+				until (PassedSection == ACTrue)
+			end loop
+		
+			until ((PassedSection == ACTrue) or (ACPlayerHasMoved != ACFalse))
+		end loop
+		
+		if (PassedSection == ACTrue)
+			ACStopSayingLine = ACTrue
+			run background script ACSayLine(VerygoodNowpullthemousetowardsyoutomoveforwards)
+		end if
+		
+		wait 20 seconds
+		PassedSection = ACFalse
+		ACPlayerHasMoved = ACFalse
+		
+		until ((ACCurrentCheckpointNumber > 0) or (ACAssaultCourseQuit == ACTrue))
+	end loop
+	
+	stop script "ACPullBackIfWayTooFarAway"
+	stop script "ACCheckForUsingKeys"
+end script ACMouseMovement
+
+
+//--------------------------------------------------------------------------------------------------------------//
+//  ACPitchAndRotate:  Teaches the player how to pitch and rotate the camera using both the keys and the mouse	//
+//--------------------------------------------------------------------------------------------------------------//
+begin script ACPitchAndRotate
+  OriginalMousePitchesAndRotations	= 0
+  NewMousePitchesAndRotations		= 0
+  NumberOfPitchesAndRotationsToDo	= 30
+  WhereToMiddleClick				= marker at {999.332,14.273,1388.152}
+  DonePivotMonkeySeeMonkeyDo		= ACFalse
+start
+	begin cinema
+		move camera position to {1044.685,25.122,1392.435} time 3
+		move camera focus to {1029.355,17.867,1384.630} time 3
+		say "Very good.  You now know how to move around, but there is more to learn."
+		wait until read
+		say "You can pitch and rotate the camera using the middle mouse button."
+		wait until read and camera ready
+		say "Hold the middle mouse button down and move the mouse to move the camera."
+		start hand demo "ACPitchAndRotate" with pause on trigger
+		wait until read
+		wait until hand demo trigger
+		say "Moving the mouse forwards and backwards moves the camera up and down,"
+		wait until read
+		wait until hand demo trigger
+		say "and moving the mouse left and right rotates the camera left and right,"
+		wait until read
+		wait until hand demo trigger
+		say "When pitching and rotating, the camera is pivoting around your hand."
+		wait until read
+		wait until hand demo played
+		move camera position to {1044.685,25.122,1392.435} time 2
+		move camera focus to {1029.355,17.867,1384.630} time 2
+		say "Now you try."
+		wait until read
+	end cinema
+	
+	set interaction SCRIPT_INTERFACE_LEVEL_NORMAL
+	
+	while (0 == 0)
+		OriginalMousePitchesAndRotations = get player 1 stat STATISTICS_TYPE_PLAYER_CURRENT STATISTICS_STAT_MOUSE_PITCH_COUNT total events
+		OriginalMousePitchesAndRotations += get player 1 stat STATISTICS_TYPE_PLAYER_CURRENT STATISTICS_STAT_MOUSE_ROTATE_COUNT total events
+		begin dialogue
+			eject evil spirit
+			make evil spirit point at {WhereToMiddleClick} in world
+			say "Click here...  I reckon it's the Perfect Pivot Position (TM)."
+			wait until read or mouse middle button down
+			
+			if read
+				wait until mouse middle button down
+			end if
+		end dialogue
+		if not hand position near {WhereToMiddleClick} radius 10
+			//acsayline
+			begin dialogue
+				say "not close enough, but ok"
+				wait until read
+			end dialogue
+		end if
+		run background script ACSayLine(GoodNowmovethemouseabouttomovethecameraYoullgetafeelforit)
+
+		begin loop
+			NewMousePitchesAndRotations = get player 1 stat STATISTICS_TYPE_PLAYER_CURRENT STATISTICS_STAT_MOUSE_PITCH_COUNT total events
+			NewMousePitchesAndRotations += get player 1 stat STATISTICS_TYPE_PLAYER_CURRENT STATISTICS_STAT_MOUSE_ROTATE_COUNT total events
+
+			until ((NewMousePitchesAndRotations > (OriginalMousePitchesAndRotations + NumberOfPitchesAndRotationsToDo)) or (not mouse middle button down))
+		end loop
+		
+		if (not mouse middle button down)
+			begin dialogue
+				say "NOOOOO! You let go, you fool!"
+				wait until read
+			end dialogue
+			wait 1 second
+		else
+			DonePivotMonkeySeeMonkeyDo = ACTrue
+		end if
+		
+		until (DonePivotMonkeySeeMonkeyDo == ACTrue)
+	end while
+
+	ACStopSayingLine = ACTrue
+	if (ACCurrentSectionCompleted == ACFalse)
+		begin cinema
+			move camera position to {1044.685,25.122,1392.435} time 3
+			move camera focus to {1029.355,17.867,1384.630} time 3
+			
+			say "Well done."
+			wait until read
+			say "Now as you can see..."
+			
+			run background script ACFinishSectionWhenCameraIsCloseEnough(10)
+			move camera position to {1047.073,50.958,1392.837} time 6
+			move camera focus to {1033.448,36.700,1400.519} time 6
+			
+			wait until read
+			say "the next checkpoint is over this mountain ridge."
+			wait until read
+			say "It is a lot easier and quicker to move over the mountain than around it."
+			wait until read
+
+			move camera position to {1044.685,25.122,1392.435} time 3
+			move camera focus to {1029.355,17.867,1384.630} time 3
+
+			say "Give it a go.  Pitch and rotate the camera to the next checkpoint."
+			wait until read
+			
+			///do something
+		end cinema with dialogue
+			say "Click, move, rotate etc"
+			wait until read
+		end dialogue
+	else
+		begin cinema
+			say "Well done, you've made it to the checkpoint."
+			wait until read
+		end cinema with widescreen
+	end if
+end script ACPitchAndRotate
+
+
+//-------------------------------------------------------------------------------------------------------------------------//
+//  ACPullBackIfWayTooFarAway:  If the player moves too far from the given position, they are pulled back and 'told off'.  //
+//-------------------------------------------------------------------------------------------------------------------------//
+begin script ACPullBackIfWayTooFarAway(WhereToPullBackTo, HowFarCanTheyBe)
+  CurrentCheckpointNumber = ACCurrentCheckpointNumber
+start
+	begin loop
+		if get distance from camera position to {WhereToPullBackTo} > HowFarCanTheyBe
+			ACBeingDraggedBack = ACTrue
+			run background script ACSayLine(EasyboyYouvegonewaytoofaraway)
+			begin camera
+				move camera position to {WhereToPullBackTo} time 2
+				move camera focus to {ACCheckpointPositions[ACCurrentCheckpointNumber]} time 2
+				wait until camera ready
+			end camera
+			ACBeingDraggedBack = ACFalse
+		end if
+		
+		until (CurrentCheckpointNumber != ACCurrentCheckpointNumber)
+	end loop
+end script ACPullBackIfWayTooFarAway
+
+
+//--------------------------------------------------------------------------------//
+//  ACQuitCinema:  Says stuff to the user when they have quit the game/tutorial.  //
+//--------------------------------------------------------------------------------//
+begin script ACQuitCinema
+start
+	begin dialogue
+		say "You can learn more about movement by clicking on the scroll above my tent at any time."
+		wait until read
+	end dialogue
+end script ACQuitCinema
+
+
+//------------------------------------------------------------------//
+//  ACRunSection:  Used so that the main game can be run in a loop	//
+//------------------------------------------------------------------//
+begin script ACRunSection(SectionNumber)
+start
+	if (SectionNumber == 0)
+		run background script ACMouseMovement
+	elsif (SectionNumber == 1)
+		run background script ACKeyboardMovement
+	elsif (SectionNumber == 2)
+		run background script ACPitchAndRotate
+	elsif (SectionNumber == 3)
+		run background script ACDoubleClick
+	else
+		run background script ACGenericCheckpointHandler
+	end if
+end script ACRunSection
+
+
+//----------------------------------------------------------------------------------------//
+//  ACSayLine:	If a line is already being said, it is stopped and the new line is said.  //
+//----------------------------------------------------------------------------------------//
+begin script ACSayLine(LineNumber)
+start
+	if (ACLineBeingSaid != LineNumber)
+		ACStopSayingLine = ACTrue
+		run background script ACActuallySayLine(LineNumber)
+	end if
+end script ACSayLine
+
+
+//----------------------------------------------------------------------------//
+//  ACSendGuyHome:	Sends the tutor back to his hut, and makes him sit down.  //
+//----------------------------------------------------------------------------//
+begin script ACSendGuyHome
+start
+	move ACTutor position to {ACTutorsHutPosition}
+	wait until {ACTutor} near {ACTutorsHutPosition} radius 1
+	ACTutor play ANM_P_SITTING_DOWN1_INTO loop 1
+	wait until ACTutor played
+	ACTutor play ANM_P_SITTING_DOWN1_SITTING loop -1	
+end script ACSendGuyHome
+
+
+//----------------------------------------------------------------//
+//  ACWinCinema:  Says stuff to the user when they win the game.  //
+//----------------------------------------------------------------//
+begin script ACWinCinema
+start
+	begin cinema
+		say "You win.  Well done."
+		wait until read
+	end cinema
+end script ACWinCinema
+
+
+//-------------------------------------------------------------------------//
+//-------------------------------------------------------------------------//
+begin script ACDoubleClick
+  ClickedInTheRightPlace = ACFalse
+start
+	run background script ACFinishSectionWhenCameraIsCloseEnough(10)
+	
+	set interaction SCRIPT_INTERFACE_LEVEL_NORMAL
+		
+	begin cinema
+		move camera position to {1003.958,23.947,1438.313} time 5
+		move camera focus to {998.860,13.325,1396.252} time 5
+		say "Good-hoe"
+		wait until read
+		say "Double clicking allows you to move considerably faster to a given location."
+		wait until read and camera ready
+		say "Double click the next checkpoint to move over there."
+		wait until read
+	end cinema
+	
+	while (ACCurrentSectionCompleted == ACFalse)
+		while (ClickedInTheRightPlace == ACFalse)
+			clear left clicked position
+			wait until ((mouse left button double clicked) or (ACCurrentSectionCompleted == ACTrue))
+
+			if (ACCurrentSectionCompleted == ACTrue)
+				begin dialogue
+					say "you cheated!"
+					wait until read
+				end dialogue
+				ClickedInTheRightPlace = ACTrue
+			elsif left clicked position near {ACCheckpointPositions[3]} radius 20
+				begin dialogue
+					say "Very good."
+					wait until read
+					say "Now you just need to drag a little bit to hit the checkpoint."
+					wait until read
+				end dialogue
+				ClickedInTheRightPlace = ACTrue
+			else
+				wait 1 second
+				begin camera
+					say "Well... you've double clicked alright, but not in the right place!"
+					wait until read
+					move camera focus to {ACCheckpointPositions[3]} time 3
+					say "There's the checkpoint, so give it another go"
+					wait until read
+				end camera
+			end if
+		end while
+		
+		until (ACCurrentSectionCompleted == ACTrue)
+	end while
+end script ACDoubleClick
+
+
+//-------------------------------------------------------------------------//
+//-------------------------------------------------------------------------//
+begin script ACGenericCheckpointHandler
+start
+	run script ACFinishSectionWhenCameraIsCloseEnough(10)
+end script ACGenericCheckpointHandler
+
+
+//-------------------------------------------------------------------------//
+//-------------------------------------------------------------------------//
+begin script ACTutorialMode
+  CreateCheckpoints		= 0
+  UseUntil				= ACFalse
+start
+	CreateCheckpoints = 0
+	begin loop
+		ACCheckpoints[CreateCheckpoints] = create alex special effect SPOT_VISUAL_ALEX_HULAHOOP at {ACCheckpointPositions[CreateCheckpoints]}
+		HEIGHT of ACCheckpoints[CreateCheckpoints] = 20
+		DENSITY of ACCheckpoints[CreateCheckpoints] = 10
+		set ACCheckpoints[CreateCheckpoints] colour red 200 green 0 blue 50
+		CreateCheckpoints ++
+
+		until (CreateCheckpoints == ACNumberOfCheckpoints)
+	end loop
+	
+	stop script "ACSendGuyHome"
+	run script ACIntroduction
+	run background script ACCheckForPressingEscape
+	
+	UseUntil = ACFalse
+	while (UseUntil == ACFalse)
+		UseUntil = ACTrue
+		
+		ACCurrentCheckpointNumber = 0
+		begin loop
+			if (ACCurrentCheckpointNumber > 0)
+				set ACCheckpoints[ACCurrentCheckpointNumber - 1] color red 0 green 50 blue 200
+			end if
+			set ACCheckpoints[ACCurrentCheckpointNumber] color red 0 green 200 blue 50
+			
+			stop script "ACSayLine"
+			stop script "ACActuallySayLine"
+			ACCurrentSectionCompleted = ACFalse
+			run background script ACRunSection(ACCurrentCheckpointNumber)
+			wait until (ACCurrentSectionCompleted == ACTrue)
+			
+			until (ACCurrentCheckpointNumber > ACNumberOfCheckpoints)
+		end loop
+					
+		until ((ACAssaultCourseComplete == ACTrue) or (ACAssaultCourseQuit == ACTrue))
+	end while
+		
+	set interaction SCRIPT_INTERFACE_LEVEL_NORMAL
+
+	if (ACAssaultCourseQuit == ACTrue)
+		run script ACQuitCinema
+	else
+		run script ACTutorialCompleteCinema
+		ACUnlockedRace = ACTrue
+		ACScoreboard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {ACScoreboardPosition}
+		set ACScoreboard score ACBestTime
+	end if
+	run background script ACSendGuyHome
+	
+	CreateCheckpoints = 0
+	begin loop
+		delete ACCheckpoints[CreateCheckpoints]
+		CreateCheckpoints ++
+
+		until (CreateCheckpoints == ACNumberOfCheckpoints)
+	end loop
+end script ACTutorialMode
+
+
+//-------------------------------------------------------------------------//
+//-------------------------------------------------------------------------//
+begin script ACTutorialCompleteCinema
+start
+	begin cinema
+		say "Well done; you have learnt all there is to know about moving around in the world."
+		wait until read
+		say "A new scroll is now available next to my tent."
+		wait until read
+		say "It is a race around these checkpoints, and many more."
+		wait until read
+		say "Click on it... if you think you're worthy..."
+		wait until read
+	end cinema	
+end script ACTutorialCompleteCinema
+
+
+//-------------------------------------------------------------------------//
+//-------------------------------------------------------------------------//
+begin script ACRaceMode
+  CreateCheckpoints	= 0
+  UseUntil			= ACFalse
+start
+	CreateCheckpoints = 0
+	begin loop
+		ACCheckpoints[CreateCheckpoints] = create alex special effect SPOT_VISUAL_ALEX_HULAHOOP at {ACCheckpointPositions[CreateCheckpoints]}
+		HEIGHT of ACCheckpoints[CreateCheckpoints] = 20
+		DENSITY of ACCheckpoints[CreateCheckpoints] = 10
+		set ACCheckpoints[CreateCheckpoints] colour red 200 green 0 blue 50
+		CreateCheckpoints ++
+
+		until (CreateCheckpoints == ACNumberOfRaceCheckpoints)
+	end loop
+	
+	stop script "ACSendGuyHome"
+	run script ACRaceIntroduction
+	run background script ACCheckForPressingEscape
+	
+	UseUntil = ACFalse
+	while (UseUntil == ACFalse)
+		UseUntil = ACTrue
+		
+		ACCurrentCheckpointNumber = 0
+		begin loop
+			if (ACCurrentCheckpointNumber > 0)
+				set ACCheckpoints[ACCurrentCheckpointNumber - 1] color red 0 green 50 blue 200
+			end if
+			set ACCheckpoints[ACCurrentCheckpointNumber] color red 0 green 200 blue 50
+			
+			ACCurrentSectionCompleted = ACFalse
+			run background script ACGenericCheckpointHandler
+			wait until (ACCurrentSectionCompleted == ACTrue)
+			begin dialogue
+				say "Whoop-aa"
+				wait until read
+			end dialogue
+			
+			until (ACCurrentCheckpointNumber == ACNumberOfRaceCheckpoints)
+		end loop
+					
+		until ((ACAssaultCourseComplete == ACTrue) or (ACAssaultCourseQuit == ACTrue))
+	end while
+		
+	if (ACAssaultCourseQuit == ACTrue)
+		run script ACQuitRaceCinema
+	else
+		run script ACWinCinema
+	end if
+	
+	CreateCheckpoints = 0
+	begin loop
+		delete ACCheckpoints[CreateCheckpoints]
+		CreateCheckpoints ++
+
+		until (CreateCheckpoints == ACNumberOfRaceCheckpoints)
+	end loop
+end script ACRaceMode
+
+
+//-------------------------------------------------------------------------//
+//-------------------------------------------------------------------------//
+begin script ACRaceIntroduction
+start
+	begin cinema
+		move camera position to {1124.293,42.035,1372.654} time 2
+		move camera focus to {1052.874,22.898,1345.702} time 2
+		say "Race through all of the checkpoints in the quickest time you can..."
+		wait until read
+		say "Press escape to quit, cuz this is the mad notes"
+		wait until read
+		wait until camera ready
+	end cinema
+end script ACRaceIntroduction
+
+
+//-------------------------------------------------------------------------//
+//-------------------------------------------------------------------------//
+begin script ACQuitRaceCinema
+start
+	begin cinema
+		say "You quit the race.  Boy, what a loser you must be."
+		wait until read
+	end cinema
+end script ACQuitRaceCinema

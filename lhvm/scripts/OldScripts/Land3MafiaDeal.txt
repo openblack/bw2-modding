@@ -1,0 +1,1260 @@
+//===========================================================================
+// File: MafiaDeal
+// Author: Tid
+// Date: 27/02/03
+// Description:	This script details the MafiaDeal challenge. In it, the player
+//							is recruited by a group of Norsemen to recover a lost box and
+//							use their creature to deliver it to the Japanese daimyo, Toranaga.
+//							The box is found under a tree in a nearby forest. When the player
+//							uses their creature to transport it to Toranaga, it triggers a
+//							cutscene where we learn that the box contains the head of 
+//							Toranaga's lieutenant. This triggers the skirmishes between
+//							the Japanese and the Norse, and also causes the Japanese to 
+//							send a group of soldiers to harry the player
+//===========================================================================
+
+//Constants===================================================================
+define MD_TRUE				= 1
+define MD_FALSE				= 0
+
+//Setup Globals================================================================
+global MD_NorseFirePosition
+
+//Setup Actors=================================================================
+global MD_FainOnTheRun		= 1
+
+//Flags======================================================================
+global MD_FoundTheBox = MD_FALSE	//has the player found the box yet?
+global MD_GotQuest = MD_FALSE		//has the player been given the quest by the norse guy
+global MD_BoxWarningJap = MD_FALSE //has the player been warned about approaching the Japanese with the box
+global MD_BoxWarningNorse = MD_FALSE //has the player been warned about approaching the Norse with the box
+global MD_Highlight = 0
+global MD_Box = 0
+global NorseCentre = 0
+global JapCentre = 0
+
+global MD_Fell = 0
+global MD_Fain = 0
+
+//Declare scripts to be used in this challenge==============================================
+define script Land3MafiaDeal
+define script MD_CreateOutlawHighlight
+define script MD_IsTreeThere
+define script MD_FoundTheBox(MD_TreePos)
+define script MD_BoxDeliveredJaps
+define script MD_BoxDeliveredNorse
+define script MD_NearToranaga
+define script MD_NearFenrick
+define script MD_ClickScrollAgain
+define script MD_NorseGoMad
+define script MD_CheckFainPos
+define script MD_FennersGetsHead
+define script MD_JapsGetHead
+define script MD_Intro
+define script MovingBoxBodge(Dude1, Dude2, Dude1Pos)
+
+
+//run script MafiaDeal
+
+//MD_SetupFell================================================================
+//Function: This script sets up the Norse bad guy and his cronies at their camp
+begin script Land3MafiaDeal
+
+start
+
+MD_NorseFirePosition = marker at {1442.703,487.938,1835.786}
+
+NorseCentre = marker at {1241.849,284.469,1418.168}
+JapCentre = marker at {1018.709,133.169,890.890}
+
+run background script MD_IsTreeThere
+run script MD_CreateOutlawHighlight
+
+end script Land3MafiaDeal
+//===========================================================================
+
+//Create Highlight===========================================================
+//Function: This script creates the scroll that can be clicked to kick off the new script
+
+begin script MD_CreateOutlawHighlight
+
+start
+	MD_Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {MD_NorseFirePosition} //creates the scroll at the position of the highlight
+	ALTITUDE of MD_Highlight = 5 //sets the altitude of the scroll
+
+	wait until MD_Highlight right clicked //tells the script to wait until the scroll is right clicked on
+
+	if MD_GotQuest == MD_FALSE
+		run script MD_Intro
+	end if
+
+	run background script MD_ClickScrollAgain
+
+end script MD_CreateOutlawHighlight
+//===========================================================================
+
+// MD_ClickScrollAgain=========================================
+// Function: 
+
+begin script MD_ClickScrollAgain
+
+start
+	while MD_QuestComplete == MD_FALSE //while the player hasn't brought the box to Toranaga
+		MD_Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {MD_NorseFirePosition} //creates the scroll at the position of the highlight
+		ALTITUDE of MD_Highlight = 5
+		wait until MD_Highlight right clicked //tells the script to wait until the scroll is right clicked on
+		if MD_GotQuest == MD_TRUE //if the player has already received the quest
+			begin dialogue //begin a dialogue that quickly recaps
+				say "Advisor reminds player about finding the box and returning it"
+				wait until read
+			end dialogue
+		end if
+	end while
+
+end script MD_ClickScrollAgain
+//===========================================================================
+
+//MD_IsTreeThere=============================================================
+//Function: This function will check to see if there is a tree close to the box and show the box if there isn't
+begin script MD_IsTreeThere
+
+MD_TreePos = marker at {1291.082,179.861,1017.992} //this is the position of the tree with the box
+MD_TheTree = MD_FALSE //this variables refers to the tree with the box within
+MD_TempTree = 0
+
+start
+
+MD_TempTree = create with angle 0 and scale 2 TREE TREE_INFO_SPRUCE at {MD_TreePos}
+	while MD_FoundTheBox != MD_TRUE						// while the player hasn't found the box
+		MD_TheTree = get TREE at {MD_TreePos} radius 1	// the MD_TheTree is a tree within the radius of the position
+														// and since there is only one tree within this radius this
+														// is our tree!
+
+		if MD_TheTree exists							// if the tree is within the radius
+			MD_TheTree = MD_FALSE						// do nothing
+		else
+			MD_FoundTheBox = MD_TRUE					// switch the flag to true to end the while loop
+			run script MD_FoundTheBox(MD_TreePos)		// and run this script
+		end if
+	end while			
+
+end script MD_IsTreeThere
+//=============================================================================
+
+//MD_FoundBox====================================================================
+//Function: This script is run when the player lifts the tree that hides the box
+begin script MD_FoundTheBox(MD_TreePos)
+
+MD_HandPos = marker at hand position //this variable represents the position of the hand
+
+start
+	MD_Box = create OBJECT TRIBUTEBOX at {MD_TreePos}
+	if {MD_TreePos} near {MD_HandPos} radius 20 //if the position of the tree and the hand are very close
+		if MD_GotQuest == MD_FALSE //if the player hasn't received the quest
+			say "Advisor wonders why there's a box under a tree"	//trigger a scene where the evil spirit
+			wait until read											//asks what the hell it's for
+		else															//but if they have received the quest....
+			say "Advisor congratulates player on finding the box"	
+			wait until read
+		end if
+
+		else
+		begin dialogue
+			say "Advisor informs player that something has been found when the woodcutters chop the tree"
+			wait until read
+		end dialogue
+	end if
+
+	run background script MD_NearToranaga		// once the box is discovered we will continuously run the script
+											// to check if the box has been delivered
+	run background script MD_NearFenrick
+
+end script MD_FoundTheBox
+//===========================================================================
+
+//MD_NearToranaga============================================================
+// Function: Checks to see if the box is approaching the Japanese and warns the player
+begin script MD_NearToranaga
+
+start
+	while MD_BoxWarningJap != MD_TRUE //if the player has not yet been warned
+		if {MD_Box} near {JapCentre} radius 500 //if the player is within 80 units of Toranaga
+
+			if MD_GotQuest == MD_FALSE //if the player has not received the quest
+				begin dialogue //have the evil spirit give a warning
+
+					say "Advisor warns player that the creature is getting near to the Japanese"
+					wait until read
+
+				end dialogue
+				MD_BoxWarningJap = MD_TRUE //switch the warning flag to true
+			end if
+
+			if MD_GotQuest == MD_TRUE //if the player has received the quest
+				begin dialogue //give this warning
+					//eject evil spirit
+						say "Advisor warns player that the creature is getting near to the Japanese"
+						wait until read
+						MD_BoxWarningJap = MD_TRUE
+					//send evil spirit home
+				end dialogue
+			end if
+		end if
+	end while
+
+	//insert scripting here to make the creature stop
+
+	run script MD_BoxDeliveredJaps
+
+end script MD_NearToranaga
+//===========================================================================
+
+//MD_NearToranaga============================================================
+// Function: Checks to see if the box is approaching the Japanese and warns the player
+begin script MD_NearFenrick
+
+start
+
+while MD_BoxWarningNorse != MD_TRUE //if the player has not yet been warned
+	if {MD_Box} near {NorseCentre} radius 500 //if the player is within 150 units of Fenrick
+
+		if MD_GotQuest == MD_FALSE //if the player has not received the quest
+			begin dialogue //have the evil spirit give a warning
+
+			//eject evil spirit
+			say "Advisor warns player that the creature is getting near to the Norse"
+			wait until read
+			//send evil spirit home
+
+			end dialogue
+			MD_BoxWarningNorse = MD_TRUE //switch the warning flag to true
+		end if
+
+		if MD_GotQuest == MD_TRUE //if the player has received the quest
+			begin dialogue //give this warning
+				//eject evil spirit
+				say "Advisor warns player that the creature is getting near to the Norse"
+				wait until read
+				MD_BoxWarningNorse = MD_TRUE
+				//send evil spirit home
+			end dialogue
+		end if
+	end if
+end while
+
+//insert scripting here to make the creature stop
+
+run script MD_BoxDeliveredNorse
+
+end script MD_NearFenrick
+//===========================================================================
+
+//MD_BoxDeliveredJaps============================================================
+// Function: Checks to see if the box is near Toranaga and runs his cut scene if it is
+begin script MD_BoxDeliveredJaps
+
+start
+	while MD_QuestComplete != MD_TRUE
+		if {MD_Box} near {JapCentre} radius 200
+
+			run script MD_JapsGetHead
+
+			MD_QuestComplete = MD_TRUE //Toranaga now pissed at the player
+			delete MD_Highlight //remove the challenge scroll
+			delete MD_Box
+			//ENTER CUT SCENE FOR TORANAGA FLIPPING OUT HERE
+			begin dialogue
+				say "Toranaga's armies leave the Japanese capital"
+				wait until read
+			end dialogue
+		end if
+	end while
+stop script "MD_NearToranaga"
+
+L3YukaHeadDeliveredToJapanese = 1
+
+end script MD_BoxDeliveredJaps
+//============================================================================
+//MD_BoxDeliveredNorse============================================================
+// Function: Checks to see if the box is near Fenrick and runs his cut scene if it is
+begin script MD_BoxDeliveredNorse
+
+start
+while MD_QuestComplete != MD_TRUE
+	if {MD_Box} near {NorseCentre} radius 200
+
+		run script MD_FennersGetsHead
+
+		MD_QuestComplete = MD_TRUE
+		delete MD_Highlight //remove the challenge scroll
+		delete MD_Box
+		begin dialogue
+			say "Norse have a little civil war"
+			wait until read
+		end dialogue
+	end if
+end while
+
+stop script "MD_NearFenrick"
+stop script "MD_NearToranaga"
+
+L3YukaHeadDeliveredToNorse = 1
+run script MD_NorseGoMad
+
+end script MD_BoxDeliveredNorse
+
+//==========================================================================
+begin script MD_NorseGoMad
+
+start
+	say "Fain should leg it to the Japs"
+	wait until read
+	SPEED of MD_Fain = 1.20
+	move MD_Fain position to {JapCentre}
+
+	disable MD_Fain pickup//maybe redundant if creature can pick up anything
+
+	run background script MD_CheckFainPos
+end script MD_NorseGoMad
+
+//=========================================================================
+begin script MD_CheckFainPos
+
+TheJapTown = 0
+JapTownCentre = 0
+
+start
+
+TheJapTown = get TOWN at {JapCentre} radius 200
+JapTownCentre = get building TOWN_CENTRE in TheJapTown min built 1.0 excluding scripted
+
+while MD_FainOnTheRun==1
+	if {MD_Fain} near {JapCentre} radius 350
+		move MD_Fain position to {JapTownCentre} 
+		MD_FainOnTheRun=0
+		MD_FainToJaps = 1
+		wait 5 seconds
+	end if
+
+	if HEALTH of MD_Fell <= 0
+		MD_FainOnTheRun=0
+		MD_FainFails=1
+	end if
+end while
+
+end script MD_CheckFainPos
+
+//--------------------------------------------------------------------------------
+//Japs get head
+begin script MD_JapsGetHead
+
+RelCamPos=0
+RelCamFoc=0
+Backforthguard=0
+BackforthguardPos1 = 0
+BackforthguardPos2 = 0
+WhereGateShouldBePos = marker at {1052.560, 132.431, 876.420}
+
+WhereGateShouldBe=0
+HeadCarryingCreature=0
+HeadCarryingCreaturePos=0
+JapTownCentretrte=0
+JapTownCentretrtePos=marker at {919.685, 129.938, 795.109}
+AnotherJapGuardPos[20]
+AnotherJapGuard[20]
+TaramangaPos = 0
+counter = 0
+Taramanga = 0
+TaramangaGoToPos = 0
+Guardgoeshere=0
+CutsceneBox=0
+
+start
+
+	WhereGateShouldBe = get HOUSE at {WhereGateShouldBePos}
+	BackforthguardPos1 = marker at get world position from WhereGateShouldBe to {-6.373, 2.321, 0.975}
+	BackforthguardPos2 = marker at get world position from WhereGateShouldBe to {-3.768, 2.332, 0.839}
+	store camera details
+
+	begin cinema
+
+	Backforthguard = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_1 at {BackforthguardPos1}
+	set Backforthguard carrying CARRIED_OBJECT_NONE
+
+		start music "cut_scene_sinister_02"				
+		//delete MD_Box
+
+		RelCamPos=marker at get world position from WhereGateShouldBe to {-38.124, 21.854, 18.137}
+		RelCamFoc=marker at get world position from WhereGateShouldBe to {-37.553, 21.404, 17.450}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 68.000 time 2
+
+		move Backforthguard position to {BackforthguardPos2}
+		wait 1 seconds//until {Backforthguard} at {BackforthguardPos2}
+
+		set camera lens 53.000
+		set camera position follow Backforthguard offset {-0.952, 1.097, -1.106}
+		set camera focus follow Backforthguard offset {10.334, -0.816, 13.779}
+
+		wait until {Backforthguard} at {BackforthguardPos2}
+		move camera position to camera position time 0.3
+		move camera focus to camera focus time 0.3
+		play anim "A_P_TURN_180" on Backforthguard 
+
+		//wait 0.5 second
+
+		wait until Backforthguard played
+		set Backforthguard focus to {BackforthguardPos1}
+
+		HeadCarryingCreaturePos = marker at get world position from WhereGateShouldBe to {-12.524, 2.394, 1.358}
+		//HeadCarryingCreature = create DUMB_CREATURE CREATURE_TYPE_GORILLA at {HeadCarryingCreaturePos}
+		HeadCarryingCreature = get player 0 creature
+		wait 0.8 seconds
+
+		set HeadCarryingCreature position to {BackforthguardPos1}
+		set HeadCarryingCreature focus to {Backforthguard}
+		wait 0.2 seconds
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from WhereGateShouldBe to {-2.075, 3.330, 1.835}
+		RelCamFoc=marker at get world position from WhereGateShouldBe to {-3.036, 3.562, 1.683}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until Backforthguard played
+		play anim "a_p_look_at_creature" on Backforthguard
+		
+		wait 2 seconds
+		play anim "a_p_mafiadeal_covering_eyes" on Backforthguard
+
+		set camera lens 48.000
+		RelCamPos=marker at get world position from WhereGateShouldBe to {-5.182, 4.486, 2.091}
+		RelCamFoc=marker at get world position from WhereGateShouldBe to {-4.679, 3.925, 1.434}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 2 seconds
+
+		/*set camera lens 70.000
+		RelCamPos=marker at get world position from WhereGateShouldBe to {-8.467, 5.476, 6.238}
+		RelCamFoc=marker at get world position from WhereGateShouldBe to {-8.191, 5.331, 5.287}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 1 seconds
+		play anim C_PICKUP_FRONT_RIGHT on HeadCarryingCreature
+		wait 1 seconds*/
+
+		set HeadCarryingCreature position to {1141.713, 166.220, 961.401}
+
+		set camera lens 26.000
+		RelCamPos=marker at get world position from WhereGateShouldBe to {-4.810, 3.425, 1.279}
+		RelCamFoc=marker at get world position from WhereGateShouldBe to {-3.910, 3.116, 0.971}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 3 seconds
+
+		MD_Box = create OBJECT TRIBUTEBOX at {BackforthguardPos1}
+		set MD_Box focus to get target from {MD_Box} to focus position of MD_Box distance 1 angle 180
+
+		set camera lens 48.000
+		RelCamPos=marker at get world position from WhereGateShouldBe to {-7.515, 3.950, 1.889}
+		RelCamFoc=marker at get world position from WhereGateShouldBe to {-6.665, 3.820, 1.377}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		RelCamPos=marker at get world position from WhereGateShouldBe to {-7.515, 3.013, 1.889}
+		RelCamFoc=marker at get world position from WhereGateShouldBe to {-6.684, 2.920, 1.340}
+		move camera position to {RelCamPos} time 6
+		move camera focus to {RelCamFoc} time 6
+		wait 4 seconds
+		set fade red 0 green 0 blue 0 time 2		
+		wait until camera ready
+
+		delete MD_Box
+
+		clear dialogue
+
+		JapTownCentretrte = get HOUSE at {JapTownCentretrtePos}
+
+		AnotherJapGuardPos[0] = marker at get world position from JapTownCentretrte to {7.771, 8.291, -30.815}
+		AnotherJapGuardPos[1] = marker at get world position from JapTownCentretrte to {7.672, 9.181, -29.522}
+		AnotherJapGuardPos[2] = marker at get target from {AnotherJapGuardPos[0]} to {AnotherJapGuardPos[1]} distance 1 angle 0
+		AnotherJapGuardPos[3] = marker at get target from {AnotherJapGuardPos[0]} to {AnotherJapGuardPos[1]} distance 2 angle 0
+
+		AnotherJapGuardPos[4] = marker at get target from {AnotherJapGuardPos[0]} to {AnotherJapGuardPos[1]} distance 3 angle 0
+		AnotherJapGuardPos[5] = marker at get target from {AnotherJapGuardPos[0]} to {AnotherJapGuardPos[1]} distance 4 angle 0
+		AnotherJapGuardPos[6] = marker at get target from {AnotherJapGuardPos[0]} to {AnotherJapGuardPos[1]} distance 5 angle 0
+		AnotherJapGuardPos[7] = marker at get target from {AnotherJapGuardPos[0]} to {AnotherJapGuardPos[1]} distance 6 angle 0
+		AnotherJapGuardPos[8] = marker at get world position from JapTownCentretrte to {-0.857, 8.474, -32.778}
+		AnotherJapGuardPos[9] = marker at get world position from JapTownCentretrte to {1.120, 8.815, -32.926}
+
+		TaramangaPos = marker at get world position from JapTownCentretrte to {0.098, 10.101, -31.040}
+
+		while counter <10
+			AnotherJapGuard[counter] = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_1 at {AnotherJapGuardPos[counter]}
+			ALTITUDE of AnotherJapGuard[counter] = 7.7
+				counter++
+		end while
+
+		Taramanga = create VILLAGER TARANAGA at {TaramangaPos}
+
+		set Backforthguard position to get world position from JapTownCentretrte to {-0.007, 9.776, -27.890}
+
+		ALTITUDE of Taramanga = 7.7
+		ALTITUDE of Backforthguard = 7.7
+
+		set Backforthguard focus to {Taramanga}
+		set Taramanga focus to {Backforthguard}
+		set AnotherJapGuard[0] focus to {Taramanga}
+		set AnotherJapGuard[1] focus to get target from {AnotherJapGuard[0]} to {Taramanga} distance 1 angle 270
+		set AnotherJapGuard[2] focus to get target from {AnotherJapGuard[0]} to {Taramanga} distance 2 angle 270
+		set AnotherJapGuard[3] focus to get target from {AnotherJapGuard[0]} to {Taramanga} distance 3 angle 270
+		set AnotherJapGuard[4] focus to get target from {AnotherJapGuard[0]} to {Taramanga} distance 4 angle 270
+		set AnotherJapGuard[5] focus to get target from {AnotherJapGuard[0]} to {Taramanga} distance 5 angle 270
+		set AnotherJapGuard[6] focus to get target from {AnotherJapGuard[0]} to {Taramanga} distance 6 angle 270
+		set AnotherJapGuard[7] focus to get target from {AnotherJapGuard[0]} to {Taramanga} distance 7 angle 270
+		set AnotherJapGuard[8] focus to get world position from JapTownCentretrte to {903.651, 146.646, 778.631}
+		set AnotherJapGuard[9] focus to get world position from JapTownCentretrte to {0.334, 16.512, -21.670}
+
+		MD_Box = create OBJECT TRIBUTEBOX at get target from {Backforthguard} to {Taramanga} distance 0.5 angle 180
+		ALTITUDE of MD_Box = 7.7
+		set MD_Box focus to {AnotherJapGuard[1]}
+
+		/*set camera lens 46.000
+		RelCamPos=marker at get world position from JapTownCentretrte to {-2.229, 10.388, -28.265}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {8.061, 2.691, -35.845}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}*/
+		set fade in time 2
+		/*wait 2 seconds
+		wait 2 seconds*/
+
+		set camera lens 46.000
+		RelCamPos=marker at get world position from JapTownCentretrte to {-4.746, 8.608, -29.735}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {10.154, 8.921, -29.068}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 2 seconds
+		wait 2 seconds
+
+		set camera lens 27.000
+		RelCamPos=marker at get world position from JapTownCentretrte to {-0.648, 8.136, -29.395}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {-0.274, 8.660, -30.160}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//set Taramanga focus to get target from {Backforthguard} to {Taramanga} distance 1 angle 0
+		play anim "a_p_mafiadeal_takingheadoutofbox_a" on Taramanga 
+
+		wait 2.4 seconds
+
+		/*set camera lens 46.000
+		set camera lens 43.000 time 2
+
+		RelCamPos=marker at get world position from JapTownCentretrte to {-0.302, 9.115, -28.752}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {0.281, 9.118, -27.940}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		play anim "a_p_soldier_shocked" on Backforthguard*/
+
+		//wait 1.7 seconds	
+		wait 0.2 seconds
+		play anim "a_p_mafiadeal_soldier_shocked2" on AnotherJapGuard[1] 
+		set Taramanga carrying CARRIED_OBJECT_YUKA_HEAD
+		
+		set camera lens 35.000
+		RelCamPos=marker at get world position from JapTownCentretrte to {6.082, 9.027, -30.155}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {7.003, 9.012, -29.765}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set AnotherJapGuard[1] focus to {Taramanga}
+		wait 5 seconds
+
+		set camera lens 18.000
+		wait 0.2 seconds
+		RelCamPos=marker at get world position from JapTownCentretrte to {-0.365, 8.768, -29.749}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {0.012, 8.993, -30.647}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 1 seconds
+		set camera lens 48.000 time 7
+		wait 7 seconds
+
+		//leaving these old M_P anims in cos I can't fina  replacement - PJ
+		set AnotherJapGuard[0] focus to {Taramanga}
+		set AnotherJapGuard[1] focus to {Taramanga}
+		set AnotherJapGuard[2] focus to {Taramanga}
+		set AnotherJapGuard[3] focus to {Taramanga}
+		set AnotherJapGuard[4] focus to {Taramanga}
+		set AnotherJapGuard[5] focus to {Taramanga}
+		set AnotherJapGuard[6] focus to {Taramanga}
+		set AnotherJapGuard[7] focus to {Taramanga}
+
+		set anim speed of AnotherJapGuard[0] to 0.3
+		set anim speed of AnotherJapGuard[1] to 0.3
+		set anim speed of AnotherJapGuard[2] to 0.3
+		set anim speed of AnotherJapGuard[3] to 0.3
+		set anim speed of AnotherJapGuard[4] to 0.3
+		set anim speed of AnotherJapGuard[5] to 0.3
+		set anim speed of AnotherJapGuard[6] to 0.3
+		set anim speed of AnotherJapGuard[7] to 0.3
+		
+		play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[2] loop -1
+
+		set camera lens 40.000
+		RelCamPos=marker at get world position from JapTownCentretrte to {6.363, 8.901, -28.190}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {7.227, 9.050, -28.670}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 0.5 seconds
+        play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[0] loop -1
+		wait 0.2 seconds
+		play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[1] loop -1
+		wait 0.1 seconds
+		play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[3] loop -1
+		wait 0.7 seconds		
+		play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[6] loop -1
+		play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[7] loop -1
+		wait 0.2 seconds
+		play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[4] loop -1
+		wait 0.2 seconds
+		play anim "a_p_mafiadeal_soldiers_to_war" on AnotherJapGuard[5] loop -1
+		wait 0.2 seconds
+		wait 0.5 seconds
+		
+		RelCamPos=marker at get world position from JapTownCentretrte to {3.333, 8.937, -22.752}
+		RelCamFoc=marker at get world position from JapTownCentretrte to {4.050, 8.925, -23.449}
+		move camera position to {RelCamPos} time 10
+		move camera focus to {RelCamFoc} time 10
+
+		//set camera lens 10.000 time 13
+
+		wait 11 seconds
+		clear dialogue
+		set fade red 0 green 0 blue 0 time 4
+		stop music
+		wait 4 seconds
+
+		delete AnotherJapGuard[0]
+		delete AnotherJapGuard[1]
+		delete AnotherJapGuard[2]
+		delete AnotherJapGuard[3]
+		delete AnotherJapGuard[4]
+		delete AnotherJapGuard[5]
+		delete AnotherJapGuard[6]
+		delete AnotherJapGuard[7]
+		delete AnotherJapGuard[8]
+		delete AnotherJapGuard[9]
+		delete Taramanga
+		delete Backforthguard
+		delete MD_Box
+
+		restore camera details
+		release HeadCarryingCreature
+		set fade in time 0.5
+		wait 0.5 seconds
+
+		eject good spirit
+		eject evil spirit
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_JAPEND_40"
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_JAPEND_50"
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_JAPEND_60"
+		wait until read
+		send good spirit home
+		send evil spirit home
+
+
+	end cinema
+
+end script MD_JapsGetHead
+//-------------------------------------------------------------------------------------------
+//Fenners Gets Head
+begin script MD_FennersGetsHead
+
+RelCamPos=0
+	RelCamFoc=0
+	NorseHP = 0
+	TheTownCentrere = 0
+	TheTownCentrerePos = marker at {1253.780, 295.531, 1529.900}
+	ByFenners = 0
+
+	NorseHPDude = 0
+	NorseDeliverer = 0
+	NorseHPPos = 0
+	MSGSenderEnd = 0
+	MSGSenderStart = 0
+	Fell = 0
+	Fain = 0
+	FellPos = 0
+	FainPos = 0
+	FainPosEnd = 0
+	Carrier=0
+	Carrier2=0
+	CarrierPos=0
+	Carrier2Pos=0
+	NewBoxPos=0
+	CarrierLeave=0
+	counter=0
+
+start		
+	
+	TheTownCentrere = get HOUSE at {TheTownCentrerePos}
+	NorseHPPos = marker at get world position from TheTownCentrere to {10.838, 10.089, 21.631}
+	MSGSenderStart = marker at get world position from TheTownCentrere to {5.855, 8.984, 28.217}
+
+	FellPos = marker at get world position from TheTownCentrere to {26.835, -0.008, 36.303}
+	FainPos = marker at {1226.320, 300.801, 1492.158}
+
+	FainPosEnd = marker at get world position from TheTownCentrere to {16.815,0.000,23.292}
+
+	CarrierLeave = marker at get world position from TheTownCentrere to {1.732,0.000,17.178}
+
+	wait 1 seconds
+	delete MD_Box
+
+	store camera details
+
+	NorseHPDude = create VILLAGER FENRICK at {NorseHPPos}
+	NorseDeliverer = create SOLDIER PLATOON_INFO_NORSE_MELEE_3 at {MSGSenderStart}
+
+	set NorseHPDude focus to {NorseDeliverer}
+	NewBoxPos = marker at get target from {NorseDeliverer} to {NorseHPDude} distance 0.5 angle 180
+	MD_Box = create OBJECT TRIBUTEBOX at {NewBoxPos}
+	CarrierPos = marker at get target from {NorseHPDude} to {MD_Box} distance 0.6 angle 90
+	Carrier=create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {CarrierPos}
+	Carrier2Pos=marker at get target from {Carrier} to {MD_Box} distance 0.6 angle 0
+	Carrier2=create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {Carrier2Pos}
+	set MD_Box focus to {Carrier2}
+	set Carrier focus to {MD_Box}
+	set Carrier2 focus to {MD_Box}
+	set NorseDeliverer focus to {NorseHPDude}
+	Fain = create VILLAGER FAIN at {FainPos}
+	Fell = create VILLAGER FELL at {FellPos}
+	set Fain focus to {FainPos}
+	ALTITUDE of Carrier = 9
+	ALTITUDE of MD_Box = 9.5
+	ALTITUDE of Carrier2 = 9
+	ALTITUDE of NorseHPDude = 9
+	ALTITUDE of NorseDeliverer = 9
+
+	begin cinema
+
+		start music "cut_scene_sinister_02"		
+
+		set Fell focus to {NorseHPDude}
+		//set Fain focus to {NorseHPDude}
+		move Fain position to {1226.927, 298.896, 1492.909}
+
+		set camera lens 21.000//camera lens 50.000
+		RelCamPos=marker at get world position from TheTownCentrere to {25.002, 1.567, 32.964}
+		RelCamFoc=marker at get world position from TheTownCentrere to {28.557, 0.852, 41.646}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		//move Fain position to {FainPosEnd}
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_20"
+		wait until read
+
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_30"
+		play anim "A_P_TALK1_MALE" on Fell 
+		wait 2 seconds
+
+		set Carrier position to get target from {MD_Box} to {Carrier} distance 4 angle 270
+		set Carrier2 position to get target from {MD_Box} to {Carrier2} distance 4 angle 90
+		ALTITUDE of Carrier = 9
+		ALTITUDE of Carrier2 = 9
+		
+		//behind
+		set camera lens 32.000
+		RelCamPos=marker at get world position from TheTownCentrere to {28.575, 0.760, 37.041}
+		RelCamFoc=marker at get world position from TheTownCentrere to {21.097, 3.880, 32.258}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		move Carrier position to {CarrierPos}
+		override Carrier anim "a_p_mafiadeal_sidestep_with_box"
+		move Carrier2 position to {Carrier2Pos}
+		override Carrier2 anim "a_p_mafiadeal_sidestep_with_box"
+		SPEED of Carrier = 0.1
+		SPEED of Carrier2 = 0.1
+
+		//run background script MovingBoxBodge(Carrier,Carrier2,CarrierPos)		
+
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_40"
+		play anim "A_P_TALK1_MALE" on Fain
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_50"
+		play anim "A_P_TALK1_MALE" on Fell
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_55"
+		play anim "A_P_TALK1_MALE" on Fain
+		wait until read
+
+		MSGSenderEnd = marker at get target from {NorseDeliverer} to {NorseHPDude} distance 1 angle 180
+
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_60"
+		play anim "A_P_TALK1_MALE" on NorseDeliverer 
+
+		wait until {Carrier} near {CarrierPos} radius 1
+		wait until {Carrier2} near {Carrier2Pos} radius 1
+		
+		set camera lens 34.000	
+		RelCamPos=marker at get world position from TheTownCentrere to {7.682, 10.335, 27.358}
+		RelCamFoc=marker at get world position from TheTownCentrere to {-1.182, 9.854, 30.462}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set MD_Box position to {NewBoxPos}
+		set Carrier position to {CarrierPos}
+		set Carrier2 position to {Carrier2Pos}
+		ALTITUDE of Carrier = 9
+		ALTITUDE of Carrier2 = 9
+		ALTITUDE of MD_Box = 9.5
+		set Carrier focus to {MD_Box}
+		set Carrier2 focus to {MD_Box}
+		wait 1.5 seconds
+		
+		set camera lens 34.000
+		RelCamPos=marker at get world position from TheTownCentrere to {9.991, 10.134, 23.594}
+		RelCamFoc=marker at get world position from TheTownCentrere to {13.165, 10.562, 14.749}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		play anim "a_p_put_down_sticks" on Carrier 
+		play anim "a_p_put_down_sticks" on Carrier2 
+
+		counter = 0
+
+		while counter < 13
+			ALTITUDE of MD_Box = ALTITUDE of MD_Box - 0.04
+			counter++
+		end while
+
+		move Carrier position to {CarrierLeave}
+		move Carrier2 position to {CarrierLeave}
+
+		//two shot fain fell
+		set camera lens 26.000
+		RelCamPos=marker at get world position from TheTownCentrere to {24.974, 1.297, 33.468}
+		RelCamFoc=marker at get world position from TheTownCentrere to {29.648, 1.022, 41.630}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+			
+		play anim "A_P_TALK1_MALE" on Fell 
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_70"
+		wait until read
+
+		move Fell position to get world position from TheTownCentrere to {33.522, 0.163, 29.276}
+		SPEED of Fell = 0.4
+		move Fain position to get world position from TheTownCentrere to {33.522, 0.163, 29.276}
+		SPEED of Fain = 0.4
+		wait 1 second
+
+		RelCamPos=marker at get world position from TheTownCentrere to {10.197, 9.553, 23.496}
+		RelCamFoc=marker at get world position from TheTownCentrere to {11.354, 12.787, 14.735}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		stop Fell moving
+		stop Fain moving
+
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_80"
+		play anim "a_p_mafiadeal_takingheadoutofbox_a" on NorseHPDude
+		wait 2.5 seconds
+
+		set camera lens 23.000 time 3
+		RelCamPos=marker at get world position from TheTownCentrere to {7.062, 10.271, 27.475}
+		RelCamFoc=marker at get world position from TheTownCentrere to {-1.030, 11.127, 32.207}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_90"
+		wait 3 seconds
+		set NorseHPDude carrying CARRIED_OBJECT_YUKA_HEAD
+
+		set camera lens 26.000
+		RelCamPos=marker at get world position from TheTownCentrere to {10.398, 9.697, 23.373}
+		RelCamFoc=marker at get world position from TheTownCentrere to {12.138, 13.003, 14.734}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 1 seconds
+		play string sound "ARMYBLOODSPLAT6"
+		wait 2 seconds
+
+
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_95"
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_100"
+		wait until read
+
+		set Fain position to {1237.503, 298.618, 1421.221}
+		set Fell position to {1237.933, 298.848, 1419.600}
+		
+		set Fain focus to {Fell}
+		set Fell focus to {Fain}
+
+		set camera lens 37.000
+		set camera position to {1235.004, 300.289, 1421.695}
+		set camera focus to {1235.906, 300.186, 1421.276}
+	
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_110"
+
+		play anim "a_p_mafiacreature_talking_gesturing_at_something"  on Fell
+		play anim "A_P_CONFUSED_MALE3"  on Fain loop 2
+		
+		wait until read
+        say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_120"
+
+		wait until Fell played
+		play anim "A_P_TALK1_MALE"  on Fell loop 2
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_130"
+		wait until read
+
+		clear dialogue
+
+		set camera position to {1229.722, 303.220, 1419.272}
+		set camera focus to {1230.711, 303.078, 1419.312}
+		
+		move Fell position to {1275.381, 300.517, 1418.377}
+		override Fell anim "a_p_run_male_evil"
+		SPEED of Fell = 0.7
+
+		move Fain position to {1259.066, 286.691, 1401.520}
+		override Fell anim "a_p_run_male_evil"
+		SPEED of Fain = 0.7
+
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_140"
+		wait until read
+		say "BW2T_SCRIPT_03C_06FELLSGIFT_NORSEEND_150"
+		wait until read
+
+		stop music
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		delete Fell
+		delete Fain
+		delete NorseDeliverer
+		delete NorseHPDude
+		restore camera details
+
+		set fade in time 0.5
+		wait 0.5 seconds
+
+		end cinema
+
+end script MD_FennersGetsHead
+//-------------------------------------------------------------------------------------------
+//Intro
+begin script MD_Intro
+
+RelCamPos=0
+RelCamFoc=0
+FellPos = marker at {1471.213,484.030,1745.787}
+Cave = marker at {1458.340, 487.776, 1835.350}
+CavePos = marker at {1458.340, 487.776, 1835.350}
+FainPos = 0
+lalalalalala = 0
+MD_FellStart=0
+DerTownCenterung=0
+LadyInWaiting=0
+
+CaveFoc=marker at {1457.158, 487.776, 1834.943}
+
+start
+
+	store camera details
+
+		begin cinema
+		
+			start music "cut_scene_sinister_01"
+
+			set camera position to {1428.115,512.118,1804.484}
+			set camera focus to {1443.736,488.180,1838.528}
+		
+			MD_Fain = create VILLAGER FAIN at {1438.828,487.793,1838.073}//{1470.381,485.234,1747.723}
+			MD_FellStart = marker at {1452.978, 487.910, 1832.225}
+			MD_Fell = create VILLAGER FELL at {MD_FellStart}
+			set MD_Fain position to get target from {MD_Fell} to {MD_Fain} distance 1 angle 0
+			set MD_Fain focus to {MD_Fell}
+			set MD_Fell focus to {MD_Fain}
+			SPEED of MD_Fain = 0.6
+			
+			move MD_Fain position to get target from {MD_Fain} to {MD_Fell} distance 2 angle 180// {1470.381,485.234,1747.723}
+			
+			wait 1.5 seconds
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_10"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_20"
+			wait until read
+			set camera lens 38.000
+			RelCamPos=marker at get world position from MD_Fell to {-1.440, 1.283, -2.493}
+			RelCamFoc=marker at get world position from MD_Fell to {9.976, -1.021, 40.407}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait until read
+
+
+			////////////////////////////////////////////////////////////////////////////////
+			//CUT TO FLASHBACK
+
+			DerTownCenterung = get HOUSE at {918.990, 129.938, 794.390}
+
+			MD_Fell = create VILLAGER FELL at get world position from DerTownCenterung to {14.202, 3.192, -41.687}
+	LadyInWaiting = create VILLAGER JAPANESE_HOUSEWIFE at get world position from DerTownCenterung to {12.722, 3.128, -42.781}
+
+	set MD_Fell focus to {LadyInWaiting}
+	set LadyInWaiting focus to {MD_Fell}
+
+	set camera lens 37.000
+	RelCamPos=marker at get world position from DerTownCenterung to {13.694, 1.583, -42.338}
+	RelCamFoc=marker at get world position from DerTownCenterung to {14.270, 1.506, -41.524}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	play anim "a_p_talk2_male" on MD_Fell
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_30"
+	wait until read
+
+	set camera lens 50.000
+	RelCamPos=marker at get world position from DerTownCenterung to {13.422, 1.484, -42.554}
+	RelCamFoc=marker at get world position from DerTownCenterung to {12.432, 1.487, -42.696}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	play anim "a_p_talk2_male" on LadyInWaiting loop 2
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_40"
+	wait until read
+	set camera lens 37.000
+	RelCamPos=marker at get world position from DerTownCenterung to {13.694, 1.583, -42.338}
+	RelCamFoc=marker at get world position from DerTownCenterung to {14.270, 1.506, -41.524}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_50"
+	wait until read
+	set camera lens 50.000
+	RelCamPos=marker at get world position from DerTownCenterung to {13.422, 1.484, -42.554}
+	RelCamFoc=marker at get world position from DerTownCenterung to {12.432, 1.487, -42.696}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_60"
+	wait until read
+
+	play anim "a_p_talk2_male" on MD_Fell loop 2
+	set camera lens 37.000
+	RelCamPos=marker at get world position from DerTownCenterung to {13.694, 1.583, -42.338}
+	RelCamFoc=marker at get world position from DerTownCenterung to {14.270, 1.506, -41.524}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_70"
+	wait until read
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_80"
+	wait until read
+
+	set camera lens 50.000
+	RelCamPos=marker at get world position from DerTownCenterung to {13.422, 1.484, -42.554}
+	RelCamFoc=marker at get world position from DerTownCenterung to {12.432, 1.487, -42.696}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	play anim "a_p_talk2_male" on LadyInWaiting loop 2
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_90"
+	wait until read
+
+	set camera lens 37.000
+	RelCamPos=marker at get world position from DerTownCenterung to {13.694, 1.583, -42.338}
+	RelCamFoc=marker at get world position from DerTownCenterung to {14.270, 1.506, -41.524}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	play anim "a_p_talk2_male" on MD_Fell loop 2			
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_100"
+	wait until read
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_110"
+	wait until read
+	play anim "a_p_talk2_male" on LadyInWaiting
+	say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_120"
+	wait until read
+
+
+			////////////////////////////////////////////////////////////////////////////
+			//FLASHBACK 2
+
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_120"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_130"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_140"
+			wait until read
+
+			///////////////////////////////////////////////////////////////////////////
+			//BACK TO LIFE BACK TO REALITY
+
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_150"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_160"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_170"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_180"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_190"
+			wait until read
+
+
+			set camera lens 24.000
+			RelCamPos=marker at get world position from MD_Fell to {-0.615, 1.445, 1.799}
+			RelCamFoc=marker at get world position from MD_Fell to {34.145, -2.865, -91.414}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_20"
+
+			play anim "A_P_TALK2_MALE" on MD_Fell 
+			wait until read			
+			
+			play anim "A_P_TALK1_MALE" on MD_Fain 
+			
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_30"
+			wait until read
+
+			set camera lens 31.000
+			RelCamPos=marker at get world position from MD_Fell to {-1.607, 1.284, -2.058}
+			RelCamFoc=marker at get world position from MD_Fell to {44.411, -4.147, 86.079}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_40"
+			
+			play anim "A_P_TALK2_MALE" on MD_Fell 
+			wait until read
+			
+			play anim "A_P_TALK1_MALE" on MD_Fain 
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_50"
+			wait until read
+
+			//FELL
+			play anim "A_P_TALK2_MALE"	 on MD_Fell 
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_60"
+		
+			set camera lens 24.000
+			RelCamPos=marker at get world position from MD_Fell to {-0.958, 1.250, 1.939}
+			RelCamFoc=marker at get world position from MD_Fell to {44.347, 4.210, -86.684}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			wait until read
+		
+			//Fain falls into reluctant silence.
+
+			//FELL (Con’t)
+			play anim "A_P_CROWD_LOST" on MD_Fain 
+			set camera lens 31.000
+			RelCamPos=marker at get world position from MD_Fell to {-0.820, 1.384, 0.379}
+			RelCamFoc=marker at get world position from MD_Fell to {48.381, -5.957, 86.639}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 2 seconds
+			play anim "A_P_TALK2_MALE"	 on MD_Fell loop 3
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_70"
+			//wait 3 seconds
+			set camera lens 24.000
+			RelCamPos=marker at get world position from MD_Fell to {-0.749, 1.118, 1.801}
+			RelCamFoc=marker at get world position from MD_Fell to {39.472, 13.757, -88.410}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			wait until read
+			
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_80"
+			wait until read
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_90"
+			wait until read
+	
+			//FAIN
+			
+			play anim "A_P_TALK1_MALE" on MD_Fain 
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_100"
+
+			set fade red 255 green 255 blue 255 time 0.2
+			wait 0.2 seconds
+			set sky colour red 85 green 0 blue 0 time 0.1
+
+			set fade in time 0.1
+
+			set camera lens 38.000
+			set camera position to {1310.719,178.045,1038.070}
+			set camera focus to {1297.788,180.176,1000.765}
+			move camera position to {1293.948,180.382,998.052} time 5
+			move camera focus to {1281.016,182.513,960.747} time 5
+
+			wait until read
+			
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_110"
+			wait until read
+
+			set fade red 255 green 255 blue 255 time 0.2
+			wait 0.2 seconds
+			reset sky colour 0.1 seconds
+			wait 0.1 seconds
+			
+			//FELL
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_120"
+			wait until read
+
+			set fade in time 0.1
+			play anim "A_P_TALK1_MALE"  on MD_Fell loop 3			
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_130"
+			set camera lens 24.000
+			RelCamPos=marker at get world position from MD_Fell to {-0.619, 1.552, 1.071}
+			RelCamFoc=marker at get world position from MD_Fell to {48.680, -6.145, -85.103}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait until read
+			
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_140"
+			wait until read
+			
+			clear dialogue
+
+			move MD_Fell position to get world position from Cave to {-0.935, -0.094, -0.644}
+			move MD_Fain position to get world position from Cave to {9.166, -0.422, 21.295}
+
+			set camera lens 58.000
+			set camera position to {1437.786, 491.283, 1820.217}
+			set camera focus to {1501.721, 489.654, 1896.540}
+
+			eject good spirit
+			eject evil spirit
+
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_150"
+			wait until read
+			
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_160"
+			stop music
+			wait until read
+			
+			///need to chop this sound up
+			/*
+			say "BW2T_SCRIPT_03C_06FELLSGIFT_INTRO_170"
+			wait until read*/
+
+			send good spirit home
+			send evil spirit home
+
+			delete MD_Fell
+			delete MD_Fain
+
+		end cinema
+
+end script MD_Intro
+//--------------------------------------------------------------------------------------------------
+begin script MovingBoxBodge(Dude1, Dude2, Dude1Pos)
+
+start
+
+	while {Dude1} not at {Dude1Pos}
+		set MD_Box position to get target from {Dude1} to {Dude2} distance 0.5  angle 180
+		ALTITUDE of MD_Box = 9.5
+	end while
+
+end script MovingBoxBodge
+

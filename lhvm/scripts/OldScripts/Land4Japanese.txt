@@ -1,0 +1,221 @@
+//------------------------------------------------
+//  LAND 4 JAPANESE TOWN AI (just the capital city)
+//------------------------------------------------
+
+define script L4JapanCapitolTownManagement
+define script L4JapanCapitolArmyManagement
+define script JapCapBodgeOre
+
+begin script L4JapanCapitol
+
+start
+
+run background script L4JapanCapitolTownManagement
+run background script L4JapanCapitolArmyManagement
+run background script JapCapBodgeOre
+
+begin loop
+	//if PLAYER 1 owns the town
+	if PLAYER of L4JapanCapitol == 0
+		L4CapitolConverted = 1
+	end if
+	until L4CapitolConverted == 1
+end loop
+
+/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+begin cinema
+	//cut scene for town conversion
+end cinema
+
+// IF PLAYER CONVERTS L4JapanCapitol THEN TRIGGER THE L4JapanCapitol SUBMISSION CUT-SCENE
+// REMEMBER TO SET L4CapitolConverted = 2 when script completed (used in L4Control to trigger L4IslandComplete cut-scene)
+
+end script L4JapanCapitol
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script L4JapanCapitolTownManagement
+
+InitialGreekAggression = 20
+AngeredGreekAggression = 80
+InitialGreekTolerance = 200
+NewRacialTolerance = 0
+AngerCounter = 0
+AngerTimer = create timer for 0 seconds
+AngerKickDelay = 180
+FeudValue = 0
+
+start
+
+// Initial army setup
+set town L4JapanCapitol platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.50
+//set town L4JapanCapitol platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.30
+
+// Commented out cos it was saying this before the Land intro when LandControl was used : Ken
+///say "putting troops on wall"
+///wait until read
+
+//set town L4JapanCapitol army type ARMY_UNIT_TYPE_RANGED_1 platoon ratio on wall to 0.8
+
+// Initial villager setup
+set town L4JapanCapitol desire for GATHER_FOOD to 0.80
+set town L4JapanCapitol desire for GROW_FOOD to 0.60
+set town L4JapanCapitol desire for GATHER_WOOD to 0.40
+set town L4JapanCapitol desire for GATHER_ORE to 0.40
+set town L4JapanCapitol desire for BREED to 0.40
+set town L4JapanCapitol desire for ATTACK to 0.10
+set town L4JapanCapitol desire for FUN to 0.50
+
+
+// desire setups for the minor farming settlements
+
+set town L4_PaddyField1 desire for GATHER_FOOD to 1
+set town L4_PaddyField2 desire for GATHER_FOOD to 1
+set town L4_PaddyField3 desire for GATHER_FOOD to 1
+set town L4_PaddyField4 desire for GATHER_FOOD to 1
+set town L4_PaddyField5 desire for GATHER_FOOD to 1
+set town L4_PaddyField6 desire for GATHER_FOOD to 1
+
+set town L4_PaddyField1 desire for GATHER_WOOD to 0
+set town L4_PaddyField2 desire for GATHER_WOOD to 0
+set town L4_PaddyField3 desire for GATHER_WOOD to 0
+set town L4_PaddyField4 desire for GATHER_WOOD to 0
+set town L4_PaddyField5 desire for GATHER_WOOD to 0
+set town L4_PaddyField6 desire for GATHER_WOOD to 0
+
+// Initial feud status
+set town L4JapanCapitol interracial tolerance with town L4GreekTown to InitialGreekTolerance
+set town L4JapanCapitol racial aggression with town L4GreekTown to InitialGreekAggression
+set town L4JapanCapitol impressive threshold for town L4GreekTown to 100
+
+begin loop
+	
+	//if the two outposts are converted
+	if L4Outpost1Converted == 1
+		set town L4JapanCapitol platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.15
+		set town L4JapanCapitol platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.10
+
+		// Initial villager setup
+		set town L4JapanCapitol desire for GATHER_FOOD to 0.90
+		set town L4JapanCapitol desire for GROW_FOOD to 0.75
+		set town L4JapanCapitol desire for GATHER_WOOD to 0.30
+		set town L4JapanCapitol desire for GATHER_ORE to 0.30
+		set town L4JapanCapitol desire for BREED to 0.50
+		set town L4JapanCapitol desire for ATTACK to 0.30
+		set town L4JapanCapitol desire for FUN to 0.20
+
+		// Initial feud status
+		NewRacialTolerance = InitialGreekTolerance/2
+		set town L4JapanCapitol interracial tolerance with town L4GreekTown to NewRacialTolerance
+
+		set town L4JapanCapitol racial aggression with town L4GreekTown to AngeredGreekAggression
+	end if
+
+	//if the larger of the two outposts only is converted
+	if L4Outpost1Converted == 1
+		set town L4JapanCapitol platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.15
+		set town L4JapanCapitol platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.10
+
+		// Initial villager setup
+		set town L4JapanCapitol desire for GATHER_FOOD to 0.85
+		set town L4JapanCapitol desire for GROW_FOOD to 0.65
+		set town L4JapanCapitol desire for GATHER_WOOD to 0.35
+		set town L4JapanCapitol desire for GATHER_ORE to 0.35
+		set town L4JapanCapitol desire for BREED to 0.45
+		set town L4JapanCapitol desire for ATTACK to 0.30
+		set town L4JapanCapitol desire for FUN to 0.35
+
+		// Initial feud status
+		NewRacialTolerance = InitialGreekTolerance/2
+		set town L4JapanCapitol interracial tolerance with town L4GreekTown to NewRacialTolerance
+
+		set town L4JapanCapitol racial aggression with town L4GreekTown to AngeredGreekAggression
+	end if
+
+	//if the player has done the gongbusters script and the jap town loses lots of people
+	if L4GongChallengeComplete == 1
+		set town L4JapanCapitol desire for BREED to 0.60
+	end if
+
+	until L4CapitolConverted == 1
+end loop
+
+end script L4JapanCapitolTownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script L4JapanCapitolArmyManagement
+
+GreekFeudBreach	= 0
+IdlePlatoons	= 0
+
+start
+
+begin loop
+
+if town L4JapanCapitol feud threshold with town L4GreekTown passed
+	if GreekFeudBreach == 1
+		//assume defensive positons?
+		//form all idle platoons into defence?
+		set town L4JapanCapitol desire for GATHER_FOOD to 0.90
+		set town L4JapanCapitol desire for GROW_FOOD to 0.10
+		set town L4JapanCapitol desire for GATHER_WOOD to 0.60
+		set town L4JapanCapitol desire for GATHER_ORE to 0.50
+		set town L4JapanCapitol desire for BREED to 0.40
+		set town L4JapanCapitol desire for ATTACK to 0.40
+		set town L4JapanCapitol desire for DEFENCE to 0.40
+		set town L4JapanCapitol desire for FUN to 0.10
+	end if
+end if
+
+if town L4JapanCapitol feud threshold with town L4GreekTown passed
+	if GreekFeudBreach == 1
+		//check if there's enough platoons idle to create a respectable army
+		IdlePlatoons = get idle platoons in town L4JapanCapitol
+		if IdlePlatoons >= 3
+			//make an army
+		end if
+	end if
+end if
+
+///if L4JapaneseBattleground == 1
+///	run script Land4Battlefield
+///end if
+
+until L4CapitolConverted == 1
+
+end loop
+
+end script L4JapanCapitolArmyManagement
+
+//-------------------------------------------------------------------------------------------
+
+begin script JapCapBodgeOre /// !
+
+JapBodgeOrePit = get STORE at {584.288, 81.063, 2084.833} radius 50 /// !
+OreAmount = 0
+FoodAmount = 0
+
+start
+begin loop
+OreAmount = get resource RESOURCE_TYPE_ORE in JapBodgeOrePit
+FoodAmount = get resource RESOURCE_TYPE_FOOD in JapBodgeOrePit
+
+if OreAmount < 10000
+add resource RESOURCE_TYPE_ORE 10000 to JapBodgeOrePit /// !
+end if
+
+if FoodAmount < 10000
+add resource RESOURCE_TYPE_FOOD 10000 to JapBodgeOrePit /// !
+end if
+
+wait 10 seconds
+until L4CapitolConverted == 1
+end loop
+
+end script JapCapBodgeOre

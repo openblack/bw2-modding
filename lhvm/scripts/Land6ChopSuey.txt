@@ -1,0 +1,822 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NUMBER_OF_BLOCKS	= 3
+define CS_True			= 1
+define CS_False			= 0
+define CS_FistLimit0	= 5
+define CS_FistLimit1	= 7
+define CS_FistLimit2	= 8
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CS_NumTimesPassedLine	= 0
+global Block[NUMBER_OF_BLOCKS]
+global Check					= 0
+global CS_Block[NUMBER_OF_BLOCKS]
+global CS_BlockCount[NUMBER_OF_BLOCKS]
+global Chop_Suey				= 0
+global Grand_Kai				= 0
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CS_WatchLine(Counter)
+
+//-----------------------------------------------------------------------------
+//----Land6ChopSuey----// Main function, calls other scripts
+//-----------------------------------------------------------------------------
+begin script Land6ChopSuey
+	Scroll_Pos				= marker at {763.776, 56.100, 630.760}
+	InfluencePos			= marker at {747.982,57.015,604.074}
+	BlockPos[NUMBER_OF_BLOCKS]
+	IntroPlayed				= CS_False
+	ChallengeComplete		= CS_False
+	BlockHittingLoopOver	= CS_False
+	PickABlock				= CS_True
+	Timer					= create timer for 0 seconds
+	VUNERABLE_TIME			= 5
+	BesideStatuePos			= 0
+	Scroll					= 0
+	Counter					= 0
+	Random					= 0
+	ChopSueyHit				= 0
+	Influence				= 0
+	Influence2				= 0
+	Influence3				= 0
+	BlockHighlight			= 0
+	Chance					= 0
+	CamPos[NUMBER_OF_BLOCKS]
+	CamFocus[NUMBER_OF_BLOCKS]
+	ChopSueyPos[NUMBER_OF_BLOCKS]
+	OriginalSpeed			= 0
+	RandomNum				= 0
+	EvilTimer				= create timer for 0 seconds
+
+	//Lenny
+	Fragment_0[3]
+	Fragment_1[3]
+	Fragment_2[3]
+start
+	
+//----Initialise variables----//
+	
+	CS_BlockCount[0]	= CS_FistLimit0
+	CS_BlockCount[1]	= CS_FistLimit1
+	CS_BlockCount[2]	= CS_FistLimit2
+
+	//BlockPos[0] = marker at get target from {Scroll_Pos} to {758.666, 57.401, 580.535} distance 3 angle 180
+	//BlockPos[1] = marker at get target from {Scroll_Pos} to {BlockPos[0]} distance 3 angle 180
+	//BlockPos[2] = marker at get target from {Scroll_Pos} to {BlockPos[1]} distance 3 angle 180
+	BlockPos[0] = marker at {759.810, 55.841, 623.464}
+	BlockPos[1] = marker at {762.596, 55.805, 623.929}
+	BlockPos[2] = marker at {765.518, 55.759, 624.151}
+
+	CamPos[0] = marker at {759.889, 67.306, 615.676} //marker at {759.911, 67.316, 616.392}
+	CamPos[1] = marker at {762.715, 67.306, 615.782} //{762.001, 67.369, 616.422}
+	CamPos[2] = marker at {765.490, 67.306, 615.773} //{764.749, 67.369, 616.578}
+	
+	CamFocus[0] = marker at {750.591, 37.982, 711.539}
+	CamFocus[1] = marker at {756.593, 37.772, 711.789}
+	CamFocus[2] = marker at {759.341, 37.772, 711.945}
+	
+	ChopSueyPos[0] = marker at get target from {BlockPos[1]} to {BlockPos[0]} distance 2.2 angle 0
+	ChopSueyPos[1] = marker at get target from {BlockPos[2]} to {BlockPos[1]} distance 2.2 angle 0
+	ChopSueyPos[2] = marker at get target from {BlockPos[1]} to {BlockPos[2]} distance 2.2 angle 180
+
+	//----Create blocks----//
+	if Block[0] not exists
+
+		Block[0] = create ROCK_OBJECT MOBILE_STATIC_INFO_BREAKABLE_STONE_02 at {BlockPos[0]}
+		set Block[0] focus to get target from {Scroll_Pos} to {Block[0]} distance 5 angle 90
+		disable Block[0] pickup
+		disable Block[0] interactable
+		enable Block[0] indestructible
+		disable Block[0] moveable
+		disable Block[0] reactable
+		disable Block[0] set on fire
+		ANGLE of Block[0] = 90
+		Influence = create influence at {Block[0]} radius 30
+	end if	
+	
+	if Block[1] not exists
+
+		Block[1] = create ROCK_OBJECT MOBILE_STATIC_INFO_BREAKABLE_STONE_03 at {BlockPos[1]}
+		set Block[1] focus to get target from {Scroll_Pos} to {Block[1]} distance 5 angle 90
+		disable Block[1] pickup
+		disable Block[1] interactable
+		enable Block[1] indestructible
+		disable Block[1] moveable
+		disable Block[1] reactable
+		disable Block[1] set on fire
+		ANGLE of Block[1] = 90
+		Influence2 = create influence at {Block[1]} radius 30
+	end if	
+	
+	if Block[2] not exists
+
+		Block[2] = create ROCK_OBJECT MOBILE_STATIC_INFO_BREAKABLE_STONE_04 at {BlockPos[2]}
+		set Block[2] focus to get target from {Scroll_Pos} to {Block[2]} distance 5 angle 90
+		disable Block[2] pickup
+		disable Block[2] interactable
+		enable Block[2] indestructible
+		disable Block[2] moveable
+		disable Block[2] reactable
+		disable Block[2] set on fire
+		ANGLE of Block[2] = 90
+		Influence3 = create influence at {Block[2]} radius 30
+	end if	
+	
+//----Create Scroll and wait until clicked----//
+	//		Chop_Suey = create VILLAGER YOUNG_MONK at {757.870, 63.942, 623.326}
+	//		set Chop_Suey focus to {758.687, 63.922, 623.504}
+	//		wait 2 seconds
+	//play anim "a_p_l6chopsuey_student_get_ready" on Chop_Suey disable stand
+	//wait 50000 seconds
+		
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_06FINAL_CHALLENGENAME_CHOP_SUEY" remind "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_REMINDER" at {Scroll_Pos}
+	ALTITUDE of Scroll  = 3
+	while Scroll exists
+		//if player cast wonder within a radius of 50
+		//		delete scroll
+		//end if
+		wait until Scroll right clicked //and player not holding wonder
+		clear right clicked object
+		if get research ARTEFACT_HAND_FISTING available == variable RESEARCH_AVAILABILITY_RESEARCHED
+			delete Scroll
+		else
+			if get EvilTimer time remaining <= 0
+				begin dialogue
+					make evil spirit appear
+						//EA: "Buy Physting from the Tribute menu."
+						say "BW2T_SCRIPT_GENERIC_ADVISORS_BUY_PHYSTING"
+						wait until read
+					make evil spirit disappear
+				end dialogue
+				set EvilTimer time to 15 seconds
+			end if
+		end if
+	end while
+	
+
+
+	//REMOVE THIS
+	//Grand_Kai = create VILLAGER OLD_MONK at {762.240, 55.853, 614.536}
+	//Chop_Suey = create VILLAGER YOUNG_MONK at {763.998, 55.785, 614.680}
+	// END
+	
+		
+//----Intro Cutscene----//
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	begin cinema 
+		wait 2 seconds
+		start music "japanesen1"
+		
+		
+
+		set camera position to {762.909, 64.665, 616.234}
+		set camera focus to {764.612, 49.910, 715.123}
+		move camera position to {762.909, 64.992, 616.234} time 12
+		move camera focus to {764.612, 50.237, 715.124} time 12
+		set fade in time 2
+		wait 2 seconds
+		
+		Grand_Kai = create VILLAGER OLD_MONK at {762.240, 55.853, 614.536}
+		enable Grand_Kai indestructible
+		disable Grand_Kai reactable
+		disable Grand_Kai hurt by fire
+		disable Grand_Kai set on fire
+		disable Grand_Kai pickup 
+		Chop_Suey = create VILLAGER YOUNG_MONK at {763.998, 55.785, 614.680}
+		enable Chop_Suey indestructible
+		disable Chop_Suey reactable
+		disable Chop_Suey hurt by fire
+		disable Chop_Suey set on fire
+		disable Chop_Suey pickup 
+		OriginalSpeed = SPEED of Chop_Suey
+		//play anim "a_p_icemelt_lookingathandconfused" on Grand_Kai loop 20
+		//wait 500000 seconds
+		
+
+		move Grand_Kai position to {761.593, 55.791, 621.292}
+		
+		SPEED of Grand_Kai = 0.04
+		wait 1.2 seconds
+		override Grand_Kai anim "a_p_walk_old"
+		
+		move Chop_Suey position to {763.447, 55.719, 622.166}
+		SPEED of Chop_Suey = 0.04
+			wait 6.5 seconds
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_10"
+	
+		wait 3 seconds
+		set camera position to {765.095, 57.027, 619.421} + {0, 8.22 ,0}
+		set camera focus to {665.308, 50.569, 620.635} + {0, 8.22 ,0}
+		move camera focus to {664.623, 57.116, 620.059} + {0, 8.22 ,0} time 12
+		move camera position to {764.599, 56.994, 622.281} + {0, 8.22 ,0} time 12
+		set camera lens 42
+		wait until read
+		//say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_20"
+		wait 7.5 seconds
+		
+		//play anim "a_p_shopkeeper_idle_into" on Grand_Kai loop 1
+		//wait until Chop_Suey played
+		//play anim "a_p_shopkeeper_idle" on Grand_Kai loop -1
+		//wait until read
+		
+		
+		
+		//play anim "a_p_l3paternitysuit_father_to_stop" on Chop_Suey loop 1 disable stand blend time 0
+		set camera position to {762.655, 56.064, 619.490} + {0, 8.22 ,0}	
+		set camera focus to {755.874, 93.477, 711.976} + {0, 8.22 ,0}
+		set camera lens 46
+		move camera position to {762.638, 56.158, 619.721} + {0, 8.22 ,0} time 8
+		move camera focus to {755.857, 93.572, 712.208} + {0, 8.22 ,0} time 8
+		
+		play anim "a_p_l6chopsuey_master_talking" on Grand_Kai loop 1
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_30"
+		wait until read
+		
+		//say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_40"
+		//wait until read
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		start music "japanesen2"
+		wait 2 seconds
+		
+		
+		set camera position to {760.960, 57.128, 622.590} + {0, 7.8 ,0}	
+		set camera focus to {678.385, 60.051, 678.920} + {0, 7.8 ,0}	
+		set camera lens 59
+		move camera position to {760.671, 57.128, 622.167} + {0, 7.8 ,0} time 5
+		move camera focus to {678.097, 60.051, 678.497} + {0, 7.8 ,0} time 5
+		
+		//Grand_Kai = create VILLAGER OLD_MONK at {762.240, 55.853, 614.536}
+		//Chop_Suey = create VILLAGER YOUNG_MONK at {763.998, 55.785, 614.680}
+		set Chop_Suey position to {757.727, 55.916, 623.198}
+		move Chop_Suey position to {757.727, 55.916, 623.198}
+		set Chop_Suey focus to {759.897, 55.829, 623.560}
+		disable Chop_Suey reactable
+		disable Grand_Kai reactable
+		set fade in time 2
+		wait 1 seconds
+		
+		
+		play anim "a_p_l6chopsuey_student_get_ready" on Chop_Suey disable stand
+		set anim speed of Chop_Suey to 0.5
+		
+		set Grand_Kai position to {761.206, 55.836, 625.259}
+		move Grand_Kai position to {761.206, 55.836, 625.259}
+		set Grand_Kai focus to {Chop_Suey}
+		
+		wait 5 seconds
+		set camera position to {758.306, 56.964, 621.661} + {0, 8 ,0}	
+		set camera focus to {744.646, 53.304, 720.654} + {0, 8 ,0}	
+		move camera position to {757.729, 56.964, 621.582} + {0, 8 ,0} time 4
+		move camera focus to {744.069, 53.304, 720.575} + {0, 8 ,0} time 4
+		
+		wait 4 seconds
+		set camera position to {758.597, 64.655, 622.311}
+		set camera focus to {672.794, 71.405, 673.226}
+		move camera position to {758.510, 64.662, 622.363} time 6
+		move camera focus to {672.707, 71.412, 673.278} time 6
+		
+		
+		wait 4 seconds
+		set camera position to {756.501, 57.309, 621.163} + {0, 8.22 ,0}	
+		set camera focus to {830.903, 37.340, 684.920} + {0, 8.22 ,0}	
+		set camera lens 59
+		wait 0.2 seconds
+		set camera lens 25 time 0.5
+		
+		
+
+		wait until Chop_Suey played
+		reset Chop_Suey anim speed
+		play anim "a_p_l6chopsuey_student_chop_fail" on Chop_Suey disable stand
+		play sound "GATESLAMSHUT8" at camera position	
+		shake camera strength 7.0		
+		stop music with fadetime 0
+		
+		wait 1 seconds
+		stop camera shake
+		play sound "MANSHOCKED" at camera position		
+		wait 1 seconds
+		
+		play anim "a_p_arms_crossed" on Grand_Kai loop 1
+		set camera position to {759.608, 57.863, 618.729} + {0, 8.22 ,0}	
+		set camera focus to {764.021, 40.595, 717.130} + {0, 8.22 ,0}	
+		move camera position to {759.593, 57.921, 618.398} + {0, 8.22 ,0}	time 10
+		move camera focus to {764.006, 40.653, 716.799} + {0, 8.22 ,0}	time 10
+		set camera lens 70
+		wait 0.5 seconds
+		
+		eject evil spirit
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_30"
+		wait until read
+		make evil spirit fly across 0.2 down 0.2
+		eject good spirit
+		
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_70"
+		wait until Chop_Suey played
+		play anim "a_p_l1eloi_sad1_into" on Chop_Suey 
+		wait until Chop_Suey played
+		play anim "a_p_l1eloi_sad1_loop" on Chop_Suey loop -1
+		
+		wait until read
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_80"
+		wait until read
+		send good spirit home
+		send evil spirit home
+		
+		move Chop_Suey position to {Chop_Suey}
+		move Grand_Kai position to {Grand_Kai}
+		
+		disable Chop_Suey pickup
+		disable Grand_Kai pickup
+		disable Chop_Suey reactable
+		disable Grand_Kai reactable
+		disable Chop_Suey interactable
+		disable Grand_Kai interactable
+		disable Grand_Kai moveable
+		disable Chop_Suey moveable
+		
+		disable Grand_Kai hurt by fire
+		disable Grand_Kai set on fire
+		disable Chop_Suey hurt by fire
+		disable Chop_Suey set on fire
+		enable Grand_Kai indestructible
+		enable Chop_Suey indestructible
+	
+		wait 1 seconds
+	end cinema
+
+	SPEED of Chop_Suey = OriginalSpeed
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 with amount 1 text "BW2T_SCRIPT_06FINAL_CHALLENGENAME_CHOP_SUEY" amount 1 description "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_6_CHOPSUEY
+	L6ShowingChopSuey = 1
+	
+	//run background script CS_WatchLine
+
+//----Game stuff----//
+	
+	while ChallengeComplete == CS_False
+
+		disable Chop_Suey reactable
+		disable Grand_Kai reactable
+
+		disable  pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		disable  pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT
+		disable  pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT
+
+		disable Chop_Suey pickup
+		disable Grand_Kai pickup
+		disable Chop_Suey interactable
+		disable Grand_Kai interactable
+		disable Grand_Kai moveable
+		disable Chop_Suey moveable
+
+		disable Grand_Kai hurt by fire
+		disable Chop_Suey hurt by fire
+		disable Grand_Kai set on fire
+		disable Chop_Suey set on fire
+		
+		enable Grand_Kai indestructible
+		enable Chop_Suey indestructible
+
+		//enable hand icon draw
+
+		begin interactive camera 
+			Counter = 0
+			BlockHittingLoopOver = CS_False
+			while BlockHittingLoopOver == CS_False
+
+				if not {Chop_Suey} at {ChopSueyPos[Counter]}
+					move Chop_Suey position to {ChopSueyPos[Counter]}
+					move villager Grand_Kai focus to {ChopSueyPos[Counter]}
+				end if
+
+				move camera position to {CamPos[Counter]} time 3
+				move camera focus to {CamFocus[Counter]} time 3
+				set camera lens 70 time 3
+				wait until camera ready
+
+				wait until {Chop_Suey} at {ChopSueyPos[Counter]}
+				set Chop_Suey focus on Block[Counter]
+				wait 0.5 seconds				
+
+				play anim "a_p_l6chopsuey_student_get_ready" on Chop_Suey disable stand
+				run background script CS_WatchLine(Counter)
+				//wait 5.6 seconds
+				wait until Chop_Suey played
+
+				//run background script CS_WatchLine(Counter)
+
+				//BlockHighlight = create visual effect "gp_s_rayfxball.ves" strength 1 scale 1 on Block[Counter] time -1
+				
+				//while not Chop_Suey played and Block[Counter] exists
+					//wait 0.2 seconds
+					//if (variable get hand state == variable HAND_STATE_FIST_WEAK or variable get hand state == variable HAND_STATE_FIST_STRONG) and CS_NumTimesPassedLine == 1 //and {Block[Counter]} near hand position radius 2
+					//		delete Block[Counter]
+					//end if
+				//end while
+
+				//wait 0.2 seconds
+				
+				if Block[Counter] exists
+						if CS_Block[Counter] >= CS_BlockCount[Counter]
+								delete Block[Counter]
+						end if
+				end if
+				//	//if (variable get hand state == variable HAND_STATE_FIST_WEAK or variable get hand state == variable HAND_STATE_FIST_STRONG) and CS_NumTimesPassedLine == 1 //and {Block[Counter]} near hand position radius 2
+				//	//		delete Block[Counter]
+				//	//end if
+				//end if
+
+				Check = 1
+				CS_NumTimesPassedLine = 0
+
+			
+				if Block[Counter] exists
+
+					play sound "MANSHOCKED" at {Chop_Suey}
+						
+					shake camera strength 8.0
+					play anim "a_p_l6chopsuey_student_chop_fail" on Chop_Suey disable stand
+					wait 1 seconds
+
+					stop camera shake
+
+					wait until Chop_Suey played
+					play anim "a_p_l6chopsuey_master_talking" on Grand_Kai disable stand
+
+					if Counter == 0
+						if Chance == 0
+						//Grand Kai: "You need to work harder to harness the awesome power of Chi! You may try again when you feel ready student"
+							say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_230"
+							wait until read
+							play anim "a_p_stand" on Grand_Kai
+						//Chop Suey: "Yes, Grandmaster Kai."
+							say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_20"
+							wait until read
+							Chance++
+						elsif Chance == 1
+						//Grand Kai: "No no no! Focus your Chi, student!"
+							say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_220"
+							wait until read
+							play anim "a_p_stand" on Grand_Kai
+							BlockHittingLoopOver = CS_True
+							set fade red 0 green 0 blue 0 time 2
+							wait 2 seconds
+							delete Chop_Suey
+							delete Grand_Kai
+							//set fade in time 2
+							//wait 3 seconds
+						end if
+					else						
+						//Grand Kai: "You must work harder, student!"
+						say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_210"
+						wait 1 seconds
+						wait until read
+						play anim "a_p_stand" on Grand_Kai
+						BlockHittingLoopOver = CS_True
+						set fade red 0 green 0 blue 0 time 2
+						wait 2 seconds
+						delete Chop_Suey
+						delete Grand_Kai
+					end if
+
+				else		
+
+					play anim "a_p_l6chopsuey_student_chop_success" on Chop_Suey disable stand
+					if Counter == 0
+
+						Fragment_0[0]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[0]}
+						override mesh for Fragment_0[0] with "M_BreakableStones02_Part1"
+						ALTITUDE of Fragment_0[0] = 0.5
+						ANGLE of Fragment_0[0] = 90
+
+						Fragment_0[1]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[0]}
+						override mesh for Fragment_0[1] with "M_BreakableStones02_Part2"
+						ALTITUDE of Fragment_0[1] = 1.3
+						ANGLE of Fragment_0[1] = 90
+
+						Fragment_0[2]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[0]}
+						override mesh for Fragment_0[2] with "M_BreakableStones02_Part3"
+						ALTITUDE of Fragment_0[2] = 2.3
+						ANGLE of Fragment_0[2] = 90
+
+						set Fragment_0[0] velocity heading {BlockPos[1]} + {0, 25, 30} speed 15
+						set Fragment_0[1] velocity heading {BlockPos[1]} + {0, 15, 20} speed 10
+						set Fragment_0[2] velocity heading {BlockPos[1]} + {0, 5, 15} speed 5	
+
+						wait 2 seconds
+						delete Fragment_0[0] with fade
+						delete Fragment_0[1] with fade
+						delete Fragment_0[2] with fade
+
+						//Grand Kai: Good work!
+						say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_250"
+						wait until read
+						play anim "a_p_stand" on Grand_Kai
+
+					elsif Counter == 1
+
+						Fragment_1[0]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[1]}
+						override mesh for Fragment_1[0] with "M_BreakableStones03_Part1"
+						ALTITUDE of Fragment_1[0] = 0.5
+						ANGLE of Fragment_1[0] = 90
+
+						Fragment_1[1]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[1]}
+						override mesh for Fragment_1[1] with "M_BreakableStones03_Part2"
+						ALTITUDE of Fragment_1[1] = 1.3
+						ANGLE of Fragment_1[1] = 90
+
+						Fragment_1[2]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[1]}
+						override mesh for Fragment_1[2] with "M_BreakableStones03_Part3"
+						ALTITUDE of Fragment_1[2] = 2.3
+						ANGLE of Fragment_1[2] = 90
+
+						set Fragment_1[0] velocity heading {BlockPos[1]} + {0, 25, 30} speed 15
+						set Fragment_1[1] velocity heading {BlockPos[1]} + {0, 15, 20} speed 10
+						set Fragment_1[2] velocity heading {BlockPos[1]} + {0, 5, 15} speed 5	
+
+						wait 2 seconds
+						delete Fragment_1[0] with fade
+						delete Fragment_1[1] with fade
+						delete Fragment_1[2] with fade
+
+						//Grand Kai: Excellent.
+						say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_240"
+						wait until read
+
+						play anim "a_p_stand" on Grand_Kai
+
+					elsif Counter == 2
+						
+						Fragment_1[0]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[2]}
+						override mesh for Fragment_1[0] with "M_BreakableStones03_Part1"
+						ALTITUDE of Fragment_1[0] = 0.5
+						ANGLE of Fragment_1[0] = 90
+
+						Fragment_1[1]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[2]}
+						override mesh for Fragment_1[1] with "M_BreakableStones03_Part2"
+						ALTITUDE of Fragment_1[1] = 1.3
+						ANGLE of Fragment_1[1] = 90
+
+						Fragment_1[2]	= create ROCK_OBJECT ROUND_ROCK_SMALL at {BlockPos[2]}
+						override mesh for Fragment_1[2] with "M_BreakableStones03_Part3"
+						ALTITUDE of Fragment_1[2] = 2.3
+						ANGLE of Fragment_1[2] = 90
+
+						set Fragment_1[0] velocity heading {BlockPos[1]} + {0, 25, 30} speed 15
+						set Fragment_1[1] velocity heading {BlockPos[1]} + {0, 15, 20} speed 10
+						set Fragment_1[2] velocity heading {BlockPos[1]} + {0, 5, 15} speed 5	
+
+						wait 2 seconds
+						delete Fragment_1[0] with fade
+						delete Fragment_1[1] with fade
+						delete Fragment_1[2] with fade
+
+
+						wait 2 seconds
+						BlockHittingLoopOver = CS_True
+						ChallengeComplete = CS_True
+						set fade red 0 green 0 blue 0 time 2
+						wait 2 seconds
+
+					end if				
+					Counter++
+				end if
+				//delete Influence
+			end while
+		end camera 
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		enable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT
+		enable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT
+
+		if ChallengeComplete == CS_False
+			Chance = 0
+			if Block[0] not exists
+				Block[0] = create ROCK_OBJECT MOBILE_STATIC_INFO_BREAKABLE_STONE_02 at {BlockPos[0]}
+				set Block[0] focus to get target from {Scroll_Pos} to {Block[0]} distance 5 angle 90
+				disable Block[0] pickup
+				disable Block[0] interactable
+				disable Block[0] moveable
+				disable Block[0] set on fire
+				disable Block[0] reactable
+				ANGLE of Block[0] = 90
+			end if	
+			
+			if Block[1] not exists
+				Block[1] = create ROCK_OBJECT MOBILE_STATIC_INFO_BREAKABLE_STONE_03 at {BlockPos[1]}
+				set Block[1] focus to get target from {Scroll_Pos} to {Block[1]} distance 5 angle 90
+				disable Block[1] pickup
+				disable Block[1] interactable
+				disable Block[1] moveable
+				disable Block[1] reactable
+				disable Block[1] set on fire
+				ANGLE of Block[1] = 90
+			end if	
+			
+			if Block[2] not exists
+				Block[2] = create ROCK_OBJECT MOBILE_STATIC_INFO_BREAKABLE_STONE_04 at {BlockPos[2]}
+				set Block[2] focus to get target from {Scroll_Pos} to {Block[2]} distance 5 angle 90
+				disable Block[2] pickup
+				disable Block[2] interactable
+				disable Block[2] moveable
+				disable Block[2] reactable
+				disable Block[2] set on fire
+				ANGLE of Block[2] = 90
+			end if	
+
+			Scroll = create highlight SILVER name "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_REMINDER" remind "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_REMINDER" at {Scroll_Pos}
+			ALTITUDE of Scroll  = 3
+
+			set fade in time 2
+			wait 2 seconds
+
+			wait until Scroll right clicked
+
+			//disable hand icon draw
+
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+			delete Scroll
+			if Chop_Suey not exists
+				Chop_Suey = create VILLAGER YOUNG_MONK at {ChopSueyPos[0]}
+				disable Chop_Suey pickup
+				enable Chop_Suey indestructible
+				disable Chop_Suey reactable
+				//Influence = create influence at {Chop_Suey} radius 40
+			end if
+			if Grand_Kai not exists
+				//disable hand icon draw
+				Grand_Kai = create VILLAGER OLD_MONK at {761.206, 55.836, 625.259}
+				disable Grand_Kai pickup
+				disable Grand_Kai reactable
+				enable Grand_Kai indestructible
+			end if
+			set Chop_Suey focus on Block[0]
+			set Grand_Kai focus on Chop_Suey
+			set fade in time 2
+			wait 2 seconds
+
+		end if
+	end while
+	
+	
+	
+	
+	begin cinema 
+		start music "japanesen3"
+	
+		wait 2 seconds
+	
+		set camera position to {750.911, 66.044, 644.574}
+		set camera focus to {850.282, 60.054, 654.004}
+		move camera position to {750.986, 66.044, 643.774} time 20
+		move camera focus to {850.357, 60.054, 653.204} time 20
+		set fade in time 2
+		//Grand_Kai = create VILLAGER OLD_MONK at {763.958, 55.771, 615.767}
+		//Chop_Suey = create VILLAGER YOUNG_MONK at {764.560, 55.773, 614.795}
+		set Grand_Kai position to {756.208, 63.939, 639.407}
+		set Chop_Suey position to {756.969, 63.940, 637.914}
+		
+		move Grand_Kai position to {771.969, 63.937, 637.513}
+		SPEED of Grand_Kai = 0.04
+		move Chop_Suey position to {771.969, 63.937, 637.513}
+		
+		SPEED of Chop_Suey = 0.04
+		
+		wait 0.2 seconds
+		override Grand_Kai anim "a_p_walk_old"
+		wait 5.8 seconds
+		
+		
+		
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_CHOP_SUEY_280"
+		wait until read
+		wait 2 seconds
+		play anim "a_p_meleecombat_idle_look_left" on Chop_Suey loop 1
+		wait until Chop_Suey played
+		play anim "a_p_meleecombat_idle_look_right" on Chop_Suey loop 1
+		wait until Chop_Suey played
+		
+		play anim "A_p_L6chopsuey_student_celebrate" on Chop_Suey loop 1
+		wait until Chop_Suey played
+		reset Chop_Suey anim speed
+		move Chop_Suey position to {771.969, 63.937, 637.513}
+		
+		
+		
+		
+		SPEED of Chop_Suey = 0.1
+		//wait 1.2 seconds
+		
+		wait 2 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		delete Chop_Suey
+		delete Grand_Kai
+		set camera position to {775.517, 82.822, 587.344}
+		set camera focus to {731.718, 25.535, 656.625}
+		
+		set fade in time 2
+		eject good spirit
+		say "BW2T_SCRIPT_03FINAL_FAMILY_110"
+		wait until read
+		send good spirit home
+	end cinema
+	
+
+	
+	
+//----Clean up----//
+
+	delete Block[0]
+	delete Block[1]
+	delete Block[2]	delete Chop_Suey
+	delete Grand_Kai
+	//delete Influence
+ 
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_6_CHOPSUEY
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+    
+    wait 2.5 seconds
+    
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+end script Land6ChopSuey
+
+//-----------------------------------------------------------------------------
+// Watch Line
+//-----------------------------------------------------------------------------
+begin script CS_WatchLine(Counter)
+	//P1 = marker at {755.00, 63.968, 621.731}
+	//P2 = marker at {770.00, 63.968, 621.731}
+	//CP = marker at {762.356, 63.920, 622.704}
+	ReminderTimer	= create timer for 0 seconds
+	AnotherCheck = 0
+	Counter2 = 0
+	BlockHighlight = 0
+	EffectIsOn		= 0
+	ExplodeFX			= 0
+	ExplodeFX2			= 0
+	FXHeight = 0
+	FXHeight2 = 0
+
+start
+
+	Check				= 0
+	CS_Block[Counter]	= 0
+	FXHeight = marker at {Block[Counter]} + {0,-1,0}
+	FXHeight2 = marker at {Block[Counter]} + {0,-2,0}
+
+	begin loop
+		//CS_Block[Counter] >= CS_BlockCount[Counter]
+		//if hand position and {CP} on same side of line between {P1} and {P2} and variable get hand state == variable HAND_STATE_FIST_STRONG
+		//	CS_NumTimesPassedLine++
+		//	say "$d" with number CS_NumTimesPassedLine
+		//	wait until not hand position and {CP} on same side of line between {P1} and {P2}
+		//end if
+		if hand position near {Block[Counter]} radius 1 and (variable get hand state == variable HAND_STATE_FIST_STRONG or variable get hand state == variable HAND_STATE_FIST_WEAK)
+			wait until not hand position near {Block[Counter]} radius 1.2
+			CS_Block[Counter] ++
+			//ExplodeFX = create visual effect "ev_s_beamrocks.ves" strength 1 scale 0.5 at {Block[Counter]} time 1
+			ExplodeFX = create visual effect "ev_s_dust.ves" strength 1 scale 0.2 at {FXHeight} time 1
+			set ExplodeFX colour red 80 green 80 blue 90
+			////wait until not hand position near {Block[Counter]} radius 1
+			//wait 0.2 seconds
+			//CS_NumTimesPassedLine ++
+			//Counter2 ++
+		end if
+		//say "$d" with number CS_Block[Counter]
+
+		//ExplodeFX = create visual effect "ev_s_beamrocks.ves" strength 1 scale 0.1 at {OB_Pumps[ID]} time 1
+
+		if CS_Block[Counter] >= CS_BlockCount[Counter] and EffectIsOn == 0
+			BlockHighlight = create visual effect "gp_s_rayfxball.ves" strength 1 scale 1 on Block[Counter] time -1
+			EffectIsOn = 1
+		end if
+		//if CS_NumTimesPassedLine == 1 and AnotherCheck == 0
+		//	set ReminderTimer time to 0.5 seconds
+		//	AnotherCheck = 1
+		//end if
+
+		//if get ReminderTimer time remaining <= 0 and AnotherCheck == 1 and CS_NumTimesPassedLine == 1
+		//	CS_NumTimesPassedLine = 0
+		//end if
+
+		//if CS_NumTimesPassedLine == 0
+		//	AnotherCheck = 0
+		//end if
+
+	until Chop_Suey played
+	end loop
+	wait 1 second
+	stop visual effect BlockHighlight
+	stop visual effect ExplodeFX
+	stop visual effect ExplodeFX2
+
+end script CS_WatchLine

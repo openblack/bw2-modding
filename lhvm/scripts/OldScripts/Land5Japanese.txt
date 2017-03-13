@@ -1,0 +1,1718 @@
+//------------------------------------------------
+//  LAND 5 JAPANESE TOWN AI (just the capital city)
+//------------------------------------------------
+
+define script L5JapanCapitolTownManagement
+define script L5JapanCapitolArmyManagement
+define script MainHirokuComments
+define script JapCapBodgeOre
+define script TrackApproachingOutpostRetaliationArmy (Army)
+define script TrackJapanArmyMain (JapanArmyMain, NotSneakyRoutePos)
+define script SwarmPaddyFieldsAttack
+define script L5ManageBallistae
+define script L5JapanCapitalPaddyArmies
+define script BattlefieldHonour
+define script TrackHomagesandTributes (Target, MigrationType)
+
+// talk script
+define script L5Jap_DeadOfNightSpeak
+define script L5Jap_CapitalMigrationPeacefulSpeak
+define script L5Jap_CapitalMigrationHalfSpeak
+define script L5Jap_CapitalMigrationQuarterSpeak
+define script L5Jap_CapitalMigrationEigthSpeak
+define script L5Jap_CapitalMigrationMinorSpeak
+define script L5Jap_CapitalTribute1Speak
+define script L5Jap_CapitalTribute2Speak
+define script L5Jap_CapitalHomage1Speak
+define script L5Jap_CapitalHomage2Speak
+define script L5Jap_HomageAdvisorSpeak(Target)
+define script L5Jap_TributeAdvisorSpeak(Target)
+define script L5Jap_GenericInsult1Speak
+define script L5Jap_GenericInsult2Speak
+define script L5Jap_GenericInsult3Speak
+define script L5Jap_OutpostLookSpeak
+define script L5Jap_CapitalLookSpeak
+define script L5Jap_BackDoorLookSpeak
+define script L5Jap_PlateauLookSpeak
+define script L5Jap_StealForestSpeak
+define script L5Jap_MineLookSpeak
+define script L5Jap_HalfUpgradeSpeak
+define script L5Jap_FullUpgradeSpeak
+define script L5Jap_GoodCreatureSpeak
+define script L5Jap_EvilCreatureSpeak
+define script L5Jap_ArcherInsultSpeak
+define script L5Jap_WariorInsultSpeak
+define script L5Jap_WonderSpeak
+define script L5Jap_JapanNotSneakySpeak
+define script L5Jap_AproachingArmyJustLeftSpeak(Army)
+define script L5Jap_AproachingArmyHalfwaySpeak(Army)
+define script L5Jap_AproachingArmyCauseWaySpeak(Army)
+define script L5Jap_AproachingArmyWonSpeak
+define script L5Jap_AproachingArmyDefeatedSpeak
+define script L5Jap_PaddySwarmStartSpeak(PlatoonOne)
+define script L5Jap_PaddySwarmIntroSpeak
+define script L5Jap_PaddySwarmUnrestSpeak
+define script L5Jap_PaddySwarmRushSpeak
+define script L5Jap_PaddySwarmCauseWaySpeak(PaddyGrunt1,PaddyGrunt2)
+
+global Land5BoredomTimer = 0
+global PaddyArmiesActive = 1
+
+//--------------------------------------------------------------------------
+// MAIN
+//--------------------------------------------------------------------------
+
+begin script L5JapanCapitol
+
+ NightToggle = 0
+ NightCount = 0
+ DeadOfNightComment = 0
+
+start
+
+Land5BoredomTimer = create timer for 0 seconds
+
+run background script L5JapanCapitolTownManagement
+run background script L5JapanCapitolArmyManagement
+run background script L5JapanCapitalPaddyArmies
+run background script JapCapBodgeOre
+run background script MainHirokuComments
+
+begin loop
+	//if PLAYER 1 owns the town
+	if PLAYER of L5JapanCapitol == 0
+		L5CapitolConverted = 1
+	end if
+
+	if PaddyArmiesActive == 0 and GreekPaddyFields < 2
+		PaddyArmiesActive = 1
+		run background script L5JapanCapitalPaddyArmies
+	end if
+
+	if get game time > 20.00 or get game time < 4.00 and NightToggle == 0
+		NightToggle = 1
+		NightCount++
+	elsif get game time <= 20.00 and get game time >= 4.00 and NightToggle == 1
+		NightToggle = 0
+	end if
+
+	if DeadOfNightComment == 0 and NightCount >= 2
+		run script L5Jap_DeadOfNightSpeak
+		DeadOfNightComment = 1
+	end if
+
+until L5CapitolConverted == 1 or PLAYER of L5GreekTown != 0
+end loop
+
+/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+
+L5CapitolConverted = 2
+
+// IF PLAYER CONVERTS L5JapanCapitol THEN TRIGGER THE L5JapanCapitol SUBMISSION CUT-SCENE
+// REMEMBER TO SET L5CapitolConverted = 2 when script completed (used in L5Control to trigger L5IslandComplete cut-scene)
+
+end script L5JapanCapitol
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script L5JapanCapitolTownManagement
+
+InitialGreekAggression = 20
+AngeredGreekAggression = 80
+InitialGreekTolerance = 200
+NewRacialTolerance = 0
+AngerCounter = 0
+AngerTimer = create timer for 0 seconds
+AngerKickDelay = 180
+FeudValue = 0
+
+JapaneseImpressivePoints = 0
+InitialTimer = create timer for 0 seconds
+JapanesePilgrims = 0
+PilgrimSize = 0
+JapanImpressivenessThreshold = 0.3
+
+Pilgrim_Ctr = 0
+RatiosAdjusted = 0
+TributeComment = 0
+HomageComment = 0
+
+start
+
+// Initial army setup
+set town L5JapanCapitol platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.1
+set town L5JapanCapitol platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.1
+
+//set town L5JapanCapitol army type ARMY_UNIT_TYPE_RANGED_1 platoon ratio on wall to 0.5
+
+// Initial villager setup
+set town L5JapanCapitol desire for GATHER_FOOD to 0.80
+set town L5JapanCapitol desire for GROW_FOOD to 0.60
+set town L5JapanCapitol desire for GATHER_WOOD to 0.40
+set town L5JapanCapitol desire for GATHER_ORE to 0.40
+set town L5JapanCapitol desire for BREED to 0.40
+set town L5JapanCapitol desire for ATTACK to 0.10
+set town L5JapanCapitol desire for FUN to 0.50
+
+
+// desire setups for the minor farming settlements
+
+set town L5_PaddyField1 desire for GATHER_FOOD to 1
+set town L5_PaddyField2 desire for GATHER_FOOD to 1
+set town L5_PaddyField3 desire for GATHER_FOOD to 1
+set town L5_PaddyField4 desire for GATHER_FOOD to 1
+set town L5_PaddyField5 desire for GATHER_FOOD to 1
+set town L5_PaddyField6 desire for GATHER_FOOD to 1
+
+set town L5_PaddyField1 desire for GATHER_WOOD to 0
+set town L5_PaddyField2 desire for GATHER_WOOD to 0
+set town L5_PaddyField3 desire for GATHER_WOOD to 0
+set town L5_PaddyField4 desire for GATHER_WOOD to 0
+set town L5_PaddyField5 desire for GATHER_WOOD to 0
+set town L5_PaddyField6 desire for GATHER_WOOD to 0
+
+// Initial feud status
+//set town L5JapanCapitol interracial tolerance with town L5GreekTown to InitialGreekTolerance
+//set town L5JapanCapitol racial aggression with town L5GreekTown to InitialGreekAggression
+//set town L5JapanCapitol impressive threshold for town L5GreekTown to 100
+
+begin loop
+	
+	//if the outpost is converted
+	if L5Outpost1Converted == 1 and RatiosAdjusted == 0
+		set town L5JapanCapitol platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.3
+		set town L5JapanCapitol platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.2
+
+		// Initial villager setup
+		set town L5JapanCapitol desire for GATHER_FOOD to 0.90
+		set town L5JapanCapitol desire for GROW_FOOD to 0.75
+		set town L5JapanCapitol desire for GATHER_WOOD to 0.30
+		set town L5JapanCapitol desire for GATHER_ORE to 0.30
+		set town L5JapanCapitol desire for BREED to 0.50
+		set town L5JapanCapitol desire for ATTACK to 0.30
+		set town L5JapanCapitol desire for FUN to 0.20
+
+		//// Initial feud status
+		//NewRacialTolerance = InitialGreekTolerance/2
+		//set town L5JapanCapitol interracial tolerance with town L5GreekTown to NewRacialTolerance
+
+		//set town L5JapanCapitol racial aggression with town L5GreekTown to AngeredGreekAggression
+		//RatiosAdjusted = 1
+	end if
+
+	//JapaneseImpressivePoints = get town L5JapanCapitol impressive value for town L5GreekTown
+	/////if town L5JapanCapitol impressive threshold with town L5GreekTown passed and get InitialTimer time remaining <= 0 and Land5GreekImpressiveness >= Land5GreekImpressivenessMinimum
+	//if get InitialTimer time remaining <= 0 and Land5GreekImpressiveness >= Land5GreekImpressivenessMinimum
+
+	//	if Pilgrim_Ctr == 10 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimum + 3000)
+	//		if TownPilgrimageStatus[9] == 1 // Always Accept
+	//			// CONVERT THE TOWN PEACEFULLY
+	//			set player 0 town L5JapanCapitol capture reason LAST_CAPTURE_PASSIVE
+	//			run script L5Jap_CapitalMigrationPeacefulSpeak
+	//		elsif TownPilgrimageStatus[9] == 2 // always Decline
+	//		end if
+	//		reset town L5JapanCapitol impressive value for town L5GreekTown
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 9 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimum + 2500)
+	//		if TownPilgrimageStatus[9] == 1 // Always Accept
+	//			run script L5Jap_CapitalMigrationHalfSpeak
+	//			PilgrimSize = size of L5JapanCapitol
+	//			PilgrimSize = PilgrimSize/2
+	//			JapanesePilgrims = L5JapanCapitol pilgrimage PAY_PILGRIMAGE to town L5GreekTown with PilgrimSize pilgrims
+	//		elsif TownPilgrimageStatus[9] == 2 // always Decline
+	//		end if
+	//		reset town L5JapanCapitol impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 8 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimum + 2000)
+	//		if TownPilgrimageStatus[9] == 1 // Always Accept
+	//			run script L5Jap_CapitalMigrationQuarterSpeak
+	//			PilgrimSize = size of L5JapanCapitol
+	//			PilgrimSize = PilgrimSize/4
+	//			JapanesePilgrims = L5JapanCapitol pilgrimage PAY_PILGRIMAGE to town L5GreekTown with PilgrimSize pilgrims
+	//		elsif TownPilgrimageStatus[9] == 2 // always Decline
+	//		end if
+	//		reset town L5JapanCapitol impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 7 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimum + 1500)
+	//		if TownPilgrimageStatus[9] == 1 // Always Accept
+	//			run script L5Jap_CapitalMigrationEigthSpeak
+	//			PilgrimSize = size of L5JapanCapitol
+	//			PilgrimSize = PilgrimSize/8
+	//			JapanesePilgrims = L5JapanCapitol pilgrimage PAY_PILGRIMAGE to town L5GreekTown with PilgrimSize pilgrims
+	//			run background script ManagePilgrims (JapanesePilgrims, 9)
+	//			Pilgrim_Ctr++
+	//		elsif TownPilgrimageStatus[9] == 2 // always Decline
+	//			Pilgrim_Ctr = 6
+	//			TownPilgrimageStatus[9] = 0
+	//			JapanImpressivenessThreshold += 0.2
+	//			if JapanImpressivenessThreshold > 1
+	//				JapanImpressivenessThreshold = 1
+	//			end if
+	//			set town L5JapanCapitol impressive threshold for town L5GreekTown to JapanImpressivenessThreshold
+	//			Land5GreekImpressivenessMinimum += 4000
+	//		end if
+	//		reset town L5JapanCapitol impressive value for town L5GreekTown
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 6 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimum + 1000)
+	//		run script L5Jap_CapitalMigrationMinorSpeak
+	//		JapanesePilgrims = L5JapanCapitol pilgrimage PAY_PILGRIMAGE to town L5GreekTown with 4 pilgrims
+	//		run background script ManagePilgrims (JapanesePilgrims, 9)
+	//		reset town L5JapanCapitol impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr >= 2 and Pilgrim_Ctr <= 5 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimum + 500)
+	//		// Japanese pay tribute to Greeks
+	//		if TributeComment == 0
+	//			run script L5Jap_CapitalTribute1Speak
+	//			TributeComment = 1
+	//		else
+	//			run script L5Jap_CapitalTribute2Speak
+	//		end if
+	//		JapanesePilgrims = L5JapanCapitol pilgrimage PAY_TRIBUTE to town L5GreekTown with 4 pilgrims
+	//		run background script TrackHomagesandTributes (JapanesePilgrims, 1)
+	//		reset town L5JapanCapitol impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr < 2
+	//		if HomageComment == 0
+	//			run script L5Jap_CapitalHomage1Speak
+	//			HomageComment = 1
+	//		else
+	//			run script L5Jap_CapitalHomage2Speak
+	//		end if
+	//		JapanesePilgrims = L5JapanCapitol pilgrimage PAY_HOMAGE to town L5GreekTown with 4 pilgrims
+	//		run background script TrackHomagesandTributes (JapanesePilgrims, 0)
+	//		reset town L5JapanCapitol impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+	//end if
+
+until L5CapitolConverted == 1 or PLAYER of L5GreekTown != 0
+end loop
+
+end script L5JapanCapitolTownManagement
+
+// *****************************
+// ** HOMAGE/TRIBUTE TRACKING **
+// *****************************
+
+begin script TrackHomagesandTributes (Target, MigrationType)
+
+ Arrival = 0
+
+start
+
+//begin loop
+//	if {Target} near {L5GreekTown} radius 150
+//		if MigrationType == 0 // Homage
+//			run script L5Jap_HomageAdvisorSpeak(Target)
+//		else	//Tribute
+//			run script L5Jap_TributeAdvisorSpeak(Target)
+//		end if
+//		Arrival = 1
+//	end if
+//until Arrival == 1
+//end loop
+
+end script TrackHomagesandTributes
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script L5JapanCapitolArmyManagement
+
+GreekFeudBreach	= 0
+IdlePlatoons	= 0
+IdleTroops		= 0
+JapanArmyOne	= 0
+JapanArmyMain	= 0
+JapanArmySneak = 0
+Count			= 0
+JapaneseFeudPoints = 0
+OutpostRetaliation = 0
+PaddyFieldAttack = 0
+RetaliationTimer = create timer for 0 seconds
+NotSneakyRoutePos = marker at {932.473, 66.721, 1242.260}
+SneakyBackRoutePos = marker at {506.418, 47.443, 1257.666}
+
+start
+
+set Land5BoredomTimer time to 300 seconds
+///run background script L5ManageBallistae
+
+begin loop
+
+	//if town L5JapanCapitol feud threshold with town L5GreekTown passed or get Land5BoredomTimer time remaining <= 0
+	if PLAYER of L5JapanOutpost1 == 0 and OutpostRetaliation == 0
+		//check if there's enough platoons idle to create a respectable army
+		IdlePlatoons = get idle platoons in town L5JapanCapitol
+		if IdlePlatoons >= 3 // prepare for attack of 3 platoons
+			//make an army
+			JapanArmyOne = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 200 excluding scripted
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of JapanArmyOne action queue
+			run background script TrackApproachingOutpostRetaliationArmy (JapanArmyOne)
+			Count = 0
+			while Count < 2
+				IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 200 excluding scripted
+				add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using JapanArmyOne to front of IdleTroops action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to next in IdleTroops action queue
+				wait 0.5 seconds
+				Count++
+			end while
+
+		//	reset town L5JapanCapitol feud value for town L5GreekTown
+			GreekFeudBreach = 1
+			set Land5BoredomTimer time to 300 seconds
+			OutpostRetaliation = 1
+			set RetaliationTimer time to 280 seconds
+		end if
+	elsif PLAYER of L5JapanOutpost1 == 0 and OutpostRetaliation > 0 and get RetaliationTimer time remaining <= 0 and size of L5GreekTown > 100
+		IdlePlatoons = get idle platoons in town L5JapanCapitol
+		if IdlePlatoons > 5
+			JapanArmyMain = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of JapanArmyMain action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {NotSneakyRoutePos} to front of JapanArmySneak action queue
+			run background script TrackJapanArmyMain (JapanArmyMain, NotSneakyRoutePos)
+			Count = 0
+			while Count < 3
+				IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+				add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using JapanArmyMain to front of IdleTroops action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to next in IdleTroops action queue
+				wait 0.5 seconds
+				Count++
+			end while
+
+			JapanArmySneak = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5JapanOutpost1 to front of JapanArmySneak action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {SneakyBackRoutePos} to front of JapanArmySneak action queue
+			IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+			add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using JapanArmySneak to front of IdleTroops action queue
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to next in IdleTroops action queue
+			set RetaliationTimer time to 450 seconds
+			OutpostRetaliation++
+		end if
+	end if
+
+    if GreekPaddyFields > 3 and PaddyFieldAttack == 0
+		IdlePlatoons = get idle platoons in town L5JapanCapitol
+		if IdlePlatoons > 5
+			////run background script BattlefieldHonour
+		end if
+	elsif GreekPaddyFields > 1 and PaddyFieldAttack == 0
+		IdlePlatoons = get idle platoons in town L5JapanCapitol
+		if IdlePlatoons > 3
+			run background script SwarmPaddyFieldsAttack
+			PaddyFieldAttack = 1
+		end if
+	end if
+
+until L5CapitolConverted == 1 or PLAYER of L5GreekTown != 0
+end loop
+
+end script L5JapanCapitolArmyManagement
+//-------------------------------------------------------------------------------------------
+// MAIN HIROKU COMMENTS
+//-------------------------------------------------------------------------------------------
+begin script MainHirokuComments
+
+ GenericTimer = create timer for 0 seconds
+ GenericTimerDelay = 600
+ GenericInstance = 0
+ OutpostComment = 0
+ CapitalComment = 0
+ FieldComment = 0
+ ResourceComment = 0
+ MineComment = 0
+ GreekTrespasser = 0
+ HalfUpgradeComment = 0
+ HalfUpgradePopulation = 120
+ FullUpgradeComment = 0
+ FullUpgradePopulation = 220
+ OutpostMinePos = marker at {661.224, 85.431, 885.379}
+ CentreFieldPos = marker at {957.898, 69.067, 1506.802}
+ CreatureAlignmentComment = 0
+ InitialTimer = create timer for 0 seconds
+ ArcherComment = 0
+ WonderComment = 0
+ WarriorComment = 0
+ CapitalView = marker at {786.187, 122.193, 2084.876}
+ BackdoorComment = 0
+ BackdoorView = marker at {476.169, 65.063, 1922.933}
+ ArmySize = 0
+
+start
+
+ set GenericTimer time to 600 seconds
+ set InitialTimer time to 500 seconds
+
+ begin loop
+	// Generic Boredom Comments
+	if get GenericTimer time remaining <= 0
+		if GenericInstance == 0
+			run script L5Jap_GenericInsult1Speak
+			GenericInstance++
+		elsif GenericInstance == 1
+			run script L5Jap_GenericInsult2Speak
+			GenericInstance++
+		elsif GenericInstance == 2
+			GenericInstance++
+			run script L5Jap_GenericInsult3Speak
+		end if
+
+		set GenericTimer time to GenericTimerDelay seconds
+	end if
+
+	// First time player zooms over the Japanese Outpost
+	if OutpostComment == 0
+		if camera position near {L5JapanOutpost1} radius 100 and {L5JapanOutpost1} viewed
+			OutpostComment++
+			run script L5Jap_OutpostLookSpeak
+		end if
+	end if
+
+	// First time the player zooms over the Japanese Capital
+	if CapitalComment == 0
+		if camera position near {CapitalView} radius 200 and {CapitalView} viewed
+			CapitalComment++
+			run script L5Jap_CapitalLookSpeak
+		end if
+	end if
+
+	// First time the player zooms in near the back Gatehouse of the Japanese Capital
+	if BackdoorComment == 0
+		if camera position near {BackdoorView} radius 100 and {BackdoorView} viewed
+			BackdoorComment++
+			run script L5Jap_BackDoorLookSpeak
+		end if
+	end if
+
+	// First time the player zooms over the Farming Plateau
+	if FieldComment == 0
+		if camera position near {CentreFieldPos} radius 200 and {CentreFieldPos} viewed
+			FieldComment++
+			run script L5Jap_PlateauLookSpeak
+		end if
+	end if
+
+	// When the Greeks first start harvesting the forest near the Japanese Outpost
+	/// NEEDS ATTACK CO-ORDINATION??
+	if ResourceComment == 0
+		GreekTrespasser = get VILLAGER VILLAGER_INFO_GREEK_FORESTER_MALE at {OutpostMinePos} radius 50
+		if GreekTrespasser not exists and GreekTrespasser is not HELD_ANY
+			GreekTrespasser = get VILLAGER VILLAGER_INFO_GREEK_FORESTER_MALE at {OutpostMinePos} radius 50 /// SHOULD CHECK FOR GREEK MINERS!!
+		end if
+		if GreekTrespasser exists
+			ResourceComment++
+			run script L5Jap_StealForestSpeak
+		end if
+	end if
+
+	// When player zooms near very near the mine
+	if MineComment == 0
+		if camera position near {OutpostMinePos} radius 50 and {OutpostMinePos} viewed
+			MineComment++
+			run script L5Jap_MineLookSpeak
+		end if
+	end if
+
+	// When the player first kills Japanese Troops with a miracle
+	/// IF PLAYER USES MIRACLE ON JAPANESE TROOPS
+
+	// When the player is half way towards the next tech level
+	if HalfUpgradeComment == 0
+		if size of L5GreekTown > HalfUpgradePopulation
+			HalfUpgradeComment++
+			run script L5Jap_HalfUpgradeSpeak
+		end if
+	end if
+
+	// When the Greek town is upgraded
+	if FullUpgradeComment == 0
+		if size of L5GreekTown > FullUpgradePopulation
+			FullUpgradeComment++
+			run script L5Jap_FullUpgradeSpeak
+		end if
+	end if
+
+	// When the player's Creature breaches alignment thresholds
+	if CreatureAlignmentComment == 0 and MyCreature exists
+		if ALIGNMENT of MyCreature > 0.5 and get InitialTimer time remaining <= 0
+			CreatureAlignmentComment = 1
+			run script L5Jap_GoodCreatureSpeak
+		elsif ALIGNMENT of MyCreature < -0.5 and get InitialTimer time remaining <= 0
+			CreatureAlignmentComment = 1
+			run script L5Jap_EvilCreatureSpeak
+		end if
+	end if
+
+	// When the player first creates archers
+	if ArcherComment == 0
+		if get army unit type ARMY_UNIT_TYPE_RANGED_3 number in town L5GreekTown > 0
+			ArcherComment = 1
+			run script L5Jap_ArcherInsultSpeak
+		end if
+	end if
+
+	// When the player has more than three melee units
+	if WarriorComment == 0
+//		if get army unit type ARMY_UNIT_TYPE_MELEE_3 number in town L5GreekTown > 2 
+//		ArmySize = get army size in town L5GreekTown
+		ArmySize = get idle platoons in town L5GreekTown
+		if ArmySize > 30
+			WarriorComment = 1
+			run script L5Jap_WariorInsultSpeak
+		end if
+	end if
+
+	// When the player starts to build a wonder
+	if WonderComment == 0
+		if get WONDER in L5GreekTown exists
+			WonderComment = 1
+			run script L5Jap_WonderSpeak
+		end if
+	end if
+
+ until L5CapitolConverted == 1 or PLAYER of L5GreekTown != 0
+ end loop
+
+end script MainHirokuComments
+
+//-------------------------------------------------------------------------------------------
+// TRACK MAIN PRONG ARMY
+//-------------------------------------------------------------------------------------------
+
+begin script TrackJapanArmyMain (JapanArmyMain, NotSneakyRoutePos)
+
+ DumpLoop = 0
+
+start
+	begin loop
+		if JapanArmyMain not exists
+			DumpLoop = 1
+		elsif {JapanArmyMain} near {NotSneakyRoutePos} radius 75
+			run script L5Jap_JapanNotSneakySpeak
+			DumpLoop = 1
+		end if
+		
+	until JapanArmyMain not exists or DumpLoop == 1 or PLAYER of L5GreekTown != 0
+	end loop
+
+end script TrackJapanArmyMain
+
+//-------------------------------------------------------------------------------------------
+// BATTLEFIELD HONOUR EVENT
+//-------------------------------------------------------------------------------------------
+
+begin script BattlefieldHonour
+
+BattlefieldPos[6]
+
+start
+
+BattlefieldPos[0] = marker at {0,0,0}
+BattlefieldPos[1] = marker at {0,0,0}
+BattlefieldPos[2] = marker at {0,0,0}
+BattlefieldPos[3] = marker at {0,0,0}
+BattlefieldPos[4] = marker at {0,0,0}
+BattlefieldPos[5] = marker at {0,0,0}
+
+begin loop
+	///errrr
+end loop
+
+end script BattlefieldHonour
+
+//-------------------------------------------------------------------------------------------
+// MANAGE BALLISTAS
+//-------------------------------------------------------------------------------------------
+
+begin script L5ManageBallistae
+
+ L5BallistaCount = 0
+ L5BallistaPos[3]
+ Ballista = 0
+
+start
+
+L5BallistaPos[0] = marker at {741.401, 99.625, 1452.341}
+L5BallistaPos[1] = marker at {749.863, 99.625, 1477.304}
+L5BallistaPos[2] = marker at {916.796, 248.993, 2018.561}
+
+while L5BallistaCount != 3
+	//create planned siege weapon SIEGE_BALANCE_TYPE_BALLISTA at {L5BallistaPos[L5BallistaCount]} belonging to town L5JapanCapitol
+	wait 90 seconds
+	L5BallistaCount++
+end while
+
+end script L5ManageBallistae
+
+//-------------------------------------------------------------------------------------------
+// TRACK APPROACHING ARMY
+//-------------------------------------------------------------------------------------------
+
+begin script TrackApproachingOutpostRetaliationArmy (Army)
+
+JustLeftTownPos = marker at {0,0,0}
+JustLeftTown = 0
+HalfWayPos = marker at {985.784, 69.866, 1491.446}
+HalfWay = 0
+OnCausewayPos = marker at {936.154, 54.987, 1153.093}
+OnCauseway = 0
+
+start
+
+JustLeftTownPos = marker at {Army}
+
+begin loop
+	if {Army} not near {JustLeftTownPos} radius 50 and JustLeftTown == 0
+		run script L5Jap_AproachingArmyJustLeftSpeak(Army)
+		JustLeftTown = 1
+	end if
+	
+	if {Army} near {HalfWayPos} radius 70 and HalfWay == 0
+		run script L5Jap_AproachingArmyHalfwaySpeak(Army)
+		HalfWay = 1
+	end if
+
+	if {Army} near {OnCausewayPos} radius 50 and OnCauseway == 0
+		run script L5Jap_AproachingArmyCauseWaySpeak(Army)
+		OnCauseway = 1
+	end if
+
+ until Army not exists or PLAYER of L5GreekTown == 1
+ end loop
+
+ if Army exists and PLAYER of L5GreekTown == 1
+	 run script L5Jap_AproachingArmyWonSpeak
+	 attach Army to L5GreekTown
+	 release Army
+ elsif Army not exists and PLAYER of L5GreekTown == 0
+	 run script L5Jap_AproachingArmyDefeatedSpeak
+ end if
+
+end script TrackApproachingOutpostRetaliationArmy
+
+//-------------------------------------------------------------------------------------------
+// SWARM PADDY FIELDS ATTACK
+//-------------------------------------------------------------------------------------------
+
+begin script SwarmPaddyFieldsAttack
+
+ Count = 0
+ TargetOne = 0
+ TargetTwo = 0
+ Fields[6]
+ PlatoonOne = 0
+ PlatoonTwo = 0
+ PlatoonThree = 0
+ PlatoonFour = 0
+ PlatoonOneInitialPos = 0
+
+start
+	Fields[0] = L5_PaddyField1
+	Fields[1] = L5_PaddyField2
+	Fields[2] = L5_PaddyField3
+	Fields[3] = L5_PaddyField4
+	Fields[4] = L5_PaddyField5
+	Fields[5] = L5_PaddyField6
+
+	// acquire targets
+	begin loop
+		if PLAYER of Fields[Count] == 0
+			TargetOne = Fields[Count]
+		end if
+		Count++
+	until TargetOne != 0
+	end loop
+	//note that count was not reset
+	begin loop
+		if PLAYER of Fields[Count] == 0
+			TargetTwo = Fields[Count]
+		end if
+		Count++
+	until TargetTwo != 0
+	end loop
+
+	PlatoonOne = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+	PlatoonTwo = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+	PlatoonThree = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+	PlatoonFour = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+
+	/// ATTACH CREATURE TO THIS ATTACK!! (And maybe make it bigger)
+//	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetOne to front of PlatoonOne action queue
+//	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetOne to front of PlatoonTwo action queue
+
+//	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTwo to front of PlatoonThree action queue
+//	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTwo to front of PlatoonFour action queue
+
+//	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using Fields[0] to front of PlatoonOne action queue
+//	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using Fields[0] to front of PlatoonTwo action queue
+
+///	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTwo to front of PlatoonThree action queue
+///	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTwo to front of PlatoonFour action queue
+
+	PlatoonOneInitialPos = marker at {PlatoonOne}
+	wait until {PlatoonOne} not near {PlatoonOneInitialPos} radius 100
+
+	run script L5Jap_PaddySwarmStartSpeak(PlatoonOne)
+
+end script SwarmPaddyFieldsAttack
+
+//-------------------------------------------------------------------------------------------
+// PADDY FIELD ARMIES
+//-------------------------------------------------------------------------------------------
+begin script L5JapanCapitalPaddyArmies
+
+ PaddyGrunt1 = 0
+ Grunt1Timer = create timer for 0 seconds
+ PaddyGrunt2 = 0
+ Grunt2Timer = create timer for 0 seconds
+ PaddyArcher1 = 0
+ Archer1Timer = create timer for 0 seconds
+ PaddyArcher2 = 0
+ Archer2Timer = create timer for 0 seconds
+ PaddyProgress = 0
+ Grunt1Pos1 = marker at {960.374, 103.574, 1812.688}
+ Archer1Pos1 = marker at {970.374, 103.574, 1812.688}
+ Grunt1Pos2 = marker at {953.859, 83.801, 1412.881}
+ Archer1Pos2 = marker at {973.596, 87.256, 1424.307}
+ Grunt2Pos1 = marker at {1000.374, 103.574, 1812.688}
+ Archer2Pos1 = marker at {1010.374, 103.574, 1812.688}
+ Grunt2Pos2 = marker at {823.572, 78.645, 1395.367}
+ Archer2Pos2 = marker at {814.921, 71.295, 1419.706}
+ IdleTroops = 0
+ LevelTimer = create timer for 0 seconds
+ GreekAttackComment = 0
+ GreekAttackCommentTimer = create timer for 0 seconds
+ FirstStageDelay = 60 // time between stages of build up
+ StageDelay = 240
+ OnCausewayPos = marker at {936.154, 54.987, 1153.093}
+ GotArmoury = 0
+ GreekPop = 0
+
+start
+	set LevelTimer time to FirstStageDelay seconds
+
+	// CREATE INITIAL PLATOONS
+PaddyGrunt1 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {Grunt1Pos1} with 12 men and 0 women
+attach PaddyGrunt1 to L5JapanCapitol
+PaddyGrunt2 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {Grunt2Pos1} with 12 men and 0 women
+attach PaddyGrunt2 to L5JapanCapitol
+PaddyArcher1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {Archer1Pos1} with 12 men and 0 women
+attach PaddyArcher1 to L5JapanCapitol
+PaddyArcher2 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {Archer2Pos1} with 12 men and 0 women
+attach PaddyArcher2 to L5JapanCapitol
+
+wait 1 second // for luck
+
+detach PaddyGrunt1 from L5JapanCapitol
+detach PaddyGrunt2 from L5JapanCapitol
+detach PaddyArcher1 from L5JapanCapitol
+detach PaddyArcher2 from L5JapanCapitol
+
+	begin loop
+
+		if PaddyProgress == 0 and get LevelTimer time remaining <= 0
+			PaddyProgress = 1
+			run script L5Jap_PaddySwarmIntroSpeak
+			set LevelTimer time to StageDelay seconds
+		elsif PaddyProgress == 1 and get LevelTimer time remaining <= 0
+			PaddyProgress = 2
+			set LevelTimer time to StageDelay seconds
+		elsif PaddyProgress == 2 and get LevelTimer time remaining <= 0 and (get game time > 11.00 and get game time < 20.00)
+			if size of L5GreekTown > 80 and get number of type HOUSE ARMOURY in L5GreekTown min built 1.0 > 0
+				run script L5Jap_PaddySwarmUnrestSpeak
+				PaddyProgress = 3
+				GreekAttackComment = 1
+				set GreekAttackCommentTimer time to 30 seconds
+			end if
+		end if
+
+		if GreekAttackComment == 1 and get GreekAttackCommentTimer time remaining <= 0
+			run script L5Jap_PaddySwarmRushSpeak
+			GreekAttackComment = 2
+		elsif GreekAttackComment == 2
+			if {PaddyGrunt1} near {OnCausewayPos} radius 50 or {PaddyGrunt2} near {OnCausewayPos} radius 50 or (PaddyGrunt1 not exists and PaddyGrunt2 not exists)
+				if PaddyGrunt1 exists or PaddyGrunt2 exists
+					run script L5Jap_PaddySwarmCauseWaySpeak(PaddyGrunt1,PaddyGrunt2)
+					GreekAttackComment = 3
+				end if
+			end if
+		end if
+
+		/// TRACK GRUNT 1
+		if PaddyGrunt1 not exists
+			IdleTroops = get idle platoons in town L5JapanCapitol
+			if IdleTroops > 3 and size of L5JapanCapitol > 100
+				PaddyGrunt1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+				detach PaddyGrunt1 from L5JapanCapitol
+			end if
+		elsif PaddyProgress == 0
+			if {PaddyGrunt1} not near {Grunt1Pos1} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Grunt1Pos1} to front of PaddyGrunt1 action queue
+			end if
+		elsif PaddyProgress == 1
+			if PLAYER of L5_PaddyField4 != 1 and get Grunt1Timer time remaining <= 0
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5_PaddyField4 to front of PaddyGrunt1 action queue
+				set Grunt1Timer time to 60 seconds
+			end if
+		elsif PaddyProgress == 2
+			if PLAYER of L5_PaddyField4 != 1 and get Grunt1Timer time remaining <= 0
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5_PaddyField4 to front of PaddyGrunt1 action queue
+				set Grunt1Timer time to 60 seconds
+			elsif {PaddyGrunt1} not near {Grunt1Pos2} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Grunt1Pos2} to front of PaddyGrunt1 action queue
+				set Grunt2Timer time to 60 seconds
+			end if
+//			if {PaddyGrunt1} near {Grunt1Pos2} radius 30
+//				set Grunt2Timer time to 60 seconds
+//			end if
+		elsif PaddyProgress == 3 and get Grunt1Timer time remaining <= 0
+				/// SHOULD SEND PLATOON ON A SUBURB/RESOURCE RAID, NOT A TownCentre ASSAULT
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of PaddyGrunt1 action queue
+				set Grunt1Timer time to 60 seconds
+		end if
+
+		/// TRACK ARCHER 1
+		if PaddyArcher1 not exists
+			IdleTroops = get idle platoons in town L5JapanCapitol
+			if IdleTroops > 3 and size of L5JapanCapitol > 100
+				PaddyArcher1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+				detach PaddyArcher1 from L5JapanCapitol
+			end if
+		elsif PaddyProgress == 0
+			if {PaddyArcher1} not near {Archer1Pos1} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Archer1Pos1} to front of PaddyArcher1 action queue
+			end if
+		elsif PaddyProgress == 1
+			if PLAYER of L5_PaddyField4 != 1 and get Archer1Timer time remaining <= 0
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5_PaddyField4 to front of PaddyArcher1 action queue
+				set Archer1Timer time to 60 seconds
+			end if
+		elsif PaddyProgress == 2
+			if {PaddyArcher1} not near {Archer1Pos2} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Archer1Pos2} to front of PaddyArcher1 action queue
+			end if
+		/// COMMENTED OUT FOR GAMEPLAY DEMO (to make it easier until we get the ability to make platoons raid instead of assault)
+		///elsif PaddyProgress == 3 and get Archer1Timer time remaining <= 0
+		/// SHOULD SEND PLATOON ON A SUBURB/RESOURCE RAID, NOT A TownCentre ASSAULT
+		///	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of PaddyArcher1 action queue
+		///	set Archer1Timer time to 60 seconds
+		end if
+
+		/// TRACK GRUNT 2
+		if PaddyGrunt2 not exists
+			IdleTroops = get idle platoons in town L5JapanCapitol
+			if IdleTroops > 3 and size of L5JapanCapitol > 100
+				PaddyGrunt2 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+				detach PaddyGrunt2 from L5JapanCapitol
+			end if
+		elsif PaddyProgress == 0
+			if {PaddyGrunt2} not near {Grunt2Pos1} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Grunt2Pos1} to front of PaddyGrunt2 action queue
+			end if
+		elsif PaddyProgress == 1
+			if PLAYER of L5_PaddyField5 != 1 and get Grunt2Timer time remaining <= 0
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5_PaddyField5 to front of PaddyGrunt2 action queue
+				set Grunt2Timer time to 60 seconds
+			end if
+		elsif PaddyProgress == 2
+			if PLAYER of L5_PaddyField5 != 1 and get Grunt2Timer time remaining <= 0
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5_PaddyField5 to front of PaddyGrunt2 action queue
+				set Grunt2Timer time to 60 seconds
+			elsif {PaddyGrunt2} not near {Grunt2Pos2} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Grunt2Pos2} to front of PaddyGrunt2 action queue
+				set Grunt2Timer time to 60 seconds
+			end if
+//			if {PaddyGrunt2} near {Grunt2Pos2} radius 30
+//				set Grunt2Timer time to 60 seconds
+//			end if
+		elsif PaddyProgress == 3 and get Grunt2Timer time remaining <= 0
+//			if size of L5GreekTown > 80 and get number of type HOUSE in L5GreekTown min built 1.0 > 0
+				/// SHOULD SEND PLATOON ON A SUBURB/RESOURCE RAID, NOT A TownCentre ASSAULT
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of PaddyGrunt2 action queue
+				set Grunt2Timer time to 60 seconds
+//			end if
+		end if
+
+		/// TRACK ARCHER 2
+		if PaddyArcher2 not exists
+			IdleTroops = get idle platoons in town L5JapanCapitol
+			if IdleTroops > 3 and size of L5JapanCapitol > 100
+				PaddyArcher2 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanCapitol} radius 300 excluding scripted
+				detach PaddyArcher2 from L5JapanCapitol
+			end if
+		elsif PaddyProgress == 0
+			if {PaddyArcher2} not near {Archer2Pos1} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Archer2Pos1} to front of PaddyArcher2 action queue
+			end if
+		elsif PaddyProgress == 1
+			if PLAYER of L5_PaddyField5 != 1 and get Archer2Timer time remaining <= 0
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5_PaddyField5 to front of PaddyArcher2 action queue
+				set Archer2Timer time to 60 seconds
+			end if
+		elsif PaddyProgress == 2
+			if {PaddyArcher2} not near {Archer2Pos2} radius 30
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Archer2Pos2} to front of PaddyArcher2 action queue
+			end if
+		/// COMMENTED OUT FOR GAMEPLAY DEMO (to make it easier until we get the ability to make platoons raid instead of assault)
+		///elsif PaddyProgress == 3 and get Archer2Timer time remaining <= 0
+		/// SHOULD SEND PLATOON ON A SUBURB/RESOURCE RAID, NOT A TownCentre ASSAULT
+		///	add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of PaddyArcher2 action queue
+		///	set Archer2Timer time to 60 seconds
+		end if
+
+	until PLAYER of L5JapanCapitol == 0 or GreekPaddyFields > 4 or PLAYER of L5GreekTown != 0
+	end loop
+
+	PaddyArmiesActive = 0
+
+end script L5JapanCapitalPaddyArmies
+
+
+//-------------------------------------------------------------------------------------------
+// BODGE ORE
+//-------------------------------------------------------------------------------------------
+
+begin script JapCapBodgeOre /// !
+
+JapBodgeOrePit = get STORE at {1039.719, 111.200, 1936.939} radius 50 /// !
+OreAmount = 0
+FoodAmount = 0
+
+start
+begin loop
+OreAmount = get resource RESOURCE_TYPE_ORE in JapBodgeOrePit
+FoodAmount = get resource RESOURCE_TYPE_FOOD in JapBodgeOrePit
+
+if OreAmount < 10000
+add resource RESOURCE_TYPE_ORE 10000 to JapBodgeOrePit /// !
+end if
+
+if FoodAmount < 10000
+add resource RESOURCE_TYPE_FOOD 10000 to JapBodgeOrePit /// !
+end if
+
+wait 10 seconds
+until L5CapitolConverted == 1
+end loop
+
+end script JapCapBodgeOre
+
+//------------------------------------------
+// L5Jap_DeadOfNightSpeak
+//------------------------------------------
+begin help script L5Jap_DeadOfNightSpeak
+start
+	begin dialogue
+//		eject good spirit
+		//say "GA - I must admit I get a bit nervous at night."
+//		say "BW2T_SCRIPT_05NEW_ANALYSIS_DEADNIGHT_10"
+//		wait until read
+		eject evil spirit
+        //say "BOO!"
+//		say "BW2T_SCRIPT_05NEW_ANALYSIS_DEADNIGHT_20"
+//		wait until read
+		//say "GA - AHH! For the love of...don't do that!"
+//		say "BW2T_SCRIPT_05NEW_ANALYSIS_DEADNIGHT_30"
+//		wait until read
+		//say "EA - Hehe. Scaring you is like taking candy from a baby. Fun."
+//		say "BW2T_SCRIPT_05NEW_ANALYSIS_DEADNIGHT_40"
+//		wait until read
+//		send good spirit home
+        //say "EA - Hey, Boss! Let's use the cover of darkness to sneak up on the Japanese."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_DEADNIGHT_50"
+		wait until read
+		//say "EA - Kick their heads in while they sleep."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_DEADNIGHT_60"
+		wait until read
+	end dialogue
+end script L5Jap_DeadOfNightSpeak
+
+//------------------------------------------
+// L5Jap_CapitalMigrationPeacefulSpeak
+//------------------------------------------
+begin help script L5Jap_CapitalMigrationPeacefulSpeak
+start
+	begin dialogue
+		//say "But why is everyone leaving?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_10"
+		wait until read
+		//say "My own bretheren..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_20"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalMigrationPeacefulSpeak
+
+//------------------------------------------
+// L5Jap_CapitalMigrationHalfSpeak
+//------------------------------------------
+begin help script L5Jap_CapitalMigrationHalfSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL 1/2 MIGRATION TRIGGERED"
+		//say "My generals tell me half the town is going"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_30"
+		wait until read
+		//say "By every god and demon..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_40"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalMigrationHalfSpeak
+
+//------------------------------------------
+// L5Jap_CapitalMigrationQuarterSpeak
+//------------------------------------------
+begin help script L5Jap_CapitalMigrationQuarterSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL 1/4 MIGRATION TRIGGERED"
+		//say "What? More people are leaving? They say..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_50"
+		wait until read
+		//say "I could weep..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_60"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalMigrationQuarterSpeak
+
+//------------------------------------------
+// L5Jap_CapitalMigrationEigthSpeak
+//------------------------------------------
+begin help script L5Jap_CapitalMigrationEigthSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL 1/8 MIGRATION TRIGGERED"
+		//say "I cannot understand it..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_70"
+		wait until read
+		//say "I'm at a loss to stop it. The Greeks..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_80"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalMigrationEigthSpeak
+
+//------------------------------------------
+// L5Jap_CapitalMigrationMinorSpeak
+//------------------------------------------
+begin help script L5Jap_CapitalMigrationMinorSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL MINOR MIGRATION TRIGGERED"
+		//say "My people no longer give the Greeks tributes."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_90"
+		wait until read
+		//say "Now they want to go..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_100"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalMigrationMinorSpeak
+
+//------------------------------------------
+// L5Jap_CapitalTribute1Speak
+//------------------------------------------
+begin help script L5Jap_CapitalTribute1Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL TRIBUTE TRIGGERED"
+		//say "I can't believe what I'm hearing."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_110"
+		wait until read
+		//say "My people are stealing my own resources and..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_120"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalTribute1Speak
+
+//------------------------------------------
+// L5Jap_CapitalTribute2Speak
+//------------------------------------------
+begin help script L5Jap_CapitalTribute2Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL TRIBUTE TRIGGERED"
+		//say "My people are still giving the Greeks tributes."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_130"
+		wait until read
+		//say "I thought we had put..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_140"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalTribute2Speak
+
+//------------------------------------------
+// L5Jap_CapitalHomage1Speak
+//------------------------------------------
+begin help script L5Jap_CapitalHomage1Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL HOMAGE TRIGGERED"
+		//say "What is this? My people seem distracted."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_150"
+		wait until read
+		//say "Are they paying homage..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_160"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalHomage1Speak
+
+//------------------------------------------
+// L5Jap_CapitalHomage2Speak
+//------------------------------------------
+begin help script L5Jap_CapitalHomage2Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - CAPITAL HOMAGE TRIGGERED 2"
+		//say "Why do my people act this way?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_170"
+		wait until read
+		//say "They seem transfixed..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONCAPITAL_180"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalHomage2Speak
+
+//------------------------------------------
+// L5Jap_HomageAdvisorSpeak(Target)
+//------------------------------------------
+begin help script L5Jap_HomageAdvisorSpeak(Target)
+start
+	begin dialogue
+		eject good spirit
+		make good spirit point at {Target}
+		say "Look there! Some Japanese have come to pay homage to our great city."
+		wait until read
+		say "This is the first step to conversion."
+		wait until read
+	end dialogue
+end script L5Jap_HomageAdvisorSpeak
+
+//------------------------------------------
+// L5Jap_TributeAdvisorSpeak(Target)
+//------------------------------------------
+begin help script L5Jap_TributeAdvisorSpeak(Target)
+start
+	begin dialogue
+		eject good spirit
+		make good spirit point at {Target}
+		say "Excellent news! Some Japanese have left tributes on our border."
+		wait until read
+		say "This is the second step to conversion. Soon they will come seeking homes with us."
+		wait until read
+	end dialogue
+end script L5Jap_TributeAdvisorSpeak
+
+//------------------------------------------
+// L5Jap_GenericInsult1Speak
+//------------------------------------------
+begin help script L5Jap_GenericInsult1Speak
+start
+	begin dialogue
+		//say "HIROKU - Your presence on my homeland is an insult."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_10"
+		wait until read
+		//say "HIROKU - Do not encroach further or there will be repurcusions!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_20"
+		wait until read
+	end dialogue
+end script L5Jap_GenericInsult1Speak
+
+//------------------------------------------
+// L5Jap_GenericInsult2Speak
+//------------------------------------------
+begin help script L5Jap_GenericInsult2Speak
+start
+	begin dialogue
+		//say "HIROKU - My people may be swayed by your Greek trinkets but I am not."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_30"
+		wait until read
+		//say "HIROKU - I will show them there is no honour amongst Greeks!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_40"
+		wait until read
+	end dialogue
+end script L5Jap_GenericInsult2Speak
+
+//------------------------------------------
+// L5Jap_GenericInsult3Speak
+//------------------------------------------
+begin help script L5Jap_GenericInsult3Speak
+start
+	begin dialogue
+		//say "HIROKU - Why do you constantly test my patience?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_50"
+		wait until read
+		//say "HIROKU - I see what you're planning and it won't work."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_60"
+		wait until read
+	end dialogue
+end script L5Jap_GenericInsult3Speak
+
+//------------------------------------------
+// L5Jap_OutpostLookSpeak
+//------------------------------------------
+begin help script L5Jap_OutpostLookSpeak
+start
+	begin dialogue
+		//say "HIROKU - You can look but not touch."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_70"
+		wait until read
+		//say "HIROKU - Lay a finger on my people and I'll raze your settlement to the ground!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_80"
+		wait until read
+	end dialogue
+end script L5Jap_OutpostLookSpeak
+
+//------------------------------------------
+// L5Jap_CapitalLookSpeak
+//------------------------------------------
+begin help script L5Jap_CapitalLookSpeak
+start
+	begin dialogue
+		//say "HIROKU - Behold the glory that is my impenetrable Capital City."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_90"
+		wait until read
+		//say "HIROKU - Spy all you want, it won't help you in taking this prize!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_100"
+		wait until read
+	end dialogue
+end script L5Jap_CapitalLookSpeak
+
+//------------------------------------------
+// L5Jap_BackDoorLookSpeak
+//------------------------------------------
+begin help script L5Jap_BackDoorLookSpeak
+start
+	begin dialogue
+		eject evil spirit
+		//say "EA - Hey, that gatehouse doesn't look all that well defended."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_110"
+		wait until read
+		//say "EA - We could use that to our advantage if we attack the city."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_120"
+		wait until read
+	end dialogue
+end script L5Jap_BackDoorLookSpeak
+
+//------------------------------------------
+// L5Jap_PlateauLookSpeak
+//------------------------------------------
+begin help script L5Jap_PlateauLookSpeak
+start
+	begin dialogue
+		eject good spirit
+		//say "GA - Look, Leader! Bountiful Japanese Farms!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_130"
+		wait until read
+		//say "GA - If we could persuade them to join us we'd have no food shortages."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_140"
+		wait until read
+		eject evil spirit
+		//say "EA - Let's get some troops over there then and kick their heads in!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_150"
+		wait until read
+		//say "GA - That's not what I had in mind..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_160"
+		wait until read
+	end dialogue
+end script L5Jap_PlateauLookSpeak
+
+//------------------------------------------
+// L5Jap_StealForestSpeak
+//------------------------------------------
+begin help script L5Jap_StealForestSpeak
+start
+	begin dialogue
+		//say "HIROKU - There is no honour amongst thieves and you are a thief!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_170"
+		wait until read
+		//say "HIROKU - If your villagers continue to steal from me there will be trouble."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_180"
+		wait until read
+	end dialogue
+end script L5Jap_StealForestSpeak
+
+//------------------------------------------
+// L5Jap_MineLookSpeak
+//------------------------------------------
+begin help script L5Jap_MineLookSpeak
+start
+	begin dialogue
+		//say "HIROKU - Stay away! The ore in that mine rightfully belongs to my people."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_190"
+		wait until read
+	end dialogue
+end script L5Jap_MineLookSpeak
+
+//------------------------------------------
+// L5Jap_HalfUpgradeSpeak
+//------------------------------------------
+begin help script L5Jap_HalfUpgradeSpeak
+start
+	begin dialogue
+		//say "HIROKU - Your people have built an impressive settlement. For an inferior race."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_200"
+		wait until read
+		//say "HIROKU - Nut build what you like..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_210"
+		wait until read
+		eject evil spirit
+		//say "EA - Hell, I'm gonna slap that idiot if he doesn't shut his gob."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_220"
+		wait until read
+	end dialogue
+end script L5Jap_HalfUpgradeSpeak
+
+//------------------------------------------
+// L5Jap_FullUpgradeSpeak
+//------------------------------------------
+begin help script L5Jap_FullUpgradeSpeak
+start
+	begin dialogue	
+		//say "HIROKU - That's quite an impressive city, foreigner."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_230"
+		wait until read
+		//say "HIROKU - With my tactical abilities I could destroy it in an instant."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_240"
+		wait until read
+		eject good spirit
+		//say "GA - Do you think he means it? I hope he's not going to cause more trouble."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_250"
+		wait until read
+		eject evil spirit
+		//say "EA - Bring on the trouble! That inbred fool can kiss my scrawny..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_260"
+		wait until read
+		//say "GA - Yes, yes. We all know what you think."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_270"
+		wait until read
+	end dialogue
+end script L5Jap_FullUpgradeSpeak
+
+//------------------------------------------
+// L5Jap_GoodCreatureSpeak
+//------------------------------------------
+begin help script L5Jap_GoodCreatureSpeak
+start
+	begin dialogue
+		//say "HIROKU - You should try and be more like your creature"
+		//say "HIROKU - Your creature is clearly a honourable and charitable beast."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_280"
+		wait until read
+		//say "HIROKU - Perhaps you should try to be more like him."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_290"
+		wait until read
+	end dialogue
+end script L5Jap_GoodCreatureSpeak
+
+//------------------------------------------
+// L5Jap_EvilCreatureSpeak
+//------------------------------------------
+begin help script L5Jap_EvilCreatureSpeak
+start
+	begin dialogue
+		//say "HIROKU - You have twisted your creature into a dishonourable monster."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_300"
+		wait until read
+		//say "HIROKU - The way you treat it is brutal and barbaric."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_310"
+		wait until read
+	end dialogue
+end script L5Jap_EvilCreatureSpeak
+
+//------------------------------------------
+// L5Jap_ArcherInsultSpeak
+//------------------------------------------
+begin help script L5Jap_ArcherInsultSpeak
+start
+	begin dialogue
+		//say "HIROKU - Hah! Your archers are pathetic. They can hardly pull their bows!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_320"
+		wait until read
+		//say "HIROKU - My bowmen dedicate their lives to perfecting their art."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_330"
+		wait until read
+	end dialogue
+end script L5Jap_ArcherInsultSpeak
+
+//------------------------------------------
+// L5Jap_WariorInsultSpeak
+//------------------------------------------
+begin help script L5Jap_WariorInsultSpeak
+start
+	begin dialogue
+		//say "HIROKU - Your attempts at militarisation are doomed, Greek!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_750"
+		wait until read
+		//say "HIROKU - For the first time in countless generations, war shall draw its bloody blade in Honshu!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_760"
+		wait until read
+	end dialogue
+end script L5Jap_WariorInsultSpeak
+
+//------------------------------------------
+// L5Jap_WonderSpeak
+//------------------------------------------
+begin help script L5Jap_WonderSpeak
+start
+	begin dialogue
+		//say "HIROKU - The Greeks have finished that enormous construction. We have to act quickly"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_340"
+		wait until read
+		//say "HIROKU - Quickly, gather my strongest warriors and prepare to launch an assault on it!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_350"
+		wait until read
+	end dialogue
+end script L5Jap_WonderSpeak
+
+//------------------------------------------
+// L5Jap_JapanNotSneakySpeak
+//------------------------------------------
+begin help script L5Jap_JapanNotSneakySpeak
+start
+	begin dialogue
+		//say "HIROKU - We will not stand idle whilst Japanese people suffer under oppressive Greek rule"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_360"
+		wait until read
+		eject good spirit
+		//say "GA - Leader? Err, There appear to be a lot of Japanese Troops coming our way."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_370"
+		wait until read
+	end dialogue
+end script L5Jap_JapanNotSneakySpeak
+
+//------------------------------------------
+// L5Jap_AproachingArmyJustLeftSpeak(Army)
+//------------------------------------------
+begin help script L5Jap_AproachingArmyJustLeftSpeak(Army)
+start
+	begin dialogue
+		eject good spirit
+		make good spirit point at {Army}
+		//say "GA - Oh my! The Japanese are moving troops in our direction."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_380"
+		wait until read
+		eject evil spirit
+		//say "EA - Wahey! A fight! This is what I've been waiting for!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_390"
+		wait until read
+		stop good spirit pointing
+		if get army size in town L5GreekTown <= 0
+			//say "GA - But we don't have any troops! We need warriors to defend ourselves!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_400"
+			wait until read
+			//say "EA - Hey! I thought you didn't like warfare!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_410"
+			wait until read
+			//say "GA - This isn't warfare, it's self defence. We need troops!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_420"
+			wait until read
+		end if
+	end dialogue
+end script L5Jap_AproachingArmyJustLeftSpeak
+
+//------------------------------------------
+// L5Jap_AproachingArmyHalfwaySpeak(Army)
+//------------------------------------------
+begin help script L5Jap_AproachingArmyHalfwaySpeak(Army)
+start
+	begin dialogue
+		eject evil spirit
+		make evil spirit point at {Army}
+		//say "EA - That Japanese Army are definitely heading our way, Boss!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_430"
+		wait until read
+		stop evil spirit pointing
+		if get army size in town L5GreekTown <= 0
+			//say "EA - If we don't train troops now we'll lose the town!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_440"
+			wait until read
+		else
+			//say "EA - Prepare our men for battle!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_450"
+			wait until read
+		end if
+	end dialogue
+end script L5Jap_AproachingArmyHalfwaySpeak
+
+//------------------------------------------
+// L5Jap_AproachingArmyCauseWaySpeak(Army)
+//------------------------------------------
+begin help script L5Jap_AproachingArmyCauseWaySpeak(Army)
+start
+	begin dialogue
+		eject good spirit
+		make good spirit point at {Army} //in world
+		//say "GA - Oh no! The Japanese are crossing the causeway. They're attacking!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_460"
+		wait until read
+		if get army size in town L5GreekTown <= 0
+			eject evil spirit
+			//say "EA - We've got no troops so you are the only thing stopping them, Boss!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_470"
+			wait until read
+			//say "EA - Start mashing those Samurai with rocks!!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_480"
+			wait until read
+		else
+			stop good spirit pointing
+			//say "GA - Let's hope our brave Greek guards can defend the town."
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_490"
+			wait until read
+		end if
+	end dialogue
+end script L5Jap_AproachingArmyCauseWaySpeak
+
+//------------------------------------------
+// L5Jap_AproachingArmyWonSpeak
+//------------------------------------------
+begin help script L5Jap_AproachingArmyWonSpeak
+start
+	 begin dialogue
+		eject evil spirit
+		//say "EA - NOOOO!! Those cheating Japanese Samurai have snuck right in and stolen our town!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_500"
+		wait until read
+		//say "EA - What the hell! We've lost all our followers!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_510"
+		wait until read
+	 end dialogue
+end script L5Jap_AproachingArmyWonSpeak
+
+//------------------------------------------
+// L5Jap_AproachingArmyDefeatedSpeak
+//------------------------------------------
+begin help script L5Jap_AproachingArmyDefeatedSpeak
+start
+	begin dialogue
+		eject evil spirit
+		//say "EA - Sweet mother of all carnage! You are the man, Boss!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_520"
+		wait until read
+		eject good spirit
+		//say "GA - Let's hope its over and they don't send more troops."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_530"
+		wait until read
+		//say "EA - Are you kidding? Let 'em come!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_540"
+		wait until read
+	end dialogue
+end script L5Jap_AproachingArmyDefeatedSpeak
+
+//------------------------------------------
+// L5Jap_PaddySwarmStartSpeak(PlatoonOne)
+//------------------------------------------
+begin help script L5Jap_PaddySwarmStartSpeak(PlatoonOne)
+start
+	begin dialogue
+		eject good spirit
+		//say "GA - Now I don't want to cause alarm but the Japanese are up to something."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_550"
+		if PlatoonOne exists
+			wait 2 seconds
+			make good spirit point at {PlatoonOne} //in world
+		end if
+		wait until read
+		eject evil spirit
+		//say "EA - This smacks of a counter-attack, Boss. They ain't giving up the farms without a fight."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_560"
+		wait until read
+		stop good spirit pointing
+	end dialogue
+end script L5Jap_PaddySwarmStartSpeak
+
+//------------------------------------------
+// L5Jap_PaddySwarmIntroSpeak
+//------------------------------------------
+begin help script L5Jap_PaddySwarmIntroSpeak
+start
+	begin dialogue
+		//say "HIROKU - We cannot allow this Greek infection to spread to the Southern Farmland."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_570"
+		wait until read
+		//say "HIROKU - Move my best warriors south to protect our people there."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_580"
+		wait until read
+	end dialogue
+end script L5Jap_PaddySwarmIntroSpeak
+
+//------------------------------------------
+// L5Jap_PaddySwarmUnrestSpeak
+//------------------------------------------
+begin help script L5Jap_PaddySwarmUnrestSpeak
+start
+	begin dialogue
+		eject good spirit
+		//say "GA - Ooh. There seems to be some unrest amongst the Japanese Troops."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_590"
+		wait until read
+		//say "GA - Some of them are spoiling for a fight. With us."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_600"
+		wait until read
+	end dialogue
+end script L5Jap_PaddySwarmUnrestSpeak
+
+//------------------------------------------
+// L5Jap_PaddySwarmRushSpeak
+//------------------------------------------
+begin help script L5Jap_PaddySwarmRushSpeak
+start
+	begin dialogue
+		//say "DIMITRIOS - Some of the Japanese Troops to the north have broken ranks."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_610"
+		wait until read
+		//say "DIMITRIOS - They are marching on our city. We have to act."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_620"
+		wait until read
+	end dialogue
+end script L5Jap_PaddySwarmRushSpeak
+
+//------------------------------------------
+// L5Jap_PaddySwarmCauseWaySpeak(PaddyGrunt1,PaddyGrunt2)
+//------------------------------------------
+begin help script L5Jap_PaddySwarmCauseWaySpeak(PaddyGrunt1,PaddyGrunt2)
+start
+	begin dialogue
+		//say "GA - Oh no! The Japanese are crossing the causeway. They're attacking!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_460"
+		wait 1 second
+		if PaddyGrunt1 exists
+			make good spirit point at {PaddyGrunt1} //in world
+		else
+			make good spirit point at {PaddyGrunt2} //in world
+		end if
+		wait until read
+		if get army size in town L5GreekTown <= 0
+			eject evil spirit
+			//say "EA - We've got no troops so you are the only thing stopping them, Boss!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_470"
+			wait until read
+			//say "EA - Start mashing those Samurai with rocks!!"
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_480"
+			wait until read
+		else
+			stop good spirit pointing
+			//say "GA - Let's hope our brave Greek guards can defend the town."
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_490"
+			wait until read
+		end if
+	end dialogue
+end script L5Jap_PaddySwarmCauseWaySpeak

@@ -1,0 +1,24 @@
+//-----------------------------------------------------------------
+// LAND 6 EGYPTIAN CREATURE AI
+//-----------------------------------------------------------------
+
+begin script L6ECAI
+
+ L6EgyptCreaturePos = marker at {0.000,0.000,0.000}
+
+start
+
+	L6EgyptCreature = create CREATURE CREATURE_TYPE_APE at {L6EgyptCreaturePos}
+	SCALE of L6EgyptCreature = 0.9
+	ALIGNMENT of L6EgyptCreature = -0.8
+
+	set player 1 creature to L6EgyptCreature
+
+	release L6EgyptCreature
+
+	begin loop
+		/// SCRIPTED BEHAVIOUR TO BE ADDED
+	until L6EgyptConverted == 1
+	end loop
+
+end script L6ECAI

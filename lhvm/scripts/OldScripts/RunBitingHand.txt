@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Order of the Biting Hand script
+//-----------------------------------------------------------------------------
+run script RunBitingHand
+
+begin script RunBitingHand
+
+start
+
+	run script Land5BitingHand
+
+end script RunBitingHand

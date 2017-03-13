@@ -1,0 +1,351 @@
+//-------------------------------------
+// MAIN
+//-------------------------------------
+
+define L5EB_TIME_TO_START = 600
+
+global L5EB_Blueprint = 0
+global L5EB_BlueprintStolen = 0
+global L5EB_ForemansHut = 0
+global L5EB_ForemansHutLoc = 0
+
+define script L5EB_StealBlueprint
+define script L5EB_StealBlueprintComments
+define script BluePrintIntro
+define script L5EB_AdvisorReminder1
+define script L5EB_AdvisorReminder2
+define script L5EB_AdvisorReminder3
+
+begin script Land5ForemanBlueprint
+
+SpyScroll = 0
+
+start
+
+	L5EB_ForemansHutLoc = marker at {1571.585, 62.081, 1943.071}
+	L5EB_ForemansHut = get HOUSE at {L5EB_ForemansHutLoc}
+
+	///run background script L5EB_StealBlueprint
+	/*run background script L5EB_StealBlueprintComments
+	wait L5EB_TIME_TO_START seconds
+*/
+	if L5EB_BlueprintStolen == 0
+		SpyScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {L5EB_ForemansHutLoc}+{0,10,0}
+
+		wait until SpyScroll right clicked or L5EB_BlueprintStolen != 0
+		clear right clicked object
+		delete SpyScroll
+	end if
+
+	if L5EB_BlueprintStolen == 0
+		//This is the intro, in case you need to be told what to do.
+		run script BluePrintIntro
+		run background script L5EB_AdvisorReminder1
+		
+	end if
+end script Land5ForemanBlueprint
+
+begin script L5EB_StealBlueprint
+start
+	wait until HEALTH of L5EB_ForemansHut < 0.2
+	L5EB_Blueprint = create blueprint RESEARCH_ITEM_MAGIC_TYPE_EPIC_EARTHQUAKE at {L5EB_ForemansHut}
+	wait until L5EB_Blueprint right clicked
+	L5EB_BlueprintStolen = 1
+end script L5EB_StealBlueprint
+
+begin script L5EB_StealBlueprintComments
+	FiveSecondTimer = 0
+start
+	wait until L5EB_Blueprint exists
+	wait until ({L5EB_Blueprint} viewed and camera position near {L5EB_Blueprint} radius 500) or L5EB_BlueprintStolen != 0
+	if L5EB_BlueprintStolen == 0
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_BLUEPRINT_10" //by evil spirit
+			FiveSecondTimer = create timer for 5 seconds
+			wait until L5EB_BlueprintStolen != 0 or get FiveSecondTimer time remaining <= 0
+			if L5EB_BlueprintStolen != 0
+				say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_BLUEPRINT_20" //by evil spirit
+				wait 2 seconds
+			end if
+			send evil spirit home
+		end dialogue
+	end if
+
+	if L5EB_BlueprintStolen == 0
+		wait until L5EB_BlueprintStolen != 0
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_BLUEPRINT_20" //by evil spirit
+			wait 2 seconds
+			send evil spirit home
+		end dialogue
+	end if
+end script L5EB_StealBlueprintComments
+
+begin script L5EB_AdvisorReminder1
+start
+	wait number from 500 to 1000 seconds
+	if L5EB_BlueprintStolen == 0
+		wait until ({L5EB_ForemansHut} viewed and camera position near {L5EB_ForemansHut} radius 500) or L5EB_BlueprintStolen != 0
+		if L5EB_BlueprintStolen == 0
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_REMINDER_10" //by evil spirit
+				wait 2 seconds
+				send evil spirit home
+			end dialogue
+		end if
+	end if
+
+	if L5EB_BlueprintStolen == 0
+		run background script L5EB_AdvisorReminder2
+	end if
+end script L5EB_AdvisorReminder1
+
+begin script L5EB_AdvisorReminder2
+start
+	wait number from 400 to 1000 seconds
+	if L5EB_BlueprintStolen == 0
+		wait until ({L5EB_ForemansHut} not viewed and camera position not near {L5EB_ForemansHut} radius 500) or L5EB_BlueprintStolen != 0
+		if L5EB_BlueprintStolen == 0
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_REMINDER_20" //by good spirit
+				wait 2 seconds
+				send good spirit home
+			end dialogue
+		end if
+	end if
+
+	if L5EB_BlueprintStolen == 0
+		run background script L5EB_AdvisorReminder3
+	end if
+end script L5EB_AdvisorReminder2
+
+begin script L5EB_AdvisorReminder3
+start
+	wait number from 400 to 1000 seconds
+	if L5EB_BlueprintStolen == 0
+		wait until ({L5EB_ForemansHut} viewed and camera position near {L5EB_ForemansHut} radius 500) or L5EB_BlueprintStolen != 0
+		if L5EB_BlueprintStolen == 0
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_REMINDER_30" //by evil spirit
+				wait 2 seconds
+				send evil spirit home
+			end dialogue
+		end if
+	end if
+end script L5EB_AdvisorReminder3
+
+//------------------------------------------------------------------------------------------------------------
+begin script BluePrintIntro
+
+Foremanshouse=0
+RelCamPos=0
+RelCamFoc=0
+
+ForemanDude=0
+ForemanStart=0
+ForemanEnd=0
+ForeWonder=0
+Workers[10]
+
+start
+	build building at {1543.137, 54.245, 1872.095} desire 0.6
+
+begin cinema
+
+	Foremanshouse = get HOUSE at {1572.615, 62.143, 1946.183}
+	//ForeWonder = get HOUSE at {1543.137, 54.245, 1872.095}
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	set camera lens 70.000
+	RelCamPos=marker at get world position from Foremanshouse  to {-9.596, 5.909, -6.583}
+	RelCamFoc=marker at get world position from Foremanshouse  to {-8.902, 5.551, -5.959}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	set fade in time 1
+
+	start music "cut_scene_wrecking_03"	
+
+	Workers[0] = create VILLAGER JAPANESE_FORESTER at {1560.826, 53.787, 1884.481}
+	Workers[1] = create VILLAGER JAPANESE_FORESTER at {1550.946, 53.995, 1878.576}
+	Workers[2] = create VILLAGER JAPANESE_FORESTER at {1554.289, 53.858, 1882.792}
+	Workers[3] = create VILLAGER JAPANESE_FORESTER at {1550.180, 56.264, 1879.763}
+	Workers[4] = create VILLAGER JAPANESE_FORESTER at {1547.605, 56.597, 1883.956}
+	Workers[5] = create VILLAGER JAPANESE_FORESTER at {1547.012, 54.520, 1885.718}
+	Workers[6] = create VILLAGER JAPANESE_FORESTER at {1549.787, 57.686, 1888.408}
+	Workers[7] = create VILLAGER JAPANESE_FORESTER at {1550.519, 57.171, 1884.116}
+
+	set Workers[0] focus to {1558.687, 53.696, 1883.110}
+	set Workers[1] focus to {1559.226, 53.669, 1882.896}
+	set Workers[2] focus to {1550.437, 53.979, 1877.626}
+	set Workers[3] focus to {1554.068, 53.732, 1877.344}
+	set Workers[4] focus to {1543.109, 55.432, 1883.300}
+	set Workers[5] focus to {1542.774, 56.038, 1886.868}
+
+	set Workers[0] carrying CARRIED_OBJECT_HAMMER
+	set Workers[1] carrying CARRIED_OBJECT_MALLET_HEAVY
+	set Workers[2] carrying CARRIED_OBJECT_MALLET_HEAVY
+	set Workers[3] carrying CARRIED_OBJECT_HAMMER
+	set Workers[4] carrying CARRIED_OBJECT_MALLET_HEAVY
+	set Workers[5] carrying CARRIED_OBJECT_HAMMER
+	set Workers[6] carrying CARRIED_OBJECT_MALLET_HEAVY
+	set Workers[7] carrying CARRIED_OBJECT_MALLET_HEAVY
+
+	play anim "a_p_hammering" on Workers[0] loop -1
+	wait 0.2 seconds
+	play anim "a_p_sledgehammer" on Workers[1] loop -1
+	wait 0.2 seconds
+
+	play anim "a_p_sledgehammer" on Workers[2] loop -1
+	play anim "a_p_hammering" on Workers[3] loop -1
+	wait 0.2 seconds
+	play anim "a_p_sledgehammer" on Workers[4] loop -1
+	wait 0.2 seconds
+	play anim "a_p_hammering" on Workers[5] loop -1
+
+	ForemanStart = marker at get world position from Foremanshouse to {-1.383, 0.000, 0.024}
+	ForemanEnd = marker at get world position from Foremanshouse to {-5.888, 0.037, -0.081}
+	ForemanDude = create VILLAGER JAPANESE_FORESTER at {ForemanStart}
+	disable ForemanDude alternative mesh
+	set camera lens 67.000 time 5
+
+	move ForemanDude position to {ForemanEnd}
+	ALTITUDE of ForemanDude = 0.7
+	wait 1 seconds
+
+	wait 0.6 seconds
+	ALTITUDE of ForemanDude = 0.4
+	wait 0.3 seconds
+	ALTITUDE of ForemanDude = 0.3
+	wait 0.3 seconds
+	ALTITUDE of ForemanDude = 0.2
+	wait 0.3 seconds
+	ALTITUDE of ForemanDude = 0.1
+	wait 0.1 seconds
+
+	wait until {ForemanDude} at {ForemanEnd}
+
+	set camera lens 70.000
+	RelCamPos=marker at get world position from Foremanshouse to {-5.023, 1.306, -0.849}
+	RelCamFoc=marker at get world position from Foremanshouse to {-5.953, 1.445, -0.508}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 0.5 seconds
+
+	play anim "a_p_blueprint_reading_blueprint_foreman" on ForemanDude loop -1
+	wait 1 seconds
+	set camera lens 70.000
+	RelCamPos=marker at get world position from Foremanshouse to {-6.946, 1.209, -0.548}
+	RelCamFoc=marker at get world position from Foremanshouse to {-6.078, 1.130, -0.058}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 1 seconds
+	/*RelCamPos=marker at get world position from Foremanshouse to {-5.893, 1.464, -0.395}
+	RelCamFoc=marker at get world position from Foremanshouse to {-5.148, 1.354, 0.263}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}*/
+	//set anim speed of ForemanDude to 0.3
+	//play anim "a_p_look_at_creature" on ForemanDude disable stand
+
+	//wait 1.2 seconds	
+	wait 0.4 seconds	
+	//set anim speed of ForemanDude to 0.1
+	wait 0.3 seconds
+	wait 0.3 seconds
+
+
+	set camera lens 45.000
+	set camera position to {1569.019, 58.394, 1889.938}
+	set camera focus to {1568.152, 58.092, 1889.544}
+	move camera position to {1558.485, 64.866, 1900.180} time 6 easein 0.5 easeout 2
+	move camera focus to {1558.054, 64.405, 1899.405} time 6 easein 0.5 easeout 2
+	//reset ForemanDude anim speed
+	move Workers[6] position to {1547.961, 56.917, 1881.437}
+	move Workers[7] position to {1556.904, 57.200, 1888.045}
+	wait 4.5 seconds
+	say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_INTRO_10" by ForemanDude
+	play anim "a_p_blueprint_instructing_workers_foreman" on ForemanDude
+	//wait 0.2 seconds
+
+	set camera lens 70.000
+	RelCamPos=marker at get world position from Foremanshouse to {-6.946, 1.209, -0.548}
+	RelCamFoc=marker at get world position from Foremanshouse to {-6.078, 1.130, -0.058}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	/*set camera lens 70.000
+	RelCamPos=marker at get world position from Foremanshouse  to {-9.009, 5.541, -5.879}
+	RelCamFoc=marker at get world position from Foremanshouse  to {-8.341, 5.141, -5.251}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}*/
+	//wait until read
+
+	wait 1.5 seconds
+	wait until ForemanDude played
+	move ForemanDude position to {ForemanStart}
+	wait 0.3 seconds
+	RelCamPos=marker at get world position from Foremanshouse  to {-8.139, 5.508, -6.694}
+	RelCamFoc=marker at get world position from Foremanshouse  to {-7.510, 5.137, -6.011}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	wait 0.3 seconds
+	/*set ForemanDude carrying CARRIED_OBJECT_BEERMUG
+	RelCamPos=marker at get world position from Foremanshouse  to {-4.644, 0.902, -0.961}
+	RelCamFoc=marker at get world position from Foremanshouse  to {-4.293, 0.727, -0.041}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}*/
+	wait 1 seconds
+	ALTITUDE of ForemanDude = 0.1
+
+	//wait 1 seconds
+	set camera lens 70.000
+	RelCamPos=marker at get world position from Foremanshouse  to {-8.139, 5.508, -6.694}
+	RelCamFoc=marker at get world position from Foremanshouse  to {-7.510, 5.137, -6.011}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	wait 0.2 seconds
+	ALTITUDE of ForemanDude = 0.2
+	wait 0.2 seconds
+	ALTITUDE of ForemanDude = 0.3
+	wait 0.2 seconds
+	ALTITUDE of ForemanDude = 0.4
+	wait 0.2 seconds
+	ALTITUDE of ForemanDude = 0.5
+	wait 0.1 seconds
+
+	eject good spirit
+	eject evil spirit
+
+	make evil spirit point at {ForemanDude}
+	say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_INTRO_20"
+	wait until read
+	stop evil spirit pointing
+	say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_INTRO_30"
+	wait until read
+	say "BW2T_SCRIPT_05NEW_FOREBLUEPRINT_INTRO_40"
+	wait until read
+
+	wait 10 seconds
+
+	send evil spirit home
+	send good spirit home
+
+    delete ForemanDude
+	delete Workers[0]
+	delete Workers[1]
+	delete Workers[2]
+	delete Workers[3]
+	delete Workers[4]
+	delete Workers[5]
+	delete Workers[6]
+	delete Workers[7]
+
+end cinema
+
+
+end script BluePrintIntro

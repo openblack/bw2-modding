@@ -1,0 +1,110 @@
+//Land6Event3.txt
+
+//*********************************************************************************************
+// Script Name: Spartan Legion
+// Land:		6
+// Author:		Tid 'Simply Sensational' Cooney
+// Date:		17th November 2003
+// Desc:		The players attention is drawn to a battle going on in a mountain pass near an inland lake.
+//				Here, a platoon of Greek resistance fighters are holding off a horde of Aztec troops. The player
+//				must use their creature to cross the lake and rescue the Spartans.
+//*********************************************************************************************
+
+define script SetupLegions
+define script RunBattle
+define script CheckForCreature
+define script Rescue
+
+global Spartans = 0
+global Aztecs[5]
+
+//run script Test
+
+begin script Land6SpartanLegion
+
+start
+
+	run script SetupLegions
+
+end script Land6SpartanLegion
+
+
+//=====================================================================
+
+begin script SetupLegions
+
+SpartanPos = 0
+AztecPos[5]
+CTR = 0
+
+start
+
+SpartanPos = marker at {1241.073,53.723,594.333}
+AztecPos[0] = marker at {1098.782,127.275,1294.701}
+AztecPos[1] = marker at {1105.990,129.462,1284.644}
+AztecPos[2] = marker at {1115.220,129.962,1279.559}
+AztecPos[3] = marker at {1126.144,127.257,1273.940}
+AztecPos[4] = marker at {1141.126,129.900,1270.393}
+
+Spartans = create platoon PLATOON_INFO_GREEK_RANGED_1 at {SpartanPos} with 12 men and 0 women
+
+while CTR != 5
+	Aztecs[CTR] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {AztecPos[CTR]} with 12 men and 0 women
+	CTR++
+end while
+
+CTR = 0
+
+HEALTH of Spartans = 100
+enable Spartans indestructible
+
+// Make the monks an enemy of the player or the Aztecs
+set Spartans player 1
+
+while CTR != 5
+	set Aztecs[CTR] player 2
+	CTR++
+end while
+
+set player 1 ENEMY to player 2
+
+run background script CheckForCreature
+run script RunBattle
+
+end script SetupLegions
+
+//======================================================================
+begin script RunBattle
+
+CTR = 0
+
+start
+
+if CTR != 5
+	move Aztecs[CTR] position to {Spartans}
+	HEALTH of Spartans = 100
+		wait 30 seconds
+	CTR++
+end if
+
+end script RunBattle
+//======================================================================
+
+begin script CheckForCreature
+
+start
+
+if {MyCreature} near {Spartans} radius 300
+	say "Creature is nearby"
+	wait until read
+	// make Spartan health normal
+end if
+
+end script CheckForCreature
+//======================================================================
+
+begin script Rescue
+
+start
+
+end script Rescue

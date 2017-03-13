@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land 7 Ghost script
+//-----------------------------------------------------------------------------
+run script RunLand7Ghost
+
+begin script RunLand7Ghost
+
+start
+
+	run script Land7Ghost
+
+end script RunLand7Ghost

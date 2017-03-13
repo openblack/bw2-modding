@@ -1,0 +1,451 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define BB_INVALID = 4
+define BB_FALSE = 0
+define BB_TRUE = 1
+
+define BB_ACTION_TIME_MIN = 5
+define BB_ACTION_TIME_MAX = 60
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global BB_Barrels[6]		//Beer Barrels 
+global BB_PartyVillager[6]	//The party villagers
+global BB_VillagerBusy[6]	//Villager is busy flags
+
+///global BB_StackPos = marker at {1015.692871,7.050602,679.972229}	//The barrel stack position
+global BB_StackPos = 0
+global BB_BarrelStack[6]
+global BB_BarrelsFound = 0
+
+global BB_VillagerReset = 0
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script BB_PlaceBarrels
+define script BB_Intro
+define script BB_AddToBarrelStack
+define script BB_LostBarrel
+define script BB_CrowdControl
+define script NorseBarrel
+
+define script TempHand
+
+define script BB_GetVillagerToStackBarrel(Barrel)
+define script VillagerCelebrate(Villager, Position)
+
+//-----------------------------------------------------------------------------
+//	Land 1 Beer Barrels
+//-----------------------------------------------------------------------------
+begin script Land1BeerBarrel
+	BeerScroll = 0
+	ScrollPos = 0
+	StoragePit = 0
+start
+
+
+	//run background script TempHand
+
+	BB_StackPos = marker at {1001.075928,7.000004,694.263611}
+
+	//TEMP --TEMP --TEMP --TEMP --TEMP --TEMP --TEMP --TEMP --TEMP --
+	L1GreekTown = get TOWN at {1140.514038,54.313099,866.788025}
+
+	wait until get number of type HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L1GreekTown > 0
+	
+	StoragePit = get HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L1GreekTown
+
+	wait until BUILT of StoragePit == 1.0
+
+	ScrollPos = marker at get world position from StoragePit to {-17.166, -1.578, 0.293}
+	BeerScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+	ALTITUDE of BeerScroll = 10
+
+	wait until BeerScroll right clicked
+	delete BeerScroll
+
+	run script BB_Intro
+
+	run script BB_PlaceBarrels
+	run background script BB_CrowdControl
+
+	wait until BB_BarrelsFound == 5
+
+	BeerScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {BB_StackPos}
+	ALTITUDE of BeerScroll = 5
+
+	wait until BeerScroll right clicked
+	delete BeerScroll	
+
+	run script BB_LostBarrel
+	run script NorseBarrel
+
+	wait until BB_BarrelsFound == 6
+
+	begin dialogue
+		eject good spirit
+		say "Well done, you've collected all the barrels"
+		wait until read
+	end dialogue
+
+end script Land1BeerBarrel
+
+//-----------------------------------------------------------------------------
+//	Place Barrels
+//-----------------------------------------------------------------------------
+begin script BB_PlaceBarrels
+start
+	BB_Barrels[0] = create OBJECT NORSE_BARREL_02 at {1079.358887,56.796253,504.924927}
+	BB_Barrels[1] = create OBJECT NORSE_BARREL_02 at {1032.117798,50.200001,541.155701}
+	BB_Barrels[2] = create OBJECT NORSE_BARREL_02 at {1081.656616,50.200001,547.439880}
+	BB_Barrels[3] = create OBJECT NORSE_BARREL_02 at {1047.873779,50.200001,507.638092}
+	BB_Barrels[4] = create OBJECT NORSE_BARREL_02 at {1016.031372,50.199974,506.221313}
+end script BB_PlaceBarrels
+
+//-----------------------------------------------------------------------------
+//	Land 1 Beer Barrels Intro
+//-----------------------------------------------------------------------------
+begin script BB_Intro
+start
+	begin cinema
+
+		say "Oh no the Beer Barrels are in the ocean"
+		wait until read
+
+		say "Bring them to the coast, your creature might be able to help you but the waters are too cold for him to wade in"
+		wait until read
+
+	end cinema
+end script BB_Intro
+
+//-----------------------------------------------------------------------------
+//	Land 1 Lost Barrel
+//-----------------------------------------------------------------------------
+begin script BB_LostBarrel
+start
+	begin cinema
+		say "One of the beer barrels is missing"
+		wait until read
+
+		say "Some marauders were down here earlier, maybe they took one"
+		wait until read
+
+		say "I'd have a look round there farming settlment, that'll be where it's gone"
+		wait until read
+	end cinema
+end script BB_LostBarrel
+
+//-----------------------------------------------------------------------------
+//	Crowd Control
+//-----------------------------------------------------------------------------
+begin script BB_CrowdControl
+	BarrelCapturePos = marker at {1025.247925,6.477203,664.066772}
+	CaptureBarrel = 0
+	FirstCapture = BB_FALSE
+	CelebratePositions[5]
+	FocusPos = marker at {997.251, 53.307, 697.059}
+	VillagerLoop = 0
+	BarrelLoop = 0
+start
+	
+	//Create the party villagers
+	BB_PartyVillager[0] = create VILLAGER GREEK_FARMER at {BarrelCapturePos}
+	BB_PartyVillager[1] = create VILLAGER GREEK_FARMER at {BarrelCapturePos} + {1.999817,0.000000,5.000000}
+	BB_PartyVillager[2] = create VILLAGER GREEK_FARMER at {BarrelCapturePos} + {-3, 0, 4}
+	BB_PartyVillager[3] = create VILLAGER GREEK_FARMER at {BarrelCapturePos} + {0.499878,0.000000,2.999878}
+	BB_PartyVillager[4] = create VILLAGER GREEK_FARMER at {BarrelCapturePos} + {7.999878,0.000000,3.999939}
+	BB_PartyVillager[5] = create VILLAGER GREEK_FARMER at {BarrelCapturePos} + {-2, 0, -4}
+
+	CelebratePositions[0] = marker at {998.833, 53.211, 693.238}
+	CelebratePositions[1] = marker at {997.619, 53.271, 693.816}
+	CelebratePositions[2] = marker at {996.246, 53.191, 695.835}
+	CelebratePositions[3] = marker at {997.251, 53.307, 697.059}
+	CelebratePositions[4] = marker at {999.150, 53.293, 698.044}
+	CelebratePositions[5] = marker at {1000.544, 53.359, 697.510}
+
+	begin loop
+		//CaptureBarrel = get OBJECT GREEK_BARREL_01 at {BarrelCapturePos} radius 20
+
+		//Set the barrel object to = nothing
+		release CaptureBarrel
+
+		//Loop through the barrels until one is near the capture position
+		begin loop
+			if {BB_Barrels[BarrelLoop]} near {BarrelCapturePos} radius 20
+				CaptureBarrel = BB_Barrels[BarrelLoop]
+			end if
+			BarrelLoop++
+			if BarrelLoop == 6
+				BarrelLoop = 0
+			end if
+		until CaptureBarrel exists and not CaptureBarrel is HELD
+		end loop
+
+		if CaptureBarrel exists and {CaptureBarrel} on land
+			BB_BarrelsFound++
+			run script BB_GetVillagerToStackBarrel(CaptureBarrel)
+			if BB_BarrelsFound == 1
+				FirstCapture = BB_TRUE
+				BarrelCapturePos = marker at {CelebratePositions[0]}
+			end if
+		end if
+
+		//The first barrel has been captured. Move everyone there to celebrate
+		if FirstCapture == BB_TRUE
+			//Move the villagers to their positions
+			begin loop
+				run background script VillagerCelebrate(BB_PartyVillager[VillagerLoop], marker at {CelebratePositions[VillagerLoop]})
+				VillagerLoop++
+			until VillagerLoop == 6
+			end loop
+			FirstCapture = BB_FALSE
+
+		//The villagers must reset their positions
+		else
+			BB_VillagerReset++
+		end if
+	end loop
+
+end script BB_CrowdControl
+
+//-----------------------------------------------------------------------------
+//	Get Villager to Stack Barrel
+//-----------------------------------------------------------------------------
+begin script BB_GetVillagerToStackBarrel(Barrel)
+	Collector = 0
+	RandomVillager = 0	
+start
+
+	//Get an idle villager
+	begin loop
+		RandomVillager = number from 0 to 5
+		Collector = BB_PartyVillager[RandomVillager]
+	until BB_VillagerBusy[RandomVillager] == BB_FALSE and villager Collector available
+	end loop
+
+	//Set this villager to be busy
+	BB_VillagerBusy[RandomVillager] = BB_TRUE	
+
+	wait 2 seconds
+
+	//Move the villager to the barrel if it is possible
+	begin loop
+		stop Collector moving
+		move Collector position to {Barrel}
+		wait 2 seconds
+	until not Collector exists or not Barrel exists or {Collector} near {Barrel} radius 1
+	end loop
+		
+	//If the villager is at the barrel position then pick it up
+	if {Collector} near {Barrel} radius 2
+		play anim "a_p_pick_up_bag" on Collector loop 1 
+		wait until Collector played
+		delete Barrel
+		set Collector carrying CARRIED_OBJECT_BARREL
+	end if	
+	
+	//Move the villager to the barrel stack
+	begin loop
+		stop Collector moving
+		move Collector position to {BB_StackPos}
+		override Collector anim "a_p_carrying_pot"
+		wait until Collector played
+		wait 2 seconds
+	until not Collector exists or {Collector} near {BB_StackPos} radius 1
+	end loop
+
+	run script BB_AddToBarrelStack
+	set Collector carrying CARRIED_OBJECT_NONE
+
+	BB_VillagerBusy[RandomVillager] = BB_FALSE
+end script BB_GetVillagerToStackBarrel
+
+//-----------------------------------------------------------------------------
+//	Add to Barrel Stack
+//-----------------------------------------------------------------------------
+begin script BB_AddToBarrelStack
+	BarrelLoop = -1
+	StackPosition = marker at {999.989929,6.942902,695.410034}
+start
+	
+	//Loop through the stack until an empty space is found
+	begin loop
+		BarrelLoop++
+	until not BB_BarrelStack[BarrelLoop] exists
+	end loop
+
+	//The loop always increments one too far
+	//BarrelLoop--
+
+	if BarrelLoop == 0
+		BB_BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at {StackPosition}
+		ALTITUDE of BB_BarrelStack[BarrelLoop] = 0
+		ANGLE of BB_BarrelStack[BarrelLoop] = number from 1 to 360
+
+	//Stack ID (X6 ME X4)
+	elsif BarrelLoop == 1
+		//long line of positional mayhem..not really but it's still long and Ihave a lot of time on my hands hence why i'm writing this comment
+		BB_BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at get world position from BB_BarrelStack[0] to {0.649872,0.000000,0.000000}
+		ALTITUDE of BB_BarrelStack[BarrelLoop] = 0
+		ANGLE of BB_BarrelStack[BarrelLoop] = number from 1 to 360
+
+	//Stack ID (X6 X5 ME)
+	elsif BarrelLoop == 2
+		BB_BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at get world position from BB_BarrelStack[0] to {1.299744,0.000000,0.000000}
+		ALTITUDE of BB_BarrelStack[BarrelLoop] = 0
+		ANGLE of BB_BarrelStack[BarrelLoop] = number from 1 to 360
+
+	//Stack ID (ME X2)
+	elsif BarrelLoop == 3
+		BB_BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at get world position from BB_BarrelStack[0] to {0.32, 0, -0.62}
+		ALTITUDE of BB_BarrelStack[BarrelLoop] = 0
+		ANGLE of BB_BarrelStack[BarrelLoop] = number from 1 to 360
+
+	//Stack ID (X3 ME)
+	elsif BarrelLoop == 4
+		BB_BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at get world position from BB_BarrelStack[0] to {0.97, 0, -0.62}
+		ALTITUDE of BB_BarrelStack[BarrelLoop] = 0
+		ANGLE of BB_BarrelStack[BarrelLoop] = number from 1 to 360
+
+	//Stack ID (ME X0
+	elsif BarrelLoop == 5
+		BB_BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at get world position from BB_BarrelStack[0] to {0.32, 0, -0.3}
+		ALTITUDE of BB_BarrelStack[BarrelLoop] = 0.9
+		ANGLE of BB_BarrelStack[BarrelLoop] = number from 1 to 360
+
+	//Stack ID (X1 ME)
+	elsif BarrelLoop == 6
+		BB_BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at get world position from BB_BarrelStack[0] to {0.97, 0, -0.3}
+		ALTITUDE of BB_BarrelStack[BarrelLoop] = 0.9
+		ANGLE of BB_BarrelStack[BarrelLoop] = number from 1 to 360
+
+	end if
+
+end script BB_AddToBarrelStack
+
+//-----------------------------------------------------------------------------
+//	Add to Barrel Stack
+//-----------------------------------------------------------------------------
+begin script NorseBarrel
+	ExitHouse = 0
+	CarryDude = 0
+	BarrelPos = marker at {966.799316,202.825653,1272.376465}
+start
+	begin loop
+		ExitHouse = get random home in town get town with id 5
+	until ExitHouse exists
+	end loop
+
+	CarryDude = create VILLAGER NORSE_FARMER at extra position 1 of ExitHouse
+
+	set CarryDude carrying CARRIED_OBJECT_BARREL	
+	move CarryDude position to {BarrelPos}
+	override CarryDude anim "a_p_carrying_pot"
+
+	wait until {CarryDude} near {BarrelPos} radius 2
+
+	BB_Barrels[5] = create OBJECT NORSE_BARREL_02 at {BarrelPos}
+
+	set CarryDude carrying CARRIED_OBJECT_NONE
+
+end script NorseBarrel
+
+//-----------------------------------------------------------------------------
+//	Villager Celebrate
+//-----------------------------------------------------------------------------
+begin script VillagerCelebrate(Villager, Position)
+	RandomAnim = 0
+	RandomAction = 0
+	LastReset = 0	//This jholds the last time the villagers were all told to reset their positions
+	ActionChange = 0
+start
+	move Villager position to {Position}
+	SPEED of Villager = 0.3
+	wait until {Villager} at {Position}
+
+	set Villager focus to {BB_StackPos}
+	
+	//Villager actions
+	begin loop			
+
+		wait until BB_VillagerReset != LastReset or ActionChange seconds
+
+		if BB_VillagerReset != LastReset
+			move Villager position to {Position}
+			SPEED of Villager = 0.3
+			wait until {Villager} at {Position}
+
+			set Villager focus to {BB_StackPos}
+
+			LastReset = BB_VillagerReset
+		end if
+
+		RandomAction = number from 1 to 2
+
+		//Make sure the villager sint carrying anything
+		set Villager carrying CARRIED_OBJECT_NONE
+
+		//Do a beer action
+		if RandomAction == 1
+			set Villager carrying CARRIED_OBJECT_BEERMUG
+			play anim "a_p_talking_drinking" on Villager loop -1		
+
+		//Do a happy animation action
+		elsif RandomAction == 2
+			RandomAnim = number from 1 to 8
+
+			if RandomAnim == 1
+				play anim "a_p_dance_celebrate01" on Villager loop -1
+			elsif RandomAnim == 2
+				play anim "a_p_dance_celebrate02" on Villager loop -1
+			elsif RandomAnim == 3
+				play anim "a_p_dance_celebrate03" on Villager loop -1
+			elsif RandomAnim == 4
+				play anim "a_p_dance_celebrate04" on Villager loop -1
+			elsif RandomAnim == 5
+				play anim "a_p_dance_celebrate05" on Villager loop -1
+			elsif RandomAnim == 6
+				play anim "a_p_dance_celebrate06" on Villager loop -1
+			elsif RandomAnim == 7
+				play anim "a_p_dance_celebrate07" on Villager loop -1
+			elsif RandomAnim == 8
+				play anim "a_p_dance_celebrate08" on Villager loop -1
+			end if	
+		end if
+
+		ActionChange = number from BB_ACTION_TIME_MIN to BB_ACTION_TIME_MAX
+
+	end loop
+
+end script VillagerCelebrate
+
+//-----------------------------------------------------------------------------
+//	Temp Hand
+//-----------------------------------------------------------------------------
+begin script TempHand
+	Barrel = 0
+	MoveVector = 0
+	MarkerRock = 0
+	MarkerMarker = 0
+	HandMarker = 0
+start
+	MarkerRock = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {1, 1, 1} 
+
+	begin loop
+		Barrel = get OBJECT NORSE_BARREL_02 at hand position radius 5
+
+		if Barrel exists
+			HandMarker = marker at hand position
+			
+			if XPOS of Barrel > XPOS of HandMarker
+				set Barrel position to {Barrel} - {1, 0, 0}
+			else
+				set Barrel position to {Barrel} - {1, 0, 0}
+			end if
+		end if
+
+	end loop
+end script TempHand

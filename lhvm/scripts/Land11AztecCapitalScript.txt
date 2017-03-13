@@ -1,0 +1,3512 @@
+//===========================================================================
+// Land 11 Aztec Capital
+// By Lenny
+//===========================================================================
+
+//-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
+define AC_FALSE			= 0
+define AC_TRUE			= 1
+
+//Game stages
+define AC_GAME_STAGE_START					= 0
+define AC_GAME_STAGE_STAGING				= 1
+define AC_GAME_STAGE_SIEGE					= 2
+define AC_GAME_STAGE_WITHDRAW				= 3
+define AC_GAME_STAGE_ONSLOUGHT				= 4
+define AC_GAME_STAGE_NORSE_REINFORCE		= 5
+define AC_GAME_STAGE_JAPANESE_REINFORCE		= 6
+define AC_GAME_STAGE_FINAL_SIEGE			= 7
+
+define AC_FINAL_ASSAULT_ORDERS_TAKE_OVER	= 0
+define AC_FINAL_ASSAULT_ORDERS_ATTACK_TROOPS = 1
+
+//====================
+// Stage specific defines
+//====================
+//Start
+define AC_GAME_STAGE_START_CONDITION_TIME				= 25
+define AC_GAME_STAGE_START_CONDITION_TOWN_SIZE			= 150
+define AC_GAME_STAGE_START_PLAYER_PLATOONS				= 8
+define AC_GAME_STAGE_START_PLAYER_PLATOON_SIZE			= 40
+
+//Siege
+define AC_GAME_STAGE_SIEGE_CONDITION_TOTAL_FIGHTS		= 20
+define AC_GAME_STAGE_SIEGE_CONDITION_TIME				= 35
+
+//Siege conditions for withdraw
+define AC_MIN_POPULATION_FOR_WITHDRAW					= 70
+define AC_MIN_PLATOON_WARRIORS_FOR_WITHDRAW				= 40
+define AC_PLATOONS_DESTROYED_FOR_WITHDRAW				= 6
+
+//Withdraw
+define AC_GAME_STAGE_SIEGE_CONDITION_TIME_AFTER_VOLCANO	= 85
+
+//Onslought
+define AC_GAME_STAGE_SIEGE_CONDITION_TIME_BEFORE_NORSE		= 60
+define AC_GAME_STAGE_SIEGE_CONDITION_TIME_BEFORE_JAPANESE	= 400 //After Norse first Aztec town has been converted
+define AC_GAME_STAGE_SIEGE_CONDITION_TIME_BEFORE_JAPANESE_MUSIC_STOPS	= 400
+
+define AC_DYNAMIC_MUSIC_TIME_BEFORE_STOPPING				= 120
+
+//====================
+
+//====================
+// Aztec General defines
+//====================
+define AC_GENERAL_TAUNT_INTERVAL	= 45
+
+
+//General comments
+define AC_GENERAL_NONE				= 0
+define AC_GENERAL_FIGHTING			= 1
+define AC_GENERAL_WON_BATTLE		= 2
+define AC_GENERAL_LOST_BATTLE		= 3
+
+//Platoon types
+define AC_PLATOON_TYPE_MELEE		= 0
+define AC_PLATOON_TYPE_RANGED		= 1
+define AC_PLATOON_TYPE_CATAPULT		= 2
+
+//Max num platoons
+define AC_PLATOON_MAX_AZTEC_CAPITAL	= 5
+define AC_PLATOON_MAX_AZTEC_TOWN1	= 3
+define AC_PLATOON_MAX_AZTEC_TOWN2	= 3
+
+//Max num siege
+define AC_SIEGE_MAX_AZTEC_CAPITAL	= 4
+define AC_SIEGE_MAX_AZTEC_TOWN1		= 2
+define AC_SIEGE_MAX_AZTEC_TOWN2		= 2
+
+//Size
+define AC_PLATOON_DEFAULT_SIZE		= 40
+
+//Town defines
+define AC_TOWN_PLAYER				= 3
+define AC_TOWN_AZTEC1				= 1
+define AC_TOWN_CAPITAL				= 0
+define AC_TOWN_AZTEC2				= 2
+define AC_TOWN_LAST					= 4
+
+//Time before events start
+define AC_SIEGE_TIME				= 30	// time before siege starts
+define AC_SIEGE_WAVE_TIME			= 15	// initial time between each wave attacking (subsequent waves have the amount below added as well)
+define AC_SIEGE_WAVE_POST_TIME		= 200	// allow enough time for first wave to have reached the city	
+define AC_VOLCANO_APPEAR_TIME		= 80
+define AC_ONSLAUGHT_TIME			= 30	// time between each wave in onslaught
+
+//Reinforcement units
+define AC_NORSE_REINFORCEMENT_UNITS = 2		// how many norse reinforcements appear
+define AC_JAPAN_REINFORCEMENT_UNITS = 5		// how many japanese reinforcements appear
+
+define MAX_BIG_ARMY_REGEN			= 500
+define MAX_BIG_ARMY_REGEN_HARD		= 3000
+//-----------------------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------------------
+global AC_GameStage		= AC_GAME_STAGE_START
+
+//Balance
+global AC_Balance_Recruit[AC_TOWN_LAST]
+global AC_Balance_Recruit_Siege[AC_TOWN_LAST]
+global AC_Balance_Recruit_Time[AC_TOWN_LAST]
+global AC_Balance_Recruit_Platoon_Size[AC_TOWN_LAST]
+
+//Platoons
+global AC_PlatoonsDefenceCapital[13]
+global AC_PlatoonsDefenceTown1[4]
+global AC_PlatoonsDefenceTown2[4]
+
+//Siege
+global AC_Town1SiegePlatoons[4]
+global AC_Town2SiegePlatoons[4]
+global AC_Town1SiegeCatapult[2]
+global AC_Town2SiegeCatapult[2]
+
+global AC_VolcanoCast				= AC_FALSE
+
+global PopulationOfPlayersTown = 0
+global NumberOfPlayerPlatoons = 0
+
+global Town2ToAttackNow = AC_FALSE
+global CountdownToVolcanoNow = AC_FALSE
+global AC_EnteredCapital = AC_FALSE // check for player rushing the enemy
+
+global NumberOfEnemyPlatoonsKilled = 0
+
+// Reinforcements
+global AC_NorseReinforcements[AC_NORSE_REINFORCEMENT_UNITS]
+global AC_JapaneseReinforcements[AC_JAPAN_REINFORCEMENT_UNITS]
+
+global AC_NorseReinforcementsSize[AC_NORSE_REINFORCEMENT_UNITS]
+global AC_JapaneseReinforcementsSize[AC_JAPAN_REINFORCEMENT_UNITS]
+
+global AC_ReinforcementsArrived = 0
+
+global Town1DestPosFirst[6]
+global Town1DestPosSecond[6]
+global Town1DestPosThird[6]
+
+global Town2DestPosFirst[6]
+global Town2DestPosSecond[6]
+global Town2DestPosThird[6]
+
+global CheckForPlatoonNearHere = 0
+global AC_SentNorseReinforcements = AC_FALSE
+global AC_ScriptedGatehouse = AC_TRUE // leave gatehouse 7 alone while it's scripted
+global AC_CatapultsAllAttack = AC_FALSE
+
+global CapitalsMainForce = 0
+
+global HardMode = AC_FALSE
+
+global FinishedIntro = AC_FALSE
+
+global MainForceBeforeDepleted = 0
+
+global CatapultsOnlyWithdrawOnce = AC_FALSE
+
+global AC_DynamicMusicTimer = 0
+global AC_DynamicMusicStopperScriptRunning = AC_FALSE
+global AC_FinaleMusicThreadRunning = AC_FALSE
+
+
+global constant AZTEC_ARMY_MELEE_LEVEL = PLATOON_INFO_AZTEC_MELEE_4
+global constant AZTEC_ARMY_RANGED_LEVEL = PLATOON_INFO_AZTEC_RANGED_4
+
+
+
+//-----------------------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------------------
+
+// ---- Misc Scripts
+define script AC11_Intro
+define script AC11_SetupBalance
+define script AC11_SetupBalanceOnslaught
+define script AC11_GreekSetup
+define script AC11_SetupMarkers
+
+// ---- AI Structure Scripts
+define script AC11_AztecCapitalArmyManager
+define script AC11_AztecTown1ArmyManager
+define script AC11_AztecTown2ArmyManager
+
+// ---- AI Build Scripts
+define script AC11_AztecCapitalBuildController
+
+// ---- AI Platoon Scripts
+define script AC11_QuickRecruitPlatoon(town_id, platoon_to_replace, rtype)
+define script AC11_QuickRecruitCatapult(town_id, platoon_to_replace)
+define script AC11_MovePlatoonHere(platoon_id, destpos)
+define script AC11_MovePlatoonHereThenAttackTown(platoon_id, destpos, to_town)
+define script AC11_PlatoonAttackTown(platoon_id, to_town)
+define script AC11_PlatoonAttackPlatoon(platoon_id, to_attack)
+define script AC11_MoveSiegeHere(siege_id, destpos)
+define script AC11_FaceThisDirection(unit_id, facepos)
+define script AC11_MoveRangedOntoWall(unit_id, wallpos)
+define script AC11_SiegeAttackWallsHere(unit_id, aimherepos, stayonsametarget)
+
+// ---- Reinforce scripts
+define script AC11_NorseReinforce
+define script AC11_JapaneseReinforce
+define script AC11_MaintainSiegePlatoonLevel(town_id)
+
+// ---- Misc scripts
+define script AC11_CastEpicVolcano
+define script AC11_TownTributes
+define script AC11_CheckPlatoonStatus(platoon_id)
+define script AC11_OpenGatesForPlatoons
+define script AC11_CreateAztecTown1Platoons
+define script AC11_CreateAztecTown2Platoons
+define script AC11_MoveAztecTown1Platoons
+define script AC11_MoveAztecTown2Platoons
+define script AC11_SecondAssault
+define script AC11_CreateAztecDefenders
+define script AC11_ControlAztecDefenders
+define script AC11_ExtraAztecDefenders
+define script AC11_MoveInReplacementPlatoon(from_town, platoon_id)
+define script AC11_MoveInReplacementCatapult(from_town, platoon_id)
+define script AC11_WithdrawEnemyArmies(react_to_armies)
+define script AC11_CheckForEnteredCapital
+define script AC11_CreateCapitalsBigPlatoon
+define script AC11_BigArmyComingAtYa
+define script AC11_FinalAssaultTroopsOrders(platoon_id, orders)
+define script AC11_DisbandRemainingTroops
+define script AC11_CheckingImpressiveRoute
+define script AC11_CheckForAndDealWithPlayerBuildingAnnoyingWalls
+define script AC11_DetectHardMode
+define script AC11_DetectFirstWaveDying
+define script AC11_EnemyEpicCharging
+define script AC11_StopDynamicMusic
+define script AC11_EndDynamicMusicGracefully
+define script AC11_PlayMusicForFinale
+
+//-----------------------------------------------------------------------------
+// Land 11 Aztec Capital
+//-----------------------------------------------------------------------------
+begin script Land11AztecCapitalScript
+	StageTimer = create timer for 0 seconds
+	VolcanoTimer = create timer for 0 seconds
+	Threshold = 0
+	PlatoonType = variable PLATOON_INFO_AZTEC_MELEE_7
+	CreatureNearWall = marker at {2030.339,218.200,661.044}
+start
+
+	set fade red 0 green 0 blue 0 time 0
+
+	enable game can be lost
+
+	//Free resources
+	
+	add resource RESOURCE_TYPE_FOOD GLOBAL_VALUE_LAND_11_INITIAL_FOOD  to L11GreekTown
+	add resource RESOURCE_TYPE_WOOD GLOBAL_VALUE_LAND_11_INITIAL_WOOD to L11GreekTown
+	add resource RESOURCE_TYPE_ORE GLOBAL_VALUE_LAND_11_INITIAL_ORE to L11GreekTown
+
+	set initial level of player melee platoon to ARMY_UNIT_TYPE_MELEE_1
+	set initial level of player ranged platoon to ARMY_UNIT_TYPE_RANGED_1
+	set initial level of player siege weapon to SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1
+
+	AC_DynamicMusicTimer = create timer for 0 seconds
+
+	//  QUICK TESTING FOR DESIGN PURPOSES ONLY.....
+	/*
+	set research ARTEFACT_MAGIC_TYPE_LIFE_HEAL available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_FIRE_FIRE available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_AIR_TEMPEST available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_EARTH_METEOR available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_WATER_RAIN available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_WATER_STORM available to RESEARCH_AVAILABILITY_RESEARCHED
+	*/
+
+	//Init control
+	run background script Land11Globals
+	run script AC11_SetupBalance	
+	run script AC11_GreekSetup
+	run background script AC11_CreateAztecDefenders
+	run script AC11_SetupMarkers
+
+	// Setup the player's migration values
+	// Capital - Player
+	Threshold = get town L11AztecCapital impressiveness
+	set migration threshold from L11AztecCapital to L11GreekTown GLOBAL_VALUE_THRESHOLD_LAND_11_CAPITAL_TO_GREEK - Threshold
+
+	// Settlement 1	- Player
+	Threshold = get town L11AztecTown1 impressiveness
+	set migration threshold from L11AztecTown1 to L11GreekTown GLOBAL_VALUE_THRESHOLD_LAND_11_SETTLEMENT1_TO_GREEK - Threshold
+
+	// Settlement 2	- Player
+	Threshold = get town L11AztecTown2 impressiveness
+	set migration threshold from L11AztecTown2 to L11GreekTown GLOBAL_VALUE_THRESHOLD_LAND_11_SETTLEMENT2_TO_GREEK - Threshold
+
+	//Land intro
+	run script AC11_Intro
+	//set fade in time 2
+
+	run background script AC11_OpenGatesForPlatoons
+	run background script AC11_ControlAztecDefenders
+	run background script AC11_ExtraAztecDefenders
+	run background script AC11_CheckingImpressiveRoute
+	run background script AC11_DetectHardMode
+	run background script AC11_EnemyEpicCharging
+
+	//   *************** TESTING **********************
+
+	//   *************** END TESTING ******************
+
+	//Run AI scripts
+	run background script AC11_AztecCapitalArmyManager
+	run background script AC11_AztecTown1ArmyManager
+	run background script AC11_AztecTown2ArmyManager
+	
+	//Run build scripts
+	run background script AC11_AztecCapitalBuildController
+
+	run background script AC11_TownTributes
+	run background script AC11_CheckForEnteredCapital
+	
+	//Conditions to get to stage AC_GAME_STAGE_SIEGE
+	//set StageTimer time to AC_GAME_STAGE_START_CONDITION_TIME seconds	
+	//wait until get StageTimer time remaining == 0 and size of L11GreekTown >= AC_GAME_STAGE_START_CONDITION_TOWN_SIZE
+	//wait until get platoons in town L11GreekTown >= AC_GAME_STAGE_START_PLAYER_PLATOONS
+
+	begin loop
+		wait 30 seconds
+
+		begin dialogue
+			//AztecG: The Norse and the Japanese were too weak to stop this Greek horde. It falls to me to do it.
+			say "BW2T_SCRIPT_10FINAL_STORYLINE_7"
+			wait until read
+		end dialogue
+
+		wait 200 seconds
+
+		run script GCAI_SetTask_PerformRole(CreatureNearWall,50,variable CR_NONE)
+
+		wait 100 seconds
+
+		AC_GameStage = AC_GAME_STAGE_STAGING
+
+		// -- Start stage siege
+		wait 30 seconds
+		AC_GameStage = AC_GAME_STAGE_SIEGE
+
+		wait until CountdownToVolcanoNow == AC_TRUE
+
+		if HardMode == AC_TRUE
+			wait 200 seconds
+		else
+			wait 20 seconds
+		end if
+
+		if PLAYER of L11GreekTown == 0
+			begin dialogue
+				//AztecG: No-one will stop the Aztecs and our epic powers!
+				say "BW2T_SCRIPT_11FINAL_STORYLINE_5"
+				wait until read
+			end dialogue
+		end if
+
+		wait 3 seconds
+
+		if PLAYER of L11GreekTown == 0
+			begin dialogue
+				//AztecG: Deploy the Epic Miracle!
+				say "BW2T_SCRIPT_10FINAL_EARTHQUAKE"
+				wait until read
+			end dialogue
+		end if
+
+		wait 30 seconds
+
+		if PLAYER of L11GreekTown == 0
+			// -- Start stage withdraw
+			AC_GameStage = AC_GAME_STAGE_WITHDRAW
+
+			play string sound "AZTECHORN"
+
+			// get all the enemy soldiers to run away from the greek town
+			run background script AC11_WithdrawEnemyArmies(AC_FALSE)
+
+			set dynamic music "smallendofbattle" loop -1 urgent
+
+			VolcanoTimer = create timer for AC_VOLCANO_APPEAR_TIME seconds
+		end if
+
+		wait 30 seconds
+		
+		if PLAYER of L11GreekTown == 0
+
+			run background script AC11_EndDynamicMusicGracefully
+
+			wait 2 seconds
+
+			play string sound "AZTECHORN"
+			run background script AC11_WithdrawEnemyArmies(AC_FALSE)
+
+			begin loop
+				if get VolcanoTimer time remaining == 0
+					run script AC11_CastEpicVolcano	//Start the volcano script, on a timer
+					AC_VolcanoCast = AC_TRUE
+				end if
+			until AC_VolcanoCast == AC_TRUE
+			end loop
+
+			set StageTimer time to AC_GAME_STAGE_SIEGE_CONDITION_TIME_AFTER_VOLCANO seconds
+
+			wait until Land11VolcanoCasting == 0
+
+			run background script AC11_EndDynamicMusicGracefully
+
+			wait until get StageTimer time remaining == 0
+		end if
+
+		// -- Start stage Onslought
+		AC_GameStage = AC_GAME_STAGE_ONSLOUGHT
+
+		// get all the enemy armies to react to the player's armies again after the withdraw
+		//run background script AC11_WithdrawEnemyArmies(AC_TRUE)
+
+		// Aztec's can ramp up their production here
+		run script AC11_SetupBalanceOnslaught
+
+		start dynamic music
+		set dynamic music "small" loop -1
+
+		run background script AC11_SecondAssault
+
+		set StageTimer time to 500 seconds
+		wait until PLAYER of L11AztecTown1 == 0 or get StageTimer time remaining == 0
+
+		run background script AC11_CreateCapitalsBigPlatoon
+
+		if AC_EnteredCapital == AC_TRUE
+			AC_EnteredCapital = AC_FALSE
+			run background script AC11_CheckForEnteredCapital
+		end if
+
+		set StageTimer time to AC_GAME_STAGE_SIEGE_CONDITION_TIME_BEFORE_JAPANESE seconds
+		wait until get StageTimer time remaining == 0 or AC_EnteredCapital == AC_TRUE or (size of AC_Town1SiegePlatoons[0] < 2 and size of AC_Town1SiegePlatoons[1] < 2 and size of AC_Town1SiegePlatoons[2] < 2 and size of AC_Town1SiegePlatoons[3] < 2)
+		wait until get StageTimer time remaining == 0
+
+		//Start the Japanese re-inforce script
+		run background script AC11_JapaneseReinforce
+
+		set StageTimer time to AC_GAME_STAGE_SIEGE_CONDITION_TIME_BEFORE_JAPANESE_MUSIC_STOPS seconds
+
+		wait until PLAYER of L11AztecTown2 == 0 or get StageTimer time remaining == 0
+
+		if PLAYER of L11AztecTown2 == 0
+			set dynamic music "smallendofbattle2" loop -1 urgent
+		else
+			set dynamic music "smallendofbattle" loop -1 urgent
+		end if
+
+		wait 40 seconds
+
+		run background script AC11_EndDynamicMusicGracefully
+
+		run script GCAI_SetTask_PerformRole(L11AztecCapital,100,variable CR_SOLDIER)
+
+		wait until size of CapitalsMainForce >= 200
+
+		AC_GameStage = AC_GAME_STAGE_FINAL_SIEGE
+
+		wait 140 seconds
+
+		begin dialogue
+			// AG: Ha. This will only end one way. Nothing can stop my Aztec nation!
+			say "BW2T_SCRIPT_10FINAL_STORYLINE_8"
+			wait until read
+		end dialogue
+
+		run script AC11_BigArmyComingAtYa
+
+		while L11Complete != AC_TRUE
+			// if the main force is nearly dead and we haven't made a number of troops
+			if HardMode == AC_FALSE
+				if size of CapitalsMainForce < 5 and MainForceBeforeDepleted < MAX_BIG_ARMY_REGEN
+					run script AC11_CreateCapitalsBigPlatoon
+
+					wait 20 seconds
+
+					run script AC11_BigArmyComingAtYa
+				end if
+			else
+				if size of CapitalsMainForce < 5 and MainForceBeforeDepleted < MAX_BIG_ARMY_REGEN_HARD
+					run script AC11_CreateCapitalsBigPlatoon
+
+					wait 20 seconds
+
+					run script AC11_BigArmyComingAtYa
+				end if
+			end if
+
+		end while
+
+		until L11Complete == AC_TRUE
+	end loop
+
+	stop dynamic music
+
+	///
+	///TA: DEAL WITH TICKING THE OBJECTIVE
+	//This has to occur before the land over script!
+	if PLAYER of L11AztecCapital == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment -0.1		
+	else
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment 0.1				
+	end if
+	//Either way we have completed the land.
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+	
+
+	// platoons and villagers should disperse for migration
+	if PLAYER of L11GreekTown == 0
+		run background script LandOver(L11GreekTown)
+	elsif PLAYER of L11AztecTown1 == 0
+		run background script LandOver(L11AztecTown1)
+	elsif PLAYER of L11AztecTown2 == 0
+		run background script LandOver(L11AztecTown2)
+	elsif PLAYER of L11AztecCapital == 0
+		run background script LandOver(L11AztecCapital)
+	else
+		run background script LandOver(L11GreekTown)
+	end if
+
+	//run background script AC11_DisbandRemainingTroops
+	
+	// playing the final outro
+	run script Land11Outro
+
+	// do nothing it's over
+	wait 500 seconds
+
+end script Land11AztecCapitalScript
+
+//-----------------------------------------------------------------------------
+// Land 11 Setup Markers
+//-----------------------------------------------------------------------------
+begin script AC11_SetupMarkers
+start
+	
+	Town1DestPosFirst[0] = marker at {1898.000,195.480,807.294}
+	Town1DestPosFirst[1] = marker at {1905.589,193.090,788.991}
+	Town1DestPosFirst[2] = marker at {1910.715,193.471,802.057}
+	Town1DestPosFirst[3] = marker at {1919.494,192.062,817.481}
+	Town1DestPosFirst[4] = marker at {1927.365,191.254,800.085}
+	Town1DestPosFirst[5] = marker at {1934.708,192.416,814.219}
+
+	Town1DestPosSecond[0] = marker at {1754.346,218.528,907.439}
+	Town1DestPosSecond[1] = marker at {1760.335,213.878,871.634}
+	Town1DestPosSecond[2] = marker at {1789.124,215.184,887.318}
+	Town1DestPosSecond[3] = marker at {1778.325,214.965,905.286}
+	Town1DestPosSecond[4] = marker at {1768.409,215.987,886.416}
+	Town1DestPosSecond[5] = marker at {1773.300,216.450,900.676}
+
+	Town1DestPosThird[0] = marker at {1553.264,235.163,967.778}
+	Town1DestPosThird[1] = marker at {1552.225,235.503,959.017}
+	Town1DestPosThird[2] = marker at {1551.229,236.671,947.395}
+	Town1DestPosThird[3] = marker at {1546.019,240.931,932.444}
+	Town1DestPosThird[4] = marker at {1803.256,212.290,876.160}
+	Town1DestPosThird[5] = marker at {1797.134,212.358,868.608}
+
+	Town2DestPosFirst[0] = marker at {1262.454,199.799,1260.588}
+	Town2DestPosFirst[1] = marker at {1259.338,196.409,1289.336}
+	Town2DestPosFirst[2] = marker at {1248.012,194.899,1277.212}
+	Town2DestPosFirst[3] = marker at {1237.726,193.134,1266.529}
+	Town2DestPosFirst[4] = marker at {1235.193,191.142,1290.865}
+	Town2DestPosFirst[5] = marker at {1227.615,189.418,1283.055}
+
+	Town2DestPosSecond[0] = marker at {1358.546,214.707,1158.888}
+	Town2DestPosSecond[1] = marker at {1358.856,213.552,1184.395}
+	Town2DestPosSecond[2] = marker at {1337.061,212.532,1181.038}
+	Town2DestPosSecond[3] = marker at {1333.544,213.369,1161.020}
+	Town2DestPosSecond[4] = marker at {1425.721,209.608,1108.058}
+	Town2DestPosSecond[5] = marker at {1434.337,201.155,1112.546}
+
+	Town2DestPosThird[0] = marker at {1545.928,238.596,974.635}
+	Town2DestPosThird[1] = marker at {1544.385,235.163,973.181}
+	Town2DestPosThird[2] = marker at {1544.944,235.279,963.279}
+	Town2DestPosThird[3] = marker at {1546.887,236.481,949.050}
+	Town2DestPosThird[4] = marker at {1377.159,219.311,1146.497}	
+	Town2DestPosThird[5] = marker at {1370.596,217.768,1142.266}	
+
+	CheckForPlatoonNearHere = marker at {1710.681,259.267,1340.545}
+
+end script AC11_SetupMarkers
+
+//-----------------------------------------------------------------------------
+// Land 11 Setup balance
+//-----------------------------------------------------------------------------
+begin script AC11_SetupBalance	
+start
+
+	/* ===================
+	AC_TOWN_CAPITAL AC_TOWN_AZTEC1 AC_TOWN_AZTEC2 - AI. Used for comments and control
+	AC_TOWN_PLAYER - Player. Used for comments only
+	*/
+
+	/* --- Balance Recruit ---
+	If the town has less than this number of platoons inside it then it will recruit some more
+	*/
+	
+	AC_Balance_Recruit[AC_TOWN_CAPITAL]			= 5
+	AC_Balance_Recruit[AC_TOWN_AZTEC1]			= 3
+	AC_Balance_Recruit[AC_TOWN_AZTEC2]			= 3
+	AC_Balance_Recruit[AC_TOWN_PLAYER]			= 7
+
+	/* --- Balance Siege ---
+	If the town has less than this number of platoons inside it then it will recruit some more
+	*/
+
+	AC_Balance_Recruit_Siege[AC_TOWN_CAPITAL]	= 7
+	AC_Balance_Recruit_Siege[AC_TOWN_AZTEC1]	= 4
+	AC_Balance_Recruit_Siege[AC_TOWN_AZTEC2]	= 4
+	AC_Balance_Recruit_Siege[AC_TOWN_PLAYER]	= 4
+
+	/* --- Balance Recruit Time ---
+	This is the time interval between each recruitment
+	*/
+	AC_Balance_Recruit_Time[AC_TOWN_CAPITAL]	= 30
+	AC_Balance_Recruit_Time[AC_TOWN_AZTEC1]		= 20
+	AC_Balance_Recruit_Time[AC_TOWN_AZTEC2]		= 20
+	AC_Balance_Recruit_Time[AC_TOWN_PLAYER]		= 30
+
+	/* --- Balance Recruit Time ---
+	This is the size of eahc platoon the town creates
+	*/
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_CAPITAL]	= AC_PLATOON_DEFAULT_SIZE
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC1]		= 30
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC2]		= 30
+
+	/* --- Balance Reinforcement Types and sizes ---- */
+	AC_NorseReinforcements[0] = variable PLATOON_INFO_NORSE_MELEE_REINFORCEMENTS_5
+	AC_NorseReinforcements[1] = variable PLATOON_INFO_NORSE_MELEE_REINFORCEMENTS_5
+
+	AC_JapaneseReinforcements[0] = variable PLATOON_INFO_SEVEN_SAMURAI_REINFORCEMENTS
+	AC_JapaneseReinforcements[1] = variable PLATOON_INFO_MONKS_REINFORCEMENTS
+	AC_JapaneseReinforcements[2] = variable PLATOON_INFO_JAPANESE_MELEE_REINFORCEMENTS_5
+	AC_JapaneseReinforcements[3] = variable PLATOON_INFO_JAPANESE_RANGED_REINFORCEMENTS_5
+	AC_JapaneseReinforcements[4] = variable PLATOON_INFO_JAPANESE_RANGED_REINFORCEMENTS_5
+
+	AC_NorseReinforcementsSize[0] = 60
+	AC_NorseReinforcementsSize[1] = 60
+
+	AC_JapaneseReinforcementsSize[0] = 7
+	AC_JapaneseReinforcementsSize[1] = 10
+	AC_JapaneseReinforcementsSize[2] = 40
+	AC_JapaneseReinforcementsSize[3] = 20
+	AC_JapaneseReinforcementsSize[4] = 20
+
+end script AC11_SetupBalance
+
+//-----------------------------------------------------------------------------
+// Setup balance for onslaught
+//-----------------------------------------------------------------------------
+begin script AC11_SetupBalanceOnslaught
+start
+
+	/* ===================
+	AC_TOWN_CAPITAL AC_TOWN_AZTEC1 AC_TOWN_AZTEC2 - AI. Used for comments and control
+	AC_TOWN_PLAYER - Player. Used for comments only
+	*/
+
+	/* --- Balance Recruit ---
+	If the town has less than this number of platoons inside it then it will recruit some more
+	*/
+	
+	AC_Balance_Recruit[AC_TOWN_CAPITAL]			= 10
+	AC_Balance_Recruit[AC_TOWN_AZTEC1]			= 7
+	AC_Balance_Recruit[AC_TOWN_AZTEC2]			= 7
+	AC_Balance_Recruit[AC_TOWN_PLAYER]			= 7
+
+	/* --- Balance Siege ---
+	If the town has less than this number of platoons inside it then it will recruit some more
+	*/
+
+	AC_Balance_Recruit_Siege[AC_TOWN_CAPITAL]	= 7
+	AC_Balance_Recruit_Siege[AC_TOWN_AZTEC1]	= 4
+	AC_Balance_Recruit_Siege[AC_TOWN_AZTEC2]	= 4
+	AC_Balance_Recruit_Siege[AC_TOWN_PLAYER]	= 4
+
+	/* --- Balance Recruit Time ---
+	This is the time interval between each recruitment
+	*/
+	AC_Balance_Recruit_Time[AC_TOWN_CAPITAL]	= 20
+	AC_Balance_Recruit_Time[AC_TOWN_AZTEC1]		= 15
+	AC_Balance_Recruit_Time[AC_TOWN_AZTEC2]		= 15
+	AC_Balance_Recruit_Time[AC_TOWN_PLAYER]		= 20
+
+	/* --- Balance Recruit Time ---
+	This is the size of eahc platoon the town creates
+	*/
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_CAPITAL]	= AC_PLATOON_DEFAULT_SIZE
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC1]		= 30
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC2]		= 30
+
+end script AC11_SetupBalanceOnslaught
+
+//-----------------------------------------------------------------------------
+// Land 11 Intro
+//-----------------------------------------------------------------------------
+begin script AC11_Intro
+
+Tez=0
+EdibleVillager = 0
+VillagerPos = marker at {1979.938,264.463,463.015}
+
+start
+
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 0
+		set game time 06.00
+
+		set camera position to {2919.016, 700.776, -87.309}
+		set camera focus to {2857.248, 667.988, -15.832}
+
+		move camera position to {1684.519,338.985,975.048} time 20
+		move camera focus to {1606.602,284.166,1005.303} time 20
+
+		wait 2 seconds
+		set fade in time 2
+
+		Tez = create VILLAGER TEZOZOMOC at {1730.117,341.224,2004.038}
+		EdibleVillager = create VILLAGER GREEK_HOUSEWIFE at {VillagerPos}
+		ALTITUDE of Tez = 3.3
+		set Tez focus to {1730.198,337.401,1994.503}
+
+		run background script LandStart
+
+		reset camera path 
+
+		queue camera move with position {2224.507,480.650,1456.156} focus {2160.053,430.717,1514.054} time 0.0
+		queue camera move with position {2150.029,458.390,1463.566} focus {2096.367,423.182,1540.251} time 8.0
+		queue camera move with position {1737.027,363.278,1935.846} focus {1732.633,337.396,2032.342} time 10.0
+		//queue camera move with position {1738.915,348.545,1972.833} focus {1722.314,333.195,2070.245} time 10.0
+		queue camera move with position {1726.296,343.693,1996.072} focus {1763.357,324.506,2086.954} time 6.0
+		play camera path with easein 0 easeout 0.5 method SCRIPT_CAMERAPATH_SMOOTHEST
+		start music "cut_scene_battle_01"
+
+		wait 4 seconds
+
+		eject good spirit
+		eject evil spirit
+
+
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_11FINAL_ADVISORS_INTRO_E_10_20_30_40_50_60_70_140
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_11FINAL_ADVISORS_INTRO_G_10_20_30_40_50_60_70_140
+	/*	
+		//EA: We made it, Boss. This is the Aztec homeland. This is where it ends. One way or the other.
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_10"
+		wait until read
+
+		//GA: The final conflict! We have every faith in you, Leader!
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_20"
+		wait until read
+
+		wait until camera ready
+
+		//GEN: The Greeks have arrived. Now I shall send them all to burn for eternity.
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_30"
+		wait until read
+	*/	
+
+		wait until camera ready
+		//wait until read
+		wait until sound "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_30" playing
+		
+		play anim "a_p_dimilives_shouting_out_commands" on Tez loop -1
+		//GEN: The Greeks have arrived. Now I shall send them all to burn for eternity.
+		//say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_30"
+		wait 6 seconds
+
+
+
+		reset camera path 
+
+		//queue camera move with position {1709.297,391.207,2093.917} focus {1737.654,388.210,2189.767} time 8.0
+		queue camera move with position {1730.449,344.241,1919.672} focus {1736.565,336.593,2019.196} time 4.0
+		//queue camera move with position {1730.688,363.489,1931.310} focus {1729.235,371.811,2030.956} time 4.0
+		queue camera move with position {1731.858,344.786,1851.230} focus {1732.249,343.480,1951.217} time 4.0
+		queue camera move with position {1733.824,332.129,1702.179} focus {1729.051,334.729,1802.033} time 4.0
+		queue camera move with position {1745.554,325.747,1456.992} focus {1738.315,334.390,1556.358} time 4.0
+		queue camera move with position {1757.102,290.711,1081.979} focus {1754.099,300.003,1181.503} time 4.0
+		queue camera move with position {1957.196,319.002,893.146} focus {1920.990,321.343,986.334} time 4.0
+		queue camera move with position {2057.203,292.149,424.439} focus {2020.167,291.429,517.325} time 3.0
+		queue camera move with position {2011.126,325.120,327.903} focus {1986.724,305.516,422.879} time 3.0
+		queue camera move with position {1996.817,267.910,450.330} focus {1968.338,261.098,545.948} time 8.0
+		queue camera move with position {1885.111,328.356,639.487} focus {1830.485,318.603,722.678} time 2.0
+
+		queue camera move with position {1668.496,295.713,799.846} focus {1636.135,279.826,893.120} time 2.0
+		play camera path with easein 0 easeout 2 method SCRIPT_CAMERAPATH_SMOOTHEST
+/*
+		//EA: He's gonna slay us all like pigs, Boss!
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_40"
+		wait until read
+
+		//GA: Pull yourself together! Now we must build as much and as quickly as possible.
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_50"
+		wait until read
+*/
+		run script GCAI_SetTask_None
+		if HEALTH of GCAI_Creature > 0
+			force GCAI_Creature CREATURE_EAT_OBJECT EdibleVillager
+		end if
+
+/*
+		//GA: The Aztecs hate us with a passion. They're going to be relentless.
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_60"
+		wait until read
+
+		//GA: And we're going to need a lot of armed forces too. We could well have to attack.
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_70"
+		wait until read
+
+		wait 10 seconds
+
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_140"
+		//	AZTEC_GENERAL	The Japanese have betrayed us! They will not escape our wrath!
+		wait until read
+*/
+
+//wait until sound "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_140" playing
+wait until read
+send good spirit home
+		send evil spirit home
+
+say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_140"
+		//	AZTEC_GENERAL	The Japanese have betrayed us! They will not escape our wrath!
+		//wait until read
+
+
+wait until read
+
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_120"
+		//JAPANESE_GENERAL_PEACE	Greek God! The Japanese follow you now.
+		wait until read
+		
+		stop music with fadetime 10
+		
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_INTRO_130"
+		//	JAPANESE_GENERAL_PEACE	Everything we own is yours. Use our city here as your base!
+		wait until read
+
+		
+
+		//wait 20 seconds
+		reset camera path 
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		set camera position to {1609.741,294.915,932.499}
+		set camera focus to {1555.724,247.016,1002.030}
+
+		delete Tez
+		enable platoon AC_PlatoonsDefenceCapital[0] camp
+		enable platoon AC_PlatoonsDefenceCapital[1] camp
+		enable platoon AC_PlatoonsDefenceCapital[2] camp
+		enable platoon AC_PlatoonsDefenceCapital[3] camp
+		enable platoon AC_PlatoonsDefenceCapital[4] camp
+		enable platoon AC_PlatoonsDefenceCapital[5] camp
+		enable platoon AC_PlatoonsDefenceCapital[6] camp
+		enable platoon AC_PlatoonsDefenceCapital[7] camp
+		enable platoon AC_PlatoonsDefenceCapital[8] camp
+		enable platoon AC_PlatoonsDefenceCapital[9] camp
+		enable platoon AC_PlatoonsDefenceCapital[10] camp
+		enable platoon AC_PlatoonsDefenceCapital[11] camp
+		enable platoon AC_PlatoonsDefenceCapital[12] camp
+
+		set fade in time 2
+		wait 2 seconds
+
+	end cinema
+
+	FinishedIntro = AC_TRUE
+
+end script AC11_Intro
+
+//-----------------------------------------------------------------------------
+// Greek Setup
+//-----------------------------------------------------------------------------
+begin script AC11_GreekSetup
+	Platoon		= 0
+	PlatoonPos[6]
+	PlatoonType[6]
+	WallPos[5]
+	Looper		= 0
+	FacePos = 0
+start
+
+	PlatoonPos[0]	= marker at {1574.684,235.962,1014.893}
+	PlatoonPos[1]	= marker at {1598.708,235.163,967.817}
+	PlatoonPos[2]	= marker at {1615.520,235.849,996.079}
+	PlatoonPos[3]	= marker at {1510.462,240.107,971.277}
+	PlatoonPos[4]	= marker at {1535.355,235.279,995.011}
+	PlatoonPos[5]	= -1
+
+	PlatoonType[0]	= variable PLATOON_INFO_GREEK_RANGED_1
+	PlatoonType[1]	= variable PLATOON_INFO_GREEK_MELEE_1
+	PlatoonType[2]	= variable PLATOON_INFO_GREEK_RANGED_1
+	PlatoonType[3]	= variable PLATOON_INFO_GREEK_MELEE_1
+	PlatoonType[4]	= variable PLATOON_INFO_GREEK_RANGED_1
+	PlatoonType[5]	= -1
+
+	WallPos[0]	= marker at {1595.048,240.995,1031.404}
+	WallPos[1]	= marker at {1666.161,235.943,970.347}
+	WallPos[2]	= marker at {1531.946,228.839,1027.594}
+	WallPos[3]	= marker at {1676.682,243.176,906.628}
+	WallPos[4]	= marker at {1449.521,232.448,1015.813}
+
+	FacePos = marker at {1569.556,309.450,1796.414}
+
+	//Place the Greek platoon
+	while PlatoonPos[Looper] != -1
+		Platoon = create platoon constant PlatoonType[Looper] at {PlatoonPos[Looper]} with AC_GAME_STAGE_START_PLAYER_PLATOON_SIZE men and 0 women
+		PLAYER of Platoon = 0
+		if PlatoonType[Looper] == variable PLATOON_INFO_GREEK_RANGED_1
+			//run script AC11_MoveRangedOntoWall(Platoon, WallPos[Looper])
+			run script AC11_FaceThisDirection(Platoon, FacePos)
+		else
+			run script AC11_FaceThisDirection(Platoon, FacePos)
+		end if
+		Looper++
+	end while
+
+end script AC11_GreekSetup
+
+//-----------------------------------------------------------------------------
+// Aztec Capital Army Managmnet
+//-----------------------------------------------------------------------------
+begin script AC11_AztecCapitalArmyManager
+	Looper					= 0
+	MyTown					= get town with id AC_TOWN_CAPITAL
+	DefendingTown		= AC_FALSE
+	TempPlatoon			= 0
+
+start
+	
+	begin loop
+
+		// Make some defenders if under attack
+		if town MyTown is under takeover from player 0 and DefendingTown == AC_FALSE
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town MyTown platoon of size 20
+				attach TempPlatoon to MyTown
+				enable platoon TempPlatoon respond to town MyTown attack
+				wait until not TempPlatoon recruiting
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MyTown} to TempPlatoon action queue
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town MyTown platoon of size 20
+				attach TempPlatoon to MyTown
+				enable platoon TempPlatoon respond to town MyTown attack
+				wait until not TempPlatoon recruiting
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MyTown} to TempPlatoon action queue
+				DefendingTown = AC_TRUE
+		end if
+
+		wait 3 seconds
+
+	until L11Complete == AC_TRUE
+	end loop
+
+end script AC11_AztecCapitalArmyManager
+
+//-----------------------------------------------------------------------------
+// Aztec Town1 Army Managment
+//-----------------------------------------------------------------------------
+begin script AC11_AztecTown1ArmyManager
+	Looper				= 0
+	MyTown				= get town with id AC_TOWN_AZTEC1
+	DefendingTown		= AC_FALSE
+	TempPlatoon			= 0
+	DefendPos			= marker at {1930.823,266.566,453.545}
+start	
+
+	run script AC11_CreateAztecTown1Platoons
+	run background script AC11_MaintainSiegePlatoonLevel(AC_TOWN_AZTEC1)
+	run background script AC11_DetectFirstWaveDying
+	run script AC11_MoveAztecTown1Platoons	
+	
+
+	begin loop
+
+		// Make some defenders if under attack
+		if town MyTown is under takeover from player 0 and DefendingTown == AC_FALSE
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town MyTown platoon of size 20
+				attach TempPlatoon to MyTown
+				enable platoon TempPlatoon respond to town MyTown attack
+				wait until not TempPlatoon recruiting
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendPos} to TempPlatoon action queue
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town MyTown platoon of size 20
+				attach TempPlatoon to MyTown
+				enable platoon TempPlatoon respond to town MyTown attack
+				wait until not TempPlatoon recruiting
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendPos} to TempPlatoon action queue
+				DefendingTown = AC_TRUE
+		end if
+
+		wait 3 seconds
+
+	until L11Complete == AC_TRUE
+	end loop
+
+end script AC11_AztecTown1ArmyManager
+
+//-----------------------------------------------------------------------------
+// Aztec Town2 Army Managment
+//-----------------------------------------------------------------------------
+begin script AC11_AztecTown2ArmyManager
+	Looper	= 0
+	MyTown				= get town with id AC_TOWN_AZTEC2
+	DefendingTown		= AC_FALSE
+	TempPlatoon			= 0
+start
+
+	run script AC11_CreateAztecTown2Platoons
+
+	run script AC11_MoveAztecTown2Platoons
+	
+	begin loop
+
+		// Make some defenders if under attack
+		if town MyTown is under takeover from player 0 and DefendingTown == AC_FALSE
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town MyTown platoon of size 20
+				attach TempPlatoon to MyTown
+				enable platoon TempPlatoon respond to town MyTown attack
+				wait until not TempPlatoon recruiting
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MyTown} to TempPlatoon action queue
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town MyTown platoon of size 20
+				attach TempPlatoon to MyTown
+				enable platoon TempPlatoon respond to town MyTown attack
+				wait until not TempPlatoon recruiting
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MyTown} to TempPlatoon action queue
+				DefendingTown = AC_TRUE
+		end if
+
+		wait 3 seconds
+
+	until L11Complete == AC_TRUE
+	end loop
+
+end script AC11_AztecTown2ArmyManager
+
+//-----------------------------------------------------------------------------
+// Maintan platoon level
+//-----------------------------------------------------------------------------
+begin script AC11_MaintainSiegePlatoonLevel(town_id)
+	Looper		= 0
+start
+	begin loop
+	
+		Looper = 0
+		
+		if town_id == AC_TOWN_AZTEC1
+			while Looper < 4
+				
+				//if not AC_Town1SiegePlatoons[Looper] exists and PLAYER of L11AztecTown1 == 1
+				if get number of villagers in platoon AC_Town1SiegePlatoons[Looper] < 5 and PLAYER of L11AztecTown1 == 1 and AC_ReinforcementsArrived < 1
+					run background script AC11_FinalAssaultTroopsOrders(AC_Town1SiegePlatoons[Looper], AC_FINAL_ASSAULT_ORDERS_ATTACK_TROOPS)
+					run script AC11_QuickRecruitPlatoon(AC_TOWN_AZTEC1, Looper, AC_PLATOON_TYPE_MELEE)
+					run background script AC11_MoveInReplacementPlatoon(AC_TOWN_AZTEC1, Looper)
+				end if
+
+				Looper++
+			end while
+
+			Looper = 0
+			while Looper < 2
+
+				if not AC_Town1SiegeCatapult[Looper] exists and PLAYER of L11AztecTown1 == 1
+				//if get number of villagers in platoon AC_Town1SiegePlatoons[Looper] < 2
+					run script AC11_QuickRecruitCatapult(AC_TOWN_AZTEC1, Looper)
+					run background script AC11_MoveInReplacementCatapult(AC_TOWN_AZTEC1, Looper)
+				end if
+
+				Looper++
+			end while
+		end if
+
+		Looper = 0
+
+		if town_id == AC_TOWN_AZTEC2
+			while Looper < 4
+				//if not AC_Town2SiegePlatoons[Looper] exists and PLAYER of L11AztecTown2 == 1
+				if get number of villagers in platoon AC_Town2SiegePlatoons[Looper] < 2 and PLAYER of L11AztecTown2 == 1
+					run background script AC11_FinalAssaultTroopsOrders(AC_Town2SiegePlatoons[Looper], AC_FINAL_ASSAULT_ORDERS_ATTACK_TROOPS)
+					run script AC11_QuickRecruitPlatoon(AC_TOWN_AZTEC2, Looper, AC_PLATOON_TYPE_MELEE)
+					run background script AC11_MoveInReplacementPlatoon(AC_TOWN_AZTEC2, Looper)
+				end if
+
+				Looper++
+			end while
+
+			Looper = 0
+			while Looper < 2
+				
+				if not AC_Town2SiegeCatapult[Looper] exists and PLAYER of L11AztecTown2 == 1
+				//if get number of villagers in platoon AC_Town1SiegePlatoons[Looper] < 2
+					run script AC11_QuickRecruitCatapult(AC_TOWN_AZTEC2, Looper)
+					run background script AC11_MoveInReplacementCatapult(AC_TOWN_AZTEC2, Looper)
+				end if
+
+				Looper++
+			end while
+		end if
+
+		wait AC_Balance_Recruit_Time[town_id] seconds
+
+	end loop
+
+end script AC11_MaintainSiegePlatoonLevel
+
+//-----------------------------------------------------------------------------
+// Quick Recruit Platoon for attacking troops
+//-----------------------------------------------------------------------------
+begin script AC11_QuickRecruitPlatoon(town_id, platoon_to_replace, rtype)
+	CreatePlatoon	= 0
+	from_town = 0
+start
+	from_town = get town with id town_id
+
+	rtype = number from 0 to 1
+
+	//Recruit a melee platoon
+	if rtype == AC_PLATOON_TYPE_MELEE
+
+		if can town from_town recruit AZTEC_ARMY_MELEE_LEVEL platoon of size AC_Balance_Recruit_Platoon_Size[town_id] and variable get town from_town status != variable TOWN_STATUS_MIGRATION_STARTED and adult size of from_town - get number of soldiers in town from_town > 30
+			CreatePlatoon = recruit AZTEC_ARMY_MELEE_LEVEL town from_town platoon of size AC_Balance_Recruit_Platoon_Size[town_id]
+			attach CreatePlatoon to from_town
+			enable platoon CreatePlatoon respond to town from_town attack
+			disable platoon CreatePlatoon respond to local platoon attack
+			disable platoon CreatePlatoon camp
+		end if
+
+	//Recruit a ranged platoon
+	elsif rtype == AC_PLATOON_TYPE_RANGED
+
+		if can town from_town recruit AZTEC_ARMY_RANGED_LEVEL platoon of size AC_Balance_Recruit_Platoon_Size[town_id] and variable get town from_town status != variable TOWN_STATUS_MIGRATION_STARTED and adult size of from_town - get number of soldiers in town from_town > 30
+			CreatePlatoon = recruit AZTEC_ARMY_RANGED_LEVEL town from_town platoon of size AC_Balance_Recruit_Platoon_Size[town_id]
+			attach CreatePlatoon to from_town
+			enable platoon CreatePlatoon respond to town from_town attack
+			disable platoon CreatePlatoon respond to local platoon attack
+			disable platoon CreatePlatoon camp
+		end if
+	end if
+		
+
+	//Add CreatePlatoon to town array
+	if CreatePlatoon exists
+
+		wait until not CreatePlatoon recruiting
+
+		if town_id == AC_TOWN_AZTEC1
+			AC_Town1SiegePlatoons[platoon_to_replace] = CreatePlatoon
+		elsif town_id == AC_TOWN_AZTEC2
+			AC_Town2SiegePlatoons[platoon_to_replace] = CreatePlatoon
+		end if
+
+		// keep a check on the platoon's status
+		run background script AC11_CheckPlatoonStatus(CreatePlatoon)
+
+		release CreatePlatoon
+	end if
+
+end script AC11_QuickRecruitPlatoon
+
+//-----------------------------------------------------------------------------
+// Quick Recruit Platoon for attacking troops
+//-----------------------------------------------------------------------------
+begin script AC11_QuickRecruitCatapult(town_id, platoon_to_replace)
+	from_town = 0
+start
+	from_town = get town with id town_id
+
+	if town_id == AC_TOWN_AZTEC1 and variable get town from_town status != variable TOWN_STATUS_MIGRATION_STARTED
+		AC_Town1SiegeCatapult[platoon_to_replace] = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 town from_town siege weapon
+		attach AC_Town1SiegeCatapult[platoon_to_replace] to L11AztecTown1
+		disable siege weapon AC_Town1SiegeCatapult[platoon_to_replace] auto attack
+	
+
+	elsif town_id == AC_TOWN_AZTEC2 and variable get town from_town status != variable TOWN_STATUS_MIGRATION_STARTED
+		AC_Town2SiegeCatapult[platoon_to_replace] = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 town from_town siege weapon
+		attach AC_Town2SiegeCatapult[platoon_to_replace] to L11AztecTown2
+		disable siege weapon AC_Town2SiegeCatapult[platoon_to_replace] auto attack
+	end if
+		
+end script AC11_QuickRecruitCatapult
+
+//-----------------------------------------------------------------------------
+// Grab Siege and Move Here
+//-----------------------------------------------------------------------------
+begin script AC11_MovePlatoonHere(platoon_id, destpos)
+start
+	if platoon_id exists and not {platoon_id} near {destpos} radius 10
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {destpos} to platoon_id action queue
+	end if
+
+end script AC11_MovePlatoonHere
+
+//-----------------------------------------------------------------------------
+// Platoon attacks this town
+//-----------------------------------------------------------------------------
+begin script AC11_PlatoonAttackTown(platoon_id, to_town)
+start
+	if platoon_id exists
+		add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using to_town to platoon_id action queue
+	end if
+end script AC11_PlatoonAttackTown
+
+//-----------------------------------------------------------------------------
+// Platoon attacks this platoon
+//-----------------------------------------------------------------------------
+begin script AC11_PlatoonAttackPlatoon(platoon_id, to_attack)
+start
+	if platoon_id exists and to_attack exists
+		add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using to_attack to platoon_id action queue
+	end if
+end script AC11_PlatoonAttackPlatoon
+
+//-----------------------------------------------------------------------------
+// move platoon then attack town
+//-----------------------------------------------------------------------------
+begin script AC11_MovePlatoonHereThenAttackTown(platoon_id, destpos, to_town)
+start
+	begin loop
+		wait until platoon_id can navigate to {destpos}
+	
+		run script AC11_MovePlatoonHere(platoon_id, destpos)
+
+		wait 5 seconds
+	until {platoon_id} near {destpos} radius 5 or platoon platoon_id fighting or AC_GameStage == AC_GAME_STAGE_WITHDRAW
+	end loop
+
+	if AC_GameStage != AC_GAME_STAGE_WITHDRAW
+		wait until not platoon platoon_id fighting or not platoon_id exists
+
+		if platoon_id exists
+			set platoon_id attack to_town with severity 0.8 for takeover
+		end if
+	end if
+    
+end script AC11_MovePlatoonHereThenAttackTown
+
+//-----------------------------------------------------------------------------
+// Move siege here
+//-----------------------------------------------------------------------------
+begin script AC11_MoveSiegeHere(siege_id, destpos)
+start
+	if siege_id exists
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {destpos} + {number from -10 to 10, number from -10 to 10} to siege weapon siege_id action queue	
+	end if
+
+end script AC11_MoveSiegeHere
+
+//-----------------------------------------------------------------------------
+// Unit to face this direction
+//-----------------------------------------------------------------------------
+begin script AC11_FaceThisDirection(unit_id, facepos)
+start
+	if unit_id exists
+		add action PLATOON_AGENDA_ACTION_FACE_POSITION using {facepos} to unit_id action queue
+	end if
+end script AC11_FaceThisDirection
+
+//-----------------------------------------------------------------------------
+// Move ranged onto wall
+//-----------------------------------------------------------------------------
+begin script AC11_MoveRangedOntoWall(unit_id, wallpos)
+	Wall = 0
+start
+	Wall = get wall segment nearest {wallpos} radius 30
+	if unit_id exists and Wall exists
+		add action PLATOON_AGENDA_ACTION_GET_ON_WALL using Wall to unit_id action queue
+		add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {unit_id} to unit_id action queue
+	end if
+end script AC11_MoveRangedOntoWall
+
+//-----------------------------------------------------------------------------
+// Siege unit to attack a pos in this town
+//-----------------------------------------------------------------------------
+begin script AC11_SiegeAttackWallsHere(unit_id, aimherepos, stayonsametarget)
+	WallSeg				= 0
+	CheckForWallsRadius = 15
+	MovedFromOriginDistance = 0
+	MoveDown = AC_TRUE
+start
+	//Make sure the siege is valid
+	if unit_id exists
+		
+		if stayonsametarget == AC_TRUE
+			//Search for a wall segment from this
+			WallSeg = get wall segment nearest {aimherepos} radius CheckForWallsRadius
+
+			if WallSeg exists and PLAYER of WallSeg == 0
+				//Now use the catapult to attack the wall segment
+				//add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {WallSeg} to siege weapon unit_id action queue
+				add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using WallSeg to siege weapon unit_id action queue
+			end if
+		else
+			while CheckForWallsRadius < 150 and AC_GameStage != AC_GAME_STAGE_WITHDRAW
+				//Search for a wall segment from this
+				WallSeg = get wall segment nearest {aimherepos} radius CheckForWallsRadius
+
+				if WallSeg exists and PLAYER of WallSeg == 0
+					//Now use the catapult to attack the wall segment
+					//add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {WallSeg} to siege weapon unit_id action queue
+					add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using WallSeg to siege weapon unit_id action queue
+				end if
+
+				//wait until siege weapon unit_id current action is SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {WallSeg} or siege weapon unit_id current action is SIEGEWEAPON_AGENDA_ACTION_ERROR using {WallSeg} or AC_GameStage == AC_GAME_STAGE_WITHDRAW
+				wait until siege weapon unit_id current action is SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using WallSeg or siege weapon unit_id current action is SIEGEWEAPON_AGENDA_ACTION_ERROR using {WallSeg} or AC_GameStage == AC_GAME_STAGE_WITHDRAW
+				wait 15 seconds or AC_GameStage == AC_GAME_STAGE_WITHDRAW
+
+				if MovedFromOriginDistance > -20 and MoveDown == AC_TRUE
+					MovedFromOriginDistance-=6
+					aimherepos = marker at {aimherepos} + {0,0,-6}
+					MoveDown = AC_TRUE
+				elsif MovedFromOriginDistance < 20
+					MovedFromOriginDistance+=6
+					aimherepos = marker at {aimherepos} + {0.000,0.000,6.000}
+					MoveDown = AC_FALSE
+				end if
+
+				WallSeg = get wall segment nearest {aimherepos} radius CheckForWallsRadius
+				if not WallSeg exists
+					CheckForWallsRadius+=5
+				end if
+
+				clear siege weapon unit_id action queue
+			end while
+		end if
+
+	end if
+end script AC11_SiegeAttackWallsHere
+
+//-----------------------------------------------------------------------------
+// Create Aztec Defenders
+//-----------------------------------------------------------------------------
+begin script AC11_CreateAztecDefenders
+	PatrolRoute = 0
+	PatrolWaypoints[7]
+	PlatoonPosCapital[14]
+	PlatoonPosTown1[5]
+	PlatoonPosTown2[5]
+	PlatoonTypeCapital[13]
+	PlatoonDefendingPos[13]
+	PlatoonTypeTown1[4]
+	PlatoonTypeTown2[4]
+	PositionToDefend[3]
+	FocusPos[3]
+	CatapultPos  = 0
+	Looper		= 0
+	CapitalPlatoonSize = 25	
+start
+
+	PlatoonPosCapital[0]	= marker at {1708.906,351.225,1961.516}
+	PlatoonPosCapital[1]	= marker at {1707.769,350.848,1955.658}
+	PlatoonPosCapital[2]	= marker at {1707.602,351.616,1950.299}
+	PlatoonPosCapital[3]	= marker at {1707.762,351.561,1941.355}
+	PlatoonPosCapital[4]	= marker at {1708.347,337.605,1932.981}
+	PlatoonPosCapital[5]	= marker at {1708.899,351.365,1924.773}
+	PlatoonPosCapital[6]	= marker at {1755.334,337.540,1967.184}
+	PlatoonPosCapital[7]	= marker at {1756.535,338.484,1955.554}
+	PlatoonPosCapital[8]	= marker at {1754.144,337.414,1945.376}
+	PlatoonPosCapital[9]	= marker at {1754.191,343.755,1936.910}
+	PlatoonPosCapital[10]	= marker at {1755.411,337.378,1926.855}
+	PlatoonPosCapital[11]	= marker at {1757.825,338.131,1919.399}
+	PlatoonPosCapital[12]	= marker at {1756.177,332.040,1824.388}
+	PlatoonPosCapital[13]	= -1
+
+	PlatoonDefendingPos[0]	= marker at {1966.758,273.271,1494.857}
+	PlatoonDefendingPos[1]	= marker at {1725.557,314.211,1628.422}
+	PlatoonDefendingPos[2]	= marker at {1726.018,279.275,1420.827}
+	PlatoonDefendingPos[3]	= marker at {1475.997,295.974,1709.349}
+	PlatoonDefendingPos[4]	= marker at {1727.947,320.651,1714.508}
+	PlatoonDefendingPos[5]	= marker at {1717.040,327.846,1779.078}
+	PlatoonDefendingPos[6]	= marker at {1745.698,327.818,1779.112}
+	PlatoonDefendingPos[7]	= marker at {1715.440,250.217,1304.176}
+	PlatoonDefendingPos[8]	= marker at {1755.325,248.298,1304.618}
+	PlatoonDefendingPos[9]	= marker at {1699.800,310.899,1634.835}
+	PlatoonDefendingPos[10]	= marker at {1758.941,310.929,1637.849}
+	PlatoonDefendingPos[11]	= marker at {1705.939,328.121,1828.730}
+	PlatoonDefendingPos[12]	= marker at {1761.684,327.717,1828.663}
+	PlatoonDefendingPos[13]	= -1
+
+	PlatoonPosTown1[1]	= -1
+	PlatoonPosTown1[0]	= marker at {1915.800,266.288,458.445}
+	//PlatoonPosTown1[1]	= marker at {2001.886,259.486,473.916}
+	PlatoonPosTown1[2]	= marker at {2031.674,216.355,679.769}
+	PlatoonPosTown1[3]	= marker at {1808.716,244.541,446.243}
+	PlatoonPosTown1[4]	= -1
+
+	PlatoonPosTown2[0]	= marker at {657.501,249.496,901.675}
+	PlatoonPosTown2[1]	= marker at {713.752,224.066,953.298}
+	PlatoonPosTown2[2]	= marker at {689.294,208.229,760.656}
+	PlatoonPosTown2[3]	= marker at {525.951,209.151,978.085}
+	PlatoonPosTown2[4]	= -1
+
+	FocusPos[0]	= marker at {1721.130,236.104,1137.001}
+	FocusPos[1]	= marker at {955.971,155.314,1195.579}
+	FocusPos[2]	= marker at {1208.986,212.262,1573.685}
+
+	PlatoonTypeCapital[0]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+	PlatoonTypeCapital[1]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_MELEE_DEFENDER
+	PlatoonTypeCapital[2]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_MELEE_DEFENDER
+	PlatoonTypeCapital[3]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+	PlatoonTypeCapital[4]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_MELEE_DEFENDER
+	PlatoonTypeCapital[5]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_MELEE_DEFENDER
+	PlatoonTypeCapital[6]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_MELEE_DEFENDER
+	PlatoonTypeCapital[7]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+	PlatoonTypeCapital[8]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+	PlatoonTypeCapital[9]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+	PlatoonTypeCapital[10]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+	PlatoonTypeCapital[11]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+	PlatoonTypeCapital[12]	= variable GLOBAL_VALUE_LAND_11_ENEMY_CAPITAL_ARCHER_DEFENDER
+
+
+	PlatoonTypeTown1[0]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonTypeTown1[1]	= variable AZTEC_ARMY_RANGED_LEVEL
+	PlatoonTypeTown1[2]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonTypeTown1[3]	= variable AZTEC_ARMY_RANGED_LEVEL
+
+	PlatoonTypeTown2[0]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonTypeTown2[1]	= variable AZTEC_ARMY_RANGED_LEVEL
+	PlatoonTypeTown2[2]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonTypeTown2[3]	= variable AZTEC_ARMY_RANGED_LEVEL
+	
+	if HardMode == AC_TRUE
+		CapitalPlatoonSize = 40
+	end if
+
+	Looper = 0
+	while PlatoonPosCapital[Looper] != -1
+		AC_PlatoonsDefenceCapital[Looper]  = create platoon constant PlatoonTypeCapital[Looper] at {PlatoonPosCapital[Looper]} with CapitalPlatoonSize men and 0 women
+		PLAYER of AC_PlatoonsDefenceCapital[Looper] = 1
+		attach AC_PlatoonsDefenceCapital[Looper] to L11AztecCapital
+		disable platoon AC_PlatoonsDefenceCapital[Looper] respond to local platoon attack
+		enable platoon AC_PlatoonsDefenceCapital[Looper] respond to town L11AztecCapital attack
+		disable platoon AC_PlatoonsDefenceCapital[Looper] camp
+		Looper++
+	end while
+
+	Looper = 0
+	while PlatoonPosTown1[Looper] != -1
+		AC_PlatoonsDefenceTown1[Looper]  = create platoon constant PlatoonTypeTown1[Looper] at {PlatoonPosTown1[Looper]} with 30 men and 0 women
+		PLAYER of AC_PlatoonsDefenceTown1[Looper] = 1
+		attach AC_PlatoonsDefenceTown1[Looper] to L11AztecTown1
+		run background script AC11_CheckPlatoonStatus(AC_PlatoonsDefenceTown1[Looper])
+		disable platoon AC_PlatoonsDefenceTown1[Looper] respond to local platoon attack
+		enable platoon AC_PlatoonsDefenceTown1[Looper] respond to town L11AztecTown1 attack
+		Looper++
+	end while
+
+	Looper = 0
+	while PlatoonPosTown2[Looper] != -1
+		AC_PlatoonsDefenceTown2[Looper]  = create platoon constant PlatoonTypeTown2[Looper] at {PlatoonPosTown2[Looper]} with 20 men and 0 women
+		PLAYER of AC_PlatoonsDefenceTown2[Looper] = 1
+		attach AC_PlatoonsDefenceTown2[Looper] to L11AztecTown2
+		run background script AC11_CheckPlatoonStatus(AC_PlatoonsDefenceTown2[Looper])
+		disable platoon AC_PlatoonsDefenceTown2[Looper] respond to local platoon attack
+		enable platoon AC_PlatoonsDefenceTown2[Looper] respond to town L11AztecTown2 attack
+		Looper++
+	end while
+
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[0], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[1], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[2], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[3], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[4], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[5], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[6], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[7], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[8], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[9], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[10], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[11], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[12], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceTown2[0], FocusPos[0])
+	run script AC11_FaceThisDirection(AC_PlatoonsDefenceTown2[1], FocusPos[0])
+
+	//Recreate the waypoint route
+	PatrolRoute = create WAYPOINT_ROUTE at {0.000,0.000,0.000}
+
+	PatrolWaypoints[0] = marker at {719.448,208.225,747.975}
+	PatrolWaypoints[1] = marker at {762.799,208.346,998.048}
+	PatrolWaypoints[2] = marker at {521.949,208.228,958.576}
+	PatrolWaypoints[3] = marker at {639.249,208.233,990.331}
+	PatrolWaypoints[4] = marker at {763.947,208.595,909.836}
+	PatrolWaypoints[5] = marker at {701.019,208.239,729.404}
+	PatrolWaypoints[6] = -1
+
+	//Add waypoints to route 1
+	Looper = 0
+	while PatrolWaypoints[Looper] != -1
+		add {PatrolWaypoints[Looper]} to waypoint list PatrolRoute
+		Looper++
+	end while
+
+	move AC_PlatoonsDefenceTown2[2] along PatrolRoute with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+	move AC_PlatoonsDefenceTown2[3] along PatrolRoute with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+
+	wait until FinishedIntro == AC_TRUE
+
+	Looper = 0
+	while PlatoonPosCapital[Looper] != -1
+		delete AC_PlatoonsDefenceCapital[Looper]
+		AC_PlatoonsDefenceCapital[Looper]  = create platoon constant PlatoonTypeCapital[Looper] at {PlatoonDefendingPos[Looper]} with CapitalPlatoonSize men and 0 women
+		PLAYER of AC_PlatoonsDefenceCapital[Looper] = 1
+		attach AC_PlatoonsDefenceCapital[Looper] to L11AztecCapital
+		run background script AC11_CheckPlatoonStatus(AC_PlatoonsDefenceCapital[Looper])
+		disable platoon AC_PlatoonsDefenceCapital[Looper] respond to local platoon attack
+		disable platoon AC_PlatoonsDefenceCapital[Looper] respond to town L11AztecCapital attack
+		run script AC11_FaceThisDirection(AC_PlatoonsDefenceCapital[Looper], FocusPos[0])
+		Looper++
+	end while
+
+end script AC11_CreateAztecDefenders
+
+//-----------------------------------------------------------------------------
+// Control defenders to get on walls/defend the capital when they can
+//-----------------------------------------------------------------------------
+begin script AC11_ControlAztecDefenders
+	WallToGetOn[6]
+	NearCity = 0
+	NearInnerWalls = 0
+	NearInnerInnerWalls = 0
+	NearTownCenter = 0
+	PlayerPlatoon = 0
+	TempPlatoon = 0
+	TriesBeforeGivingUp = 0
+	Looper = 0
+start
+	WallToGetOn[0] = marker at {1691.390,247.187,1287.226}
+	WallToGetOn[1] = marker at {1760.114,244.400,1285.635}
+	WallToGetOn[2] = marker at {1690.690,321.719,1661.625}
+	WallToGetOn[3] = marker at {1761.774,310.891,1662.906}
+	WallToGetOn[4] = marker at {1699.391,338.879,1794.601}
+	WallToGetOn[5] = marker at {1759.099,337.441,1797.225}
+
+	NearCity = marker at {1724.208,244.525,1276.765}
+	NearInnerWalls = marker at {1726.736,311.060,1655.355}
+	NearInnerInnerWalls = marker at {1728.083,327.896,1795.141}
+	NearTownCenter = marker at {1728.083,347.896,1795.141}
+
+	while not PlayerPlatoon exists
+		PlayerPlatoon = get platoon of player 0 nearest {NearCity} radius 200
+
+		wait 3 seconds
+	end while
+
+	run background script AC11_PlayMusicForFinale
+
+	run script AC11_MoveRangedOntoWall(AC_PlatoonsDefenceCapital[7], WallToGetOn[0])
+	run script AC11_MoveRangedOntoWall(AC_PlatoonsDefenceCapital[8], WallToGetOn[1])
+
+	PlayerPlatoon = 0
+	while not PlayerPlatoon exists
+		PlayerPlatoon = get platoon of player 0 nearest {NearInnerWalls} radius 180
+
+		wait 3 seconds
+	end while
+
+	run script AC11_MoveRangedOntoWall(AC_PlatoonsDefenceCapital[9], WallToGetOn[2])
+	run script AC11_MoveRangedOntoWall(AC_PlatoonsDefenceCapital[10], WallToGetOn[3])
+	run background script AC11_MovePlatoonHere(AC_PlatoonsDefenceCapital[0], NearInnerWalls)
+	run background script AC11_MovePlatoonHere(AC_PlatoonsDefenceCapital[3], NearInnerWalls)
+	run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[0], PlayerPlatoon)
+	run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[3], PlayerPlatoon)
+
+	PlayerPlatoon = 0
+	while not PlayerPlatoon exists
+		PlayerPlatoon = get platoon of player 0 nearest {NearInnerInnerWalls} radius 140
+
+		wait 3 seconds
+	end while
+	
+	run script AC11_MoveRangedOntoWall(AC_PlatoonsDefenceCapital[11], WallToGetOn[4])
+	run script AC11_MoveRangedOntoWall(AC_PlatoonsDefenceCapital[12], WallToGetOn[5])
+
+	begin loop
+		PlayerPlatoon = get platoon of player 0 nearest {L11AztecCapital} radius 400
+
+		if PlayerPlatoon exists
+			clear AC_PlatoonsDefenceCapital[4] action queue
+			clear AC_PlatoonsDefenceCapital[5] action queue
+			clear AC_PlatoonsDefenceCapital[6] action queue
+			clear AC_PlatoonsDefenceCapital[9] action queue
+			clear AC_PlatoonsDefenceCapital[10] action queue
+			clear AC_PlatoonsDefenceCapital[11] action queue
+			clear AC_PlatoonsDefenceCapital[12] action queue
+
+			add action PLATOON_AGENDA_ACTION_GET_OFF_WALL using {PlayerPlatoon} to AC_PlatoonsDefenceCapital[9] action queue
+			add action PLATOON_AGENDA_ACTION_GET_OFF_WALL using {PlayerPlatoon} to AC_PlatoonsDefenceCapital[10] action queue
+			add action PLATOON_AGENDA_ACTION_GET_OFF_WALL using {PlayerPlatoon} to AC_PlatoonsDefenceCapital[11] action queue
+			add action PLATOON_AGENDA_ACTION_GET_OFF_WALL using {PlayerPlatoon} to AC_PlatoonsDefenceCapital[12] action queue
+
+			run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[5], PlayerPlatoon)
+			run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[6], PlayerPlatoon)
+			run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[11], PlayerPlatoon)
+			run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[12], PlayerPlatoon)
+			run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[10], PlayerPlatoon)
+			run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[4], PlayerPlatoon)
+			run background script AC11_PlatoonAttackPlatoon(AC_PlatoonsDefenceCapital[9], PlayerPlatoon)
+
+			while Looper < 13
+ 				if AC_PlatoonsDefenceCapital[Looper] exists
+ 					enable platoon AC_PlatoonsDefenceCapital[Looper] respond to town L11AztecCapital attack
+ 				end if
+ 
+ 				Looper++
+ 			end while
+
+			while PlayerPlatoon exists and TriesBeforeGivingUp <= 3
+				if not AC_PlatoonsDefenceCapital[4] exists and not AC_PlatoonsDefenceCapital[5] exists and not AC_PlatoonsDefenceCapital[6] exists and not AC_PlatoonsDefenceCapital[10] exists and not AC_PlatoonsDefenceCapital[11] exists and not AC_PlatoonsDefenceCapital[12] exists
+					TempPlatoon = recruit PLATOON_INFO_AZTEC_MELEE_9 town L11AztecCapital platoon of size 20
+					add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using PlayerPlatoon to TempPlatoon action queue
+					wait until size of TempPlatoon < 2
+                    TriesBeforeGivingUp++
+				end if
+
+				wait 3 seconds
+
+			end while
+		end if
+
+		wait 3 seconds
+
+	until TriesBeforeGivingUp > 3
+	end loop
+
+end script AC11_ControlAztecDefenders
+
+//-----------------------------------------------------------------------------
+// Extra defenders against catapults
+//-----------------------------------------------------------------------------
+begin script AC11_ExtraAztecDefenders
+	NearCity = 0
+	NearInnerWalls = 0
+	NearInnerInnerWalls = 0
+	NearTownCenter = 0
+	PlayerPlatoon = 0
+	TempPlatoon = 0
+	TriesBeforeGivingUp = 0
+	
+start
+	
+	NearCity = marker at {1724.208,244.525,1276.765}
+	NearInnerWalls = marker at {1726.736,311.060,1655.355}
+	NearInnerInnerWalls = marker at {1728.083,327.896,1795.141}
+	NearTownCenter = marker at {1728.083,347.896,1795.141}
+
+	while not PlayerPlatoon exists
+		PlayerPlatoon = get siege weapon of player 0 nearest {NearCity} radius 200
+
+		wait 3 seconds
+	end while
+
+	TempPlatoon = recruit AZTEC_ARMY_MELEE_LEVEL town L11AztecCapital platoon of size 30
+	attach TempPlatoon to L11AztecCapital
+	wait until not TempPlatoon recruiting
+	enable platoon TempPlatoon respond to town L11AztecCapital attack
+	run script AC11_MovePlatoonHere(TempPlatoon, PlayerPlatoon)
+
+	while PlayerPlatoon exists and TriesBeforeGivingUp < 3
+		if not TempPlatoon exists
+			TempPlatoon = recruit AZTEC_ARMY_MELEE_LEVEL town L11AztecCapital platoon of size 30
+			attach TempPlatoon to L11AztecCapital
+			wait until not TempPlatoon recruiting
+			enable platoon TempPlatoon respond to town L11AztecCapital attack
+			run script AC11_MovePlatoonHere(TempPlatoon, PlayerPlatoon)
+			TriesBeforeGivingUp++
+		end if
+	end while
+
+	PlayerPlatoon = 0
+	while not PlayerPlatoon exists
+		PlayerPlatoon = get siege weapon of player 0 nearest {NearInnerWalls} radius 180
+
+		wait 3 seconds
+	end while
+
+	while PlayerPlatoon exists and TriesBeforeGivingUp < 3
+		if not TempPlatoon exists
+			TempPlatoon = recruit AZTEC_ARMY_MELEE_LEVEL town L11AztecCapital platoon of size 30
+			attach TempPlatoon to L11AztecCapital
+			wait until not TempPlatoon recruiting
+			enable platoon TempPlatoon respond to town L11AztecCapital attack
+			run script AC11_MovePlatoonHere(TempPlatoon, PlayerPlatoon)
+			TriesBeforeGivingUp++
+		end if
+	end while
+
+	PlayerPlatoon = 0
+	while not PlayerPlatoon exists
+		PlayerPlatoon = get siege weapon of player 0 nearest {NearInnerInnerWalls} radius 140
+
+		wait 3 seconds
+	end while
+
+	while PlayerPlatoon exists and TriesBeforeGivingUp < 3
+		if not TempPlatoon exists
+			TempPlatoon = recruit AZTEC_ARMY_MELEE_LEVEL town L11AztecCapital platoon of size 30
+			attach TempPlatoon to L11AztecCapital
+			wait until not TempPlatoon recruiting
+			enable platoon TempPlatoon respond to town L11AztecCapital attack
+			run script AC11_MovePlatoonHere(TempPlatoon, PlayerPlatoon)
+			TriesBeforeGivingUp++
+		end if
+	end while
+
+
+end script AC11_ExtraAztecDefenders
+
+//-----------------------------------------------------------------------------
+// Create Platoons
+//-----------------------------------------------------------------------------
+begin script AC11_CreateAztecTown1Platoons
+	PlatoonPos[6]
+	CatapultPos[2]
+	PlatoonType[6]
+	Looper		= 0
+	FacePos = marker at {1555.499,236.966,923.080}
+start
+
+	PlatoonPos[0]	= marker at {1999.390,193.603,766.935}
+	PlatoonPos[1]	= marker at {2019.582,192.600,771.714}
+	PlatoonPos[2]	= marker at {2041.530,190.983,779.672}
+	PlatoonPos[3]	= marker at {2032.638,198.932,748.931}
+	PlatoonPos[4]	= -1
+
+	CatapultPos[0]	= marker at {2049.549,192.172,760.589}
+	CatapultPos[1]	= marker at {2049.015,197.895,748.529}
+
+	PlatoonType[0]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonType[1]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonType[2]	= variable AZTEC_ARMY_RANGED_LEVEL
+	PlatoonType[3]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonType[4]	= -1
+
+	//Place the Greek platoon
+	while PlatoonPos[Looper] != -1
+		AC_Town1SiegePlatoons[Looper] = create platoon constant PlatoonType[Looper] at {PlatoonPos[Looper]} with 30 men and 0 women
+		PLAYER of AC_Town1SiegePlatoons[Looper] = 1
+		attach AC_Town1SiegePlatoons[Looper] to L11AztecCapital
+		run background script AC11_CheckPlatoonStatus(AC_Town1SiegePlatoons[Looper])
+		disable platoon AC_Town1SiegePlatoons[Looper] respond to local platoon attack
+		disable platoon AC_Town1SiegePlatoons[Looper] camp
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[Looper], FacePos)
+		Looper++
+	end while
+
+	AC_Town1SiegeCatapult[0] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11AztecTown1 at {CatapultPos[0]}
+	AC_Town1SiegeCatapult[1] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11AztecTown1 at {CatapultPos[1]}
+	attach AC_Town1SiegeCatapult[0] to L11AztecTown1
+	attach AC_Town1SiegeCatapult[1] to L11AztecTown1
+	disable siege weapon AC_Town1SiegeCatapult[0] auto attack
+	disable siege weapon AC_Town1SiegeCatapult[1] auto attack
+
+
+end script AC11_CreateAztecTown1Platoons
+
+//-----------------------------------------------------------------------------
+begin script AC11_CreateAztecTown2Platoons
+	PlatoonPos[6]
+	PlatoonType[6]
+	CatapultPos[2]
+	Looper		= 0
+start
+
+	PlatoonPos[0]	= marker at {786.605,198.100,1110.173}
+	PlatoonPos[1]	= marker at {800.484,199.391,1090.300}
+	PlatoonPos[2]	= marker at {815.481,195.357,1087.971}
+	PlatoonPos[3]	= marker at {784.326,202.657,1076.979}
+	PlatoonPos[4]	= -1
+
+	CatapultPos[0]	= marker at {841.988,187.761,1097.584}
+	CatapultPos[1]	= marker at {834.599,187.794,1113.319}
+
+	PlatoonType[0]	= variable AZTEC_ARMY_RANGED_LEVEL
+	PlatoonType[1]	= variable AZTEC_ARMY_RANGED_LEVEL
+	PlatoonType[2]	= variable AZTEC_ARMY_MELEE_LEVEL
+	PlatoonType[3]	= variable AZTEC_ARMY_RANGED_LEVEL
+	PlatoonType[4]	= -1
+
+	//Place the Greek platoon
+	while PlatoonPos[Looper] != -1
+		AC_Town2SiegePlatoons[Looper]  = create platoon constant PlatoonType[Looper] at {PlatoonPos[Looper]} with 30 men and 0 women
+		PLAYER of AC_Town2SiegePlatoons[Looper] = 1
+		attach AC_Town2SiegePlatoons[Looper] to L11AztecCapital
+		run background script AC11_CheckPlatoonStatus(AC_Town2SiegePlatoons[Looper])
+		disable platoon AC_Town2SiegePlatoons[Looper] respond to local platoon attack
+		disable platoon AC_Town2SiegePlatoons[Looper] camp
+		Looper++
+	end while
+
+	AC_Town2SiegeCatapult[0] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11AztecTown2 at {CatapultPos[0]}
+	AC_Town2SiegeCatapult[1] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11AztecTown2 at {CatapultPos[1]}
+	attach AC_Town2SiegeCatapult[0] to L11AztecTown2
+	attach AC_Town2SiegeCatapult[1] to L11AztecTown2
+	disable siege weapon AC_Town2SiegeCatapult[0] auto attack
+	disable siege weapon AC_Town2SiegeCatapult[1] auto attack
+
+end script AC11_CreateAztecTown2Platoons
+
+//-----------------------------------------------------------------------------
+// Move Aztec Town 1 Platoons
+//-----------------------------------------------------------------------------
+begin script AC11_MoveAztecTown1Platoons
+	
+	FacePos = marker at {1555.499,236.966,923.080}
+	CatapultTargetWall = marker at {1692.152,242.274,935.152}
+	Looper = 0
+	WallSeg = 0
+	PlayedMovingForwardLine = AC_FALSE
+	CoolHackyMessedUpScriptCode = 0
+	PlayersPlatoon = 0
+	CreatureTargetWall = marker at {1709.021,222.908,905.480}
+	WallObj = 0
+	CreaturePlaySoldier = marker at {1757.375,217.385,893.390}
+	MoveNearWallsForDefense = marker at {1724.208,244.525,1276.765}
+	Gatehouse = 0
+	SecondTimer = create timer for 0 seconds	
+start
+
+	begin loop
+		run script GCAI_SetTask_PerformRole(GCAI_Creature,50,variable CR_NONE)
+
+		Gatehouse = get HOUSE GATEHOUSE at {2029.728,212.320,703.625} radius 50
+		set gate Gatehouse close
+		
+		// trigger attack early if the player forces it...
+		wait until AC_GameStage == AC_GAME_STAGE_STAGING or size of AC_Town1SiegePlatoons[0] < 15 or size of AC_Town1SiegePlatoons[1] < 15 or size of AC_Town1SiegePlatoons[2] < 15 or size of AC_Town1SiegePlatoons[3] < 15
+
+		set gate Gatehouse open
+		AC_ScriptedGatehouse = AC_FALSE
+
+		begin dialogue
+			if HEALTH of GCAI_Creature > 0
+				play anim C_FIGHT_THREAT2 on GCAI_Creature
+			end if
+			//AG: It is time. Unleash the Creature!
+			say "BW2T_SCRIPT_10FINAL_CREATURE_KILLS_CATAPULTS"
+			wait until read
+
+			start dynamic music
+			set dynamic music "small" loop -1 urgent
+		
+			//AztecG: Warriors, rid our land of the greeks!
+			say "BW2T_SCRIPT_11FINAL_AZTEC_ATTACK_1"
+			wait until read
+		
+
+			// get within range as a group
+			run script GCAI_SetTask_LeadPlatoonToPos(AC_Town1SiegePlatoons[0], Town1DestPosSecond[0])
+
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[0], Town1DestPosFirst[0])
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[1], Town1DestPosFirst[1])
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[2], Town1DestPosFirst[2])
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[3], Town1DestPosFirst[3])
+
+			wait 2 seconds
+
+			run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[0], Town1DestPosFirst[4])
+			run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[1], Town1DestPosFirst[5])
+
+			//AztecG: Deploy the catapults!
+			say "BW2T_SCRIPT_10FINAL_CATAPULTS_ARRIVE"
+			wait until read
+
+		end dialogue
+
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[0], FacePos)
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[1], FacePos)
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[2], FacePos)
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[3], FacePos)
+		
+		// spread out along greek walls
+
+		run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[0], Town1DestPosSecond[0])
+		run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[1], Town1DestPosSecond[1])
+		run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[2], Town1DestPosSecond[2])
+		run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[3], Town1DestPosSecond[3])
+		run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[0], Town1DestPosSecond[4])
+		run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[1], Town1DestPosSecond[5])
+
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[0], FacePos)
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[1], FacePos)
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[2], FacePos)
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[3], FacePos)
+
+		wait until {AC_Town1SiegePlatoons[0]} near {Town1DestPosSecond[0]} radius 10 or AC_Town1SiegePlatoons[0] not exists
+
+		run script GCAI_SetTask_PerformRole(CreaturePlaySoldier,30,variable CR_SOLDIER)
+
+		begin loop
+			run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[0], Town1DestPosSecond[4])
+			wait 10 seconds
+		until {AC_Town1SiegeCatapult[0]} near {Town1DestPosSecond[4]} radius 10 or Town2ToAttackNow == AC_TRUE or AC_Town1SiegeCatapult[0] not exists
+		end loop
+
+		wait 25 seconds
+	
+		set SecondTimer time to 200 seconds
+
+		begin dialogue
+
+			play string sound "AZTECWARNINGHORN"
+		
+			if Town2ToAttackNow == AC_FALSE
+				//AztecG: Steel yourself men! Obey orders! And fire!
+				say "BW2T_SCRIPT_10FINAL_ARCHERS_ATTACK_THE_WOMEN"
+			end if
+
+			run script AC11_SiegeAttackWallsHere(AC_Town1SiegeCatapult[0], CatapultTargetWall, AC_TRUE)
+			run script AC11_SiegeAttackWallsHere(AC_Town1SiegeCatapult[1], CatapultTargetWall, AC_TRUE)
+
+			enable siege weapon AC_Town1SiegeCatapult[0] auto attack
+			enable siege weapon AC_Town1SiegeCatapult[1] auto attack
+
+			AC_CatapultsAllAttack = AC_TRUE
+
+			wait until read
+
+			set dynamic music "largeevent1" loop 0 urgent
+		end dialogue
+
+		// wait till halfway through smashing the wall
+		wait 5 seconds
+
+		if Town2ToAttackNow == AC_FALSE
+			begin dialogue
+				//AztecG: Smash those walls to dust.
+				say "BW2T_SCRIPT_09FINAL_GENERAL_170"
+				wait until read
+			end dialogue
+		end if
+
+		wait 5 seconds
+
+		// wait till platoon can nav into the city
+		begin loop
+			wait until AC_Town1SiegePlatoons[0] can navigate to {Town1DestPosThird[0]}
+		 
+			run background script AC11_MovePlatoonHereThenAttackTown(AC_Town1SiegePlatoons[0], Town1DestPosThird[0], L11GreekTown)
+
+			if PlayedMovingForwardLine == AC_FALSE and Town2ToAttackNow == AC_FALSE
+				set dynamic music "medium" loop -1 urgent
+				begin dialogue
+					//AztecG:  Attack! Attack!
+					say "BW2T_SCRIPT_11FINAL_EXTRA_LINES_50"
+					wait until read
+				end dialogue
+				PlayedMovingForwardLine = AC_TRUE
+			end if
+
+			wait 10 seconds
+			
+			until get number of villagers in platoon AC_Town1SiegePlatoons[0] < 15 or get SecondTimer time remaining == 0
+		end loop
+
+		if PlayedMovingForwardLine == AC_FALSE and get number of villagers in platoon AC_Town1SiegePlatoons[0] < 15
+			set dynamic music "medium" loop -1 urgent
+		end if
+
+		// creature attacks now
+		run script GCAI_SetTask_PerformRole(L11GreekTown,250,variable CR_SOLDIER)
+
+		run background script AC11_MovePlatoonHereThenAttackTown(AC_Town1SiegePlatoons[1], Town1DestPosThird[1], L11GreekTown)
+		wait until get number of villagers in platoon AC_Town1SiegePlatoons[1] < 15 or get SecondTimer time remaining == 0
+
+		run background script AC11_MovePlatoonHereThenAttackTown(AC_Town1SiegePlatoons[2], Town1DestPosThird[2], L11GreekTown)
+		run background script AC11_MovePlatoonHereThenAttackTown(AC_Town1SiegePlatoons[3], Town1DestPosThird[2], L11GreekTown)
+
+		wait until get number of villagers in platoon AC_Town1SiegePlatoons[2] < 15 or get SecondTimer time remaining == 0
+
+		Town2ToAttackNow = AC_TRUE
+		CountdownToVolcanoNow = AC_TRUE
+		
+		CoolHackyMessedUpScriptCode = AC_TRUE
+
+		until CoolHackyMessedUpScriptCode == AC_TRUE or AC_EnteredCapital == AC_TRUE
+	end loop
+
+	if AC_EnteredCapital == AC_TRUE
+
+		Town2ToAttackNow = AC_TRUE
+
+		begin dialogue 
+			say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_ARMIES_2"
+			wait until read
+		end dialogue
+
+		PlayersPlatoon = get platoon of player 0 nearest {MoveNearWallsForDefense} radius 600
+		if PlayersPlatoon exists and AC_Town1SiegePlatoons[0] can navigate to {PlayersPlatoon}
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[0], PlayersPlatoon)
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[1], PlayersPlatoon)
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[2], PlayersPlatoon)
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[3], PlayersPlatoon)
+		else
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[0], MoveNearWallsForDefense)
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[1], MoveNearWallsForDefense)
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[2], MoveNearWallsForDefense)
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[3], MoveNearWallsForDefense)
+		end if
+
+		wait 30 seconds
+
+		// attack town for take over if there's anything left
+		begin loop
+			Looper = 0
+			while Looper < 4
+				if AC_Town1SiegePlatoons[Looper] exists
+					PlayersPlatoon = get platoon of player 0 nearest {AC_Town1SiegePlatoons[Looper]} radius 600
+					enable platoon AC_Town1SiegePlatoons[Looper] respond to local platoon attack
+					if PlayersPlatoon not exists
+						if MyCreature exists
+							if HEALTH of MyCreature > 0
+								PlayersPlatoon = MyCreature
+							end if
+						end if
+					end if
+					if PlayersPlatoon exists
+						add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {PlayersPlatoon} to AC_Town1SiegePlatoons[Looper] action queue
+					else
+						set AC_Town1SiegePlatoons[Looper] attack L11GreekTown with severity 0.8 for takeover
+					end if
+					Looper++
+				end if
+			end while
+
+			wait 30 seconds
+		end loop
+	end if
+
+end script AC11_MoveAztecTown1Platoons
+
+//-----------------------------------------------------------------------------
+// Move Aztec Town 2 Platoons
+//-----------------------------------------------------------------------------
+begin script AC11_MoveAztecTown2Platoons
+	
+	FacePos = marker at {1561.681,236.667,925.905}
+	CatapultTargetWall = marker at {1489.079,211.290,1034.655}
+	CoolHackyMessedUpScriptCode = 0	// a nice and horrible hack to accomodate laziness
+	Looper = 0
+	PlayersPlatoon = 0
+start
+
+	begin loop
+
+		// get within range as a group
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[0], Town2DestPosFirst[0])
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[1], Town2DestPosFirst[1])
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[2], Town2DestPosFirst[2])
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[3], Town2DestPosFirst[3])
+
+		wait 5 seconds
+
+		run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[0], Town2DestPosFirst[4])
+		run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[1], Town2DestPosFirst[5])
+
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[0], FacePos)
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[1], FacePos)
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[2], FacePos)
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[3], FacePos)
+
+		wait until AC_GameStage == AC_GAME_STAGE_STAGING
+		
+		// spread out along greek walls
+
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[0], Town2DestPosSecond[0])
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[1], Town2DestPosSecond[1])
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[2], Town2DestPosSecond[2])
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[3], Town2DestPosSecond[3])
+		run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[0], Town2DestPosSecond[4])
+		run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[1], Town2DestPosSecond[5])
+
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[0], FacePos)
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[1], FacePos)
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[2], FacePos)
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[3], FacePos)
+		
+		// spread out along greek walls
+
+		wait until AC_CatapultsAllAttack == AC_TRUE
+
+		run script AC11_SiegeAttackWallsHere(AC_Town2SiegeCatapult[0], CatapultTargetWall, AC_TRUE)
+		run script AC11_SiegeAttackWallsHere(AC_Town2SiegeCatapult[1], CatapultTargetWall, AC_TRUE)
+
+		enable siege weapon AC_Town2SiegeCatapult[0] auto attack
+		enable siege weapon AC_Town2SiegeCatapult[1] auto attack
+
+		wait until Town2ToAttackNow == AC_TRUE
+
+		begin dialogue
+			request dialogue EVENT_TYPE_GENERIC_PLAYERS_TOWN_UNDER_ATTACK
+		end dialogue
+
+		set dynamic music "mediumevent3" loop 0 urgent
+
+		if AC_GameStage != AC_GAME_STAGE_WITHDRAW
+			run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[0], Town2DestPosThird[0], L11GreekTown)
+			run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[1], Town2DestPosThird[1], L11GreekTown)
+		end if 
+
+			wait until get number of villagers in platoon AC_Town2SiegePlatoons[1] < 25
+
+		if AC_GameStage != AC_GAME_STAGE_WITHDRAW
+			run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[2], Town2DestPosThird[2], L11GreekTown)
+			run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[3], Town2DestPosThird[3], L11GreekTown)
+			run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[0], Town2DestPosThird[4])
+			run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[1], Town2DestPosThird[4])
+
+			wait 20 seconds
+		end if
+		
+		CoolHackyMessedUpScriptCode = AC_TRUE
+
+		until CoolHackyMessedUpScriptCode == AC_TRUE or AC_EnteredCapital == AC_TRUE
+	end loop 
+
+	if AC_EnteredCapital == AC_TRUE
+		begin loop
+			if PLAYER of L11GreekTown == 0
+				// attack town for take over if there's anything left
+				set AC_Town2SiegePlatoons[0] attack L11GreekTown with severity 0.8 for takeover
+				set AC_Town2SiegePlatoons[1] attack L11GreekTown with severity 0.8 for takeover
+				set AC_Town2SiegePlatoons[2] attack L11GreekTown with severity 0.8 for takeover
+				set AC_Town2SiegePlatoons[3] attack L11GreekTown with severity 0.8 for takeover
+
+				wait until PLAYER of L11GreekTown == 1
+			else
+				Looper = 0
+				while Looper < 4
+					if AC_Town2SiegePlatoons[Looper] exists
+						PlayersPlatoon = get platoon of player 0 nearest {AC_Town2SiegePlatoons[Looper]} radius 300
+						if PlayersPlatoon exists
+							clear AC_Town2SiegePlatoons[Looper] action queue
+							enable platoon AC_Town2SiegePlatoons[Looper] respond to local platoon attack
+							add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {PlayersPlatoon} to AC_Town2SiegePlatoons[Looper] action queue
+						else
+							add action PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT using L11GreekTown to AC_Town2SiegePlatoons[Looper] action queue
+						end if
+						Looper++
+					end if
+				end while
+				
+				wait 20 seconds 
+			end if
+		end loop
+	end if
+
+end script AC11_MoveAztecTown2Platoons
+
+//-----------------------------------------------------------------------------
+// Platoons start siege again, differing setup to make other side attack first and some withdraw at reinforcements turning up
+//-----------------------------------------------------------------------------
+begin script AC11_SecondAssault
+	Looper = 0
+	FacePos = marker at {1555.499,236.966,923.080}
+	TowardsTown1[6]
+	AttackWalls[2]
+start
+	
+	TowardsTown1[0] = marker at {1891.386,266.230,463.072}
+	TowardsTown1[1] = marker at {1894.614,267.394,442.527}
+	TowardsTown1[2] = marker at {1935.604,266.288,448.784}
+	TowardsTown1[3] = marker at {1896.477,266.735,458.598}
+	TowardsTown1[4] = marker at {1832.693,218.558,675.284}
+	TowardsTown1[5] = marker at {1819.859,221.456,673.329}
+
+	AttackWalls[0] = marker at {1830.899,233.933,621.274}
+	AttackWalls[1] = marker at {1825.034,242.106,624.148}
+
+	run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[0], Town1DestPosSecond[0])
+	run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[1], Town1DestPosSecond[1])
+	run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[2], Town1DestPosSecond[2])
+	run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[3], Town1DestPosSecond[3])
+
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[0], Town2DestPosFirst[0])
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[1], Town2DestPosFirst[1])
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[2], Town2DestPosFirst[2])
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[3], Town2DestPosFirst[3])
+
+	run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[0], Town1DestPosSecond[4])
+	run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[1], Town1DestPosSecond[5])
+	run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[0], Town2DestPosFirst[4])
+	run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[1], Town2DestPosFirst[5])
+
+	wait 10 seconds
+
+	begin dialogue
+		//AztecG:  Attack! Attack!
+		say "BW2T_SCRIPT_10FINAL_AZTECS_WIN_BATTLE_3"
+		wait until read
+	end dialogue	
+
+	wait 25 seconds
+
+	if AC_SentNorseReinforcements == AC_FALSE
+		//Start the Norse re-inforce script
+		run background script AC11_NorseReinforce
+	end if
+
+	wait until town L11AztecTown1 is under takeover from player 0 or AC_PlatoonsDefenceTown1[0] not exists
+
+	wait 10 seconds
+
+	run script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[0], TowardsTown1[4])
+	run script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[1], TowardsTown1[5])
+	run script AC11_SiegeAttackWallsHere(AC_Town1SiegeCatapult[0], AttackWalls[0], AC_TRUE)
+	run script AC11_SiegeAttackWallsHere(AC_Town1SiegeCatapult[1], AttackWalls[1], AC_TRUE)
+	enable siege weapon AC_Town1SiegeCatapult[0] auto attack
+	enable siege weapon AC_Town1SiegeCatapult[1] auto attack
+
+	// withdraw town 1 troops to siege other town if necessary.
+	Looper	= 0
+	while Looper < 4
+		if AC_Town1SiegePlatoons[Looper] exists
+			run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[Looper], TowardsTown1[Looper])
+		end if
+		Looper++
+	end while
+
+	wait until PLAYER of L11AztecTown1 == 0 or 200 seconds
+
+	if PLAYER of L11AztecTown1 == 0
+		set dynamic music "smallendofbattle2" loop -1 urgent
+	else
+		set dynamic music "smallendofbattle" loop -1 urgent
+	end if
+
+	Looper	= 0
+	while Looper < 4
+		if AC_Town1SiegePlatoons[Looper] exists
+			set AC_Town1SiegePlatoons[Looper] attack L11AztecTown1 with severity 0.8 for takeover
+		end if
+		Looper++
+	end while
+
+    wait 40 seconds	
+	run background script AC11_EndDynamicMusicGracefully
+
+	if HardMode == AC_TRUE
+		wait 50 seconds
+
+		begin dialogue
+			// AztecG: Ha. This will only end one way. Nothing can stop my Aztec nation!
+			say "BW2T_SCRIPT_11FINAL_TAKE_TOWN_VIA_ARMIES_4"
+			wait until read
+			//AztecG:  Attack! Attack!
+			say "BW2T_SCRIPT_11FINAL_EXTRA_LINES_50"
+			wait until read
+		end dialogue	
+
+		wait until {AC_Town1SiegePlatoons[2]} near {Town1DestPosSecond[2]} radius 50
+			
+		run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[0], Town2DestPosThird[0], L11GreekTown)
+		run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[1], Town2DestPosThird[1], L11GreekTown)
+
+		// after lot is under attack send a second lot
+		wait until get number of villagers in platoon AC_Town2SiegePlatoons[1] < 25
+
+		run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[2], Town2DestPosThird[2], L11GreekTown)
+		run background script AC11_MovePlatoonHereThenAttackTown(AC_Town2SiegePlatoons[3], Town2DestPosThird[3], L11GreekTown)
+
+		wait 80 seconds
+	end if
+	//do more here?
+
+end script AC11_SecondAssault
+
+//-----------------------------------------------------------------------------
+// Move in replacements
+//-----------------------------------------------------------------------------
+begin script AC11_MoveInReplacementCatapult(from_town, platoon_id)
+	
+	CatapultTargetWall = 0
+start
+
+	if AC_GameStage == AC_GAME_STAGE_WITHDRAW
+		wait until AC_GameStage != AC_GAME_STAGE_WITHDRAW
+	end if
+
+	if from_town == AC_TOWN_AZTEC1
+		CatapultTargetWall = marker at {1694.754,241.182,934.733}
+		
+		// get within range as a group
+		run script AC11_MoveSiegeHere(AC_Town1SiegePlatoons[platoon_id], Town1DestPosFirst[4])
+		run script AC11_MoveSiegeHere(AC_Town1SiegePlatoons[platoon_id], Town1DestPosSecond[4])
+		
+		//wait 100 seconds
+
+		//wait until {AC_Town1SiegePlatoons[platoon_id]} near {Town1DestPosSecond[4]} radius 10
+
+		// attack
+		run script AC11_SiegeAttackWallsHere(AC_Town1SiegeCatapult[platoon_id], CatapultTargetWall, AC_TRUE)
+		enable siege weapon AC_Town1SiegeCatapult[platoon_id] auto attack
+	else
+		CatapultTargetWall = marker at {1489.079,211.290,1034.655}
+		
+		// get within range as a group
+		run script AC11_MoveSiegeHere(AC_Town2SiegePlatoons[platoon_id], Town2DestPosFirst[4])
+		run script AC11_MoveSiegeHere(AC_Town2SiegePlatoons[platoon_id], Town2DestPosSecond[4])
+		
+		//wait 100 secondsp
+
+		//wait until {AC_Town2SiegePlatoons[platoon_id]} near {Town2DestPosSecond[4]} radius 10
+
+		// attack
+		run script AC11_SiegeAttackWallsHere(AC_Town2SiegeCatapult[platoon_id], CatapultTargetWall, AC_TRUE)
+		enable siege weapon AC_Town2SiegeCatapult[platoon_id] auto attack
+	end if
+
+end script AC11_MoveInReplacementCatapult
+
+//-----------------------------------------------------------------------------
+// Move in replacement platoons
+//-----------------------------------------------------------------------------
+begin script AC11_MoveInReplacementPlatoon(from_town, platoon_id)
+	
+	FacePos = 0
+	CalledWithdraw = 0
+start
+
+	if AC_GameStage == AC_GAME_STAGE_WITHDRAW
+		if CalledWithdraw == AC_FALSE
+			if platoon_id exists
+				clear platoon_id action queue
+			end if
+			run script AC11_WithdrawEnemyArmies(AC_FALSE)
+			CalledWithdraw = AC_TRUE
+		end if
+		wait until AC_GameStage != AC_GAME_STAGE_WITHDRAW
+	end if
+
+	if from_town == AC_TOWN_AZTEC1
+		FacePos = marker at {1561.727,242.076,927.538}
+		
+		// get within range as a group
+		run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[platoon_id], Town1DestPosFirst[platoon_id])
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[platoon_id], FacePos)
+		run background script AC11_MovePlatoonHere(AC_Town1SiegePlatoons[platoon_id], Town1DestPosSecond[platoon_id])
+		run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[platoon_id], FacePos)
+
+		// attack
+		if AC_GameStage != AC_GAME_STAGE_ONSLOUGHT
+			run background script AC11_MovePlatoonHereThenAttackTown(AC_Town1SiegePlatoons[platoon_id], Town1DestPosThird[platoon_id], L11GreekTown)
+		end if
+	else
+		FacePos = marker at {1561.681,236.667,925.905}
+		
+		// get within range as a group
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[platoon_id], Town2DestPosFirst[platoon_id])
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[platoon_id], FacePos)
+		run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[platoon_id], Town2DestPosSecond[platoon_id])
+		run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[platoon_id], FacePos)
+		
+		// attack
+		run background script AC11_PlatoonAttackTown(AC_Town2SiegePlatoons[platoon_id], L11GreekTown)
+	end if
+
+end script AC11_MoveInReplacementPlatoon
+
+//-----------------------------------------------------------------------------
+// AC11_WithdrawEnemyArmies - used for withdraw of all troops from the player's town
+//-----------------------------------------------------------------------------
+begin script AC11_WithdrawEnemyArmies(react_to_armies)
+	Looper = 0
+	IdlePlatoon = 0
+	WithdrawPosCapital = marker at {1753.493,290.345,1465.579}
+	WithdrawPosTown1[10]// = marker at {1861.766,261.651,472.774}
+	WithdrawPosTown2[10]// = marker at {744.569,209.937,1069.311}
+	WithdrawPositionsUsedForTown1 = 0
+	WithdrawPositionsUsedForTown2 = 0
+	WithdrawTown1Focus = marker at {1836.757,215.657,687.132}
+	WithdrawTown2Focus = marker at {967.183,190.475,1041.839}
+
+start
+	WithdrawPosTown1[0] = marker at {1832.455,244.449,563.251}
+	WithdrawPosTown1[1] = marker at {1837.722,247.654,545.068}
+	WithdrawPosTown1[2] = marker at {1860.448,253.422,544.819}
+	WithdrawPosTown1[3] = marker at {1853.813,247.296,568.188}
+	WithdrawPosTown1[4] = marker at {1842.446,237.634,595.755}
+	WithdrawPosTown1[5] = marker at {1819.275,234.389,596.089}
+	WithdrawPosTown1[6] = marker at {1841.213,251.951,528.210}
+	WithdrawPosTown1[7] = marker at {1860.221,254.586,525.881}
+	WithdrawPosTown1[8] = marker at {1863.479,261.875,492.925}
+	WithdrawPosTown1[9] = marker at {1865.528,260.538,509.365}
+	
+	WithdrawPosTown2[0] = marker at {810.765,201.570,1042.373}
+	WithdrawPosTown2[1] = marker at {812.525,205.256,1024.134}
+	WithdrawPosTown2[2] = marker at {800.733,203.049,1051.237}
+	WithdrawPosTown2[3] = marker at {796.270,207.336,1026.713}
+	WithdrawPosTown2[4] = marker at {769.886,208.927,1049.087}
+	WithdrawPosTown2[5] = marker at {784.561,207.854,1036.899}
+	WithdrawPosTown2[6] = marker at {784.561,204.993,1061.879}
+	WithdrawPosTown2[7] = marker at {770.942,206.921,1072.453}
+	WithdrawPosTown2[8] = marker at {756.252,210.045,1060.629}
+	WithdrawPosTown2[9] = marker at {756.619,208.176,1084.238}
+
+	Looper	= 0
+	while Looper < 4
+		if AC_Town1SiegePlatoons[Looper] exists
+			if react_to_armies == AC_TRUE
+				enable platoon AC_Town1SiegePlatoons[Looper] respond to player army
+				set AC_Town1SiegePlatoons[Looper] attack L11GreekTown with severity 0.8 for takeover
+			else
+				disable platoon AC_Town1SiegePlatoons[Looper] respond to player army
+				clear AC_Town1SiegePlatoons[Looper] action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {WithdrawPosTown1[WithdrawPositionsUsedForTown1]} to AC_Town1SiegePlatoons[Looper] action queue
+				run script AC11_FaceThisDirection(AC_Town1SiegePlatoons[Looper], WithdrawTown1Focus)
+				WithdrawPositionsUsedForTown1++
+			end if
+		end if
+		Looper++
+	end while
+	
+	Looper	= 0
+	while Looper < 4
+		if AC_Town2SiegePlatoons[Looper] exists
+			if react_to_armies == AC_TRUE
+				enable platoon AC_Town2SiegePlatoons[Looper] respond to player army
+				set AC_Town2SiegePlatoons[Looper] attack L11GreekTown with severity 0.8 for takeover
+			else
+				disable platoon AC_Town2SiegePlatoons[Looper] respond to player army
+				clear AC_Town2SiegePlatoons[Looper] action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {WithdrawPosTown2[WithdrawPositionsUsedForTown2]} to AC_Town2SiegePlatoons[Looper] action queue
+				run script AC11_FaceThisDirection(AC_Town2SiegePlatoons[Looper], WithdrawTown2Focus)
+				WithdrawPositionsUsedForTown2++
+			end if
+		end if
+		Looper++
+	end while
+
+	// as they only seem to accept this order the first time, only give it to them the first time...........
+	if CatapultsOnlyWithdrawOnce == AC_FALSE
+
+		if AC_Town1SiegeCatapult[0] exists
+			disable siege weapon AC_Town1SiegeCatapult[0] auto attack
+			clear siege weapon AC_Town1SiegeCatapult[0] action queue
+		end if
+		if AC_Town1SiegeCatapult[1] exists
+			disable siege weapon AC_Town1SiegeCatapult[1] auto attack
+			clear siege weapon AC_Town1SiegeCatapult[1] action queue
+		end if
+		if AC_Town2SiegeCatapult[0] exists
+			disable siege weapon AC_Town2SiegeCatapult[0] auto attack
+			clear siege weapon AC_Town2SiegeCatapult[0] action queue
+		end if
+		if AC_Town2SiegeCatapult[1] exists
+			disable siege weapon AC_Town2SiegeCatapult[1] auto attack
+			clear siege weapon AC_Town2SiegeCatapult[1] action queue
+		end if
+		
+
+		run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[0], WithdrawPosTown1[5])
+		run background script AC11_MoveSiegeHere(AC_Town1SiegeCatapult[1], WithdrawPosTown1[6])
+		run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[0], WithdrawPosTown2[5])
+		run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[1], WithdrawPosTown2[6])
+
+		CatapultsOnlyWithdrawOnce = AC_TRUE
+	end if
+
+	
+end script AC11_WithdrawEnemyArmies
+
+//-----------------------------------------------------------------------------
+// AC11_CheckForEnteredCapital
+//-----------------------------------------------------------------------------
+begin script AC11_CheckForEnteredCapital
+	PlayerPlatoon = 0
+	LinePos1 = marker at {1710.681,259.267,1340.545}
+	LinePos2 = marker at {1845.220,259.254,1313.257}
+start
+
+	while AC_EnteredCapital != AC_TRUE
+		PlayerPlatoon = get platoon of player 0 nearest {L11AztecCapital} radius 900
+
+		if {PlayerPlatoon} and {L11AztecCapital} on same side of line between {LinePos1} and {LinePos2} or {MyCreature} and {L11AztecCapital} on same side of line between {LinePos1} and {LinePos2}
+			AC_EnteredCapital = AC_TRUE
+		end if
+
+		wait 3 seconds
+	end while
+
+
+end script AC11_CheckForEnteredCapital
+
+//-----------------------------------------------------------------------------
+// AC11_CheckPlatoonStatus - Looks for platoon dying in order to update stats
+//-----------------------------------------------------------------------------
+begin script AC11_CheckPlatoonStatus(platoon_id)
+
+start
+	wait until not platoon_id exists
+
+	NumberOfEnemyPlatoonsKilled++
+
+end script AC11_CheckPlatoonStatus
+
+//-----------------------------------------------------------------------------
+// Cast Epic Volcano
+//-----------------------------------------------------------------------------
+begin script AC11_CastEpicVolcano
+	Volcano			= 0
+	VolcanoWarning	= 0
+	
+	CastPosition	= marker at {0.000,0.000,0.000} //generated
+	
+	VolcanoTimer = create timer for 0 seconds
+	LavaTimer = create timer for 0 seconds
+	Wonder = 0
+
+start
+ 
+	begin dialogue
+		//AztecG: Let the power of the Volcano again decimate these people!
+		say "BW2T_SCRIPT_11FINAL_EPIC_VOLCANO_READY"
+		wait until read
+	end dialogue
+
+	CastPosition = marker at {1501.770,17.932,1120.787}
+
+	VolcanoWarning = create visual effect VISUAL_EFFECT_EPIC_TARGET_WARNING at {CastPosition} time 15 target {CastPosition}
+			
+	wait 10 seconds
+
+	begin dialogue
+		//AztecG: Fire the weapon!
+		say "BW2T_SCRIPT_09FINAL_GENERAL_270"
+		wait until read
+	end dialogue
+
+	wait 2 seconds
+
+	Wonder= get WONDER SCRIPT_FIND_TYPE_ANY in L11AztecCapital
+	
+	Volcano = create volcano at {CastPosition} player 1
+
+	Land11VolcanoCasting=1
+
+	run background script Land11Volcano(Wonder, Volcano)
+
+end script AC11_CastEpicVolcano
+
+//-----------------------------------------------------------------------------
+// Norse Reinforce
+//-----------------------------------------------------------------------------
+begin script AC11_NorseReinforce
+	NorsePlatoon[5]
+	FX				= 0
+	Scroll			= 0
+	TeleportCentre	= marker at {1977.255,275.745,295.284}
+	MoveOutPos		= marker at {1893.164,253.455,368.101}
+	MoveOutPos1		= marker at {1911.068,252.187,373.315}
+	MoveOutPos2		= marker at {1892.346,251.788,382.672}
+	AttackPos		= marker at {1930.823,266.566,453.545}
+	Looper			= 0
+	Catapult		= 0
+	MaxReplenishes	= 0
+start
+	AC_SentNorseReinforcements = AC_TRUE
+
+	//New balance values for this town
+	AC_Balance_Recruit[AC_TOWN_AZTEC1]					= 1
+	AC_Balance_Recruit_Time[AC_TOWN_AZTEC1]				= 60	//This town now takes a mintue to recruit a new platoon
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC1]		= 10
+
+	// don't trigger this while a city is being taken over
+	wait until not town L11AztecCapital is under takeover from player 0
+	wait until not town L11AztecCapital is under takeover from player 1
+	wait until not town L11AztecTown1 is under takeover from player 0
+	wait until not town L11AztecTown1 is under takeover from player 1
+	wait until not town L11AztecTown2 is under takeover from player 0
+	wait until not town L11AztecTown2 is under takeover from player 1
+	wait until not town L11GreekTown is under takeover from player 0
+	wait until not town L11GreekTown is under takeover from player 1
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 2
+		empty player hand
+		wait 2 seconds
+
+		set dynamic music "largeevent1" loop 0 urgent
+
+		set camera position to {1992.344,307.594,264.503}
+		set camera focus to {1955.198,249.800,337.169}
+
+		move camera position to {1987.861,292.411,299.736} time 10
+		move camera focus to {1929.719,244.116,365.208} time 10
+
+		set fade in time 1
+
+		say "BW2T_SCRIPT_11FINAL_NORSE_GENERAL_10"
+
+		FX = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {TeleportCentre} + {0.000,1.000,0.000} time 10
+		//set FX colour red 255 green 0 blue 0
+
+		NorsePlatoon[0]	= create platoon constant AC_NorseReinforcements[1] at {TeleportCentre} with AC_NorseReinforcementsSize[0] men and 0 women
+		PLAYER of NorsePlatoon[0] = 0
+
+		wait 1 seconds
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MoveOutPos} to NorsePlatoon[0] action queue
+		
+		wait 1.5 seconds
+
+		NorsePlatoon[1] = create platoon constant AC_NorseReinforcements[1] at {TeleportCentre} with AC_NorseReinforcementsSize[1] men and 0 women
+		PLAYER of NorsePlatoon[1] = 0
+
+		wait 1 seconds
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MoveOutPos2} to NorsePlatoon[1] action queue
+
+		wait 1.5 seconds
+
+		NorsePlatoon[2] = create platoon constant AC_NorseReinforcements[1] at {TeleportCentre} with AC_NorseReinforcementsSize[1] men and 0 women
+		PLAYER of NorsePlatoon[2] = 0
+
+		wait 0.5 seconds
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MoveOutPos2} to NorsePlatoon[2] action queue
+
+        wait 1.5 seconds
+
+		Catapult = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11GreekTown at {TeleportCentre}
+		PLAYER of Catapult = 0
+		wait 0.5 seconds
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {MoveOutPos1} to siege weapon Catapult action queue
+
+		//set FX colour red 0 green 0 blue 255
+	
+		wait until read
+	end cinema
+
+	begin dialogue
+		eject good spirit
+		say "BW2T_SCRIPT_11FINAL_NORSE_GENERAL_20"
+		wait until read
+
+		say "BW2T_SCRIPT_11FINAL_NORSE_GENERAL_30"
+		wait until read
+
+		//set fade red 0 green 0 blue 0 time 1
+		//wait 1 seconds
+
+		//set camera position to {2013.727,317.941,362.237}
+		//set camera focus to {1942.402,259.591,323.413}
+
+		//set fade in time 0.5
+
+		say "BW2T_SCRIPT_11FINAL_NORSE_GENERAL_40"
+		wait until read
+
+		say "BW2T_SCRIPT_11FINAL_NORSE_GENERAL_50"
+		wait until read
+
+	end dialogue
+
+	AC_ReinforcementsArrived++
+
+	wait 2 seconds
+
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {AttackPos} to NorsePlatoon[0] action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {AttackPos} to NorsePlatoon[1] action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {AttackPos} to NorsePlatoon[2] action queue
+
+end script AC11_NorseReinforce
+
+//-----------------------------------------------------------------------------
+// Japanese Reinforce
+//-----------------------------------------------------------------------------
+begin script AC11_JapaneseReinforce
+	Scroll			= 0
+	TeleportCentre	= marker at {447.340,127.971,1253.366}
+	AttackPos		= marker at {595.219,210.002,990.478}
+
+	JapanesePlatoon[5]
+	JapanesePlatoonPos[5]
+	CatapultPos[2]
+	FocusPos		= marker at {456.230,147.868,1112.198}
+	Looper			= 0
+	FX				= 0
+	Catapult1		= 0
+	Catapult2		= 0
+	MaxReplenishes	= 0
+	TowardsTown2[6]
+	NearTown2		= marker at {517.906,206.850,1006.972}
+start
+	
+	TowardsTown2[0] = marker at {664.741,245.347,911.691}
+	TowardsTown2[1] = marker at {668.594,245.991,904.615}
+	TowardsTown2[2] = marker at {675.333,243.180,909.906}
+	TowardsTown2[3] = marker at {672.318,242.043,918.436}
+	TowardsTown2[4] = marker at {785.098,205.992,1054.535}
+	TowardsTown2[5] = marker at {800.633,204.230,1041.628}
+
+	JapanesePlatoonPos[0] = marker at {448.400,126.913,1209.749}
+	JapanesePlatoonPos[1] = marker at {448.266,125.873,1221.533}
+	JapanesePlatoonPos[2] = marker at {448.543,125.595,1229.381}
+	JapanesePlatoonPos[3] = marker at {457.299,131.755,1238.600}
+	JapanesePlatoonPos[4] = marker at {439.546,124.861,1240.033}
+
+	CatapultPos[0] = marker at {435.176,125.511,1254.515}
+	CatapultPos[1] = marker at {464.559,134.433,1251.889}
+
+	// don't trigger this while a city is being taken over
+	wait until not town L11AztecCapital is under takeover from player 0
+	wait until not town L11AztecCapital is under takeover from player 1
+	wait until not town L11AztecTown1 is under takeover from player 0
+	wait until not town L11AztecTown1 is under takeover from player 1
+	wait until not town L11AztecTown2 is under takeover from player 0
+	wait until not town L11AztecTown2 is under takeover from player 1
+	wait until not town L11GreekTown is under takeover from player 0
+	wait until not town L11GreekTown is under takeover from player 1
+
+	Looper = 0
+	begin loop
+		JapanesePlatoon[Looper] = create platoon constant AC_JapaneseReinforcements[Looper] at {TeleportCentre} with AC_JapaneseReinforcementsSize[Looper] men and 0 women
+		PLAYER of JapanesePlatoon[Looper] = 0
+		run script AC11_MovePlatoonHere(JapanesePlatoon[Looper], JapanesePlatoonPos[Looper])
+		run script AC11_FaceThisDirection(JapanesePlatoon[Looper], FocusPos)
+
+		Looper++
+	until Looper >= 5
+	end loop
+
+	start dynamic music
+	set dynamic music "smallevent3" loop 1 urgent
+
+	begin cinema
+		
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		
+		//Set pos
+		set camera position to {375.461,137.188,1338.273}
+		set camera focus to {403.139,122.100,1251.508}
+
+		move camera position to {363.253,134.056,1313.432} time 5
+		move camera focus to {426.847,124.067,1239.116} time 5
+
+		set fade in time 1
+
+		say "BW2T_SCRIPT_11FINAL_JAPANESE_GENERAL_10"
+		wait until read
+
+		say "BW2T_SCRIPT_11FINAL_JAPANESE_GENERAL_20"
+		wait until read
+
+		move camera position to {497.752,321.543,905.680} time 8
+		move camera focus to {574.702,266.270,873.686} time 8
+
+		say "BW2T_SCRIPT_11FINAL_JAPANESE_GENERAL_30"
+		wait until read
+
+		wait 4 seconds
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 1 seconds
+
+		set camera position to {479.925,385.574,775.732}
+		set camera focus to {522.216,321.230,839.544}
+
+		set fade in time 1
+	end cinema
+
+	AC_ReinforcementsArrived++
+
+	set dynamic music "small" loop -1 urgent
+
+	//This city cannot re-inforce itself as much now
+	AC_Balance_Recruit[AC_TOWN_AZTEC2]					= 2
+	AC_Balance_Recruit_Time[AC_TOWN_AZTEC2]				= 60	//This town now takes a mintue to recruit a new platoon
+	AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC2]		= 10
+
+	Catapult1 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11GreekTown at {TeleportCentre}
+	PLAYER of Catapult1 = 0
+	run script AC11_MoveSiegeHere(Catapult1, CatapultPos[0])
+
+	Catapult2 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11GreekTown at {TeleportCentre}
+	PLAYER of Catapult2 = 0
+	run script AC11_MoveSiegeHere(Catapult2, CatapultPos[1])
+
+	wait 1 seconds
+
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[0], TowardsTown2[0])
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[1], TowardsTown2[1])
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[2], TowardsTown2[2])
+	run background script AC11_MovePlatoonHere(AC_Town2SiegePlatoons[3], TowardsTown2[3])
+
+	run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[0], TowardsTown2[4])
+	run background script AC11_MoveSiegeHere(AC_Town2SiegeCatapult[1], TowardsTown2[5])
+
+	wait until {Catapult1} near {NearTown2} radius 80 or {Catapult2} near {NearTown2} radius 80
+
+	set dynamic music "smallevent4" loop 0 urgent
+
+	wait 4 seconds
+
+	set dynamic music "medium" loop -1
+
+end script AC11_JapaneseReinforce
+
+//-----------------------------------------------------------------------------
+// AC11_TownTributes - Gives the player tribute when they take over a town
+//-----------------------------------------------------------------------------
+begin script AC11_TownTributes
+	Town1Taken = AC_FALSE
+	Town2Taken = AC_FALSE
+	CapitalTaken = AC_FALSE
+	
+	TotalTaken = 0
+start
+	while TotalTaken < 3
+	
+	//Check if player takes L11AztecTown1
+		
+		if Town1Taken == AC_FALSE
+
+			if get town L11AztecTown1 is migrating to == L11GreekTown or PLAYER of L11AztecTown1 == 0
+				increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_11_SETTLEMNT1
+				Town1Taken = AC_TRUE
+				TotalTaken++
+				
+				if PLAYER of L11AztecTown1 == 0
+					if AC_ReinforcementsArrived > 0
+						//NG: This Aztec city has fallen to Norse might!
+						begin dialogue
+							say "BW2T_SCRIPT_11FINAL_EXTRA_LINES_190"
+							wait until read
+						end dialogue
+					end if
+				elsif get town L11AztecTown1 is migrating to == L11GreekTown
+					if AC_ReinforcementsArrived > 0
+						//NG: This is a famous victory! The Aztecs bow before us!
+						begin dialogue
+							say "BW2T_SCRIPT_11FINAL_EXTRA_LINES_200"
+							wait until read
+						end dialogue
+					end if
+
+				end if
+			end if
+			
+		end if
+		
+	//Check if player takes L11AztecTown2
+		
+		if Town2Taken == AC_FALSE
+			
+			if get town L11AztecTown2 is migrating to == L11GreekTown or PLAYER of L11AztecTown2 == 0
+				increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_11_SETTLEMNT2
+				Town2Taken = AC_TRUE
+				TotalTaken++
+
+				if PLAYER of L11AztecTown2 == 0
+					if AC_ReinforcementsArrived > 1
+						//JG: The Greek god will be pleased today. The Aztec city has fallen.
+						begin dialogue
+							say "BW2T_SCRIPT_11FINAL_EXTRA_LINES_250"
+							wait until read
+						end dialogue
+					end if
+				elsif get town L11AztecTown2 is migrating to == L11GreekTown
+					if AC_ReinforcementsArrived > 1
+						//JG: This Aztec city is Greek now. The enemy's defeat is certain!	
+						begin dialogue
+							say "BW2T_SCRIPT_11FINAL_EXTRA_LINES_260"
+							wait until read
+						end dialogue
+					end if
+				end if
+			end if
+			
+		end if
+		
+		//Check if player takes L11AztecCapital
+		if CapitalTaken == AC_FALSE
+			if get town L11AztecCapital is migrating to == L11GreekTown or PLAYER of L11AztecCapital == 0
+				CapitalTaken = AC_TRUE
+				TotalTaken++
+			end if	
+		end if
+
+	end while
+
+end script AC11_TownTributes
+
+//-----------------------------------------------------------------------------
+// AC11_OpenGatesForPlatoons
+//-----------------------------------------------------------------------------
+begin script AC11_OpenGatesForPlatoons
+	Gatehouse[11]
+	PlayerPlatoon = 0
+ 	NearRadius = 50
+	Counter = 0
+	Catapult = 0
+
+start
+	Gatehouse[0] = get HOUSE GATEHOUSE at {1727.755,311.098,1668.390} radius 50
+	Gatehouse[1] = get HOUSE GATEHOUSE at {1990.665,263.090,1471.559} radius 50
+	Gatehouse[2] = get HOUSE GATEHOUSE at {1724.384,249.348,1292.514} radius 50
+	Gatehouse[3] = get HOUSE GATEHOUSE at {1730.829,330.134,1797.202} radius 50
+	Gatehouse[4] = get HOUSE GATEHOUSE at {1420.441,289.319,1682.717} radius 50
+	Gatehouse[5] = get HOUSE GATEHOUSE at {1828.510,232.854,628.169} radius 50
+	Gatehouse[6] = get HOUSE GATEHOUSE at {1749.181,219.547,461.722} radius 50
+	Gatehouse[7] = get HOUSE GATEHOUSE at {2028.982,212.128,709.997} radius 50
+	Gatehouse[8] = get HOUSE GATEHOUSE at {749.419,211.137,732.365} radius 50
+	Gatehouse[9] = get HOUSE GATEHOUSE at {508.378,206.597,1000.677} radius 50
+	Gatehouse[10] = get HOUSE GATEHOUSE at {777.261,209.885,1020.025} radius 50
+
+	set gate Gatehouse[0] open
+	set gate Gatehouse[1] open
+	set gate Gatehouse[2] open
+	set gate Gatehouse[3] open
+	set gate Gatehouse[4] open
+	set gate Gatehouse[5] open
+	set gate Gatehouse[6] open
+	set gate Gatehouse[8] open
+	set gate Gatehouse[9] open
+	set gate Gatehouse[10] open
+
+	begin loop
+		if PLAYER of L11AztecCapital != 0
+			Counter = 0
+			while Counter < 5
+				PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+				Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+				if (PlayerPlatoon exists or Catapult exists or get distance from {MyCreature} to {Gatehouse[Counter]} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE_FOR_CREATURE) and gate Gatehouse[Counter] is open 
+					set gate Gatehouse[Counter] close
+				
+				else
+					PlayerPlatoon = 0
+					Catapult = 0
+					PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+
+					if (PlayerPlatoon not exists and Catapult not exists and get distance from {MyCreature} to {Gatehouse[Counter]} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE_FOR_CREATURE) and not gate Gatehouse[Counter] is open
+						set gate Gatehouse[Counter] open
+					end if
+
+				end if
+				
+				Counter++
+			end while
+		end if
+
+		if PLAYER of L11AztecTown1 != 0
+			Counter = 5
+			while Counter < 8
+				if Counter == 7 and AC_ScriptedGatehouse == AC_TRUE
+					// don't do anything as it's a scripted gatehouse
+				else
+					PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					if (PlayerPlatoon exists or Catapult exists or get distance from {MyCreature} to {Gatehouse[Counter]} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE) and gate Gatehouse[Counter] is open
+						set gate Gatehouse[Counter] close
+					
+					else
+						PlayerPlatoon = 0
+						Catapult = 0
+						PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+						Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+
+						if (PlayerPlatoon not exists and Catapult not exists and get distance from {MyCreature} to {Gatehouse[Counter]} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE) and not gate Gatehouse[Counter] is open
+							set gate Gatehouse[Counter] open
+						end if
+
+					end if
+				end if
+				
+				Counter++
+			end while
+		end if
+
+        if PLAYER of L11AztecTown2 != 0
+			Counter = 8
+			while Counter < 11
+				PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+				Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+				if (PlayerPlatoon exists or Catapult exists or get distance from {MyCreature} to {Gatehouse[Counter]} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE) and gate Gatehouse[Counter] is open
+					set gate Gatehouse[Counter] close
+				
+				else
+					PlayerPlatoon = 0
+					Catapult = 0
+					PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+
+					if (PlayerPlatoon not exists and Catapult not exists and get distance from {MyCreature} to {Gatehouse[Counter]} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE) and not gate Gatehouse[Counter] is open
+						set gate Gatehouse[Counter] open
+					end if
+
+				end if
+				
+				Counter++
+			end while
+		end if
+
+	until L11Complete == AC_TRUE
+	end loop
+
+
+end script AC11_OpenGatesForPlatoons
+
+//-----------------------------------------------------------------------------
+// Aztec Capital Build Controller
+//-----------------------------------------------------------------------------
+begin script AC11_AztecCapitalBuildController
+	SearchRadius			= 10
+	Building				= 0
+start
+
+	begin loop
+		Building	= get planned HOUSE near {L11AztecCapital} radius SearchRadius
+
+		if Building exists
+			Building = build building at {Building} desire 1.0
+			wait until BUILT of Building >= 0.5 or 40 seconds
+		else
+			SearchRadius+=5
+		end if
+
+		if AC_GameStage == AC_GAME_STAGE_START
+			wait 10 seconds
+		else
+			wait 20 seconds
+		end if
+
+	end loop
+
+end script AC11_AztecCapitalBuildController
+
+//----------------------------------------------------//
+//---Make the big platoon						   ---//
+//----------------------------------------------------//
+
+begin script AC11_CreateCapitalsBigPlatoon
+
+TempRegen = 0
+RegenTimer = 0
+GroupGathersHere = marker at {1727.152,271.310,1391.047}
+FocusPos = marker at {1722.321,247.501,1224.817}
+CurrentMainForceSize = 0
+
+start
+
+	RegenTimer = create timer for 0 seconds
+
+	CapitalsMainForce = recruit AZTEC_ARMY_MELEE_LEVEL town L11AztecCapital platoon of size 20
+	MainForceBeforeDepleted += 20
+
+	attach CapitalsMainForce to L11AztecCapital
+	enable platoon CapitalsMainForce respond to town L11AztecCapital attack
+	disable platoon CapitalsMainForce respond to local platoon attack
+	disable platoon CapitalsMainForce camp
+	wait until not CapitalsMainForce recruiting
+
+	run script AC11_MovePlatoonHere(CapitalsMainForce, GroupGathersHere)
+	run script AC11_FaceThisDirection(CapitalsMainForce, FocusPos)
+
+	begin loop
+		if CapitalsMainForce exists
+			if size of CapitalsMainForce <= 200 and get RegenTimer time remaining <= 0
+				if can town L11AztecCapital recruit PLATOON_INFO_AZTEC_MELEE_6 platoon of size 30
+					TempRegen = recruit PLATOON_INFO_AZTEC_MELEE_6 town L11AztecCapital platoon of size 30
+					wait until not TempRegen recruiting
+					merge platoon TempRegen into platoon CapitalsMainForce
+					CurrentMainForceSize = size of CapitalsMainForce
+					MainForceBeforeDepleted += 30
+					wait until size of CapitalsMainForce > CurrentMainForceSize
+				end if
+				if HardMode == AC_TRUE
+					RegenTimer = create timer for 5 seconds
+				else
+					RegenTimer = create timer for 25 seconds
+				end if
+			end if
+		end if
+	until size of CapitalsMainForce >= 200 or L11Complete == AC_TRUE
+	end loop
+
+end script AC11_CreateCapitalsBigPlatoon
+
+//----------------------------------------------------//
+//---Final assault before turning defensive		   ---//
+//----------------------------------------------------//
+
+begin script AC11_BigArmyComingAtYa
+	SplittingPlatoons[3]
+	MaxWaitingTime = 0
+	Looper = 0
+	GroupGathersHere = marker at {1691.488,233.496,1127.306}
+	FocusPos = marker at {1684.085,231.847,1116.773}
+	SplitPos = marker at {1709.157,237.893,1154.703}
+start
+	run script AC11_MovePlatoonHere(CapitalsMainForce, GroupGathersHere)
+	run script AC11_FaceThisDirection(CapitalsMainForce, FocusPos)
+	
+	MaxWaitingTime = create timer for 100 seconds
+
+	wait until {CapitalsMainForce} near {SplitPos} radius 10 or get MaxWaitingTime time remaining <= 0
+
+	begin dialogue
+		// AG: I will slaughter each and every Greek who stands up to me. And those who don't.
+		say "BW2T_SCRIPT_10FINAL_STORYLINE_4"
+		wait until read
+	end dialogue 
+
+	run background script AC11_PlayMusicForFinale
+
+	while size of CapitalsMainForce > 50 and Looper < 3
+		SplittingPlatoons[Looper] = split 50 soldiers from platoon CapitalsMainForce
+		Looper++
+	end while
+
+	while Looper >= 0
+		run background script AC11_FinalAssaultTroopsOrders(SplittingPlatoons[Looper], AC_FINAL_ASSAULT_ORDERS_ATTACK_TROOPS)
+		Looper--
+	end while
+
+	run background script AC11_FinalAssaultTroopsOrders(CapitalsMainForce, AC_FINAL_ASSAULT_ORDERS_TAKE_OVER)
+
+	wait until size of CapitalsMainForce < 5
+
+end script AC11_BigArmyComingAtYa
+
+//----------------------------------------------------//
+//---Final assault before turning defensive		   ---//
+//----------------------------------------------------//
+
+begin script AC11_FinalAssaultTroopsOrders(platoon_id, orders)
+	TownsToAttack		= 0
+	EnemyTown[AC_TOWN_LAST]
+	EnemyTownToAttack = 0
+	PlayersPlatoon = 0
+	NoMoreTownsLeft = 0
+start
+
+	begin loop
+		if PLAYER of L11GreekTown != 0
+			if PLAYER of L11AztecTown1 == 0
+				EnemyTown[TownsToAttack] = L11AztecTown1
+				TownsToAttack++
+			end if
+
+			if PLAYER of L11AztecTown2 == 0
+				EnemyTown[TownsToAttack] = L11AztecTown2
+				TownsToAttack++
+			end if
+
+			if PLAYER of L11AztecCapital == 0
+				EnemyTown[TownsToAttack] = L11AztecCapital
+				TownsToAttack++
+			end if
+
+			if TownsToAttack > 0
+				EnemyTownToAttack = EnemyTown[number from 0 to (TownsToAttack - 1)]
+			else
+				NoMoreTownsLeft = AC_TRUE
+			end if
+		else
+			EnemyTownToAttack = L11GreekTown
+		end if
+		
+		if orders == AC_FINAL_ASSAULT_ORDERS_TAKE_OVER
+			set platoon_id attack EnemyTownToAttack with severity 1.0 for takeover
+		elsif orders == AC_FINAL_ASSAULT_ORDERS_ATTACK_TROOPS
+			PlayersPlatoon = get platoon of player 0 nearest {EnemyTownToAttack} radius 500
+
+			while PlayersPlatoon exists
+				if PlayersPlatoon exists and platoon_id exists
+					add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_PLATOON using PlayersPlatoon to platoon_id action queue
+				end if
+
+				wait until not PlayersPlatoon exists or platoon platoon_id idle
+				PlayersPlatoon = get platoon of player 0 nearest {EnemyTownToAttack} radius 500
+
+				wait 5 seconds
+			end while
+
+			set platoon_id attack EnemyTownToAttack with severity 1.0 for takeover
+		end if
+
+		wait until PLAYER of EnemyTownToAttack != 0
+
+	until NoMoreTownsLeft == AC_TRUE
+	end loop
+
+end script AC11_FinalAssaultTroopsOrders
+
+//----------------------------------------------------//
+//---Disband armies of enemy towns taken over by force//
+//----------------------------------------------------//
+begin script AC11_DisbandRemainingTroops
+	Looper = 0
+start
+
+//Platoons
+while Looper < 13
+	if AC_PlatoonsDefenceCapital[Looper] exists
+		disband platoon AC_PlatoonsDefenceCapital[Looper]
+	end if
+	Looper++
+end while
+
+Looper = 0
+while Looper < 4
+	if AC_PlatoonsDefenceTown1[Looper] exists
+		disband platoon AC_PlatoonsDefenceTown1[Looper]
+	end if
+	Looper++
+end while
+
+Looper = 0
+while Looper < 4
+	if AC_PlatoonsDefenceTown2[Looper] exists
+		disband platoon AC_PlatoonsDefenceTown2[Looper]
+	end if
+	Looper++
+end while
+
+Looper = 0
+while Looper < 4
+	if AC_Town1SiegePlatoons[Looper] exists
+		disband platoon AC_Town1SiegePlatoons[Looper]
+	end if
+	Looper++
+end while
+
+Looper = 0
+while Looper < 4
+	if AC_Town2SiegePlatoons[Looper] exists
+		disband platoon AC_Town2SiegePlatoons[Looper]
+	end if
+	Looper++
+end while
+
+Looper = 0
+while Looper < 2
+	if AC_Town1SiegeCatapult[Looper] exists
+		disband platoon AC_Town1SiegeCatapult[Looper]
+	end if
+	Looper++
+end while
+
+Looper = 0
+while Looper < 2
+	if AC_Town2SiegeCatapult[Looper] exists
+		disband platoon AC_Town2SiegeCatapult[Looper]
+	end if
+	Looper++
+end while
+
+end script AC11_DisbandRemainingTroops
+
+//----------------------------------------------------//
+//---Norse reinforcements possibly sent earlier if player has gone the impressive way//
+//----------------------------------------------------//
+begin script AC11_CheckingImpressiveRoute
+start
+	wait until variable get town L11AztecTown1 status == variable TOWN_STATUS_MIGRATED
+	
+	wait 20 seconds
+
+	if AC_SentNorseReinforcements == AC_FALSE
+		run script AC11_NorseReinforce
+	end if
+
+end script AC11_CheckingImpressiveRoute
+
+//----------------------------------------------------//
+//---Check for player building annoying walls, deal   //
+//---with it by building more catapults and sending   //
+//---them to keep the way clear						  //
+//----------------------------------------------------//
+begin script AC11_CheckForAndDealWithPlayerBuildingAnnoyingWalls
+	Count = 0
+	CatapultForTown1 = 0
+	CatapultForTown2 = 0
+	CreationPosForTown1 = marker at {1831.105,223.406,654.403}
+	CreationPosForTown2 = marker at {821.671,197.511,1063.378}
+	AC_Town1Waypoints[6]
+	AC_Town2Waypoints[6]
+	Looper = 0
+start
+
+	CatapultForTown1 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11AztecTown1 at {CreationPosForTown1}
+	CatapultForTown2 = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_5 belonging to L11AztecTown2 at {CreationPosForTown2}
+	attach CatapultForTown1 to L11AztecTown2
+	attach CatapultForTown2 to L11AztecTown2
+	//disable siege weapon CatapultForTown1 auto attack
+	//disable siege weapon CatapultForTown2 auto attack
+
+	AC_Town1Waypoints[0] = marker at {1834.776,208.970,717.683}
+	AC_Town1Waypoints[1] = marker at {1852.176,197.212,768.089}
+	AC_Town1Waypoints[2] = marker at {1839.969,205.388,819.919}
+	AC_Town1Waypoints[3] = marker at {1810.585,209.883,849.558}
+	AC_Town1Waypoints[4] = marker at {1770.417,215.762,875.547}
+	AC_Town1Waypoints[5] = marker at {1730.035,220.332,902.244}
+
+	
+
+	AC_Town2Waypoints[0] = marker at {1208.551,193.138,1008.546}
+	AC_Town2Waypoints[1] = marker at {1255.266,203.065,1055.764}
+	AC_Town2Waypoints[2] = marker at {1311.727,212.410,1095.414}
+	AC_Town2Waypoints[3] = marker at {1358.326,219.207,1109.802}
+	AC_Town2Waypoints[4] = marker at {1401.065,219.397,1104.155}
+	AC_Town2Waypoints[5] = marker at {1437.454,207.536,1083.806}
+
+	run script AC11_MoveSiegeHere(CatapultForTown2, AC_Town2Waypoints[Looper])
+
+	begin loop
+		Looper = 0
+		while Looper < 6
+			if CatapultForTown1 can navigate to {AC_Town1Waypoints[Looper]}
+				run script AC11_MoveSiegeHere(CatapultForTown1, AC_Town1Waypoints[Looper])
+				wait until {CatapultForTown1} near {AC_Town1Waypoints[Looper]} radius 10
+			end if
+			
+			Looper++
+		end while
+
+		Looper = 5
+		while Looper >= 0
+			if CatapultForTown1 can navigate to {AC_Town1Waypoints[Looper]}
+				run script AC11_MoveSiegeHere(CatapultForTown1, AC_Town1Waypoints[Looper])
+				wait until {CatapultForTown1} near {AC_Town1Waypoints[Looper]} radius 10
+			end if
+			
+			Looper--
+		end while
+	end loop
+
+	wait 5000 seconds
+
+end script AC11_CheckForAndDealWithPlayerBuildingAnnoyingWalls
+
+//----------------------------------------------------//
+//---if the player deletes a certain wall segment,	  //
+//		turn on 'hard' mode							  //
+//----------------------------------------------------//
+begin script AC11_DetectHardMode
+	WallPos = marker at {1490.239,245.514,834.366}
+	HardTimer = create timer for 0 seconds
+	Wall = 0
+start
+	
+	set HardTimer time to AC_GAME_STAGE_START_CONDITION_TIME seconds	
+	
+	begin loop
+		Wall = get wall segment nearest {WallPos} radius 30
+
+		wait 3 seconds
+	until not Wall exists or get HardTimer time remaining == 0
+	end loop
+
+	if get HardTimer time remaining == 0
+	else
+		//say "Going into hard mode..."
+		HardMode = AC_TRUE
+		run background script AC11_MaintainSiegePlatoonLevel(AC_TOWN_AZTEC2)
+		AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC1]		= 50
+		AC_Balance_Recruit_Platoon_Size[AC_TOWN_AZTEC2]		= 50
+	end if
+	
+end script AC11_DetectHardMode
+
+//----------------------------------------------------//
+//---If Town1 platoons are killed, town2 should start //
+//----------------------------------------------------//
+begin script AC11_DetectFirstWaveDying
+	DepletedPlatoons = 0
+	AlreadyDonePlatoons[4]
+start
+	AlreadyDonePlatoons[0] = 0
+	AlreadyDonePlatoons[1] = 0
+	AlreadyDonePlatoons[2] = 0
+	AlreadyDonePlatoons[3] = 0
+
+	begin loop
+		if AlreadyDonePlatoons[0] == 0 and (AC_Town1SiegePlatoons[0] not exists or size of AC_Town1SiegePlatoons[0] < 5)
+			AlreadyDonePlatoons[0] = 1
+			DepletedPlatoons++
+		end if
+
+		if AlreadyDonePlatoons[1] == 0 and (AC_Town1SiegePlatoons[1] not exists or size of AC_Town1SiegePlatoons[1] < 5)
+			AlreadyDonePlatoons[1] = 1
+			DepletedPlatoons++
+		end if
+
+		if AlreadyDonePlatoons[2] == 0 and (AC_Town1SiegePlatoons[2] not exists or size of AC_Town1SiegePlatoons[2] < 5)
+			AlreadyDonePlatoons[2] = 1
+			DepletedPlatoons++
+		end if
+
+		if AlreadyDonePlatoons[3] == 0 and (AC_Town1SiegePlatoons[3] not exists or size of AC_Town1SiegePlatoons[3] < 5)
+			AlreadyDonePlatoons[3] = 1
+			DepletedPlatoons++
+		end if
+	until DepletedPlatoons > 2
+	end loop
+
+	if Town2ToAttackNow == AC_FALSE
+		Town2ToAttackNow = AC_TRUE
+	end if
+end script AC11_DetectFirstWaveDying
+
+////////////////////////////////////
+begin script AC11_EnemyEpicCharging
+	L11_Wonder = 0
+	WonderCurrentCharge = 0
+start
+	L11_Wonder = get WONDER in L11AztecCapital
+	while L11_Wonder exists and WonderCurrentCharge < 1.0
+		WonderCurrentCharge = CHARGE of L11_Wonder
+	
+		if WonderCurrentCharge < 1.0
+			WonderCurrentCharge += 0.02
+			CHARGE of L11_Wonder = WonderCurrentCharge
+			wait 10 seconds
+		end if
+
+		if AC_GameStage == AC_GAME_STAGE_WITHDRAW
+			CHARGE of L11_Wonder = 1.0
+			WonderCurrentCharge = 1.0
+		end if
+	end while
+
+end script AC11_EnemyEpicCharging
+
+//////////////////////////////////
+begin script AC11_StopDynamicMusic
+start
+	if AC_DynamicMusicStopperScriptRunning == AC_FALSE
+		AC_DynamicMusicStopperScriptRunning = AC_TRUE
+
+		while get AC_DynamicMusicTimer time remaining > 0 and AC_DynamicMusicStopperScriptRunning == AC_TRUE
+
+			if AC_GameStage == AC_GAME_STAGE_STAGING or AC_GameStage == AC_GAME_STAGE_SIEGE or AC_GameStage == AC_GAME_STAGE_WITHDRAW
+				AC_DynamicMusicStopperScriptRunning = AC_FALSE
+			end if
+		end while
+
+		if AC_DynamicMusicStopperScriptRunning == AC_TRUE
+			run background script AC11_EndDynamicMusicGracefully
+			AC_DynamicMusicStopperScriptRunning = AC_FALSE
+		end if
+	end if
+
+end script AC11_StopDynamicMusic
+
+////////////////////////////////////
+begin script AC11_EndDynamicMusicGracefully
+	land11mixer = 0
+start
+	land11mixer = create mixer
+	set mixer land11mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.0 with fadetime 10
+	wait 10 seconds 
+	stop dynamic music
+	destroy mixer land11mixer with fadetime 3
+
+end script AC11_EndDynamicMusicGracefully
+
+////////////////////////////////////
+begin script AC11_PlayMusicForFinale
+	land11mixer = 0
+start
+
+	if AC_FinaleMusicThreadRunning == AC_FALSE
+		AC_FinaleMusicThreadRunning = AC_TRUE
+
+		wait until AC_GameStage == AC_GAME_STAGE_FINAL_SIEGE
+
+		land11mixer = create mixer
+		
+		begin loop
+			
+			start music "cut_scene_battle_03 "
+			set mixer land11mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0 with fadetime 3
+			wait 165 seconds
+			set mixer land11mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.0 with fadetime 3
+			wait 2 seconds
+			start music "cut_scene_battle_02 "
+			set mixer land11mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0 with fadetime 3
+			wait 233 seconds
+			set mixer land11mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.0 with fadetime 3
+			wait 2 seconds
+			start music "big_battle_01"
+			set mixer land11mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0 with fadetime 3
+			wait 206 seconds
+			set mixer land11mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.0 with fadetime 3
+			wait 2 seconds
+
+		until L11Complete == AC_TRUE
+		end loop
+
+		destroy mixer land11mixer with fadetime 3
+		stop music with fadetime 5
+	end if
+
+end script AC11_PlayMusicForFinale

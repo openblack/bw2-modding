@@ -1,0 +1,11 @@
+run script RunMarauders
+
+begin script RunMarauders
+start
+	begin camera
+		set camera position to {1630.386,58.654,1064.696}
+		set camera focus to {1601.546,39.695,1084.384}
+	end camera
+	
+	run script Marauders
+end script RunMarauders

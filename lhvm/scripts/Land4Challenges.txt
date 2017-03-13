@@ -1,0 +1,26 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 4
+//===========================================================
+
+// -Globals-
+GlobalCreatureAI.txt
+Land4Globals.txt
+Land4Intro.txt
+Land4Outro.txt
+Land4Departure.txt
+Land4NorseCapitalScript.txt
+Land4TownObjectives.txt
+Land4BuildWall.txt
+Land4AltarAndMagic.txt
+Land4UndeadLegion.txt
+Land4NutOil.txt
+Land4Geysers.txt
+Land4CreatureTutorial.txt
+Land4TownTutorials.txt
+Land4NorseWolf.txt
+Land4DYK.txt
+GlobalThrowBloke.txt
+Land4ThrowBloke.txt
+
+//always the last script
+Land4Control.txt

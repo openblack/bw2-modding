@@ -1,0 +1,997 @@
+//=============================================================================
+// Land 10 Aztec Capital
+// Lenny and Tom
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define LC10_FALSE	= 0
+define LC10_TRUE	= 1
+
+define LC10_STRATEGY_ARMY = 0
+define LC10_STRATEGY_BUILDING = 1
+
+define LC10_NUM_OF_PLATOONS					= 10
+define LC10_NUM_OF_SETTLEMENTS				= 3 //Change?
+define LC10_NUMBER_OF_STANDARD_PLATOONS		= 4
+
+//Stage defines
+define LC10_STAGE_AT_PEACE					= 0
+define LC10_STAGE_AT_WAR					= 1
+
+define LC10_PASSIVE							= 0
+define LC10_AGGRESSIVE						= 1
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global LC10_Platoon[LC10_NUM_OF_PLATOONS]
+//global LC10_MinorSettlement[LC10_NUM_OF_SETTLEMENTS]
+global LC10_PlayerOwnsSettlement[LC10_NUM_OF_SETTLEMENTS]
+global PlatoonPos[LC10_NUM_OF_PLATOONS]
+global PatrolRouteA[3]
+global PatrolRouteB[3]
+global PatrolRouteC[3]
+
+global LC10_Condition		= LC10_STAGE_AT_PEACE
+global NearestSettlement	= 0
+global WaypointsA			= 0
+global WaypointsB			= 0
+global WaypointsC			= 0
+global LevelComplete		= LC10_FALSE
+global LC10_SettlementCaptured = 10 //Invalid to start with
+global LC10_NumberOfTownsPlayerHasTaken = 0
+global LC10_NumberOfTownsEnemyHasTaken = 0
+global LC10_NearestSettlement = 0
+global LC10_NearestEnemyTown = 0
+global LC10_SettlementCapturedEnemy = 10
+global LC10_NearestPlatoon = 0
+global FoodFree = 0
+global WoodFree = 0
+global OreFree = 0
+
+global LC10_EnemyStrategy = LC10_STRATEGY_ARMY
+//-----------------------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------------------
+define script LC10_StrategyManagement
+define script LC10_GeneralManagement
+define script LC10_GetNearestSettlement(Town)
+define script LC10_GetNearestEnemyTown(Pos)
+define script LC10_HasObjectiveWallBeenBuilt
+define script LC10_NumberOfPlayerTowns
+define script LC10_ChooseEnemyStrategy
+define script LC10_NumberOfEnemyTowns
+define script LC10_GetNearestTroops(Pos)
+
+//-----------------------------------------------------------------------------
+// Land 10 Aztec Capital
+//-----------------------------------------------------------------------------
+begin script Land10AztecCapital
+	Counter = 0
+
+	//TEMP
+	Men[40]
+	TownPos = 0
+	//TEMP
+	
+	Threshold = 0
+	FoodPos = marker at {1249.833, 224.452, 739.768}
+	WoodPos = marker at {1287.396, 226.843, 719.770}
+	OrePos = marker at {1312.064, 228.593, 759.222}
+
+start	
+
+	//Get the towns
+	L10GreekTown = get town with id 0
+	L10AztecCapital = get town with id 11
+
+	LC10_MinorSettlement[0] = get town with id 6
+	LC10_MinorSettlement[1] = get town with id 12
+	LC10_MinorSettlement[2] = get town with id 5
+	//LC10_MinorSettlement[3] = get town with id 5
+
+	// Setup the player's migration values
+	// Aztec Capital - Player
+	Threshold = get town L10AztecCapital impressiveness
+	set migration threshold from L10AztecCapital to L10GreekTown GLOBAL_VALUE_THRESHOLD_LAND_10_CAPITAL_TO_GREEK - Threshold
+
+	// Settlement 1	- Player
+	Threshold = get town LC10_MinorSettlement[0] impressiveness
+	set migration threshold from LC10_MinorSettlement[0] to L10GreekTown GLOBAL_VALUE_THRESHOLD_LAND_10_SETTLEMENT1_TO_GREEK - Threshold
+
+	// Settlement 2	- Player
+	Threshold = get town LC10_MinorSettlement[1] impressiveness
+	set migration threshold from LC10_MinorSettlement[1] to L10GreekTown GLOBAL_VALUE_THRESHOLD_LAND_10_SETTLEMENT2_TO_GREEK - Threshold
+
+	// Settlement 3	- Player
+	Threshold = get town LC10_MinorSettlement[2] impressiveness
+	set migration threshold from LC10_MinorSettlement[2] to L10GreekTown GLOBAL_VALUE_THRESHOLD_LAND_10_SETTLEMENT3_TO_GREEK - Threshold
+
+	// Settlement 1	- Enemy
+	Threshold = get town LC10_MinorSettlement[0] impressiveness
+	set migration threshold from LC10_MinorSettlement[0] to L10AztecCapital GLOBAL_VALUE_THRESHOLD_LAND_10_SETTLEMENT1_TO_CAPITAL - Threshold
+	
+	//TEMP TO POPULATE VILLAGE - I MUST REMOVE THIS - Oh look, I did.
+/*
+	TownPos = marker at {1282.172, 228.239, 786.564}
+
+	while Counter != 40
+		if Men[Counter] not exists and Counter != 40
+			Men[Counter] = create VILLAGER GREEK_FARMER at {TownPos} + {number from -7 to 7, 0, number from -7 to 7}
+			attach Men[Counter] to L10GreekTown
+			Men[Counter] = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {TownPos} + {number from -7 to 7, 0, number from -7 to 7}
+			attach Men[Counter] to L10GreekTown
+			release Men[Counter]
+			Counter++
+		end if
+	end while
+*/
+	//-------
+	
+	PlatoonPos[0] = marker at {505.785, 551.884, 1769.178}
+	PlatoonPos[1] = marker at {521.172, 554.889, 1858.558}
+	PlatoonPos[2] = marker at {1219.108, 236.267, 1461.374}
+	PlatoonPos[3] = marker at {1938.246, 251.440, 1335.887}
+	PlatoonPos[4] = marker at {1762.517, 205.681, 853.717}
+	PlatoonPos[5] = marker at {1621.357, 245.055, 1143.219}
+	PlatoonPos[6] = marker at {1695.993, 210.277, 910.010}
+	PlatoonPos[7] = marker at {1665.887, 211.258, 974.195}
+	
+	PatrolRouteA[0] = marker at {1205.312, 233.416, 1420.279}
+	PatrolRouteA[1] = marker at {1554.823, 284.652, 1714.871}
+	PatrolRouteA[2] = marker at {1403.241, 234.557, 1570.948}
+	PatrolRouteB[0] = marker at {1795.434, 205.960, 1233.388}
+	PatrolRouteB[1] = marker at {1956.995, 253.698, 1356.712}
+	PatrolRouteB[2] = marker at {2015.100, 269.359, 1468.804}
+	PatrolRouteC[0] = marker at {1757.501, 207.355, 796.654}
+	PatrolRouteC[1] = marker at {1789.643, 203.331, 873.236}
+	PatrolRouteC[2] = marker at {1667.162, 225.978, 806.145}
+	
+	WaypointsA = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0, 0, 0}
+	WaypointsB = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0, 0, 0}
+	WaypointsC = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0, 0, 0}
+
+	add {PatrolRouteA[0]} to waypoint list WaypointsA
+	add {PatrolRouteA[1]} to waypoint list WaypointsA
+	add {PatrolRouteA[2]} to waypoint list WaypointsA
+	add {PatrolRouteB[0]} to waypoint list WaypointsB
+	add {PatrolRouteB[1]} to waypoint list WaypointsB
+	add {PatrolRouteB[2]} to waypoint list WaypointsB
+	add {PatrolRouteC[0]} to waypoint list WaypointsC
+	add {PatrolRouteC[1]} to waypoint list WaypointsC
+	add {PatrolRouteC[2]} to waypoint list WaypointsC
+	
+	//----Initialise the town desires---- (Not needed apparently)//
+	/*
+	set town L10AztecCapital platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.0
+	set town L10AztecCapital desire for GATHER_FOOD to 0.30
+	set town L10AztecCapital desire for GROW_FOOD to 0.20
+	set town L10AztecCapital desire for GATHER_WOOD to 0.20
+	set town L10AztecCapital desire for GATHER_ORE to 0.30
+	set town L10AztecCapital desire for BREED to 0.10
+	set town L10AztecCapital desire for ATTACK to 0.10
+	set town L10AztecCapital desire for FUN to 0.00
+	*/
+
+	
+
+	//----Create static platoons----//
+	LC10_Platoon[0] = create platoon PLATOON_INFO_AZTEC_MELEE_4 at {PlatoonPos[0]} with 10 men and 0 women
+	attach LC10_Platoon[0] to L10AztecCapital
+	PLAYER of LC10_Platoon[0] = 1
+
+	LC10_Platoon[1] = create platoon PLATOON_INFO_AZTEC_MELEE_4 at {PlatoonPos[1]} with 10 men and 0 women 
+	attach LC10_Platoon[1] to L10AztecCapital
+	PLAYER of LC10_Platoon[1] = 1
+
+	LC10_Platoon[2] = create platoon PLATOON_INFO_AZTEC_MELEE_4 at {PlatoonPos[2]} with 20 men and 0 women 
+	attach LC10_Platoon[2] to L10AztecCapital
+	PLAYER of LC10_Platoon[2] = 1
+	move LC10_Platoon[2] along WaypointsA with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+	enable platoon LC10_Platoon[Counter] respond to town L10AztecCapital attack
+
+	LC10_Platoon[3] = create platoon PLATOON_INFO_AZTEC_MELEE_4 at {PlatoonPos[3]} with 20 men and 0 women 
+	attach LC10_Platoon[3] to L10AztecCapital
+	PLAYER of LC10_Platoon[3] = 1
+	move LC10_Platoon[3] along WaypointsB with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+	enable platoon LC10_Platoon[Counter] respond to town LC10_MinorSettlement[2] attack
+
+	LC10_Platoon[4] = create platoon PLATOON_INFO_AZTEC_MELEE_4 at {PlatoonPos[4]} with 20 men and 0 women 
+	attach LC10_Platoon[4] to L10AztecCapital
+	PLAYER of LC10_Platoon[4] = 1
+	move LC10_Platoon[4] along WaypointsC with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+	enable platoon LC10_Platoon[Counter] respond to town LC10_MinorSettlement[2] attack
+
+	LC10_Platoon[5] = create platoon PLATOON_INFO_AZTEC_RANGED_4 at {PlatoonPos[5]} with 20 men and 0 women 
+	attach LC10_Platoon[5] to L10AztecCapital
+	PLAYER of LC10_Platoon[5] = 1
+	set LC10_Platoon[5] focus to {L10GreekTown}
+	add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {LC10_Platoon[5]} to LC10_Platoon[5] action queue
+
+	LC10_Platoon[6] = create platoon PLATOON_INFO_AZTEC_MELEE_4 at {PlatoonPos[6]} with 20 men and 0 women
+	attach LC10_Platoon[6] to L10AztecCapital
+	PLAYER of LC10_Platoon[6] = 1
+	add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PlatoonPos[6]} to LC10_Platoon[6] action queue
+
+	LC10_Platoon[7] = create platoon PLATOON_INFO_AZTEC_RANGED_4 at {PlatoonPos[7]} with 20 men and 0 women
+	attach LC10_Platoon[7] to L10AztecCapital
+	PLAYER of LC10_Platoon[7] = 1
+	add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PlatoonPos[7]} to LC10_Platoon[7] action queue
+
+	//Free resources
+	FoodFree = create STORE FOOD at {FoodPos}
+	WoodFree = create STORE WOOD at {WoodPos}
+	OreFree = create STORE ORE at {OrePos}
+	add resource RESOURCE_TYPE_FOOD 1999 to FoodFree
+	add resource RESOURCE_TYPE_WOOD 1999 to WoodFree
+	add resource RESOURCE_TYPE_ORE 499 to OreFree
+
+	enable villagers ignore FoodFree resource
+	enable villagers ignore WoodFree resource
+	enable villagers ignore OreFree resource
+
+	//L10_WomenSaved = 2 - DEBUG
+
+	wait until L10_WomenSaved > 0 or L10_StealthSectionComplete == 1
+	wait 120 seconds
+	enable game can be lost
+
+	run background script LC10_StrategyManagement
+	run background script LC10_GeneralManagement
+	run background script LC10_NumberOfPlayerTowns
+	run background script LC10_ChooseEnemyStrategy
+
+end script Land10AztecCapital
+
+//-----------------------------------------------------------------------------
+// Land 10 Aztec General
+//-----------------------------------------------------------------------------
+begin script LC10_GeneralManagement
+
+CommentSaid = 0
+EnemyCommentSaid = 0
+
+start
+
+	begin loop
+
+		//One town taken
+		if LC10_NumberOfTownsPlayerHasTaken == 1 and CommentSaid == 0
+			CommentSaid++
+			if LC10_SettlementCaptured == LC10_PASSIVE
+				begin dialogue
+					//say "How dare they take over towns in my land?"
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_IMPRESSIVENESS_1"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCaptured == LC10_AGGRESSIVE
+				begin dialogue
+					//say "You dare to try and use force against us? This is futile."
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_ARMIES_1"
+					wait until read
+				end dialogue
+			end if
+
+		end if
+
+		//Two towns taken
+		if LC10_NumberOfTownsPlayerHasTaken == 2 and CommentSaid == 1
+			CommentSaid++
+			if LC10_SettlementCaptured == LC10_PASSIVE
+				begin dialogue
+					//say "The Greeks are expanding their territory. Stay alert!"
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_IMPRESSIVENESS_2"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCaptured == LC10_AGGRESSIVE
+				begin dialogue
+					//say "I admire your spirit Greeks! But I will still enjoy putting each and every one of you to death!"
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_ARMIES_2"
+					wait until read
+				end dialogue
+			end if
+
+		end if
+
+		//Three towns taken
+		if LC10_NumberOfTownsPlayerHasTaken == 3 and CommentSaid == 2
+			CommentSaid++
+			if LC10_SettlementCaptured == LC10_PASSIVE
+				begin dialogue
+					//say "They have taken yet another town? They are steadily increasing their strength."
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_IMPRESSIVENESS_3"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCaptured == LC10_AGGRESSIVE
+				begin dialogue
+					//say "Keep fighting Greek scum. It makes my inevitable victory all the sweeter!"
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_ARMIES_3"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if LC10_NumberOfTownsPlayerHasTaken == 4 and CommentSaid == 3
+			CommentSaid++
+			if LC10_SettlementCaptured == LC10_PASSIVE
+				begin dialogue
+					//say "Run to the Greeks then. They cannot protect you for long!"
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_IMPRESSIVENESS_4"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCaptured == LC10_AGGRESSIVE
+				begin dialogue
+					//say "To war!"
+					say "BW2T_SCRIPT_10FINAL_GREEKS_TAKE_TOWN_VIA_ARMIES_4"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		
+
+		//Aztec takeover lines
+		if LC10_NumberOfTownsEnemyHasTaken == 1 and EnemyCommentSaid == 0
+			EnemyCommentSaid++
+			if LC10_SettlementCapturedEnemy == LC10_PASSIVE
+				begin dialogue
+					//say "We build so quickly and so well."
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_IMPRESIVENESS_1"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCapturedEnemy == LC10_AGGRESSIVE
+				begin dialogue
+					//say "We cannot be stopped now!"
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_ARMIES_1"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if LC10_NumberOfTownsEnemyHasTaken == 2 and EnemyCommentSaid == 1
+			EnemyCommentSaid++
+			if LC10_SettlementCapturedEnemy == LC10_PASSIVE
+				begin dialogue
+					//say "Soon, the whole land will join us."
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_IMPRESIVENESS_2"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCapturedEnemy == LC10_AGGRESSIVE
+				begin dialogue
+					//say "Out opposition crumbles to dust"
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_ARMIES_2"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if LC10_NumberOfTownsEnemyHasTaken == 3 and EnemyCommentSaid == 2
+			EnemyCommentSaid++
+			if LC10_SettlementCapturedEnemy == LC10_PASSIVE
+				begin dialogue
+					//say "These people should be honoured to join us aztecs"
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_IMPRESIVENESS_3"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCapturedEnemy == LC10_AGGRESSIVE
+				begin dialogue
+					//say "Who can oppose us? No-one!"
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_ARMIES_3"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if LC10_NumberOfTownsEnemyHasTaken == 4 and EnemyCommentSaid == 3
+			EnemyCommentSaid++
+			if LC10_SettlementCapturedEnemy == LC10_PASSIVE
+				begin dialogue
+					//say "Our cities are legendary. Of course these people will join us!"
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_IMPRESIVENESS_4"
+					wait until read
+				end dialogue
+			elsif LC10_SettlementCapturedEnemy == LC10_AGGRESSIVE
+				begin dialogue
+					//say "Another town falls before our might."
+					say "BW2T_SCRIPT_10FINAL_AZTECS_TAKE_TOWN_VIA_ARMIES_4"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+
+	until LevelComplete == LC10_TRUE or PLAYER of L10GreekTown != 0
+	end loop
+
+	//Level won/lost
+
+	if PLAYER of L10GreekTown == 0
+		begin dialogue
+		//say "This was a lucky victory, they should feel confident about facing us again. That is when we will wipe them out for good!"
+		say "BW2T_SCRIPT_10FINAL_AZTEC_GENERAL_90"
+		wait until read
+		end dialogue
+	else
+		begin dialogue
+			say "BW2T_SCRIPT_10FINAL_AZTECCAPITAL_10"
+			wait until read
+		end dialogue
+	end if
+
+	run background script Land10Departure
+	
+end script LC10_GeneralManagement
+
+
+//-----------------------------------------------------------------------------
+// Capital Army/Building Managment
+//-----------------------------------------------------------------------------
+begin script LC10_StrategyManagement
+	
+CurrentAction = 0
+Counter = 0
+EnemyCounter = 0
+WarTimer = 0
+ReplenishPos = 0
+TempPlatoon = 0
+Town1Defended = 0
+Town2Defended = 0
+
+SentToQuake = 0
+QuakeTimer = 0
+QuakePlatoon = -1
+
+PlannedWall[10]
+PlannedWallPos[10]
+
+WallTimer = 0
+WallBuilt = 0
+Wall1 = 0
+Wall2 = 0
+Wall3 = 0
+WallPos1 = 0
+WallPos2 = 0
+WallPos3 = 0
+
+SmallAttack = 0
+TempAttackers = 0
+AttacksTimer = 0
+
+ResourceDisable = 0
+
+QuakeWaitPos = marker at {1668.020, 227.914, 781.207}
+
+
+start
+
+	WallTimer = create timer for 400 seconds
+	AttacksTimer = create timer for 0 seconds
+	QuakeTimer = create timer for 0 seconds
+    
+	PlannedWallPos[1] = marker at {1631.634, 218.797, 854.781}
+	PlannedWallPos[2] = marker at {1654.253, 222.502, 852.583}
+	PlannedWallPos[3] = marker at {1676.061, 210.940, 861.867}
+	PlannedWallPos[4] = marker at {1753.088, 205.188, 908.964}
+	PlannedWallPos[5] = marker at {1780.836, 205.162, 937.467}
+	PlannedWallPos[6] = marker at {1790.219, 207.804, 962.287}
+	PlannedWallPos[7] = marker at {1785.644, 221.515, 1139.140}
+	PlannedWallPos[8] = marker at {1780.796, 212.335, 1174.270}
+	PlannedWallPos[9] = marker at {1718.335, 215.632, 1238.300}
+
+	WallPos1 = marker at {818.45, 402.36, 1728.21} 
+	WallPos2 = marker at {921.39, 393.33, 1781.41}
+	WallPos3 = marker at {927.73, 390.64, 1639.59}
+
+	Counter = 0
+
+	//No longer wanted
+	//while Counter < 10
+		//PlannedWall[Counter] =  build building at {PlannedWallPos[Counter]} desire 1.0
+		//Counter++
+	//end while
+
+	//Have enemy creature patrol unless directed otherwise
+	L10_GorillaAction = AC_ACTION_PATROL
+
+	begin loop
+	
+		if ResourceDisable == 0 and get number of type HOUSE ABODE_NUMBER_STORAGE_PIT in L10GreekTown min built 1.0 > 0 
+			ResourceDisable = 1
+			disable villagers ignore FoodFree resource
+			disable villagers ignore WoodFree resource
+			disable villagers ignore OreFree resource
+		end if
+		
+
+		//Send the platoons to the quake pos
+		run script LC10_GetNearestTroops(QuakeWaitPos)
+        if LC10_NearestPlatoon != -1
+			clear LC10_Platoon[LC10_NearestPlatoon] action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {QuakeWaitPos} to LC10_Platoon[LC10_NearestPlatoon] action queue
+			SentToQuake = 1
+			QuakeTimer = create timer for 180 seconds
+			QuakePlatoon = LC10_NearestPlatoon
+		end if
+
+		if SentToQuake == 1 and get QuakeTimer time remaining <=0
+			SentToQuake = 2
+			if LC10_Platoon[QuakePlatoon] exists
+				clear LC10_Platoon[QuakePlatoon] action queue
+				add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_BUILDINGS_IN_AREA using {L10GreekTown} to LC10_Platoon[QuakePlatoon] action queue
+			end if
+		end if
+	
+		//Small attacks & creature attack
+		if L10_TriggerEarthquake == 1 and SmallAttack < 3
+			wait 15 seconds
+			if PLAYER of LC10_MinorSettlement[2] == 1 and SmallAttack == 0 and get AttacksTimer time remaining <= 0
+				SmallAttack++
+				//Move and wait
+				TempAttackers = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+				add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_BUILDINGS_IN_AREA using {L10GreekTown} to TempAttackers action queue
+				AttacksTimer = create timer for 150 seconds
+			end if
+			
+			if PLAYER of LC10_MinorSettlement[2] == 1 and SmallAttack == 1 and get AttacksTimer time remaining <= 0
+				SmallAttack++
+				TempAttackers = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+				add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_BUILDINGS_IN_AREA using {L10GreekTown} to TempAttackers action queue
+				TempAttackers = recruit ARMY_UNIT_TYPE_RANGED_4 town L10AztecCapital platoon of size 20
+				add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using {L10GreekTown} to TempAttackers action queue
+				AttacksTimer = create timer for 150 seconds
+			end if
+
+			if PLAYER of LC10_MinorSettlement[2] == 1 and SmallAttack == 2 and get AttacksTimer time remaining <= 0
+				SmallAttack++
+				L10_GorillaAction = AC_ACTION_ATTACK_PLAYERTOWN
+				TempAttackers = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+				add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_BUILDINGS_IN_AREA using {L10GreekTown} to TempAttackers action queue
+				AttacksTimer = create timer for 150 seconds
+				wait 60 seconds
+				L10_GorillaAction = AC_ACTION_PATROL
+			end if
+
+		end if
+		
+
+		//Wall building
+		if get WallTimer time remaining <= 0 and WallBuilt == 0
+			WallBuilt++
+			Wall1 = build building at {WallPos1} desire 1.0
+			WallTimer = create timer for 400 seconds
+		elsif get WallTimer time remaining <= 0 and WallBuilt == 1
+			WallBuilt++
+			Wall2 = build building at {WallPos2} desire 1.0
+			Wall3 = build building at {WallPos3} desire 1.0
+		end if
+		
+		if LC10_Condition == LC10_STAGE_AT_PEACE
+			if LC10_NumberOfTownsPlayerHasTaken == 2 and CurrentAction == 0
+				CurrentAction++
+				//Ramp up building or take over one town
+				
+				if LC10_EnemyStrategy == LC10_STRATEGY_BUILDING
+					//Building stuff
+					build all town L10AztecCapital buildings in group 0
+				
+				elsif LC10_EnemyStrategy == LC10_STRATEGY_ARMY
+					//Army stuff
+					while Counter < LC10_NUM_OF_PLATOONS and EnemyCounter < 1
+						if LC10_Platoon[Counter] not exists
+							LC10_Platoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+							run script LC10_GetNearestSettlement(L10AztecCapital)
+							set LC10_Platoon[Counter] attack LC10_NearestSettlement with severity 0.7 for takeover
+							//add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using LC10_NearestSettlement to LC10_Platoon[Counter] action queue
+							EnemyCounter++
+						end if
+						Counter++
+					end while
+				end if
+
+			end if
+
+			if LC10_NumberOfTownsPlayerHasTaken == 3 and CurrentAction == 1
+				CurrentAction++
+				//Ramp up defense or take over two nearest towns
+
+				if LC10_EnemyStrategy == LC10_STRATEGY_BUILDING
+					//Building stuff
+					build all town L10AztecCapital buildings in group 1
+
+				elsif LC10_EnemyStrategy == LC10_STRATEGY_ARMY
+					//Army stuff
+					while Counter < LC10_NUM_OF_PLATOONS and EnemyCounter < 1
+						if LC10_Platoon[Counter] not exists
+							LC10_Platoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+							run script LC10_GetNearestSettlement(L10AztecCapital)
+							set LC10_Platoon[Counter] attack LC10_NearestSettlement with severity 0.7 for takeover
+							//add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using LC10_NearestSettlement to LC10_Platoon[Counter] action queue
+							EnemyCounter++
+						end if
+						Counter++
+					end while
+				end if
+			end if
+
+			if LC10_NumberOfTownsPlayerHasTaken == 4 and CurrentAction == 2
+				CurrentAction++
+				//Go to war or defend loads
+				if LC10_EnemyStrategy == LC10_STRATEGY_BUILDING
+					//Building stuff- this is crude - need to change
+					build all town L10AztecCapital buildings in group 2
+					TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L10AztecCapital} to TempPlatoon action queue
+					wait 25 seconds
+					TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L10AztecCapital} to TempPlatoon action queue
+					wait 30 seconds
+					TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L10AztecCapital} to TempPlatoon action queue
+
+				elsif LC10_EnemyStrategy == LC10_STRATEGY_ARMY
+					//Army stuff
+					LC10_Condition = LC10_STAGE_AT_WAR
+					WarTimer = create timer for 0 seconds
+				end if
+
+			end if
+
+			//Defend towns if attacked
+			if town LC10_MinorSettlement[2] is under takeover from player 0 and Town1Defended == 0
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town LC10_MinorSettlement[2] platoon of size 20
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {LC10_MinorSettlement[2]} to TempPlatoon action queue
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town LC10_MinorSettlement[2] platoon of size 20
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {LC10_MinorSettlement[2]} to TempPlatoon action queue
+				Town1Defended = 1
+			end if
+
+			if town L10AztecCapital is under takeover from player 0 and Town2Defended == 0
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L10AztecCapital} to TempPlatoon action queue
+				TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {L10AztecCapital} to TempPlatoon action queue
+				Town2Defended = 1
+			end if
+		
+		elsif LC10_Condition == LC10_STAGE_AT_WAR
+			//Attack player's town relentlessly (on a timer so it doesn't get ridiculous)
+			if get WarTimer time remaining <= 0
+				WarTimer = create timer for 30 seconds
+				Counter = 0
+				while Counter < LC10_NUM_OF_PLATOONS
+					if LC10_Platoon[Counter] not exists
+						if (number from 0 to 1) == 0
+							LC10_Platoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+							set LC10_Platoon[Counter] attack L10GreekTown with severity 0.7 for takeover
+							//add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L10GreekTown to LC10_Platoon[Counter] action queue
+						else
+							LC10_Platoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+							set LC10_Platoon[Counter] attack L10GreekTown with severity 0.8
+							//add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L10GreekTown to LC10_Platoon[Counter] action queue
+						end if
+					end if
+				end while
+			end if
+		end if
+
+		if PLAYER of L10AztecCapital == 0 or variable get town L10AztecCapital status == variable TOWN_STATUS_MIGRATION_STARTED
+			LevelComplete = LC10_TRUE
+		end if
+
+		//Replenish troops from nearest enemy town
+		Counter = 2
+
+		while Counter < 5
+			if LC10_Platoon[Counter] not exists
+				if Counter == 2
+					ReplenishPos = marker at {1147.512, 263.031, 1559.510}
+				else
+					ReplenishPos = marker at {1685.317, 206.379, 1118.917}
+				end if
+
+				run script LC10_GetNearestEnemyTown(ReplenishPos)
+				LC10_Platoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_4 town L10AztecCapital platoon of size 20
+				
+				if Counter == 2
+					move LC10_Platoon[Counter] along WaypointsA with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+				elsif Counter == 3
+					move LC10_Platoon[Counter] along WaypointsB with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+				else
+					move LC10_Platoon[Counter] along WaypointsC with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+				end if
+			end if
+		end while
+		
+
+	until LevelComplete == LC10_TRUE
+	end loop
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_10_CAPITAL
+
+end script LC10_StrategyManagement
+
+//-----------------------------------------------------------------------------
+// Objective wall
+//-----------------------------------------------------------------------------
+begin script LC10_HasObjectiveWallBeenBuilt
+	WallTower1		= 0
+	WallTower2		= 0
+start
+
+	begin loop
+
+		//Get the first wall tower by the hill
+		if not WallTower1 exists
+			//WallTower1 = 
+		end if
+
+		//Get the second walltower by opposite hill
+		if not WallTower2 exists
+			//Walltower2 = 
+		end if
+
+	until WallTower1 exists and WallTower2 exists
+	end loop
+
+	//Check to see if a wall exists between these two towers. If it doesnt then we're in the shit
+
+	//Perform a navigable check
+	
+
+end script LC10_HasObjectiveWallBeenBuilt
+
+
+
+//-----------NumberOfPlayerTowns------------
+
+begin script LC10_NumberOfPlayerTowns
+	
+PlayerOwnsSettlement[LC10_NUM_OF_SETTLEMENTS]
+Counter = 0
+Migration = L10GreekTown //Does this work?
+
+start
+	
+	begin loop
+		Counter = 0
+	
+		while Counter < LC10_NUM_OF_SETTLEMENTS
+
+			if variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED
+				Migration = get town LC10_MinorSettlement[Counter] is migrating to
+			end if
+
+			if PlayerOwnsSettlement[Counter] != LC10_TRUE 
+ 				if (variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_CAPTURED and PLAYER of LC10_MinorSettlement[Counter] == 0) or (variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED and PLAYER of Migration == 0)
+					if variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED
+						LC10_SettlementCaptured = LC10_PASSIVE
+					else
+						LC10_SettlementCaptured = LC10_AGGRESSIVE
+					end if
+					LC10_NumberOfTownsPlayerHasTaken++
+					PlayerOwnsSettlement[Counter] = LC10_TRUE
+
+					if Counter == 0
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_10_SETTLEMNT1
+					elsif Counter == 1
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_10_SETTLEMNT2
+					elsif Counter == 2
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_10_SETTLEMNT3
+					end if
+
+				end if
+			end if
+
+		Counter++
+		end while
+
+		if (PLAYER of L10AztecCapital == 0 or variable get town L10AztecCapital status == variable TOWN_STATUS_MIGRATION_STARTED) and LevelComplete == 0
+			LevelComplete = 1
+		end if
+	
+		until LevelComplete == 1
+	end loop
+		
+
+end script LC10_NumberOfPlayerTowns
+
+
+//-------------------------------------------------------
+//-----------GetNearestSettlement---------------//
+//------------------------------------------------------
+
+begin script LC10_GetNearestSettlement(Town)
+
+	Ctr				= 0
+	PlayerID		= 0
+	TownDist		= 0
+	NearestTown		= -1
+	NearestDist		= 10000
+
+start
+
+	if Town exists
+		LC10_NearestSettlement = -1
+		PlayerID = PLAYER of Town		
+	
+		while Ctr < LC10_NUM_OF_SETTLEMENTS
+			if LC10_MinorSettlement[Ctr] exists
+				if PLAYER of LC10_MinorSettlement[Ctr] != PlayerID and LC10_MinorSettlement[Ctr] != Town			
+					TownDist = get distance from {LC10_MinorSettlement[Ctr]} to {Town}
+				
+					if TownDist < NearestDist
+						NearestDist = TownDist
+						NearestTown = LC10_MinorSettlement[Ctr]
+					end if
+				end if
+			end if
+			Ctr++
+		end while
+		
+		LC10_NearestSettlement = NearestTown
+	end if
+
+end script LC10_GetNearestSettlement
+
+
+
+//GetNearestEnemyTown----------------------------------
+begin script LC10_GetNearestEnemyTown(Pos)
+
+	Ctr				= 0
+	PlayerID		= 0
+	TownDist		= 0
+	NearestTown		= -1
+	NearestDist		= 10000
+
+start
+
+	
+	LC10_NearestEnemyTown = -1
+
+	while Ctr < LC10_NUM_OF_SETTLEMENTS
+		if LC10_MinorSettlement[Ctr] exists
+			if PLAYER of LC10_MinorSettlement[Ctr] == 1			
+				TownDist = get distance from {Pos} to {LC10_MinorSettlement[Ctr]}
+			
+				if TownDist < NearestDist
+					NearestDist = TownDist
+					NearestTown = LC10_MinorSettlement[Ctr]
+				end if
+			end if
+		end if
+		Ctr++
+	end while
+	
+	LC10_NearestEnemyTown = NearestTown
+
+
+end script LC10_GetNearestEnemyTown
+
+
+
+//Change enemy strategy----------------------------------
+begin script LC10_ChooseEnemyStrategy
+
+StrategyChosen = 0
+
+start
+
+	begin loop
+
+		//Army strategy triggers -----------------
+
+		if get number of type HOUSE ABODE_NUMBER_MELEE_ARMOURY in L10AztecCapital min built 1.0 > 0 and StrategyChosen == 0
+			LC10_EnemyStrategy = LC10_STRATEGY_ARMY
+			StrategyChosen = 1
+		end if
+
+		if get number of type HOUSE ABODE_NUMBER_RANGED_ARMOURY in L10AztecCapital min built 1.0 > 0 and StrategyChosen == 0
+			LC10_EnemyStrategy = LC10_STRATEGY_ARMY
+			StrategyChosen = 1
+		end if
+
+		if get number of type HOUSE ABODE_NUMBER_WORKSHOP in L10AztecCapital min built 1.0 > 0 and StrategyChosen == 0
+			LC10_EnemyStrategy = LC10_STRATEGY_ARMY
+			StrategyChosen = 1
+		end if
+
+		if LC10_SettlementCaptured == LC10_AGGRESSIVE
+			LC10_EnemyStrategy = LC10_STRATEGY_ARMY
+			StrategyChosen = 1
+		end if
+
+		//---------------------------------------
+
+		//Building strategy triggers-------------
+
+		if get number of type HOUSE ABODE_NUMBER_TEMPLE in L10AztecCapital min built 1.0 > 0 and StrategyChosen == 0
+			LC10_EnemyStrategy = LC10_STRATEGY_BUILDING
+			StrategyChosen = 1
+		end if
+
+		if LC10_SettlementCaptured == LC10_PASSIVE
+			LC10_EnemyStrategy = LC10_STRATEGY_BUILDING
+			StrategyChosen = 1
+		end if
+
+		//--------------------------------------
+	
+	until StrategyChosen == 1
+	end loop
+
+end script LC10_ChooseEnemyStrategy
+
+
+//-----------NumberOfEnemyTowns------------
+
+begin script LC10_NumberOfEnemyTowns
+	
+EnemyOwnsSettlement[LC10_NUM_OF_SETTLEMENTS]
+Counter = 0
+Migration = L10GreekTown
+
+start
+	
+	begin loop
+		Counter = 0
+	
+		while Counter < LC10_NUM_OF_SETTLEMENTS
+
+			if variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED
+				Migration = get town LC10_MinorSettlement[Counter] is migrating to
+			end if
+
+			if EnemyOwnsSettlement[Counter] != LC10_TRUE 
+ 				if (variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_CAPTURED and PLAYER of LC10_MinorSettlement[Counter] == 1) or (variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED and PLAYER of Migration == 1)
+					if variable get town LC10_MinorSettlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED
+						LC10_SettlementCapturedEnemy = LC10_PASSIVE
+					else
+						LC10_SettlementCapturedEnemy = LC10_AGGRESSIVE
+					end if
+					
+					LC10_NumberOfTownsEnemyHasTaken++
+					EnemyOwnsSettlement[Counter] = LC10_TRUE
+
+				end if
+			end if
+
+		Counter++
+		end while
+
+		until LevelComplete == 1
+	end loop
+		
+
+end script LC10_NumberOfEnemyTowns
+
+
+//---------------//
+//Nearest platoon//
+//---------------//
+
+begin script LC10_GetNearestTroops(Pos)
+
+Counter = 0
+Dist = 9999
+MinDist = 9999
+
+start
+
+	LC10_NearestPlatoon = -1
+
+	while Counter < LC10_NUM_OF_PLATOONS
+		
+		if LC10_Platoon[Counter] exists
+			Dist = get distance from {LC10_Platoon[Counter]} to {Pos}
+			if Dist < MinDist
+				LC10_NearestPlatoon = Counter
+				MinDist = Dist
+			end if
+		end if
+		Counter++
+	end while
+
+end script LC10_GetNearestTroops

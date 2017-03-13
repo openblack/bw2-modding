@@ -1,0 +1,1963 @@
+//===============================================================
+// The Nomads (Previousley Eloi)
+// Lenny
+//===============================================================
+//TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {945.869, 377.445, 1639.584} time -1
+//---------------------------------------------------------------
+// Cosntants
+//---------------------------------------------------------------
+define EL_FALSE							= 0
+define EL_TRUE							= 1
+
+//Types
+define EL_TYPE_CHILD_M 					= 0
+define EL_TYPE_CHILD_F 					= 1
+define EL_TYPE_ADULT_M 					= 2
+define EL_TYPE_ADULT_F 					= 3
+
+//Misc
+define EL_NUMBER_OF_ELOIS				= 17
+define EL_TRAPPED_ELOI_AMOUNT			= 5
+define EL_NUM_OF_CHILDREN				= 4
+define EL_NUM_OF_ADULTS					= 8
+
+//Fish
+define EL_TOTAL_FISH					= 20
+define EL_PILE_FISH						= 5
+
+//===Actions===
+define EL_ACTION_NONE					= 0
+//Minor Actions
+define EL_ACTION_WALK					= 1
+//Major actions
+define EL_ACTION_HOPSCOTCH				= 4
+define EL_ACTION_TALK					= 5
+define EL_ACTION_FISH					= 6
+define EL_ACTION_DANCE					= 7
+define EL_ACTION_COOK					= 8
+define EL_ACTION_EL_ACTION_WALK_HOME	= 9
+//prob
+define EL_ACTION_MINOR_MAXPROB			= 3
+
+//Timers
+define EL_TIMER_HOPSCOTCH				= 120
+define EL_TIMER_TALK_MIN				= 70
+define EL_TIMER_TALK_MAX				= 100
+define EL_TIMER_FISH					= 60
+define EL_TIMER_DANCE					= 120
+define EL_TIMER_COOK					= 30
+
+
+//Advisors
+define EL_ADVISOR_PICKED_UP_ELOI		= 0
+define EL_ADVISOR_ELOI_IN_PROPER_VALLEY	= 1
+define EL_ADVISOR_ELOI_NOT_IN_VALLEY	= 2
+define EL_ADVISOR_ALL_ELOIS_RESCUED		= 3
+define EL_ADVISOR_ELOI_THROWN			= 4
+define EL_ADVISOR_ELOI_DROWNING 		= 5
+define EL_ADVISOR_ELOI_DEAD				= 6
+define EL_ADVISOR_MULTI_PICKUP			= 7
+define EL_ADVISOR_ALL_DEAD				= 8
+
+//---------------------------------------------------------------
+// Globals
+//---------------------------------------------------------------
+global EL_ActionRequest = EL_ACTION_NONE
+global ChallengeComplete = 0
+global SpecialNumber = 0
+
+//Hopscotch globals (since this activity is for upto three people)
+global EL_H_Hopping					= EL_FALSE
+global EL_H_SpectatorSpots[2]
+global EL_H_PlayingHopscotch		= 0
+
+//Talk globals
+global EL_Talk_Positions[6]
+global EL_Talk_Gates[6]
+
+//Ending globals
+global EL_Saved						= 0
+
+//Walking globals
+global EL_GlobalWalks[10]
+global EL_GlobalWalkGates[10]
+global EL_Walking = 0
+
+//Fish globals
+global EL_FishingPos[5]
+global EL_FishingFoc[5]
+global EL_FishGate[5]
+global EL_F_FishingNow				= 0
+global EL_StockFish					= EL_FALSE
+global EL_Fishies[EL_TOTAL_FISH]
+global EL_FishDeposit				= 0
+
+//Dance globals
+global EL_TotemPos					= 0
+global EL_Dancing					= 0
+global EL_DanceGate[5]
+
+//Cooking globals
+global EL_CookingGate[2]
+global EL_Pot[2]
+global EL_PotPos[2]
+global EL_Cooker[2]
+global EL_CookingPos[2]
+
+//Misc
+global TopEloi						= 0	//The top most Eloi
+global EL_HeldEloi					= 0
+global EL_ScrollClickedTrue			= 0
+global EL_Counter					= 0
+
+//Comment on Eloi challenge
+global EL_ChallengeComments			= EL_FALSE
+global EL_ChallengeEloisLeft		= 0		//The number of challeneg Elois about
+global EL_ChallengeEloisSaved		= 0
+global EL_TrappedID					= 0
+
+//Advisor flags
+global EL_Advisor_Picked_Up_Flag	= EL_FALSE
+global EL_Advisor_Rescused_Flag		= EL_FALSE
+global EL_Advisor_Thrown_Flag		= EL_FALSE
+global EL_Advisor_Drowning_Flag		= EL_FALSE
+global EL_Advisor_AllDead_Flag		= EL_FALSE
+global EL_Advisor_Multipickup_Flag	= EL_FALSE
+global deadcounter					= 0
+
+global EL_PlacePos					= 0 //set later
+global EL_PlaceFX					= 0
+global EL_SavedGate[EL_TRAPPED_ELOI_AMOUNT]
+global EL_SavedPos[EL_TRAPPED_ELOI_AMOUNT]
+
+global EL_TakeFX					= 0
+
+//---------------------------------------------------------------
+// Script defines
+//---------------------------------------------------------------
+define script EL_Eloi(Me, Type, ID)
+define script EL_FishPile
+
+//misc
+define script ClearTheDead
+define script EL_Cleanup
+define script Land1Eloi2
+define script EL_Reminder
+
+//Eloi challenge
+define script EL_Challenge
+define script EL_Intro
+define script EL_TrappedEloi(Position, Type, ID)
+define script EL_TrappedEloiAction(Me)
+define script EL_TrappedWait(Me)
+define script EL_Advisors(ID)
+define script EL_Butterflys
+
+//Action scripts
+define script EL_Dance(Me)
+define script EL_Walk(Me)
+define script EL_Hopscotch(Me)
+define script EL_Fishing(Me)
+define script EL_Talk(Me)
+define script EL_Cook(Me)
+define script EL_WalkHome(Me)
+
+define script EL_LookAtEloi
+define script EL_BodgeForPJ(Gate)
+define script EL_SavedEloiChecker(Me)
+
+//---------------------------------------------------------------
+// Eloi Control
+//---------------------------------------------------------------
+begin script Land1Eloi
+	EloiLoop		= 0
+	EloiType		= 0
+	EloiPos			= marker at {1172.396, 74.152, 1996.664}
+	Eloi			= 0	
+	CreatureTotem	= 0
+	Campfires[2]
+start
+
+	run background script EL_Butterflys
+
+	//Setup walk markers
+	EL_GlobalWalks[0] = marker at {1150.619,75.880,1983.642}
+	EL_GlobalWalks[1] = marker at {1140.314,73.151,1984.958}
+	EL_GlobalWalks[2] = marker at {1183.884,74.863,1985.310}
+	EL_GlobalWalks[3] = marker at {1162.065,75.128,1978.010}
+	EL_GlobalWalks[4] = marker at {1158.991,74.994,1971.713}
+	EL_GlobalWalks[5] = marker at {1147.988,74.033,1973.758}
+	EL_GlobalWalks[6] = marker at {1133.367,73.719,1969.289}
+	EL_GlobalWalks[7] = marker at {1169.187,75.288,1973.601}
+	EL_GlobalWalks[8] = marker at {1153.015,74.275,1993.972}
+	EL_GlobalWalks[9] = marker at {1175.592,74.839,1977.509}
+
+	//Fishing positionjs
+	EL_FishingPos[0] = marker at {1254.218,61.283,2058.241}
+	EL_FishingPos[1] = marker at {1243.039,60.882,2051.658}
+	EL_FishingPos[2] = marker at {1177.566,59.198,2065.930}
+	EL_FishingPos[3] = marker at {1170.750,59.561,2067.186}
+	EL_FishingPos[4] = marker at {1117.790, 59.106, 2068.350}
+
+	EL_FishingFoc[0] = marker at {1247.379,57.000,2117.509}
+	EL_FishingFoc[1] = marker at {1261.745,57.000,2116.046}
+	EL_FishingFoc[2] = marker at {1190.028,57.000,2121.030}
+	EL_FishingFoc[3] = marker at {1183.944,57.000,2122.322}
+	EL_FishingFoc[4] = marker at {1114.000, 57.067, 2080.055}
+
+	EL_FishDeposit = marker at {1172.917,74.164,2003.208}
+
+	//Talk globals
+	EL_Talk_Positions[0] = marker at {1169.821,71.947,2016.457}
+	EL_Talk_Positions[1] = marker at {1163.785,72.029,2014.759}
+	EL_Talk_Positions[2] = marker at {1164.982,72.380,2013.767}
+	EL_Talk_Positions[3] = marker at {1166.320,72.209,2014.691}
+	EL_Talk_Positions[4] = marker at {1161.896,71.814,2015.057}
+	EL_Talk_Positions[5] = marker at {1169.464,72.982,2012.561}
+
+	//Dance
+	EL_TotemPos = marker at {1108.988,73.816,1967.831}	
+
+	//Cooking positions
+	EL_PotPos[0] = marker at {1180.454,74.330,2003.497}
+	EL_PotPos[1] = marker at {1182.238,74.462,1997.477}
+	EL_Cooker[0] = marker at {1175.821,74.192,2000.178}
+	EL_Cooker[1] = marker at {1177.810,74.208,1996.682}
+	EL_CookingPos[0] = marker at {1176.555,74.171,2000.741}
+	EL_CookingPos[1] = marker at {1178.461,74.239,1997.119}
+
+	//Setup cooking pots
+	EL_Pot[0] = create OBJECT MOBILE_STATIC_INFO_GREEK_URN_03 at {EL_PotPos[0]}
+	disable EL_Pot[0] pickup
+	disable EL_Pot[0] moveable	
+	ALTITUDE of EL_Pot[0] = -0.1
+	
+	EL_Pot[1] = create OBJECT MOBILE_STATIC_INFO_GREEK_URN_03 at {EL_PotPos[1]}
+	disable EL_Pot[1] pickup
+	disable EL_Pot[1] moveable	
+	ALTITUDE of EL_Pot[1] = -0.1
+
+	//Setup campfire for cooking
+	Campfires[0] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {EL_Cooker[0]}
+	override mesh for Campfires[0] with "..\features\m_generic_bonfire"
+	ANGLE of Campfires[0] = 100
+	disable Campfires[0] pickup
+	disable Campfires[0] moveable
+
+	Campfires[1] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {EL_Cooker[1]}
+	override mesh for Campfires[1] with "..\features\m_generic_bonfire"
+	ANGLE of Campfires[1] = 240
+	disable Campfires[1] pickup
+	disable Campfires[1] moveable
+	
+	EL_SavedPos[0] = marker at {1192.693, 73.620, 1998.928}
+	EL_SavedPos[1] = marker at {1200.885, 73.134, 1995.130}
+	EL_SavedPos[2] = marker at {1204.816, 72.404, 1998.725}
+	EL_SavedPos[3] = marker at {1199.443, 72.461, 2002.614}
+	EL_SavedPos[4] = marker at {1196.285, 72.482, 2005.749}
+
+    //run background script EL_FishPile
+	run background script EL_LookAtEloi
+
+	//Create the children
+	while EloiLoop < EL_NUM_OF_CHILDREN
+		EloiType = number from EL_TYPE_CHILD_M to EL_TYPE_CHILD_F
+
+		if EloiType == EL_TYPE_CHILD_M
+			Eloi = create CHILD INDIGENOUS_FARMER at {EloiPos}			
+		else
+			Eloi = create CHILD INDIGENOUS_HOUSEWIFE at {EloiPos}
+		end if
+		run background script EL_Eloi(Eloi, EloiType, EloiLoop)
+
+		EloiLoop++
+	end while
+
+	//Create the adults
+	while EloiLoop < (EL_NUM_OF_ADULTS + EL_NUM_OF_CHILDREN)
+		EloiType = number from EL_TYPE_ADULT_M to EL_TYPE_ADULT_F
+
+		if EloiType == EL_TYPE_ADULT_M
+			Eloi = create VILLAGER INDIGENOUS_FARMER at {EloiPos}			
+		else
+			Eloi = create VILLAGER INDIGENOUS_HOUSEWIFE at {EloiPos}
+		end if
+		run background script EL_Eloi(Eloi, EloiType, EloiLoop)
+
+		EloiLoop++
+	end while
+
+	wait until L1_SetStatue == 1 or L1_EloiDebug == 1
+
+	if persistent data "PLAYER_CREATURE_TYPE" == variable CREATURE_TYPE_LION
+		CreatureTotem = create FEATURE FEATURE_INFO_LION_STATUE at {EL_TotemPos}
+	elsif persistent data "PLAYER_CREATURE_TYPE" == variable CREATURE_TYPE_APE
+		CreatureTotem = create FEATURE FEATURE_INFO_APE_STATUE at {EL_TotemPos}
+	elsif persistent data "PLAYER_CREATURE_TYPE" == variable CREATURE_TYPE_WOLF
+		CreatureTotem = create FEATURE FEATURE_INFO_WOLF_STATUE at {EL_TotemPos}
+	elsif persistent data "PLAYER_CREATURE_TYPE" == variable CREATURE_TYPE_COW
+		CreatureTotem = create FEATURE FEATURE_INFO_COW_STATUE at {EL_TotemPos}
+	else
+		CreatureTotem = create FEATURE FEATURE_INFO_TIGER_STATUE at {EL_TotemPos}
+	end if
+
+	/*
+	if variable get MyCreature sub type == variable CREATURE_TYPE_LION
+		CreatureTotem = create FEATURE FEATURE_INFO_LION_STATUE at {EL_TotemPos}
+	elsif MyCreature == variable CREATURE_TYPE_APE
+		CreatureTotem = create FEATURE FEATURE_INFO_APE_STATUE at {EL_TotemPos}
+	elsif MyCreature == variable CREATURE_TYPE_WOLF
+		CreatureTotem = create FEATURE FEATURE_INFO_WOLF_STATUE at {EL_TotemPos}
+	elsif MyCreature == variable CREATURE_TYPE_COW
+		CreatureTotem = create FEATURE FEATURE_INFO_COW_STATUE at {EL_TotemPos}
+	else
+		CreatureTotem = create FEATURE FEATURE_INFO_TIGER_STATUE at {EL_TotemPos}
+	end if
+	*/
+
+	ANGLE of CreatureTotem = 190
+
+	//Eloi challenge
+	run background script EL_Challenge
+	run script EL_ThrowChallenge
+
+end script Land1Eloi
+
+//---------------------------------------------------------------
+// Eloi
+//---------------------------------------------------------------
+begin script EL_Eloi(Me, Type, ID)
+	Action				= EL_ACTION_NONE
+	ActionTimer			= create timer for 0 seconds
+	ForceMinorAction	= EL_FALSE
+
+	RandomAnim			= 0
+	Random				= 0
+
+start
+
+	TopEloi++
+	disable Me reactable
+
+	//Actions
+	begin loop
+
+		//Waiting helps script DLL usage
+		wait 0.3 seconds
+
+		//Make sure action is nothing or problems may occur e.g. it will look crap
+		Action = EL_ACTION_NONE
+			
+		//Check to see if the Eloi is held
+		if Me is HELD
+			Action = EL_ACTION_EL_ACTION_WALK_HOME
+		end if
+
+		//cancel anim
+		cancel Me anim override
+
+		//============================ Action Manager ==============================
+
+		//If I'm not being forced into a minor action
+		if ForceMinorAction == EL_FALSE and Action != EL_ACTION_EL_ACTION_WALK_HOME
+
+			//A tiny bit of randomness in here
+			Random = number from 1 to 4
+
+			if Random > 1
+				//Choose cooking in preference to anything else.....brcause I like it
+				if EL_CookingGate[number from 0 to 1] == EL_FALSE
+					Random = number from 1 to 3
+					if Random == 1
+						Action = EL_ACTION_COOK
+					else
+						Action = number from EL_ACTION_HOPSCOTCH to EL_ACTION_DANCE
+					end if
+				else
+					Action = number from EL_ACTION_HOPSCOTCH to EL_ACTION_DANCE
+				end if				
+			end if //Random
+
+		else
+			ForceMinorAction = EL_FALSE	//Job done, skipped finding a major action
+		end if
+
+		//If the Action is still NONE then chhose an action
+		if Action == EL_ACTION_NONE
+			Action = EL_ACTION_WALK
+		end if
+
+		//End of Action stuff ======================================================
+
+		//------------------------- Hopscotch --------------------
+		if Action == EL_ACTION_HOPSCOTCH
+			//I must be a child and there must be space
+			if EL_H_PlayingHopscotch != 3 and (Type == EL_TYPE_CHILD_M or Type == EL_TYPE_CHILD_F)
+				run script EL_Hopscotch(Me)
+			end if
+
+		//------------------------- Walk to place --------------------
+		elsif Action == EL_ACTION_WALK
+			run script EL_Walk(Me)
+
+		//------------------------- Talk --------------------
+		elsif Action == EL_ACTION_TALK
+			run script EL_Talk(Me)
+
+		//------------------------- Fishing --------------------
+		elsif Action == EL_ACTION_FISH			
+			if Type == EL_TYPE_ADULT_M or Type == EL_TYPE_ADULT_F
+				run script EL_Fishing(Me)
+			end if
+
+		//------------------------- Dance --------------------
+		elsif Action == EL_ACTION_DANCE
+			if EL_Dancing < 5
+				run script EL_Dance(Me)
+			end if
+
+		//------------------------- Cook Action --------------------
+		elsif Action == EL_ACTION_COOK
+			if Type == EL_TYPE_ADULT_M or Type == EL_TYPE_ADULT_F
+				run script EL_Cook(Me)
+			end if
+
+		//------------------------- Walk home -------------------
+		elsif Action == EL_ACTION_EL_ACTION_WALK_HOME
+			wait until not Me is HELD
+			run script EL_WalkHome(Me)
+		end if
+
+	end loop
+
+end script EL_Eloi
+//---------------------------------------------------------------
+// Eloi Fish pile recouperation script thingus
+//---------------------------------------------------------------
+begin script EL_FishPile
+	FishLoop = 0
+start
+
+	begin loop
+		wait until EL_StockFish == EL_TRUE
+		EL_StockFish = EL_FALSE
+
+		//Give the villagers time to mvoe away and stop beign crushed
+		wait 3 seconds
+
+		//restock
+		while FishLoop < EL_TOTAL_FISH
+			
+			if EL_Fishies[FishLoop] not exists
+				EL_Fishies[FishLoop] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {EL_FishDeposit}
+				override mesh for EL_Fishies[FishLoop] with "..\skins\s_tuna"
+				ALTITUDE of EL_Fishies[FishLoop] = 1
+				SCALE of EL_Fishies[FishLoop] = 0.2
+				set EL_Fishies[FishLoop] velocity heading {EL_Fishies[FishLoop]} speed 0
+			end if
+
+			FishLoop++
+		end while
+
+		wait 1 seconds
+	end loop
+
+end script EL_FishPile
+
+//---------------------------------------------------------------
+// Eloi Fish pile recouperation script thingus
+//---------------------------------------------------------------
+begin script EL_Dance(Me)
+	DancePos[5]
+	DanceGate		= 0
+	DanceLoop		= 0	
+	RandomAnim		= 0
+	ActionTimer		= create timer for 0 seconds
+start
+
+	set ActionTimer time to EL_TIMER_DANCE seconds
+
+	DancePos[0] = marker at {1109.433, 71.655, 1970.248}
+	DancePos[1] = marker at {1106.049, 71.387, 1968.252}
+	DancePos[2] = marker at {1107.400, 71.749, 1964.665}
+	DancePos[3] = marker at {1110.543, 71.980, 1964.832}
+	DancePos[4] = marker at {1111.580, 71.853, 1968.495}
+
+	DanceGate = 0
+
+	while EL_DanceGate[DanceGate] == EL_TRUE and DanceGate < 5
+		DanceGate++
+	end while
+
+	if DanceGate != 5
+
+		EL_DanceGate[DanceGate] = EL_TRUE
+		EL_Dancing++
+
+		move Me position to {DancePos[DanceGate]} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		wait until {Me} at {DancePos[DanceGate]}
+
+		move villager Me focus to {EL_TotemPos}
+
+		begin loop
+
+			RandomAnim = number from 1 to 8
+
+			if RandomAnim == 1
+				play anim "a_p_dance_celebrate01" on Me loop 2
+			elsif RandomAnim == 2
+				play anim "a_p_dance_celebrate02" on Me
+			elsif RandomAnim == 3
+				play anim "a_p_dance_celebrate03" on Me loop 2
+			elsif RandomAnim == 4
+				play anim "a_p_dance_celebrate04" on Me
+			elsif RandomAnim == 5
+				play anim "a_p_dance_celebrate05" on Me loop 2
+			elsif RandomAnim == 6
+				play anim "a_p_dance_celebrate06" on Me
+			elsif RandomAnim == 7
+				play anim "a_p_dance_celebrate07" on Me loop 2
+			elsif RandomAnim == 8
+				play anim "a_p_dance_celebrate08" on Me
+			end if
+
+			wait until Me played
+
+		until get ActionTimer time remaining == 0
+		end loop
+
+		EL_DanceGate[DanceGate] = EL_FALSE
+		EL_Dancing--
+	end if
+
+until Me is HELD
+end script EL_Dance
+
+//---------------------------------------------------------------
+// Walk
+//---------------------------------------------------------------
+begin script EL_Walk(Me)
+	Gate		= 0
+	RandomAnim	= 0
+	House		= 0
+	WaitTime	= 0
+start
+
+	if EL_Walking < 10
+
+		//Try to find a random gate first
+		Gate = number from 0 to 9
+
+		//If the random gate I tried is full
+		if EL_GlobalWalkGates[Gate] == EL_TRUE
+			//Now find the first open gate
+			Gate = 0
+			begin loop
+				Gate++
+			until EL_GlobalWalkGates[Gate] == EL_FALSE or Gate == 10
+			end loop
+		end if
+
+		if Gate < 10
+			EL_GlobalWalkGates[Gate] = EL_TRUE
+			EL_Walking++
+
+			RandomAnim = number from 1 to 4
+
+			//Wait for landed anims and anyth9gn else which is currently playing
+			wait until Me played or 3 seconds
+
+			House = 0
+			House = get HOUSE at {EL_GlobalWalks[Gate]} radius 5
+
+			if House exists
+				move Me position to extra position 0 of House using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+				wait until {Me} at extra position 0 of House
+
+				move Me to limbo
+
+				WaitTime = number from 5 to 11
+				wait WaitTime seconds
+
+				release Me from limbo
+
+			else
+				move Me position to {EL_GlobalWalks[Gate]} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+
+				if RandomAnim == 1
+					override Me anim "a_p_walk_chuckling"
+				elsif RandomAnim == 2
+					override Me anim "a_p_walk_male_good"
+				elsif RandomAnim == 3
+					override Me anim "a_p_walk_female_good"
+				elsif RandomAnim == 4
+					override Me anim "a_p_walk_cartwheel"
+					wait 12 seconds
+					cancel Me anim override
+				end if
+
+				wait until {Me} at {EL_GlobalWalks[Gate]}
+
+			end if
+
+			//Reset walk
+			cancel Me anim override
+			EL_Walking--
+			EL_GlobalWalkGates[Gate] = EL_FALSE
+		else			
+			wait 1 seconds
+		end if
+
+	end if
+
+until Me is HELD
+end script EL_Walk
+
+//---------------------------------------------------------------
+// Hopscotch
+//---------------------------------------------------------------
+begin script EL_Hopscotch(Me)
+	//Hopscotch stuff
+	HopscotchPos		= marker at {1194.745,75.337,2000.420}
+	HopscotchFocus		= marker at {1208.508,76.178,1999.165}
+	HSpectatorPos_1		= marker at {1191.029,75.894,1998.169}
+	HSpectatorPos_2		= marker at {1191.128,76.236,2003.333}
+	HMoveOutPos			= marker at {1190.385, 73.291, 2004.153}
+	HMySpot				= 3 //My spectator pos  and start at invalid
+	ActionTimer			= 0
+	RandomAnim			= 0
+start
+
+	ActionTimer = create timer for EL_TIMER_HOPSCOTCH seconds
+	EL_H_PlayingHopscotch++
+	begin loop
+		//Only one person can hop at once, the others must watch like the scum they are!
+		if EL_H_Hopping == EL_FALSE
+
+			EL_H_Hopping = EL_TRUE
+
+			move Me position to {HopscotchPos}
+			wait until {Me} at {HopscotchPos}
+
+			set Me focus to {HopscotchFocus}
+
+			play anim "a_p_child_hopscotch_into1_pickup_throw" on Me
+			wait until Me played
+
+			RandomAnim = number from 1 to 2
+
+			if RandomAnim == 1
+				play anim "a_p_child_hopscotch1" on Me
+			else
+				play anim "a_p_child_hopscotch2" on Me
+			end if
+
+			wait until Me played
+
+			EL_H_Hopping = EL_FALSE
+			move Me position to {HMoveOutPos}
+			wait until {Me} at {HMoveOutPos}
+		else
+
+			while HMySpot == 3
+				if EL_H_SpectatorSpots[0] == EL_FALSE
+					EL_H_SpectatorSpots[0] = EL_TRUE							
+					HMySpot = 0
+
+					move Me position to {HSpectatorPos_1}
+					wait until {Me} at {HSpectatorPos_1}							
+				else
+					if EL_H_SpectatorSpots[1] == EL_FALSE
+						EL_H_SpectatorSpots[1] = EL_TRUE
+						HMySpot = 1
+
+						move Me position to {HSpectatorPos_2}
+						wait until {Me} at {HSpectatorPos_2}
+					end if
+				end if
+			end while
+
+			set Me focus to {HopscotchFocus}
+
+			begin loop
+
+				RandomAnim = number from 1 to 4
+
+				if RandomAnim == 1
+					play anim "a_p_amusement" on Me
+				elsif RandomAnim == 2
+					play anim "a_p_ambient1" on Me
+				elsif RandomAnim == 3
+					play anim "a_p_ambient2" on Me
+				elsif RandomAnim == 4
+					play anim "a_p_child_laughing_1" on Me
+				end if
+
+				wait until Me played
+			until EL_H_Hopping == EL_FALSE
+			end loop
+			
+			//Free this celebrate spot
+			EL_H_SpectatorSpots[HMySpot] = EL_FALSE
+			HMySpot = 3
+		end if
+		
+		wait 0.2 seconds
+
+	until get ActionTimer time remaining == 0
+	end loop
+
+	EL_H_PlayingHopscotch--
+
+until Me is HELD
+end script EL_Hopscotch
+
+//---------------------------------------------------------------
+// Fishing
+//---------------------------------------------------------------
+begin script EL_Fishing(Me)
+	EL_FishDepositMove = marker at {1171.505,74.162,2003.240}
+	FGate				= 0
+	FCurrentFish		= 0
+	ActionTimer			= 0
+	FPile[5]
+start
+
+	while EL_FishGate[FGate] == EL_TRUE and FGate < 5
+		FGate++
+	end while
+
+	if FGate < 5
+				
+		EL_F_FishingNow++
+
+		EL_FishGate[FGate] = EL_TRUE
+
+		move Me position to {EL_FishingPos[FGate]}
+		wait until {Me} at {EL_FishingPos[FGate]}
+
+		ActionTimer = create timer for EL_TIMER_FISH seconds
+
+		//Put down the bucket			
+		move Me position to {EL_FishingPos[FGate]} + {0.690,0.209,0.148}
+		wait until {Me} at {EL_FishingPos[FGate]} + {0.690,0.209,0.148}
+
+		set Me carrying CARRIED_OBJECT_NONE
+
+		move Me position to {EL_FishingPos[FGate]}
+		wait until {Me} at {EL_FishingPos[FGate]}				
+
+		//Main fishing sequence
+		begin loop
+			set Me focus to {EL_FishingFoc[FGate]}
+			set Me carrying CARRIED_OBJECT_FISHING_ROD
+			
+			play anim "a_p_fisherman_into" on Me
+			wait until Me played
+
+			play anim "a_p_fisherman_loop" on Me loop 5
+			wait until Me played
+
+			play anim "a_p_fisherman_out_of" on Me
+			wait until Me played
+
+			move Me position to {EL_FishingPos[FGate]} + {0.690,0.209,0.148}
+			wait until {Me} at {EL_FishingPos[FGate]} + {0.690,0.209,0.148}
+			
+			//Create a new fish
+			if FCurrentFish < 5
+				FPile[FCurrentFish] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {EL_FishingPos[FGate]} + {2.053, 0.325, -0.266}
+				override mesh for FPile[FCurrentFish] with "..\skins\s_tuna"
+				ALTITUDE of FPile[FCurrentFish] = 1
+				SCALE of FPile[FCurrentFish] = 0.2
+				set FPile[FCurrentFish] velocity heading {EL_Fishies[FCurrentFish]} speed 0
+
+				FCurrentFish++
+			end if
+
+			wait 0.2 seconds
+
+		until get ActionTimer time remaining == 0
+		end loop				
+
+		//Delete fish
+		FCurrentFish = 0
+		while FCurrentFish < 5
+			if FPile[FCurrentFish] exists
+				delete FPile[FCurrentFish]
+			end if
+			FCurrentFish++
+		end while
+
+		set Me carrying CARRIED_OBJECT_BUCKET
+
+		//Move to deposit
+		move Me position to {EL_FishDepositMove}
+		wait until {Me} at {EL_FishDepositMove}
+
+		FCurrentFish = 0
+
+		set Me carrying CARRIED_OBJECT_NONE
+		
+		EL_FishGate[FGate] = EL_FALSE
+		EL_F_FishingNow--
+	end if
+
+until Me is HELD
+end script EL_Fishing
+
+//---------------------------------------------------------------
+// Talk
+//---------------------------------------------------------------
+begin script EL_Talk(Me)
+	//Talk stuff	
+	TalkFocus		= marker at {1169.024, 74.259, 1989.075}
+	Random			= 0
+	ActionTimer		= 0
+	RandomAnim		= 0
+	Gate			= 0
+start
+
+	while EL_Talk_Gates[Gate] == EL_TRUE and Gate < 6
+		Gate++
+	end while
+
+	if EL_Talk_Gates[Gate] == EL_FALSE and Gate < 6
+		EL_Talk_Gates[Gate] = EL_TRUE
+
+		move Me position to {EL_Talk_Positions[Gate]} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		wait until {Me} at {EL_Talk_Positions[Gate]}
+
+		move villager Me focus to {TalkFocus}
+
+		ActionTimer = create timer for (number from EL_TIMER_TALK_MIN to EL_TIMER_TALK_MAX) seconds
+
+		//Now do random anims
+		begin loop
+			//If I have been sitting then don't sit again (as getting up then sitting back down again looks crap)
+			if RandomAnim >= 6
+				RandomAnim = number from 1 to 5
+			else
+				RandomAnim = number from 1 to 7
+			end if
+
+			if RandomAnim == 1
+				play anim "a_p_talk_and_pointing" on Me
+			elsif RandomAnim == 2
+				play anim "a_p_talk1_male" on Me
+			elsif RandomAnim == 3
+				play anim "a_p_talk1_woman" on Me
+			elsif RandomAnim == 4
+				play anim "a_p_talk2_woman" on Me
+			elsif RandomAnim == 5
+				play anim "a_p_talk2_male" on Me
+			elsif RandomAnim == 6			
+				play anim "a_p_sitting_down2_sitting_into" on Me disable stand
+				wait until Me played
+				play anim "a_p_sitting_down2_sitting" on Me loop 5 disable stand
+				wait until Me played
+				play anim "a_p_sitting_down2_sitting_outof" on Me disable stand
+			elsif RandomAnim == 7
+				play anim "a_p_sitting_down3_into" on Me disable stand
+				wait until Me played
+				play anim "a_p_sitting_down3_sitting" on Me loop 5 disable stand
+				wait until Me played
+				play anim "a_p_sitting_down3_outof" on Me disable stand
+			end if
+
+			wait until Me played
+
+		until get ActionTimer time remaining == 0
+		end loop
+
+		EL_Talk_Gates[Gate] = EL_FALSE
+	end if
+
+until Me is HELD
+end script EL_Talk
+
+//---------------------------------------------------------------
+// Cook
+//---------------------------------------------------------------
+begin script EL_Cook(Me)	
+	MyGate		= 0
+	FireFX		= 0
+	SteamFX		= 0
+	SmokeFX		= 0
+	Pot			= 0
+	RandomAnim	= 0
+	EggTimer	= create timer for 0 seconds
+start
+
+	if EL_CookingGate[0] == EL_FALSE
+		MyGate = 0
+	elsif EL_CookingGate[1] == EL_FALSE
+		MyGate = 1
+	else
+		MyGate = 99
+	end if
+
+	if MyGate != 99
+		EL_CookingGate[MyGate] = EL_TRUE
+
+		//Move to cooking pos
+		move Me position to {EL_CookingPos[MyGate]}
+		wait until {Me} at {EL_CookingPos[MyGate]}
+
+		//Eloi light fire
+		move villager Me focus to {EL_Cooker[MyGate]}
+		play anim "a_p_lighting_campfire" on Me
+		wait 3 seconds
+		SmokeFX = create visual effect "Gp_s_smoke_chimney.ves" strength 0.5 scale 0.8 at {EL_Cooker[MyGate]} + {0.000,1.000,0.000} time 5
+		
+		wait 2 seconds
+		//Light a fire
+		FireFX = create visual effect "gp_s_fire_vil.ves" strength 0.3 scale 0.3 at {EL_Cooker[MyGate]} - {0, 0.7, 0} time -1	
+		
+		wait until Me played
+		wait 2 seconds
+
+		//Pick up a pot
+		move Me position to {EL_Pot[MyGate]}
+		wait until {Me} at {EL_Pot[MyGate]}
+
+		wait until Me played	// wait to avoid anim override problems
+		delete EL_Pot[MyGate]
+		set Me carrying CARRIED_OBJECT_POT
+		override Me anim "a_p_carrying_pot"
+
+		//Move to cooking pos
+		move Me position to {EL_CookingPos[MyGate]}
+		wait until {Me} at {EL_CookingPos[MyGate]}
+
+		cancel Me anim override
+
+		//Put down pot
+		set EggTimer time to EL_TIMER_COOK seconds
+		set Me carrying CARRIED_OBJECT_NONE
+
+		Pot = create OBJECT MOBILE_STATIC_INFO_GREEK_URN_03 at {EL_Cooker[MyGate]}
+		ALTITUDE of Pot = 0.2
+
+		disable Pot moveable
+		disable Pot pickup
+
+		//Create smoke effects
+		wait 1.5 seconds
+		SteamFX = create visual effect "gp_s_steam.ves" strength 0.8 scale 0.3 at {Pot} + {0.000,1.000,0.000} time -1
+
+		move Me position to {EL_Cooker[MyGate]}
+		wait until {Me} near {EL_Cooker[MyGate]} radius 0.6
+
+		set Me carrying CARRIED_OBJECT_CROOK
+		move villager Me focus to {EL_Cooker[MyGate]}
+
+		//Stir the pot a bit
+		play anim "a_p_stir_pot01" on Me loop 5
+		wait until Me played
+
+		set Me carrying CARRIED_OBJECT_NONE
+
+		begin loop
+			RandomAnim = number from 1 to 3
+			//Idle anims
+			if RandomAnim == 1
+				play anim "a_p_scratching_bum" on Me loop 5
+				wait until Me played
+			elsif RandomAnim == 2
+				play anim "a_p_scratching_head" on Me loop 5
+				wait until Me played
+			elsif RandomAnim == 3			
+				play anim "a_p_stretching" on Me loop 5
+				wait until Me played
+			end if
+		until get EggTimer time remaining == 0
+		end loop
+
+		remove visual effect FireFX target at {EL_Cooker[MyGate]} - {0, 0.7, 0}
+		//stop visual effect FireFX
+		stop visual effect SteamFX
+
+		delete Pot
+
+		//Take the pot off the fire and move it back
+		move Me position to {EL_CookingPos[MyGate]}
+		wait until {Me} at {EL_CookingPos[MyGate]}
+		
+		//move Me position to {EL_Pot[MyGate]}
+		//wait until {Me} at {EL_Pot[MyGate]}
+		EL_Pot[MyGate] = create OBJECT MOBILE_STATIC_INFO_GREEK_URN_03 at {EL_PotPos[MyGate]}
+		ALTITUDE of EL_Pot[MyGate] = -0.1
+			
+		EL_CookingGate[MyGate] = EL_FALSE
+
+	end if
+
+until Me is HELD
+end script EL_Cook
+
+//---------------------------------------------------------------
+// Looad at Eloi
+//---------------------------------------------------------------
+begin script EL_WalkHome(Me)
+	HomePos = marker at {1140.922,63.918,2008.338}
+start	
+	//Check to see how far the Eloi is from the main valley
+
+	//The Eloi is a long way off, have a cry
+	if not {Me} near {HomePos} radius 50		
+		begin loop
+			play anim "a_p_crying" on Me loop 2
+			wait until Me played
+			if variable get Me navigation state != variable NAV_STATE_NAVIGATING 
+					move Me position to {HomePos} using NAV_FAILURE_MODE_STOP_IMMEDIATELY navigation
+			end if
+			//move Me position to {HomePos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation //NAV_FAILURE_MODE_STOP_IMMEDIATELY
+			wait 15 seconds
+		until {Me} near {HomePos} radius 30
+		end loop
+	end if
+
+	//The Eloi isn't very far, return
+
+until Me is HELD
+end script EL_WalkHome
+
+//---------------------------------------------------------------
+// Look at Eloi
+//---------------------------------------------------------------
+begin script EL_LookAtEloi		
+	Eloi_Camp		= 0
+	Eloi_Fisherman	= 0
+	Eloi_Children	= 0
+	AllComments[3]
+start
+
+	Eloi_Camp		= marker at {1161.808, 74.129, 1985.638}
+	Eloi_Fisherman	= marker at {1177.090, 62.063, 2063.361}
+	Eloi_Children	= marker at {1193.846, 73.110, 2002.575}
+
+	while AllComments[0] == EL_FALSE or AllComments[1] == EL_FALSE or AllComments[2] == EL_FALSE
+
+		//Someone must be cooking to trigger this
+		if get distance from camera position to {Eloi_Camp} < 50 and {Eloi_Camp} viewed and EL_CookingGate[0] == EL_TRUE and AllComments[0] == EL_FALSE
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_110"
+				wait until read
+			end dialogue
+			AllComments[0] = EL_TRUE
+		end if
+
+		//There must be people fishing for thsi to be triggered and they must be viewed
+		if get distance from camera position to {Eloi_Fisherman} < 20 and {Eloi_Fisherman} viewed and EL_F_FishingNow > 1 and AllComments[1] == EL_FALSE
+			begin dialogue
+				eject good spirit
+	 			say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_120"
+				wait until read
+			end dialogue
+			AllComments[1] = EL_TRUE
+		end if
+
+		//Someone must be hopping to trigger this
+		if get distance from camera position to {Eloi_Children} < 5 and {Eloi_Children} viewed and EL_H_PlayingHopscotch == 3 and AllComments[2] == EL_FALSE
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_130"
+				wait until read
+			end dialogue
+			AllComments[2] = EL_TRUE
+		end if
+
+		wait 2 seconds
+	end while
+
+end script EL_LookAtEloi
+
+
+
+//---------------------------------------------------------------
+// Eloi Challenge
+//---------------------------------------------------------------
+begin script EL_Challenge
+	Scroll					= 0
+	ScrollPos				= marker at {1299.110, 91.908, 1963.633}
+	EloiCreate				= marker at {1298.239, 91.697, 1965.000}
+	ReminderTimer			= create timer for 0 seconds
+	TakePos					= marker at {1299.816, 91.930, 1964.162}
+	ActorsReunited1			= 0
+	ActorsReunited2			= 0
+	completed				= 0
+	playedthroughalready	= 0
+	Cinema_Played			= EL_FALSE
+	BackGroundActorz[4]
+	EjectPos				= marker at {1318.002, 97.100, 1936.709}//marker at {1324.632, 93.230, 1948.418}
+	
+start
+
+	wait until L1_ShowEloi == 1 or SkippedTutorials == 1
+
+	begin loop
+		if L1_InAScroll == 0
+			if Scroll not exists
+				Scroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_ELOI_MISC_10" remind "BW2T_SCRIPT_01FINAL_ELOI_MISC_10" at {ScrollPos}
+				ALTITUDE of Scroll = 3
+			end if
+			if get distance from camera position to {Scroll} < 30 and {Scroll} viewed and get ReminderTimer time remaining == 0
+				begin dialogue
+				eject good spirit
+				//make good spirit point to Scroll
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_140"
+				wait until read or Scroll right clicked
+				make good spirit point to Scroll
+				send good spirit home
+				set ReminderTimer time to 120 seconds
+				end dialogue
+			end if
+		elsif Scroll exists
+			delete Scroll
+		end if
+
+		/*if TutScroll == 1 and Scroll exists
+			delete Scroll
+		elsif Scroll not exists and InRockMan == 0 and TutScroll == 0
+			Scroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_ELOI_MISC_10" remind "BW2T_SCRIPT_01FINAL_ELOI_MISC_10" at {ScrollPos}
+			ALTITUDE of Scroll = 3
+		end if*/
+
+	until Scroll right clicked// or EL_ChallengeEloisLeft == 0
+	end loop
+
+	delete Scroll
+	L1_InAScroll = 1
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds	
+
+	//NEW
+	EL_ScrollClickedTrue = 1
+	run background script Land1Eloi2
+	// ENDOFNEW
+
+	//reset and disable
+	if SkippedTutorials == 0
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	end if
+
+	run script EL_Intro
+	run background script EL_Reminder
+
+	//effect here
+	EL_PlacePos = marker at {1197.953, 73.000, 2000.115}
+	EL_PlaceFX	= create visual effect VISUAL_EFFECT_AREA_TARGET at {EL_PlacePos} time -1
+	EL_TakeFX	= create visual effect VISUAL_EFFECT_AREA_TARGET at {TakePos} time -1
+
+	SCALE of EL_PlaceFX = 2.0
+	SCALE of EL_TakeFX = 4.0 //2.5
+	set EL_PlaceFX colour red 255 green 0 blue 0
+
+	//end if	
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 with amount 1 reward GLOBAL_VALUE_TRIBUTE_LAND_1_ELOI force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_20"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_10" amount 5
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 parent objective TRIBUTE_OBJECTIVE_LAND_11
+
+	enable objective window
+
+	wait until EL_ChallengeComments == EL_TRUE
+
+	wait 2 seconds
+
+	while completed == 0
+
+		begin loop
+
+			if EL_ChallengeEloisLeft < EL_TRAPPED_ELOI_AMOUNT//-EL_ChallengeEloisSaved)
+				run background script EL_TrappedEloi(marker at {EjectPos}, number from EL_TYPE_ADULT_M to EL_TYPE_ADULT_F, EL_TrappedID)
+				wait 2 seconds
+				EL_TrappedID++
+			end if
+
+			SpecialNumber = 5-EL_ChallengeEloisSaved//EL_ChallengeEloisLeft--
+			wait 1 seconds
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_10" amount SpecialNumber
+
+		until SpecialNumber == 0
+		end loop
+
+		wait 2 seconds
+
+		if SpecialNumber == 0
+			completed = 1
+		end if
+
+	end while
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_10" amount 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 value 1
+
+		wait 2 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		stop visual effect EL_TakeFX 
+		stop visual effect EL_PlaceFX
+
+		begin cinema
+
+			ChallengeComplete = 1
+			BackGroundActorz[0] = create VILLAGER INDIGENOUS_FARMER at {1179.447, 73.168, 1996.254}
+			BackGroundActorz[1] = create VILLAGER INDIGENOUS_FARMER at {1178.233, 73.168, 1996.204}
+			set BackGroundActorz[0] focus to {BackGroundActorz[1]}
+			set BackGroundActorz[1] focus to {BackGroundActorz[0]}
+			//play anim "a_p_talk_to_neighbour" on BackGroundActorz[1] loop -1
+			//play anim "a_p_stand_fidget1" on BackGroundActorz[0] loop -1
+			
+			play paired anim VILLAGER_PAIRED_ACTION_ELOI_CHAT using BackGroundActorz[0] with BackGroundActorz[1] snap to position
+
+			BackGroundActorz[2] = create VILLAGER INDIGENOUS_FARMER at {1173.195, 94.042, 1996.380}
+			BackGroundActorz[3] = create VILLAGER INDIGENOUS_FARMER at {1173.022, 73.168, 1995.114}
+			set BackGroundActorz[2] focus to {BackGroundActorz[3]}
+			set BackGroundActorz[3] focus to {BackGroundActorz[2]}
+			play anim "a_p_gossip_woman_1" on BackGroundActorz[3] loop -1
+			play anim "a_p_stand_fidget2" on BackGroundActorz[2] loop -1
+
+			ActorsReunited1 = create VILLAGER INDIGENOUS_FARMER at {1178.242, 74.222, 2000.007}
+			ActorsReunited2 = create VILLAGER INDIGENOUS_FARMER at {1177.599, 74.355, 2000.182}
+			set ActorsReunited1 focus to {1170.125, 72.335, 2004.739}
+			set ActorsReunited2 focus to {1177.785, 74.355, 2002.737}
+			//wait 1 seconds
+			play anim "a_p_l1eloi_patting_onback_paired_a" on ActorsReunited1
+			play anim "a_p_l1eloi_patting_onback_paired_b" on ActorsReunited2
+
+			//set ActorsReunited1 focus to {1170.125, 72.335, 2004.739}
+			//play paired anim VILLAGER_PAIRED_ACTION_ELOI_BACK_PAT using ActorsReunited1 with ActorsReunited2 snap to position
+
+			set camera position to {1180.125, 76.858, 2008.487}
+			set camera focus to {1142.222, 51.905, 1919.375}
+
+			set fade in time 1
+
+			move camera position to {1179.327, 76.390, 2006.270} time 10
+			move camera focus to {1158.929, 62.033, 1909.432} time 10
+
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_150"
+			wait until read
+
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_160"
+			wait until read
+
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+			delete ActorsReunited1
+			delete ActorsReunited2
+			delete BackGroundActorz[0]
+			delete BackGroundActorz[1]
+			delete BackGroundActorz[2]
+			delete BackGroundActorz[3]
+
+			set camera position to {1172.839, 91.210, 2006.126}
+			set camera focus to {1150.866, 33.886, 1927.184}
+			//set camera position to {1560.155, 185.225, 1516.125}
+			//set camera focus to {1507.738, 134.403, 1447.790}
+			Cinema_Played = EL_TRUE
+
+			set fade in time 1
+
+			end cinema
+			wait 1 seconds
+
+			wait 2 seconds
+
+			//Re-enable rock man objectives and reset eloi
+			reset player 0 objective TRIBUTE_OBJECTIVE_LAND_11
+			reset player 0 objective TRIBUTE_OBJECTIVE_LAND_12
+
+		/*	if L1_EloiComplete == 0  and SkippedTutorials == 0
+				 set player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+			end if*/
+
+			if SkippedTutorials == 0
+				//if L1_RockManComplete == 0
+				//	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 amount 1 force open
+				//	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ROCKMAN_10"
+				//end if
+
+				if L1_WaterfallComplete == 0
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 amount 1 force open
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_20"
+				end if
+			end if
+
+			stop visual effect EL_PlaceFX
+			L1_EloiComplete = 1
+			L1_InAScroll = 0
+
+end script EL_Challenge
+
+//---------------------------------------------------------------
+// Eloi Intro
+//---------------------------------------------------------------
+begin script EL_Intro
+	SignalingEloi=0
+	CentrePoint=0
+	EloiActorz[5]
+	RandType		= 0
+	EloiLoop		= 0
+	El_Positions[10]
+	El_SittingPositions[10]
+	El_TempCutsceneSittingPeople[3]
+start
+
+	El_Positions[0] = marker at {1304.333, 94.953, 1965.089}
+	El_Positions[1] = marker at {1305.121, 94.953, 1966.214}
+	El_Positions[2] = marker at {1304.754, 94.953, 1960.553}
+	El_Positions[3] = marker at {1303.573, 94.953, 1959.405}
+	El_Positions[4] = marker at {1302.449, 94.151, 1960.611}
+
+	El_SittingPositions[0] = marker at {1173.954, 150.072, 2000.524}
+	El_SittingPositions[1] = marker at {1174.006, 150.072, 1999.261}
+	El_SittingPositions[2] = marker at {1176.733, 150.072, 1998.974}
+	El_SittingPositions[3] = marker at {1177.498, 150.072, 2001.350}
+
+	El_SittingPositions[4] = marker at {1175.661, 126.767, 2000.653}
+
+	while EL_TrappedID < EL_TRAPPED_ELOI_AMOUNT
+		RandType = number from EL_TYPE_ADULT_M to EL_TYPE_ADULT_F
+		run background script EL_TrappedEloi(El_Positions[EL_TrappedID], RandType, EL_TrappedID)
+		EL_TrappedID++
+	end while
+
+		begin cinema
+
+		start music "cut_scene_the_awakening"	
+
+		//Lenny here
+		//run background script EL_BodgeForPJ(0)
+		//run background script EL_BodgeForPJ(1)
+		//--
+
+		//set game time 18.30
+		El_TempCutsceneSittingPeople[0] = create CHILD INDIGENOUS_FARMER at {El_SittingPositions[0]}
+		El_TempCutsceneSittingPeople[1] = create CHILD INDIGENOUS_HOUSEWIFE at {El_SittingPositions[1]}
+		El_TempCutsceneSittingPeople[2] = create VILLAGER INDIGENOUS_FARMER at {El_SittingPositions[2]}
+		El_TempCutsceneSittingPeople[3] = create VILLAGER INDIGENOUS_HOUSEWIFE at {El_SittingPositions[3]}
+
+		set El_TempCutsceneSittingPeople[0] focus to {El_SittingPositions[4]}
+		set El_TempCutsceneSittingPeople[1] focus to {El_SittingPositions[4]}
+		set El_TempCutsceneSittingPeople[2] focus to {El_SittingPositions[4]}
+		set El_TempCutsceneSittingPeople[3] focus to {El_SittingPositions[4]}
+
+		play anim "a_p_sitting_down4_sitting" on El_TempCutsceneSittingPeople[1] loop -1
+		play anim "a_p_sitting_down4_sitting" on El_TempCutsceneSittingPeople[3] loop -1
+
+		play anim "a_p_sitting_down3_sitting" on El_TempCutsceneSittingPeople[0] loop -1
+		play anim "a_p_sitting_down3_sitting" on El_TempCutsceneSittingPeople[2] loop -1
+		store camera details
+		set fade in time 2
+		set camera position to {1335.717, 100.624, 2103.697}
+		set camera focus to {1249.474, 87.362, 2054.844}
+
+		move camera position to {1318.568, 81.757, 2122.179} time 5 easein 0 easeout 0
+		move camera focus to {1245.045, 79.003, 2054.454} time 5 easein 0 easeout 0
+		wait 5 seconds
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_10"
+		//wait until read
+		set camera position to {1184.215, 79.272, 2009.713}
+		set camera focus to {1119.908, 56.833, 1936.495}
+		move camera position to {1181.214, 77.212, 2011.467} time 5 easein 0 easeout 0
+		move camera focus to {1134.876, 58.812, 1924.784} time 5 easein 0 easeout 0
+		wait 5 seconds
+
+		SignalingEloi = create VILLAGER INDIGENOUS_FARMER at {1257.999, 94.829, 1994.348}
+		set SignalingEloi focus to {1171.645, 74.156, 2000.227}
+		play anim "a_p_attract_your_attention" on SignalingEloi loop 5
+		set camera position to {1259.421, 98.768, 1999.325}
+		set camera focus to {1164.426, 82.263, 1972.811}
+		move camera position to {1261.659, 98.873, 1998.041} time 5 easein 0 easeout 0
+		move camera focus to {1166.664, 82.368, 1971.528} time 5 easein 0 easeout 0
+
+		wait 5 seconds
+
+		CentrePoint = marker at {1295.175, 91.244, 1977.732}
+
+		play anim "A_P_CROWD_LOST" on SignalingEloi
+
+		set camera position to {1254.725, 98.338, 1996.663}
+		set camera focus to {1340.846, 94.384, 1945.991}
+		wait 1.5 seconds
+		//move camera position to {1311.476, 94.975, 1978.092} time 6// easein 5 easeout 0
+		//move camera focus to {1351.136, 72.383, 1889.115} time 6// easein 5 easeout 0
+		reset camera path 
+
+		queue camera move with position {1271.699, 104.670, 1986.616} focus {1353.840, 96.621, 1930.159} time 2.0
+		queue camera move with position {1297.138, 97.637, 1970.392} focus {1351.630, 62.911, 1894.074} time 2.0
+		play camera path with easein 0 easeout 0
+	
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_20"
+		wait until read
+		send good spirit home
+
+		set fade red 0 green 0 blue 0 time 2
+		stop music
+		wait 2 seconds
+		delete SignalingEloi
+		delete El_TempCutsceneSittingPeople[0]
+		delete El_TempCutsceneSittingPeople[1]
+		delete El_TempCutsceneSittingPeople[2]
+		delete El_TempCutsceneSittingPeople[3]
+
+		EL_ChallengeComments = EL_TRUE
+
+		set camera position to {1317.709, 127.826, 2014.050}
+		set camera focus to {1250.863, 93.905, 1947.924}
+	
+		set fade in time 2
+		wait 2 seconds
+	
+	end cinema
+
+end script EL_Intro
+
+//---------------------------------------------------------------
+// Trapped Eloi
+//---------------------------------------------------------------
+begin script EL_TrappedEloi(Position, Type, ID)
+	Me				= 0
+	MyValleyPos		= marker at {1319.837,92.476,1969.563}
+	ValleyPos		= marker at {1319.837,92.476,1969.563}
+	OtherValleyPos	= marker at {1140.922,63.918,2008.338}
+	MeQuitter		= EL_FALSE
+	RandomNumber	= 0
+	Counter			= 0
+	StandRandPos	= marker at {1305.571, 92.110, 1964.491}
+	MePosition		= 0
+	TeleportEffect	= 0
+	MovePos			= 0
+	RandomAnim		= 0
+
+start
+
+	//Create Elois
+	if Type == EL_TYPE_CHILD_M
+		Me = create CHILD INDIGENOUS_FARMER at {Position}
+	elsif Type == EL_TYPE_CHILD_F
+		Me = create CHILD INDIGENOUS_HOUSEWIFE at {Position}
+	elsif Type == EL_TYPE_ADULT_M
+		Me = create VILLAGER INDIGENOUS_FARMER at {Position}
+	elsif Type == EL_TYPE_ADULT_F
+		Me = create VILLAGER INDIGENOUS_HOUSEWIFE at {Position}
+	end if
+
+	disable Me reactable
+
+	if ID == 1
+		set Me focus to {1304.333, 94.953, 1965.089}
+	elsif ID == 0
+		set Me focus to {1304.333, 94.953, 1965.089}
+	elsif ID == 3
+		set Me focus to {1305.121, 94.953, 1966.214}
+	elsif ID == 4
+		set Me focus to {1304.754, 94.953, 1960.553}
+	else
+		set Me focus to {1287.983, 97.637, 1963.856}
+	end if
+
+	if number from 0 to 1 == 1
+		play anim "a_p_l1eloi_sad1_loop" on Me loop -1
+	else
+		play anim "a_p_l1eloi_sad2_loop" on Me loop -1
+	end if
+
+	//PJ - wait until intro is finished. Using this flag just cos it's a convenient one that already exists
+	wait until EL_ChallengeComments == EL_TRUE
+
+	EL_ChallengeEloisLeft++
+
+	run script EL_TrappedEloiAction(Me)	
+
+end script EL_TrappedEloi
+
+
+//---------------------------------------------------------------
+// Advisors
+//---------------------------------------------------------------
+begin script EL_Advisors(ID)
+	Rand = 0
+start
+
+	if EL_ChallengeComments == EL_TRUE
+		begin dialogue
+
+			if ID == EL_ADVISOR_PICKED_UP_ELOI and EL_Advisor_Picked_Up_Flag == EL_FALSE
+				EL_Advisor_Picked_Up_Flag = EL_TRUE
+				eject evil spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_50"
+				wait until read
+
+			elsif ID == EL_ADVISOR_ELOI_IN_PROPER_VALLEY 
+				
+				if EL_Advisor_Rescused_Flag == EL_FALSE
+					EL_Advisor_Rescused_Flag = EL_TRUE
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_100"
+					wait until read
+				else
+					eject good spirit
+					Rand = number from 1 to 11
+
+					if Rand == 1
+						say "BW2T_SCRIPT_GENERIC_01"
+					elsif Rand == 2
+						say "BW2T_SCRIPT_GENERIC_02"
+					elsif Rand == 3
+						say "BW2T_SCRIPT_GENERIC_03"
+					elsif Rand == 4
+						say "BW2T_SCRIPT_GENERIC_04"
+					elsif Rand == 5
+						say "BW2T_SCRIPT_GENERIC_05"
+					elsif Rand == 6
+						say "BW2T_SCRIPT_GENERIC_06"
+					elsif Rand == 7
+						say "BW2T_SCRIPT_GENERIC_07"
+					elsif Rand == 8
+						say "BW2T_SCRIPT_GENERIC_08"
+					elsif Rand == 9
+						say "BW2T_SCRIPT_GENERIC_09"
+					elsif Rand == 10
+						say "BW2T_SCRIPT_GENERIC_10"
+					elsif Rand == 11
+						say "BW2T_SCRIPT_GENERIC_11"
+					end if
+
+					wait until read
+				end if
+
+			elsif ID == EL_ADVISOR_ALL_ELOIS_RESCUED
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_90"
+				wait until read
+
+			elsif ID == EL_ADVISOR_ELOI_THROWN and EL_Advisor_Thrown_Flag == EL_FALSE
+				EL_Advisor_Thrown_Flag = EL_TRUE
+				eject evil spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_60"
+				wait until read
+
+			elsif ID == EL_ADVISOR_ELOI_DROWNING and EL_Advisor_Thrown_Flag == EL_FALSE
+				EL_Advisor_Drowning_Flag = EL_TRUE
+				eject evil spirit 
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_30"
+				wait until read
+				// waits a few seconds so that the advisor doesn't say silly things that don't make sense
+				run background script EL_Cleanup
+
+			elsif ID == EL_ADVISOR_ELOI_DEAD
+				if deadcounter == 0
+					eject evil spirit 
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_80"
+					wait until read
+					deadcounter++
+
+				elsif deadcounter == 1
+					deadcounter++
+
+				elsif deadcounter == 2
+					eject evil spirit
+					say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_18"
+					wait until read
+					deadcounter++
+
+				elsif deadcounter == 3
+					deadcounter++
+
+				end if
+			
+			elsif ID == EL_ADVISOR_MULTI_PICKUP and EL_Advisor_Multipickup_Flag == EL_FALSE
+				EL_Advisor_Multipickup_Flag = EL_TRUE
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_40"
+				wait until read
+
+			elsif ID == EL_ADVISOR_ELOI_NOT_IN_VALLEY and EL_Advisor_Drowning_Flag == EL_FALSE
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ELOI_70"
+				wait until read
+
+			elsif ID == EL_ADVISOR_ALL_DEAD
+				eject evil spirit
+				say"BW2T_HELP_TEXT_GUIDANCE_RANDOM_ADVISOR_20"
+				wait until read
+				eject good spirit
+				say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_01"
+				wait until read
+			end if
+
+			//Clean up
+			send good spirit home
+			send evil spirit home
+
+		end dialogue
+	end if
+
+end script EL_Advisors
+
+
+//---------------------------------------------------------------
+// Trapped Eloi Action
+//---------------------------------------------------------------
+begin script EL_TrappedEloiAction(Me)
+	MovePos			= marker at {0, 0, 0} //generated
+	ValleyPos		= marker at {1299.811, 92.285, 1960.965}
+	RandomAnim		= 0
+	TeleportEffect	= 0
+	MePosition		= 0
+	OtherValleyPos	= marker at {1140.922,63.918,2008.338}
+	Rescued			= EL_FALSE
+	MeQuitter		= EL_FALSE
+	DrowningComment	= 0
+
+start
+
+	begin loop
+
+		MovePos = marker at {ValleyPos} + {number from -10 to 10, 0, number from -10 to 10}
+
+		if get distance from {ValleyPos} to {Me} < 40 //{Me} near {ValleyPos} radius 40
+				move Me position to {MovePos}
+				wait until {Me} at {MovePos} or Me is HELD or get distance from {ValleyPos} to {Me} > 40
+		end if
+		
+		if not {Me} on land and not Me is FLYING and not Me is HELD and HEALTH of Me > 0
+			//wait 0.1 seconds
+			//HEALTH of Me -= 0.1
+		end if
+
+		RandomAnim = number from 1 to 3
+		if RandomAnim == 1
+			play anim "a_p_crying" on Me loop 3
+			wait until Me played or Me is HELD or HEALTH of Me == 0 or get distance from {ValleyPos} to {Me} > 40
+		elsif RandomAnim == 2
+			play anim "a_p_child_crying_1" on Me loop 3
+			wait until Me played or Me is HELD or HEALTH of Me == 0 or get distance from {ValleyPos} to {Me} > 40
+		elsif RandomAnim == 3
+			play anim "a_p_child_crying_2" on Me loop 3
+			wait until Me played or Me is HELD or HEALTH of Me == 0 or get distance from {ValleyPos} to {Me} > 40
+		end if
+
+		if Me is HELD
+			wait 0.5 seconds
+			play string sound "REWARD6"
+			run background script EL_Advisors(EL_ADVISOR_PICKED_UP_ELOI)
+			wait until not Me is HELD
+		end if		
+
+		wait 0.1 seconds
+
+		//Guy has been thrown!!!
+		if Me is FLYING and SPEED of Me > 5
+			run background script EL_Advisors(EL_ADVISOR_ELOI_THROWN)
+			wait until not Me is FLYING
+		else
+
+		if Me is DROWNING
+			EL_Advisor_Drowning_Flag = EL_TRUE
+			if DrowningComment == 0
+				run background script EL_Advisors(EL_ADVISOR_ELOI_DROWNING)
+				DrowningComment = 1
+			end if
+			if HEALTH of Me > 0
+				HEALTH of Me -= 0.1
+				wait 0.1 seconds
+			end if
+		else
+				
+				//Check to see if I am near the REAL 'BO Valley
+				if ({Me} and {EL_PlacePos} on same side of line between {1265.334, 75.158, 2048.993} and {1207.398, 85.064, 1965.041}) and ({Me} and {EL_PlacePos} on same side of line between {1207.398, 85.064, 1965.041} and {1109.993, 83.586, 1924.690}) and ({Me} and {EL_PlacePos} on same side of line between {1109.993, 83.586, 1924.690} and {1073.254, 85.905, 2072.535}) and ({Me} and {EL_PlacePos} on same side of line between {1073.254, 85.905, 2072.535} and {1265.334, 75.158, 2048.993})
+					if not Me is HELD and not Me is FLYING and Me exists and {Me} on land
+						EL_ChallengeEloisSaved++
+						//EL_ChallengeEloisLeft
+						run background script EL_Advisors(EL_ADVISOR_ELOI_IN_PROPER_VALLEY)
+						set EL_PlaceFX colour red 0 green 255 blue 0
+						MeQuitter = EL_TRUE
+						run script EL_TrappedWait(Me)
+					end if
+				elsif not Me is HELD and not Me is FLYING and Me exists and {Me} on land and not {Me} near {ValleyPos} radius 40
+						run background script EL_Advisors(EL_ADVISOR_ELOI_NOT_IN_VALLEY)
+						disable Me pickup
+						MePosition = marker at {Me} + {0,1,0}
+						wait 1 seconds
+						TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {MePosition} time 2
+						wait 1 seconds
+						set Me position to {MovePos}
+						MePosition = marker at {Me} + {0,1,0}
+						TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {MePosition} time 2
+						enable Me pickup
+				end if
+			end if
+		end if
+
+		wait 0.1 seconds
+
+	until MeQuitter == EL_TRUE or not Me exists or HEALTH of Me == 0
+	end loop	
+
+	if not Me exists or HEALTH of Me == 0
+		release Me
+		run background script EL_Advisors(EL_ADVISOR_ELOI_DEAD)
+		EL_ChallengeEloisLeft--
+	end if
+
+end script EL_TrappedEloiAction
+
+
+//---------------------------------------------------------------
+// Butterflys
+//---------------------------------------------------------------
+begin script EL_Butterflys
+	ButterflyFX[15]
+	Pos[5]
+	Loop	= 0
+start
+
+	Pos[0] = marker at {1132.305,77.148,927.277}
+	Pos[1] = marker at {1162.230,74.118,2012.765}
+	Pos[2] = marker at {975.549,92.858,2012.170}
+	Pos[3] = marker at {1046.606,84.993,1329.573}
+	Pos[4] = marker at {1570.603,115.306,854.820}
+
+	while Loop < 15
+		ButterflyFX[Loop+0] = create visual effect "gp_s_butterflies.ves" strength 1 scale 1 at {Pos[0]} + {number from -10 to 10, number from -1 to 3, number from -25 to 25} time -1
+		ButterflyFX[Loop+1] = create visual effect "gp_s_butterflies.ves" strength 1 scale 1 at {Pos[1]} + {number from -10 to 10, number from -1 to 3, number from -25 to 25} time -1
+		ButterflyFX[Loop+2] = create visual effect "gp_s_butterflies.ves" strength 1 scale 1 at {Pos[2]} + {number from -10 to 10, number from -1 to 3, number from -25 to 25} time -1
+		ButterflyFX[Loop+3] = create visual effect "gp_s_butterflies.ves" strength 1 scale 1 at {Pos[3]} + {number from -10 to 10, number from -1 to 3, number from -25 to 25} time -1
+		ButterflyFX[Loop+4] = create visual effect "gp_s_butterflies.ves" strength 1 scale 1 at {Pos[4]} + {number from -10 to 10, number from -1 to 3, number from -25 to 25} time -1
+		Loop+=5
+	end while
+
+	if L1_EloiDebug == 1
+		wait until 1 == 0
+	end if
+
+end script EL_Butterflys
+
+//---------------------------------------------------------------
+// Trapped Eloi Wait
+//---------------------------------------------------------------
+begin script EL_TrappedWait(Me)
+	Gate = 0
+	RandomAnim = 0
+	check2 = 0
+	MyValleyPos		= marker at {1319.837,92.476,1969.563}
+	OtherValleyPos	= marker at {1140.922,63.918,2008.338}
+	MovePos		= 0
+
+start
+
+	play string sound "REWARD13"
+	EL_Saved ++
+	MovePos = marker at {EL_PlacePos} + {number from -5 to 5, 0, number from -5 to 5}
+	wait 0.1 seconds
+	run background script EL_SavedEloiChecker(Me)
+	disable Me pickup
+	play anim "A_p_crowd_won_2" on Me
+	wait until Me played //or 3 seconds	// wait for landed anim to finsih before setting off moviong and overriding anims
+	enable Me pickup
+	begin loop
+	if not {Me} at {MovePos}
+		move Me position to {MovePos}
+	end if
+	if {Me} at {MovePos}
+		move villager Me focus to camera position
+		RandomAnim = number from 1 to 8
+		if RandomAnim == 1
+			play anim "a_p_dance_celebrate01" on Me loop 2
+		elsif RandomAnim == 2
+			play anim "a_p_dance_celebrate02" on Me
+		elsif RandomAnim == 3
+			play anim "a_p_dance_celebrate03" on Me loop 2
+		elsif RandomAnim == 4
+			play anim "a_p_dance_celebrate04" on Me
+		elsif RandomAnim == 5
+			play anim "a_p_dance_celebrate05" on Me loop 2
+		elsif RandomAnim == 6
+			play anim "a_p_dance_celebrate06" on Me
+		elsif RandomAnim == 7
+			play anim "a_p_dance_celebrate07" on Me loop 2
+		elsif RandomAnim == 8
+			play anim "a_p_dance_celebrate08" on Me
+		end if
+		wait until Me played or {Me} near {MyValleyPos} radius 40
+	end if
+
+		if {Me} near {MyValleyPos} radius 40
+				check2 = 1
+		end if
+
+	until EL_ChallengeEloisLeft == 0 or check2 == 1 or ChallengeComplete == 1
+	end loop	
+
+	if SpecialNumber == 0
+		run background script EL_Eloi(Me, 4, TopEloi)
+	end if
+
+end script EL_TrappedWait
+
+//---------------------------------------------------------------
+// Eloi Control 2 - Normal Village scene
+//---------------------------------------------------------------
+begin script Land1Eloi2
+	EloiLoop = 0
+	EloiType = 0
+	EloiPos[14]
+	Eloi = 0
+	Campfires[2]
+	inc = 0
+start
+
+	if EL_ScrollClickedTrue == 1
+			run script ClearTheDead
+			//EL_ScrollClickedTrue = 0
+	end if
+
+	//Create the children
+	while EloiLoop < EL_NUM_OF_CHILDREN
+		EloiType = number from EL_TYPE_CHILD_M to EL_TYPE_CHILD_F
+
+		if EloiType == EL_TYPE_CHILD_M
+			Eloi = create CHILD INDIGENOUS_FARMER at {EloiPos[inc]}	
+			inc++
+		else
+			Eloi = create CHILD INDIGENOUS_HOUSEWIFE at {EloiPos[inc]}
+			inc++
+		end if
+		run background script EL_Eloi(Eloi, EloiType, EloiLoop)
+
+		EloiLoop++
+	end while
+
+	//Create the adults
+	while EloiLoop < (EL_NUM_OF_ADULTS + EL_NUM_OF_CHILDREN)
+		EloiType = number from EL_TYPE_ADULT_M to EL_TYPE_ADULT_F
+
+		if EloiType == EL_TYPE_ADULT_M
+			Eloi = create VILLAGER INDIGENOUS_FARMER at {EloiPos[inc]}
+			inc++
+		else
+			Eloi = create VILLAGER INDIGENOUS_HOUSEWIFE at {EloiPos[inc]}
+			inc++
+		end if
+		run background script EL_Eloi(Eloi, EloiType, EloiLoop)
+
+		EloiLoop++
+	end while		
+
+end script Land1Eloi2
+
+//---------------------------------------------------------------
+// Clears any villagers/corpses
+//---------------------------------------------------------------
+begin script ClearTheDead
+	MyCorpse = 0
+	NoCorpsesFound = 0
+	CorpseArea = marker at {1161.547, 73.665, 1988.524}
+start
+	
+	while NoCorpsesFound < 20
+		MyCorpse = get VILLAGER in state DEAD at {CorpseArea} radius 100
+		if MyCorpse exists
+				delete MyCorpse
+		end if
+		MyCorpse = get VILLAGER at {CorpseArea} radius 100
+		if MyCorpse exists
+				delete MyCorpse
+		end if
+		NoCorpsesFound ++
+	end while
+
+end script ClearTheDead
+
+//---------------------------------------------------------------
+// Cleanup
+//---------------------------------------------------------------
+begin script EL_Cleanup
+start
+	
+	wait 10 seconds
+	EL_Advisor_Drowning_Flag = EL_FALSE
+
+end script EL_Cleanup
+
+//---------------------------------------------------------------
+// Remidner
+//---------------------------------------------------------------
+begin script EL_Reminder
+	Scroll		= 0
+	ScrollPos	= marker at {1326.196, 93.068, 1954.007}
+start
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_20" remind "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_20" at {ScrollPos}
+	ALTITUDE of Scroll = 3
+
+	wait until EL_ChallengeEloisLeft == 0 or ChallengeComplete == 1
+	delete Scroll
+
+end script EL_Reminder
+
+//---------------------------------------------------------------
+// A wonderful bodge to make the Eloi do the cooking and that durinv ghr Eloi cutscene, if they're not doing so already
+//---------------------------------------------------------------
+begin script EL_BodgeForPJ(Gate)
+	Me	= 0
+	EloiPos	= marker at {1172.396, 74.152, 1996.664}
+start
+
+	//Check the cooking gates, to see if there is room to add someone else cooking
+	if EL_CookingGate[Gate] == EL_FALSE
+		Me = create VILLAGER INDIGENOUS_FARMER at {EloiPos}
+		run script EL_Cook(Me)
+	end if
+
+	delete Me
+
+end script EL_BodgeForPJ
+
+begin script EL_SavedEloiChecker(Me)
+
+check2 = 0
+EjectPos = marker at {1318.002, 97.100, 1936.709}
+MyValleyPos		= marker at {1319.837,92.476,1969.563}
+OtherValleyPos	= marker at {1140.922,63.918,2008.338}
+Anumber			= 0
+
+start
+	begin loop
+		if HEALTH of Me == 0
+			release Me
+			run background script EL_Advisors(EL_ADVISOR_ELOI_DEAD)
+			wait until read
+			EL_ChallengeEloisSaved--
+			EL_ChallengeEloisLeft--
+			EL_Saved --
+			check2 = 1
+		end if
+		if Me exists
+			if (not {Me} and {EL_PlacePos} on same side of line between {1265.334, 75.158, 2048.993} and {1207.398, 85.064, 1965.041}) or (not {Me} and {EL_PlacePos} on same side of line between {1207.398, 85.064, 1965.041} and {1109.993, 83.586, 1924.690}) or (not {Me} and {EL_PlacePos} on same side of line between {1109.993, 83.586, 1924.690} and {1073.254, 85.905, 2072.535}) or (not {Me} and {EL_PlacePos} on same side of line between {1073.254, 85.905, 2072.535} and {1265.334, 75.158, 2048.993})
+					if not Me is HELD and not Me is FLYING and Me exists
+						EL_ChallengeEloisSaved--
+						EL_Saved --
+						check2 = 1
+						Anumber = number from 1 to 4
+						run script EL_TrappedEloiAction(Me)
+					end if
+			end if
+		end if
+	until check2 == 1 or ChallengeComplete == 1
+	end loop
+end script EL_SavedEloiChecker

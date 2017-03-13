@@ -1,0 +1,6 @@
+run script RunLand1FistingBarrels
+
+begin script RunLand1FistingBarrels
+start
+	run script Land1FistingBarrels
+end script RunLand1FistingBarrels

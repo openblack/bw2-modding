@@ -1,0 +1,6 @@
+run script RunLand1RockMan
+
+begin script RunLand1RockMan
+start
+	run script Land1RockMan
+end script RunLand1RockMan

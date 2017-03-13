@@ -1,0 +1,538 @@
+///////////////////////////////////////////////////////////////////////////////
+//	JACK FROST
+//	~~~~~~~~~~
+//
+//	Description???
+//
+//	Rewards:			Unknown
+//
+//	Start date:			Unknown				By:	Alex
+//	Update date:		11-03-05			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define JF_TRUE						= 1
+define JF_FALSE						= 0
+define JF_SCALE_UP					= 1
+define JF_SCALE_DOWN				= 0
+define JF_SCALE_OF_JACK				= 2.0
+define JF_JACK_TIME					= 12				// 6
+define JF_MIN_NUMBER_OF_VILLAGERS	= 10					
+define JF_MIN_NUMBER_OF_FIELDS		= 2
+define JF_MAX_FIELDS_TO_SEARCH		= 5
+define JF_NUMBER_OF_SPAWN_POS		= 6
+define JF_ICE_RED					= 255
+define JF_ICE_GREEN					= 255
+define JF_ICE_BLUE					= 225
+
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global JF_JackFrost					= 0
+global JF_JackDead					= JF_FALSE
+global JF_JackSpawnPos				= 0
+global JF_JacksSpeed				= 0.5
+global JF_JackIsFrozen				= JF_FALSE
+global JF_PlayerTown				= 0
+global JF_JackSafe					= JF_TRUE
+global JF_JackIsBurnt				= JF_FALSE
+
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script JF_CreateJack
+define script JF_JackHunt
+define script JF_JackFrozen
+define script JF_JackWet
+define script JF_JacksTrail
+define script JF_IsJackDead
+define script JF_JackBurnt
+define script JF_JackRunsAway
+define script JF_AdvisorsWarning
+define script JF_ScaleJack(Direction, EndSize, NumIncrements)
+define script JF_CreateJackEffects(Pos, NumEffects)
+//define script JF_JackOffshore
+
+
+// TEMP:
+define script JF_SetAndMaintainTime
+
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land5JackFrost
+start
+
+	// TEMP:
+	//run background script JF_SetAndMaintainTime
+
+	// Get the players town
+	JF_PlayerTown = L5GreekTown
+
+	// Keep running the script until Jack Frost is killed
+	while JF_JackDead == JF_FALSE
+		if JF_JackFrost not exists
+			// Wait until the correct time of day and other elements are in place to create Jack
+			wait until get game time >= JF_JACK_TIME and get game time <= (JF_JACK_TIME+1) and size of JF_PlayerTown >= JF_MIN_NUMBER_OF_VILLAGERS and get number of type SCRIPT_OBJECT_TYPE_FIELD in JF_PlayerTown min built 1.0 >= JF_MIN_NUMBER_OF_FIELDS
+
+			// Create Jack
+			run script JF_CreateJack
+
+			// Do background checks on Jack
+			run background script JF_JackFrozen
+			run background script JF_JackWet
+			run background script JF_JacksTrail
+			run background script JF_IsJackDead
+			run background script JF_JackBurnt
+
+			// Handle Jacks attack
+			run script JF_JackHunt
+
+			// Make sure we only have 1 attack a day
+			//wait until get game time > JF_JACK_TIME+2
+		end if
+	end while
+
+	say "Jack has been killed. End script."
+	wait until read
+	
+end script Land5JackFrost
+
+
+
+//-----------------------------------------------------------------------------
+// JF_CreateJack -- Creates Jack Frost at JF_JACK_TIME when jack doesn't exist
+//-----------------------------------------------------------------------------
+begin script JF_CreateJack
+
+	Jack_Random_Spawn_Pos[JF_NUMBER_OF_SPAWN_POS]
+	NumEffects					= 0
+	SplashFX					= 0
+
+start
+
+	// Setup Jacks spawn points
+	Jack_Random_Spawn_Pos[0] = marker at {1348.697, 67.965, 1480.007}
+	Jack_Random_Spawn_Pos[1] = marker at {1694.634, 51.655, 1463.883}
+	Jack_Random_Spawn_Pos[2] = marker at {1360.966, 70.487, 1155.772}
+	Jack_Random_Spawn_Pos[3] = marker at {1722.737, 79.134, 1076.476}
+	Jack_Random_Spawn_Pos[4] = marker at {1300.268, 65.871, 1408.187}
+	Jack_Random_Spawn_Pos[5] = marker at {1887.560, 76.564, 1376.542}
+
+	// Create Jack at one of the spawn point randomly
+	JF_JackSpawnPos = Jack_Random_Spawn_Pos[number from 0 to (JF_NUMBER_OF_SPAWN_POS-1)]
+	run background script JF_CreateJackEffects(JF_JackSpawnPos, 20)
+	JF_JackFrost = create VILLAGER VILLAGER_INFO_FENRICK at {JF_JackSpawnPos}
+	SCALE of JF_JackFrost = 0.1
+	run background script JF_ScaleJack(JF_SCALE_UP, JF_SCALE_OF_JACK, 30)
+	enable JF_JackFrost indestructible
+	enable JF_JackFrost immune to spells
+	disable JF_JackFrost pickup
+	set JF_JackFrost temperature 0
+	JF_JacksSpeed  = 0.3
+	SPEED of JF_JackFrost = JF_JacksSpeed
+	JF_JackSafe = JF_FALSE
+
+end script JF_CreateJack
+
+
+
+//-----------------------------------------------------------------------------
+// JF_JackHunt -- Directs Jack To The Player's Fields
+//-----------------------------------------------------------------------------
+begin script JF_JackHunt
+
+	NUM_EFFECTS_ON_FIELD	= 20
+	JF_Field[JF_MAX_FIELDS_TO_SEARCH]
+	JF_FieldToAttack		= 0
+	JF_Radius				= 20
+	JF_Freeze_Timer			= 0
+	AdvisorsSpoken			= JF_FALSE
+	ClosestField			= 1000
+	Ctr						= 0
+	SplashFX				= 0
+	NumEffects				= 0
+
+start
+
+	wait 2.5 seconds
+
+	// Get the nearest field to Jack in the players town to attack
+	while Ctr < JF_MAX_FIELDS_TO_SEARCH
+		JF_Field[Ctr] = get SCRIPT_OBJECT_TYPE_FIELD in JF_PlayerTown excluding scripted
+		if JF_Field[Ctr] exists and get distance from {JF_JackFrost} to {JF_Field[Ctr]} < ClosestField
+			ClosestField = get distance from {JF_JackFrost} to {JF_Field[Ctr]}
+			JF_FieldToAttack = JF_Field[Ctr]
+		end if
+		Ctr++
+	end while
+
+	if JF_FieldToAttack exists
+		// Move Jack to the field
+		if JF_JackFrost exists and JF_JackDead == JF_FALSE and JF_JackIsFrozen == JF_FALSE
+			move JF_JackFrost position to {JF_FieldToAttack} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+			//move JF_JackFrost position to {JF_FieldToAttack}
+		end if
+
+		// Keep looping until Jack gets to his destination or he is screwed
+		begin loop
+		until {JF_JackFrost} at {JF_FieldToAttack}
+		until JF_JackIsFrozen == JF_TRUE or JF_JackFrost not exists or JF_JackDead == JF_TRUE
+		end loop
+
+		// Get Jack to freeze the field if he made it ok
+		if JF_JackIsFrozen == JF_FALSE and JF_JackFrost exists and JF_JackDead == JF_FALSE
+			JF_Freeze_Timer = create timer for 10 seconds
+
+			while JF_JackIsFrozen == JF_FALSE and JF_JackFrost exists and JF_JackDead == JF_FALSE and get JF_Freeze_Timer time remaining > 0
+				if get JF_Freeze_Timer time remaining <= 7 and AdvisorsSpoken == JF_FALSE
+					// Get a warning from the advisors - once per freezing!
+					run background script JF_AdvisorsWarning
+					AdvisorsSpoken = JF_TRUE
+				end if
+
+				if NumEffects < NUM_EFFECTS_ON_FIELD
+					add effect EFFECT_TYPE_BURN at {JF_FieldToAttack} strength -1 radius 5.0
+					SplashFX = create visual effect "gp_s_waterfall_ground.ves" strength 1 scale 2 at {JF_FieldToAttack} time 60
+					set SplashFX colour red JF_ICE_RED green JF_ICE_GREEN blue JF_ICE_BLUE
+					NumEffects++
+				end if
+			end while
+		end if
+
+		// Get Jack to flee
+		run script JF_JackRunsAway
+	else
+		say "No field found for Jack to attack"
+		wait until read
+	end if
+
+end script JF_JackHunt
+
+
+
+//-----------------------------------------------------------------------------
+// JF_JackFrozen -- Increases Speed of Jack when he is frozen
+//-----------------------------------------------------------------------------
+begin script JF_JackFrozen
+
+	JF_Ice_Spell		= 0
+
+start
+
+	begin loop
+		wait until JF_JackFrost exists
+		JF_Ice_Spell = get spell MAGIC_TYPE_BOMB_ICE at {JF_JackFrost} radius 8
+
+		if JF_Ice_Spell exists
+			JF_JacksSpeed += 0.2
+			SPEED of JF_JackFrost = JF_JacksSpeed
+			wait 0.5 seconds
+		end if
+
+	until JF_JackFrost not exists
+	until JF_JackDead == JF_TRUE
+	end loop
+
+end script JF_JackFrozen
+
+
+
+//-----------------------------------------------------------------------------
+// JF_JackWet -- Turns Jack into a block of ice when he is wet
+//-----------------------------------------------------------------------------
+begin script JF_JackWet
+
+	JF_Water_Spell		= 0
+	JF_Frozen_Timer		= 0
+	IceBlock			= 0
+
+start
+
+	begin loop
+		while JF_JackIsFrozen == JF_FALSE
+			if not {JF_JackFrost} on land and JF_JackFrost is not HELD
+				//run background script JF_JackOffshore
+			else
+				JF_Water_Spell = get spell MAGIC_TYPE_VECTOR_WATER at {JF_JackFrost} radius 3 
+				if JF_Water_Spell exists
+					// Put Jack in an ice block
+					IceBlock = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {JF_JackFrost}
+					override mesh for IceBlock with "..\models\m_freezeiceblock.bwm"
+					SCALE of IceBlock = JF_SCALE_OF_JACK
+					ALTITUDE of IceBlock = 0
+					JF_JackIsFrozen = JF_TRUE
+				end if
+			end if
+		end while
+
+		move JF_JackFrost position to {JF_JackFrost}
+		JF_JacksSpeed = 0.2
+		SPEED of JF_JackFrost = JF_JacksSpeed
+		disable JF_JackFrost indestructible
+
+		JF_Frozen_Timer = create timer for 30 seconds
+		wait until get JF_Frozen_Timer time remaining == 0 or JF_JackIsFrozen == JF_FALSE
+		wait until {JF_JackFrost} on land
+
+		if IceBlock exists
+			delete IceBlock with explode
+		end if
+
+		JF_JackIsFrozen = JF_FALSE
+		enable JF_JackFrost indestructible
+		run background script JF_JackRunsAway
+
+	until JF_JackFrost not exists
+	until JF_JackDead == JF_TRUE
+	end loop
+
+end script JF_JackWet
+
+
+
+//-----------------------------------------------------------------------------
+// JF_JacksTrail -- Leaves An Icy Trail Everywhere Jack Goes
+//-----------------------------------------------------------------------------
+begin script JF_JacksTrail
+
+	JF_Frozen_Building	= 0
+	SplashFX			= 0
+
+start
+
+	begin loop
+		wait until JF_JackFrost exists
+		add effect EFFECT_TYPE_BURN at {JF_JackFrost} strength -1 radius 0.1
+		SplashFX = create visual effect "gp_s_waterfall_ground.ves" strength 1 scale 1 at {JF_JackFrost} time 2
+		set SplashFX colour red JF_ICE_RED green JF_ICE_GREEN blue JF_ICE_BLUE
+
+		JF_Frozen_Building = 0
+		JF_Frozen_Building = get HOUSE at {JF_JackFrost} radius 12
+
+		if  JF_Frozen_Building exists and get JF_Frozen_Building temperature < 0
+			set JF_Frozen_Building temperature 0
+		end if
+
+	until JF_JackFrost not exists
+	until JF_JackDead == JF_TRUE
+	end loop
+
+end script JF_JacksTrail
+
+
+
+//-----------------------------------------------------------------------------
+// JF_IsJackDead -- Checks If The Player Has Killed Jack 
+//-----------------------------------------------------------------------------
+begin script JF_IsJackDead
+start
+
+	begin loop
+		if JF_JackSafe == JF_FALSE and (JF_JackFrost not exists or HEALTH of JF_JackFrost <= 0)
+			JF_JackDead = JF_TRUE
+		end if
+	until JF_JackSafe == JF_TRUE and JF_JackFrost not exists
+	until JF_JackDead == JF_TRUE
+	end loop
+
+end script JF_IsJackDead
+
+
+
+//-----------------------------------------------------------------------------
+// JF_JackBurnt -- Melts Jack When He Is burned
+//-----------------------------------------------------------------------------
+begin script JF_JackBurnt
+
+	JF_Fire_Spell1		= 0
+	JF_Fire_Spell2		= 0
+	SplashFX			= 0
+
+start
+
+	begin loop
+		// Test to see if jack has been burnt with a fire type spell
+		while JF_JackIsBurnt == JF_FALSE
+			JF_Fire_Spell1 = get spell MAGIC_TYPE_VECTOR_FLAME  at {JF_JackFrost} radius 4 
+			JF_Fire_Spell2 = get spell MAGIC_TYPE_BOMB_FIRE at {JF_JackFrost} radius 4 
+
+			if JF_Fire_Spell1 exists or JF_Fire_Spell2 exists
+				JF_JackIsBurnt = JF_TRUE
+			end if
+		end while
+
+		// If Jack is frozen (wet) unfreeze him otherwise turn him to water vapour and delete him (temporarily)
+		if JF_JackIsFrozen == JF_TRUE
+			JF_JackIsFrozen = JF_FALSE
+		else
+			SplashFX = create visual effect "gp_s_waterfall_ground.ves" strength 1 scale 3 at {JF_JackFrost} + {0, HEIGHT of JF_JackFrost / 2, 0} time 2
+			set SplashFX colour red JF_ICE_RED green JF_ICE_GREEN blue JF_ICE_BLUE
+			wait 1 second
+			JF_JackSafe = JF_TRUE
+			delete JF_JackFrost
+		end if
+
+	until JF_JackFrost not exists
+	until JF_JackDead == JF_TRUE
+	end loop
+
+end script JF_JackBurnt
+
+
+
+
+//-----------------------------------------------------------------------------
+// JF_JackRunsAway -- Get Jack to run away
+//-----------------------------------------------------------------------------
+begin script JF_JackRunsAway
+start
+
+	// Get Jack to flee
+	if JF_JackIsFrozen == JF_FALSE and JF_JackFrost exists and JF_JackDead == JF_FALSE
+		attach reaction JF_JackFrost REACTION_FLEE_FROM_OBJECT
+
+		// Move Jack to his spawn pos to leave the map
+		if JF_JackFrost exists and JF_JackDead == JF_FALSE and JF_JackIsFrozen == JF_FALSE
+			move JF_JackFrost position to {JF_JackSpawnPos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+			//move JF_JackFrost position to {JF_JackSpawnPos} 
+		end if
+
+		// Keep looping until Jack gets to his destination or he is screwed
+		begin loop
+		until {JF_JackFrost} at {JF_JackSpawnPos}
+		until JF_JackIsFrozen == JF_TRUE or JF_JackFrost not exists or JF_JackDead == JF_TRUE
+		end loop
+
+		// Has Jack made it to his destination ok?
+		if JF_JackFrost exists and JF_JackDead == JF_FALSE and JF_JackIsFrozen == JF_FALSE
+			move JF_JackFrost position to {JF_JackFrost}
+			run script JF_CreateJackEffects(JF_JackFrost, 20)
+			run script JF_ScaleJack(JF_SCALE_DOWN, 0.1, 30)
+			JF_JackSafe = JF_TRUE
+			delete JF_JackFrost
+		end if
+	end if
+
+end script JF_JackRunsAway
+
+
+
+//-----------------------------------------------------------------------------
+// JF_ScaleJack -- Scale jack upto his actual size
+//-----------------------------------------------------------------------------
+begin script JF_ScaleJack(Direction, EndSize, NumIncrements)
+
+	CurrentSize			= SCALE of JF_JackFrost
+	SizeChange			= 0
+	SizeIncrement		= 0
+
+start
+
+	if JF_JackFrost exists
+		if Direction == JF_SCALE_UP
+			SizeChange = EndSize - CurrentSize
+			SizeIncrement = SizeChange / NumIncrements
+
+			while CurrentSize < EndSize
+				SCALE of JF_JackFrost += SizeIncrement
+				CurrentSize = SCALE of JF_JackFrost
+			end while
+		else
+			SizeChange = CurrentSize - EndSize
+			SizeIncrement = SizeChange / NumIncrements
+
+			while CurrentSize > EndSize
+				SCALE of JF_JackFrost -= SizeIncrement
+				CurrentSize = SCALE of JF_JackFrost
+			end while
+		end if
+	end if
+
+end script JF_ScaleJack
+
+
+
+//-----------------------------------------------------------------------------
+// JF_CreateJackEffects -- Handles the create and delete effects
+//-----------------------------------------------------------------------------
+begin script JF_CreateJackEffects(Pos, NumEffects)
+
+	EffectCtr		= 0
+	Offset			= marker at {0, 2, 0}
+	SplashFX		= 0
+
+start
+
+	SplashFX = create visual effect "gp_s_townctr_beam.ves" strength 1 scale 1 at {Pos} time 3
+	set SplashFX colour red JF_ICE_RED green JF_ICE_GREEN blue JF_ICE_BLUE
+
+	while EffectCtr < NumEffects
+		SplashFX = create visual effect "gp_s_waterfall_ground.ves" strength 4 scale 1 at {Pos} + {Offset} time 3
+		set SplashFX colour red JF_ICE_RED green JF_ICE_GREEN blue JF_ICE_BLUE
+		EffectCtr++
+	end while
+
+end script JF_CreateJackEffects
+
+
+
+//-----------------------------------------------------------------------------
+// JF_AdvisorsWarning -- The advisors warn the player that Jack is freezing the field
+//-----------------------------------------------------------------------------
+begin script JF_AdvisorsWarning
+start
+
+	begin dialogue
+		eject good spirit
+		say "Oh my!  He has frozen our crops."
+		wait until read
+		eject evil spirit
+		say "Don't let him get away with that Boss!"
+		wait until read
+	end dialogue
+
+end script JF_AdvisorsWarning
+
+
+
+//-----------------------------------------------------------------------------
+// JF_JackOffshore -- Washes Jack Up To The Shore
+//-----------------------------------------------------------------------------
+begin script JF_JackOffshore
+start
+end script JF_JackOffshore
+
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------
+
+
+
+
+
+begin script JF_SetAndMaintainTime
+
+	Time		= JF_JACK_TIME + 0.5
+
+start
+
+	begin loop
+		set game time Time
+		wait 5 seconds
+	until JF_JackDead == JF_TRUE
+	end loop
+
+end script JF_SetAndMaintainTime

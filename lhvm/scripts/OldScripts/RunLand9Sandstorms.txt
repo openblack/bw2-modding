@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land 9 Sandstorms script
+//-----------------------------------------------------------------------------
+run script RunLand9Sandstorms
+
+begin script RunLand9Sandstorms
+
+start
+
+	run script Land9Sandstorms
+
+end script RunLand9Sandstorms

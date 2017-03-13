@@ -1,0 +1,5 @@
+run script RunLand9Nymphs
+begin script RunLand9Nymphs
+start
+	run script Land9Nymphs
+end script RunLand9Nymphs

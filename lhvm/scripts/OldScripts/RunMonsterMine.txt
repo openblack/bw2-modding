@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Monster Mine script
+//-----------------------------------------------------------------------------
+run script RunMonsterMine
+
+begin script RunMonsterMine
+
+start
+	
+	run script Land3MonsterMine
+	
+end script RunMonsterMine

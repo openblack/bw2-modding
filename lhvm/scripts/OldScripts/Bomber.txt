@@ -1,0 +1,363 @@
+
+
+global BomberActive
+global IWannaGetOff
+global CheckPointsPassed
+global BirdyComplete
+global RaceIsGo
+global WhoIsLast
+global LastGrenadePos
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** FINISH LINE SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleBirdyFinish (FinishLine, TotalCheckPoints)
+
+ RingEffect = 0
+
+start
+ RingEffect = create alex special effect SPOT_VISUAL_ALEX_HULAHOOP at {FinishLine}
+ HEIGHT of RingEffect = 25
+ DENSITY of RingEffect = 5
+ set RingEffect colour red 0 green 0 blue 255
+
+ wait until RaceIsGo == 1
+
+ begin loop
+	if camera position near {FinishLine} radius 20
+		if CheckPointsPassed >= TotalCheckPoints
+			set RingEffect colour red 0 green 255 blue 0
+			BirdyComplete = 1
+		else
+			begin dialogue
+				eject evil spirit
+				say "You gotta do the checkpoints first, Boss."
+				wait until read
+			end dialogue
+		end if
+	end if
+ until BirdyComplete != 0 or IWannaGetOff != 0
+ end loop
+ 
+ wait 3 seconds
+ delete RingEffect
+end script HandleBirdyFinish
+
+//-------------------------------------------------------------------------------------------------------
+// ** CHECKPOINT SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleBirdyCheckPoint (CheckPoint)
+
+ RingEffect = 0
+ CamPos = 0
+ CheckPointAlive = 0
+ Count = 0
+
+start
+
+ RingEffect = create alex special effect SPOT_VISUAL_ALEX_HULAHOOP at {CheckPoint}
+ HEIGHT of RingEffect = 25
+ DENSITY of RingEffect = 5
+ set RingEffect colour red 255 green 0 blue 0
+ 
+ wait until RaceIsGo == 1
+ Count = 0
+ while CheckPointAlive == 0 and IWannaGetOff == 0
+	if Count > 5
+		if WhoIsLast > 0 and CheckPointAlive == 0
+			WhoIsLast = marker at {CheckPoint}
+		end if
+		if {LastGrenadePos} near {CheckPoint} radius 20
+			CheckPointAlive = 1
+		end if
+		Count = 0
+	else
+		Count++
+	end if		
+ end while
+
+ if IWannaGetOff == 0
+ 	set RingEffect colour red 0 green 255 blue 0
+	begin dialogue
+		eject evil spirit
+		say "Direct Hit!"
+		wait until read
+	end dialogue
+	CheckPointsPassed++
+ end if
+
+ wait until IWannaGetOff != 0 or BirdyComplete != 0
+ wait 3 seconds
+ delete RingEffect
+ 
+end script HandleBirdyCheckPoint
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** SHRAPNEL BLAST SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script ShrapnelBlast
+
+ AimPos = 0
+ Boulder = 0
+ Power = 0
+ Smoke = 0
+ ExplodeBoulder = 0
+ RandomTime = 0
+ ShrapnelTimer = create timer for 0 seconds
+ Spangle = 0
+ 
+start
+ //AimPos = marker at get target from {TargettingRock} to {CatapultPos} distance 10 angle 0
+ AimPos = marker at {LastGrenadePos}+{number from -10 to 10, number from -10 to 10}
+ ALTITUDE of AimPos = number from 4 to 15
+ 
+ Boulder = create with angle 0 and scale 0.2 ROCK_OBJECT ROCK at {LastGrenadePos}
+ enable Boulder on fire 1
+ disable Boulder affected by wind
+ set Boulder temperature 2000
+ Power = number from 20 to 40
+ set Boulder velocity heading {AimPos} speed Power angular x number from 1 to 10 y 10 z number from 1 to 10 
+ 
+ RandomTime = number from 0 to 2
+ set ShrapnelTimer time to RandomTime seconds
+ while Boulder exists and Boulder is not HELD_ANY and Boulder is FLYING and ExplodeBoulder == 0
+ 	Smoke = create special effect SPOT_VISUAL_BONFIRE at {Boulder} time 0.1
+	SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of Smoke = 8.0
+//	if ALTITUDE of Boulder < 2
+//		delete Boulder with explosion
+//		ExplodeBoulder = 1
+	if get ShrapnelTimer time remaining <= 0
+		Spangle = create special effect SPOT_VISUAL_COMMAND_SUCCEED at {Boulder} time 0.5
+		delete Boulder with explosion
+		ExplodeBoulder = 1
+	end if
+ end while
+
+end script ShrapnelBlast
+
+//-------------------------------------------------------------------------------------------------------
+// ** GRENADE SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script GrenadesAway
+
+ CamPos = 0
+ CamFoc = 0
+ CamAlt = 0
+ Grenade = 0
+ AimFocus = 0
+ Explosive = 0
+ ExplodeGrenade = 0
+ Smoke = 0
+ Count = 0
+ RandomShrapnel = 0
+
+start
+	begin loop
+		if mouse right button down
+			CamFoc = marker at camera focus
+			CamPos = marker at camera position
+			ExplodeGrenade = 0
+			//Grenade = create MOBILE_OBJECT MOBILE_OBJECT_INFO_EGPT_BARREL at {CamPos}
+			Grenade = create OBJECT ROCK at {CamPos}
+			ALTITUDE of Grenade = ALTITUDE of CamPos
+			set Grenade velocity heading {CamFoc} speed 500
+			shake camera at camera position radius 40.0 amplitude 0.1 time 0.2
+			//play sound LH_SAMPLE_BARRELFIRED
+			// AUDIO_TODO play sound constant number from 89 to 90 SOUND_BANK_TYPE_SPELL			
+			
+			while Grenade exists and Grenade is FLYING and ExplodeGrenade == 0
+				//THE TIME AT THE END OF THIS LINE GIVES THE LENGTH OF THE FLUME
+				Smoke = create special effect SPOT_VISUAL_BONFIRE at {Grenade} time 0.1
+				SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of Smoke = 8.0
+				if ALTITUDE of Grenade < 4
+					ExplodeGrenade = 1
+				end if
+			end while
+
+			LastGrenadePos = marker at {Grenade}
+			Explosive = cast SPELL_FIREBALL_LEVEL_1 spell at {Grenade} + {number from -2 to 2,2,number from -2 to 2} from {Grenade} radius 1.0 time 2 curl 0
+			delete Grenade with explosion
+			RandomShrapnel = number from 5 to 10
+			Count = 0
+			while Count < RandomShrapnel
+				run background script ShrapnelBlast
+				Count++
+			end while			
+
+		end if
+	until IWannaGetOff != 0 or BirdyComplete != 0
+	end loop
+end script GrenadesAway
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** MAIN SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script Bomber
+
+ Highlight = 0
+ HighlightPos = marker at {838.935,1.340,1554.763}
+ FlyStartPos = marker at {832.768,17.306,1585.364}
+ FlyStartFoc = marker at {843.021,2.347,1510.960}
+ TotalCheckPoints = 12
+ BirdyCheckPoint[12]
+ BirdyFinishLine = marker at {1127.133,26.285,1459.908} // next to town centre
+ Count = 0
+ GoForLineComment = 0
+ ThisTime = 0
+ BestTime = 200
+ HighscoreBoard = 0
+ CrashLanding = 0
+ CrashCamPos = 0
+
+start
+ BirdyCheckPoint[0] = marker at {872.674,0.000,1365.366} // oneshot area
+ BirdyCheckPoint[1] = marker at {1094.058,16.348,1294.012} // golf hole 3
+ BirdyCheckPoint[2] = marker at {1172.268,7.576,1348.383} // coastal chasm
+ BirdyCheckPoint[3] = marker at {1195.572,0.299,1474.457} // in chasm
+ BirdyCheckPoint[4] = marker at {1053.526,16.949,1368.826} // in alley by citadel
+ BirdyCheckPoint[5] = marker at {1078.543,7.872,1494.744} // coastal ramp by town
+ BirdyCheckPoint[6] = marker at {1061.428,0.000,1614.353} // between mainland and creature trophies
+ BirdyCheckPoint[7] = marker at {1300.677,26.452,1615.113} // ramp down to extended peninsula, golf hole 9
+ BirdyCheckPoint[8] = marker at {1351.919,13.298,1491.134} // ramp to beach past creature section
+ BirdyCheckPoint[9] = marker at {1398.527,26.798,1366.450} // on peak near sandy flat test patch
+ BirdyCheckPoint[10] = marker at {1287.334,27.900,1388.088} // mountain pass in creature section
+ BirdyCheckPoint[11] = marker at {1244.181,27.335,1428.743} // over bridge from town
+
+HighscoreBoard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {HighlightPos}
+set HighscoreBoard score BestTime
+
+/// TEST ONLY!!
+begin cinema
+	set camera position to {839.330,16.249,1582.239}
+	set camera focus to {838.741,2.197,1553.828}
+end cinema
+
+ begin loop
+	Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of Highlight = 10
+	wait until Highlight right clicked
+	delete Highlight
+	
+	BirdyComplete = 0
+	RaceIsGo = 0
+	IWannaGetOff = 0
+	CheckPointsPassed = 0
+	GoForLineComment = 0
+	WhoIsLast = 0
+	CrashLanding = 0
+	LastGrenadePos = marker at {0.000,0.000,0.000}
+	
+	Count = 0
+	while Count < TotalCheckPoints
+		run background script HandleBirdyCheckPoint (BirdyCheckPoint[Count])
+		Count++
+	end while
+	
+	run background script HandleBirdyFinish (BirdyFinishLine, TotalCheckPoints)
+	
+	begin cinema
+		set camera position to {BirdyCheckPoint[0]}+{12.500,7.500,12.500}
+		set camera focus to {BirdyCheckPoint[0]}
+		say "Bomb all the checkpoint rings in any order."
+		wait until read
+		wait 1 seconds
+		set camera position to {BirdyFinishLine}+{12.500,7.500,12.500}
+		set camera focus to {BirdyFinishLine}
+		say "Then fly through the blue checkpoint to finish."
+		wait until read
+		wait 1 seconds
+		set camera position to {FlyStartPos}
+		set camera focus to {FlyStartFoc}
+		say "Press Shift F6 to activate BirdCam."
+		wait until read
+		say "Then press LMB to fly forwards and steer with the mouse."
+		wait until read
+		say "Press RMB to fire a bomb."
+		wait until read
+		RaceIsGo = 1
+	end cinema		
+
+	// start upwards timer
+	set countdown timer draw SCRIPT_COUNTDOWN_DRAW_TOP_RIGHT
+	enable countdown timer up with 0 seconds
+
+	run background script GrenadesAway
+	
+	while IWannaGetOff == 0 and BirdyComplete == 0
+		if key KB_ESC down
+			IWannaGetOff = 1
+		end if
+		
+		CrashCamPos = marker at camera position
+		if ALTITUDE of CrashCamPos < 0
+			IWannaGetOff = 1
+			CrashLanding = 1
+		end if
+		
+		if CheckPointsPassed >= (TotalCheckPoints-1) and GoForLineComment == 0
+			WhoIsLast = 1
+			wait 0.5 seconds
+			GoForLineComment = 1
+			begin dialogue
+				eject evil spirit
+				make evil spirit point at {WhoIsLast}
+				say "One more to go, Boss!"
+				wait until read
+			end dialogue			
+		elsif CheckPointsPassed >= TotalCheckPoints and GoForLineComment == 1
+			GoForLineComment = 2
+			begin dialogue
+				eject good spirit
+				make good spirit point at {BirdyFinishLine}
+				say "GO FOR THE FINISH LINE!!!"
+				wait until read
+			end dialogue
+		end if
+	end while
+
+	ThisTime = get countdown timer time
+	disable countdown timer
+	if IWannaGetOff == 0
+		begin cinema
+			move camera position to {BirdyFinishLine} time 4
+			set fade red 0 green 0 blue 0 time 2
+			wait 2 seconds
+			set camera position to {FlyStartPos}
+			set camera focus to {FlyStartFoc}
+			set fade in time 2
+			wait 2 seconds
+			say "You finished in a time of $d" with number ThisTime
+			wait until read
+			if ThisTime < BestTime
+				BestTime = ThisTime
+				say "You've set a new record!!"
+				set HighscoreBoard score BestTime
+				wait until read
+			end if
+		end cinema
+	elsif CrashLanding == 1
+		begin cinema
+			say "YOU CRASHED!!"
+			wait until read		
+			set camera position to {FlyStartPos}
+			set camera focus to {FlyStartFoc}
+		end cinema
+	else
+		begin dialogue
+			say "YOU QUIT"
+			wait until read
+		end dialogue
+	end if
+	
+ until BomberActive == 1 // Eternity
+ end loop
+	
+end script Bomber

@@ -1,0 +1,768 @@
+//-----------------------------------------------------------------------------
+//	Physics demo for GDC 2004
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define PD_TRUE									= 1
+define PD_FALSE									= 0
+define PD_NUMBER_OF_ROCKS_FROM_SKY				= 50
+define PD_NUMBER_OF_ROCKS_IN_ROCKFALL			= 40
+define PD_NUMBER_OF_BASIC_STACKING_OBJECTS		= 10
+define PD_NUMBER_OF_AVERAGE_STACKING_OBJECTS	= 10
+define PD_NUMBER_OF_WALL_BREAKING_ROCKS			= 10
+
+define PD_NOTHING_ACTIVE						= 0
+define PD_SKY_ROCKS_ACTIVE						= 1
+define PD_STACKING_ACTIVE						= 2
+define PD_ATTACK_WALL_ACTIVE					= 3
+define PD_GREEK_STATUE_ACTIVE					= 4
+define PD_ROCKFALL_ACTIVE						= 5
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global PD_SkyRocks[PD_NUMBER_OF_ROCKS_FROM_SKY]
+global PD_RockfallRocks[PD_NUMBER_OF_ROCKS_IN_ROCKFALL]
+global PD_BasicStackingObjects[PD_NUMBER_OF_BASIC_STACKING_OBJECTS]
+global PD_AverageStackingObjects[PD_NUMBER_OF_AVERAGE_STACKING_OBJECTS]
+global PD_WallBreakingRocks[PD_NUMBER_OF_WALL_BREAKING_ROCKS]
+
+global PD_GreekStatue						= 0
+global PD_WhatsActive						= PD_NOTHING_ACTIVE
+
+// Scrolls
+global PD_SkyRocksScroll					= 0
+global PD_BasicStackingScroll				= 0
+global PD_AverageStackingScroll				= 0
+global PD_AttackingWallScroll				= 0
+global PD_GreekStatueScroll					= 0
+global PD_RockfallScroll					= 0
+
+global PD_BasicStackingDone					= PD_FALSE
+global PD_AverageStackingDone				= PD_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script PD_RocksFromSky
+define script PD_BasicStacking
+define script PD_AverageStacking
+define script PD_AttackWall
+define script PD_GreekStatue
+define script PD_Rockfall
+define script PD_HighlightPhysicsDemo
+
+run script GDCPhysicsDemo
+
+//-----------------------------------------------------------------------------
+// Physics demo
+//-----------------------------------------------------------------------------
+begin script GDCPhysicsDemo
+
+	OnPhysicsIsland			= PD_FALSE
+	JapaneseTown			= 0
+	GreekTown				= 0
+	JapaneseTownPos			= marker at {1250.85, 239, 930.17}
+	GreekTownPos			= marker at {600.74, 112, 960.39}
+
+start
+
+	OnPhysicsIsland = PD_FALSE
+	// Check to see what map we are on - we only have the 3 town centres on land 3
+	JapaneseTown = get TOWN at {JapaneseTownPos} radius 30
+	if JapaneseTown exists
+		GreekTown = get TOWN at {GreekTownPos} radius 30
+		if GreekTown exists
+			OnPhysicsIsland = PD_TRUE
+		end if
+	end if
+
+
+	// Run the correct physics demos for the land we're on
+	if OnPhysicsIsland == PD_TRUE
+	
+		// Set time and then stop it
+		set game time 13.5
+		disable game time
+		// Turn off the influence ring
+		begin camera
+			start swave camera shake strength 0.0
+		end camera
+
+		// Physics island scripts
+		run background script PD_RocksFromSky
+		run background script PD_BasicStacking
+		run background script PD_AverageStacking
+		run background script PD_Rockfall
+		run background script PD_AttackWall
+		run background script PD_GreekStatue
+
+		// highlight what the demos are
+		run background script PD_HighlightPhysicsDemo
+	end if
+
+end script GDCPhysicsDemo
+
+
+//-----------------------------------------------------------------------------
+// Rocks fall from sky demo
+//-----------------------------------------------------------------------------
+begin script PD_RocksFromSky
+
+	ALT			= 50
+	Counter		= 0
+	ScrollPos	= marker at {1741.008, 172.682, 954.261}
+	SkyRockPos	= marker at {1712.926, 178.626, 955.996}
+
+	WatchRocksKickedOffPos = marker at {1793.990, 236.670, 983.366}
+	WatchRocksKickedOffFoc = marker at {1793.203, 236.098, 983.134}
+
+start
+
+	// Create a scroll for the player to click on
+	PD_SkyRocksScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	begin loop
+		wait until PD_SkyRocksScroll right clicked or PD_WhatsActive != PD_SKY_ROCKS_ACTIVE
+
+		Counter = 0
+		while Counter < PD_NUMBER_OF_ROCKS_FROM_SKY
+			if PD_SkyRocks[Counter] exists
+				delete PD_SkyRocks[Counter]
+			end if
+			Counter++
+
+			if PD_SkyRocks[Counter] exists
+				delete PD_SkyRocks[Counter]
+			end if
+			Counter++
+
+			if PD_SkyRocks[Counter] exists
+				delete PD_SkyRocks[Counter]
+			end if
+			Counter++
+
+			if PD_SkyRocks[Counter] exists
+				delete PD_SkyRocks[Counter]
+			end if
+			Counter++
+
+			if PD_SkyRocks[Counter] exists
+				delete PD_SkyRocks[Counter]
+			end if
+			Counter++
+		end while
+
+		if PD_SkyRocksScroll right clicked
+			clear right clicked object
+
+			PD_WhatsActive = PD_SKY_ROCKS_ACTIVE
+
+			if camera position not near {PD_SkyRocksScroll} radius 150
+				begin camera
+					move camera position to {WatchRocksKickedOffPos} time 2
+					move camera focus to {WatchRocksKickedOffFoc} time 2
+				end camera
+			end if
+
+			Counter = 0
+			// Create the rocks then watch them fall
+			while Counter < PD_NUMBER_OF_ROCKS_FROM_SKY
+				// Create the rocks(1)
+				PD_SkyRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {SkyRockPos} + {number from -20 to 20, number from -20 to 20}
+				ALTITUDE of PD_SkyRocks[Counter] = ALT + number from -5 to 5
+				SCALE of PD_SkyRocks[Counter] = 0.8
+				set PD_SkyRocks[Counter] velocity heading {SkyRockPos} speed number from 10 to 50
+				set PD_SkyRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(2)
+				PD_SkyRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {SkyRockPos} + {number from -20 to 20, number from -20 to 20}
+				ALTITUDE of PD_SkyRocks[Counter] = ALT + number from -5 to 5
+				SCALE of PD_SkyRocks[Counter] = 1.1
+				set PD_SkyRocks[Counter] velocity heading {SkyRockPos} speed number from 10 to 50
+				set PD_SkyRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(3)
+				PD_SkyRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {SkyRockPos} + {number from -20 to 20, number from -20 to 20}
+				ALTITUDE of PD_SkyRocks[Counter] = ALT + number from -5 to 5
+				SCALE of PD_SkyRocks[Counter] = 1.0
+				set PD_SkyRocks[Counter] velocity heading {SkyRockPos} speed number from 10 to 50
+				set PD_SkyRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(4)
+				PD_SkyRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {SkyRockPos} + {number from -20 to 20, number from -20 to 20}
+				ALTITUDE of PD_SkyRocks[Counter] = ALT + number from -5 to 5
+				SCALE of PD_SkyRocks[Counter] = 1.0
+				set PD_SkyRocks[Counter] velocity heading {SkyRockPos} speed number from 10 to 50
+				set PD_SkyRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(5)
+				PD_SkyRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {SkyRockPos} + {number from -20 to 20, number from -20 to 20}
+				ALTITUDE of PD_SkyRocks[Counter] = ALT + number from -5 to 5
+				SCALE of PD_SkyRocks[Counter] = (number from 80 to 120 ) / 100
+				set PD_SkyRocks[Counter] velocity heading {SkyRockPos} speed number from 10 to 50
+				set PD_SkyRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+			end while
+		end if
+	end loop
+
+end script PD_RocksFromSky
+
+
+//-----------------------------------------------------------------------------
+// Basic stacking demo
+//-----------------------------------------------------------------------------
+begin script PD_BasicStacking
+
+	Index				= 0
+	Counter				= 0
+	Altitude			= 0
+	TimesThroughLoop	= 0
+	ScrollPos			= marker at {1268.609, 237.597, 1034.770}
+	TablePos			= marker at {1260.082, 237.844, 1026.719}
+
+	GetCloseToAreaPos	= marker at {1254.091, 247.437, 1044.292}
+	GetCloseToAreaFoc	= marker at {1254.566, 247.066, 1043.495}
+
+start
+
+	// Create a scroll for the player to click on
+	PD_BasicStackingScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	begin loop
+		wait until PD_BasicStackingScroll right clicked or PD_WhatsActive != PD_STACKING_ACTIVE
+
+		if PD_BasicStackingScroll right clicked
+			clear right clicked object
+
+			PD_WhatsActive = PD_STACKING_ACTIVE
+			TimesThroughLoop++
+
+			if camera position not near {PD_BasicStackingScroll} radius 30
+				begin camera
+					move camera position to {GetCloseToAreaPos} time 2
+					move camera focus to {GetCloseToAreaFoc} time 2
+				end camera
+			end if
+
+			// Create the bucket and drop it onto the table
+			if TimesThroughLoop <= 10
+				PD_BasicStackingObjects[Index] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {TablePos}
+				Altitude += 1
+				ALTITUDE of PD_BasicStackingObjects[Index] = Altitude
+
+				if TimesThroughLoop == 1
+					override mesh for PD_BasicStackingObjects[Index] with "m_japanesetable"
+				elsif TimesThroughLoop <= 10
+					override mesh for PD_BasicStackingObjects[Index] with "..\features\M_GREEK_TF_URN03_N"
+					set PD_BasicStackingObjects[Index] angular velocity x 0 y 0 z 0
+				end if
+
+				// Put the object into physics
+				set PD_BasicStackingObjects[Index] velocity heading {TablePos} speed 1
+
+				if TimesThroughLoop == 10
+					PD_BasicStackingDone = PD_TRUE
+				end if
+
+				Index++
+			else
+				// Delete the objects
+				Index = 0
+				Counter = 0
+				Altitude = 0
+				TimesThroughLoop = 0
+				while Counter < PD_NUMBER_OF_BASIC_STACKING_OBJECTS
+					delete PD_BasicStackingObjects[Counter]
+					Counter++
+				end while
+			end if
+		else
+			// Some other scroll was clicked on so delete this scripts objects
+			Index = 0
+			Counter = 0
+			Altitude = 0
+			TimesThroughLoop = 0
+			while Counter < PD_NUMBER_OF_BASIC_STACKING_OBJECTS
+				delete PD_BasicStackingObjects[Counter]
+				Counter++
+			end while
+		end if
+	end loop
+
+end script PD_BasicStacking
+
+
+//-----------------------------------------------------------------------------
+// Average stacking demo
+//-----------------------------------------------------------------------------
+begin script PD_AverageStacking
+
+	Scale				= 0
+	Angle				= 0
+	TimesThroughLoop	= 0
+	Index				= 0
+	Counter				= 0
+	ScrollPos			= marker at {1276.912, 239.271, 996.223}
+	//TablePos			= marker at {1264.468, 239.144, 995.087}
+	TablePos			= marker at {1265.032, 239.656, 984.756}
+
+	GetCloseToScrollPos	= marker at {1251.431, 259.546, 1001.614}
+	GetCloseToScrollFoc = marker at {1252.089, 259.025, 1001.070}
+
+start
+
+	// Make sure the scroll doesn't appear until the basic stacking has been done
+	wait until PD_BasicStackingDone == PD_TRUE
+
+	// Create a scroll for the player to click on
+	PD_AverageStackingScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	begin loop
+		wait until PD_AverageStackingScroll right clicked or PD_WhatsActive != PD_STACKING_ACTIVE
+
+		if PD_AverageStackingScroll right clicked
+			clear right clicked object
+
+			PD_WhatsActive = PD_STACKING_ACTIVE
+			TimesThroughLoop++
+
+			if camera position not near {PD_AverageStackingScroll} radius 80
+				begin camera
+					move camera position to {GetCloseToScrollPos} time 2
+					move camera focus to {GetCloseToScrollFoc} time 2
+				end camera
+			end if
+
+			if TimesThroughLoop <= 10
+				// Create the bucket and drop it onto the table
+				PD_AverageStackingObjects[Index] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {TablePos}
+				override mesh for PD_AverageStackingObjects[Index] with "m_japanesetable"
+				
+				// Handle the objects
+				if TimesThroughLoop == 1
+					SCALE of PD_AverageStackingObjects[Index] = 6
+					ALTITUDE of PD_AverageStackingObjects[Index] = 3
+				elsif TimesThroughLoop == 2
+					SCALE of PD_AverageStackingObjects[Index] = 4.75
+					ALTITUDE of PD_AverageStackingObjects[Index] = 10
+				elsif TimesThroughLoop == 3
+					SCALE of PD_AverageStackingObjects[Index] = 3.5
+					ALTITUDE of PD_AverageStackingObjects[Index] = 10
+				elsif TimesThroughLoop == 4
+					SCALE of PD_AverageStackingObjects[Index] = 2.25
+					ALTITUDE of PD_AverageStackingObjects[Index] = 12
+				elsif TimesThroughLoop == 5
+					SCALE of PD_AverageStackingObjects[Index] = 1
+					ALTITUDE of PD_AverageStackingObjects[Index] = 12
+				elsif TimesThroughLoop == 6
+					SCALE of PD_AverageStackingObjects[Index] = 1
+					ALTITUDE of PD_AverageStackingObjects[Index] = 14
+					XANGLE of PD_AverageStackingObjects[Index] = 180
+				elsif TimesThroughLoop == 7
+					SCALE of PD_AverageStackingObjects[Index] = 2.25
+					ALTITUDE of PD_AverageStackingObjects[Index] = 15
+					XANGLE of PD_AverageStackingObjects[Index] = 180
+				elsif TimesThroughLoop == 8
+					SCALE of PD_AverageStackingObjects[Index] = 3.5
+					ALTITUDE of PD_AverageStackingObjects[Index] = 18
+					XANGLE of PD_AverageStackingObjects[Index] = 180
+				elsif TimesThroughLoop == 9
+					SCALE of PD_AverageStackingObjects[Index] = 4.75
+					ALTITUDE of PD_AverageStackingObjects[Index] = 20
+					XANGLE of PD_AverageStackingObjects[Index] = 180
+				elsif TimesThroughLoop == 10
+					SCALE of PD_AverageStackingObjects[Index] = 6
+					ALTITUDE of PD_AverageStackingObjects[Index] = 25
+					XANGLE of PD_AverageStackingObjects[Index] = 180
+				end if
+
+				// Put the object into physics
+				if TimesThroughLoop <= 10
+					set PD_AverageStackingObjects[Index] velocity heading {TablePos} speed 1
+
+					if TimesThroughLoop == 10
+						PD_AverageStackingDone = PD_TRUE
+					end if
+
+					Index++
+				end if
+			else
+				// Delete the objects
+				Index = 0
+				Counter = 0
+				TimesThroughLoop = 0
+				while Counter < PD_NUMBER_OF_AVERAGE_STACKING_OBJECTS
+					delete PD_AverageStackingObjects[Counter]
+					Counter++
+				end while
+			end if
+		else
+			// Some other scroll was clicked on so delete this scripts objects
+			Index = 0
+			Counter = 0
+			TimesThroughLoop = 0
+			while Counter < PD_NUMBER_OF_AVERAGE_STACKING_OBJECTS
+				delete PD_AverageStackingObjects[Counter]
+				Counter++
+			end while
+		end if
+	end loop
+
+end script PD_AverageStacking
+
+
+//-----------------------------------------------------------------------------
+// Attacking wall demo
+//-----------------------------------------------------------------------------
+begin script PD_AttackWall
+
+	SiegeWeaponOffToSidePos					= marker at {1026.096, 143.083, 1098.066}
+	SiegeWeaponOtherSideOfWallCentrePos		= marker at {891.231, 91.044, 969.094}
+	SiegeWeaponOtherSideOfWallSidePos		= marker at {876.529, 110.010, 1114.270}
+	WallPos									= marker at {950.094, 95.871, 1036.109}
+	ScrollPos								= marker at {985.658, 140.224, 1115.486}
+
+	LookAtTargetPos		= marker at {841.860, 199.907, 1125.683}
+	LookAtTargetFoc		= marker at {842.436, 199.249, 1125.198}
+
+	MyRockPos			= marker at {957.157, 99.404, 1067.927}
+
+	SiegeOne			= 0
+	SiegeTwo			= 0
+	SiegeThree			= 0
+	Counter				= 0
+	Wall				= 0
+	DoneRockCreate		= PD_FALSE
+	DoneWallAttack		= PD_FALSE
+
+start
+
+	// Create a scroll for the player to click on
+	PD_AttackingWallScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	begin loop
+		wait until PD_AttackingWallScroll right clicked or PD_WhatsActive != PD_ATTACK_WALL_ACTIVE
+
+		if PD_AttackingWallScroll right clicked
+			clear right clicked object
+
+			PD_WhatsActive = PD_ATTACK_WALL_ACTIVE
+
+			if camera position not near {PD_AttackingWallScroll} radius 100
+				begin camera
+					move camera position to {LookAtTargetPos} time 2
+					move camera focus to {LookAtTargetFoc} time 2
+				end camera
+			end if
+
+			// Get the wall segment to attack
+			if DoneWallAttack == PD_FALSE
+				DoneWallAttack = PD_TRUE
+				Wall = get wall segment nearest {WallPos} radius 50
+
+				// Create the 3 siege weapons and make them attack the wall
+				if not SiegeOne exists
+					SiegeOne = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to TRIBE_TYPE_GREEK at {SiegeWeaponOffToSidePos}
+				end if
+
+				if not SiegeTwo exists
+					SiegeTwo = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to TRIBE_TYPE_GREEK at {SiegeWeaponOtherSideOfWallCentrePos} 
+				end if
+
+				if not SiegeThree exists
+					SiegeThree = create siege weapon SIEGE_BALANCE_TYPE_LEVEL_1 belonging to TRIBE_TYPE_GREEK at {SiegeWeaponOtherSideOfWallSidePos} 
+				end if
+
+				move siege weapon SiegeOne to attack Wall
+				move siege weapon SiegeTwo to attack Wall
+				move siege weapon SiegeThree to attack Wall
+			end if
+
+			// Create the rocks
+			if DoneRockCreate == PD_FALSE
+				DoneRockCreate = PD_TRUE
+				Counter = 0
+				while Counter < PD_NUMBER_OF_WALL_BREAKING_ROCKS
+					PD_WallBreakingRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {MyRockPos} + {number from -5 to 5, 10, number from 5 to 5}
+					Counter++
+				end while
+			end if
+		else
+			// Some other scroll was clicked on so delete this scripts objects - can only do the rocks
+			Counter = 0
+			while Counter < PD_NUMBER_OF_WALL_BREAKING_ROCKS
+				if PD_WallBreakingRocks[Counter] exists
+					delete PD_WallBreakingRocks[Counter]
+				end if
+				Counter++
+			end while
+
+			// Stop the siege weapons from attacking - doing it this way as deleting them crashes the game
+			Wall = get wall segment nearest {0, 0, 0} radius 50
+			move siege weapon SiegeOne to attack Wall
+			move siege weapon SiegeTwo to attack Wall
+			move siege weapon SiegeThree to attack Wall
+
+			DoneRockCreate = PD_FALSE
+			DoneWallAttack = PD_FALSE
+		end if
+	end loop
+
+end script PD_AttackWall
+
+
+//-----------------------------------------------------------------------------
+// Greek statue demo
+//-----------------------------------------------------------------------------
+begin script PD_GreekStatue
+
+	ScrollPos			= marker at {936.470, 96.142, 956.568}
+	StautePos			= marker at {733.207, 113.647, 1011.341}
+	EarthquakeStartPos	= marker at {889.714, 90.623, 1034.325}
+	EarthquakeEndPos	= marker at {642.321, 90.195, 986.808}
+
+	WatchStatueDestroyPos	= marker at {720.975, 122.787, 1012.078}
+	WatchStatueDestroyFoc	= marker at {742.807, 118.237, 1008.011}
+	Waypoint				= marker at {775.869, 129.798, 1029.790}
+
+	Anotherbodgeobject		= 0
+
+start
+
+	// Create a scroll for the player to click on
+	PD_GreekStatueScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	begin loop
+		wait until PD_GreekStatueScroll right clicked or PD_WhatsActive != PD_GREEK_STATUE_ACTIVE
+
+		if PD_GreekStatueScroll right clicked
+			clear right clicked object
+
+			PD_WhatsActive = PD_GREEK_STATUE_ACTIVE
+
+			if not PD_GreekStatue exists
+				PD_GreekStatue = create EMBELLISHMENT EMBELLISHMENT_INFO_GREEK_STATUE at {StautePos}
+				//ANGLE of PD_GreekStatue = 90
+				ANGLE of PD_GreekStatue = -120
+			end if
+
+			begin camera
+				Anotherbodgeobject = create terminal object at {EarthquakeEndPos} with duration of 15 seconds
+				attach atmos "spells" to Anotherbodgeobject range 500
+				set Anotherbodgeobject atmos group 5 time 1 seconds
+
+				move camera focus to {PD_GreekStatue} time 2
+				wait 2 seconds
+				move camera position to {Waypoint} time 2
+				wait until camera position near {Waypoint} radius 10
+				move camera position to {WatchStatueDestroyPos} + {0, 10, 0} time 3
+				move camera focus to {WatchStatueDestroyFoc} time 5
+				wait 6 seconds
+
+				play sound "EARTHQUAKECRACK"
+				set Anotherbodgeobject atmos group 6 time 1 seconds				
+
+				// Cast the earthquake
+				create earthquake start {EarthquakeEndPos} end {EarthquakeStartPos}
+				play sound "EARTHQUAKEEXPLOSION"
+			end camera
+			
+			wait 5 seconds
+
+			// Make the statue crumble
+			delete PD_GreekStatue with explode
+			detach atmos from Anotherbodgeobject
+		else
+			// Some other scroll was clicked on so delete this scripts objects
+			if PD_GreekStatue exists
+				delete PD_GreekStatue
+			end if
+		end if
+	end loop
+
+end script PD_GreekStatue
+
+
+//-----------------------------------------------------------------------------
+// Rockfall demo
+//-----------------------------------------------------------------------------
+begin script PD_Rockfall
+
+	START_IN_AIR				= PD_TRUE
+	ALT							= 40
+    Counter						= 0
+
+	ScrollPos					= marker at {1218.585, 239.801, 971.682}
+	MyRockPos					= marker at {1186.986, 208.362, 982.861}
+
+	CloseUpOnFallPos			= marker at {1019.766, 122.871, 1006.109}
+	CloseUpOnFallFoc			= marker at {1020.674, 123.266, 1005.966}
+
+start
+
+	// Create a scroll for the player to click on
+	PD_RockfallScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	begin loop
+		wait until PD_RockfallScroll right clicked or PD_WhatsActive != PD_ROCKFALL_ACTIVE
+
+		Counter = 0
+		while Counter < PD_NUMBER_OF_ROCKS_IN_ROCKFALL
+			if PD_RockfallRocks[Counter] exists
+				delete PD_RockfallRocks[Counter]
+			end if
+			Counter++
+
+			if PD_RockfallRocks[Counter] exists
+				delete PD_RockfallRocks[Counter]
+			end if
+			Counter++
+
+			if PD_RockfallRocks[Counter] exists
+				delete PD_RockfallRocks[Counter]
+			end if
+			Counter++
+
+			if PD_RockfallRocks[Counter] exists
+				delete PD_RockfallRocks[Counter]
+			end if
+			Counter++
+
+			if PD_RockfallRocks[Counter] exists
+				delete PD_RockfallRocks[Counter]
+			end if
+			Counter++
+		end while
+
+
+		if PD_RockfallScroll right clicked
+			clear right clicked object
+
+			PD_WhatsActive = PD_ROCKFALL_ACTIVE
+
+			if camera position not near {PD_RockfallScroll} radius 100
+				begin camera
+					move camera position to {CloseUpOnFallPos} time 2
+					move camera focus to {CloseUpOnFallFoc} time 3
+					wait 2 seconds
+				end camera
+			end if
+
+			Counter = 0
+			while Counter < PD_NUMBER_OF_ROCKS_IN_ROCKFALL
+				// Create the rocks(1)
+				PD_RockfallRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {MyRockPos} + {number from -20 to 20, number from -20 to 20}
+				if START_IN_AIR == PD_TRUE
+					ALTITUDE of PD_RockfallRocks[Counter] = ALT
+				end if
+				SCALE of PD_RockfallRocks[Counter] = 0.8
+				set PD_RockfallRocks[Counter] velocity heading {MyRockPos} speed number from 10 to 50
+				set PD_RockfallRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(2)
+				PD_RockfallRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {MyRockPos} + {number from -20 to 20, number from -20 to 20}
+				if START_IN_AIR == PD_TRUE
+					ALTITUDE of PD_RockfallRocks[Counter] = ALT
+				end if
+				SCALE of PD_RockfallRocks[Counter] = 1.1
+				set PD_RockfallRocks[Counter] velocity heading {MyRockPos} speed number from 10 to 50
+				set PD_RockfallRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(3)
+				PD_RockfallRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {MyRockPos} + {number from -20 to 20, number from -20 to 20}
+				if START_IN_AIR == PD_TRUE
+					ALTITUDE of PD_RockfallRocks[Counter] = ALT
+				end if
+				SCALE of PD_RockfallRocks[Counter] = 1.0
+				set PD_RockfallRocks[Counter] velocity heading {MyRockPos} speed number from 10 to 50
+				set PD_RockfallRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(4)
+				PD_RockfallRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {MyRockPos} + {number from -20 to 20, number from -20 to 20}
+				if START_IN_AIR == PD_TRUE
+					ALTITUDE of PD_RockfallRocks[Counter] = ALT
+				end if
+				SCALE of PD_RockfallRocks[Counter] = 1.0
+				set PD_RockfallRocks[Counter] velocity heading {MyRockPos} speed number from 10 to 50
+				set PD_RockfallRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+
+				// Create the rocks(5)
+				PD_RockfallRocks[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {MyRockPos} + {number from -20 to 20, number from -20 to 20}
+				if START_IN_AIR == PD_TRUE
+					ALTITUDE of PD_RockfallRocks[Counter] = ALT
+				end if
+				SCALE of PD_RockfallRocks[Counter] = (number from 80 to 120 ) / 100
+				set PD_RockfallRocks[Counter] velocity heading {MyRockPos} speed number from 10 to 50
+				set PD_RockfallRocks[Counter] angular velocity x number from 1 to 20 y number from 1 to 20 z number from 1 to 20
+				Counter++
+			end while
+		end if
+	end loop
+
+end script PD_Rockfall
+
+
+//-----------------------------------------------------------------------------
+// Display a line telling the player what demo they are looking at
+//-----------------------------------------------------------------------------
+begin script PD_HighlightPhysicsDemo
+
+	RAD			= 10
+
+start
+
+	begin loop
+		if hand position near {PD_SkyRocksScroll} radius RAD
+			begin dialogue
+				say "Physics Demo: Rocks from the Sky"
+				wait until not hand position near {PD_SkyRocksScroll} radius RAD or PD_WhatsActive == PD_SKY_ROCKS_ACTIVE
+			end dialogue
+		elsif hand position near {PD_BasicStackingScroll} radius RAD
+			begin dialogue
+				say "Physics Demo: Stacking level 1"
+				wait until not hand position near {PD_BasicStackingScroll} radius RAD or PD_WhatsActive == PD_STACKING_ACTIVE
+			end dialogue
+		elsif hand position near {PD_AverageStackingScroll} radius RAD
+			begin dialogue
+				say "Physics Demo: Stacking level 2"
+				wait until not hand position near {PD_AverageStackingScroll} radius RAD or PD_WhatsActive == PD_STACKING_ACTIVE
+			end dialogue
+		elsif hand position near {PD_AttackingWallScroll} radius RAD
+			begin dialogue
+				say "Physics Demo: Wall Fracture"
+				wait until not hand position near {PD_AttackingWallScroll} radius RAD or PD_WhatsActive == PD_ATTACK_WALL_ACTIVE
+			end dialogue
+		elsif hand position near {PD_GreekStatueScroll} radius RAD
+			begin dialogue
+				say "Physics Demo: Destruction"
+				wait until not hand position near {PD_GreekStatueScroll} radius RAD or PD_WhatsActive == PD_GREEK_STATUE_ACTIVE
+			end dialogue
+		elsif hand position near {PD_RockfallScroll} radius RAD
+			begin dialogue
+				say "Physics Demo: Rockfall"
+				wait until not hand position near {PD_RockfallScroll} radius RAD or PD_WhatsActive == PD_ROCKFALL_ACTIVE
+			end dialogue
+		end if
+	end loop
+
+end script PD_HighlightPhysicsDemo
+
+
+//-----------------------------------------------------------------------------
+// End script
+//-----------------------------------------------------------------------------

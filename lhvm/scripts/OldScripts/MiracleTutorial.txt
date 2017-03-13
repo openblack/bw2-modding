@@ -1,0 +1,713 @@
+//------------------------------------------------------------------------------------------------------------------------
+// MIRACLE TUTORIALS
+//------------------------------------------------------------------------------------------------------------------------
+
+global TotalNormalMiracles
+global TotalVillagerMiracles
+global IdleVillagerMax = 0	/// replace with Persistant Data Variable incremented by main game scripts
+
+
+//-------------------------------------------------------------------------------------
+// Aggression 0
+//-------------------------------------------------------------------------------------
+
+begin script AggressionTutorial
+start
+	begin dialogue
+		eject evil spirit
+		say "Aggression: Right click near your creature or villagers to cast it"
+		wait until read
+	end dialogue
+end script AggressionTutorial
+
+
+//-------------------------------------------------------------------------------------
+// Heal 0
+//-------------------------------------------------------------------------------------
+
+begin script HealTutorial
+start
+	begin dialogue
+		eject good spirit
+		say "Heal: right click on someone to heal them."
+		wait until read
+	end dialogue
+end script HealTutorial
+
+//-------------------------------------------------------------------------------------
+// Lightning 0
+//-------------------------------------------------------------------------------------
+
+begin script LightningTutorial
+start
+	begin dialogue
+		eject evil spirit
+		say "Lightning: right click on something to frazzle it."
+		wait until read
+	end dialogue
+end script LightningTutorial
+
+//-------------------------------------------------------------------------------------
+// Fireball 2
+//-------------------------------------------------------------------------------------
+
+begin script FoodTutorial
+start
+	begin dialogue
+		eject evil spirit
+		say "Food: Right click to pour food."
+		wait until read
+	end dialogue
+end script FoodTutorial
+
+//-------------------------------------------------------------------------------------
+// Fireball 2
+//-------------------------------------------------------------------------------------
+
+begin script Fireball2Tutorial
+start
+	begin dialogue
+		eject evil spirit
+		say "Fireball: Throw to cast."
+		wait until read
+	end dialogue
+end script Fireball2Tutorial
+
+//-------------------------------------------------------------------------------------
+// Strength 0
+//-------------------------------------------------------------------------------------
+
+begin script StrengthTutorial
+start
+	begin dialogue
+		eject good spirit
+		say "Strength: Right click near your creature or villagers to cast it."
+		wait until read
+	end dialogue
+end script StrengthTutorial
+
+//-------------------------------------------------------------------------------------
+// Water 0
+//-------------------------------------------------------------------------------------
+
+begin script WaterTutorial
+start
+	begin dialogue
+		eject good spirit
+		say "Water: Hold down right mouse button to rain under the hand."
+		wait until read
+	end dialogue
+end script WaterTutorial
+
+//-------------------------------------------------------------------------------------
+// Wood 0
+//-------------------------------------------------------------------------------------
+
+begin script WoodTutorial
+start
+	begin dialogue
+		eject good spirit
+		say "Wood: Hold down the right mouse button to drop more logs."
+		wait until read
+	end dialogue
+end script WoodTutorial
+
+//-------------------------------------------------------------------------------------
+// Shield 0
+//-------------------------------------------------------------------------------------
+
+begin script ShieldTutorial
+start
+	begin dialogue
+		eject good spirit
+		say "Shield: Hold down the right mouse button and draw a circle."
+		wait until read
+	end dialogue
+end script ShieldTutorial
+
+
+//-------------------------------------------------------------------------------------
+// A maintenance script that looks after a dispenser
+//------------------------------------------------------------------------------------- 
+
+begin script MaintainDispenser (Dispenser, MiracleType)
+start
+	set Dispenser magic properties constant MiracleType
+	enable Dispenser active
+	set Dispenser time to 1 seconds
+		
+end script MaintainDispenser
+ 
+//-------------------------------------------------------------------------------------
+// Place Miracle Dispensers on Map then run maintenance script for each
+//------------------------------------------------------------------------------------- 
+
+begin script ActivateDispensers
+
+ NDispenser[10]
+ VDispenser[10]
+ NDispenserPos[10]
+ VDispenserPos[10]
+ Count = 0
+ 
+start
+	// Normal Miracles
+	NDispenserPos[0] = marker at {899.438,0.288,1344.493}
+	NDispenserPos[1] = marker at {895.057,1.340,1342.624} 
+	NDispenserPos[2] = marker at {889.503,1.115,1341.351}
+	NDispenserPos[3] = marker at {883.302,1.383,1341.492}
+	NDispenserPos[4] = marker at {878.135,1.560,1343.379}
+	NDispenserPos[5] = marker at {873.316,1.340,1348.092}
+	NDispenserPos[6] = marker at {870.081,1.340,1352.650}
+	NDispenserPos[7] = marker at {868.408,1.340,1357.889}
+	NDispenserPos[8] = marker at {867.490,0.879,1364.255}
+	NDispenserPos[9] = marker at {869.165,0.000,1369.868}
+	
+	// Creature/Villager Miracles
+	VDispenserPos[0] = marker at {902.727,0.775,1344.833}
+	VDispenserPos[1] = marker at {903.907,1.130,1350.332}
+	VDispenserPos[2] = marker at {903.321,1.340,1357.679}
+	VDispenserPos[3] = marker at {899.406,0.706,1362.653}
+	VDispenserPos[4] = marker at {895.607,1.340,1367.301}
+	VDispenserPos[5] = marker at {891.300,1.850,1371.531}
+	VDispenserPos[6] = marker at {886.237,1.458,1374.139}
+	VDispenserPos[7] = marker at {881.544,0.748,1376.267}
+	VDispenserPos[8] = marker at {876.237,0.000,1376.881}
+	VDispenserPos[9] = marker at {871.610,0.000,1375.296}
+	
+	// create all the normal dispensers (inactive)
+	while Count < 10
+		NDispenser[Count] = create with angle 0 and scale 1.0 SCRIPT_OBJECT_TYPE_SPELL_DISPENSER ABODE_INFO_NORSE_SPELL_DISPENSER at {NDispenserPos[Count]}
+		enable NDispenser[Count] indestructible
+		disable NDispenser[Count] set on fire
+		disable NDispenser[Count] hurt by fire
+		disable NDispenser[Count] active // Disable all dispensers that are not available in game yet
+		Count++
+	end while
+	Count = 0
+
+	// create all the Creature/Villager dispensers (inactive)
+	while Count < 10
+		VDispenser[Count] = create with angle 0 and scale 1.0 SCRIPT_OBJECT_TYPE_SPELL_DISPENSER ABODE_INFO_NORSE_SPELL_DISPENSER at {VDispenserPos[Count]}
+		enable VDispenser[Count] indestructible
+		disable VDispenser[Count] set on fire
+		disable VDispenser[Count] hurt by fire
+		disable VDispenser[Count] active // Disable all dispensers that are not available in game yet
+		Count++
+	end while
+	Count = 0
+	
+	/// TO DO: Make an effect stay on dispenser until the relevant miracle has been succesfully cast anywhere in the game
+	
+	// activate the miracles available on Land One
+	run background script MaintainDispenser (NDispenser[TotalNormalMiracles], variable MAGIC_TYPE_HEAL)
+	TotalNormalMiracles++
+	run background script MaintainDispenser (NDispenser[TotalNormalMiracles], variable MAGIC_TYPE_LIGHTNING_BOLT)
+	TotalNormalMiracles++
+	run background script MaintainDispenser (NDispenser[TotalNormalMiracles], variable MAGIC_TYPE_FOOD)
+	TotalNormalMiracles++
+	run background script MaintainDispenser (VDispenser[TotalVillagerMiracles], variable MAGIC_TYPE_CREATURE_SPELL_ANGRY)
+	TotalVillagerMiracles++
+	run background script MaintainDispenser (NDispenser[TotalNormalMiracles], variable MAGIC_TYPE_FIREBALL)
+	TotalNormalMiracles++
+	run background script MaintainDispenser (VDispenser[TotalVillagerMiracles], variable MAGIC_TYPE_CREATURE_SPELL_STRONG)
+	TotalVillagerMiracles++
+	run background script MaintainDispenser (NDispenser[TotalNormalMiracles], variable MAGIC_TYPE_WOOD)
+	TotalNormalMiracles++
+	run background script MaintainDispenser (NDispenser[TotalNormalMiracles], variable MAGIC_TYPE_SHIELD)
+	TotalNormalMiracles++
+	run background script MaintainDispenser (NDispenser[TotalNormalMiracles], variable MAGIC_TYPE_WATER)
+	TotalNormalMiracles++
+
+	// A loop that checks for miracle discovery in the main game and activates the relevant miracle onto the next dispenser in the line
+	while (TotalNormalMiracles + TotalVillagerMiracles) < 20
+		/// Keep checking globals to see when miracles acquired for first time in main game
+		/// activate relevant miracle on next dispenser
+	end while
+		
+end script ActivateDispensers
+ 
+//-------------------------------------------------------------------------------------
+// Intro to One-Shot Miracle Seeds and Dispensers 
+//-------------------------------------------------------------------------------------
+
+begin script OneShotCinema
+
+ OneShotHighlightPos = marker at {884.494,0.000,1355.987}
+ OneShotHighlight = 0
+ Teacher = 0
+ TeacherHut = 0
+ TeacherPos = marker at {896.576,13.065,1306.522}
+ ExitStageRight = marker at {926.463,8.579,1326.191} 
+
+start
+	OneShotHighlight = create highlight CHALLENGE_TIGER_CANNON HIGHLIGHT_CHALLENGE at {OneShotHighlightPos}
+	ALTITUDE of OneShotHighlight = 20
+	
+	begin loop
+		wait until OneShotHighlight right clicked /// or StoneTablet link clicked
+		clear right clicked object
+		TeacherHut = get HOUSE at {889.242,12.611,1308.789}
+		
+		begin cinema
+			StopMiracleInHandTutorials = 1
+			// Cinema outside Teacher's hut
+			set camera position to {912.459,20.701,1314.266}
+			set camera focus to {892.937,13.323,1311.328}
+			move camera position to {912.803,19.755,1292.465} time 8
+			move camera focus to {895.938,13.204,1307.574} time 8
+			Teacher = create VILLAGER MALE at {TeacherHut}
+			move Teacher position to {TeacherPos}
+			wait until {Teacher} near {TeacherPos} radius 1
+			wait 0.5 seconds
+			set Teacher focus to {909.857,16.003,1301.978} 
+			set camera position to {909.857,16.003,1301.978}
+			set camera focus follow Teacher
+			Teacher play ANM_P_TALK1_MALE loop -1
+			say "Aha, you've seen my most prized collection."
+			wait until read
+			say "If you keep it a secret I'll tell you all about them."
+			Teacher play ANM_P_LOOKING_FOR_SOMETHING
+			wait until Teacher played
+			Teacher play ANM_P_TALK1_MALE loop -1
+			wait until read
+			move Teacher position to {ExitStageRight}
+			move camera position to {896.903,16.003,1297.780} time 6
+			wait 3 seconds
+			// waving to follow camera
+			set Teacher anim ANM_P_WALK_BECKON02
+			wait 2 seconds
+			//fade out
+			set fade red 0 green 0 blue 0 time 3
+			wait 3 seconds
+			clear right clicked object			
+			set camera position to {917.289,5.115,1341.526}
+			set camera focus to {897.758,1.059,1348.515}
+			set fade in time 2
+			wait 2 seconds
+			move camera position to {914.956,19.240,1344.402} time 8
+			move camera focus to {888.578,0.748,1354.806} time 8
+			say "These dispensers generate Miracle Seeds."
+			wait until read
+			say "The miracles you get from one of these costs you no prayer power when cast."
+			wait until read
+			set camera position to {893.427,5.850,1350.595}
+			set camera focus to {896.536,1.905,1337.291}
+			say "**HAND DEMO STARTS** - Tapping Miracle Seed**"
+			wait 2 seconds
+			say "To use a Miracle Seed just tap it to break it open."
+			wait until read
+			say "And the miracle automatically appears in your hand ready to cast."
+			wait until read
+			///wait until hand demo played
+			say "**HAND DEMO ENDS**"
+			wait 1 second
+			move camera position to {914.956,19.240,1344.402} time 6
+			move camera focus to {888.578,0.748,1354.806} time 6
+			say "As you discover new miracles in the game the relevant Miracle Seeds will appear here."
+			wait until read
+			say "You can come here to learn about the miracle or to just practise casting it."
+			wait until read
+			wait until camera ready
+			
+			StopMiracleInHandTutorials = 0
+		end cinema
+	end loop
+
+end script OneShotCinema
+ 
+//-------------------------------------------------------------------------------------
+// Intro to Miracle Casting Section
+//-------------------------------------------------------------------------------------
+
+begin script MiracleIntro
+
+ MiracleHighlight = 0
+ Villager = 0
+ VillagerPosse = 0
+ OutsideWorshipsite = marker at {1116.723,26.130,1438.231}
+ Worshipsite = marker at {1116.162,26.130,1427.907}
+ Villager1Pos = marker at {1119.560,26.130,1450.921}
+ Villager2Pos = marker at {1115.649,26.130,1447.517}
+ TestVariable = 0
+ Reloop = 0
+ NoCharge = 0
+ WorshipFlock = 0
+ Worshipper = 0
+ Teacher = 0
+ TeacherHutPos = marker at {889.242,12.611,1308.789}
+ TeacherHut = create HOUSE ABODE_INFO_JAPANESE_SHACK_Y at {TeacherHutPos}
+ TeacherHighlight = 0
+ TeacherPos = marker at {896.576,13.065,1306.522}
+ TeacherClicked = 0
+ ExitStageRight = marker at {926.463,8.579,1326.191} 
+ InFrontOfTownCentre = marker at {1114.620,26.130,1453.370} 
+
+start
+	enable TeacherHut indestructible
+	disable TeacherHut hurt by fire
+	disable TeacherHut set on fire
+	MiracleHighlight = create highlight CHALLENGE_TIGER_CANNON HIGHLIGHT_CHALLENGE at {InFrontOfTownCentre}
+	ALTITUDE of MiracleHighlight = 5
+	
+	TeacherHighlight = create highlight CHALLENGE_TIGER_CANNON HIGHLIGHT_CHALLENGE at {TeacherHutPos}
+	ALTITUDE of TeacherHighlight = 15
+	
+	begin loop
+		Reloop = 0
+		TeacherClicked = 0
+		wait until MiracleHighlight right clicked or TeacherHighlight right clicked /// or StoneTablet link clicked
+		
+		begin cinema
+			if TeacherHighlight right clicked
+				TeacherClicked = 1
+				// Cinema outside Teacher's hut
+				set camera position to {912.459,20.701,1314.266}
+				set camera focus to {892.937,13.323,1311.328}
+				move camera position to {912.803,19.755,1292.465} time 8
+				move camera focus to {895.938,13.204,1307.574} time 8
+				Teacher = create VILLAGER MALE at {TeacherHut}
+				move Teacher position to {TeacherPos}
+				wait until {Teacher} near {TeacherPos} radius 1
+				wait 0.5 seconds
+				set Teacher focus to {909.857,16.003,1301.978} 
+				set camera position to {909.857,16.003,1301.978}
+				set camera focus follow Teacher
+				Teacher play ANM_P_TALK1_MALE loop -1
+				say "Soooo, ya wanna know about makin' miracles, eh?"
+				wait until read
+				say "Smart move. Right then, follow me up to town."
+				Teacher play ANM_P_LOOKING_FOR_SOMETHING
+				wait until Teacher played
+				Teacher play ANM_P_TALK1_MALE loop -1
+				wait until read
+				move Teacher position to {ExitStageRight}
+				move camera position to {896.903,16.003,1297.780} time 6
+				wait 3 seconds
+				// waving to follow camera
+				set Teacher anim ANM_P_WALK_BECKON02
+				wait 2 seconds
+				//fade out
+				set fade red 0 green 0 blue 0 time 3
+				wait 3 seconds
+			end if
+			clear right clicked object
+			
+			// The rest of this cinema is what is triggered using the scroll in front of TownCentre
+			// Show Towncentre Totem
+			set camera position to {1123.430,43.266,1499.197}
+			set camera focus to {1112.859,26.219,1406.443}
+			if TeacherClicked == 1
+				set fade in time 2
+				move camera position to {1117.157,34.165,1471.864} time 8
+				move camera focus to {1113.125,26.289,1448.772} time 8				
+				wait 2 seconds
+				delete Teacher
+			else
+				move camera position to {1117.157,34.165,1471.864} time 6
+				move camera focus to {1113.125,26.289,1448.772} time 6
+			end if
+			say "The power needed to charge miracles comes from villagers praying."
+			wait until read
+			wait until camera ready
+			
+			// create worshipping villagers for following shot
+			Villager = create VILLAGER MALE at {OutsideWorshipsite}
+			VillagerPosse = make Villager dance DANCE_INFO_NEW_DANCE_AROUND_PERSON around {Worshipsite} time -1
+			attach Villager to VillagerPosse
+			while size of VillagerPosse < 10
+				Villager = create VILLAGER MALE at {OutsideWorshipsite}+{number from -10 to 10, number from -10 to 10}
+				attach Villager to VillagerPosse
+			end while
+			
+			///Hand Demo of Hand Lifting Totem
+			say "**HAND DEMO STARTS PLAYING**"
+			wait 1.5 seconds
+			say "Lift the totem to get some of them to worship."
+			wait until read
+			wait 1 second
+			say "The higher you lift the totem the more villagers will come."
+			wait until read
+			///wait until hand demo played
+			say "HAND DEMO ENDS"
+			wait until read
+			
+			WorshipFlock = flock at {1128.466,26.443,1479.401}
+			set WorshipFlock properties inner 5 outer 30
+			while size of WorshipFlock < 6
+				Worshipper = create VILLAGER MALE at {1128.466,26.443,1479.401}+{number from -10 to 10,number from -10 to 10}
+				attach Worshipper to WorshipFlock
+			end while
+			move WorshipFlock position to {OutsideWorshipsite}
+			SPEED of WorshipFlock = 0.5
+			
+			move camera position to {1130.833,28.462,1488.135} time 4
+			wait 1 second
+			move camera focus to {1089.627,30.767,1347.162} time 3
+			say "Make sure you leave the village enough workers to survive"
+			wait until read
+			wait until camera ready
+			wait 2 seconds
+			set camera position to {1116.432,28.962,1433.990}
+			set camera focus to {1116.575,26.226,1420.057}
+			move camera position to {1116.342,31.505,1446.323} time 6
+			move camera focus to {1116.376,26.317,1433.524} time 6
+
+			say "They'll keep worshipping until you drop the totem again."
+			
+			while size of WorshipFlock > 0
+				Worshipper = get VILLAGER in WorshipFlock
+				delete Worshipper
+			end while
+			
+			Villager = create VILLAGER MALE at {Villager1Pos}
+			attach Villager to VillagerPosse
+			Villager = create VILLAGER MALE at {Villager2Pos}
+			attach Villager to VillagerPosse
+			
+			wait until read
+			wait 2 seconds
+			say "Always keep the worship site well supplied with food"
+			set camera position to {1125.446,29.823,1426.640}
+			set camera focus to {1120.020,26.343,1431.655}
+			wait until read
+			say "Or the villagers will have to go home when they are hungry."
+			wait until read
+			
+			set camera position to {1101.433,27.630,1459.534}
+			set camera focus to {1118.014,31.415,1456.661}
+			say "**HAND DEMO* - Selecting Miracle."
+			wait 2 seconds			
+			say "To charge a miracle you can either right click on it here on the Town Centre"
+			wait until read
+			///wait until hand demo played
+			say "or you can right click on it at the worship site."
+			move camera position to {1111.927,33.661,1442.062} time 3
+			move camera focus to {1115.731,26.403,1431.589} time 3
+			wait until read
+			say "**HAND DEMO* - Stopping Miracle Charging."
+			wait 2 seconds
+			say "You can stop a miracle charging by clicking on it again."
+			wait until read
+			///wait until hand demo played
+			wait until camera ready
+			say "Charge any of the miracles on this island and we'll tell you how to cast it."
+			wait until read
+			say "Now select a miracle to charge by clicking on it."
+			wait until read
+			
+			while size of VillagerPosse > 0
+				Villager = get VILLAGER MALE in VillagerPosse
+				detach Villager from VillagerPosse
+				delete Villager
+			end while
+			
+			disband VillagerPosse
+			delete VillagerPosse
+		end cinema
+		
+		while Reloop == 0
+			if MiracleHighlight right clicked or TeacherHighlight right clicked
+				Reloop = 1
+			end if
+			if player 1 spell charging
+				begin dialogue
+					say "The more Villagers you have worshipping the faster the Miracle will charge."
+					wait until read
+					say "The Miracle will appear in your hand when it is fully charged."
+					wait until read
+				end dialogue
+				Reloop = 1
+			end if
+		end while
+		
+	end loop
+	
+end script MiracleIntro
+
+//-------------------------------------------------------------------------------------
+// Check For Miracle In Hand
+// Script that checks if a miracle is in the players hand and runs a talk-through dialogue for it
+//-------------------------------------------------------------------------------------
+begin script CheckForMiracle
+ ObjectInHand = 0
+ TempType = 0
+ Subtype = 0
+start
+	begin loop
+		while StopMiracleInHandTutorials == 0 and not in widescreen // Checks if disabled temporarily by another tutorial
+			// check if there's a miracle in the hand
+			ObjectInHand = get object held
+			if ObjectInHand exists
+				TempType = variable get ObjectInHand type
+				if TempType == variable SCRIPT_OBJECT_TYPE_ONE_SHOT_SPELL or TempType == variable SCRIPT_OBJECT_TYPE_SPELL_SEED
+					// Find Subtype and run relevant dialogue script
+					Subtype=variable get ObjectInHand sub type
+		
+					if Subtype == variable SPELL_SEED_TYPE_FIRE
+					//elsif Subtype == variable MAGIC_TYPE_FIREBALL_PU_ONE
+					//elsif Subtype == variable MAGIC_TYPE_FIREBALL_PU_TWO
+						run script Fireball2Tutorial
+					elsif Subtype == variable SPELL_SEED_TYPE_LIGHTNING_BOLT
+						run script LightningTutorial
+					//elsif Subtype == variable MAGIC_TYPE_LIGHTNING_BOLT_PU_ONE
+					//elsif Subtype == variable MAGIC_TYPE_LIGHTNING_BOLT_PU_TWO
+					elsif Subtype == variable SPELL_SEED_TYPE_FOOD
+						run script FoodTutorial
+					elsif Subtype == variable SPELL_SEED_TYPE_HEAL
+						run script HealTutorial
+					elsif Subtype == variable SPELL_SEED_TYPE_CREATURE_SPELL_ANGRY
+						run script AggressionTutorial
+					elsif Subtype == variable SPELL_SEED_TYPE_CREATURE_SPELL_STRONG
+						run script StrengthTutorial
+					elsif Subtype == variable SPELL_SEED_TYPE_WATER
+						run script WaterTutorial
+					elsif Subtype == variable SPELL_SEED_TYPE_WOOD
+						run script WoodTutorial
+					elsif Subtype == variable SPELL_SEED_TYPE_SHIELD
+						run script ShieldTutorial
+					/// etc etc
+					end if
+				end if
+				while ObjectInHand exists
+					wait 0.5 seconds
+					ObjectInHand = get object held
+				end while
+			end if
+			
+			wait 0.5 seconds			
+		end while
+
+		// Checks if re-enabled by another tutorial		
+		wait until StopMiracleInHandTutorials == 0
+	end loop
+	
+end script CheckForMiracle
+
+//----------------------------------------------------------------------------------------
+// Idle Villager Scripts - Designed to give the player a target for all villager Miracles.
+// Should the villagers be spread out to demonstrate increasing AoE effectiveness?
+// Also provides a hut to practise other miracles on.
+//----------------------------------------------------------------------------------------
+
+begin script ControlIdleVillager (IdleVillagerPos, CampfirePos)
+
+ Eternity = 0
+ IdleVillager = 0
+ ReturnTimer = create timer for 0 seconds
+ RecreateVillager = 1
+ HeadingForShore = 0
+ WatersEdge = marker at {875.683,0.000,1370.803}
+ Returner = 0
+
+start
+	begin loop
+		if RecreateVillager == 1
+			wait 2 seconds
+			IdleVillager = create VILLAGER MALE at {IdleVillagerPos}
+			disable IdleVillager pickup
+			set IdleVillager focus to {CampfirePos}
+			IdleVillager play ANM_P_SITTING_DOWN2_SITTING loop -1
+			HeadingForShore = 0
+			RecreateVillager = 0
+		end if
+		
+		if IdleVillager not exists
+			wait 12 seconds
+			RecreateVillager = 1
+		elsif HEALTH of IdleVillager <= 0
+			wait 10 seconds
+			delete IdleVillager with fade
+			wait 2 seconds
+			RecreateVillager = 1
+		elsif IdleVillager on fire and HeadingForShore == 0
+			move IdleVillager position to {WatersEdge}
+			SPEED of IdleVillager = 0.8
+			HeadingForShore = 1
+		elsif IdleVillager on fire and HeadingForShore == 1 and {IdleVillager} near {WatersEdge} radius 1
+			move IdleVillager position to {IdleVillager}
+			wait 0.1 seconds
+			set IdleVillager focus to {WatersEdge}
+			IdleVillager play ANM_P_FAKE_FOUL_FALL
+			wait until IdleVillager played or 2 seconds
+			//IdleVillager play ANM_P_ON_FIRE_DOUSED
+			//wait until IdleVillager played or 2 seconds
+			HeadingForShore = 0
+		elsif {IdleVillager} not near {IdleVillagerPos} radius 1 and get ReturnTimer time remaining <= 0 and IdleVillager is not FLYING and IdleVillager is not HELD_ANY and HeadingForShore == 0
+			move IdleVillager position to {IdleVillagerPos}
+			set ReturnTimer time to 3 seconds
+			Returner = 1
+		elsif Returner == 1 and {IdleVillager} near {IdleVillagerPos} radius 1 and IdleVillager is not FLYING and IdleVillager is not HELD_ANY
+			wait 1 second
+			Returner = 0
+			set IdleVillager focus to {CampfirePos}
+			wait 0.2 seconds
+			IdleVillager play ANM_P_SITTING_DOWN2_SITTING loop -1
+		end if
+	until Eternity == 1
+	end loop
+	
+end script ControlIdleVillager
+
+//----------------------------------------------------------------------------------------
+
+begin script IdleVillagers
+
+ CampfirePos = marker at {862.420,1.340,1375.239}
+ Campfire = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {CampfirePos}
+ IdleVillagerPos[11]
+ Count = 0
+ EndLoop = 0
+ Barrels = 0
+   
+start
+
+ enable Campfire indestructible
+ disable Campfire pickup
+ disable Campfire hurt by fire
+ disable Campfire set on fire
+ disable Campfire moveable
+ 
+ Barrels = create MOBILE_OBJECT MOBILE_OBJECT_INFO_EGPT_BARREL at {858.433,1.340,1371.901}
+ Barrels = create MOBILE_OBJECT MOBILE_OBJECT_INFO_EGPT_BARREL at {857.539,1.348,1372.675}
+ Barrels = create MOBILE_OBJECT MOBILE_OBJECT_INFO_EGPT_BARREL at {858.300,1.423,1374.521}
+ 
+ IdleVillagerPos[0] = marker at {862.865,1.340,1373.693}
+ IdleVillagerPos[1] = marker at {862.781,1.340,1376.845}
+ IdleVillagerPos[2] = marker at {861.779,1.340,1375.224}
+ IdleVillagerPos[3] = marker at {864.063,1.340,1375.213}
+ IdleVillagerPos[4] = marker at {861.536,1.340,1373.745}
+ IdleVillagerPos[5] = marker at {861.729,1.340,1376.949}
+ IdleVillagerPos[6] = marker at {863.796,1.219,1373.344}
+ IdleVillagerPos[7] = marker at {863.888,1.141,1376.857}
+ IdleVillagerPos[8] = marker at {860.114,1.340,1372.781}
+ IdleVillagerPos[9] = marker at {860.097,1.340,1374.123}
+ IdleVillagerPos[10] = marker at {861.646,1.340,1372.363}
+
+ run background script ControlIdleVillager (IdleVillagerPos[0], CampfirePos)
+ 
+ begin loop
+	if IdleVillagerMax > Count
+		Count++
+		run background script ControlIdleVillager (IdleVillagerPos[Count], CampfirePos)
+	end if
+	if Count == 10
+		EndLoop = 1
+	end if
+ end loop
+ 
+end script IdleVillagers
+
+
+//-----------------------------------------------------------------------------
+// Main Script
+//-----------------------------------------------------------------------------
+
+begin script MiracleTutorial
+start
+	run background script ActivateDispensers
+	run background script IdleVillagers
+	run background script MiracleIntro
+	run background script OneShotCinema
+	run background script CheckForMiracle
+end script MiracleTutorial

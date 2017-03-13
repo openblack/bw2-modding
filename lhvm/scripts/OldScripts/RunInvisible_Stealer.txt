@@ -1,0 +1,6 @@
+run script RunInvisibleStealer
+
+begin script RunInvisibleStealer
+start
+	run script Land5InvisibleStealer
+end script RunInvisibleStealer

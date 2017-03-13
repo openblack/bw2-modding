@@ -1,0 +1,1295 @@
+//================================================================
+// Land 2 Intro
+//================================================================
+
+//-------------------------------------------
+// Script Defines
+//-------------------------------------------
+define script Land2MaintainTime
+define script Land2InterfaceActions(EnableDisable)
+define script MattLovesCameraRoll
+define script Advisorage
+define script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(whichset, deleteorcleate)
+define script Land2_IntroAction
+define script DistantExplosions
+
+
+//-------------------------------------------
+// Land 2 Intro
+//-------------------------------------------
+begin script Land2Intro
+	L2IntroObjectInHand = 0
+	volcanoonlooker = 0
+	land2mixer = 0
+	FireInCHand = 0
+	L2_EnemyCreature = 0
+	l2Teleporteffect1 = 0
+	l2Teleporteffect2 = 0
+	PrayingWoman = 0
+	count=0
+	ExplodeROF=0
+	FlamingRock=0
+	Flameeffect1=0
+	Flameeffect2=0
+	L2CreatureStatue=0
+	L2StatuePos = marker at {1624.314, 141.972, 1917.263}
+	L2CreatureStatueCheck=0
+	L2PlayersCreatureCheck=0
+	ExplodeROFx=0
+	CheckFlameRock=0
+	FireHand[2]
+	BodyEffect=0
+	VolcanoSeed=0
+	HitLandTimer=0
+
+start
+
+	enable pause menu in widescreen
+
+    begin cinema
+
+		set fade red 0 green 0 blue 0 time 0
+		
+		//disable game features
+		disable dialogue manager
+		disable personalisations
+		disable interface action MANACOST_BALANCE_TYPE_INITIATECREATUREFIST
+		disable toolbar
+		disable fire system
+		disable heartbeat sound
+		disable drawing of all flags
+		disable army flag in widescreen
+		enable scripted platoon get on enemy wall
+		disable show army set effect
+		disable tribute visual
+		disable show army bubbles
+		disable single active speech		
+		//disable simulation sound
+
+		L2PlayersCreatureCheck = persistent data "PLAYER_CREATURE_TYPE"
+
+		if L2PlayersCreatureCheck == variable CREATURE_TYPE_LION
+			L2CreatureStatue = create FEATURE FEATURE_INFO_LION_STATUE at {L2StatuePos}
+		elsif L2PlayersCreatureCheck == variable CREATURE_TYPE_APE
+			L2CreatureStatue = create FEATURE FEATURE_INFO_APE_STATUE at {L2StatuePos}
+		elsif L2PlayersCreatureCheck == variable CREATURE_TYPE_WOLF
+			L2CreatureStatue = create FEATURE FEATURE_INFO_WOLF_STATUE at {L2StatuePos}
+		elsif L2PlayersCreatureCheck == variable CREATURE_TYPE_COW
+			L2CreatureStatue = create FEATURE FEATURE_INFO_COW_STATUE at {L2StatuePos}
+		else// L2PlayersCreatureCheck == variable CREATURE_TYPE_TIGER
+			L2CreatureStatue = create FEATURE FEATURE_INFO_TIGER_STATUE at {L2StatuePos}
+		end if
+		
+		L2_EnemyCreature = create DUMB_CREATURE CREATURE_TYPE_GORILLA at {1496.953, 246.171, 1503.493}
+		set creature L2_EnemyCreature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 1 time 0
+
+		set L2_EnemyCreature position to {1496.953, 246.171, 1503.493}
+
+		snap creature L2_EnemyCreature focus to {1681.901, 119.445, 1771.142}
+
+		Openingl2gate = get HOUSE GATEHOUSE at {1727.538, 115.912, 1678.221} radius 10
+		set gate Openingl2gate open
+
+		land2mixer = create mixer
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_SCRIPT_SFX to 1.0
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 0.8
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_ATMOS_MAP to 0.0
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.3
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_SFX to 0.8
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_ANIMATION_VILLAGER to 0.8		
+
+		run script Land2InterfaceActions(0)
+
+		L2GreekTown = get TOWN at {2011.118, 99.516, 890.750}
+
+		enable global influence
+		disable toolbar
+
+		run background script Land2AztecAttacks
+
+		InCameraRollMode = 1
+
+		set game time 18.00
+		disable game time
+
+		set cloud alignment to -1 at {1047.428, 52.081, 1188.115} radius 200000
+
+		//RUN SCRIPT... ANYWHERE!!
+		run background script CF_RescueVillagers
+		run background script Land2Teleport
+		run background script Land2BarrelRun
+		run background script Land2RingOfFire
+		//run background script BI_BarrelPlatoon
+		run background script Land2_IntroAction
+
+		wait 2 seconds
+		wait 2 seconds
+
+		ALTITUDE of L2CreatureStatue = 1.2
+		set L2CreatureStatue focus to {1620.734, 137.630, 1931.413}
+
+		PrayingWoman = create VILLAGER GREEK_HOUSEWIFE at {1627.901, 151.869, 1917.253}
+		ALTITUDE of PrayingWoman = 0.7
+		set PrayingWoman focus to {1634.582, 139.717, 1913.397}
+
+		start music "cut_scene_battle_03 " loop -1 start loop 2990080 size loop 1994752
+
+		run background script Land2Dialogue(ADVISORS_START_LAND)
+		
+		reset camera path 
+
+        queue camera move with position {2808.591, 42.904, -1794.079} focus {2769.529, 7.648, -1709.044} time 0.0
+		queue camera move with position {2323.616, 94.637, -758.748} focus {2279.012, 85.017, -669.759} time 7.0
+		queue camera move with position {1894.298, 156.657, 678.592} focus {1931.835, 136.482, 769.058} time 10.0 
+		queue camera move with position {1985.613, 135.164, 1008.001} focus {2018.144, 117.360, 1100.873} time 2.0 
+		queue camera move with position {2015.687, 106.489, 1389.936} focus {1964.283, 95.672, 1475.031} time 2.0 
+		queue camera move with position {1830.019, 163.255, 1652.356} focus {1766.872, 139.866, 1726.294} time 3.0
+		queue camera move with position {1745.242, 121.488, 1724.722} focus {1696.328, 108.092, 1810.903} time 3.0
+		queue camera move with position {1724.243, 131.386, 1775.307} focus {1662.268, 123.699, 1853.408} time 2.5
+		queue camera move with position {1655.521, 145.809, 1892.564} focus {1580.985, 129.534, 1957.213} time 4.0
+//
+		queue camera move with position {1639.088, 148.278, 1918.074} focus {1563.734, 86.907, 1894.490} time 4.0
+		queue camera move with position {1637.947, 147.004, 1915.907} focus {1553.340, 100.451, 1889.930} time 2.0
+		queue camera move with position {1612.156, 154.510, 1890.867} focus {1519.676, 136.779, 1857.200} time 2.0
+		queue camera move with position {1613.035, 154.877, 1890.359} focus {1525.278, 136.559, 1846.047} time 3.0
+		queue camera move with position {1604.007, 145.718, 1867.113} focus {1675.638, 122.570, 1801.280} time 11.0
+
+		play camera path with easein 8 easeout 4  method SCRIPT_CAMERAPATH_SMOOTHEST
+		run background script LandStart
+		set fade in time 2
+
+		wait 7 seconds
+
+		wait 3 seconds
+
+		wait 4 seconds
+		play string sound "BW2T_SCRIPT_02FINAL_PICKUP145"
+
+		L2_Trigger_IntroVillagersLook = 1
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0 with fadetime 8
+
+		wait until not sound "BW2T_SCRIPT_02FINAL_PICKUP145" playing
+		play string sound "BW2T_SCRIPT_02FINAL_PICKUP148"
+		wait 3 seconds
+		//wait 3 seconds
+				
+		attach atmos "battle_one_shot_sfx" to camera
+		set camera atmos group 5 time 1 seconds
+		
+		run background script DistantExplosions
+			
+		wait until read
+		//wait until not sound "BW2T_SCRIPT_02FINAL_PICKUP148" playing
+		enable single active speech
+
+		run background script Land2Dialogue(WOMAN_PRAYER)
+		play anim "a_p_land2_woman_praying_greek" on PrayingWoman
+
+		wait 2 seconds
+		HugeArmyCreateDelete = 1
+		wait 3 seconds	
+		play string sound "SCRIPT29_MARCHING" loop -1
+
+		wait 5 seconds
+
+		wait 3 seconds
+		play string sound "SCRIPT29_AZTECHORN"
+		attach atmos "battle_atmos_" to camera
+		set camera atmos group 6 time 1 seconds id 1
+		wait 3 seconds
+			
+		wait 4 seconds
+		
+		wait until read
+		
+		run background script Land2Dialogue(ADVISORS_COMMENT_ON_ARMY)
+		
+		wait 4 seconds
+
+		run background script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(0, 0)
+		run background script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(1, 0)
+		
+		//Remove praying woman
+		delete PrayingWoman
+
+		wait 2 seconds
+
+		run background script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(0, 1)
+
+		FlamingRock = create ROCK_OBJECT ROUND_ROCK_LARGE at {1489.360, 139.762, 1844.769}
+
+		Flameeffect1 = create visual effect "ev_s_rocktrail.ves" strength 1 scale 1 on FlamingRock time -1
+		wait 0.5 seconds
+
+		L2_SceneryPlatoonTrigger[0] = 1
+
+		set FlamingRock velocity heading {1701.388, 214.959, 1776.698} speed 135
+		wait 0.2 seconds
+		HitLandTimer=create timer for 4 seconds
+		enable FlamingRock physics tracking	
+		wait 0.5 seconds
+		play string sound "SCRIPT29_VOLCANOWHOOSH3"	
+		wait until FlamingRock hit land or get HitLandTimer time remaining <= 0
+		stop sound "SCRIPT29_VOLCANOWHOOSH3"	
+		play string sound "SCRIPT29_SIEGEWEAPONHITOBJECT"	
+		//wait 2 seconds
+		Flameeffect2 = create visual effect "eh_s_lsflash.ves" strength 1 scale 0.3 at {FlamingRock} time 5
+		delete FlamingRock
+		wait 1 seconds
+		InCameraRollMode = 1	
+
+		stop sound "SCRIPT29_MARCHING"
+		
+		set camera atmos group 4 time 1 seconds id 0
+		
+		detach atmos from camera id 1
+			
+		InCameraRollMode = 1
+		run background script Land2_SmallExplosion(marker at {1737.588, 163.866, 1107.076})
+		run background script Land2_SmallExplosion(marker at {2130.578, 110.659, 861.235})
+
+		run background script Land2Dialogue(WOMAN_PRAYER_PART2)
+
+		reset camera path 
+
+		queue camera move with position {1733.300, 162.975, 1109.723} focus {1752.416, 166.123, 1011.615} time 0.0
+		queue camera move with position {1737.627, 164.224, 1075.306} focus {1745.293, 167.828, 975.660} time 3.0
+		queue camera move with position {1748.254, 165.317, 1011.802} focus {1763.476, 162.282, 913.017} time 3.0
+		queue camera move with position {1756.371, 168.655, 962.832} focus {1713.451, 119.972, 886.752} time 2.0//queue camera move with position {1751.304, 162.264, 958.535} focus {1742.979, 134.281, 862.893} time 2.0
+		queue camera move with position {1761.941, 162.080, 948.349} focus {1675.906, 118.418, 922.049} time 2.5
+
+		play camera path with easein 0 easeout 0 method SCRIPT_CAMERAPATH_SMOOTHEST
+	
+		//Trigger this platoon wave, also a trigger for ambient sutf fin alley
+		L2_SceneryPlatoonTrigger[1] = 1
+
+		wait 1 seconds
+		HugeArmyCreateDelete = 2
+		wait 3 seconds
+		
+		run background script Land2BackgroundChaos(marker at {1746.562, 159.386, 1046.940}, 10, 2)
+		run background script Land2BackgroundChaos(marker at {1761.293, 156.742, 863.187}, 20, 5)
+
+		run background script Land2_SmallExplosion(marker at {1762.576, 160.256, 1057.842})
+		run background script Land2_SmallExplosion(marker at {1747.673, 159.532, 1081.907})
+		wait 3.8 seconds
+
+		run background script Land2AudioDistantExplosions(8)
+		run background script Land2AudioDistantExplosions(8)
+		run background script Land2AudioDistantScreams(2)
+
+		stop sound "SCRIPT29_VILLAGERSCREAM2"
+
+		wait 2.2 seconds
+
+		shake camera strength 6.0
+		wait until camera ready
+
+		//Delete stuff for inital flyby
+		L2DeleteUberVillagers = 1
+		L2DeleteCityArmies = 1		
+
+		////////////////////////////////////////////////////////////////////////////////////////////
+		//out field
+
+		run background script Land2AudioDistantExplosions(5)
+
+		CF_Stage = 1
+
+		run background script Land2AudioDistantScreams(3)		
+		L2_Trigger_ReleaseWallVillagers = 1
+		InCameraRollMode = 0
+
+		//CB: Have to take at least 0.1 seconds
+		set camera roll 0 time 0.1
+		//set camera roll 0 time 0.01
+
+		//Delete platoons from initial flyby and trigger wall villagers
+		L2_SceneryPlatoonDelete[0] = 1
+		L2_SceneryPlatoonDelete[1] = 1
+		L2_Trigger_Wall_Villagers = 1
+
+		reset camera path 
+
+		queue camera move with position {1831.125, 143.295, 1704.154} focus {1744.419, 96.597, 1686.820} time 0.0
+		queue camera move with position {1815.011, 145.781, 1698.068} focus {1740.756, 79.837, 1686.373} time 4.0
+
+		play camera path with easein 0 easeout 2 
+		wait 0.5 seconds
+		shake camera strength 0.0
+		run background script Land2_SmallExplosion(marker at {1779.458, 119.628, 1717.329})
+
+		wait 2 seconds
+
+		run background script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(0, 0)
+
+		run background script Land2AudioDistantExplosions(5)
+		wait 2 seconds		
+
+	end cinema
+
+	begin interactive camera  
+	
+		set camera atmos group 5 time 1 seconds id 0		
+
+		run background script Land2Dialogue(CF_ADVISORS_VILLAGERS_BY_WALL_ALERT)
+
+		set gate Openingl2gate open		
+
+		wait 3 seconds
+
+		wait until CF_GatehouseCameraTrigger == CF_TRUE
+
+		//disable player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+		//disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 1
+
+		InCameraRollMode = 1
+		wait 0.5 seconds
+
+	end interactive camera
+
+	begin cinema
+
+		reset camera path 
+
+		queue camera move with position {1815.011, 145.781, 1698.068} focus {1740.756, 79.837, 1686.373} time 0.0
+        queue camera move with position {1749.830, 121.560, 1707.467} focus {1677.515, 122.150, 1638.400} time 2.0
+     	queue camera move with position {1720.216, 122.364, 1671.071} focus {1651.430, 128.731, 1598.768} time 1.5
+        queue camera move with position {1682.684, 153.141, 1635.691} focus {1608.295, 135.362, 1571.262} time 2.0 
+		queue camera move with position {1656.416, 156.254, 1625.705} focus {1580.793, 110.183, 1579.233} time 2.5
+		play camera path with easein 2 easeout 2 
+
+		L2_Trigger_StartRingOfFireFires = 1
+		L2_SceneryPlatoonTrigger[2] = 1
+		RF_RunRing = 1
+
+		run background script Land2ScaredVillagers(marker at {1743.568, 119.722, 1715.155}, marker at {1721.019, 125.429, 1639.630}, 17, 0.45, 10)		
+		wait 2 seconds
+		set gate Openingl2gate close	
+
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 0
+
+		wait 2 seconds
+
+		run background script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(2, 0)
+
+		//run the ring of fire
+		run background script Land2Dialogue(CF_ADVISORS_RING_OF_FIRE)
+
+		run background script Land2AudioDistantScreams(3)	
+
+		InCameraRollMode = 0
+		set camera roll 0 time 3
+		play string sound "SCRIPT29_HOUSEFIRE" loop -1
+
+		wait 1.5 seconds
+
+		//Run ring of fire and delete scenery platoons on run up to ring of fire		
+		L2_Trigger_Wall_Villagers	= 2
+		L2_RoofPlatoonDelete[0]		= 1
+
+		wait until read
+		wait until camera ready
+		L2_SceneryPlatoonDelete[2]	= 1
+
+	end cinema
+
+	begin interactive camera
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_RING_60" amount 5
+
+		//Wall objectives
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 with amount 1 reward GLOBAL_VALUE_TRIBUTE_LAND2_RING_OF_FIRE force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_RING_80" 
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_RING_20"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 parent objective TRIBUTE_OBJECTIVE_LAND_2
+		wait until RF_MoveCameraToShowRescuePos == 1
+		set L2_EnemyCreature position to {1496.953, 246.171, 1503.493}
+
+		snap creature L2_EnemyCreature focus to {1681.901, 119.445, 1771.142}
+	end interactive camera
+	
+	begin cinema
+
+		release loop
+
+		disable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+
+		L2_Trigger_CalmRingOfFireSmoke = 1
+		wait 1 seconds
+
+		ExplodeROF = make player 0 throw miracle MIRACLE_TYPE_FIRE from {1633.421, 141.151, 1608.425} heading {1642.018, 141.161, 1607.853}
+		play string sound "SCRIPT29_EXPLOSIONRINGOFFIRE"
+		
+		play string sound "SCRIPT29_EXPLOSIONSCREAM"
+		
+		wait 0.25 seconds
+		
+		play string sound "SCRIPT29_EXPLOSIONSCREAM"
+		wait 0.25 seconds
+		play string sound "SCRIPT29_EXPLOSIONSCREAM"
+		wait 0.25 seconds
+		play string sound "SCRIPT29_EXPLOSIONSCREAM"
+		
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+		wait 0.5 seconds
+
+		shake camera strength 8.0	
+		//wait 1 seconds
+		wait 1.25 seconds
+		move camera focus to {1571.443, 186.326, 1569.142} time 3
+
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+
+		disable objective window
+
+		CF_Stage = 2
+	
+		wait 2 seconds
+
+		//start music "cut_scene_end_battle 1"
+		run background script Land2Dialogue(CF_ADVISORS_VOLCANO_TWO)
+		shake camera strength 8.0
+		
+		wait 2 seconds	
+
+		FireHand[0] = create visual effect "cr_s_Casting_fist.ves" strength 1 scale 1 on creature L2_EnemyCreature left hand time 30
+		FireHand[1] = create visual effect "cr_s_Casting_fist.ves" strength 1 scale 1 on creature L2_EnemyCreature right hand time 30
+		set visual effect FireHand[0] target {1503.411, 253.550, 1509.348}
+		set visual effect FireHand[1] target {1503.411, 253.550, 1509.348}
+
+		wait 0.8 seconds
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 0.3
+
+		run background script Land2Volcano(marker at {1728.982, 109.584, 1806.910})	
+		play anim C_L2OUTRO_VOLCANO_CREATE on L2_EnemyCreature// loop 2
+		wait 0.2 seconds	
+		VolcanoSeed = create visual effect VISUAL_EFFECT_EPIC_VOLCANO_SEED at {1499.508, 253.602, 1506.384} time 6
+
+		shake camera strength 4.0
+		set camera lens 50.000
+		set camera position to {1496.704, 255.689, 1494.765}
+		set camera focus to {1528.406, 231.000, 1586.330}
+		play string sound "SCRIPT29_APEFIRE" loop -1
+		stop sound "SCRIPT29_HOUSEFIRE"
+
+		wait 2.2 seconds
+		set visual effect FireHand[0] target {1495.863, 255.098, 1500.700}
+
+		set visual effect FireHand[1] target {1495.863, 255.098, 1500.700}
+		wait 1 seconds
+
+		//set VolcanoSeed position to ({1499.508, 253.602, 1506.384}+{1503.411, 253.550, 1509.348})/2
+		wait 0.1 seconds
+
+		set VolcanoSeed position to {1503.411, 253.550, 1509.348}
+		wait 0.7 seconds
+
+		shake camera strength 8.0
+		set camera lens 40.000
+
+		run background script Land2AudioDistantScreams(3)
+		stop sound "SCRIPT29_APEFIRE"// loop -1
+		
+		set camera position to {1910.172, 163.382, 1861.912}
+		set camera focus to {1821.427, 177.132, 1817.918}
+
+		wait 3 seconds
+
+		L2Events = 2	
+
+		wait 3.5 seconds
+		//FireInCHand = create visual effect VISUAL_MIRACLE_FIRE_IMPACT at {L2_EnemyCreature}
+		play string sound "SCRIPT29_APEWETSCREAM_LARGE"
+		play string sound "SCRIPT29_APEFIRE" loop -1
+		BodyEffect = create visual effect "cr_s_Casting_body.ves" strength 1 scale 1 at {1498.754, 253.449, 1505.081}/*{1496.618, 252.304, 1504.108}*/ time 30
+
+		set camera lens 50.000
+		shake camera strength 4.0
+		set camera position to {1493.873, 254.940, 1478.184}
+		set camera focus to {1533.009, 248.315, 1569.969}
+
+		clear dialogue
+
+		run background script Land2AudioDistantExplosions(5)
+		wait 3.5 seconds
+		shake camera strength 8.0
+		wait 3 seconds
+		set camera lens 70.000
+
+		shake camera strength 6.0
+		queue camera move with position {1682.661, 213.557, 1760.898} focus {1743.012, 266.057, 1820.907} time 0.0
+		queue camera move with position {1741.537, 165.148, 1603.590} focus {1734.860, 186.139, 1701.137} time 8.0
+		queue camera move with position {2005.235, 123.147, 1081.477} focus {1973.277, 137.453, 1175.154} time 8.0
+
+		play camera path with easein 0 easeout 6 
+		stop sound "SCRIPT29_APEFIRE"// loop -1
+
+		wait 8 seconds
+
+		shake camera strength 5.0	
+		wait 3 seconds
+		shake camera strength 4.0	
+		wait 3 seconds
+		stop camera shake
+		wait 1 seconds
+		reset camera path 
+
+		queue camera move with position {2020.914, 117.868, 1041.255} focus {1988.406, 132.009, 1134.761} time 4.0
+		queue camera move with position {2032.910, 113.216, 1009.610} focus {2125.562, 85.488, 1035.043} time 4.0
+		play camera path with easein 0 easeout 0 
+		wait 2.5 seconds
+		stop music with fadetime 5
+		wait 3.5 seconds
+
+		RF_RunRing = 2
+
+		run background script Land2Dialogue(BI_ADVISORS_OH_NO_THE_BARRELS)
+
+		L2_SceneryPlatoonTrigger[5] = 1
+		wait 1.5 seconds
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 0.4
+
+		//Run second section
+		L2_Trigger_BarrelRun = 1
+		start music "big_battle_01" loop -1 start loop 2187008 size loop 1410048
+		wait 1.5 seconds
+
+		//Stop ring of fire from running	
+		run background script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(1, 1)
+		reset camera path 
+
+		queue camera move with position {2024.151, 112.558, 1006.357} focus {2112.652, 73.248, 981.430} time 3.0
+		queue camera move with position {2031.061, 107.295, 993.574} focus {2067.841, 85.371, 903.205} time 3.0 
+		queue camera move with position {2048.286, 115.067, 965.487} focus {2034.565, 85.968, 870.803} time 2.0 
+		queue camera move with position {2068.465, 116.851, 954.844} focus {2013.729, 63.548, 890.318} time 4.0 
+
+		play camera path with easein 0 easeout 2 
+		InCameraRollMode = 1   			
+
+		run background script Land2AudioDistantScreams(2)
+		wait 1 seconds
+		
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_BODYHIT"	
+		wait 0.5 seconds
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BODYHIT"
+	
+		run background script BI_TavernExplode
+
+		run background script Land2AudioDistantExplosions(5)
+
+		L2_Trigger_BarrelRunBackground = 1
+        
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_BODYHIT"	
+		wait 0.5 seconds
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BODYHIT"		
+
+		//Towards the player		
+		run background script Land2ScaredVillagers(marker at {2039.627, 102.542, 960.496}, marker at {2029.982, 102.576, 998.266}, 17, 0.45, 10)
+
+		wait 3 seconds
+
+		run background script Land2AudioCameraScreams(3)
+
+		wait 2 seconds
+
+		run background script Land2AudioDistantExplosions(5)
+		run background script Land2AudioDistantScreams(2)
+		
+		InCameraRollMode = 0
+		set camera roll 0.0 time 2
+		wait 2 seconds
+
+		enable objective window
+        
+		//Reset these two objectives
+		reset player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+		reset player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+
+		//Wall objectives
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 with amount 1 reward GLOBAL_VALUE_TRIBUTE_LAND2_BARREL_RUN force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_BARRELS_10"
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_BARRELS_20"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 parent objective TRIBUTE_OBJECTIVE_LAND_2
+
+		BI_ShowFenceWorldIcon	= BI_TRUE
+
+		run background script Land2Dialogue(BI_ADVISORS_RELEASE_THE_BARRELS_SUGGESTION)	
+
+	end cinema
+
+	begin interactive camera
+
+		wait until BI_GateSet == BI_TRUE
+		if BI_GateSet == BI_TRUE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+			wait 0.5 seconds
+		else
+			BI_GateSet = BI_TRUE
+		end if
+
+	end interactive camera
+
+	begin cinema
+
+		L2_SceneryPlatoonTrigger[3] = 1
+		L2_SceneryPlatoonDelete[5] = 1
+
+		InCameraRollMode = 1
+
+		run background script Land2AudioDistantExplosions(5)
+
+		//Set timer and run hay bales script
+		run background script BI_HayRoll
+
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_BODYHIT"	
+		wait 0.5 seconds
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BODYHIT"
+
+		queue camera move with position {2068.465, 116.851, 954.844} focus {2013.729, 63.548, 890.318} time 0.0 
+		queue camera move with position {2059.547, 107.924, 934.753} focus {2062.013, 87.270, 836.939} time 2.0
+		
+		queue camera move with position {2066.163, 108.598, 893.164} focus {2162.574, 82.227, 890.002} time 2.0
+		queue camera move with position {2101.557, 103.274, 875.917} focus {2186.592, 67.124, 914.155} time 2.0
+		queue camera move with position {2108.547, 116.462, 864.026} focus {2161.038, 65.184, 931.970} time 2.0
+		queue camera move with position {2111.429, 112.900, 870.935} focus {2174.491, 66.565, 933.184} time 9.0
+
+		play camera path with easein 2 easeout 2 method SCRIPT_CAMERAPATH_SMOOTHEST
+
+		run background script Land2ScaredVillagers(marker at {2128.083, 89.103, 909.640}, marker at {2083.577, 99.835, 885.779}, 30, 0.4, 20)
+		run background script Land2ScaredVillagers(marker at {2140.818, 88.354, 890.489}, marker at {2105.905, 103.838, 853.064}, 21, 0.5, 30)
+		run background script Land2ScaredVillagers(marker at {2161.862, 85.599, 869.621}, marker at {2082.865, 100.048, 875.792}, 40, 0.4, 30)
+				
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_BODYHIT"	
+		wait 0.5 seconds
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BODYHIT"
+		//wait 2 seconds
+		InCameraRollMode = 0
+		set camera roll 0.0 time 2
+
+		play string sound "SCRIPT29_ARROWS1"
+		wait 2 seconds
+		play string sound "SCRIPT29_ARROWS2"
+		wait 2 seconds
+		play string sound "SCRIPT29_ARROWS3"
+
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 0
+
+		L2_SceneryPlatoonDelete[3] = 1
+		run background script Land2Dialogue(BI_ADVISORS_SET_HAY_ON_FIRE)
+
+		wait 4 seconds
+
+
+		wait until camera ready
+		wait until read
+		L2_RoofPlatoonDelete[1] = 1
+	end cinema
+
+	delete all objects in physics
+
+	begin interactive camera
+
+		//Reset these two objectives
+		reset player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+		reset player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+
+		//Wall objectives
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 with amount 1 reward 0 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_BALES_60"
+
+		//GLOBAL_VALUE_TRIBUTE_LAND2_HAY_BALES
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_BALES_70"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 parent objective TRIBUTE_OBJECTIVE_LAND_2
+		
+		InCameraRollMode = 0
+
+		wait 4 seconds
+		BI_BalesTimer = create timer for BI_BALES_TIME seconds
+
+		wait until BI_BalesRolling == 5//	or get BI_BalesTimer time remaining == 0
+
+		release loop
+
+		//if BI_BalesRolling == 5
+		wait 0.5 seconds
+		//end if
+
+		disable objectives window
+
+	end interactive camera
+
+	begin cinema
+
+		//FINAL volcano
+		run background script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(2, 0)
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 0.3
+
+		//wait 2 seconds
+
+		reset all objectives for player 0
+
+		set camera position to {2186.607, 83.513, 927.194}	
+		set camera focus to {2097.569, 87.360, 881.821}
+		move camera position to {2186.607, 83.513, 927.194} time 4
+		move camera focus to {2091.246, 62.136, 906.027} time 4
+		
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANSCREAM"
+		play string sound "SCRIPT29_BLOODSPLAT"	
+		wait 0.5 seconds
+		play string sound "SCRIPT29_MANSCREAM"
+		wait 0.2 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_BLOODSPLAT"
+		wait 0.3 seconds
+		play string sound "SCRIPT29_MANGROAN"
+		run background script Land2Volcano(marker at {1995.963, 100.559, 946.154})
+		
+		//wait 2 seconds
+		detach atmos from camera
+		
+		wait 1 seconds
+		shake camera strength 7.0	
+
+		set camera position to {2212.136, 129.421, 927.363}
+		set camera focus to {2161.453, 43.772, 937.128}
+		move camera position to {2212.136, 129.421, 927.363} time 4
+		move camera focus to {2165.481, 41.634, 938.190} time 4
+
+		wait 3 seconds
+
+		run background script Land2Dialogue(BI_ADVISORS_FINAL_VOLCANO)
+
+		set camera position to {2088.346, 105.040, 881.667}
+		set camera focus to {2021.573, 168.802, 920.082}
+		move camera position to {2081.042, 111.875, 879.256} time 5
+		move camera focus to {2015.100, 165.217, 932.216} time 5
+		BI_StopBarrage = BI_TRUE
+
+		wait 5 seconds
+		stop music with fadetime 4
+		start music "cut_scene_sad_34s_01" with fadetime 4
+
+		clear dialogue
+
+		set L2_EnemyCreature position to {1555.118, 256.238, 926.445}
+		snap creature L2_EnemyCreature focus to {1555.118, 256.238, 926.445}
+		play anim C_L2OUTRO_VOLCANO_CREATE on L2_EnemyCreature
+		VolcanoSeed = create visual effect VISUAL_EFFECT_EPIC_VOLCANO_SEED at {1499.508, 253.602, 1506.384} time 4
+		FireHand[0] = create visual effect "cr_s_Casting_fist.ves" strength 1 scale 1 on creature L2_EnemyCreature left hand time 30
+		FireHand[1] = create visual effect "cr_s_Casting_fist.ves" strength 1 scale 1 on creature L2_EnemyCreature right hand time 30
+		set visual effect FireHand[0] target {1503.411, 253.550, 1509.348}
+		set visual effect FireHand[1] target {1503.411, 253.550, 1509.348}
+		BodyEffect = create visual effect "cr_s_Casting_body.ves" strength 1 scale 1 at {1498.754, 253.449, 1505.081}/*{1496.618, 252.304, 1504.108}*/ time 30
+
+		
+		wait 5 seconds
+		//FireInCHand = create visual effect VISUAL_MIRACLE_FIRE_IMPACT at {L2_EnemyCreature}
+
+		set camera position to {2091.331, 156.061, 869.843}//set camera position to {2114.460, 127.993, 879.911}
+		set camera focus to {2010.715, 165.341, 928.278}//set camera focus to {2037.019, 152.039, 938.413}
+		move camera position to {2091.331, 207.293, 869.843} time 10 easein 0 easeout 0//camera position to {2114.460, 223.225, 879.911} time 10 easein 0 easeout 0
+		move camera focus to {2010.715, 216.573, 928.278} time 10 easein 0 easeout 0//camera focus to {2035.261, 230.186, 940.580} time 10 easein 0 easeout 0
+
+		wait 4 seconds
+		shake camera strength 6.0	
+		wait 2 seconds
+		shake camera strength 4.0	
+		wait 2 seconds
+		stop camera shake
+		wait 2 seconds
+
+		reset camera path
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND2_DONE_LAND
+
+		queue camera move with position {2445.731, 185.784, 420.333} focus {2379.324, 198.754, 493.956} time 0.0
+		queue camera move with position {2695.798, 136.951, 143.128} focus {2629.392, 149.921, 216.752} time 29.0
+		queue camera move with position {2781.639, 180.805, 575.077} focus {2788.573, 190.542, 674.357} time 1.0
+		queue camera move with position {8974.207, 63.197, 7725.082} focus {9048.328, 63.117, 7792.270} time 6.0
+		play camera path with easein 0 easeout 0.5 method SCRIPT_CAMERAPATH_SMOOTHEST
+		eject evil spirit
+		eject good spirit
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_02FINAL_PLAYTHROUGH29_OUTRO_G_10_20_30_40_60
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_02FINAL_PLAYTHROUGH29_OUTRO_E_10_20_30_40_60
+				
+		wait 30 seconds
+		//set camera lens 100.000 time 4
+		wait 2 seconds
+		set mixer land2mixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+
+		set fade red 255 green 255 blue 255 time 2
+		wait 1 seconds
+		wait until read
+		send good spirit home
+		send evil spirit home
+
+		wait 2 seconds
+
+	end cinema
+
+	run script Land2InterfaceActions(1)	
+
+	disable global influence
+	enable heartbeat sound
+	disable scripted platoon get on enemy wall
+	enable tribute visual
+	enable show army set effect
+	enable show army bubbles
+
+	//set fade in time 1
+	Land2Complete = 1
+	//wait 5 seconds
+	disable pause menu in widescreen
+	enable fire system
+	wait until widescreen transition complete
+	load map "./Data/Landscape/BW2/Land3.bwe"
+	wait 3 seconds
+
+end script Land2Intro
+
+//-------------------------------------------
+// Maintain time
+//-------------------------------------------
+begin script Land2MaintainTime
+start
+	begin loop
+		set game time 18.30
+		wait 1 seconds
+	until L2ChangeTime == 1
+	end loop
+end script Land2MaintainTime
+
+//-------------------------------------------
+// Disable lots of interface actions
+//-------------------------------------------
+begin script Land2InterfaceActions(EnableDisable)
+start
+
+	if EnableDisable == 0
+
+		disable interface action MANACOST_BALANCE_TYPE_CREATEDISCIPLE
+		disable interface action MANACOST_BALANCE_TYPE_PLACEBLUEPRINT
+		disable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+		disable interface action MANACOST_BALANCE_TYPE_PERHOURCHANGED
+		disable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+		disable interface action MANACOST_BALANCE_TYPE_TAPBUILDING
+		disable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+		enable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		enable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT                   
+		enable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT                                            
+		disable pickup type PICKUP_BALANCE_TYPE_ROAD                                                     
+		disable pickup type PICKUP_BALANCE_TYPE_SMALLTREE                                               
+		disable pickup type PICKUP_BALANCE_TYPE_TREE                                                   
+		disable pickup type PICKUP_BALANCE_TYPE_SPELLSEED
+		disable pickup type PICKUP_BALANCE_TYPE_ABODE
+		disable pickup type PICKUP_BALANCE_TYPE_ARMYFLAG 
+		disable pickup type PICKUP_BALANCE_TYPE_TOWER
+
+	else
+
+		enable interface action MANACOST_BALANCE_TYPE_CREATEDISCIPLE
+		enable interface action MANACOST_BALANCE_TYPE_PLACEBLUEPRINT
+		enable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+		enable interface action MANACOST_BALANCE_TYPE_PERHOURCHANGED
+		enable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+		enable interface action MANACOST_BALANCE_TYPE_TAPBUILDING
+		enable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+		enable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		enable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT                   
+		enable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT                                            
+		enable pickup type PICKUP_BALANCE_TYPE_ROAD                                                     
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLTREE                                               
+		enable pickup type PICKUP_BALANCE_TYPE_TREE                                                   
+		enable pickup type PICKUP_BALANCE_TYPE_SPELLSEED
+		enable pickup type PICKUP_BALANCE_TYPE_ABODE
+		enable pickup type PICKUP_BALANCE_TYPE_ARMYFLAG 
+		enable pickup type PICKUP_BALANCE_TYPE_TOWER
+
+	end if
+
+end script Land2InterfaceActions
+
+//-------------------------------------------------------------------------
+// Camera Roll
+//-------------------------------------------------------------------------
+begin script MattLovesCameraRoll
+
+start
+
+	while 0 ==0
+
+		if InCameraRollMode ==1
+
+			begin known cinema
+
+				set camera roll -3 time 3
+				wait 3 seconds
+
+				begin loop
+					set camera roll 3 time 3
+					wait 6 seconds
+					set camera roll -3 time 3
+					wait 6 seconds
+				until InCameraRollMode == 0
+				end loop
+
+			end known cinema
+
+		end if
+
+	end while
+
+end script MattLovesCameraRoll
+
+//=========================================================================================
+begin script Advisorage
+
+start
+
+	begin known cinema
+
+		eject good spirit
+		eject evil spirit
+
+		say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP94"
+		//	GOOD_ADVISOR	Now you've had a taste of your powers, we're ready to visit our mighty Greek capital.
+		wait until read
+
+		say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP95"	
+		//EVIL_ADVISOR	Yeah, full of people that worship US!
+		wait until read
+
+		say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP96"	
+		//GOOD_ADVISOR	Listen! Can you hear that? That's a pure prayer.
+		wait until read
+
+		say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP97"	
+		//GOOD_ADVISOR	It sounds like something terrible has happened!
+		wait until read
+
+		say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP98"	
+		//GOOD_ADVISOR	Look! There she is!
+		wait until read
+
+		say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP99"	
+		//L2_PRAYING_WOMAN	Save us! Help us! Save us! Help us!
+		wait until read
+
+		//Save us! Save our people!			
+		say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_10"
+		wait until read
+		//Please, we pray! Save us!			
+		say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_20"
+		wait until read
+		//Boss, you are the god of the Greeks.			
+		say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_25"
+		wait until read
+
+		say "BW2T_SCRIPT_02FINAL_PDMRON_PICKUP100"	
+		//EVIL_ADVISOR	Where are these Aztecs?
+		wait until read				
+
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_7"
+		wait until read
+		say "BW2T_SCRIPT_02FINAL_INTERACTIVECINEMA_8"
+		wait until read
+
+		//The Aztecs have killed all our troops!			
+		say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_80"
+		wait until read
+		//We're all going to die!			
+		say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_90"
+		wait until read
+		//We're going to be wiped out by the brutal Aztecs!			
+		say "BW2T_SCRIPT_02FINAL_PDM_STARTLAND_100"
+		wait until read
+
+	end known cinema
+end script Advisorage
+
+begin script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly(whichset, deleteorcleate)
+
+count = 0
+
+start
+
+if whichset ==0
+
+	while count < 40
+		if deleteorcleate ==0
+			AlleyLimboHouses[count] = get HOUSE at {1740.654, 160.487, 1029.511} radius 35 excluding scripted
+			if AlleyLimboHouses[count] exists
+				move AlleyLimboHouses[count] to limbo
+				count++
+			end if
+		elsif deleteorcleate ==1
+			if AlleyLimboHouses[count] exists
+				release AlleyLimboHouses[count] from limbo
+				count++
+			end if
+		end if
+
+
+	end while
+
+
+	while count < 80
+		if deleteorcleate ==0
+
+			AlleyLimboHouses[count] = get HOUSE at {1718.607, 156.211, 860.081} radius 50 excluding scripted
+			if AlleyLimboHouses[count] exists
+				move AlleyLimboHouses[count] to limbo
+				count++
+			end if
+		elsif deleteorcleate ==1
+			if AlleyLimboHouses[count] exists
+				release AlleyLimboHouses[count] from limbo
+				count++
+			end if
+
+		end if
+
+	end while
+
+elsif whichset ==1
+
+
+	while count < 20
+		if deleteorcleate ==0
+
+			BarrelLimboHouses[count] = get HOUSE at {1993.294, 101.478, 989.880} radius 50 excluding scripted
+			if BarrelLimboHouses[count] exists
+				move BarrelLimboHouses[count] to limbo
+				count++
+
+			end if
+		elsif deleteorcleate ==1
+			if BarrelLimboHouses[count] exists
+				release BarrelLimboHouses[count] from limbo
+				count++
+			end if
+
+		end if
+
+	end while
+
+
+	while count < 40
+		if deleteorcleate ==0
+
+			BarrelLimboHouses[count] = get HOUSE at {2057.956, 100.618, 889.669} radius 50 excluding scripted
+			if BarrelLimboHouses[count] exists
+				move BarrelLimboHouses[count] to limbo
+				count++
+			end if
+		elsif deleteorcleate ==1
+			if BarrelLimboHouses[count] exists
+				release BarrelLimboHouses[count] from limbo
+				count++
+			end if
+
+		end if
+
+	end while
+
+elsif whichset ==2
+
+
+	while count < 20
+		if deleteorcleate ==0
+
+			TownLimboHouses[count] = get HOUSE at {1759.212, 113.321, 1824.665} radius 50 excluding scripted
+			if TownLimboHouses[count] exists
+				move TownLimboHouses[count] to limbo
+				count++
+			end if
+		elsif deleteorcleate ==1
+			if TownLimboHouses[count] exists
+			release TownLimboHouses[count] from limbo
+			count++
+			end if
+
+		end if
+
+
+	end while
+
+
+	while count < 40
+		if deleteorcleate ==0
+
+			TownLimboHouses[count] = get HOUSE at {1693.682, 117.762, 1747.508} radius 50 excluding scripted
+			if TownLimboHouses[count] exists
+				move TownLimboHouses[count] to limbo
+				count++
+			end if
+		elsif deleteorcleate ==1
+			if TownLimboHouses[count] exists
+				release TownLimboHouses[count] from limbo
+				count++
+			end if
+
+		end if
+
+	end while
+
+end if
+
+
+
+
+end script HaHAWeCanCheatminSpecByDeleetingHousesOnTheFly
+
+//---------------------------------------------------------
+// Intro Action
+//---------------------------------------------------------
+begin script Land2_IntroAction
+start
+	
+	//Intro villagers and stuff
+	//run background script Land2_IntroVllagers(marker at {1737.596, 112.477, 1764.968}, marker at {1727.303, 115.491, 1692.886})
+	wait 20 seconds
+
+
+	//run background script AA_IntroCatapults
+	run background script Land2_MassScaredVillagers(marker at {1671.054, 120.094, 1782.623}, marker at {1741.529, 126.590, 1898.202})
+	run background script Land2_MassScaredVillagers(marker at {1743.432, 112.519, 1746.915}, marker at {1810.162, 116.701, 1756.732})
+	run background script Land2_MassScaredVillagers(marker at {1764.111, 113.119, 1829.047}, marker at {1733.373, 115.601, 1714.211})
+	run background script Land2_MassScaredVillagers(marker at {1580.767, 144.599, 1843.010}, marker at {1723.115, 112.740, 1797.738})
+/*
+	run background script Land2_IntroExplodeCrap(marker at {1728.380, 113.460, 1750.136}, 15) 
+	run background script Land2_IntroExplodeCrap(marker at {1763.191, 112.613, 1753.876}, 16)
+	run background script Land2_IntroExplodeCrap(marker at {1695.475, 117.195, 1766.294}, 18)
+	run background script Land2_IntroExplodeCrap(marker at {1685.423, 122.231, 1843.785}, 19)
+	run background script Land2_IntroExplodeCrap(marker at {1665.159, 126.884, 1868.378}, 19)
+*/
+	wait 20 seconds
+
+	L2_Trigger_DeleteIntroStuff = 1
+	wait until 1 == 0
+
+end script Land2_IntroAction
+
+begin script DistantExplosions
+
+start
+
+
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds		
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		play string sound "SCRIPT29_EXPLOSION5"
+		wait 2 seconds
+		
+end script DistantExplosions
+

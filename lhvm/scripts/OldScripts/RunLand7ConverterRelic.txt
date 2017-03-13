@@ -1,0 +1,10 @@
+//------------------------------------------------------------------------------------------------------------------------
+run script RunLand7ConverterRelic
+//------------------------------------------------------------------------------------------------------------------------
+begin script RunLand7ConverterRelic
+
+start
+
+	run script Land7ConverterRelic
+	
+end script RunLand7ConverterRelic

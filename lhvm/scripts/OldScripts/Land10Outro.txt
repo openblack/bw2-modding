@@ -1,0 +1,75 @@
+begin script Land10Outro
+
+L10AztecTownConversionMethod=0
+
+start
+
+begin cinema
+
+	L10AztecTownConversionMethod = variable get town L10AztecCapital method of last conversion
+
+	if L10AztecTownConversionMethod == 0
+		L10AztecTownConversionMethod = number from 1 to 2
+	end if
+
+	if L10AztecTownConversionMethod == 1 //aggressive
+
+		say "BW2T_SCRIPT_10FINAL_OUTRO_EVIL_10"
+		//AZTEC_GENERAL	How can this be? I am brought low by these Greeks! They call upon the divine energies for assistance. They fight in the shadow of some mighty god!
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_OUTRO_EVIL_20"
+		//	AZTEC_GENERAL	Their armies are powerful, their tactics sublime. But they will be stopped!
+		wait until read
+		
+	elsif L10AztecTownConversionMethod == 2
+
+		say "BW2T_SCRIPT_10FINAL_OUTRO_GOOD_10"
+		//	AZTEC_GENERAL	These Greeks have built so mighty an empire upon this land. I vow to gather my forces and wreak terrible vengeance on them all!
+		wait until read
+		
+		say "BW2T_SCRIPT_10FINAL_OUTRO_GOOD_20"
+		//	AZTEC_GENERAL	These Greeks are aided by authority from above. They wield unstoppable Miracles. They are under the protection of some mighty power!
+		wait until read
+		
+	end if
+
+	say "BW2T_SCRIPT_10FINAL_OUTRO_PICKUP82"
+	//	AZTEC_GENERAL	Do these Greeks dare to follow us to our capital?
+	wait until read
+		
+	say "BW2T_SCRIPT_10FINAL_OUTRO_PICKUP83"
+	//	AZTEC_GENERAL	 This would be foolish of them. But fools and wise men die just as easily.
+	wait until read
+		
+	say "BW2T_SCRIPT_10FINAL_OUTRO_PICKUP84"
+	//	AZTEC_GENERAL	Come quickly, my warriors. We must take flight! Perhaps the Greeks, sensing victory, will blindly follow us!
+	wait until read
+		
+	say "BW2T_SCRIPT_10FINAL_OUTRO_PICKUP85"
+	//	AZTEC_GENERAL	Ensure that the Epic Miracle is charged. I intend to make good use of it!
+	wait until read
+
+	eject evil spirit
+		
+	say "BW2T_SCRIPT_10FINAL_OUTRO_PICKUP86"
+	//	EVIL_ADVISOR	We have to follow them and end this. We got no choice.
+	wait until read
+
+	eject good spirit
+		
+	say "BW2T_SCRIPT_10FINAL_OUTRO_PICKUP87"
+	//	GOOD_ADVISOR	I fear he's right, Leader. But the Aztec people can still be saved. I am sure of that.
+	wait until read
+		
+	/*
+	BW2T_SCRIPT_10FINAL_PICKUP40	GOOD_ADVISOR	Leader, when the Earthquake's effects wear off, we'll need new walls to protect the Town!
+	BW2T_SCRIPT_10FINAL_PICKUP78	AZTEC_GENERAL	A Creature will ensure the survival of a race? Can this be so?
+	BW2T_SCRIPT_10FINAL_PICKUP79	AZTEC_GENERAL	This is what the Prophecy says! But does a divine power truly protect the Greeks?
+	BW2T_SCRIPT_10FINAL_PICKUP80	AZTEC_GENERAL	Aides! summon all the scholars to my chambers now!
+	*/
+
+
+end cinema
+
+
+end script Land10Outro

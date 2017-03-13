@@ -1,0 +1,11 @@
+run script RunFootRace
+
+begin script RunFootRace
+start
+	begin camera
+		set camera position to {951.362,31.830,1220.874}
+		set camera focus to {985.303,8.269,1266.806}
+	end camera
+
+	run script FootRace
+end script RunFootRace

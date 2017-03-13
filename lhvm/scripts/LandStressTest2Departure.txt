@@ -1,0 +1,31 @@
+begin script Land2StressTest2Departure
+	DepartureScrollPos = marker at {651.323, 43.442, 475.535}
+	DepartureFX = 0
+	DepartureScroll = 0
+start
+
+	DepartureFX = create visual effect "gp_s_townctr_beam.ves" strength 1 scale 0.7 at {DepartureScrollPos} time -1 
+	set DepartureFX colour red 221 green 228 blue 0	
+
+	DepartureScroll = create highlight GOLD name "Depart Land 2" remind "Reminder temp" at {DepartureScrollPos}
+	ALTITUDE of DepartureScroll = 3
+
+	wait until DepartureScroll right clicked
+
+	begin dialogue
+		eject good spirit
+		say "Are you sure you wish to leave the land?"
+		wait until read
+		say "Click again to confirm"
+		wait until read
+		send good spirit home
+	end dialogue
+
+	clear right clicked object
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+
+	Land2Complete = 1
+	load map "./Data/Landscape/BW2/Land3.bwe"
+
+end script Land2StressTest2Departure

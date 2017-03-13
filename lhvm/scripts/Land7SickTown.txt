@@ -1,0 +1,553 @@
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+
+define ST_NUM_PEOPLE = 15
+//define GLOBAL_VALUE_LAND_7_SICKTOWN_WAFTTIMER = 3
+//define GLOBAL_VALUE_LAND_7_SICKTOWN_REACTIVATETIMER = 50
+//define GLOBAL_VALUE_LAND_7_SICKTOWN_REACTIVATETIMER2 = 18
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+
+global ST_CenterPos = 0 //marker at {1543.000,306.503,1463.557}
+global ST_ScrollClicked = 0
+global ST_NumSaved = 0
+global ST_NumKilled = 0
+global ST_SmokeCleared = 0
+global ST_PlatoonDead = 0
+global PeopleStartPos[ST_NUM_PEOPLE]
+global SickTownMigrate = 0
+global ST_ChallengeComplete = 0
+
+global ST_EmmiterRed = 0
+global ST_EmmiterGreen = 255
+global ST_EmmiterBlue = 0
+global TIMER = GLOBAL_VALUE_LAND_7_SICKTOWN_REACTIVATETIMER
+global TIMER2 = GLOBAL_VALUE_LAND_7_SICKTOWN_REACTIVATETIMER2
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+define script ST_Setup
+define script Count
+define script ST_Outro
+define script ST_PeopleControl(Victim,inc)
+define script ST_ScrollCheck
+define script ST_CheckForPlatoon(PlatoonNear)
+define script ST_PeopleComments
+
+begin script Land7SickTown
+
+start
+
+	run background script ST_Setup
+
+end script Land7SickTown
+
+
+//-----------------------------------------------------------------
+// Setup
+//-----------------------------------------------------------------
+
+begin script ST_Setup
+
+	inc = 0
+	Victim = 0
+	L3GreekTown = get town with id 0
+	Effect = 0
+	SickTown = get town with id 1
+
+start
+	ST_CenterPos = marker at {1556.707,307.163,1474.137}
+
+	PeopleStartPos[0] = marker at {1491.876,303.785,1489.803}
+	PeopleStartPos[1] = marker at {1558.154,305.823,1488.561}
+	PeopleStartPos[2] = marker at {1585.583,304.098,1446.893}
+	PeopleStartPos[3] = marker at {1526.760,295.815,1397.460}
+	PeopleStartPos[4] = marker at {1590.309,296.418,1398.192}
+	PeopleStartPos[5] = marker at {1521.433,307.610,1528.124}
+	PeopleStartPos[6] = marker at {1518.292,303.078,1442.646}
+	PeopleStartPos[7] = marker at {1512.711,306.129,1512.322}
+	PeopleStartPos[8] = marker at {1607.397,306.763,1478.509}
+	PeopleStartPos[9] = marker at {1579.675,306.812,1496.834}
+	PeopleStartPos[10] = marker at {1576.302,303.152,1443.788}
+	PeopleStartPos[11] = marker at {1535.536,297.431,1412.036}
+	PeopleStartPos[12] = marker at {1528.616,304.880,1472.318}
+	PeopleStartPos[13] = marker at {1499.637,304.796,1475.447}
+	PeopleStartPos[14] = marker at {1620.137,306.439,1465.083}
+	//PeopleStartPos[15] = marker at {1579.675,306.812,1496.834}
+
+	inc= 0
+
+	run background script Count
+
+	force while inc < ST_NUM_PEOPLE
+		Victim = create random villager of tribe TRIBE_TYPE_JAPANESE at {PeopleStartPos[inc]}
+		run background script ST_PeopleControl(Victim,inc)
+		inc++
+		attach Victim to SickTown
+	end while
+
+	run background script ST_ScrollCheck
+	run background script ST_PeopleComments
+
+	wait until ST_SmokeCleared == 1
+
+	wait 2 seconds
+	
+	run script ST_Outro
+
+	//increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SICKTOWN
+	
+end script ST_Setup
+
+//--------------------------------------------------------------------
+// PEOPLE CONTROL
+//--------------------------------------------------------------------
+
+
+begin script ST_PeopleControl(Victim,inc)
+
+ObjectInHand = 0
+thisnumber = 0
+Time = 0
+Effect = 0
+VictimDead = 0
+Setup = 0
+PlatoonNear = 0
+NumberofPeople = ST_NUM_PEOPLE - 1
+SickTown = get town with id 1
+
+start
+
+	while not Setup == 1
+		HEALTH of Victim = 0.1
+		Effect = create visual effect "gp_s_posion_cloud_wind.ves" strength 20.0 scale 1 on Victim time -1
+		//set Effect colour red ST_EmmiterRed green ST_EmmiterGreen blue ST_EmmiterBlue
+		Setup = 1
+	end while
+
+	move Victim position to {PeopleStartPos[inc]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+
+	while Victim exists and ST_ChallengeComplete == 0
+
+		if number from 1 to 200 == 1 and Effect exists
+				play sound "SCRIPT_FART" at {Victim}
+				wait until not sound "SCRIPT_FART" playing
+		end if
+
+		if variable get town SickTown status == variable TOWN_STATUS_MIGRATION_STARTED or SickTownMigrate == 1
+				delete Victim with fade
+				SickTownMigrate = 1
+				stop visual effect Effect
+				delete Effect
+		end if
+
+		if ST_SmokeCleared == 1
+				if Effect exists
+						stop visual effect Effect
+						wait 2 seconds
+						delete Effect
+				end if
+				release Victim
+				Victim = 0
+		// If Victim is killed then player is being evil
+		elsif HEALTH of Victim < 0.1 and SickTownMigrate == 0
+				stop visual effect Effect
+				delete Effect
+				ST_NumKilled++
+				//say "Victim Dead"
+				release Victim
+				Victim = 0
+		// If Victim heals the villagers they are being good
+		elsif HEALTH of Victim > 0.1 and SickTownMigrate == 0
+				stop visual effect Effect
+				wait 2 seconds
+				delete Effect
+				ST_NumSaved++
+				//say "Victim Saved"
+				release Victim
+				Victim = 0
+		else
+
+			if {Victim} near {PeopleStartPos[inc]} radius 5
+					if inc < NumberofPeople
+							inc ++
+							move Victim position to {PeopleStartPos[inc]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+					else inc = 0
+						move Victim position to {PeopleStartPos[inc]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+					end if
+			end if
+
+
+			// Checks to see if a platoon is nearby, if so they will also become sick (and die)
+			PlatoonNear =  get platoon of player 0 nearest {Victim} radius 10
+			if PlatoonNear exists and ST_PlatoonDead == 0 and get distance from {PlatoonNear} to {SickTown} < 60
+					run background script ST_CheckForPlatoon(PlatoonNear)
+					ST_PlatoonDead = 1
+			elsif PlatoonNear exists
+				release PlatoonNear
+			end if
+
+			// Checks that the player isn't holding anyone
+			ObjectInHand = get object held
+					if ObjectInHand == Victim
+							while not ObjectInHand == 0
+										ObjectInHand = get object held
+							end while
+					else ObjectInHand = 0
+					end if
+
+			if ObjectInHand == 0
+
+			// Checks to see if the player is wafting the smoke away
+					while hand position near {Victim} radius 7
+						while thisnumber <= GLOBAL_VALUE_LAND_7_SICKTOWN_WAFTTIMER and HEALTH of Victim >= 0.1
+								if hand position near {Victim} radius 3
+									wait until hand position not near {Victim} radius 3.5
+									thisnumber ++
+								end if	
+								// Check to see if victim is near next waypoint
+								if {Victim} near {PeopleStartPos[inc]} radius 5
+									if inc < ST_NUM_PEOPLE
+									inc ++
+									move Victim position to {PeopleStartPos[inc]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+									else inc = 0
+									move Victim position to {PeopleStartPos[inc]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+								end if
+						end if
+						end while
+						if thisnumber >= GLOBAL_VALUE_LAND_7_SICKTOWN_WAFTTIMER and HEALTH of Victim >= 0.1
+								stop visual effect Effect
+								wait 2 seconds
+								delete Effect
+								ST_NumSaved++
+										while Time < TIMER2
+											wait 1.0 seconds
+											Time ++
+									end while
+								// Once wafted the villager will wait x amount of seconds before becoming ill again.
+								if Time == TIMER2 and HEALTH of Victim >= 0.1
+										if not ST_SmokeCleared == 1
+											ST_NumSaved--
+											Effect = create visual effect "gp_s_posion_cloud_wind.ves" strength 20.0 scale 1 on Victim time -1
+											//set Effect colour red ST_EmmiterRed green ST_EmmiterGreen blue ST_EmmiterBlue
+											Time = 0
+											thisnumber = 0
+										end if
+								end if
+						end if
+					end while
+			end if
+		end if
+
+	end while
+
+	release Victim
+	HEALTH of Victim = 1
+
+end script ST_PeopleControl
+
+
+
+//----------------------------------------------------------------
+// Count
+//----------------------------------------------------------------
+
+// Checks to see how many have been killed/saved
+
+begin script Count
+
+People = ST_NUM_PEOPLE
+Total = 0
+
+start
+	begin loop
+		Total = ST_NumSaved + ST_NumKilled
+		if Total == People
+				ST_SmokeCleared = 1
+		end if
+		if ST_NumSaved == People
+				ST_SmokeCleared = 1
+		end if 
+		if ST_NumKilled == People and ST_ScrollClicked == 1
+				ST_SmokeCleared = 1
+		end if 
+	end loop
+end script Count
+
+
+
+
+//-------------------------------------------------------------
+// Outro
+//-------------------------------------------------------------
+
+
+begin script ST_Outro
+
+MyNewValue = 0
+SickTown = get town with id 1
+
+start
+	ST_ChallengeComplete = 1
+	if PLAYER of SickTown == 0
+		if ST_NumSaved >= ST_NUM_PEOPLE - 4
+			begin cinema
+				eject good spirit
+				say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_160"
+				wait until read
+				send good spirit home
+				MyNewValue = get player 0 alignment+0.02
+				wait 1 second
+			end cinema
+		else
+			begin cinema 
+				MyNewValue = get player 0 alignment-0.02
+				set player 0 alignment MyNewValue
+				eject evil spirit
+				say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_190"
+				wait until read
+				send evil spirit home
+				wait 1 seconds
+			end cinema
+		end if
+	else
+		if ST_NumSaved >= ST_NUM_PEOPLE - 4
+			begin cinema  
+					eject good spirit
+					say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_40"
+					wait until read
+					eject evil spirit
+					say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_50"
+					wait until read
+					send good spirit home
+					send evil spirit home
+					MyNewValue = get player 0 alignment+0.02
+					set player 0 alignment MyNewValue
+					wait 1 seconds
+			end cinema
+		else
+			begin cinema 
+					MyNewValue = get player 0 alignment-0.02
+					set player 0 alignment MyNewValue
+					eject evil spirit
+					say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_190"
+					wait until read
+					send evil spirit home
+					wait 1 seconds
+			end cinema
+		end if
+	end if
+
+		wait 2 seconds
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+		wait 2 seconds
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+end script ST_Outro
+
+
+//-----------------------------------------------------------------
+// CheckForPlatoon
+//-----------------------------------------------------------------
+// Makes platoon ill if they get too close to an infected villager
+// The platoon will die and cannot be saved (Town cannot be taken by force this way, until challenge is complete)
+
+begin script ST_CheckForPlatoon(PlatoonNear)
+
+	NewUnit[ST_NUM_PEOPLE]
+	inc = 0
+	Effect2[ST_NUM_PEOPLE]
+	TroopHealth = 0
+
+start
+
+		while get number of villagers in platoon PlatoonNear >  0
+				NewUnit[inc] = get platoon PlatoonNear member at offset inc
+				Effect2[inc] = create visual effect "gp_s_posion_cloud_wind.ves" strength 20.0 scale 1 on NewUnit[inc] time 3
+				if NewUnit[inc] exists and HEALTH of NewUnit[inc] > 0
+					TroopHealth = HEALTH of NewUnit[inc]
+					TroopHealth -= 0.25
+					if TroopHealth < 0
+							TroopHealth = 0
+					end if
+					HEALTH of NewUnit[inc] = TroopHealth
+					wait 0.1 second
+				elsif NewUnit[inc] exists and HEALTH of NewUnit[inc] == 0
+					state NewUnit[inc] DEAD
+				end if
+				inc++
+				if inc > get number of villagers in platoon PlatoonNear
+					inc = 0
+					wait 0.2 seconds
+				end if
+		end while
+		ST_PlatoonDead = 0
+
+end script ST_CheckForPlatoon
+
+
+
+//--------------------------------------------------------------------------------
+// People Comments
+//--------------------------------------------------------------------------------
+
+begin script ST_PeopleComments
+	CommentTime		= 0
+	RandomNum		= 0
+	RandomNum2		= 0
+	invis1			= marker at {1543.172, 303.099, 1446.084}
+	invis2			= marker at {1553.548, 305.081, 1476.591}
+	invis3			= marker at {1573.620, 304.397, 1450.901}
+	area			= 0
+
+start
+	while ST_SmokeCleared == 0
+		if hand position near {ST_CenterPos} radius 100
+			RandomNum = number from 1 to 3
+			RandomNum2 = number from 1 to 3
+			if RandomNum2 == 1
+				area = marker at {invis1}
+			end if
+			if RandomNum2 == 2
+				area = marker at {invis2}
+			end if
+			if RandomNum2 == 1
+				area = marker at {invis3}
+			end if
+			begin dialogue
+				if RandomNum == 1 and camera position near {area} radius 30
+					play sound "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_120" at {area}
+					wait until not sound "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_120" playing
+					play sound "SCRIPT_FART" at {area}
+					wait until not sound "SCRIPT_FART" playing
+				elsif RandomNum == 2 and camera position near {area} radius 30
+					play sound "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_130" at {area}
+					wait until not sound "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_130" playing
+					play sound "SCRIPT_FART" at {area}
+					wait until not sound "SCRIPT_FART" playing
+				elsif RandomNum == 3 and camera position near {area} radius 30
+					play sound "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_140" at {area}
+					wait until not sound "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_140" playing
+					play sound "SCRIPT_FART" at {area}
+					wait until not sound "SCRIPT_FART" playing
+				end if
+			end dialogue
+		end if
+		CommentTime = number from 10 to 20
+		wait CommentTime seconds
+	end while
+end script ST_PeopleComments
+
+
+//-----------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------
+
+begin script ST_Intro
+
+	// Camera Positions
+	CameraPos1 = marker at {1478.255,325.400,1425.556}
+	CameraPos2 = marker at {1488.222,305.571,1437.396}
+	CameraPos3 = marker at {1491.955,306.311,1437.073}
+	CameraFoc1 = marker at  {1518.961,288.550,1508.897}
+	CameraFoc2 = marker at  {1545.880,295.136,1512.983}
+	CameraFoc3 = marker at  {1459.820,288.051,1528.187}
+	
+	// variables
+	actor = 0
+	ActorStart =  marker at {1490.742,304.858,1444.383}
+	ActorStop1 = marker at {1492.799,305.319,1441.081}
+	ActorEnd = marker at {1500.302,307.069,1431.273}
+	Effect = 0
+	
+start
+	begin cinema
+		store camera details
+		set fade red 0 green 0 blue 0 time 2		
+		wait 2 seconds
+		actor = create random villager of tribe TRIBE_TYPE_JAPANESE at {ActorStart}
+		Effect = create visual effect "gp_s_posion_cloud_wind.ves" strength 20.0 scale 1 on actor time -1
+		//set Effect colour red ST_EmmiterRed green ST_EmmiterGreen blue ST_EmmiterBlue
+		set camera position to {CameraPos1}
+		set camera focus to {CameraFoc1}
+		set fade in time 2
+		SPEED of actor  = 0.1 
+		HEALTH of actor  = 0.1
+		move actor position to {ActorStop1}
+		move camera position to {CameraPos2} time 6
+		move camera focus to {CameraFoc2} time 6
+		eject good spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_10"
+		wait until read
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_20"
+		wait 2 seconds
+		play anim "a_p_stand_despair_3" on actor loop 1
+		wait until actor played
+		move actor position to {ActorEnd}
+		wait until read
+		//eject evil spirit
+		//say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_30"
+		//wait until read
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		restore camera details
+		//Clean up
+		send good spirit home
+		send evil spirit home
+		delete Effect
+		delete actor
+		wait 1 seconds
+		set fade in time 1
+	end cinema	
+end script ST_Intro
+
+
+
+
+//-----------------------------------------------------------------
+// ScrollCheck
+//-----------------------------------------------------------------
+
+begin script ST_ScrollCheck
+	Scroll = 0
+	ScrollPos = marker at {1556.951,307.385,1481.471}
+	TownMigrated = 0
+	SickTown = get town with id 1
+
+start
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_200" remind "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_200" at {ScrollPos}
+	ALTITUDE of Scroll = 3	
+		
+	wait until Scroll right clicked	or variable get town SickTown status == variable TOWN_STATUS_MIGRATION_STARTED
+	
+	if variable get town SickTown status == variable TOWN_STATUS_MIGRATION_STARTED
+				delete Scroll
+				TownMigrated = 1
+	end if
+
+	if TownMigrated == 0
+
+		ST_ScrollClicked = 1
+		delete Scroll
+		
+		run script ST_Intro
+
+		TIMER2 = TIMER
+
+		Scroll = create highlight SILVER name "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_REMINDER" remind "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_REMINDER" at {ScrollPos}
+		ALTITUDE of Scroll = 3	
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 with amount 1 text "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_REMINDER" amount 1 description "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_7_SICKTOWN
+		L7ShowingSickTownObjective = 1
+
+		wait until ST_SmokeCleared == 1
+
+		delete Scroll
+	end if
+
+end script ST_ScrollCheck

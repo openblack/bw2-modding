@@ -1,0 +1,6 @@
+run script RunLand1FollowCreature
+
+begin script RunLand1FollowCreature
+start
+	run script Land1FollowCreature
+end script RunLand1FollowCreature

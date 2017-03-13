@@ -1,0 +1,6 @@
+run script RunLand5ThrowBloke
+
+begin script RunLand5ThrowBloke
+start
+	run script Land5ThrowBloke
+end script RunLand5ThrowBloke

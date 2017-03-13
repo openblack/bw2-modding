@@ -1,0 +1,6 @@
+run script RunLand5NorseCapitalScript
+
+begin script RunLand5NorseCapitalScript
+start
+	run script Land5NorseCapitalScript
+end script RunLand5NorseCapitalScript

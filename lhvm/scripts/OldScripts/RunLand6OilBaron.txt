@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Oil Baron script
+//-----------------------------------------------------------------------------
+run script RunLand6OilBaron
+
+begin script RunLand6OilBaron
+
+start
+
+	run script Land6OilBaron
+
+end script RunLand6OilBaron

@@ -1,0 +1,36 @@
+define script Land3BeginMigration
+
+begin script Land3Migration
+
+PlayerGotTemple = 0
+
+start
+
+while L3MigrationComplete != 1
+
+	PlayerGotTemple = get building ABODE_NUMBER_TEMPLE in L3GreekTown min built 1
+
+	if PlayerGotTemple != 0
+		run script Land3BeginMigration
+	end if
+end while
+
+end script Land3Migration
+
+//***************************************
+
+begin script Land3BeginMigration
+
+TempText = 0
+
+start
+
+	if TempText == 0
+		say "Migration begins"
+		wait until read
+		TempText = 1
+	end if
+
+end script Land3BeginMigration
+
+//***************************************

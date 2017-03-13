@@ -1,0 +1,6 @@
+run script RunLand4Fireflies
+
+begin script RunLand4Fireflies
+start
+	run script Land4Fireflies
+end script RunLand4Fireflies

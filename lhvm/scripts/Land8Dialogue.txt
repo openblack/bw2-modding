@@ -1,0 +1,45 @@
+begin script L8_SendAttackDialogue(AttackGroup)
+start
+	begin dialogue
+		if AttackGroup == 140 // raid
+			// Send out raiding parties against these Greeks!
+			say "BW2T_SCRIPT_08FINAL_JAPANESE_EXTRA_LINES_10"
+			wait until read
+		elsif AttackGroup == 100 // attack T3
+			// Attack! The town must be ours!
+			say "BW2T_SCRIPT_08FINAL_JAPANESE_EXTRA_LINES_30"
+			wait until read
+		elsif AttackGroup == 110 // attack T4
+			// We must take the Town. The power of our Creature will assure our victory!
+			say "BW2T_SCRIPT_08FINAL_JAPANESE_EXTRA_LINES_50"
+			wait until read
+		elsif AttackGroup == 120 or AttackGroup == 130 // attack Player
+			// Send our army to decimate the Greek city and purge them from our land.
+			say "BW2T_SCRIPT_08FINAL_JAPANESE_EXTRA_LINES_70"
+			wait until read
+		end if
+	end dialogue
+end script L8_SendAttackDialogue
+
+begin script ChangeStateDialogue(State)
+start
+	begin dialogue
+		if State == 2
+			// Prepare our forces for immediate attack. We must secure the town against the Greeks!
+			say "BW2T_SCRIPT_08FINAL_JAPANESE_EXTRA_LINES_20"
+			wait until read
+		elsif State == 3
+			// Brother, the Greeks are encroaching on our lands, use our Creature to keep them at bay.
+			say "BW2T_SCRIPT_08FINAL_JAPANESE_EXTRA_LINES_40"
+			wait until read
+		elsif State == 4
+			// Our armies continue their advance.
+			say "BW2T_SCRIPT_08FINAL_GENERAL_JAPANESE_WIN_TOWNS_7"
+			wait until read
+		elsif State == 5
+			// Ready our forces for the assault. If we strike decisively we will crush these usurpers.
+			say "BW2T_SCRIPT_08FINAL_JAPANESE_EXTRA_LINES_60"
+			wait until read
+		end if
+	end dialogue
+end script ChangeStateDialogue

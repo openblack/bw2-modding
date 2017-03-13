@@ -1,0 +1,8 @@
+run script RunLand8OilBaron
+
+begin script RunLand8OilBaron
+start
+
+	run script Land8OilBaron
+
+end script RunLand8OilBaron

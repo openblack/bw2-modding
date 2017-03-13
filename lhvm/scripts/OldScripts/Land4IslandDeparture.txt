@@ -1,0 +1,96 @@
+//------------------------------------------------
+//  LAND 4 ISLAND DEPARTURE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land4IslandDeparture
+
+ IslandDepartureScroll = 0
+ IslandDepartureScrollPos = marker at {1074.745,45.700,711.211}
+
+ BoatMaster=0
+ BoatMasterPos=marker at {1074.745,45.700,711.211}
+ MainBoat=0
+ MainBoatPos=0
+ RelCamPos=0
+ RelCamFoc=0
+ BoatMasterFocusPos=0
+ Captain=0
+ CaptainPos0 = marker at {1576.673,18.746,1836.615}
+ CaptainPos1 = marker at {1575.345,18.563,1836.606}
+
+start
+
+	IslandDepartureScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {IslandDepartureScrollPos}
+	ALTITUDE of IslandDepartureScroll = 10
+	BoatMaster = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {BoatMasterPos}
+	wait 0.3 seconds
+	CaptainPos0=marker at get world position from BoatMaster to {7.960,-0.810,-6.622}
+	Captain = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {CaptainPos0}
+	CaptainPos1 = marker at get target from {CaptainPos0} to {BoatMaster} distance 5 angle 180
+
+	begin loop
+		if IslandDepartureScroll right clicked
+			clear right clicked object
+
+			begin cinema
+
+			store camera details
+
+				move Captain position to {CaptainPos1}				
+
+				RelCamPos=marker at get world position from BoatMaster to {-2.516,3.866,-13.111}
+				RelCamFoc=marker at get world position from BoatMaster to {0.658,1.528,-1.200}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+
+				RelCamPos=marker at get world position from BoatMaster to {-2.516,2.530,-12.816}
+				RelCamFoc=marker at get world position from BoatMaster to {-0.624,1.634,-0.446}
+				move camera position to {RelCamPos} time 6
+				move camera focus to {RelCamFoc} time 6
+				wait until camera ready
+
+				set camera lens 38.000
+				RelCamPos=marker at get world position from Captain to {-0.253,0.757,0.524}
+				RelCamFoc=marker at get world position from Captain to {6.687,-1.276,-9.733}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				say "Have we got all the boats packed then?"
+				play anim "A_P_TALK2_MALE" on Captain 
+				wait 2 seconds
+				play anim "A_P_TURN_180" on BoatMaster 
+				wait until BoatMaster played
+				set BoatMaster focus to {Captain}
+				wait until read
+
+				set camera lens 48.000
+				RelCamPos=marker at get world position from Captain to {-0.454,0.863,-0.431}
+				RelCamFoc=marker at get world position from Captain to {5.138,-3.151,10.062}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				wait until BoatMaster played
+				say "I'm just waiting for the signal and we're ready to go"
+				play anim "A_P_TALK2_MALE" on BoatMaster 
+				wait until read
+				move Captain position to {828.396,59.407,659.945}
+
+				restore camera details
+				wait 1 seconds
+				
+			end cinema
+
+			wait until IslandDepartureScroll right clicked
+			clear right clicked object
+			begin cinema
+				set camera lens 70.000
+				RelCamPos=marker at get world position from BoatMaster to {7.702,3.884,2.082}
+				RelCamFoc=marker at get world position from BoatMaster to {-3.656,1.408,-2.639}
+				set camera position to {RelCamPos}
+				set camera focus to {RelCamFoc}
+				say "This cutscene will show the boats sailing off"
+				wait until read
+			end cinema
+		end if
+	end loop
+
+end script Land4IslandDeparture

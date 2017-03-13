@@ -1,0 +1,23 @@
+//-----------------------------------------------------------------------------
+// RunDiscipleTutorial
+//
+// Paul Nettleton
+//
+// This script runs the disciple tutorial script
+//
+//-----------------------------------------------------------------------------
+
+run script RunDiscipleTutorial
+
+//-----------------------------------------------------------------------------
+
+begin script RunDiscipleTutorial
+start
+	
+	run script DiscipleTutorial
+	  
+end script RunDiscipleTutorial
+
+
+//-----------------------------------------------------------------------------
+

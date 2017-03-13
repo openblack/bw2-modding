@@ -1,0 +1,180 @@
+/**************************************
+** Land 2 Shrine Defence
+***************************************
+This challenge begins after the player has built both a pub and a shrine.
+A scroll appears at the shrine. When clicked on, a very old man enters the village and is surprised to find a god there. ‘Ah!’ he exclaims and offers to make up a batch of Ambrosia for the player, ‘like in the old days’. He will prepare it within the confines of the ‘most holy shrine’. The only thing is, that the sweet smell of the Ambrosia will attract the ‘giant monkey’ that lives on the land, and said ‘monkey’ will happily drink his fill. The player simply needs to keep the ‘giant monkey’ away from the ‘most holy shrine’ for a long enough period of time, and the drink of the gods will be finished. As the challenge nears completion, the Norse creature will become more and more desperate to get at the Ambrosia. When presented to the player, the Ambrosia becomes the heal miracle.
+If the player fails to keep the creature away, they will get a second try.
+To keep the creature away the player can:
+•	Build walls keeping the creature out.
+•	Attack the creature with an army.
+•	Attack the creature with the Greek creature.
+•	Throw rocks at it.
+•	Try and get the Greek creature to befriend it and get them to go ‘somewhere else’ together.
+•	Try and placate the creature with food.
+•	Scare the creature off with fire.
+•	Steal the creatures toys and lure him away with them.
+***************************************
+To Do:
+Make sure we find a Shrine rather than a Cathedral
+Add creature doing things
+Add advisor coments
+**************************************/
+
+/*
+Wait until the player has both a shrine and a pub in his town
+Wait a while
+Make a scroll
+If eaither the pub or the shrine are destroyed (or even badly damaged), the
+scroll will disapear until they are better.
+When clicked, the intro cutscene will play.
+Then the pub will slowly emenate an aura of potion brewing.
+The Norse creature will gain desire to go to the pub.
+If the Norse creature makes it to the pub, or the pub is destroyed, a
+scroll will appear above the pub (when it is fixed if broken).
+Whether the player succeeds or fails they get a scroll above the pub.
+This will tell them whats what.
+Finally, when successfull, they get a blueprint
+*/
+
+// defines
+define L2SD_TRUE		= 1
+define L2SD_FALSE		= 0
+define L2SD_ABROSIA_BREW_TIME = 100
+define L2SD_MIN_BUILDING_HEALTH = 0.7 // if a building's health drops bellow this, it is considered destoyed.
+
+global L2SD_GLOBAL_CREATURE_WANTS_AMBROSIA = L2SD_FALSE
+
+define script L2SD_HandleCreature
+
+define script L2SD_IntroCutscene(Shrine,Pub)
+define script L2SD_RetryCutscene(Pub)
+define script L2SD_SuccessCutscene(Pub)
+
+begin script Land2ShrineDefence
+	// Things
+	Pub = 0
+	Shrine = 0
+	Scroll = 0
+	Blueprint = 0
+
+	// Variables
+	StartedChallenge = L2SD_FALSE
+	ChallengeFinished = L2SD_FALSE
+	AmbrosiaTime = create timer for 0 seconds
+start
+	// To begin challenge
+	while StartedChallenge == L2SD_FALSE
+
+		//Wait until the player has both a shrine and a pub in his town
+		while Pub not exists
+			wait 3 seconds
+			Pub = get PUB in L2GreekTown
+		end while
+		while Shrine not exists
+			wait 3 seconds
+			Shrine = get CATHEDRAL in L2GreekTown
+		end while
+
+		//Wait a while
+		wait number from 15 to 100 seconds
+		wait until (HEALTH of Shrine >= L2SD_MIN_BUILDING_HEALTH and HEALTH of Pub >= L2SD_MIN_BUILDING_HEALTH) or Shrine not exists or Pub not exists
+		if Pub exists and Shrine exists
+
+			//Make a scroll
+			Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {Shrine}
+			ALTITUDE of Scroll = 3
+
+			//If eaither the pub or the shrine are destroyed (or even badly
+			//damaged), the scroll will disapear until they are better.
+			wait until HEALTH of Pub < L2SD_MIN_BUILDING_HEALTH or HEALTH of Shrine < L2SD_MIN_BUILDING_HEALTH or Scroll right clicked or Shrine not exists or Pub not exists
+			delete Scroll
+			if Pub exists and Shrine exists and HEALTH of Shrine >= L2SD_MIN_BUILDING_HEALTH and HEALTH of Pub >= L2SD_MIN_BUILDING_HEALTH
+				StartedChallenge = L2SD_TRUE
+			end if
+		end if
+	end while
+
+	// play the intro
+	run script L2SD_IntroCutscene(Shrine,Pub)
+
+	while ChallengeFinished == L2SD_FALSE
+		set AmbrosiaTime time to L2SD_ABROSIA_BREW_TIME seconds
+
+		L2SD_GLOBAL_CREATURE_WANTS_AMBROSIA = L2SD_TRUE
+		run background script L2SD_HandleCreature
+		wait until get AmbrosiaTime time remaining <= 0 or HEALTH of Pub < L2SD_MIN_BUILDING_HEALTH or Pub not exists
+		L2SD_GLOBAL_CREATURE_WANTS_AMBROSIA = L2SD_FALSE
+
+		if Pub exists and HEALTH of Pub >= L2SD_MIN_BUILDING_HEALTH
+			ChallengeFinished = L2SD_TRUE
+		else
+			StartedChallenge = L2SD_FALSE
+			while StartedChallenge == L2SD_FALSE
+				while Pub not exists
+					wait 3 seconds
+					Pub = get PUB in L2GreekTown
+				end while
+				wait until Pub not exists or HEALTH of Pub >= L2SD_MIN_BUILDING_HEALTH
+				if Pub exists
+					Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {Pub}
+					ALTITUDE of Scroll = 3
+
+					wait until Scroll right clicked or HEALTH of Pub < L2SD_MIN_BUILDING_HEALTH or Pub not exists
+					delete Scroll
+
+					if Pub exists and HEALTH of Pub >= L2SD_MIN_BUILDING_HEALTH
+						StartedChallenge = L2SD_TRUE
+						run script L2SD_RetryCutscene(Pub)
+					end if
+				end if
+			end while
+		end if
+	end while
+
+	// StartedChallenge now represents whether or not we are ready to play
+	// the cutscene
+	StartedChallenge = L2SD_FALSE
+	while StartedChallenge == L2SD_FALSE
+		while Pub not exists
+			wait 3 seconds
+			Pub = get PUB in L2GreekTown
+		end while
+		wait until Pub not exists or HEALTH of Pub >= L2SD_MIN_BUILDING_HEALTH
+		if Pub exists
+			Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {Pub}
+			ALTITUDE of Scroll = 3
+
+			wait until Scroll right clicked or HEALTH of Pub < L2SD_MIN_BUILDING_HEALTH or Pub not exists
+			delete Scroll
+
+			if Pub exists and HEALTH of Pub >= L2SD_MIN_BUILDING_HEALTH
+				StartedChallenge = L2SD_TRUE
+				run script L2SD_SuccessCutscene(Pub)
+			end if
+		end if
+	end while
+
+	Blueprint = create blueprint RESEARCH_ITEM_CREATURE_MAGIC_TYPE_AREA_HEAL at {Pub}
+	ALTITUDE of Blueprint = 3
+	wait until Blueprint right clicked
+
+end script Land2ShrineDefence
+
+begin script L2SD_HandleCreature
+start
+	// do stuff that starts the creature
+	wait until L2SD_GLOBAL_CREATURE_WANTS_AMBROSIA == L2SD_FALSE
+	// do stuff that stops the creature
+end script L2SD_HandleCreature
+
+begin script L2SD_IntroCutscene(Shrine,Pub)
+start
+end script L2SD_IntroCutscene
+
+begin script L2SD_RetryCutscene(Pub)
+start
+end script L2SD_RetryCutscene
+
+begin script L2SD_SuccessCutscene(Pub)
+start
+end script L2SD_SuccessCutscene

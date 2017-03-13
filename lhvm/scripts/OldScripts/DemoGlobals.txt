@@ -1,0 +1,44 @@
+//-----------------------------------------------------------
+// DEMO GLOBALS ===== LAND 5 GLOBALS
+//-----------------------------------------------------------
+
+global L5JapanCapitol = 0
+global L5JapanOutpost1 = 0
+global L5GreekTown = 0
+
+global L5_PaddyField1 = 0
+global L5_PaddyField2 = 0
+global L5_PaddyField3 = 0
+global L5_PaddyField4 = 0
+global L5_PaddyField5 = 0
+global L5_PaddyField6 = 0
+global GreekPaddyFields = 0
+
+global L5JapaneseCreature = 0
+
+global L5CapitolConverted	= 0
+global L5Outpost1Converted	= 0
+global Land5GreekImpressiveness = 0
+global Land5GreekImpressivenessMinimum = 4500
+global Land5GreekImpressivenessMinimumOutpost = 3600
+
+
+//-----------------------------------------------------------
+
+begin script DemoGlobals
+
+	Eternity = 0
+
+start
+	L5GreekTown = get town with id 12
+	L5JapanCapitol = get town with id 13
+	L5JapanOutpost1 = get town with id 3
+
+	L5_PaddyField1 = get town with id 5
+	L5_PaddyField2 = get town with id 6
+	L5_PaddyField3 = get town with id 7
+	L5_PaddyField4 = get town with id 8
+	L5_PaddyField5 = get town with id 9
+	L5_PaddyField6 = get town with id 10
+
+end script DemoGlobals

@@ -1,0 +1,15 @@
+//-----------------------------------------------------------------------------
+//	Run Archery script
+//-----------------------------------------------------------------------------
+run script RunLand4Battlefield
+
+begin script RunLand4Battlefield
+
+start
+
+say "running battlefield"
+wait until read
+
+run script Land4Battlefield
+
+end script RunLand4Battlefield

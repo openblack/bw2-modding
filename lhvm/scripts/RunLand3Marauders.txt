@@ -1,0 +1,6 @@
+run script RunLand3Marauders
+
+begin script RunLand3Marauders
+start
+	run script Land3Marauders
+end script RunLand3Marauders

@@ -1,0 +1,10 @@
+//------------------------------------------------------------------------------------------------------------------------
+run script RunPropagandaSpeech
+//------------------------------------------------------------------------------------------------------------------------
+begin script RunPropagandaSpeech
+
+start
+
+	run script Land3PropagandaSpeech
+	
+end script RunPropagandaSpeech

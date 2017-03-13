@@ -1,0 +1,6 @@
+run script RunLand3PaternitySuit
+
+begin script RunLand3PaternitySuit
+start
+	run script Land3PaternitySuit
+end script RunLand3PaternitySuit

@@ -1,0 +1,6 @@
+run script RunLand7ThrowBloke
+
+begin script RunLand7ThrowBloke
+start
+	run script Land7ThrowBloke
+end script RunLand7ThrowBloke

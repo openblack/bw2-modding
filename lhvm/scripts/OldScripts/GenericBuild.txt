@@ -1,0 +1,35 @@
+define GB_SEARCH_INCREMENT = 5
+
+global GB_ExpansionTime = 0
+
+//-------------------------------------------
+// Generic Build
+//-------------------------------------------
+begin script GenericBuild(Town, DefaultTime, MaxSearchRadius)
+	ReleaseTimer = create timer for 0 seconds
+	Building = 0
+	SearchRadius = 0
+start
+	
+	if Town exists
+		
+		begin loop			
+			GB_ExpansionTime = DefaultTime
+
+			if get ReleaseTimer time remaining == 0
+				Building = get planned HOUSE in Town near {Town} radius SearchRadius
+
+				if Building exists
+					Building = build building at {Building} desire 1.0
+					ReleaseTimer = create timer for GB_ExpansionTime seconds
+				else
+					SearchRadius+=GB_SEARCH_INCREMENT
+				end if				
+			end if
+
+		until SearchRadius > MaxSearchRadius
+		end loop
+
+	end if
+
+end script GenericBuild

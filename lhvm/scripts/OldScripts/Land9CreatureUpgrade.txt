@@ -1,0 +1,283 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	Creature Upgrade - Land 9
+//	~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+
+//All the flags bar one are currently held by the opponent on this land.
+//Differences in the following items/assets for variation on the control of these areas are:
+
+// - Landscape (Hill-type defences - vantage points for archers.)
+// - Walls (The enemy has managed to build walls around one monument/flag.)
+// - Seige weapons (Fired from with a walled section, or on a hill top.)
+// - Armies. (Simple groups of troops defending a far away location.)
+// - Spell effects. (Wall of fire? Requires Creature to put it out.)
+// - Enemy creature. (Guards one monument/flag quite viciously.)
+// - Land-locked. (Rivers/canals etc that make it difficult to attack the location.)
+
+// CTF (Capture The Flag)
+//
+//CTF - A minimum of five flags; possibly more...
+//Each flag will consist of a ritual stone that will glow if you have enough people of a particular race next to it.
+//This can change to something cooler :)
+//To initialise the creature upgrade a race must control all of the points at once and get the creature to the centre point.
+//
+//Currently using:
+//Rocks on fire - for each flag.
+//Enemy platoons guard some of the points.
+//One test attack launched after a while on one of your points.
+//Defend routine to choose different ways of defeating the player?
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+//Hero - deliver troops pos:
+//marker at {1789.021,25.774,849.554}
+
+//Hiding place to attack the middle base from:
+//marker at {1275.488,55.935,1580.034}
+
+//Hiding place from where to attack your base that's closest to the enemy... does that make sense? :)
+//marker at {1532.312,69.366,1504.661}
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CU_FALSE			= 0
+define CU_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CU_Waypoints[4]					//... Waypoint array
+global CU_Flag_Control_Level[4]			//... Flag control array (Who controls a flag)
+global CU_Flag_Pos[5]
+global CU_Flag[5]
+global CU_Player_Controls_All_Flags		= CU_FALSE
+global CU_Someone_Controls_All_Flags	= CU_FALSE
+global CU_Players_Town					= 0
+global CU_Spawned_Norse_Army			= 0
+global CU_Enemy_Spawn_Pos				= 0
+global CU_Used_Platoon[20]	//= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CU_Create_Flags
+define script CU_Check_Control_Of_Flags
+define script CU_Create_Platoons
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//===============================
+begin script Land9CreatureUpgrade
+
+	ArmyTest = 0
+
+start
+
+	CU_Players_Town	= get TOWN at {1766.557,27.132,762.960} radius 100
+
+	run script CU_Create_Flags
+	
+	run background script CU_Check_Control_Of_Flags
+	run background script CU_Create_Platoons
+
+	until CU_Someone_Controls_All_Flags == CU_TRUE
+
+	stop script "CU_Check_Control_Of_Flags"
+	stop script "CU_Create_Platoons"
+
+	if CU_Player_Controls_All_Flags == CU_TRUE
+		say "Player has control of all flags! Wahoo! WP! Creature upgrade starting..."
+	elsif CU_Player_Controls_All_Flags == CU_FALSE
+		say "Player has failed. The enemy have managed to power up their creature."
+	end if
+
+	wait 1000 seconds
+
+end script Land9CreatureUpgrade
+//=============================
+
+
+//-----------------------------------------------------------------------------
+//	CU_Create_Flags
+//-----------------------------------------------------------------------------
+begin script CU_Create_Flags
+
+start
+
+	//Flags near enemy base:
+	CU_Flag_Pos[0] = marker at {1040.127,30.601,1959.755}
+	CU_Flag_Pos[1] = marker at {820.042,35.847,1779.924}
+
+	//Central flag:
+	CU_Flag_Pos[2] = marker at {1159.573,30.974,1360.321}
+
+	//Flags near to the player's base:
+	CU_Flag_Pos[3] = marker at {1879.188,25.858,1309.626}
+	CU_Flag_Pos[4] = marker at {1789.401,28.244,939.940}
+
+	CU_Flag[0] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[0]}
+	CU_Flag[1] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[1]}
+	CU_Flag[2] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[2]}
+	CU_Flag[3] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[3]}
+	CU_Flag[4] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[4]}
+
+/*
+	set CU_Flag[0] temperature 1000
+	set CU_Flag[1] temperature 1000
+	set CU_Flag[2] temperature 1000
+	set CU_Flag[3] temperature 1000
+	set CU_Flag[4] temperature 1000
+*/
+
+end script CU_Create_Flags
+
+
+//-----------------------------------------------------------------------------
+//	CU_Check_Control_Of_Flags
+//-----------------------------------------------------------------------------
+begin script CU_Check_Control_Of_Flags
+
+	CU_Player_Army_F[5]
+	CU_CPU_Army_F[5]
+	Counter = 0
+	tt = 0.0
+start
+
+	begin loop
+		
+		wait until CU_Spawned_Norse_Army != 0
+
+		Counter++
+
+		//Get the two army levels around the flags
+		CU_Player_Army_F[0] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[0]} radius 100
+		CU_Player_Army_F[1] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[1]} radius 100
+		CU_Player_Army_F[2] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[2]} radius 100
+		CU_Player_Army_F[3] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[3]} radius 100
+		CU_Player_Army_F[4] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[4]} radius 100
+		wait 1 second
+		//CU_CPU_Army_F[0] = 25.0
+		CU_CPU_Army_F[0] = get soldiers of tribe TRIBE_TYPE_NORSE nearest {CU_Flag[0]} radius 100
+		CU_CPU_Army_F[1] = get soldiers of tribe TRIBE_TYPE_NORSE nearest {CU_Flag[1]} radius 100
+		CU_CPU_Army_F[2] = get soldiers of tribe TRIBE_TYPE_NORSE nearest {CU_Flag[2]} radius 100
+		CU_CPU_Army_F[3] = get soldiers of tribe TRIBE_TYPE_NORSE nearest {CU_Flag[3]} radius 100
+		CU_CPU_Army_F[4] = get soldiers of tribe TRIBE_TYPE_NORSE nearest {CU_Flag[4]} radius 100
+		wait 1 second
+		
+		//CU_Used_Platoon[Counter] = 0
+		//gets the number of soldiers of a given tribe within an area
+		//ArmyTest = get villagers of tribe TRIBE_TYPE_GREEKS nearest {MyPos} radius 40
+
+		if CU_Spawned_Norse_Army exists
+			CU_Used_Platoon[Counter] = CU_Spawned_Norse_Army
+			CU_Spawned_Norse_Army = 0
+			//say "Platoon exists"
+			tt = CU_CPU_Army_F[0]
+			if tt == 0
+				say "0"
+			elsif (tt > 0 and tt < 22)
+				say "1 to 21"
+			elsif tt > 21
+				say "Greater than 21 troops at the first rock."
+			end if
+
+			//Calculate who has the most troops at which location to help decide what to do about it...
+			//flag near base in trouble - send more troops!
+			
+			if CU_CPU_Army_F[0] < 35
+				move CU_Used_Platoon[Counter] position to {CU_Flag[0]}
+				//wait until {CU_Used_Platoon[Counter]} near {CU_Flag[0]} radius 5.0
+			elsif CU_CPU_Army_F[1] < 35
+				move CU_Used_Platoon[Counter] position to {CU_Flag[1]}
+				//wait until {CU_Used_Platoon[Counter]} near {CU_Flag[1]} radius 5.0
+			elsif CU_CPU_Army_F[2] < CU_Player_Army_F[2]
+				//centre flag in trouble
+				move CU_Used_Platoon[Counter] position to {CU_Flag[2]}
+			elsif CU_Player_Army_F[3] < 21
+				//flag fairly near the player - send troops if fairly undefended
+				move CU_Used_Platoon[Counter] position to {CU_Flag[3]}
+			elsif CU_Player_Army_F[4] < 30
+				//flags near the player - send troops every now and again...
+				move CU_Used_Platoon[Counter] position to {CU_Flag[4]}
+			end if
+			
+		end if
+
+		//Check if either the player or CPU has won
+		if CU_Player_Army_F[0] > 0 and CU_Player_Army_F[1] > 0 and CU_Player_Army_F[2] > 0 and CU_Player_Army_F[3] > 0 and CU_Player_Army_F[4] > 0
+			//player has troops at all the flags
+			CU_Player_Controls_All_Flags = CU_TRUE
+			CU_Someone_Controls_All_Flags = CU_TRUE
+			say "Player won"
+			wait until read
+		elsif CU_CPU_Army_F[0] > 0 and CU_CPU_Army_F[1] > 0 and CU_CPU_Army_F[2] > 0 and CU_CPU_Army_F[3] > 0 and CU_CPU_Army_F[4] > 0
+			//cpu has control over all the flags
+			CU_Player_Controls_All_Flags = CU_FALSE //set it in case...
+			CU_Someone_Controls_All_Flags = CU_TRUE
+			say "CPU won - Go straight to jail, do not collect 200 pounds."
+		end if
+
+		wait 10 seconds
+		until Counter == 20
+	end loop
+	
+	begin dialogue
+		say "Routine: CU_Check_Control_Of_Flags - is now finished."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script CU_Check_Control_Of_Flags
+
+
+
+//-----------------------------------------------------------------------------
+//	CU_Create_Platoons
+//-----------------------------------------------------------------------------
+begin script CU_Create_Platoons
+
+start
+	
+	CU_Enemy_Spawn_Pos = marker at {839.218,34.722,1921.810}
+
+	begin loop
+		wait 40 seconds
+		if CU_Spawned_Norse_Army not exists
+			CU_Spawned_Norse_Army = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_RABBLE at {CU_Enemy_Spawn_Pos} facing {CU_Flag_Pos[2]} with 15 villagers
+			set CU_Spawned_Norse_Army player 5
+			set player 0 ENEMY to player 5
+		end if
+	end loop
+
+end script CU_Create_Platoons
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+/*
+	begin dialogue
+		eject good spirit
+		say "."
+		wait until read
+		clear dialogue
+	end dialogue
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/
+

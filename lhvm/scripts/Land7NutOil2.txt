@@ -1,0 +1,1070 @@
+
+//================================================================
+
+// Nut Oil 2
+
+// Driley
+
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+
+define NO2_FALSE = 0
+define NO2_TRUE = 1
+
+define NO2_TOTAL_HITS = 3
+define NO2_FIRE_OUT_TIME = 150
+define NO2_NUM_BARRELS_PER_PYRE = 7
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global NO2_Barrel = 0
+global NO2_BarrelOffset = 0
+global NO2_BarrelsThrown = 0
+global NO2_NewCamPos= 0
+global NO2_HitWater = 0
+global NO2_AntiInfluence = 0
+global NO2_LevelCompleate = 0
+global NO2_ThrowPos = 0
+global NO2_Influence = 0
+global NO2_NumShots = 0
+global NO2_OutOfBounds = 0
+global NO2_HighLight = 0
+global NO2_DoneIntro = 0
+global NO2_StartPos = 0
+global NO2_BarrelCreate = 0
+global NO2_CamDistance = 20
+global NO2_CamAngle = 0
+global NO2_NumHits = 0
+global NO2_TargetRad = 20
+global NO2_PlayerWantsToQuit = 0
+global NO2_QuitScroll = 0
+global NO2_AboutToStart = 0
+global NO2_CreatedTargets = 0
+
+
+global NO2_TargetPos[5]
+global NO2_TargetCamPos[5]
+global NO2_TargetCamFoc[5]
+// upped to 6, 0 is the first brother, 1-5 are the targets to hit
+global NO2_Brother[6]
+global NO2_Stockpile = 0
+
+global DrunkBrother[3]
+
+ 
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+
+define script Land7NutOil2
+define script NO2_Setup
+define script NO2_NutOil
+define script NO2_CamMoveToTarget(Target,Offset,Face)
+define script NO2_ThrowBarrel
+define script NO2_PickUpBarrel
+define script NO2_Intro
+define script NO2_GoToBarrel
+define script NO2_SetAntiInfluence
+define script NO2_CreateBrothers
+define script NO2_BoundsCheck
+define script NO2_SuccessfulShot
+define script NO2_UnsuccessfulShot
+define script NO2_FadeOutPyre(PyreIndex, PyreEffect, PyrePosition)
+define script NO2_CheckForQuit
+define script NO2_DetectSetOnFire
+
+//run script Land7NutOil2
+
+begin script Land7NutOil2
+start
+
+	run script NO2_Setup
+
+end script Land7NutOil2
+
+//-----------------------------------------------------------------
+// Setup
+//-----------------------------------------------------------------
+
+begin script NO2_Setup
+
+	StartScroll = 0
+	ScrollPos = 0
+	QuitScroll = 0
+	HousePosition = marker at {801.548,211.466,776.668}
+	House = 0
+start
+
+	NO2_TargetPos[0] = marker at {1016.530,216.163,821.555}
+	NO2_TargetPos[1] = marker at {928.054,208.600,944.630}
+	NO2_TargetPos[2] = marker at {711.175,236.037,722.561}
+	NO2_TargetPos[3] = marker at {725.193,285.669,1017.267}
+	NO2_TargetPos[4] = marker at {724.940,246.630,669.207}
+	
+	
+	NO2_TargetCamPos[0] = marker at {790.712,230.018,757.587}
+	NO2_TargetCamPos[1] = marker at {803.253,226.932,733.108}
+	NO2_TargetCamPos[2] = marker at {843.015, 219.543, 775.073}
+	NO2_TargetCamPos[3] = marker at {842.435,219.239,767.193}
+	NO2_TargetCamPos[4] = marker at {0.000,0.000,0.000}
+
+	NO2_TargetCamFoc[0] = marker at {875.576,184.243,785.089}
+	NO2_TargetCamFoc[1] = marker at {853.845,185.466,808.749}
+	NO2_TargetCamFoc[2] = marker at {752.384, 209.096, 734.118}
+	NO2_TargetCamFoc[3] = marker at {797.345,194.356,827.254}
+	NO2_TargetCamFoc[4] = marker at {0.000,0.000,0.000}
+
+	House = create OBJECT NORSE_BARREL_02 at {HousePosition}		
+	override mesh for House with "m_norseabodea"
+
+	run script NO2_CreateBrothers
+
+	ScrollPos = marker at {803.202,213.029,759.445}
+	NO2_StartPos = marker at {705.742,231.814,831.870}
+	
+	StartScroll = create highlight SILVER name "BW2T_SCRIPT_07FINAL_NUTOIL_TT_10" remind "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_REMINDER" at {ScrollPos}
+    ALTITUDE of StartScroll = 2
+
+	wait until StartScroll right clicked
+	delete StartScroll
+	
+	NO2_AboutToStart = NO2_TRUE
+
+	run background script NO2_NutOil
+
+end script NO2_Setup
+
+//-----------------------------------------------------------------
+// Create Brothers and the Barrel
+//-----------------------------------------------------------------
+
+begin script NO2_CreateBrothers 
+	
+	FirstBrotherStart = marker at {809.720,211.123,768.564}
+	StockpileMarker = marker at {810.985,211.123,776.964}
+start
+
+	NO2_LevelCompleate = 0
+	NO2_HitWater = 0
+	NO2_OutOfBounds = 0
+	NO2_HighLight = 0
+	NO2_NumHits = 0
+	NO2_NumShots = 0
+	NO2_PlayerWantsToQuit = 0
+	
+	NO2_BarrelOffset = marker at {0.000,5.000,0.000}
+	
+	if NO2_Brother[0] exists
+	
+		//delete NO2_Brother[0]
+
+		move NO2_Brother[0] position to {FirstBrotherStart}		
+	end if
+	
+	// only create the extra targets if we're ready for them
+	if NO2_TOTAL_HITS > 1 and NO2_CreatedTargets == NO2_FALSE
+		NO2_Brother[0] = create VILLAGER MERRYMAN1 at {FirstBrotherStart}
+		NO2_Brother[1] = create ROCK_OBJECT NORSE_BARREL_02 at {NO2_TargetPos[0]}
+		override mesh for NO2_Brother[1] with "m_genericpyre"
+		SCALE of NO2_Brother[1] = 3.3
+		
+		NO2_Brother[2] = create ROCK_OBJECT NORSE_BARREL_02 at {NO2_TargetPos[1]}
+		override mesh for NO2_Brother[2] with "m_genericpyre"
+		SCALE of NO2_Brother[2] = 2.7
+		disable NO2_Brother[2] pickup
+		disable NO2_Brother[2] moveable
+		enable NO2_Brother[2] indestructible
+
+		NO2_Brother[3] = create ROCK_OBJECT NORSE_BARREL_02 at {NO2_TargetPos[2]}
+		override mesh for NO2_Brother[3] with "m_genericpyre"
+		SCALE of NO2_Brother[3] = 2.5
+		disable NO2_Brother[3] pickup
+		disable NO2_Brother[3] moveable
+		enable NO2_Brother[3] indestructible		
+
+		NO2_Stockpile = create OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {StockpileMarker}
+		override mesh for NO2_Stockpile with "m_nutoilbarrelstackempty02"
+		disable NO2_Stockpile pickup
+		disable NO2_Stockpile moveable
+		enable NO2_Stockpile indestructible
+
+		if NO2_TOTAL_HITS > 3
+			NO2_Brother[4] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {NO2_TargetPos[3]}
+			override mesh for NO2_Brother[4] with "m_genericpyre"
+			SCALE of NO2_Brother[4] = 2.5
+			disable NO2_Brother[4] pickup
+			disable NO2_Brother[4] moveable
+			enable NO2_Brother[4] indestructible
+		end if
+
+		NO2_CreatedTargets = NO2_TRUE
+
+		/*NO2_Brother[5] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {NO2_TargetPos[4]}
+		override mesh for NO2_Brother[5] with "m_genericpyre"
+		SCALE of NO2_Brother[5] = 2.5
+		disable NO2_Brother[5] pickup
+		disable NO2_Brother[5] moveable*/
+	elsif NO2_TOTAL_HITS == 1 and NO2_CreatedTargets == NO2_FALSE
+		NO2_Brother[0] = create VILLAGER FELL at {FirstBrotherStart}
+		NO2_Brother[1] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {NO2_TargetPos[4]}
+		override mesh for NO2_Brother[1] with "m_genericpyre"
+		SCALE of NO2_Brother[1] = 2.5
+
+		NO2_CreatedTargets = NO2_TRUE
+	end if
+	
+	
+	disable NO2_Brother[0] pickup
+	enable NO2_Brother[0] indestructible
+	disable NO2_Brother[0] can be fisted
+	disable NO2_Brother[1] pickup
+	disable NO2_Brother[1] moveable
+	enable NO2_Brother[1] indestructible
+	
+	//disable NO2_Brother[2] pickup
+	//disable NO2_Brother[3] pickup
+	
+end script NO2_CreateBrothers
+
+//-----------------------------------------------------------------
+// NutOil
+//-----------------------------------------------------------------
+
+begin script NO2_NutOil
+	
+start
+	NO2_BarrelCreate = marker at {824.220,211.123,767.940}
+	NO2_BarrelsThrown = 0
+    
+    //NO2_Barrel = create OBJECT NORSE_BARREL_01 at {NO2_BarrelCreate}
+    //wait 1 second
+	run script NO2_Intro
+
+	NO2_AboutToStart = NO2_FALSE
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 with amount 1 text "BW2T_SCRIPT_07FINAL_NUTOIL_TT_10" amount 1 description "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_REMINDER" class TRIBUTE_OBJECTIVE_CLASS_SPECIAL start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_7_NUTOIL2
+	L7ShowingNutOil2Objective= 1
+	//run background script NO2_SetAntiInfluence
+	run background script NO2_BoundsCheck
+	run background script NO2_DetectSetOnFire
+
+	// experiment with fixed camera
+	/*
+	begin interactive camera
+
+	enable global influence
+	disable toolbar
+
+	run background script NO2_CheckForQuit
+	*/
+
+	while NO2_BarrelsThrown < NO2_NUM_BARRELS_PER_PYRE and NO2_NumHits < NO2_TOTAL_HITS and NO2_PlayerWantsToQuit == NO2_FALSE
+	
+		if not NO2_Barrel exists
+			NO2_Barrel = create OBJECT MOBILE_STATIC_INFO_NUTOIL_BARREL at {NO2_BarrelCreate}
+			disable NO2_Barrel moveable	
+			disable NO2_Barrel can be fisted
+			enable NO2_Barrel cylindar override
+		end if
+	
+		NO2_ThrowPos = marker at {NO2_Barrel}
+		
+		if NO2_Influence exists
+			delete NO2_Influence
+		end if 
+		
+		NO2_Influence = create influence at {NO2_BarrelCreate} radius 100
+		
+		run script NO2_PickUpBarrel
+		enable NO2_Barrel moveable	
+		enable NO2_Barrel can be fisted
+		run script NO2_ThrowBarrel
+	end while
+
+
+
+	/*
+	disable global influence
+	enable toolbar
+
+	end interactive camera
+	
+	delete NO2_QuitScroll
+	*/
+
+	wait 2 seconds	
+
+	NO2_LevelCompleate = 1
+
+	// begin cleanup if quitted via the scroll
+	if NO2_HighLight exists
+		delete NO2_HighLight
+	end if
+
+	if NO2_Barrel exists
+		delete NO2_Barrel
+	end if
+
+	if NO2_Influence exists
+		delete NO2_Influence
+	end if 
+
+	if NO2_PlayerWantsToQuit == NO2_TRUE
+		/*if NO2_Brother[1] exists
+			delete NO2_Brother[1]
+		end if
+		if NO2_Brother[2] exists
+			delete NO2_Brother[2]
+		end if
+		if NO2_Brother[3] exists
+			delete NO2_Brother[3]
+		end if
+		if NO2_Brother[4] exists
+			delete NO2_Brother[4]
+		end if*/
+	end if
+	// end cleanup if quitted via the scroll
+
+	if NO2_NumHits >= NO2_TOTAL_HITS
+	
+		begin cinema
+			set fade in time 2
+			//Lead= create VILLAGER MERRYMAN1 at {812.438,211.662,778.216}
+			set NO2_Brother[0] position to {812.438,211.662,778.216}
+			ALTITUDE of NO2_Brother[0] = 0.1
+
+
+			//DrunkBrother[0] = create VILLAGER MERRYMAN7 at{810.602,211.662,774.815}
+			//DrunkBrother[1] = create VILLAGER MERRYMAN6 at {808.952,211.662,775.840}
+			//DrunkBrother[2] = create VILLAGER MERRYMAN8 at {808.724,211.662,777.937}
+			set DrunkBrother[0] position to {810.602,211.662,774.815}
+			set DrunkBrother[1] position to {808.952,211.662,775.840}
+			set DrunkBrother[2] position to {808.724,211.662,777.937}
+
+			set NO2_Brother[0] focus to {820.168,211.231,782.181}
+			set DrunkBrother[0] focus to {NO2_Brother[0]}
+			set DrunkBrother[1] focus to {NO2_Brother[0]}
+			set DrunkBrother[2] focus to {NO2_Brother[0]}
+			play anim "A_p_L4Nutoil_brother_dance1" on DrunkBrother[1] loop -1
+			play anim "A_p_L4Nutoil_brother_dance2" on DrunkBrother[2] loop -1
+			play anim "A_p_L4Nutoil_brother_dance3" on DrunkBrother[0] loop -1
+			set NO2_Brother[0] focus to get target from focus position of NO2_Brother[0] to {NO2_Brother[0]} distance 1 angle 0
+			play anim "a_p_l4nutoil_180turn_into_dance1" on NO2_Brother[0] disable stand
+
+			set camera position to {816.247,213.404,780.204}
+			set camera focus to {726.531,200.053,738.096}
+			move camera position to {816.491,213.213,779.123} time 12
+			move camera focus to {722.551,206.566,745.492} time 12
+
+			say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_20"
+			wait until NO2_Brother[0] played
+			play anim "A_p_L4Nutoil_brother_dance1" on NO2_Brother[0] loop -1 blend time 0
+
+			wait until read
+			wait 4 seconds
+			set fade red 0 green 0 blue 0 time 2
+			wait 2 seconds
+			set fade in time 2
+
+		end cinema
+
+		wait 1 seconds
+		
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+		wait 2.5 seconds
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+		// get rid of the brother once the challenge is won?
+		wait until not {NO2_Brother[0]} viewed and get distance from camera position to {NO2_Brother[0]} > 100
+		delete NO2_Brother[0]
+		delete DrunkBrother[0]
+		delete DrunkBrother[1]
+		delete DrunkBrother[2]
+
+		if NO2_Stockpile exists
+			delete NO2_Stockpile
+		end if
+	
+	elsif NO2_BarrelsThrown >= NO2_NUM_BARRELS_PER_PYRE or NO2_PlayerWantsToQuit == NO2_TRUE
+		begin cinema
+
+			//say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_10"
+			set NO2_Brother[0] focus to camera position
+			play anim "a_p_scowl" on NO2_Brother[0] loop 1
+
+			if NO2_BarrelsThrown >= NO2_NUM_BARRELS_PER_PYRE
+				eject good spirit
+				say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_100"
+				wait until read
+				send good spirit home
+			end if
+
+			wait until read
+			wait 1 seconds
+			set DrunkBrother[0] position to {1108.792,191.402,789.980}
+			set DrunkBrother[1] position to {1107.901,191.222,787.038}
+			set DrunkBrother[2] position to {1109.615,191.330,788.597}
+			run background script NO2_Setup
+		end cinema
+	end if
+
+	wait 1 seconds
+
+	stop music
+	//wait until not NO2_Brother[0] viewed
+	
+
+end script NO2_NutOil
+
+//-----------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------
+
+begin script NO2_Intro
+	FirstPos = 0
+	SecondPos = 0
+	CamOffset = 0
+	FirstBrotherStart = marker at {809.720,211.123,768.564}
+start 
+	begin cinema
+		
+		if NO2_DoneIntro == 0	
+			set fade red 0 green 0 blue 0 time 1
+			start music "nutoilsong"
+
+			DrunkBrother[0] = create VILLAGER MERRYMAN7 at {1108.792,191.402,789.980}
+			DrunkBrother[1] = create VILLAGER MERRYMAN6 at {1107.901,191.222,787.038}
+			DrunkBrother[2] = create VILLAGER MERRYMAN8 at {1109.615,191.330,788.597}
+			disable DrunkBrother[0] pickup
+			disable DrunkBrother[0] moveable
+			disable DrunkBrother[1] pickup
+			disable DrunkBrother[1] moveable
+			disable DrunkBrother[2] pickup
+			disable DrunkBrother[2] moveable
+			enable DrunkBrother[0] indestructible
+			enable DrunkBrother[1] indestructible
+			enable DrunkBrother[2] indestructible
+			play anim "a_p_looking_for_something" on DrunkBrother[0] loop -1
+			play anim "A_p_L4Nutoil_brother_dance1" on DrunkBrother[1] loop -1
+			play anim "A_p_L4Nutoil_brother_dance2" on DrunkBrother[2] loop -1
+
+			wait 1 seconds
+			
+			NO2_Barrel = create OBJECT MOBILE_STATIC_INFO_NUTOIL_BARREL at {NO2_BarrelCreate}
+			//run script NO2_CreateBrothers
+			
+			set NO2_Brother[0] position to {823.373,211.067,769.816}
+			set camera position to {820.252,213.687,767.101}
+			set camera focus to {897.876,178.421,819.360}
+			set NO2_Brother[0] focus to {819.356,212.996,766.584}
+			set fade in time 3
+			
+			//say "BW2T_SCRIPT_07FINAL_NUTOIL_TALK_10"
+			//say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_10"
+			say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_30"
+
+			play anim "a_p_l4nutoil_brother_talk1" on NO2_Brother[0]
+			
+			wait 3 seconds
+			set camera position to {1112.738,193.280,789.620}
+			set camera focus to {1014.801,179.792,774.557}
+			play anim "a_p_stand" on NO2_Brother[0]
+			wait 3 seconds
+			
+		
+			//play anim "a_p_pointing" on NO2_Brother[0]
+			//wait until NO2_Brother[0] played
+			
+			//wait 2 seconds
+			
+			set NO2_Brother[0] focus to {NO2_TargetPos[0]}
+			//say "BW2T_SCRIPT_07FINAL_NUTOIL_TALK_30"
+
+			set camera position to {819.356,212.996,766.584}
+			set camera focus to {915.670,214.543,793.433}
+			play anim "a_p_l7nutoil2_pointing_into" on NO2_Brother[0] disable stand blend time 0
+			//wait 1 seconds
+			wait until NO2_Brother[0] played
+				
+			play anim "a_p_l7nutoil2_pointing_loop" on NO2_Brother[0] disable stand blend time 0
+			wait until NO2_Brother[0] played
+			play anim "a_p_l7nutoil2_pointing_outof" on NO2_Brother[0] disable stand blend time 0
+			wait until NO2_Brother[0] played
+			play anim "a_p_chatting_paired01_a" on NO2_Brother[0]
+
+			
+			wait 1 seconds
+			
+			//move villager NO2_Brother[0] focus to camera position
+			wait 2 seconds
+			
+			//move villager NO2_Brother[0] focus to {SecondPos}
+			move NO2_Brother[0] position to {FirstBrotherStart}
+			//say "BW2T_SCRIPT_07FINAL_NUTOIL_TALK_40"
+			wait until read
+			set fade red 0 green 0 blue 0 time 2
+			wait 2 seconds
+			play anim "a_p_stand" on DrunkBrother[0]
+			//play anim "a_p_stand" on NO2_Brother[0]
+			set camera position to {791.487,229.722,757.841}
+			set camera focus to {875.173,184.319,785.082}
+			set fade in time 2
+
+
+			NO2_DoneIntro = 1
+		else
+			set fade red 0 green 0 blue 0 time 1
+
+			start music "nutoilsong"
+			wait 1 seconds
+			set camera position to {791.487,229.722,757.841}
+			set camera focus to {875.173,184.319,785.082}
+			//run script NO2_CreateBrothers
+			set fade in time 3
+		end if
+		
+		/*run script NO2_CamMoveToTarget(NO2_BarrelCreate ,NO2_BarrelOffset,NO2_TargetPos[0])
+		move camera position to {NO2_NewCamPos} time 2
+		move camera focus to {NO2_BarrelCreate} time 2*/
+
+		move camera position to {NO2_TargetCamPos[NO2_NumHits]} time 2
+		move camera focus to {NO2_TargetCamFoc[NO2_NumHits]} time 2
+		
+	end cinema
+
+end script NO2_Intro
+
+//-----------------------------------------------------------------
+// PickUpBarrel
+//-----------------------------------------------------------------
+
+begin script NO2_PickUpBarrel
+	
+start
+	//wait until mouse left button clicked
+
+	//set NO2_Barrel velocity heading {NO2_TargetPos} speed 250
+
+	if NO2_HighLight == 0 
+		NO2_HighLight = create visual effect VISUAL_EFFECT_TOWN_BEAM at {NO2_TargetPos[NO2_NumHits]} time -1
+	end if
+
+	wait until NO2_Barrel is HELD or NO2_Barrel in MyCreature hand or NO2_OutOfBounds == 2 or NO2_PlayerWantsToQuit == NO2_TRUE or NO2_NumHits >= NO2_TOTAL_HITS
+
+	if NO2_Barrel in MyCreature hand
+		enable NO2_Barrel moveable	
+		enable NO2_Barrel can be fisted
+		wait until NO2_Barrel is FLYING
+	end if
+	
+	if NO2_HighLight == 0 and NO2_PlayerWantsToQuit == NO2_FALSE and NO2_NumHits < NO2_TOTAL_HITS
+		NO2_HighLight = create visual effect VISUAL_EFFECT_TOWN_BEAM at {NO2_TargetPos[NO2_NumHits]} time -1
+	end if
+
+	if NO2_OutOfBounds == 0 and NO2_HighLight == 0 and NO2_PlayerWantsToQuit == NO2_FALSE and NO2_NumHits < NO2_TOTAL_HITS
+		//begin interactive camera
+			//move camera focus to {NO2_TargetPos} time 2
+			NO2_HighLight = create visual effect VISUAL_EFFECT_TOWN_BEAM at {NO2_TargetPos[NO2_NumHits]} time -1
+			//wait until camera ready
+		//end interactive camera
+	end if
+
+end script NO2_PickUpBarrel
+
+//-----------------------------------------------------------------
+// Throw Barrel
+//-----------------------------------------------------------------
+
+begin script NO2_ThrowBarrel
+	Explosion = 0
+	FireEffect = 0
+	s = 5
+	p = 10
+	HitObject = 0
+	HandleStuckBarrelTimer = 0
+start
+	if NO2_PlayerWantsToQuit == NO2_FALSE and NO2_NumHits < NO2_TOTAL_HITS
+		wait until not NO2_Barrel is HELD or NO2_OutOfBounds == 2 
+		NO2_NumShots++
+		//begin known cinema
+		begin cinema
+		
+			enable NO2_Barrel physics tracking
+
+			HandleStuckBarrelTimer = create timer for 5 seconds
+
+			while NO2_Barrel exists and not NO2_Barrel hit and not NO2_Barrel hit land and not {NO2_Barrel} under water and not NO2_OutOfBounds != 0 and not get HandleStuckBarrelTimer time remaining == 0
+			 
+				NO2_CamDistance = 5
+				NO2_CamAngle = 0
+				
+				run script NO2_CamMoveToTarget(NO2_Barrel ,NO2_BarrelOffset,NO2_TargetPos[NO2_NumHits])
+				move camera position to {NO2_NewCamPos} time 1
+				move camera focus to {NO2_Barrel} time 1			
+				//until get NO2_Barrel altitude < 5 or {NO2_Barrel} under water or NO2_OutOfBounds != 0 
+			end while
+			
+			set camera position to camera position
+			set camera focus to camera focus
+			Explosion = create visual effect "gp_s_expbarrel.ves" strength 1 scale 1 at {NO2_Barrel} time 1
+			
+			NO2_CamDistance = 15
+			NO2_CamAngle = 0
+			
+
+	//		if {NO2_Barrel} near {NO2_TargetPos} radius NO2_TargetRad
+			HitObject = NO2_Barrel hit object
+			if HitObject == NO2_Brother[NO2_NumHits + 1]
+
+				stop visual effect FireEffect
+				/*s=s*NO2_NumHits
+				p=p*NO2_NumHits*/
+				FireEffect = create visual effect VISUAL_EFFECT_SPREAD_FIRE_LARGE at {NO2_Brother[NO2_NumHits + 1]} time NO2_FIRE_OUT_TIME
+				attach 3d sound "SCULLFIRE" to NO2_Brother[NO2_NumHits + 1]
+				//after the fire fades out the object needs to go as well
+				run background script NO2_FadeOutPyre(NO2_NumHits + 1, FireEffect, NO2_Brother[NO2_NumHits + 1])
+
+				NO2_NumHits++
+				// barrels thrown reset after each hit so you get 
+				NO2_BarrelsThrown = 0
+
+				run script NO2_SuccessfulShot
+
+
+				delete NO2_HighLight
+				NO2_HighLight = 0
+
+				wait 2 seconds
+
+			else
+				// taken out advisor dialogue
+				//run background script NO2_UnsuccessfulShot
+
+				// only increment the number of barrels if you fail to hit it.
+				// otherwise you can lose from hitting a barrel on your last throw
+				NO2_BarrelsThrown++
+			end if
+
+			disable NO2_Barrel physics tracking
+			
+			delete NO2_Barrel
+
+			wait 0.4 seconds
+
+			// do fade here to reset barrel cam.
+			
+
+			/*run script NO2_CamMoveToTarget(NO2_BarrelCreate ,marker at {0.000,8.000,0.000},NO2_TargetPos[NO2_NumHits])
+			move camera position to {NO2_NewCamPos} time 2
+			move camera focus to {NO2_BarrelCreate} time 2
+			wait until camera ready*/
+
+
+			if NO2_NumHits < NO2_TOTAL_HITS
+				set fade red 0 green 0 blue 0 time 1
+				wait 1 seconds
+				set camera position to {NO2_TargetCamPos[NO2_NumHits]}// time 2
+				set camera focus to {NO2_TargetCamFoc[NO2_NumHits]}// time 2
+				wait until camera ready
+				set fade in time 1
+				wait 1 seconds
+		/*	else
+				run script NO2_CamMoveToTarget(NO2_BarrelCreate ,marker at {0.000,8.000,0.000},NO2_TargetPos[NO2_NumHits])
+				set camera position to {NO2_NewCamPos}// time 1
+				set camera focus to {NO2_BarrelCreate}// time 1
+				wait until camera ready
+		*/	end if
+	
+		
+			/*run script NO2_CamMoveToTarget(NO2_BarrelCreate ,NO2_BarrelOffset,NO2_TargetPos[NO2_NumHits])
+			move camera position to {NO2_NewCamPos} time 2
+			move camera focus to {NO2_BarrelCreate} time 2*/
+			//wait until camera ready
+			
+		//end known cinema
+		end cinema
+	end if
+
+end script NO2_ThrowBarrel
+
+//-----------------------------------------------------------------
+// CamMoveToTarget
+//-----------------------------------------------------------------
+
+begin script NO2_CamMoveToTarget(Target,Offset,Face)
+		
+start
+	NO2_NewCamPos = 0
+	NO2_NewCamPos = marker at get target from {Face} to {Target} distance NO2_CamDistance angle NO2_CamAngle
+	NO2_NewCamPos = marker at get world position from {NO2_NewCamPos} facing {Target} to {Offset}
+
+end script NO2_CamMoveToTarget
+
+//-----------------------------------------------------------------
+// GoToBarrel
+//-----------------------------------------------------------------
+
+begin script NO2_GoToBarrel
+
+	FirstPos = marker at get target from {NO2_Brother[0]} to {NO2_Barrel} distance 1 angle 180
+	SecondPos = marker at get target from {NO2_Brother[0]} to {NO2_Barrel} distance 5 angle 180
+		
+start
+	SPEED of NO2_Brother[0] = 0.8
+	move NO2_Brother[0] position to {FirstPos}
+	wait until {NO2_Brother[0]} near {FirstPos} radius 1
+	wait 2 seconds
+	move NO2_Brother[0] position to {SecondPos}
+	wait until {NO2_Brother[0]} near {SecondPos} radius 1
+	
+end script NO2_GoToBarrel
+
+
+//-----------------------------------------------------------------
+// SetAntiInfluence
+//-----------------------------------------------------------------
+
+begin script NO2_SetAntiInfluence
+	ThrowRadius = 100
+start
+	
+	while NO2_LevelCompleate == 0
+		
+		if NO2_Barrel exists
+			if not {NO2_Barrel} near {NO2_ThrowPos} radius ThrowRadius and NO2_Barrel is HELD
+		
+				if not NO2_AntiInfluence exists
+					NO2_AntiInfluence = create anti influence on NO2_Barrel radius 15
+				end if
+				
+
+			else
+			
+				if NO2_AntiInfluence exists
+					delete NO2_AntiInfluence
+				end if
+				
+			end if 
+		end if
+	
+	end while
+	
+end script NO2_SetAntiInfluence
+
+//-----------------------------------------------------------------
+// BoundsCheck
+//-----------------------------------------------------------------
+
+begin script NO2_BoundsCheck
+start
+	while NO2_LevelCompleate == 0
+		if NO2_Barrel exists
+			if not {NO2_Barrel} near {NO2_TargetPos[NO2_NumHits]} radius 5000 and not NO2_Barrel is HELD and not {NO2_Barrel} near {NO2_StartPos} radius 5000
+				NO2_OutOfBounds = 1
+			elsif not camera position near {NO2_StartPos} radius 5000
+				NO2_OutOfBounds = 2
+			end if 
+		end if
+	end while
+end script NO2_BoundsCheck
+
+//-----------------------------------------------------------------
+// SuccessfulShot
+//-----------------------------------------------------------------
+
+begin script NO2_SuccessfulShot
+start
+	begin known cinema
+
+	if NO2_NumHits == 1
+		//GA: Great shot leader
+		eject good spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_40"
+		
+		set DrunkBrother[0] focus to {1026.686, 228.698, 829.159}
+		set DrunkBrother[1] focus to {1026.686, 228.698, 829.159}
+		set DrunkBrother[2] focus to {1026.686, 228.698, 829.159}
+		play anim "A_p_L4Nutoil_brother_dance1" on DrunkBrother[1] loop -1 blend time 0
+		play anim "A_p_L4Nutoil_brother_dance2" on DrunkBrother[2] loop -1 blend time 0
+		wait until read
+		send good spirit home
+		set camera position to {1112.901, 192.344, 789.431}
+		set camera focus to {1015.513, 212.403, 800.125}
+		//wait 1 seconds
+		play anim "a_p_l7nutoil2_pointing_into" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		play anim "a_p_l7nutoil2_pointing_loop" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		play anim "a_p_l7nutoil2_pointing_outof" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		
+		move DrunkBrother[0] position to {1069.293, 196.047, 880.577}
+		SPEED of DrunkBrother[0] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[0] anim "a_p_walk_drunk"
+		wait 0.2 seconds
+		
+		move DrunkBrother[1] position to {1069.548, 195.708, 875.450}
+		SPEED of DrunkBrother[1] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[1] anim "a_p_walk_drunk"
+		wait 0.1 seconds		
+		
+		move DrunkBrother[2] position to {1069.293, 196.047, 880.577}
+		SPEED of DrunkBrother[2] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[2] anim "a_p_walk_drunk"
+		wait 0.1 seconds
+
+		//wait 2 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		move DrunkBrother[0] position to {1069.293, 196.047, 880.577} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		move DrunkBrother[1] position to {1069.548, 195.708, 875.450} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		move DrunkBrother[2] position to {1069.293, 196.047, 880.577} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		set camera position to {803.505,226.904,733.460}
+		set camera focus to {853.798,184.905,809.004}
+
+
+
+	elsif NO2_NumHits == 2
+		//EA: direct hit! Lovely!
+		eject evil spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_50"
+		
+		set DrunkBrother[0] position to {1068.054,204.168,876.901}
+		set DrunkBrother[1] position to {1068.568,204.168,875.659}
+		set DrunkBrother[2] position to {1068.730,204.168,877.907}
+		move DrunkBrother[0] position to {DrunkBrother[0]}
+		move DrunkBrother[1] position to {DrunkBrother[1]}
+		move DrunkBrother[2] position to {DrunkBrother[2]}
+
+		set DrunkBrother[0] focus to {941.507,201.244,936.756}
+		set DrunkBrother[1] focus to {941.507,201.244,936.756}
+		set DrunkBrother[2] focus to {941.507,201.244,936.756}
+		//play anim "a_p_pointing" on DrunkBrother[0]
+		play anim "A_p_L4Nutoil_brother_dance1" on DrunkBrother[1] loop -1
+		play anim "A_p_L4Nutoil_brother_dance2" on DrunkBrother[2] loop -1
+		wait until read
+		send evil spirit home
+		set camera position to {1071.193,196.947,876.864}
+		set camera focus to {972.438,206.465,889.395}
+		wait 1 seconds
+		play anim "a_p_l7nutoil2_pointing_into" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		play anim "a_p_l7nutoil2_pointing_loop" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		play anim "a_p_l7nutoil2_pointing_outof" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		move DrunkBrother[0] position to {894.922, 204.629, 959.650}
+		SPEED of DrunkBrother[0] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[0] anim "a_p_walk_drunk"
+		wait 0.2 seconds
+		move DrunkBrother[1] position to {894.969, 204.628, 959.576}
+		SPEED of DrunkBrother[1] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[1] anim "a_p_walk_drunk"
+		wait 0.1 seconds	
+		move DrunkBrother[2] position to {894.987, 204.627, 959.537}
+		SPEED of DrunkBrother[2] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[2] anim "a_p_walk_drunk"
+		wait 0.1 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		move DrunkBrother[0] position to {812.222, 211.333, 777.384} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		move DrunkBrother[1] position to {812.222, 211.333, 777.384} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		move DrunkBrother[2] position to {812.222, 211.333, 777.384} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+
+	elsif NO2_NumHits == 3
+		//EA: deadly and accurate. You should take up darts
+		eject evil spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_60"
+		
+		set DrunkBrother[0] position to {894.922,204.629,959.650}
+		set DrunkBrother[1] position to {895.162,225.045,960.610}
+		set DrunkBrother[2] position to {894.332,224.795,961.358}
+		move DrunkBrother[0] position to {DrunkBrother[0]}
+		move DrunkBrother[1] position to {DrunkBrother[1]}
+		move DrunkBrother[2] position to {DrunkBrother[2]}
+		set DrunkBrother[0] focus to {891.187,204.816,955.731}
+		set DrunkBrother[1] focus to {891.187,204.816,955.731}
+		set DrunkBrother[2] focus to {891.187,204.816,955.731}
+		play anim "a_p_stand" on DrunkBrother[0]
+		play anim "A_p_L4Nutoil_brother_dance1" on DrunkBrother[1] loop -1
+		play anim "A_p_L4Nutoil_brother_dance2" on DrunkBrother[2] loop -1
+		wait until read
+		send evil spirit home
+		set camera position to {899.479,206.324,961.642}
+		set camera focus to {816.984,207.090,905.124}
+		wait 1 seconds
+		play anim "a_p_l7nutoil2_pointing_into" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		play anim "a_p_l7nutoil2_pointing_loop" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		play anim "a_p_l7nutoil2_pointing_outof" on DrunkBrother[0] disable stand blend time 0
+		wait until DrunkBrother[0] played
+		move DrunkBrother[0] position to {812.222, 211.333, 777.384}
+		SPEED of DrunkBrother[0] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[0] anim "a_p_walk_drunk"
+		wait 0.2 seconds
+		move DrunkBrother[1] position to {812.222, 211.333, 777.384}
+		SPEED of DrunkBrother[1] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[1] anim "a_p_walk_drunk"
+		wait 0.1 seconds	
+		move DrunkBrother[2] position to {812.222, 211.333, 777.384}
+		SPEED of DrunkBrother[2] = 0.1
+		wait 0.1 seconds
+		override DrunkBrother[2] anim "a_p_walk_drunk"
+		wait 0.1 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		move DrunkBrother[0] position to {812.222, 211.333, 777.384} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		move DrunkBrother[1] position to {812.222, 211.333, 777.384} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		move DrunkBrother[2] position to {812.222, 211.333, 777.384} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+
+	
+	elsif NO2_NumHits == 4
+		//GA: a wonderful throw. Bang on target
+		eject good spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_70"
+		wait until read
+		send good spirit home
+	end if
+
+	end known cinema
+
+end script NO2_SuccessfulShot
+
+
+//-----------------------------------------------------------------
+// UnsuccessfulShot
+//-----------------------------------------------------------------
+
+begin script NO2_UnsuccessfulShot
+start
+	begin known dialogue
+	
+	if NO2_NumShots % 3 == 1
+		//EA: you throw like a baby girl!
+		eject evil spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_80"
+		wait until read
+		send evil spirit home
+	elsif NO2_NumShots % 3 == 2
+		//EA: you are rubbish!
+		eject evil spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_90"
+		wait until read
+		send evil spirit home
+	elsif NO2_NumShots % 3 == 0
+		//GA: oh dear. That’s was very poor
+		eject good spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_100"
+		wait until read
+		send good spirit home
+	end if
+
+	end known dialogue
+
+end script NO2_UnsuccessfulShot
+
+//-----------------------------------------------------------------
+// NO2_FadeOutPyre
+//-----------------------------------------------------------------
+
+begin script NO2_FadeOutPyre(PyreIndex, PyreEffect, PyrePosition)
+start
+	// remove the 
+	wait NO2_FIRE_OUT_TIME seconds or NO2_PlayerWantsToQuit == NO2_TRUE or NO2_AboutToStart == NO2_TRUE
+
+	//delete NO2_Brother[PyreIndex]
+	
+	wait 1 seconds
+
+	remove visual effect PyreEffect target at {PyrePosition}
+	delete PyreEffect
+	detach sound "SCULLFIRE" from NO2_Brother[NO2_NumHits + 1]
+
+end script NO2_FadeOutPyre
+
+//-----------------------------------------------------------------
+// NO2_CheckForQuit
+//-----------------------------------------------------------------
+
+begin script NO2_CheckForQuit
+	
+	EndScrollPos = 0
+start
+	EndScrollPos = marker at {802.709,212.593,768.225}
+
+	NO2_QuitScroll = create highlight BRONZE name "BW2T_SCRIPT_07FINAL_NUTOIL_TT_10" remind "BW2T_SCRIPT_07FINAL_CHALLENGE_NUT_OIL_PART2_REMINDER" at {EndScrollPos}
+    ALTITUDE of NO2_QuitScroll = 1
+
+	wait until not NO2_QuitScroll exists or NO2_QuitScroll right clicked 
+
+	if NO2_QuitScroll exists
+		NO2_PlayerWantsToQuit = 1
+	end if
+
+end script NO2_CheckForQuit
+
+//-----------------------------------------------------------------
+// NO2_DetectSetOnFire
+//-----------------------------------------------------------------
+
+begin script NO2_DetectSetOnFire
+	FireEffect = 0
+start
+	begin loop
+		if NO2_Brother[NO2_NumHits + 1] on fire
+			stop visual effect FireEffect
+			/*s=s*NO2_NumHits
+			p=p*NO2_NumHits*/
+			FireEffect = create visual effect VISUAL_EFFECT_SPREAD_FIRE_LARGE at {NO2_Brother[NO2_NumHits + 1]} time NO2_FIRE_OUT_TIME
+			attach 3d sound "SCULLFIRE" to NO2_Brother[NO2_NumHits + 1]
+			//after the fire fades out the object needs to go as well
+			run background script NO2_FadeOutPyre(NO2_NumHits + 1, FireEffect, NO2_Brother[NO2_NumHits + 1])
+
+			NO2_NumHits++
+			// barrels thrown reset after each hit so you get 
+			NO2_BarrelsThrown = 0
+			
+			begin cinema
+
+				run script NO2_SuccessfulShot
+
+				if NO2_NumHits < NO2_TOTAL_HITS
+					set fade red 0 green 0 blue 0 time 1
+					wait 1 seconds
+					set camera position to {NO2_TargetCamPos[NO2_NumHits]}// time 2
+					set camera focus to {NO2_TargetCamFoc[NO2_NumHits]}// time 2
+					wait until camera ready
+					set fade in time 1
+					wait 1 seconds
+				end if
+
+				delete NO2_HighLight
+				NO2_HighLight = 0
+
+				if NO2_HighLight == 0 
+					NO2_HighLight = create visual effect VISUAL_EFFECT_TOWN_BEAM at {NO2_TargetPos[NO2_NumHits]} time -1
+				end if
+
+			end cinema
+
+			wait 2 seconds
+		end if
+
+	until NO2_BarrelsThrown >= NO2_NUM_BARRELS_PER_PYRE or NO2_NumHits >= NO2_TOTAL_HITS or NO2_PlayerWantsToQuit != NO2_FALSE
+	end loop
+
+end script NO2_DetectSetOnFire

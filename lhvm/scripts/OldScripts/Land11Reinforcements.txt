@@ -1,0 +1,142 @@
+///////////////////////////////////////////////////////////////////////////////
+//	REINFORCEMENTS
+//	~~~~~~~~~~~~~~
+//
+//	The player gets a new unit of reinforcements after a certain time
+//
+//	Rewards:			Units
+//
+//	Start date:			30-03-05			By:	Steve
+//	Update date:		30-03-05			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define RE_TRUE						= 1
+define RE_FALSE						= 0
+
+define RE_TYPE_MELEE				= 1
+define RE_TYPE_ARCHER				= 2
+define RE_TYPE_CATAPULT				= 3
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script RE_AdvisorsComment(Type)
+
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land11Reinforcements
+
+	ReinforceCreatePos			= marker at {1258.015, 139.910, 566.612}
+	PosToGoTo					= marker at {1530.730, 246.273, 1020.361}
+	Town						= get TOWN at {PosToGoTo} radius 100
+	RUnit						= 0
+	TypeOfReinforcement			= -1
+	LastTypeOfReinforcement		= -1
+	ReinforceDelay				= 0
+	
+	UpperDelay					= 60					// 10 mins
+	LowerDelay					= 24					// 4 mins
+	
+	GotValidReinforcement		= RE_FALSE
+	ReinforceTimer				= create timer for number from LowerDelay to UpperDelay  seconds
+
+start
+
+	if Town exists
+		begin loop				// Currently we keep getting reinforcements the whole time
+			if get ReinforceTimer time remaining <= 0
+				// Do the reinforcement here...
+				while GotValidReinforcement == RE_FALSE
+					TypeOfReinforcement = number from RE_TYPE_MELEE to RE_TYPE_CATAPULT
+					
+					if TypeOfReinforcement != LastTypeOfReinforcement
+						// Create the actual reinforcements here...
+						if TypeOfReinforcement == RE_TYPE_MELEE
+							RUnit = create platoon PLATOON_INFO_GREEK_MELEE_1 at {ReinforceCreatePos} with 25 men and 0 women
+							PLAYER of RUnit = 0
+							
+							// Send the unit to the players town, attach it then release from script						
+							clear RUnit action queue
+							add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PosToGoTo} to RUnit action queue
+							
+						elsif TypeOfReinforcement == RE_TYPE_ARCHER
+							RUnit = create platoon PLATOON_INFO_GREEK_RANGED_1 at {ReinforceCreatePos} with 25 men and 0 women					
+							PLAYER of RUnit = 0
+
+							// Send the unit to the players town, attach it then release from script						
+							clear RUnit action queue
+							add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PosToGoTo} to RUnit action queue
+							
+						else		// Catapult
+							RUnit = create siege weapon CATAPULT_1 belonging to Town at {ReinforceCreatePos}
+		
+							// Send the unit to the players town, attach it then release from script
+							clear siege weapon RUnit action queue
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {PosToGoTo} to siege weapon RUnit action queue
+						end if
+
+						run background script RE_AdvisorsComment(TypeOfReinforcement)
+						attach RUnit to Town
+						release RUnit										
+						
+						LastTypeOfReinforcement = TypeOfReinforcement
+						GotValidReinforcement = RE_TRUE
+					end if
+				end while
+				
+				GotValidReinforcement = RE_FALSE
+				ReinforceDelay = number from LowerDelay to UpperDelay
+				set ReinforceTimer time to ReinforceDelay seconds
+			end if	
+		end loop
+	else
+		say "ERROR: Couldn't get the players town by using a position."
+		wait until read
+	end if
+	
+end script Land11Reinforcements
+
+
+//-----------------------------------------------------------------------------
+//	Advisors tell the player that new reinforcements have arrived
+//-----------------------------------------------------------------------------
+begin script RE_AdvisorsComment(Type)
+start
+
+	begin dialogue
+		eject evil spirit
+		
+		if Type == RE_TYPE_MELEE
+			say "EA: Oh yeah Boss, a new unit of fighters have arrived at the beach."
+		elsif Type == RE_TYPE_ARCHER
+			say "EA: Cool! A unit of archers have arrived at the beach."
+		else								// Catapult
+			say "EA: We've got a new catapult at the beach Boss. Wicked!"
+		end if
+		
+		wait until read
+		
+		send evil spirit home
+	end dialogue
+
+end script RE_AdvisorsComment
+
+*/
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

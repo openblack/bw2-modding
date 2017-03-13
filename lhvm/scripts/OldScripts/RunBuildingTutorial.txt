@@ -1,0 +1,33 @@
+//-----------------------------------------------------------------------------
+// RunBuildingTutorial
+//
+// Paul Nettleton
+//
+// This script runs the building tutorials
+//
+//-----------------------------------------------------------------------------
+
+run script RunBuildingTutorial
+
+//-----------------------------------------------------------------------------
+
+begin script RunBuildingTutorial
+start
+	
+	run background script BuildingTutorialTownCentre
+	run background script BuildingTutorialStoragePit
+	run background script BuildingTutorialWorkshop
+	run background script BuildingWarriorTraining
+	run background script BuildingSeigeWorkshop
+	run background script BuildingTutorialArchersExtension
+	run background script BuildingTutorialWallGateTower
+	run background script BuildingTutorialSeigeExtension
+	
+	run background script BuildingTutorialLevelTwo
+	run background script BuildingTutorialLevelThree
+	
+end script RunBuildingTutorial
+
+
+//-----------------------------------------------------------------------------
+

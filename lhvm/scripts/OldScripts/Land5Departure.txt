@@ -1,0 +1,35 @@
+begin script Land5Departure
+
+DepartureScrollPos = marker at {1533.281, 186.799, 649.130}
+
+DepartureScroll = 0
+
+start
+
+
+
+	DepartureScroll = create highlight GOLD name "Depart Land 5" remind "Reminder temp" at {DepartureScrollPos}
+	ALTITUDE of DepartureScroll = 3
+
+	wait until DepartureScroll right clicked
+
+	begin dialogue
+		eject good spirit
+		say "Are you sure you wish to leave the land?"
+		wait until read
+		say "Click again to confirm"
+		wait until read
+		send good spirit home
+	end dialogue
+
+clear right clicked object
+
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+
+
+	L5Complete = 1
+	load map "./Data/Landscape/BW2/Land6.bwe"
+
+
+end script Land5Departure

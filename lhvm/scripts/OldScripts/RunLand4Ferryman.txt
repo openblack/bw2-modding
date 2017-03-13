@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Sigved Return script
+//-----------------------------------------------------------------------------
+run script RunLand4Ferryman
+
+begin script RunLand4Ferryman
+
+start
+
+	run script Land4Ferryman
+
+end script RunLand4Ferryman

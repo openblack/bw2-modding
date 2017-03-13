@@ -1,0 +1,6 @@
+run script RunLand10Stealth
+
+begin script RunLand10Stealth
+start
+	run script Land10Stealth
+end script RunLand10Stealth

@@ -1,0 +1,124 @@
+////////////////////////////////////////////////////////////////////////////////////
+//Land 1 Wolves
+//
+// Bands of wolves wonder the forest by the Greek settlment
+// They attack villagers who go near
+// The creature cna frighten them away
+////////////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define LAND1_WOLF_FLOCK_SIZE = 10
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global L1_Wolf[LAND1_WOLF_FLOCK_SIZE]
+global W_ForestOfDeath = 0
+global W_WolvesLeft = 0
+global WolfCreature = 0
+
+//-----------------------------------------------------------------------------
+//	Defines
+//-----------------------------------------------------------------------------
+define script WolfControl(WolfID)
+define script WolfAdvisor(AdvisorID)
+
+//-----------------------------------------------------------------------------
+//	Land 1 Wolves
+//-----------------------------------------------------------------------------
+begin script Land1Wolves
+	WolfFlock = 0
+	FlockPos = marker at {1001.795, 11.058, 946.167}
+	Counter = 0
+start
+	
+	WolfFlock = create flock container	
+	
+	///////temp
+	WolfCreature = get player 0 creature
+	
+	while Counter < LAND1_WOLF_FLOCK_SIZE
+		L1_Wolf[Counter] = create ANIMAL LION at {FlockPos} + {number from -5 to 5, number from -5 to 5}
+		add L1_Wolf[Counter] to flock WolfFlock
+		run background script WolfControl(Counter)
+		Counter++
+	end while
+		
+	nominate L1_Wolf[0] as leader for flock WolfFlock
+	
+end script Land1Wolves
+
+//-----------------------------------------------------------------------------
+//	Wolf Control
+//-----------------------------------------------------------------------------
+begin script WolfControl(WolfID)
+	RetreatPos = 0
+	RetreatDist = 0
+	RetreatAngle = 0
+start	
+	
+	//Increase the wolf counter each time this script is run
+	W_WolvesLeft++
+	
+	//Only run this loop while the wolf is alive
+	while L1_Wolf[WolfID] exists
+		
+		if {WolfCreature} near {L1_Wolf[WolfID]} radius 50
+			RetreatAngle =  number from -60 to 60
+			RetreatDist =  number from 50 to 150
+			RetreatPos = marker at get target from {MyCreature} to {L1_Wolf[WolfID]} distance RetreatDist angle RetreatAngle
+			move L1_Wolf[WolfID] position to {RetreatPos}
+			//SPEED of L1_Wolf[WolfID] = 10.0
+			
+			wait 1 seconds
+			
+		end if
+		
+	end while
+	
+	//A wolf has died.. decrease the counter
+	W_WolvesLeft--	
+	if W_WolvesLeft == 0
+		run background script WolfAdvisor(3)
+	end if
+	
+end script WolfControl
+
+//-----------------------------------------------------------------------------
+//	Wolf Advisor
+//-----------------------------------------------------------------------------
+begin script WolfAdvisor(AdvisorID)
+start
+	
+	//These wolves are eating our villagers
+	if AdvisorID == 0
+	
+	//Maybe our creature can help rid thhe forest of the wolves
+	elsif AdvisorID == 1
+	
+	//Look the wolves are moving away from your creature
+	elsif AdvisorID == 2
+	
+	//All the wolves are dead.. it's safe to forest again now
+	elsif AdvisorID == 3
+	
+		begin dialogue
+		
+			eject evil spirit
+			say "yea Killlling spree!"
+			wait 2 seconds
+			
+			eject good spirit
+			say "Was there not a nicer way to get rid of the wolves leader?"
+			wait 2 seconds
+			
+			send good spirit home
+			send evil spirit home
+			
+		end dialogue
+		
+	end if
+	
+end script WolfAdvisor

@@ -1,0 +1,12 @@
+run script RunLand10Departure
+
+begin script RunLand10Departure
+
+
+start
+
+
+run script Land10Departure
+
+
+end script RunLand10Departure

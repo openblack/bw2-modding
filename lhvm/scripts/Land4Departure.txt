@@ -1,0 +1,114 @@
+begin script Land4Departure
+	DepartureScrollPos = marker at {1091.795, 177.090, 617.846}
+	DepartureScroll = 0
+	AreYouSureCommentSaid = 0
+	Random = 0
+	CommentTimer = create timer for 0 seconds
+	TeleportEffect = 0
+	CSMixer = 0
+start
+	CSMixer = create mixer
+	
+	if not L4NorseCity exists
+		run script Land4Globals
+	end if
+	
+	wait until variable get town L4NorseCity status == variable TOWN_STATUS_MIGRATION_STARTED or variable get town L4NorseCity status == variable TOWN_STATUS_CAPTURED
+	
+	run background script LandOver(L4GreekTown)
+						
+	run script Land4Outro
+	
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {DepartureScrollPos}
+	ALTITUDE of DepartureScroll = 3
+	set CommentTimer time to 30 seconds
+	
+	TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {DepartureScrollPos} + {0, 3, 0} time -1
+	
+	begin loop
+		if DepartureScroll right clicked and AreYouSureCommentSaid == 0
+			clear right clicked object
+			begin dialogue
+				eject good spirit
+				eject evil spirit
+			//GA: "Are you sure you wish to leave the land?"
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_DEPARTURE_10"
+				wait until read
+			//EA: "Click again to confirm"
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_DEPARTURE_11"
+				wait until read
+				send good spirit home
+				send evil spirit home
+			end dialogue
+			AreYouSureCommentSaid = 1
+			clear right clicked object
+		elsif DepartureScroll right clicked and AreYouSureCommentSaid == 1
+			delete DepartureScroll
+		end if
+	until DepartureScroll not exists
+	end loop
+	
+	start music "farming_communtiy_land2" loop 2
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	begin cinema
+		wait 2 seconds
+		reset camera path 
+		queue camera move with position {1120.948, 191.273, 620.060} focus {1023.622, 170.546, 610.136} time 0.0
+		queue camera move with position {1109.861, 194.675, 618.923} focus {1013.145, 171.279, 608.974} time 24.0
+		queue camera move with position {1091.971, 183.042, 617.829} focus {1071.781, 85.150, 614.728} time 5.0
+		play camera path with easein 12 easeout 4 method SCRIPT_CAMERAPATH_EQUALTIME
+		set fade in time 2
+		eject good spirit
+		eject evil spirit
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_OUTRO_10"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_OUTRO_20"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_OUTRO_30"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_OUTRO_40"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_OUTRO_50"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_OUTRO_60"
+		wait until read
+		send good spirit home
+		send evil spirit home
+		send evil spirit home
+		set fade red 0 green 0 blue 0 time 3
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+		wait 3.5 seconds
+		wait 1 seconds
+	end cinema	    	
+	////
+	//TRIGGER processing of land end objectives
+	process land end objectives
+	wait until land end objectives processed
+
+	if MyCreature exists
+		save my_creature
+	end if
+
+	L4Complete = 1
+	disable game can be lost
+	
+	
+	///Activat any challenges we haven't done so we can see them on the end screens
+	if L4ShowingBuildAWall == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_WALL_90" amount 1		
+	end if
+	
+	if L4ShowingNutOil == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 with amount 1 text "BW2T_SCRIPT_04FINAL_NUT_OIL_REMINDER" amount 1 description "BW2T_SCRIPT_04FINAL_NUT_OIL_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_4_NUTOIL_HIGH
+	end if 
+	
+	if L4ShowingUndeadLegion == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 with amount 1 text "BW2T_SCRIPT_04FINAL_CHALLENGENAME_UNDEAD_LEGION" amount 1 description "BW2T_SCRIPT_04FINAL_GHOSTLEGION_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_4_UNDEADLEGION
+	end if 
+	
+	run script LandExit
+	
+	load map "./Data/Landscape/BW2/Land6.bwe"
+	wait 2 seconds
+end script Land4Departure

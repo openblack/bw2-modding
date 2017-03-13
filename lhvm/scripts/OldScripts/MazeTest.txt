@@ -1,0 +1,405 @@
+//Maze test
+//This is a test for the maze mini game played at the beginning of the game.
+
+//-----------------------------------------------------------------------------
+
+define NumberOfControlPoints = 30
+define NumberOfArmyCreationPoints = 5
+
+define MZ_FREE = 0
+define MZ_BLOCKED = 1
+define MZ_FINISHED = 2
+
+
+global CPPosition[NumberOfControlPoints] 
+global CPFirstChoice[NumberOfControlPoints] 
+global CPSecondChoice[NumberOfControlPoints] 
+global CPArmyChoice[NumberOfControlPoints] 
+global CPType[NumberOfControlPoints] 
+global CPObstacle[NumberOfControlPoints]
+global CPLevel[NumberOfControlPoints]
+global LevelReached = 0
+
+//-----------------------------------------------------------------------------
+
+run script CreateTheVillagers
+
+//-----------------------------------------------------------------------------
+
+begin script EmulateLightningStrike
+LightningPos = 0
+MyWeather = 0
+MyWeatherPos = marker at {1252.520, 60.250, 1144.818}
+CurrentHandStrength = marker at {0.0, 30.0, 10.0}
+CurrentRadius = 20
+NearbyObject =0
+start
+	MyWeather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {MyWeatherPos}     
+	set physics from hand with strength {CurrentHandStrength} radius CurrentRadius
+	begin loop
+		if mouse right button clicked
+			LightningPos = marker at right clicked position 
+			set lightning strike at {LightningPos} from MyWeather
+			wait 0.2 seconds
+		
+			NearbyObject = get HOUSE ABODE_INFO_GREEK_TENT at {LightningPos} radius 10
+			
+			if (NearbyObject exists)
+				delete NearbyObject 
+			end if
+			
+			
+			
+			//MyLightningPos = 0
+			clear right clicked position
+		end if
+	end loop
+end script EmulateLightningStrike
+
+//-----------------------------------------------------------------------------
+
+begin script MoveArmyAround(attacking_army, current_position)
+RandomNo = 0
+DestinationPosition = 0
+start
+	//Move the villager to the correct position
+	set attacking_army position to {CPPosition[current_position]}
+	begin loop
+		//Check if there is a  choice.
+		if (CPSecondChoice[current_position] != -1)
+			if (CPArmyChoice[current_position] != -1)
+				//Choose which pos to go to.
+				RandomNo = number from 0 to 2
+				if (RandomNo == 0)
+					current_position = CPFirstChoice[current_position]
+				elsif (RandomNo == 1)
+					current_position = CPSecondChoice[current_position]
+				else 
+					current_position = CPArmyChoice[current_position]
+				end if 	
+			else
+				//Choose which pos to go to.
+				RandomNo = number from 0 to 1
+				if (RandomNo == 0)
+					current_position = CPFirstChoice[current_position]
+				else
+					current_position = CPSecondChoice[current_position]
+				end if 	
+			end if
+		else
+			//No choice, move to the first point.
+			current_position = CPFirstChoice[current_position]
+		end if 
+		
+		DestinationPosition = marker at {CPPosition[current_position]} + {number from -2 to 2, 0, number from -2 to 2}
+		move attacking_army position to {DestinationPosition}
+		wait until {attacking_army} near {DestinationPosition} radius 3
+		wait 1 seconds
+		
+		until not attacking_army exists
+	end loop
+end script MoveArmyAround
+
+//-----------------------------------------------------------------------------
+
+begin script LookAfterMaraudingArmies
+Army1 = 0
+Army2 = 0
+
+start
+ 	begin loop
+		wait 5 seconds
+		if (not Army1 exists)
+			Army1 = create platoon PLATOON_INFO_AZTEC_MELEE_1 at {1788.037, 12.625, 1037.382} with 4 men and 0 women
+			set Army1 player 1
+			run background script MoveArmyAround(Army1, 29)
+		end if
+		wait 5 seconds
+		if (not Army2 exists)
+			Army2 = create platoon PLATOON_INFO_AZTEC_MELEE_1 at {1788.037, 12.625, 1037.382} with 4 men and 0 women
+			set Army2 player 1
+			run background script MoveArmyAround(Army2, 29)
+		end if
+	end loop
+end script LookAfterMaraudingArmies
+
+//-----------------------------------------------------------------------------
+
+begin script CreateObstacles
+Counter = 0
+start
+	while (Counter < NumberOfControlPoints)
+		if (CPType[Counter] == MZ_BLOCKED)
+			CPObstacle[Counter] = create HOUSE ABODE_INFO_GREEK_TENT at {CPPosition[Counter]}
+			//SCALE of CPObstacle[Counter] = 1
+		end if 
+		Counter++
+	end while
+	
+end script CreateObstacles
+
+//-----------------------------------------------------------------------------
+
+begin script LookAfterObstacles
+Counter = 0
+start
+	begin loop
+		Counter = 0
+		while (Counter < NumberOfControlPoints)
+			if (CPType[Counter] == MZ_BLOCKED)
+				if (not CPObstacle[Counter] exists)
+					CPType[Counter] = MZ_FREE
+				end if 
+			end if 
+			Counter++
+		end while
+	end loop
+end script LookAfterObstacles
+
+//-----------------------------------------------------------------------------
+
+begin script LookAfterPeopleWalkingThroughTheTown(villager_group, current_position)
+RandomNo = 0
+DestinationPosition = 0
+start
+	//Move the villager to the correct position
+	set villager_group position to {CPPosition[current_position]}
+	begin loop
+	
+		wait until CPType[current_position] != MZ_BLOCKED
+		if (CPType[current_position] == MZ_FINISHED)
+			wait 3 seconds
+			delete villager_group
+		end if 
+		
+		//Check if there is a  choice.
+		if (CPSecondChoice[current_position] != -1)
+			//Choose which pos to go to.
+			RandomNo = number from 0 to 1
+			if (RandomNo == 0)
+				current_position = CPFirstChoice[current_position]
+			else
+				current_position = CPSecondChoice[current_position]
+			end if 	
+		else
+			//No choice, move to the first point.
+			current_position = CPFirstChoice[current_position]
+		end if 
+		
+		DestinationPosition = marker at {CPPosition[current_position]} + {number from -2 to 2, 0, number from -2 to 2}
+		move villager_group position to {DestinationPosition}
+		wait until {villager_group} near {DestinationPosition} radius 1
+		wait 1 seconds
+		
+		until not villager_group exists
+	end loop
+end script LookAfterPeopleWalkingThroughTheTown
+
+//-----------------------------------------------------------------------------
+
+begin script CreateTheVillagers
+VillagerGroup = 0
+VillagerRunner = 0
+start
+	//Setup the control points here!
+	CPPosition[0] = marker at {1735.586, 12.625, 1007.722}
+	CPFirstChoice[0] = 3
+	CPSecondChoice[0] = -1
+	CPArmyChoice[0] = -1
+	CPType[0] = MZ_FREE
+	
+	CPPosition[1] = marker at {1798.336, 12.625, 1004.084}
+	CPFirstChoice[1] = 5
+	CPSecondChoice[1] = -1
+	CPArmyChoice[1] = -1
+	CPType[1] = MZ_FREE
+	
+	CPPosition[2] =  marker at {1711.649, 12.625, 985.315}
+	CPFirstChoice[2] = 7
+	CPSecondChoice[2] = 3
+	CPArmyChoice[2] = -1
+	CPType[2] = MZ_FREE
+	
+	CPPosition[3] = marker at {1735.979, 12.625, 986.498}
+	CPFirstChoice[3] = 2
+	CPSecondChoice[3] = 4
+	CPArmyChoice[3] = -1
+	CPType[3] = MZ_FREE
+	
+	CPPosition[4] = marker at {1776.094, 12.625, 984.584}
+	CPFirstChoice[4] = 10
+	CPSecondChoice[4] = -1
+	CPArmyChoice[4] = -1
+	CPType[4] = MZ_FREE
+	
+	CPPosition[5] = marker at {1799.011, 12.625, 983.396}
+	CPFirstChoice[5] = 4
+	CPSecondChoice[5] = 6
+	CPArmyChoice[5] = -1
+	CPType[5] = MZ_FREE
+	
+	CPPosition[6] = marker at {1807.440, 12.625, 983.434}
+	CPFirstChoice[6] = 5
+	CPSecondChoice[6] = 11
+	CPArmyChoice[6] = -1
+	CPType[6] = MZ_FREE
+	
+	CPPosition[7] = marker at {1711.025, 12.625, 977.053}
+	CPFirstChoice[7] = 8
+	CPSecondChoice[7] = -1
+	CPArmyChoice[7] = -1
+	CPType[7] = MZ_BLOCKED
+	
+	CPPosition[8] = marker at {1713.908, 12.625, 967.228}
+	CPFirstChoice[8] = 9
+	CPSecondChoice[8] = -1
+	CPArmyChoice[8] = -1
+	CPType[8] = MZ_FREE
+	
+	CPPosition[9] = marker at {1754.201, 12.625, 965.407}
+	CPFirstChoice[9] = 12
+	CPSecondChoice[9] = -1
+	CPArmyChoice[9] = -1
+	CPType[9] = MZ_FREE
+	
+	CPPosition[10] = marker at {1776.829, 12.625, 966.852}
+	CPFirstChoice[10] = 9
+	CPSecondChoice[10] = 11
+	CPArmyChoice[10] = -1
+	CPType[10] = MZ_FREE
+	
+	CPPosition[11] = marker at {1806.836, 12.625, 965.769}
+	CPFirstChoice[11] = 16
+	CPSecondChoice[11] = 10
+	CPArmyChoice[11] = -1
+	CPType[11] = MZ_FREE
+	
+	CPPosition[12] = marker at {1752.401, 12.625, 958.459}
+	CPFirstChoice[12] = 15
+	CPSecondChoice[12] = -1
+	CPArmyChoice[12] = -1
+	CPType[12] = MZ_BLOCKED
+	
+	CPPosition[13] = marker at {1713.533, 12.625, 946.410}
+	CPFirstChoice[13] = 19
+	CPSecondChoice[13] = -1
+	CPArmyChoice[13] = -1
+	CPType[13] = MZ_FREE
+	
+	CPPosition[14] = marker at {1733.463, 12.625, 947.646}
+	CPFirstChoice[14] = 13
+	CPSecondChoice[14] = 17
+	CPArmyChoice[14] = -1
+	CPType[14] = MZ_FREE
+	
+	CPPosition[15] = marker at {1756.480, 12.625, 947.351}
+	CPFirstChoice[15] = 14
+	CPSecondChoice[15] = 16
+	CPArmyChoice[15] = -1
+	CPType[15] = MZ_FREE
+	
+	CPPosition[16] = marker at {1806.754, 12.625, 946.406}
+	CPFirstChoice[16] = 15
+	CPSecondChoice[16] = 18
+	CPArmyChoice[16] = -1
+	CPType[16] = MZ_FREE
+	
+	CPPosition[17] = marker at {1731.699, 12.625, 936.352}
+	CPFirstChoice[17] = 20
+	CPSecondChoice[17] = -1
+	CPArmyChoice[17] = -1
+	CPType[17] = MZ_BLOCKED
+	
+	CPPosition[18] = marker at {1806.485, 12.594, 936.583}
+	CPFirstChoice[18] = 22
+	CPSecondChoice[18] = -1
+	CPArmyChoice[18] = -1
+	CPType[18] = MZ_BLOCKED
+	
+	CPPosition[19] = marker at {1714.756, 12.625, 925.764}
+	CPFirstChoice[19] = 20
+	CPSecondChoice[19] = 21
+	CPArmyChoice[19] = -1
+	CPType[19] = 0
+	
+	CPPosition[20] = marker at {1733.341, 12.625, 927.870}
+	CPFirstChoice[20] = 19
+	CPSecondChoice[20] = 24
+	CPArmyChoice[20] = -1
+	CPType[20] = MZ_FREE
+	
+	CPPosition[21] = marker at {1714.040, 12.594, 916.408}
+	CPFirstChoice[21] = 23
+	CPSecondChoice[21] = -1
+	CPArmyChoice[21] = -1
+	CPType[21] = MZ_BLOCKED
+	
+	CPPosition[22] = marker at {1806.592, 12.594, 916.095}
+	CPFirstChoice[22] = 26
+	CPSecondChoice[22] = -1
+	CPType[22] = MZ_BLOCKED
+	
+	CPPosition[23] = marker at {1714.017, 12.594, 906.424}
+	CPFirstChoice[23] = 27
+	CPSecondChoice[23] = 24
+	CPArmyChoice[23] = -1
+	CPType[23] = MZ_FREE
+	
+	CPPosition[24] = marker at {1733.300, 12.594, 907.520}
+	CPFirstChoice[24] = 23
+	CPSecondChoice[24] = 25
+	CPArmyChoice[24] = -1
+	CPType[24] = MZ_FREE
+	
+	CPPosition[25] = marker at {1785.295, 12.594, 905.013}
+	CPFirstChoice[25] = 24
+	CPSecondChoice[25] = 28
+	CPArmyChoice[25] = -1
+	CPType[25] = MZ_FREE
+	
+	CPPosition[26] = marker at {1804.214, 12.594, 906.818}
+	CPFirstChoice[26] = 25
+	CPSecondChoice[26] = -1
+	CPArmyChoice[26] = -1
+	CPType[26] = MZ_FREE
+	
+	CPPosition[27] = marker at {1712.828, 12.594, 885.137}
+	CPFirstChoice[27] = -1
+	CPSecondChoice[27] = -1
+	CPArmyChoice[27] = -1
+	CPType[27] = MZ_FINISHED
+	
+	CPPosition[28] = marker at {1785.506, 12.594, 888.248}
+	CPFirstChoice[28] = -1
+	CPSecondChoice[28] = -1
+	CPArmyChoice[28] = -1
+	CPType[28] = MZ_FINISHED
+	
+	CPPosition[29] = marker at {1826.664, 12.625, 985.839}	
+	CPFirstChoice[29] = 6
+	CPSecondChoice[29] = -1
+	CPArmyChoice[29] = -1
+	CPType[29] = MZ_FREE
+	
+	LevelReached = 1
+	run script CreateObstacles
+	run background script LookAfterObstacles
+	run background script LookAfterMaraudingArmies
+	run background script EmulateLightningStrike
+	
+	set player 0 ENEMY to player 1
+	set player 1 ENEMY to player 0
+
+	begin loop
+		VillagerRunner = create VILLAGER MALE at {1788.037, 12.625, 1037.382}
+		set VillagerRunner player 0
+
+		SPEED of VillagerRunner = 1
+		run background script LookAfterPeopleWalkingThroughTheTown(VillagerRunner, number from 0 to 1)
+		wait 4 seconds
+	end loop
+
+end script CreateTheVillagers
+
+//-----------------------------------------------------------------------------
+

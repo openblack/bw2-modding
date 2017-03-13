@@ -1,0 +1,102 @@
+//-----------------------------------------------------------
+// Land 2 Global Defines
+//-----------------------------------------------------------
+define LAND2_MAX_SCENERY_PLATOONS	= 7
+
+//-----------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------
+define script Land2UpdateSaved
+define script Land2BlingBling(Inc)
+
+//-----------------------------------------------------------
+// Land 2 Globals
+//-----------------------------------------------------------
+global L2GreekTown				= 0
+global L2ActiveVolcanos			= 0
+global Land2Complete			= 0
+global L2Creature				= 0
+global L2Events					= 0
+global InCameraRollMode			= 0
+global L2DeleteUberVillagers	= 0
+global L2DeleteCityArmies		= 0
+global L2ChangeTime				= 0
+global L2VillagersSaved			= 0
+global Openingl2gate			= 0
+global HugeArmyCreateDelete		= 0
+global Land2_CurrentAdvisorComment = 0
+global BI_ShowStickWorldIcon		= 0
+global BI_FlamingStickObject		= 0
+
+global AlleyLimboHouses[80]
+global BarrelLimboHouses[40]
+global TownLimboHouses[40]
+
+
+global L2_SceneryPlatoonTrigger[LAND2_MAX_SCENERY_PLATOONS]
+global L2_SceneryPlatoonDelete[LAND2_MAX_SCENERY_PLATOONS]
+global L2_RoofPlatoonDelete[2]
+
+//Triggers
+global L2_Trigger_ReleaseWallVillagers	= 0
+global L2_Trigger_BarrelRun				= 0
+global L2_Trigger_Wall_Villagers		= 0
+global L2_Trigger_GoHayArmies			= 0
+global L2_Trigger_BarrelRunBackground	= 0
+global L2_Trigger_StartRingOfFireFires	= 0
+global L2_Trigger_CalmRingOfFireSmoke	= 0
+global L2_Trigger_IntroVillagersLook	= 0
+global L2_Trigger_DeleteIntroStuff		= 0
+global L2_Trigger_StartWallVillagers	= 0
+
+//-----------------------------------------------------------
+// PoP Watch
+//-----------------------------------------------------------
+begin script PopWatch
+	POP			= 0
+	Trig		= 0
+start
+
+	begin loop
+		if size of L2GreekTown > 0
+			Trig		= 1
+		end if
+	end loop
+
+end script PopWatch
+
+//-----------------------------------------------------------
+// Globals
+//-----------------------------------------------------------
+begin script Land2Globals
+start
+	L2GreekTown = get town with id 0
+	//run script PopWatch
+end script Land2Globals
+
+//-------------------------------------------------------------------------
+// Update Global Objectives
+//-------------------------------------------------------------------------
+begin script Land2UpdateSaved
+start
+	
+	L2VillagersSaved++
+	set persistent data "LAND2_VILLAGERS_SAVED" to L2VillagersSaved
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_SAVED_10" amount L2VillagersSaved	
+
+end script Land2UpdateSaved
+
+//-------------------------------------------------------------------------
+// Land 2 Bling Bling
+//-------------------------------------------------------------------------
+begin script Land2BlingBling(Inc)
+	Incer	= 0
+start
+
+	begin loop
+		run script Land2UpdateSaved
+		Incer++
+	until Incer >= Inc
+	end loop
+
+end script Land2BlingBling

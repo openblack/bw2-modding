@@ -1,0 +1,244 @@
+define False = 0
+define True = 1
+
+define script CreateAndLookAfterVillager(StartPos, TownToAttach)
+define script LookAfterVillagers
+
+global ScriptFinished 
+
+begin script Land7Intro
+	JapaneseTown = 0
+	Catapult = 0
+	Catapult2 = 0
+	Catapult3 = 0
+	JapaneseL = 0
+	JapaneseR = 0
+	GateHouse1 = 0
+	GateHouse2 = 0
+	Army1 = 0
+	Army2 = 0
+	Army3 = 0
+
+start
+
+	GateHouse1 = get HOUSE GATEHOUSE at {1509.351, 210.085, 948.081} radius 20
+	GateHouse2 = get HOUSE GATEHOUSE at {1152.272, 313.675, 1462.073} radius 20
+	set gate GateHouse1 open
+	set gate GateHouse2 open
+
+	JapaneseL = create VILLAGER VILLAGER_INFO_TARANAGA at {645.051, 467.008, 1805.654}
+	JapaneseR = create VILLAGER VILLAGER_INFO_HIROKU at {646.096, 467.001, 1805.739}
+	
+	set JapaneseL focus to {646.096, 467.001, 1805.739}
+	set JapaneseR focus to {645.051, 467.008, 1805.654}
+	ALTITUDE of JapaneseL = 4.65
+	ALTITUDE of JapaneseR = 4.65
+	play anim "a_p_chatting_paired01_a" on JapaneseL loop -1
+	play anim "a_p_talk2_male" on JapaneseR loop -1
+	
+	set fade red 0 green 0 blue 0 time 0
+	JapaneseTown = get TOWN at {637.424, 466.983, 1805.349} radius 50
+	Catapult = create siege weapon CATAPULT_1 belonging to JapaneseTown at {1518.651, 222.322, 979.359}
+	Catapult2 = create siege weapon CATAPULT_1 belonging to JapaneseTown at {1546.594, 230.818, 1000.260}
+	Catapult3 = create siege weapon CATAPULT_1 belonging to JapaneseTown at {1534.899, 218.059, 958.073}
+	ScriptFinished = False
+	
+	add action SIEGEWEAPON_AGENDA_ACTION_FACE_POSITION using {1465.961, 193.494, 844.537} to siege weapon Catapult action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_FACE_POSITION using {1465.961, 193.494, 844.537} to siege weapon Catapult2 action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_FACE_POSITION using {1465.961, 193.494, 844.537} to siege weapon Catapult3 action queue
+	
+	//wait 3.5 seconds
+	//wait for the gates to open. 
+	wait until gate GateHouse1 is open
+	
+	Army1 = create platoon PLATOON_INFO_JAPANESE_MELEE_5 at {1365.089, 256.808, 1023.456} with 50 men and 0 women
+	attach Army1 to JapaneseTown
+	move Army1 position to {1480.487, 258.211, 1149.787}
+	
+	Army2 = create platoon PLATOON_INFO_JAPANESE_MELEE_5 at {1162.476, 308.411, 1439.800} with 50 men and 0 women
+	attach Army2 to JapaneseTown
+	
+	
+	Army3 = create platoon PLATOON_INFO_JAPANESE_MELEE_5 at {1171.076, 310.911, 1457.048} with 50 men and 0 women
+	attach Army3 to JapaneseTown
+	
+	wait 1 seconds		
+	begin cinema
+		set game time 06.00		
+		
+		start music "creaturefightmain_01" loop -1
+		
+		queue camera move with position {1524.913, 207.198, 834.154} focus {1499.693, 210.138, 930.876} time 0.0
+			queue camera move with position {1515.021, 238.075, 904.724} focus {1513.470, 207.831, 1000.030} time 7.0
+				queue camera move with position {1204.322, 334.689, 1393.341} focus {1126.954, 328.635, 1456.403} time 12.0
+						queue camera move with position {745.637, 431.312, 1507.551} focus {692.451, 430.400, 1592.231} time 8.0
+							queue camera move with position {646.065, 469.161, 1761.149} focus {642.135, 460.686, 1860.709} time 8.0
+			play camera path with easein 4 easeout 12 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		set fade in time 2
+		
+		run background script LandStart
+		wait 2 seconds
+		
+		//Gen of city:Brother, I could not stand up to the Greeks. They overwhelmed us.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_10"
+		wait 2 seconds
+		//set gate GateHouse1 close
+		wait until read
+		//Gen of war:You are a fool. With defences and a strong army they could have been held at bay.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_20"
+		wait 5 seconds
+		//set gate GateHouse2 close
+		
+		wait until read
+		//Grn of city:No! They have some power. I think they have a god. I have seen Miracles.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_30"
+		
+		
+		move Army2 position to {1203.936, 291.717, 1401.299}
+		move Army3 position to {1245.845, 297.150, 1444.947}
+		
+		wait until read
+		//Gen of war: They have no god. You failed.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_40"
+		wait until read
+		//Gen of city:No, it is as the Prophesy says. A weak race will survive an onslaught and will rise again with a god to lead it.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_50"
+		wait until read
+		
+		
+		
+		set camera position to {643.132, 470.075, 1800.496}
+		set camera focus to {686.387, 494.507, 1887.288}
+		move camera position to {643.287, 470.162, 1800.808} time 20
+		move camera focus to {686.543, 494.595, 1887.600} time 20
+		
+		//Gen of war:Silence! I will deal with these Greeks according to the Teachings of War.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_60"
+		wait until read
+		//Gen of war:I will let them build and then I will destroy them.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_70"
+		wait until read
+		
+		reset camera path
+		
+		queue camera move with position {644.396, 476.178, 1812.617} focus {671.929, 445.590, 1721.479} time 0.0
+			queue camera move with position {644.786, 475.745, 1811.324} focus {672.319, 445.157, 1720.186} time 5.0
+				queue camera move with position {653.598, 473.047, 1798.988} focus {706.466, 471.213, 1714.124} time 6.0
+					queue camera move with position {714.042, 462.439, 1728.160} focus {737.895, 421.890, 1639.916} time 5.0
+						queue camera move with position {747.300, 470.035, 1583.298} focus {739.860, 392.764, 1520.261} time 5.0
+						queue camera move with position {669.011, 328.771, 1417.761} focus {659.984, 255.883, 1349.890} time 3.0
+							queue camera move with position {668.269, 240.649, 1178.103} focus {676.026, 227.105, 1079.323} time 3.0
+			queue camera move with position {692.008, 310.220, 1018.591} focus {713.181, 309.552, 920.862} time 4.0
+		queue camera move with position {703.877, 280.955, 960.747} focus {720.424, 227.061, 878.155} time 5.0
+		play camera path with easein 6 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+	
+		//Gen of war: Remember. We obey the Aztecs. Until we are beaten or we triumph, we must follow the Aztecs.		
+		say "BW2T_SCRIPT_07FINAL_PDM_STARTLAND_80"
+		wait until read
+		
+		eject good spirit
+		eject evil spirit
+
+		/*say "BW2T_SCRIPT_07FINAL_ADVISORS_INTRO_30"
+		wait until read
+		say "BW2T_SCRIPT_07FINAL_ADVISORS_INTRO_40"
+		wait until read
+		say "BW2T_SCRIPT_07FINAL_ADVISORS_INTRO_50"
+		wait until read*/
+		
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_07FINAL_ADVISORS_INTRO_G_30_40_50
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_07FINAL_ADVISORS_INTRO_E_30_40_50
+		wait until read
+		
+				
+		send good spirit home
+		send evil spirit home
+		
+		//add action SIEGEWEAPON_AGENDA_ACTION_FACE_POSITION using {1132.466, 314.667, 1452.605} to siege weapon Catapult action queue
+		//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {1132.466, 314.667, 1452.605} to siege weapon Catapult2 action queue
+		
+		//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {1328.308, 257.251, 1001.030} to siege weapon Catapult2 action queue
+		//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {1328.308, 257.251, 1001.030} to siege weapon Catapult3 action queue
+
+		//wait 6 seconds
+		wait until camera ready
+		wait 0.5 seconds
+		stop music with fadetime 5
+	end cinema
+	ScriptFinished = True
+	delete JapaneseL
+	delete JapaneseR
+	delete Army1
+	delete Army2
+	delete Army3
+	delete Catapult
+	delete Catapult2
+	delete Catapult3
+	//release Catapult
+	//release Catapult2
+	//release Catapult3
+end script Land7Intro
+
+begin script LookAfterVillagers
+Count = 0
+GreekTown = get TOWN at {635.634, 250.994, 865.602}
+start
+	while Count < 40
+		run background script CreateAndLookAfterVillager(marker at {652.010, 250.642, 842.435}+ {number from -3 to 3, 0, number from -3 to 3}, GreekTown)
+		Count++
+	end while 
+		
+	enable objective window
+	wait 5 seconds
+	disable objective window
+
+end script LookAfterVillagers
+
+
+begin script CreateAndLookAfterVillager(StartPos, TownToAttach)
+Villager = 0
+TeleportFX = 0
+MyFade = 0
+RandomNumber = 0
+Type = 0
+start
+	Type = number from 0 to 1
+	if Type == 0	
+		Villager = create VILLAGER GREEK_FARMER at {StartPos}
+	else
+		Villager = create VILLAGER GREEK_HOUSEWIFE at {StartPos}
+	end if
+	
+	set Villager alpha 0.0
+	RandomNumber = number from 1 to 5
+	
+	set Villager focus to {1076.809, 368.505, 1571.520}
+	
+	RandomNumber = number from 0 to 2
+	if RandomNumber == 0
+		play anim "a_p_scared_1" on Villager loop 1
+	elsif RandomNumber == 1
+		play anim "a_p_scared_stiff_2" on Villager loop 1
+	else
+		play anim "a_p_landed" on Villager loop 1
+	end if 
+	
+	wait 0.4 seconds
+	
+	TeleportFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on Villager time 4 
+	set TeleportFX colour red 0 green 0 blue 255
+	while MyFade < 1
+		set Villager alpha MyFade
+		MyFade+=0.05
+	end while
+	set Villager alpha 1.0
+	wait until Villager played
+	
+	//move Villager position to {644.778, 246.279, 871.622}
+	attach Villager to L7GreekTown
+	release Villager
+	
+	wait until ScriptFinished == True
+
+
+end script CreateAndLookAfterVillager

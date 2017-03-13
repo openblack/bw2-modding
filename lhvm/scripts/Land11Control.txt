@@ -1,0 +1,29 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 11 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land11Control
+	MyCreaturePos	= marker at {1643.655,236.506,809.703}
+start
+	set fade red 0 green 0 blue 0 time 0
+
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	
+	run script Land11DidYouKnow
+
+	//Load the creature and get it into global
+	load my_creature at {MyCreaturePos}
+	MyCreature = get player 0 creature
+
+	if not MyCreature exists
+		MyCreature = create CREATURE CREATURE_TYPE_LAST at {MyCreaturePos}
+		set player 0 creature to MyCreature
+		release MyCreature
+	end if
+
+	run background script Land11Creature
+	run background script SetupBuildingsLand4Onwards
+	run background script Land11Objectives
+	run background script SetupBuildingsLand4Onwards
+	run script Land11AztecCapitalScript
+
+end script Land11Control

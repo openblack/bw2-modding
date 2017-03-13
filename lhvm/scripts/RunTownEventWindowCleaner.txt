@@ -1,0 +1,8 @@
+run script RunTownEventWindowCleaner
+begin script RunTownEventWindowCleaner
+start
+
+	//run script TownEventWindowCleaner
+	run script WindowCleanerControl
+
+end script RunTownEventWindowCleaner

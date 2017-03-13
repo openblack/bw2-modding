@@ -1,0 +1,974 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Invisible_Stealer - Land 5
+//	~~~~~~~~~~~~~~~~~~~~~~~~~~
+//	
+//	I’m sure my food’s disappearing… 
+//	
+//	An invisible bandit starts to take food from your storage pit. The guards are somewhat puzzled by
+//	this miracle of disappearing food; so they ask for your help. 
+//	The player needs to discover where this food is going and who's responsible.
+//	The guards also describes a humming sound that is always present when the food goes missing. He says 
+//	he'll inform you if he hears it again.
+//	The player must track the bandit by his humming or his slight dust trails.
+//	Whenever the bandit reaches the witch's hut; the witch reverses her spell on him, making him visible; 
+//	then she decides she wants more food and so she casts the invisibility spell on him again. She detects 
+//	your presence and makes a run for it. She will run to a nearby group of trees and hide in there.
+//	She hides until either you force her out or she thinks you have gone. You must grab here before she can 
+//	do so, or the following will happen:
+//	The player must now catch her and put her in jail. Her voice can be heard saying things like 
+//	"Haha! You'll never catch me". She like the bandit makes a small dust trail whilst moving.
+//	Both the bandit and the witch can be dropped in the FAKE jail building or one or both of them can be killed
+//	in order to complete the script.
+//	
+//	
+//	Rewards:			Invisibility spell.
+//	Drawbacks:			Loss of food over time?
+//
+//	Start date:			28-03-03?	 		By:	Phil
+//	Last Update:		01-04-03			By: Phil
+//
+//	Requires:			Invisible bandit. Witch.
+//
+//	Notes: Playing as Japanese (South), Aztecs are the main threat (roughly to the centre of the map). 
+//	Euronymous has a small Greek City to the North. Monastry is past a little way North of the Aztecs.
+//
+//	Flock of bandits taking the food? That would mean more dust...
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define INV_FALSE				= 0
+define INV_TRUE					= 1
+define INV_WAYPOINT_RADIUS		= 20
+
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global INV_Bandit_Waypoints_To_Town[4]			//... Bandit's travel to town waypoint array
+global INV_Witch_Waypoints[2]					//... Witch's escape route waypoint array
+global INV_Initial_Scroll_Used					= INV_FALSE
+global INV_Both_Dead							= INV_FALSE
+global INV_Both_In_Jail							= INV_FALSE
+global INV_Witch_In_Jail						= INV_FALSE
+global INV_Bandit_In_Jail						= INV_FALSE
+global INV_Witch_Dead							= INV_FALSE
+global INV_Bandit_Dead							= INV_FALSE
+global INV_Advisor_Called						= INV_FALSE
+global INV_Bandit_Picked_Up						= INV_FALSE
+global INV_Witch_Picked_Up						= INV_FALSE
+global INV_Bandit_Called_Upon					= INV_FALSE
+global INV_Players_Town							= 0
+global INV_Witch								= 0
+global INV_Bandit								= 0
+global INV_Witch_Home_Position					= 0
+global INV_Witch_Home_Building					= 0
+global INV_Temp_Jail							= 0
+global INV_Guard_A								= 0
+global INV_Guard_B								= 0
+global INV_Player_Storage_Pit					= 0
+global INV_Scroll								= 0
+global INV_Reminder_Scroll						= 0
+global INV_Reward_Scroll						= 0
+global INV_Position_Just_Outside_Witch_House	= 0
+global INV_Position_Just_Outside_Storage_Pit	= 0
+global INV_Position_In_Jail						= 0
+global INV_Counter_A							= 0
+global INV_Counter_B							= 0
+global INV_Bandit_Counter						= 0
+
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script INV_Create_Homes_For_Both
+define script INV_Create_Bandit
+define script INV_Create_Guards
+define script INV_Initialise_Scrolls
+define script INV_Cutscene_Guards_Explain_Problem
+define script INV_Advisors_Point_Out_Guards_Spotted_Something
+define script INV_Bandit_Steals_Food
+define script INV_Create_Witch_Hiding_In_Home
+define script INV_Detect_Bandit_Killed
+define script INV_Detect_Witch_Killed
+define script INV_Detect_Bandit_Placed_In_Jail
+define script INV_Detect_Witch_Placed_In_Jail
+define script INV_Cutscene_Guards_Rewards_Player
+define script INV_Fake_The_Thefts
+define script INV_Reminder_Scroll_Info
+define script INV_Advisor_Warns_Food_Level_Is_Dropping
+define script INV_Are_Both_Dead
+define script INV_Are_Both_In_Jail
+define script INV_Has_Either_Been_Picked_Up
+define script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+define script INV_Create_Reward_Scroll
+define script INV_Witch_Does_Her_Stuff
+
+
+//... Run the main script not required.
+//run script Invisible_Stealer
+
+
+
+//========================================================================================
+//	MAIN script
+//========================================================================================
+
+//==========================
+begin script Invisible_Stealer
+
+start
+
+	INV_Players_Town						= get town with id 0
+	INV_Position_In_Jail					= marker at {1082.865,3.248,1286.756}
+	INV_Position_Just_Outside_Witch_House	= marker at {1093.629,3.919,1419.892}
+	INV_Position_Just_Outside_Storage_Pit	= marker at {996.495,3.214,1293.370}
+	INV_Bandit_Waypoints_To_Town[0]			= marker at {1092.366,3.843,1389.673}
+	INV_Bandit_Waypoints_To_Town[1]			= marker at {1035.283,3.015,1332.756}
+	INV_Bandit_Waypoints_To_Town[2]			= marker at {1012.079,3.350,1305.271}
+	INV_Bandit_Waypoints_To_Town[3]			= marker at {997.677,3.227,1296.098}
+	INV_Witch_Waypoints[0]					= marker at {1093.552,3.923,1420.037}
+	INV_Witch_Waypoints[1]					= marker at {1033.441,3.015,1464.685}
+
+	run script INV_Create_Homes_For_Both
+	run script INV_Create_Guards
+	run background script INV_Fake_The_Thefts
+
+	wait until INV_Counter_A == 3 //... Wait until 3 fake thefts have taken place.
+
+	run background script INV_Initialise_Scrolls
+	
+	wait until INV_Scroll exists
+	wait until INV_Scroll right clicked
+	delete INV_Scroll
+	INV_Initial_Scroll_Used = INV_TRUE
+
+	stop script "INV_Fake_The_Thefts"
+	run script INV_Cutscene_Guards_Explain_Problem
+	run script INV_Create_Bandit
+	run script INV_Create_Witch_Hiding_In_Home
+
+	run background script INV_Reminder_Scroll_Info
+	run background script INV_Detect_Bandit_Killed
+	run background script INV_Detect_Witch_Killed
+	run background script INV_Detect_Bandit_Placed_In_Jail
+	run background script INV_Detect_Witch_Placed_In_Jail
+	run background script INV_Has_Either_Been_Picked_Up
+	run background script INV_Advisors_Point_Out_Guards_Spotted_Something
+	run background script INV_Are_Both_Dead
+	run background script INV_Are_Both_In_Jail
+	run background script INV_Bandit_Steals_Food
+	run background script INV_Witch_Does_Her_Stuff
+
+	wait until ((INV_Both_Dead == INV_TRUE) or (INV_Both_In_Jail == INV_TRUE) or (INV_Bandit_Dead == INV_TRUE and INV_Witch_In_Jail == INV_TRUE) or (INV_Witch_Dead == INV_TRUE and INV_Bandit_In_Jail == INV_TRUE))
+
+	stop script "INV_Reminder_Scroll_Info"
+    stop script "INV_Bandit_Steals_Food"
+	stop script "INV_Witch_Does_Her_Stuff"
+	stop script "INV_Are_Both_Dead"
+	stop script "INV_Are_Both_In_Jail"
+
+	run script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+	run script INV_Create_Reward_Scroll
+	run script INV_Cutscene_Guards_Rewards_Player
+	
+    wait 30 seconds
+    wait 30 seconds
+
+end script Invisible_Stealer
+//==========================
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Homes_For_Both
+//-----------------------------------------------------------------------------
+begin script INV_Create_Homes_For_Both
+
+start
+
+	//... Create the home for the witch.
+	INV_Witch_Home_Position = marker at {1095.743,4.267,1422.225}
+	INV_Witch_Home_Building = create with angle 135 and scale 1.0 HOUSE ABODE_INFO_GREEK_SHACK_X at {INV_Witch_Home_Position}
+
+   	INV_Temp_Jail = create with angle 135 and scale 1.0 HOUSE ABODE_INFO_GREEK_SHACK_X at {INV_Position_In_Jail}
+
+
+end script INV_Create_Homes_For_Both
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Bandit
+//-----------------------------------------------------------------------------
+begin script INV_Create_Bandit
+
+	INV_Bandit_Spawn_Position	= 0
+	//INV_InvisSpell				= 0
+
+start
+
+	//... Create the bandit character.
+	INV_Bandit_Spawn_Position = marker at {1095.743,4.267,1422.225}
+	INV_Bandit = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Bandit_Spawn_Position}
+	//INV_Bandit = create VILLAGER VILLAGER_INFO_SAILOR_ACCORDIAN at {INV_Bandit_Spawn_Position}
+	
+	// TEMP SPEED BOOST	
+	SPEED of INV_Bandit = 1.10
+		
+	//... Make him invisible.   time -1 = forever
+	//INV_InvisSpell = cast MAGIC_TYPE_CREATURE_SPELL_INVISIBLE spell on INV_Bandit from [INV_Bandit] radius 0 time -1 curl 0
+
+	//... add some small dust effects to show where he's walking.
+
+
+end script INV_Create_Bandit
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Guards
+//-----------------------------------------------------------------------------
+begin script INV_Create_Guards
+
+	INV_Guard_A_Spawn_Position = 0
+	INV_Guard_B_Spawn_Position = 0
+
+start
+
+	//... Create the guard's spawn positions.
+	INV_Guard_A_Spawn_Position = marker at {995.525,3.083,1294.257}
+	INV_Guard_B_Spawn_Position = marker at {997.587,3.361,1293.356}
+
+	//... Create the guards by the Storage Pit entrance.
+	INV_Guard_A = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Guard_A_Spawn_Position}
+	INV_Guard_B = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Guard_B_Spawn_Position}
+
+	//... looking puzzled animations?
+
+end script INV_Create_Guards
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Initialise_Scrolls
+//-----------------------------------------------------------------------------
+begin script INV_Initialise_Scrolls
+
+INV_Scroll_Position			= 0
+		
+start
+
+	//... Create scroll creation position above the two guards by the player's storage pit.
+	INV_Scroll_Position = marker at {1042.576,3.015,1329.986} //marker at {1008.063,4.000,1297.998}
+
+
+	//------------
+	begin loop
+
+		if INV_Initial_Scroll_Used == INV_FALSE	//...If not started this event/challenge
+			if INV_Scroll not exists
+				INV_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Scroll_Position}
+			end if
+		else									//... Already used the main scroll, so create a reminder.
+			if INV_Reminder_Scroll not exists
+				INV_Reminder_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Scroll_Position}
+			end if		
+		end if
+		
+		wait 0.6 seconds
+
+		//... Once bandit and witch caught, or both dead; stop all scrolls
+		until INV_Both_Dead == INV_TRUE or INV_Both_In_Jail == INV_TRUE
+
+	end loop
+	//------------
+
+
+	if INV_Scroll exists
+		delete INV_Scroll
+	end if
+	if INV_Reminder_Scroll exists
+		delete INV_Reminder_Scroll
+	end if
+	
+
+end script INV_Initialise_Scrolls
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Cutscene_Guards_Explain_Problem
+//-----------------------------------------------------------------------------
+begin script INV_Cutscene_Guards_Explain_Problem
+
+start
+
+	begin cinema
+		set camera position to {999.351,5.450,1294.408}
+		set camera focus to {997.786,3.708,1293.957}
+		say "Lord, can you help us solve this mystery?"
+		wait until read
+		clear dialogue
+		say "Food keeps disappearing from the storage pit! If our captain finds out we're mincemeat!"
+		wait until read
+		clear dialogue
+		say "Someone must be stealing it from under our noses! But we have never seen anyone take any out."
+		wait until read
+		clear dialogue
+		say "I'd swear someone was humming whilst it happens though. But you're right; there's never anyone there."
+		wait until read
+		clear dialogue
+		say "If we hear it again we'll call on you."
+		wait until read
+		clear dialogue
+	end cinema
+	
+	//... Set having used the initial scroll to True.
+	INV_Initial_Scroll_Used = INV_TRUE
+
+end script INV_Cutscene_Guards_Explain_Problem
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Advisors_Point_Out_Guards_Spotted_Something
+//-----------------------------------------------------------------------------
+begin script INV_Advisors_Point_Out_Guards_Spotted_Something
+
+	INV_Counter_C		= 0
+
+start
+
+	//------------
+	begin loop
+
+		wait until INV_Advisor_Called == INV_TRUE
+
+		begin dialogue
+			eject evil spirit
+			if INV_Counter_C == 0
+		 		say "Those guards say they can hear that humming again. The food is being stolen right now!"
+			elsif INV_Counter_C == 1
+				say "The guards think some of our food is being stolen again! Can you see anyone at the storage pit?"
+			elsif INV_Counter_C == 2
+				say "Food is being stolen! I think I can see someone kicking up some dust! Are they invisible???"
+			elsif INV_Counter_C > 2
+				say "Follow that dust being kicked up by the storage pit. It's gotta be the thief stealing our food!"
+			end	if
+			wait until read
+			clear dialogue
+			send evil spirit home
+		end dialogue
+
+		INV_Advisor_Called = INV_FALSE
+
+		INV_Counter_C++
+
+	end loop
+	//------------
+
+end script INV_Advisors_Point_Out_Guards_Spotted_Something
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Witch_Hiding_In_Home
+//-----------------------------------------------------------------------------
+begin script INV_Create_Witch_Hiding_In_Home
+
+	INV_Witch_Spawn_Position = 0
+
+start
+
+	//... Create the witch character.
+	INV_Witch_Spawn_Position = marker at {1095.743,4.267,1422.225}
+	INV_Witch = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Witch_Spawn_Position}
+
+	// TEMP SPEED BOOST	
+	SPEED of INV_Witch = 1.10
+
+end script INV_Create_Witch_Hiding_In_Home
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Bandit_Steals_Food
+//-----------------------------------------------------------------------------
+begin script INV_Bandit_Steals_Food
+
+	INV_InvisSpell		= 0
+	INV_Counter_D		= 0
+
+start
+
+	//------------
+	while INV_Bandit_Counter == 0
+
+		//... Start the bandit humming his tune.
+		//attach music MUSIC_TYPE_SCRIPT_MISSIONARIES_BACKGROUND to INV_Bandit
+		
+
+		//... Move the bandit to a position just outside of the witch's house.
+		move INV_Bandit position to {INV_Position_Just_Outside_Witch_House}
+		wait until {INV_Bandit} near {INV_Position_Just_Outside_Witch_House} radius 3
+
+
+		if INV_Counter_D == 0
+		//INV_InvisSpell = cast MAGIC_TYPE_CREATURE_SPELL_INVISIBLE spell on INV_Bandit from {INV_Bandit} radius 0 time -1 curl 0
+		end if
+
+		INV_Counter_D++
+
+
+		//... Move the bandit between waypoints all the way to the storage pit.
+		//... Waypoint 0
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[0]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[0]} radius 3
+		//... Waypoint 1
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[1]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[1]} radius 3
+		//... Waypoint 2
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[2]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[2]} radius 3
+		//... Waypoint 3
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[3]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[3]} radius 3
+
+		//... Move the bandit to a position just outside the storage pit.
+		move INV_Bandit position to {INV_Position_Just_Outside_Storage_Pit}
+		wait until {INV_Bandit} near {INV_Position_Just_Outside_Storage_Pit} radius 3
+
+		//... Advisor gives you a hint.
+		INV_Advisor_Called = INV_TRUE 
+
+		wait 2 seconds
+
+		//... The bandit grabs some food from the storage pit.
+		remove resource RESOURCE_TYPE_FOOD 20 from INV_Player_Storage_Pit
+
+		begin dialogue
+			say "Food stolen by invisible bandit"
+			wait until read
+			clear dialogue
+		end dialogue
+
+		//wait 2 seconds
+
+		//... Move the bandit to a position just outside the storage pit.
+		move INV_Bandit position to {INV_Position_Just_Outside_Storage_Pit}
+		wait until {INV_Bandit} near {INV_Position_Just_Outside_Storage_Pit} radius 3
+
+		//... Move the bandit between waypoints all the way back to the witch's house.
+		//... Waypoint 3
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[3]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[3]} radius 3
+		//... Waypoint 2
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[2]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[2]} radius 3
+		//... Waypoint 1
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[1]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[1]} radius 3
+		//... Waypoint 0
+		move INV_Bandit position to {INV_Bandit_Waypoints_To_Town[0]}
+		wait until {INV_Bandit} near {INV_Bandit_Waypoints_To_Town[0]} radius 3
+
+		//... Move the bandit to a position just outside of the witch's house.
+		move INV_Bandit position to {INV_Position_Just_Outside_Witch_House}
+		wait until {INV_Bandit} near {INV_Position_Just_Outside_Witch_House} radius 3
+
+
+		//... Stop the bandit humming his tune.
+		//detach music from INV_Bandit
+
+		begin dialogue
+			say "Witch says: Great - you've brought me some food. I'll make you visible again. Zapppp!"
+			wait until read
+			clear dialogue
+
+			//...................................
+			//.. BANDIT becomes visible again
+			//...................................
+
+			wait 5 seconds
+
+			//...................................
+			//.. BANDIT becomes invisible again
+			//...................................
+
+			if INV_Bandit_Counter == 0
+				say "Witch says: Right; I want more food. Zappp! Go and get me more food Bandit."
+				wait until read
+				clear dialogue
+			end if
+		end dialogue
+
+	end while
+	//------------
+
+end script INV_Bandit_Steals_Food
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Witch_Does_Her_Stuff
+//-----------------------------------------------------------------------------
+begin script INV_Witch_Does_Her_Stuff
+
+		INV_InvisSpell2 = 0
+
+start
+
+	//------------
+	begin loop
+
+		//... Bandit and house been found as player has managed to pick up the bandit.
+		wait until INV_Bandit_Counter > 0 
+
+		begin dialogue
+			say "Witch says: Argh, that Devil has found us out! I'm outta here..."
+			wait until read
+			clear dialogue
+		end dialogue
+
+		move INV_Witch position to {INV_Position_Just_Outside_Witch_House}
+		wait until {INV_Witch} near {INV_Position_Just_Outside_Witch_House} radius 3
+
+		//INV_InvisSpell2 = cast MAGIC_TYPE_CREATURE_SPELL_INVISIBLE spell on INV_Witch from {INV_Witch} radius 0 time -1 curl 0
+
+		//... start slight kicking up dust anim on the witch.
+
+		//...move the witch between the waypoints.
+		move INV_Witch position to {INV_Witch_Waypoints[0]}
+		wait until {INV_Witch} near {INV_Witch_Waypoints[0]} radius 4
+		
+		move INV_Witch position to {INV_Witch_Waypoints[1]}
+		wait until {INV_Witch} near {INV_Witch_Waypoints[1]} radius 4
+
+		wait 30 seconds
+
+		//... wait until the witch isn't onscreen (still invisible) and her house isn't onscreen either
+		wait until INV_Witch not viewed and INV_Witch_Home_Building not viewed
+
+		move INV_Witch position to {INV_Witch_Waypoints[0]}
+		wait until {INV_Witch} near {INV_Witch_Waypoints[0]} radius 4
+
+		//...................................
+		//.. WITCH becomes visible again
+		//...................................
+
+		move INV_Witch position to {INV_Witch_Home_Position}
+		wait until {INV_Witch} near {INV_Witch_Home_Position} radius 4
+
+		wait until INV_Bandit_Counter == 0
+
+	end loop
+	//------------
+
+end script INV_Witch_Does_Her_Stuff
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Bandit_Killed
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Bandit_Killed
+
+	INV_Counter_E = 0
+
+start
+
+	while INV_Counter_E == 0
+		if HEALTH of INV_Bandit <= 0
+			INV_Bandit_Dead = INV_TRUE
+			INV_Counter_E = 1
+		end if
+		wait 0.4 seconds
+	end while
+
+	begin dialogue
+		say "Bandit is dead."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script INV_Detect_Bandit_Killed
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Witch_Killed
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Witch_Killed
+
+	INV_Counter_F = 0
+
+start
+
+	while INV_Counter_F == 0
+		if HEALTH of INV_Witch <= 0
+			INV_Witch_Dead = INV_TRUE
+			INV_Counter_F = 1
+		end if
+		wait 0.4 seconds
+	end while
+
+	begin dialogue
+		say "Witch is dead."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script INV_Detect_Witch_Killed
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Bandit_Placed_In_Jail
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Bandit_Placed_In_Jail
+
+start
+
+
+	//... Detect whether the Bandit has been placed in the jail.
+	
+	wait until {INV_Bandit} near {INV_Position_In_Jail} radius 30
+	INV_Bandit_In_Jail = INV_TRUE
+
+    stop script "INV_Bandit_Steals_Food"
+
+	move INV_Bandit position to {INV_Position_In_Jail}
+
+	begin dialogue
+		say "Bandit is now in jail."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait until {INV_Bandit} near {INV_Position_In_Jail} radius 3
+
+end script INV_Detect_Bandit_Placed_In_Jail
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Witch_Placed_In_Jail
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Witch_Placed_In_Jail
+
+start
+
+	//... Detect whether the Witch has been placed in the jail.
+	
+	wait until {INV_Witch} near {INV_Position_In_Jail} radius 30
+	INV_Witch_In_Jail = INV_TRUE
+
+	stop script "INV_Witch_Does_Her_Stuff"
+
+	move INV_Witch position to {INV_Position_In_Jail}
+	
+	begin dialogue
+		say "Witch is now in jail."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait until {INV_Witch} near {INV_Position_In_Jail} radius 3
+
+end script INV_Detect_Witch_Placed_In_Jail
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Cutscene_Guards_Rewards_Player
+//-----------------------------------------------------------------------------
+begin script INV_Cutscene_Guards_Rewards_Player
+
+start
+
+	wait until INV_Reward_Scroll right clicked
+	delete INV_Reward_Scroll
+
+	begin cinema
+		set camera position to {999.351,5.450,1294.408}
+		set camera focus to {997.786,3.708,1293.957}
+
+		if INV_Witch_In_Jail == INV_TRUE
+			say "Thanks for catching that witch! She was a real menace!"
+		elsif INV_Witch_Dead == INV_TRUE
+			say "Well you certainly got rid of that witch! Thanks."
+		end if
+		wait until read
+		clear dialogue
+
+		if INV_Bandit_Dead == INV_TRUE
+			say "And you certainly gave that Bandit a good lesson; now he's dead he won't steal again!"
+		elsif INV_Bandit_In_Jail == INV_TRUE			
+			say "And you caught the bandit, well done!"
+		end if
+		wait until read
+		clear dialogue
+	end cinema
+
+end script INV_Cutscene_Guards_Rewards_Player
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Fake_The_Thefts
+//-----------------------------------------------------------------------------
+begin script INV_Fake_The_Thefts
+
+	INV_Player_Storage_Pit_Position = marker at {987.500,2.500,1287.500}
+
+start
+
+	INV_Player_Storage_Pit = get STORE at {INV_Player_Storage_Pit_Position} radius 10
+
+	//------------
+	begin loop
+
+		//... crucial time to wait between each fake theft
+		wait 2 seconds	//... should be about every 2 minutes?
+
+		run script INV_Advisor_Warns_Food_Level_Is_Dropping
+
+		//... Pretend they are adding the food to the storage pit.
+		remove resource RESOURCE_TYPE_FOOD 10 from INV_Player_Storage_Pit
+
+		INV_Counter_A++
+
+		until INV_Scroll right clicked
+	end loop
+	//------------
+
+end script INV_Fake_The_Thefts
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Reminder_Scroll_Info
+//-----------------------------------------------------------------------------
+begin script INV_Reminder_Scroll_Info
+
+start
+
+	wait until INV_Initial_Scroll_Used == INV_TRUE
+
+	//------------
+	begin loop
+
+		wait until INV_Reminder_Scroll right clicked
+		delete INV_Reminder_Scroll
+
+		begin dialogue
+			say "Solve the problem of the food going missing from our storage pit."
+			wait until read
+			clear dialogue
+		end dialogue
+
+		wait 1.5 seconds
+
+	end loop
+	//------------
+
+end script INV_Reminder_Scroll_Info
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Advisor_Warns_Food_Level_Is_Dropping
+//-----------------------------------------------------------------------------
+begin script INV_Advisor_Warns_Food_Level_Is_Dropping
+
+start
+
+	begin dialogue
+		eject evil spirit
+		if INV_Counter_B == 0
+    		say "Hey Boss! Our food supply level just dropped a little."
+		elsif INV_Counter_B == 1
+			say "Our food level just dropped again boss! What's going on??"
+		elsif INV_Counter_B > 1
+			say "What the heck is happening! We've just lost some more food!"
+		end if
+		wait until read
+		clear dialogue
+		send evil spirit home
+	end dialogue
+
+	INV_Counter_B++
+
+end script INV_Advisor_Warns_Food_Level_Is_Dropping
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Are_Both_Dead
+//-----------------------------------------------------------------------------
+begin script INV_Are_Both_Dead
+
+start
+
+	wait until INV_Bandit_Dead == INV_TRUE and INV_Witch_Dead == INV_TRUE
+
+	INV_Both_Dead = INV_TRUE
+
+end script INV_Are_Both_Dead
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Are_Both_In_Jail
+//-----------------------------------------------------------------------------
+begin script INV_Are_Both_In_Jail
+
+start
+
+	wait until INV_Bandit_In_Jail == INV_TRUE and INV_Witch_In_Jail == INV_TRUE
+
+	INV_Both_In_Jail = INV_TRUE
+
+end script INV_Are_Both_In_Jail
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Has_Either_Been_Picked_Up
+//-----------------------------------------------------------------------------
+begin script INV_Has_Either_Been_Picked_Up
+
+	INV_Witch_Counter		= 0
+
+start
+
+		//---------------
+		begin loop
+
+			if INV_Bandit is HELD
+				INV_Bandit_Picked_Up = INV_TRUE
+				INV_Bandit_Counter++
+				begin dialogue
+					if INV_Bandit_Counter == 0
+						say "Please put me down. I'm have to take food to the witch."
+					elsif INV_Bandit_Counter == 1
+						say "Noooo! I must deliver food to the witch; put me down!"
+					elsif INV_Bandit_Counter == 2
+						say "Stop picking me up, I HAVE to take her food or she'll turn me into something nasty."
+					elsif INV_Bandit_Counter == 3
+						say "Desist!"
+					elsif INV_Bandit_Counter > 3
+						say "Arghhh!"
+					end if
+					wait 2 seconds
+					//wait until read
+					clear dialogue
+				end dialogue
+			elsif INV_Witch is HELD
+				INV_Witch_Picked_Up = INV_TRUE
+				INV_Witch_Counter++
+					begin dialogue
+				if INV_Witch_Counter == 0
+					say "Put me down Devil!"
+				elsif INV_Witch_Counter == 1
+					say "Let me be, Devil, or I'll cast a spell on you!"
+				elsif INV_Witch_Counter == 2
+					say "Oi you, stop it!"
+				elsif INV_Witch_Counter == 3
+					say "Right that's it, I'm going to turn you into a toad!"
+				elsif INV_Witch_Counter > 3
+					say "Put me down Devil!"
+				end if
+				wait 2 seconds
+				//wait until read
+				clear dialogue
+			end dialogue
+			else
+				INV_Bandit_Picked_Up = INV_FALSE
+				INV_Witch_Picked_Up = INV_FALSE
+			end if
+	
+			wait 0.1 seconds
+
+		end loop
+		//---------------
+
+end script INV_Has_Either_Been_Picked_Up
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Reward_Scroll
+//-----------------------------------------------------------------------------
+begin script INV_Create_Reward_Scroll
+
+	INV_Reward_Scroll_Position = marker at {1075.000,6.015,1400.000}
+
+start
+
+	if INV_Reminder_Scroll exists
+		delete INV_Reminder_Scroll
+	end if
+
+	INV_Reward_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Reward_Scroll_Position}
+	
+	
+end script INV_Create_Reward_Scroll
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+//-----------------------------------------------------------------------------
+begin script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+
+start
+
+	begin dialogue
+		eject good spirit
+		if INV_Bandit_Dead == INV_TRUE and INV_Witch_Dead == INV_FALSE
+			say "Surely there was no need to kill the bandit! He was forced to do that witch's bidding! You could have put him in the jail!"
+		elsif INV_Bandit_Dead == INV_FALSE and INV_Witch_Dead == INV_TRUE
+			say "You killed that witch! I can see that you felt she left us no choice."
+		elsif INV_Both_Dead == INV_TRUE
+			say "You killed them both! Oh well, I don't seem to be able to influence your actions..."
+		else
+			say "Well done! Both are safely locked away! They won't be stealing our food any longer."
+		end if
+		wait until read
+		clear dialogue
+		say "I think those two guards outside the storage pit want to talk to you now."
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+end script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+
+	
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+/*
+
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+
+
+*/

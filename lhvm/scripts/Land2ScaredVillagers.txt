@@ -1,0 +1,117 @@
+////=========================================================
+//// Land 2 Scared Villagers
+//// Matt. L
+////=========================================================
+//
+//define SV_MAX_NUM_VILLAGERS = 35	//The maximum number of villagers
+//define SV_WAIT_TIME = 35			//Time before the villagers are deleted
+//
+//define SV_MAX_UBER_VILLAGERS = 50
+//
+////-----------------------------------------------------------------
+//// Land2 Scared Villagers
+////-----------------------------------------------------------------
+//begin script Land2ScaredVillagers(Start, End, Num, Speed, Radius)
+//	Villagers[SV_MAX_NUM_VILLAGERS]
+//	CreatePos = marker at {0, 0, 0} //Generated
+//	MovePos = marker at {0, 0, 0} //Generated
+//	VillagerLoop = 0
+//	VillagerType = 0
+//start
+//
+//	//Don't go ot of bounds on the villager array
+//	if Num >= SV_MAX_NUM_VILLAGERS
+//		Num = (SV_MAX_NUM_VILLAGERS-1)	//arrays
+//	end if
+//
+//	//create the villagers ad move them to the position
+//	force while VillagerLoop < Num
+//		//Set create position
+//		CreatePos = marker at {Start} + {number from -5 to 5, 0, number from -5 to 5}
+//
+//		VillagerType = number from 1 to 2
+//
+//		//Adult Male
+//		if VillagerType == 1
+//			Villagers[VillagerLoop] = create VILLAGER GREEK_TRADER at {CreatePos}
+//		//Adult Female
+//		elsif VillagerType == 2
+//			Villagers[VillagerLoop] = create VILLAGER GREEK_HOUSEWIFE at {CreatePos}
+//		end if
+//
+//		disable Villagers[VillagerLoop] reactable		
+//		disable Villagers[VillagerLoop] pickup
+//
+//		//Move the villagers
+//		MovePos = marker at {End} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius}
+//		move Villagers[VillagerLoop] position to {MovePos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+//		SPEED of Villagers[VillagerLoop] = Speed
+//
+//		VillagerLoop++
+//	end while
+//
+//	//Wait SV_WAIT_TIME seconds before deleting
+//	wait SV_WAIT_TIME seconds
+//
+//	//wait until not Villagers[0] is moving or SV_WAIT_TIME seconds
+//
+//	VillagerLoop = 0
+//	force while VillagerLoop < Num
+//		delete Villagers[VillagerLoop]
+//		VillagerLoop++
+//	end while
+//
+//end script Land2ScaredVillagers
+//
+////-----------------------------------------------------------------
+//// Land2 Uber Scared Villagers
+////-----------------------------------------------------------------
+//begin script Land2UberScaredVillagers(Num, Pos, Radius)
+//	AbodeFrom = 0
+//	AbodeTo = 0
+//	UberVillager[SV_MAX_UBER_VILLAGERS]
+//	CreateLoop = 0
+//	Type = 0
+//start
+//
+//	if Num >= SV_MAX_UBER_VILLAGERS
+//		Num = (SV_MAX_UBER_VILLAGERS-1)
+//	end if
+//
+//	if not L2GreekTown exists
+//		run script Land2Globals
+//	end if
+//
+//	while CreateLoop < Num
+//		AbodeFrom = get HOUSE at {Pos} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius}
+//		AbodeTo =	get HOUSE at {Pos} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius}
+//		
+//		if AbodeFrom exists
+//			Type = number from 1 to 2
+//
+//			if Type == 1
+//				UberVillager[CreateLoop] = create VILLAGER GREEK_FARMER at extra position 0 of AbodeFrom
+//			else
+//				UberVillager[CreateLoop] = create VILLAGER GREEK_HOUSEWIFE at extra position 0 of AbodeFrom
+//			end if
+//
+//			SPEED of UberVillager[CreateLoop] = 0.4
+//			if AbodeTo exists
+//				move UberVillager[CreateLoop] position to extra position 0 of AbodeTo using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+//			end if
+//		end if
+//
+//		CreateLoop++
+//	end while
+//
+//	wait until L2DeleteUberVillagers == 1
+//
+//	CreateLoop = 0
+//	while CreateLoop < Num
+//		if UberVillager[CreateLoop] exists
+//			delete UberVillager[CreateLoop]
+//		end if
+//		CreateLoop++
+//	end while
+//
+//end script Land2UberScaredVillagers

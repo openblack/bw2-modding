@@ -1,0 +1,25 @@
+//------------------------------------------------
+//  LAND 3 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land3Wanted
+
+ L3Actor1Pos = marker at {2006.953, 56.971, 392.684}	// Behind one of the hills behind the Greeks
+ L3Actor1 = create VILLAGER MALE at {L3Actor1Pos}
+ PosterPos1 = marker at {1885.207, 102.355, 822.595}
+ L3Actor2Pos = marker at {1488.863, 58.037, 485.849}	// behind the monster mine near the Greeks
+ L3Actor2 = create VILLAGER MALE at {L3Actor2Pos}
+ PosterPos2 = marker at {1894.849, 103.423, 827.709}
+ JailLocation = marker at {1910.124, 103.950, 816.201}
+
+ BodgeMarker = 0
+ BodgeSpangle = 0
+  
+start
+	
+	run background script GlobalWanted (6, L3Actor1, L3Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (7, L3Actor2, L3Actor2Pos, JailLocation, PosterPos2)
+
+end script Land3Wanted
+

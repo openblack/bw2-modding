@@ -1,0 +1,6 @@
+run script RunLand6JapaneseCapitalScript
+
+begin script RunLand6JapaneseCapitalScript
+start
+	run script Land6JapaneseCapitalScript
+end script RunLand6JapaneseCapitalScript

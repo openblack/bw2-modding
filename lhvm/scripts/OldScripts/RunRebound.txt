@@ -1,0 +1,20 @@
+//-----------------------------------------------------------------------------
+run script RunRebound
+//-----------------------------------------------------------------------------
+begin script RunRebound
+
+ HighlightPos = marker at {1415.168,4.894,1288.215}
+
+start
+
+	// Setup the camera position
+	begin camera
+		set camera position to {HighlightPos}+{12.500,10.000,12.500}
+		set camera focus to {HighlightPos}+{0.000,5.000,0.000}
+	end camera
+
+	run script Rebound
+	
+end script RunRebound
+
+//-----------------------------------------------------------------------------

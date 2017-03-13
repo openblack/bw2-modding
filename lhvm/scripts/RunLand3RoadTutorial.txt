@@ -1,0 +1,6 @@
+run script RunLand3RoadTutorial
+
+begin script RunLand3RoadTutorial
+start
+	run script Land3RoadTutorial
+end script RunLand3RoadTutorial

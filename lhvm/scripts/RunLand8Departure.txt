@@ -1,0 +1,12 @@
+run script RunLand8Departure
+
+begin script RunLand8Departure
+
+
+start
+
+
+run script Land8Departure
+
+
+end script RunLand8Departure

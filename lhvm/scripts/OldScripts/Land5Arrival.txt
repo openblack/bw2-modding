@@ -1,0 +1,220 @@
+//------------------------------------------------
+//  LAND 5 ARRIVAL CUT-SCENE
+//------------------------------------------------
+
+define script KillThisBadboy(whichbadboy)
+define script KillMoreBadboysByHand(whichgoodboy, whichbadboy)
+
+
+global Centre=0
+
+
+begin script Land5Arrival
+
+Dimitrios=0
+DimitriosPos=marker at {1305.818,58.085,499.078}
+
+Samurai[10]
+SamuraiPos[20]
+
+AztecBadboys[20]
+AztecBadboysPos[20]
+
+MoreAztecBadBoysPos=marker at {1325.636,57.347,500.971}
+MoreAztecBadBoys=0
+
+JapExtras[0]
+JapExtrasPos[20]
+
+counter = 0
+
+ArcherDudesPos = marker at {1308.847,58.179,496.079}
+ArcherDudes = 0
+
+NotCentre = marker at {1310.442,58.719,576.784}
+
+ScarperPos = marker at {1360.594,59.567,435.585}
+
+start
+
+Centre=marker at {1318.290,57.626,508.388}
+
+	AztecBadboysPos[0] = marker at get target from {NotCentre} to {Centre} distance 10 angle 18
+	AztecBadboysPos[1] = marker at get target from {NotCentre} to {Centre} distance 10 angle 36
+	AztecBadboysPos[2] = marker at get target from {NotCentre} to {Centre} distance 10 angle 54
+	AztecBadboysPos[3] = marker at get target from {NotCentre} to {Centre} distance 10 angle 72
+	AztecBadboysPos[4] = marker at get target from {NotCentre} to {Centre} distance 10 angle 90
+	AztecBadboysPos[5] = marker at get target from {NotCentre} to {Centre} distance 10 angle 108
+	AztecBadboysPos[6] = marker at get target from {NotCentre} to {Centre} distance 10 angle 126
+	AztecBadboysPos[7] = marker at get target from {NotCentre} to {Centre} distance 10 angle 144
+	AztecBadboysPos[8] = marker at get target from {NotCentre} to {Centre} distance 10 angle 162
+	AztecBadboysPos[9] = marker at get target from {NotCentre} to {Centre} distance 10 angle 180
+	AztecBadboysPos[10] = marker at get target from {NotCentre} to {Centre} distance 10 angle 198
+	AztecBadboysPos[11] = marker at get target from {NotCentre} to {Centre} distance 10 angle 216
+	AztecBadboysPos[12] = marker at get target from {NotCentre} to {Centre} distance 10 angle 234
+	AztecBadboysPos[13] = marker at get target from {NotCentre} to {Centre} distance 10 angle 252
+	AztecBadboysPos[14] = marker at get target from {NotCentre} to {Centre} distance 10 angle 270
+	AztecBadboysPos[15] = marker at get target from {NotCentre} to {Centre} distance 10 angle 288
+	AztecBadboysPos[16] = marker at get target from {NotCentre} to {Centre} distance 10 angle 306
+	AztecBadboysPos[17] = marker at get target from {NotCentre} to {Centre} distance 10 angle 324
+	AztecBadboysPos[18] = marker at get target from {NotCentre} to {Centre} distance 10 angle 342
+	AztecBadboysPos[19] = marker at get target from {NotCentre} to {Centre} distance 10 angle 360
+
+	SamuraiPos[0] = marker at get target from {NotCentre} to {Centre} distance 5 angle 18
+	SamuraiPos[1] = marker at get target from {NotCentre} to {Centre} distance 5 angle 54
+	SamuraiPos[2] = marker at get target from {NotCentre} to {Centre} distance 5 angle 90
+	SamuraiPos[3] = marker at get target from {NotCentre} to {Centre} distance 5 angle 126
+	SamuraiPos[4] = marker at get target from {NotCentre} to {Centre} distance 5 angle 162
+	SamuraiPos[5] = marker at get target from {NotCentre} to {Centre} distance 5 angle 198
+	SamuraiPos[6] = marker at get target from {NotCentre} to {Centre} distance 5 angle 234
+	SamuraiPos[7] = marker at get target from {NotCentre} to {Centre} distance 5 angle 270
+	SamuraiPos[8] = marker at get target from {NotCentre} to {Centre} distance 5 angle 306
+	SamuraiPos[9] = marker at get target from {NotCentre} to {Centre} distance 5 angle 342
+
+	begin cinema
+
+		Dimitrios = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {DimitriosPos}
+		set Dimitrios focus to {Centre}
+
+		while counter < 20
+			AztecBadboys[counter] = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at {AztecBadboysPos[counter]}
+			set AztecBadboys[counter] focus to {Centre}
+			if counter < 10
+				Samurai[counter] = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_1 at {SamuraiPos[counter]}
+				set Samurai[counter] focus to {AztecBadboys[counter]}
+			end if
+			counter++
+		end while
+
+		ArcherDudes = create platoon PLATOON_INFO_GREEK_RANGED_1 at {ArcherDudesPos} with 10 men and 0 women
+
+		MoreAztecBadBoys = create platoon PLATOON_INFO_NORSE_RANGED_1 at {MoreAztecBadBoysPos} with 10 men and 0 women
+		/*set camera lens 70.000
+		set camera position to {1304.783,67.576,509.236}
+		set camera focus to {1311.259,62.052,509.878}
+		wait 3 seconds
+		
+		set camera lens 37.000
+		set camera position to {1318.760,58.415,510.282}
+		set camera focus to {1327.105,56.821,511.110}
+		
+		counter=0
+		while counter < 20
+			move AztecBadboys[counter] position to get target from {Centre} to {AztecBadboys[counter]} distance 2 angle 180
+			counter++
+		end while
+
+		
+		//wait 1 seconds
+		set camera lens 50.000
+		set camera position to {1317.639,58.333,507.560}
+		set camera focus to {1325.536,57.346,504.475}
+		wait 2 seconds
+		set camera position to {1311.817,61.939,510.801}
+		set camera focus to {1318.795,57.848,508.076}
+		set camera lens 47.000 time 4
+		wait 4 seconds
+		say "FIRE!"
+		counter=10
+		while counter < 20
+			run background script KillThisBadboy(AztecBadboys[counter])
+			counter++
+		end while
+		say "done loop"
+		set camera lens 50.000
+		set camera position to {1313.954,58.668,511.513}
+		set camera focus to {1322.173,56.393,511.163}
+		wait 2 seconds
+		set camera position to {1315.151,58.134,509.258}
+		set camera focus to {1315.324,58.409,500.729}
+		wait 2 seconds
+			clear dialogue
+		say "here"*/
+		counter=0
+		while counter < 10
+			run background script KillMoreBadboysByHand(Samurai[counter], AztecBadboys[counter])
+	       	
+			counter++
+		end while
+		say "done loop 2"
+
+		set camera position to {1318.972,58.466,503.722}
+		set camera focus to {1322.225,56.405,511.339}
+		wait 4 seconds
+
+		set camera position to {1315.520,61.051,505.044}
+		set camera focus to {1321.078,57.065,510.149}
+
+		move camera position to {1316.816,58.692,509.903} time 7
+		move camera focus to {1322.586,56.318,515.727} time 7
+
+		wait 10 seconds
+
+		move MoreAztecBadBoys position to {ScarperPos}
+
+
+
+		play anim "A_P_TURN_180" on Samurai[9] 
+
+		set Dimitrios focus to {Samurai[9]}
+		set camera position to {1317.498,58.347,511.325}
+		set camera focus to {1319.097,56.771,519.560}
+		wait until Samurai[9] played
+		set Samurai[9] focus to {Dimitrios}
+		say "The Aztecs.  How many more are there?"
+		play anim "A_P_TALK1_MALE" on Dimitrios 
+
+		wait 2 seconds
+		set camera lens 29.000
+		set camera position to {1306.393,58.659,499.500}
+		set camera focus to {1299.398,59.936,494.780}
+		wait until read
+		wait 2 seconds
+		say "Hundreds.  We’re outnumbered five to one."
+		play anim "A_P_TALK1_MALE" on Samurai[9] 
+		set camera lens 50.000
+		set camera position to {1317.498,58.347,511.325}
+		set camera focus to {1319.097,56.771,519.560}
+		wait until read
+		play anim "A_P_TALK1_MALE" on Dimitrios 
+		say "Fall back!  Retreat to the city!"
+		set camera lens 29.000
+		set camera position to {1306.393,58.659,499.500}
+		set camera focus to {1299.398,59.936,494.780}
+		wait until read
+
+		
+	end cinema
+
+end script Land5Arrival
+
+begin script KillThisBadboy(whichbadboy)
+
+start
+	wait number from 0 to 3 seconds
+	play anim "a_p_meleecombat_death_back_arrow" on whichbadboy 
+	wait until whichbadboy played
+	set whichbadboy focus to get target from {Centre} to {whichbadboy} distance 1 angle 90
+	play anim "a_p_meleecombat_meleedead" on whichbadboy  loop -1
+
+end script KillThisBadboy
+
+begin script KillMoreBadboysByHand(whichgoodboy, whichbadboy)
+
+GoWhere=0
+
+start
+
+	GoWhere = marker at get target from {whichgoodboy} to {whichbadboy} distance 0.5 angle 180
+
+	move whichgoodboy position to {GoWhere}
+	wait until {whichgoodboy} at {GoWhere}
+	play anim "A_P_Meleecombat_pairedfight_A1" on whichgoodboy 
+	//whichbadboy play anim "A_P_meleecombat_pairedfight_death_A1"
+	//wait until whichbadboy played
+	wait 2 seconds
+	play anim "a_p_meleecombat_meleedead" on whichbadboy  loop -1
+
+
+end script KillMoreBadboysByHand
+

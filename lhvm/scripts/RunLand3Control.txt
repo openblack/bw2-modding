@@ -1,0 +1,8 @@
+run script RunLand3Control
+
+begin script RunLand3Control
+start
+	set game time 15.00
+	run script Land3Control	
+end script RunLand3Control
+

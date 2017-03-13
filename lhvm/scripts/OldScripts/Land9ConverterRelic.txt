@@ -1,0 +1,258 @@
+//Land9ConverterRelic.txt
+
+global MagicSlot[5]
+global MagicStone[5]
+global SacrificialStandingPoints[5]
+global WeHaveAWinner
+global MagicStoneInPlace
+global MagicStoneInCorrectPlace
+global CRComplete
+global SacrificeDudes[5]
+global SacrificialArmyInPlace=0
+
+define script CheckTheSlotsForTheRock(whichslot)
+define script CheckIfSlotsClicked
+define script CheckForArmy
+define script PressTheBoutton
+define script HeresTheRitual
+
+
+define NUMBER_OF_MAGIC_SLOTS = 3
+
+
+begin script Land9ConverterRelic
+
+counter = 0
+RockStart[5]
+
+start
+
+RockStart[0] = marker at {1082.741,44.610,798.414}
+RockStart[1] = marker at {1083.932,44.789,792.079}
+RockStart[2] = marker at {1084.175,45.291,784.476}
+
+MagicSlot[0] = marker at {1098.541,45.563,795.505}
+MagicSlot[1] = marker at {1091.965,45.563,790.125}
+MagicSlot[2] = marker at {1098.468,45.563,785.133}
+
+run background script CheckForArmy
+run background script PressTheBoutton
+
+
+
+begin loop
+	MagicStone[counter]= create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {RockStart[counter]}
+	run background script CheckTheSlotsForTheRock(counter)
+	counter++
+
+until counter == 3
+end loop
+
+end script Land9ConverterRelic
+///////////////////////////////////////////////////////////////////////////
+
+begin script CheckTheSlotsForTheRock(whichslot)
+
+NearRock=0
+SlotFilled=0
+
+start
+
+begin loop
+
+NearRock = get ROCK_OBJECT at {MagicSlot[whichslot]} radius 5
+
+	if NearRock exists and SlotFilled==0
+		MagicStoneInPlace++
+		if NearRock == MagicStone[whichslot] and SlotFilled == 0
+			MagicStoneInCorrectPlace++		
+			
+		end if
+		SlotFilled=1
+	elsif NearRock not exists and SlotFilled==1
+		SlotFilled=0
+		MagicStoneInPlace--
+		MagicStoneInCorrectPlace--	
+	end if
+		
+until WeHaveAWinner==1
+end loop
+
+end script CheckTheSlotsForTheRock
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script CheckIfSlotsClicked
+
+start
+
+
+while CRComplete != 1
+	if MagicSlot[0] right clicked
+		clear right clicked object
+		begin dialogue
+			say "Riddle #1"
+			wait until read
+		end dialogue
+	end if
+
+	if MagicSlot[1] right clicked
+		clear right clicked object
+		begin dialogue
+			say "Riddle #2"
+			wait until read
+		end dialogue
+	end if
+
+	if MagicSlot[2] right clicked
+		clear right clicked object
+		begin dialogue
+			say "Riddle #3"
+			wait until read
+		end dialogue
+	end if
+
+	if MagicSlot[3] right clicked
+		clear right clicked object
+		begin dialogue
+			say "Riddle #4"
+			wait until read
+		end dialogue
+	end if
+
+	if MagicSlot[4] right clicked
+		clear right clicked object
+		begin dialogue
+			say "Riddle #5"
+			wait until read
+		end dialogue
+	end if
+end while
+end script CheckIfSlotsClicked
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+begin script CheckForArmy
+
+SacrificialArmyPos=marker at {1074.709,45.154,791.481}
+SacrificialArmy=0
+SacrificialArmySize=0
+CheckMyBadSelf = 0
+counter = 0
+LowestGuyToReplace=0
+
+start
+
+SacrificialStandingPoints[0] = marker at {1074.911,44.964,796.834}
+SacrificialStandingPoints[1] = marker at {1076.000,45.021,794.411}
+SacrificialStandingPoints[2] = marker at {1075.074,45.173,790.484}
+SacrificialStandingPoints[3] = marker at {1074.298,45.421,787.531}
+SacrificialStandingPoints[4] = marker at {1074.368,45.495,783.032}
+
+begin loop
+
+	counter = 4
+	LowestGuyToReplace=5
+
+	begin loop
+		CheckMyBadSelf = get VILLAGER at {SacrificialStandingPoints[counter]} radius 1
+		if CheckMyBadSelf not exists
+			LowestGuyToReplace = counter
+		end if
+		counter--
+	until counter == -1
+	end loop
+
+	if LowestGuyToReplace != 5
+		SacrificialArmyInPlace=0
+		SacrificialArmy = get platoon of player 0 nearest {SacrificialArmyPos} radius 5
+		if SacrificialArmy exists
+			SacrificeDudes[LowestGuyToReplace] = get villager from platoon SacrificialArmy nearest {SacrificialStandingPoints[0]}
+			remove villager SacrificeDudes[LowestGuyToReplace] from platoon
+			move SacrificeDudes[LowestGuyToReplace] position to {SacrificialStandingPoints[LowestGuyToReplace]}
+			//SPEED of SacrificeDudes[LowestGuyToReplace] = 0.5
+			wait until {SacrificeDudes[LowestGuyToReplace]} at {SacrificialStandingPoints[LowestGuyToReplace]}
+			SacrificialArmySize = get number of villagers in platoon SacrificialArmy
+			if SacrificialArmySize == 0
+				delete SacrificialArmy
+			end if
+		end if
+	else
+		SacrificialArmyInPlace=1
+	end if
+
+until CRComplete == 1
+end loop
+
+add villager SacrificeDudes[LowestGuyToReplace] to platoon SacrificialArmy
+
+
+end script CheckForArmy
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+begin script PressTheBoutton
+
+MagicActivator=0
+
+start
+
+MagicActivator = get HOUSE at {1105.177,45.563,789.532}
+
+begin loop
+
+	if MagicActivator right clicked
+		clear right clicked object
+		if MagicStoneInPlace != NUMBER_OF_MAGIC_SLOTS
+			begin dialogue
+				say "Put the rocks in place first"
+				wait until read
+			end dialogue
+			
+		elsif SacrificialStandingPoints[0] not exists
+			begin dialogue
+				say "you need more soldiers to create the circle of destruction"
+				wait until read
+			end dialogue
+
+		elsif SacrificialArmyInPlace==0
+			begin dialogue
+				say "Put your soldiers into the slaughtering position"
+				wait until read
+			end dialogue
+		else
+			run script HeresTheRitual
+		end if
+		
+	end if
+
+until CRComplete == 1
+end loop
+
+end script PressTheBoutton
+//////////////////////////////////////////////////////////////////////////////////////
+begin script HeresTheRitual
+
+start
+
+	begin cinema
+		say "A magnificant cutscene will appear here and will show you that..."
+		wait until read
+		if MagicStoneInCorrectPlace != NUMBER_OF_MAGIC_SLOTS
+			say "You have lost!"
+			wait until read
+			say "Your army are toast!"
+			delete SacrificeDudes[0]
+			delete SacrificeDudes[1]
+			delete SacrificeDudes[2]
+			delete SacrificeDudes[3]
+			delete SacrificeDudes[4]
+		else
+			say "you have won!"
+		end if
+		wait until read
+
+
+	end cinema
+
+	
+
+end script HeresTheRitual
+//////////////////////////////////////////////////////////////////////////////////////

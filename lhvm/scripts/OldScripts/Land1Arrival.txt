@@ -1,0 +1,14 @@
+//------------------------------------------------
+//  LAND 1 ARRIVAL CUT-SCENE (Yuka's Capture)
+//------------------------------------------------
+
+
+begin script Land1Arrival
+start
+
+begin dialogue
+	say "The Land One Arrival Cut-Scene has not been implemented yet."
+	wait until read
+end dialogue
+
+end script Land1Arrival

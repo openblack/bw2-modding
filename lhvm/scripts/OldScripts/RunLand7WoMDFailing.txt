@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Weapon of mass destruction failing script
+//-----------------------------------------------------------------------------
+run script RunLand7WoMDFailing
+
+begin script RunLand7WoMDFailing
+
+start
+
+	run script Land7WoMDFailing
+
+end script RunLand7WoMDFailing

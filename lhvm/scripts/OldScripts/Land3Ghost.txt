@@ -1,0 +1,225 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Land 3 - Creature_Series script
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+//	Hide & Seek with the creature
+//
+//	Design problem - Difficulty was originally based on the land number.
+//	How will this work? Can the player start one on land 6 for the first time???
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CS_FALSE			= 0
+define CS_TRUE			= 1
+define RESPAWN_DELAY	= 10
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CS_SomeThing			= CS_FALSE
+global CS_Is_Creature_Alive	= CS_FALSE
+global CS_Creature_Found	= CS_FALSE
+global CS_Player_Creature	= 0
+global CS_Land_Number		= 0
+global CS_Hiding_Place		= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CS_Check_If_Creature_Is_Alive
+define script CS_What_Land_Is_This
+define script CS_Advisor_Explains_Rules
+define script CS_Creature_Hides
+define script CS_Advisors_Explain_Creature_Hiding
+define script CS_Keep_Resetting_Creature_Pos
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land3Ghost
+
+start
+	
+	//run script CS_What_Land_Is_This
+
+	run background script CS_Check_If_Creature_Is_Alive
+
+	wait until CS_Is_Creature_Alive == CS_TRUE
+
+	run script CS_Advisor_Explains_Rules
+	run script CS_Creature_Hides
+
+	run background script CS_Advisors_Explain_Creature_Hiding
+	run background script CS_Keep_Resetting_Creature_Pos
+
+	wait until hand position near {CS_Player_Creature} radius 40 and CS_Player_Creature viewed
+
+	CS_Creature_Found = CS_TRUE
+
+	stop script "CS_Keep_Resetting_Creature_Pos"
+	begin dialogue
+		say "Well done! You found your creature..."
+		wait until read
+		clear dialogue
+	end dialogue
+	
+	wait 10 seconds
+
+end script Land3Ghost
+//=============================
+
+
+//-----------------------------------------------------------------------------
+//	CS_Check_If_Creature_Is_Alive
+//-----------------------------------------------------------------------------
+begin script CS_Check_If_Creature_Is_Alive
+
+start
+
+	// Has the creature been killed? - check for the entirety of the land
+	begin loop
+		CS_Player_Creature = get player 0 creature
+		// Make sure he exists
+		if CS_Player_Creature exists and HEALTH of CS_Player_Creature > 0
+			// He's alive!
+			CS_Is_Creature_Alive = CS_TRUE
+		else
+			// He's dead.
+			CS_Is_Creature_Alive = CS_FALSE
+			say "No player creature exists atm - create one!"
+			// Wait a little while before respawning the creature
+			wait RESPAWN_DELAY seconds
+		end if
+	end loop	
+
+end script CS_Check_If_Creature_Is_Alive
+
+
+//-----------------------------------------------------------------------------
+//	CS_What_Land_Is_This
+//-----------------------------------------------------------------------------
+begin script CS_What_Land_Is_This
+
+start
+
+	if L3GreekTown exists
+		say "The current land is Land 3."
+		CS_Land_Number = 3
+	else
+		say "Land number unknown"
+		CS_Land_Number = 0
+	end if
+
+end script CS_What_Land_Is_This
+
+
+//-----------------------------------------------------------------------------
+//	CS_Advisor_Explains_Rules
+//-----------------------------------------------------------------------------
+begin script CS_Advisor_Explains_Rules
+
+start
+
+	begin dialogue
+		eject good spirit
+		//if CS_Land_Number == 3
+			say "Welcome to Hide and Seek 101. Blindfold time!"
+		//else
+		//	say "Waaaasssuppp! Doesn't appear to be Land 3 - so doing nowt atm..."
+		//end if
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script CS_Advisor_Explains_Rules
+
+
+
+//-----------------------------------------------------------------------------
+//	CS_Creature_Hides
+//-----------------------------------------------------------------------------
+begin script CS_Creature_Hides
+
+start
+
+	//Give the creature the first hiding place.
+	CS_Hiding_Place = marker at {1544.407,82.134,457.865}
+
+	set fade red 255 green 255 blue 255 time 3	
+	
+	wait 4 seconds
+
+	set CS_Player_Creature position to {CS_Hiding_Place}
+
+	wait 3 seconds
+
+	set fade in time 2
+
+end script CS_Creature_Hides
+
+
+//-----------------------------------------------------------------------------
+//	CS_Advisors_Explain_Creature_Hiding
+//-----------------------------------------------------------------------------
+begin script CS_Advisors_Explain_Creature_Hiding
+
+start
+
+	begin dialogue
+		eject good spirit
+		say "Your creature wants to play hide and seek! He's hiding! But can you find him?"
+		wait until read
+		clear dialogue
+		say "Press C to end this game of Hide and Seek."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script CS_Advisors_Explain_Creature_Hiding
+
+
+//-----------------------------------------------------------------------------
+//	CS_Keep_Resetting_Creature_Pos
+//-----------------------------------------------------------------------------
+begin script CS_Keep_Resetting_Creature_Pos
+
+start
+
+	begin loop
+		set CS_Player_Creature position to {CS_Hiding_Place}
+		wait 3 seconds
+		until CS_Creature_Found == CS_TRUE
+	end loop
+
+end script CS_Keep_Resetting_Creature_Pos
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+/*
+	begin dialogue
+		eject good spirit
+		say "."
+		wait until read
+		clear dialogue
+	end dialogue
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

@@ -1,0 +1,6 @@
+run script RunLand5Objectives
+
+begin script RunLand5Objectives
+start
+	run script Land5Objectives
+end script RunLand5Objectives

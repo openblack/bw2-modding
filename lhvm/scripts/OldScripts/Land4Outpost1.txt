@@ -1,0 +1,212 @@
+//------------------------------------------------
+//  LAND 4 JAPANESE OUTPOST 1 AI
+//------------------------------------------------
+
+define script Land4Outpost1TownManagement
+define script Land4Outpost1ArmyManagement
+define script JapPostBodgeOre
+
+begin script Land4Outpost1
+
+start
+
+run background script Land4Outpost1TownManagement
+run background script Land4Outpost1ArmyManagement
+run background script JapPostBodgeOre
+
+begin loop
+	//if PLAYER 1 owns the town
+	if PLAYER of L4JapanOutpost1 == 0
+		L4Outpost1Converted = 1
+	end if
+	until L4Outpost1Converted == 1
+end loop
+
+/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+begin cinema
+	//submission cut scene
+end cinema
+
+//L4Outpost1Converted = 2
+
+// IF PLAYER CONVERTS L4JapanOutpost1 THEN TRIGGER THE L4JapanOutpost1 SUBMISSION CUT-SCENE
+// REMEMBER TO SET L4Outpost1Converted = 2 when script completed (used in L4Control to trigger L4IslandComplete cut-scene)
+
+end script Land4Outpost1
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script Land4Outpost1TownManagement
+
+InitialGreekAggression = 20
+AngeredGreekAggression = 80
+InitialGreekTolerance = 200
+AngerCounter = 0
+AngerTimer = create timer for 0 seconds
+AngerKickDelay = 180
+FeudValue = 0
+
+start
+
+// Initial villager setup
+set town L4JapanOutpost1 desire for GATHER_FOOD to 0.80
+set town L4JapanOutpost1 desire for GROW_FOOD to 0.60
+set town L4JapanOutpost1 desire for GATHER_WOOD to 0.40
+set town L4JapanOutpost1 desire for GATHER_ORE to 0.40
+set town L4JapanOutpost1 desire for BREED to 0.40
+set town L4JapanOutpost1 desire for ATTACK to 0.10
+set town L4JapanOutpost1 desire for FUN to 0.50
+
+// Initial feud status
+set town L4JapanOutpost1 interracial tolerance with town L4GreekTown to InitialGreekTolerance
+set town L4JapanOutpost1 racial aggression with town L4GreekTown to InitialGreekAggression
+set town L4JapanOutpost1 impressive threshold for town L4GreekTown to 1.0
+
+wait 10 seconds // give other scripts a chance to create existing units
+
+// Initial army setup
+set town L4JapanOutpost1 platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.5
+set town L4JapanOutpost1 platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.5
+
+begin loop
+
+until L4Outpost1Converted == 1
+end loop
+
+end script Land4Outpost1TownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script Land4Outpost1ArmyManagement
+
+GreekFeudBreach	= 0
+IdlePlatoons	= 0
+IdleTroops = 0
+JapanArmyOne	= 0
+Count = 0
+
+L4_JapVillageGrunt1 = 0
+L4_JapVillageGrunt1Pos = marker at {569.746, 73.309, 1086.628} // in town
+L4_JapVillageGrunt2 = 0
+L4_JapVillageGrunt2Pos = marker at {566.386, 87.219, 1014.318} // on ledge above town
+L4_JapVillageArcher1 = 0
+L4_JapVillageArcher1Pos = marker at {620.941, 122.770, 1040.283} // on hill above town
+GruntMinePos = marker at {666.288, 93.318, 907.530}
+ArcherMinePos = marker at {651.176, 98.453, 916.223}
+MineAdvanceActive = 0
+CurrentGruntPos = 0
+CurrentArcherPos = 0
+BoredomTimer = create timer for 300 seconds
+
+start
+
+// create initial platoons
+/*L4_JapVillageGrunt1 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {L4_JapVillageGrunt1Pos} with 12 men and 0 women
+attach L4_JapVillageGrunt1 to L4JapanOutpost1
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapVillageGrunt1Pos} to front of L4_JapVillageGrunt1 action queue
+
+L4_JapVillageGrunt2 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {L4_JapVillageGrunt2Pos} with 12 men and 0 women
+attach L4_JapVillageGrunt2 to L4JapanOutpost1
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapVillageGrunt2Pos} to front of L4_JapVillageGrunt2 action queue
+
+L4_JapVillageArcher1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L4_JapVillageArcher1Pos} with 12 men and 0 women
+attach L4_JapVillageArcher1 to L4JapanOutpost1
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapVillageArcher1Pos} to front of L4_JapVillageArcher1 action queue*/
+
+begin loop
+	wait 1 second
+
+	// Maintain GRUNT 1
+	if L4_JapVillageGrunt1 exists
+		if {L4_JapVillageGrunt1} not near {L4_JapVillageGrunt1Pos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L4_JapVillageGrunt1Pos} to front of L4_JapVillageGrunt1 action queue
+		end if
+	else
+		IdlePlatoons = get idle platoons in town L4JapanOutpost1
+		if IdlePlatoons > 0
+			//make an army
+			L4_JapVillageGrunt1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost1} radius 200
+		end if
+	end if
+
+	// Maintain GRUNT 2
+	if L4_JapVillageGrunt2 exists
+		if {L4_JapVillageGrunt2} not near {CurrentGruntPos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {CurrentGruntPos} to front of L4_JapVillageGrunt2 action queue
+		end if
+	else
+		IdlePlatoons = get idle platoons in town L4JapanOutpost1
+		if IdlePlatoons > 0
+			//make an army
+			L4_JapVillageGrunt2 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost1} radius 200
+		end if
+	end if
+
+	// Maintain ARCHER 1
+	if L4_JapVillageArcher1 exists
+		if {L4_JapVillageArcher1} not near {CurrentArcherPos} radius 10
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {CurrentArcherPos} to front of L4_JapVillageArcher1 action queue
+		end if
+	else
+		IdlePlatoons = get idle platoons in town L4JapanOutpost1
+		if IdlePlatoons > 0
+			//make an army
+			L4_JapVillageArcher1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanOutpost1} radius 200
+		end if
+	end if
+
+	// ATTACK TRIGGERS
+	if town L4JapanOutpost1 feud threshold with town L4GreekTown passed and MineAdvanceActive == 0
+		MineAdvanceActive = 1
+		CurrentGruntPos = GruntMinePos
+		CurrentArcherPos = ArcherMinePos
+		reset town L4JapanOutpost1 feud value for town L4GreekTown
+		if get BoredomTimer time remaining > 300
+			set BoredomTimer time to 300 seconds
+		end if
+	elsif town L4JapanOutpost1 feud threshold with town L4GreekTown passed or get BoredomTimer time remaining <= 0
+		// do 1 platoon attack
+		if L4_JapVillageGrunt1 exists
+			set platoon L4_JapVillageGrunt1 take over town L4GreekTown
+			reset town L4JapanOutpost1 feud value for town L4GreekTown
+			set BoredomTimer time to 900 seconds
+		end if
+	end if
+
+	until L4Outpost1Converted == 1
+
+end loop
+
+end script Land4Outpost1ArmyManagement
+
+//-----------------------------------------------------------------------------------
+
+begin script JapPostBodgeOre /// !
+
+JapBodgeOrePit = get STORE at {588.256, 61.063, 1143.171} radius 50 /// !
+OreAmount = 0
+FoodAmount = 0
+
+start
+	begin loop
+		OreAmount = get resource RESOURCE_TYPE_ORE in JapBodgeOrePit
+		FoodAmount = get resource RESOURCE_TYPE_FOOD in JapBodgeOrePit
+
+		if OreAmount < 10000
+			add resource RESOURCE_TYPE_ORE 10000 to JapBodgeOrePit /// !
+		end if
+
+		if FoodAmount < 10000
+			add resource RESOURCE_TYPE_FOOD 10000 to JapBodgeOrePit /// !
+		end if
+
+		wait 10 seconds
+		until L4CapitolConverted == 1
+	end loop
+
+end script JapPostBodgeOre

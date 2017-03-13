@@ -1,0 +1,1391 @@
+///////////////////////////////////////////////////////////////////////////////
+//	OIL BARON
+//	~~~~~~~~~
+//	Description:
+//	A hermit type character is able to produce barrels of oil (“Greek Fire”) has run into some problems
+//	and cannot create any for you. He is located on the top of a hill to the side of your city.
+//	A serious oil fire has broken out at the top of his Oil Well and must be put out.
+//	The player will have to get help from the creature as the player needs to cast a water miracle
+//	and a freeze miracle on the fire simultaneously.  Once out the Oil Baron starts to produce more barrels
+//	at a predefined rate, no disciples can be added to the task. When the land is ripped apart later
+//	by the WoMD activity the fire will restart and needs quenching again. The Greek Fire Oil Barrels
+//	that he produces explode when thrown or heated.
+//	They act as a poor man’s fireball (and actually create scaled down fireballs in their place when deleted
+//	with explosion and also release projectiles that dissipate before landing).
+//	The enemy tribes will try and send forces to attack this production facility, blowing up any barrels
+//	present and setting the Oil Well alight again.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			14-03-05			By:	Steve
+//	Update date:		15-03-05			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define OB_TRUE					= 1
+define OB_FALSE					= 0
+define OB_MAX_AMOUNT_OF_BARRELS	= 5
+define OB_AMOUNT_OF_GUSHERS		= 5
+define OB_TIME_TO_CAP_PUMPS		= 120
+define OB_NUM_SABS				= 3
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global OB_Pumps[OB_AMOUNT_OF_GUSHERS]
+global OB_PumpPressure[OB_AMOUNT_OF_GUSHERS]
+global OB_OilBarrel[OB_MAX_AMOUNT_OF_BARRELS]
+global PumpCounter[OB_AMOUNT_OF_GUSHERS]
+global RefinerySaved[OB_AMOUNT_OF_GUSHERS]
+global Reset[OB_AMOUNT_OF_GUSHERS]
+global WaterStat2[OB_AMOUNT_OF_GUSHERS]
+
+global OB_Creature					= 0
+global OB_OilBaron					= 0
+global OB_OilRefinery				= 0
+global OB_OilFiresPutOut			= OB_FALSE
+global OB_BaronReadyToAttack		= OB_FALSE
+global OB_ChallengeCompleted		= OB_FALSE
+global OB_BaronDead					= OB_FALSE
+global OB_NumberOfGushersCapped		= 0
+global WaterStat					= 0
+global OB_WaterThrown				= OB_FALSE
+
+//Sab camp stuff
+global OB_Sab[OB_NUM_SABS]
+global OB_SabHideout				= 0
+global OB_SabID						= 0				//Current Sab assignment for camp positions 
+global OB_Campfire					= 0
+global OB_CampfireFX				= 0
+global OB_SabActionMeeting			= OB_FALSE
+global OB_SabsAtMeeting				= 0
+
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script OB_SetupOilRefineryAndPumps
+define script OB_Intro
+define script OB_GratefulBaron
+define script OB_CheckPump(Pump)
+define script OB_CheckBaron
+define script OB_ExplodePump(ID)
+define script OB_CreateBarrels
+define script OB_ExplodingBarrel(Barrel)
+
+define script OB_Sabotage(Sab)
+define script OB_ChaseSab(Sab, Target)
+define script OB_SabCamp(Sab)
+define script SabMeetingDialogue
+
+define script SabotageIntro
+define script wait_timer(ID)
+
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land8OilBaron
+
+	Counter		= 0
+	EX = 0
+	CSBarrel1 = 0
+start
+
+	//CSBarrel1 = create OBJECT NORSE_BARREL_02 at {1294.099, 122.691, 1359.580}
+	//ALTITUDE of CSBarrel1 = 0.01
+	
+	//wait 50000 seconds
+	
+	/*begin loop
+		EX = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at hand position time 10
+		wait 2 seconds
+		
+	end loop*/
+	// Get the players creature
+	OB_Creature = get player 0 creature
+
+	// Create the oil baron refinery and the oil barrels
+	run script OB_SetupOilRefineryAndPumps
+	
+	run script OB_Intro
+	WaterStat = get total of stat STATS_EVT_PLAYER_CAST_WATER_THROW
+	
+	// Check the pumps top see if they've been put out
+	while Counter < OB_AMOUNT_OF_GUSHERS
+		run background script OB_CheckPump(Counter)
+		WaterStat2[Counter] = WaterStat
+		Counter++
+	end while
+
+	begin loop
+		WaterStat = get total of stat STATS_EVT_PLAYER_CAST_WATER_THROW
+		wait 0.5 seconds
+	until OB_OilFiresPutOut == OB_TRUE
+	end loop
+
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	// Get the congratulations cutscene
+	run script OB_GratefulBaron
+	
+	wait 2 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	wait 2 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+	// Keep creating the barrels while the pumps are working until the max is met
+	run background script OB_CreateBarrels
+		
+	wait until OB_BaronReadyToAttack == OB_TRUE				// Wait until the barrels have been created
+		
+	// Create the saboteurs
+	Counter = 0
+	while Counter < OB_NUM_SABS
+		run background script OB_Sabotage(Counter)
+		wait 2 seconds
+		Counter++
+	end while
+
+end script Land8OilBaron
+
+
+//-----------------------------------------------------------------------------
+//	Setup the oil refinary and it's pumps
+//-----------------------------------------------------------------------------
+begin script OB_SetupOilRefineryAndPumps
+
+	PumpPoints[OB_AMOUNT_OF_GUSHERS]
+	DIST					= 40
+	ANGLE					= 0
+	Counter					= 0
+	Store					= 0
+	RefineryPos				= marker at {1335.982,122.803,1360.191} - {20, 0, 20}
+	RefineryPos2 = marker at {1288.0, 119.596, 1362.954}
+
+start
+	
+	// Get / Create the oil refinery and the pumps
+	OB_OilRefinery = create FEATURE OIL_REFINERY at {RefineryPos2}
+	ALTITUDE of OB_OilRefinery = -0.35
+	ANGLE of OB_OilRefinery = 55
+
+	// These are the markers for the storage points for the oil barrels
+	while Counter < OB_AMOUNT_OF_GUSHERS
+		PumpPoints[Counter] = marker at get target from {RefineryPos} + {5.000,0.000,0.000} to {RefineryPos} distance DIST angle ANGLE
+		OB_Pumps[Counter] = create FEATURE OIL_PUMP at {PumpPoints[Counter]}
+		disable OB_Pumps[Counter] moveable
+		disable OB_Pumps[Counter] pickup
+		enable OB_Pumps[Counter] indestructible
+//		run background script OB_ExplodePump(Counter)
+// Moved
+		//enable OB_Pumps[Counter] set on fire
+		//enable OB_Pumps[Counter] on fire 1.0
+// End of Moved
+		ANGLE of OB_Pumps[Counter] = ANGLE + 90
+		ANGLE += 360 / OB_AMOUNT_OF_GUSHERS
+		Counter++
+	end while
+	
+	// Create the saboteurs hideout
+	OB_SabHideout = create HOUSE ABODE_INFO_AZTEC_HOUSE_A at {1304.702,112.170,1219.974}
+	ANGLE of OB_SabHideout = 180
+	OB_Campfire = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {1298.012,113.822,1232.511}
+	override mesh for OB_Campfire with "..\features\m_generic_bonfire"
+
+end script OB_SetupOilRefineryAndPumps
+
+
+
+//-----------------------------------------------------------------------------
+//	Get the thanks from the oil baron guy and ask for some helpers
+//-----------------------------------------------------------------------------
+begin script OB_Intro
+
+	BaronCreatePos	= marker at {1318.870,123.128,1340.042}
+	BaronTalkPos	= marker at {1323.039,122.856,1339.553}
+	Scroll			= 0
+	ReminderTimer	= create timer for 0 seconds
+	CSBarrel1 = 0
+	ExplodeFX1 = 0
+	ExplodeFX2 = 0
+	Counter = 0
+
+start
+	
+	// Create a scroll for the player to click on
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_SCROLL_10" remind "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_SCROLL_20" at {OB_OilRefinery}
+	ALTITUDE of Scroll = 10
+	
+	// Handle the scroll reminder
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			if camera position near {Scroll} radius 50 and {Scroll} viewed
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+
+					// Leader, the Oil Baron wants to speak to you over at the oil refinery.
+					say "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_50"
+					wait until read
+
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 30 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 with amount 1 text "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_REMINDER" amount 1 description "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_8_OILBARON
+	L9ShowingOilBaronObjective = 1
+
+	//run script SabotageIntro
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	//OB_OilBaron = create VILLAGER OIL_BARON at {1338.823, 115.645, 1324.420}
+	OB_OilBaron = create VILLAGER OIL_BARON at {1338.823, 115.645, 1324.420}
+
+	disable OB_OilBaron hurt by fire
+	disable OB_OilBaron set on fire
+	enable OB_OilBaron indestructible
+	disable OB_OilBaron reactable
+
+	set OB_OilBaron position to {1289.386, 130.185, 1361.954}
+	move OB_OilBaron position to {1289.386, 130.185, 1361.954}
+		
+	//set OB_OilBaron focus to {1345.647, 115.059, 1319.895}
+	disable OB_OilBaron reactable
+	//play anim "a_p_l8oilbaron_man_panicked_loop" on OB_OilBaron loop 1
+	begin cinema
+			
+		start music "cut_scene_sinister_03"
+		wait 2 seconds
+
+		// New
+		// Set Refinery on fire (This will eventually show it being sabotaged in a cutscene)
+		while Counter < OB_AMOUNT_OF_GUSHERS
+			enable OB_Pumps[Counter] set on fire
+			enable OB_Pumps[Counter] on fire 1.0
+			Counter ++
+		end while
+		// End of New
+		
+		set camera position to {1285.165, 151.583, 1365.980}
+		set camera focus to {1283.737, 51.596, 1365.382}
+		set camera lens 35
+		move camera position to {1290.585, 151.583, 1360.514} time 12
+		move camera focus to {1289.157, 51.596, 1359.916} time 12
+		set fade in time 2
+		wait 1.5 seconds
+		set OB_OilBaron position to {1289.386, 130.185, 1361.954}
+		move OB_OilBaron position to {1299.259, 118.551, 1354.479}
+		
+		
+		
+		wait 1 seconds
+		SPEED of OB_OilBaron = 0.3
+		
+		wait 3 seconds
+		
+		//Legs...
+		set camera lens 32
+		set camera position to {1300.095, 108.933, 1356.198}
+		set camera focus to {1250.864, 108.278, 1269.149}
+		move camera position to {1309.853, 103.162, 1349.552} time 5.8
+		move camera focus to {1244.277, 106.532, 1274.125} time 5.8
+		
+		/*set camera position to {1300.210, 120.953, 1356.120}
+		set camera focus to {1250.784, 120.345, 1269.193}
+		move camera position to {1308.083, 119.659, 1350.758} time 5.8
+		move camera focus to {1245.278, 122.307, 1272.987} time 5.8*/
+		
+		set OB_OilBaron position to {1296.292, 118.844, 1356.053}	
+		move OB_OilBaron position to {1318.258, 117.241, 1341.298}
+		disable OB_OilBaron reactable	
+		SPEED of OB_OilBaron = 0.4
+		wait 0.5 seconds
+		
+		//override OB_OilBaron anim "a_p_l9raindancedrum_run"
+		//a_p_l9raindancedrum_run
+		wait 3.0 seconds
+		
+		
+		set OB_OilBaron position to {1338.823, 115.645, 1324.420}
+		set OB_OilBaron focus to {1345.647, 115.059, 1319.895}
+		//disable OB_OilBaron reactable
+
+		//set OB_OilBaron position to {1337.356, 115.766, 1325.499}
+		
+		
+		
+		play anim "a_p_l8oilbaron_outof" on OB_OilBaron disable stand blend time 0 
+		wait 0.1 seconds
+		set camera lens 65
+		set camera position to {1339.797, 116.841, 1324.179}
+		set camera focus to {1249.270, 118.289, 1366.647}
+		wait 0.5 seconds
+		play sound "SCRIPT29_EXPLOSION5" at camera position
+		wait until OB_OilBaron played
+		//play anim "a_p_l8oilbaron_man_panicked_loop" on OB_OilBaron loop 1
+		//set anim speed of OB_OilBaron to 1
+		//wait 0.2 seconds
+		play anim "a_p_l8oilbaron_man_panicked_loop" on OB_OilBaron loop 1
+		
+		shake camera strength 5.0
+		
+		wait 1.7 seconds
+		play sound "ARMYMANLOUDSCREAM22" at camera position
+	
+	
+	
+	
+		set camera position to {1338.306, 116.763, 1324.089}
+		set camera focus to {1344.568, 132.839, 1422.588}
+		set camera lens 60 time 0.5
+		wait 0.5 seconds
+		
+		ExplodeFX2 = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[3]} time 10
+		play sound "SCRIPT29_EXPLOSION2" at camera position
+		shake camera strength 6.0
+		
+		wait 1.5 seconds
+		play sound "ARMYMANLOUDSCREAM21" at camera position
+		
+		set camera position to {1339.353, 116.805, 1324.967}
+		set camera focus to {1254.172, 121.684, 1272.818}
+		set camera lens 42 time 0.5
+		wait 0.5 seconds
+		ExplodeFX2 = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[1]} time 10
+		play sound "SCRIPT29_EXPLOSION2" at camera position
+		shake camera strength 6.5
+		wait 2.1 seconds
+		play sound "ARMYMANLOUDSCREAM23" at camera position
+		
+		//ExplodeFX1 = create visual effect "ev_s_beamrocks.ves" strength 1 scale 1 at {OB_Pumps[1]} time 10
+		//ExplodeFX2 = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[0]} time 10
+		
+		//ExplodeFX2 = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[2]} time 10
+		//ExplodeFX2 = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[3]} time 10
+		//ExplodeFX2 = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[4]} time 10
+
+
+		/*set camera position to {1339.386, 116.697, 1324.339}
+		set camera focus to {1256.562, 129.086, 1378.978}
+		set camera lens 39 time 2
+		move camera position to {1340.600, 116.495, 1323.236} time 2
+		move camera focus to {1258.935, 129.050, 1379.559} time 2
+		
+		wait 2 seconds*/
+		
+		set camera lens 42
+		set camera position to {1338.142, 116.483, 1325.985}
+		set camera focus to {1403.572, 137.982, 1253.487}
+		move camera position to {1337.884, 116.398, 1326.271} time 12
+		move camera position to {1337.884, 116.398, 1326.271} time 12
+		wait until OB_OilBaron played
+		//play anim "a_p_japan_kneeling_into" on OB_OilBaron loop 1
+		//wait until OB_OilBaron played
+		play anim "a_p_crying" on OB_OilBaron loop -1
+		wait 2 seconds
+		
+		ExplodeFX2 = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[2]} time 10
+		play sound "SCRIPT29_EXPLOSION3" at camera position
+		
+		wait 2 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		stop camera shake
+		set camera position to {1281.757, 175.458, 1301.659}
+		set camera focus to {1322.333, 97.664, 1349.633}
+		set camera lens 70
+		move camera position to {1279.351, 180.072, 1298.813} time 8
+		move camera focus to {1319.927, 102.278, 1346.787} time 8
+		wait 1 seconds
+		eject good spirit
+		delete OB_OilBaron
+		set fade in time 2
+		wait 1 seconds
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_170"
+		wait until read
+		send good spirit home
+		wait 0.5 seconds
+		stop music with fadetime 4
+	end cinema
+	
+
+	
+	
+
+end script OB_Intro
+
+
+
+//---------------------------------------------------------------
+// Get thanks from the baron
+//---------------------------------------------------------------
+begin script OB_GratefulBaron
+
+	BaronCreatePos	= marker at {1318.870,123.128,1340.042}
+	BaronTalkPos	= marker at {1323.039,122.856,1339.553}
+	Scroll			= 0
+	ReminderTimer	= create timer for 0 seconds
+
+	CSBarrel1		= 0
+	CSBarrel2		= 0
+	CSBarrel3		= 0
+	BombFX = 0
+start
+
+/*	// Create a scroll for the player to click on
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_SCROLL_10" remind "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_SCROLL_30" at {OB_OilRefinery}
+	ALTITUDE of Scroll = 10
+
+	// Handle the scroll reminder
+	/*begin loop
+		if get ReminderTimer time remaining <= 0
+			if camera position near {Scroll} radius 50 and {Scroll} viewed
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+
+					// Leader, the Oil Baron wants to speak to you over at the oil refinery.
+					say "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_50"
+					wait until read
+
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 30 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop*/
+	delete Scroll  */
+	
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		start music "cut_scene_happy_02"
+		wait 2 seconds
+		OB_OilBaron = create VILLAGER OIL_BARON at {1292.542, 119.193, 1360.322}
+		disable OB_OilBaron reactable
+		set OB_OilBaron focus to {1295.392, 118.944, 1358.161}
+		
+		set camera position to {1398.471, 163.026, 1333.098}
+		set camera focus to {1314.572, 109.527, 1343.023}
+		set camera lens 50
+		move camera position to {1394.269, 160.347, 1333.595} time 8
+		move camera focus to {1310.370, 106.848, 1343.519} time 8
+		set fade in time 2
+		
+		wait 5 seconds
+		
+		set camera position to {1341.089, 138.317, 1341.372}
+		set camera focus to {1365.454, 88.096, 1424.343}
+		move camera position to {1341.627, 137.205, 1343.210} time 8
+		move camera focus to {1365.993, 86.983, 1426.181} time 8
+		
+		wait 5 seconds
+		
+		
+		
+	
+		CSBarrel1 = create OBJECT NORSE_BARREL_02 at {1293.279, 119.116, 1359.730}
+		ALTITUDE of CSBarrel1 = 0.1
+		CSBarrel2 = create OBJECT NORSE_BARREL_02 at {1292.532, 119.182, 1358.849}
+		ALTITUDE of CSBarrel2 = 0.1
+		CSBarrel3 = create OBJECT NORSE_BARREL_02 at {1293.456, 119.150, 1360.981}
+		ALTITUDE of CSBarrel3 = 0.1
+
+		
+		ALTITUDE of CSBarrel1 = 0.01
+		ALTITUDE of CSBarrel2 = 0.01
+		ALTITUDE of CSBarrel3 = 0.01
+		set camera position to {1298.254, 123.011, 1355.774}
+		set camera focus to {1218.042, 108.375, 1413.672}
+		set camera lens 70
+		move camera position to {1297.944, 122.954, 1355.999} time 20
+		move camera focus to {1217.731, 108.319, 1413.897} time 20
+		
+		wait 1 seconds
+		
+		
+		
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_360"
+		wait 1 seconds
+		
+		
+		play anim "A_p_L8oilbaron_man_offering_barrels" on OB_OilBaron loop 1
+		//play anim "a_p_prometheus_turning_from_explosion" on OB_OilBaron loop 1
+		//move OB_OilBaron position to {1290.771, 119.332, 1358.029}
+		//wait 1 seconds
+		//dd = marker at get target from focus position of OB_OilBaron to {OB_OilBaron} distance 1 angle 0
+		//play anim "a_p_fright_jump" on OB_OilBaron loop 1 
+		
+		//play anim "a_p_womd_villager_reaction2" on OB_OilBaron loop 1 disable stand
+		//wait until OB_OilBaron played 
+		//set OB_OilBaron velocity heading {OB_OilBaron} + {0, 4, 0} speed 10
+		//wait 50000 seconds
+		
+		//set OB_OilBaron focus to {dd}
+		//play anim "a_p_prometheus_turning_from_explosion" on OB_OilBaron loop 1
+		
+		//wait 50000 seconds
+		wait 2 seconds
+		set camera position to {1294.659, 122.499, 1359.483}
+		set camera focus to {1225.665, 110.673, 1430.906}
+		move camera position to {1294.741, 122.499, 1359.561} time 1
+		move camera focus to {1225.747, 110.673, 1430.984} time 1
+		set camera lens 40
+		wait 1.75 seconds
+		
+		set camera position to {1294.540, 122.360, 1358.152}
+		set camera focus to {1213.546, 113.185, 1416.074}
+		move camera position to {1294.378, 122.360, 1357.926} time 2
+		move camera focus to {1213.385, 113.185, 1415.848} time 2
+		wait 2 seconds
+		
+		set camera position to {1297.944, 122.954, 1355.999} 
+		set camera focus to {1217.731, 108.319, 1413.897} 
+		set camera lens 70
+		move camera position to {1298.254, 123.011, 1355.774} time 20
+		move camera focus to {1218.042, 108.375, 1413.672} time 20
+	
+		wait 1.5 seconds
+		move OB_OilBaron position to {1290.008, 119.374, 1356.434}
+		eject evil spirit
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_80"
+		
+		wait 2.3 seconds
+		play anim "a_p_fright_jump" on OB_OilBaron loop 1 
+		BombFX = create visual effect "gp_s_expbarrel.ves" strength 3 scale 3 at {CSBarrel2} time 15
+		play sound "SCRIPT25_EXPLOSION3" at camera position
+		delete CSBarrel2 with fade time 0.5
+		HEALTH of OB_OilBaron = 1.0
+		wait 1.6 seconds
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {1343.203, 172.450, 1296.423}
+		set camera focus to {1312.942, 93.930, 1350.452}
+		set camera lens 70
+		set fade in time 2
+		eject good spirit
+		say "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_90"
+		wait until read
+		
+		enable OB_OilBaron hurt by fire
+		enable OB_OilBaron set on fire
+		disable OB_OilBaron indestructible
+		enable OB_OilBaron reactable
+		
+		send good spirit home
+		send evil spirit home
+		wait 1 seconds
+		
+		stop music with fadetime 4
+		wait 2 seconds
+	end cinema
+	
+	run background script OB_ExplodingBarrel(CSBarrel1)
+	run background script OB_ExplodingBarrel(CSBarrel3)
+	
+	//wait until {OB_OilBaron} near {BaronCreatePos} radius 1 or 10 seconds
+	
+
+end script OB_GratefulBaron
+
+
+
+
+//---------------------------------------------------------------
+// Check to see if the pump has been capped
+//---------------------------------------------------------------
+begin script OB_CheckPump(Pump)
+
+	ExplodeTimer		= create timer for OB_TIME_TO_CAP_PUMPS seconds
+	WaterTimer			= create timer for 4 seconds
+	//Counter				= 0
+	FireTurnedOff		= 0
+
+start
+
+	begin loop
+		if OB_NumberOfGushersCapped < OB_AMOUNT_OF_GUSHERS
+			OB_OilFiresPutOut = OB_FALSE
+			//WaterStat = get total of stat STATS_EVT_PLAYER_CAST_WATER_THROW
+			// Has the pump been capped?
+			if OB_Pumps[Pump] exists
+				//NEW
+				if OB_Pumps[Pump] on fire
+					enable OB_Pumps[Pump] set on fire
+					enable OB_Pumps[Pump] on fire 1.0
+				end if
+				// Check to see if the player is throwing the water miracle if so, the fire can go out.
+				if WaterStat2[Pump] < WaterStat
+						OB_WaterThrown = OB_TRUE
+				end if
+				if not OB_Pumps[Pump] on fire and Reset[Pump] == 0
+							//check whether player is using water spell
+							set WaterTimer time to 4 seconds
+							while get WaterTimer time remaining > 0 and RefinerySaved[Pump] == 0
+								if OB_WaterThrown == OB_TRUE
+									RefinerySaved[Pump] = 1
+									PumpCounter[Pump] = 0
+									WaterStat2[Pump] = WaterStat
+									OB_WaterThrown = OB_FALSE
+								end if
+								if not OB_Pumps[Pump] on fire
+										PumpCounter[Pump] ++
+								end if
+								if PumpCounter[Pump] >= 35 and not OB_Pumps[Pump] on fire
+									RefinerySaved[Pump] = 1
+									PumpCounter[Pump] = 0
+								end if
+								// Keeps fire going on the pump (fires can go out with one click of the mouse button otherwise)
+								if PumpCounter[Pump] < 35
+										enable OB_Pumps[Pump] set on fire
+										enable OB_Pumps[Pump] on fire 1.0
+										//Counter = 0
+								end if
+							end while
+							// if player hasn't used the water miracle enough, it will trigger an explosion
+							if RefinerySaved[Pump] == 0
+									Reset[Pump] = 1
+									run background script OB_ExplodePump(Pump)
+									PumpCounter[Pump] = 0
+							end if
+				end if
+
+				WaterStat2[Pump] = WaterStat
+				// Refinery saved, will eventually trigger Saboteur to set it alight again (rather then igniting itself magically).
+
+				if RefinerySaved[Pump] == 1
+					//clear right clicked object
+					OB_NumberOfGushersCapped++
+					set OB_Pumps[Pump] temperature 0
+					set ExplodeTimer time to OB_TIME_TO_CAP_PUMPS seconds
+					
+					wait until OB_NumberOfGushersCapped >= OB_AMOUNT_OF_GUSHERS or get ExplodeTimer time remaining <= 0
+					
+					if OB_NumberOfGushersCapped < OB_AMOUNT_OF_GUSHERS
+						OB_NumberOfGushersCapped--
+						Reset[Pump] = 1
+						run background script OB_ExplodePump(Pump)
+						enable OB_Pumps[Pump] set on fire
+						enable OB_Pumps[Pump] on fire 1.0
+						RefinerySaved[Pump] = 0
+					end if
+				end if
+
+			end if
+		else
+			OB_OilFiresPutOut = OB_TRUE
+		end if		
+	end loop
+
+end script OB_CheckPump
+
+
+
+//---------------------------------------------------------------
+// Explode Pump
+//---------------------------------------------------------------
+begin script OB_ExplodePump(ID)
+
+	ExplodeFX		= 0
+
+	//These last for a while and need to eb stopped at appropriate stages
+	PlumeFX			= 0
+	FireFX			= 0
+
+	StageTimer		= 0
+
+start
+
+/*
+	eeq_s_explosion.ves		//Awesome rocks FX
+	eeq_s_bang.ves			//Bang with green thing
+	eeq_s_rocks.ves			//Earthquake rocks
+	ev_s_ash.ves			//Nice black smoke
+
+	ev_s_beamrocks.ves		//VERYCOOl! rocks with fire
+	ev_s_lavaexplosion.ves
+
+	ev_s_mspotsmoke.ves		//Waftable smoke
+	ev_s_plume.ves			//Scale this down a lto and we're in business
+
+	gp_s_expbarrel.ves		//For ther exploding barrels
+*/
+
+	//First explosion
+	if OB_OilFiresPutOut == OB_FALSE
+		set physics at position {OB_Pumps[ID]} with strength {number from -10 to 10, number from 20 to 35,number from -10 to 0} radius 20 random 1
+		ExplodeFX = create visual effect "ev_s_beamrocks.ves" strength 1 scale 1 at {OB_Pumps[ID]} time 10
+		ExplodeFX = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.3 at {OB_Pumps[ID]} time 10
+		run background script wait_timer(ID)
+	end if
+
+	wait 4 seconds
+	
+	if OB_OilFiresPutOut == OB_FALSE
+		set physics at position {OB_Pumps[ID]} with strength {number from -10 to 10, number from 20 to 35,number from -10 to 10} radius 20 random 1
+		//ExplodeFX = create visual effect "eeq_s_rocks.ves" strength 1 scale 0.3 at {OB_Pumps[ID]} time 10
+		ExplodeFX = create visual effect "eeq_s_explosion.ves" strength 1 scale 0.3 at {OB_Pumps[ID]} time 8
+		ExplodeFX = create visual effect "ev_s_mspotsmoke.ves" strength 3 scale 3 at {OB_Pumps[ID]} time 5
+	end if
+
+	StageTimer = create timer for 5 seconds
+	while get StageTimer time remaining > 0
+		ExplodeFX = create visual effect "gp_s_expbarrel.ves" strength 3 scale 2 at {OB_Pumps[ID]} + {number from -10 to 10, number from 5 to 15, number from - 10 to 10} time 15
+	until OB_OilFiresPutOut == OB_TRUE
+	end while
+
+	if OB_OilFiresPutOut == OB_FALSE
+		set physics at position {OB_Pumps[ID]} with strength {number from -10 to 10, number from 20 to 35,number from -10 to 10} radius 20 random 1
+	end if
+
+end script OB_ExplodePump 
+
+
+
+//-----------------------------------------------------------------------------
+//	Create the explosive barrels
+//-----------------------------------------------------------------------------
+begin script OB_CreateBarrels
+
+	BarrelPos[OB_MAX_AMOUNT_OF_BARRELS]
+	PutDownBarrelPos[OB_MAX_AMOUNT_OF_BARRELS]
+	BarrelCentrePos		= 0
+	BarrelIndex			= 0
+	ANGLE				= 0
+	DELAY				= 2							// Was 20
+	Ctr					= 0
+	
+	BaronCreatePos		= marker at {1318.870,123.128,1340.042}
+	BaronMidPos			= marker at {1323.039,122.856,1339.553}
+	PlaceBarrelTimer	= create timer for DELAY seconds
+
+start
+
+	BarrelCentrePos	= marker at {1324.493,123.096,1331.414}
+	
+	while Ctr < OB_MAX_AMOUNT_OF_BARRELS
+		BarrelPos[Ctr] = marker at get target from  {0, 0, 0} to {BarrelCentrePos} distance 3 angle ANGLE
+		PutDownBarrelPos[Ctr] = marker at get target from {BaronMidPos} to {BarrelPos[Ctr]} distance 1 angle 180
+		ANGLE += (360 / OB_MAX_AMOUNT_OF_BARRELS)
+		Ctr++
+	end while
+
+	begin loop
+		if OB_BaronDead == OB_FALSE and get PlaceBarrelTimer time remaining <= 0 and OB_OilFiresPutOut == OB_TRUE
+			if OB_OilBarrel[BarrelIndex] not exists
+				if OB_OilBaron not exists and OB_BaronDead == OB_FALSE
+					OB_OilBaron = create VILLAGER OIL_BARON at {BaronCreatePos}
+					run background script OB_CheckBaron
+				end if
+				
+				set OB_OilBaron carrying CARRIED_OBJECT_BARREL
+				move OB_OilBaron position to {BaronMidPos}
+				wait until {OB_OilBaron} near {BaronMidPos} radius 1 or OB_BaronDead == OB_TRUE
+			
+				if OB_BaronDead == OB_FALSE					
+					move OB_OilBaron position to {PutDownBarrelPos[BarrelIndex]}
+					wait until {OB_OilBaron} at {PutDownBarrelPos[BarrelIndex]} or OB_BaronDead == OB_TRUE
+											
+					if OB_BaronDead == OB_FALSE
+						// Place the barrel in it's correct position
+						set OB_OilBaron carrying CARRIED_OBJECT_NONE						
+						OB_OilBarrel[BarrelIndex] = create OBJECT NORSE_BARREL_02 at {BarrelPos[BarrelIndex]}
+						disable OB_OilBaron reactable
+						set OB_OilBarrel[BarrelIndex] velocity heading {OB_OilBarrel[BarrelIndex]} speed 0
+						run background script OB_ExplodingBarrel(OB_OilBarrel[BarrelIndex])
+						
+						// Send the baron home
+						wait 1 second
+						move OB_OilBaron position to {BaronMidPos}
+						enable OB_OilBaron reactable						
+						wait until {OB_OilBaron} near {BaronMidPos} radius 1 or OB_BaronDead == OB_TRUE
+						if OB_BaronDead == OB_FALSE
+							move OB_OilBaron position to {BaronCreatePos}
+							wait until {OB_OilBaron} near {BaronCreatePos} radius 1 or OB_BaronDead == OB_TRUE
+						end if
+					end if
+				end if
+			end if
+			
+			BarrelIndex++
+			
+			if BarrelIndex >= OB_MAX_AMOUNT_OF_BARRELS
+				BarrelIndex = 0
+				OB_BaronReadyToAttack = OB_TRUE
+			end if
+
+			set PlaceBarrelTimer time to DELAY seconds
+		end if
+		
+	until OB_BaronDead == OB_TRUE
+	end loop
+	
+end script OB_CreateBarrels
+
+
+
+//-----------------------------------------------------------------------------
+//	Handle the reactions of the barrel exploding
+//-----------------------------------------------------------------------------
+begin script OB_ExplodingBarrel(Barrel)
+
+	Detonate			= OB_FALSE
+	EnemyPlatoon		= 0
+	ExplodePos			= 0
+	RubbleLoop			= 0
+	BarrelRubble		= 0
+	BombFX				= 0
+	StageTimer			= 0
+	GetObject			= 0
+
+start
+
+	while Detonate == OB_FALSE
+		//Detonate by throwing.. whatever.. to be replace by a proepr hti detection thingus
+		if Barrel is HELD
+			wait until not Barrel is HELD
+			wait 1 seconds
+			if Barrel is FLYING	and SPEED of Barrel > 5
+				wait until ALTITUDE of Barrel < 1
+				Detonate = OB_TRUE
+			else
+				ALTITUDE of Barrel = 0
+				ANGLE of Barrel = 0
+				PITCH of Barrel = 0
+			end if
+		end if
+
+		EnemyPlatoon = get platoon of player 1 nearest {Barrel} radius 5
+	
+		//when fisting/ rolling the barrel
+		if SPEED of Barrel > 7
+			Detonate = OB_TRUE
+		end if
+
+		//The barrels act as mines to the enemy
+		if EnemyPlatoon exists
+			Detonate = OB_TRUE
+		end if
+
+		//Barrels on fire will explode
+		if Barrel on fire
+			Detonate = OB_TRUE
+		end if
+
+		wait 0.2 seconds
+	until Detonate == OB_TRUE
+	end while
+
+	ExplodePos = marker at {Barrel}
+	delete Barrel
+
+	force while RubbleLoop < 10
+		BarrelRubble = create rubble type 1 scale 0.2 at {ExplodePos} velocity {0, 0, 0}
+		RubbleLoop++
+	end while	
+
+	BombFX = create visual effect "gp_s_expbarrel.ves" strength 3 scale 3 at {ExplodePos} + {0, 2, 0} time 15
+
+//	set physics at position {ExplodePos} with strength {number from -5 to 5, number from 5 to 15 ,number from -5 to 5} radius 20 random 1
+
+	StageTimer = create timer for 2 seconds
+	while get StageTimer time remaining > 0
+		BombFX = create visual effect "gp_s_expbarrel.ves" strength 3 scale ((number from 1 to 5)/10) at {ExplodePos} + {number from -4 to 4, number from 0 to 4, number from - 4 to 4} time 15
+
+		GetObject = get OBJECT at {ExplodePos} radius 7
+		if GetObject exists
+			enable GetObject on fire 1.0
+		end if
+
+		GetObject = get VILLAGER at {ExplodePos} radius 7
+		if GetObject exists
+			enable GetObject on fire 1.0
+		end if
+	end while		
+	
+end script OB_ExplodingBarrel
+
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the baron is alive or not
+//-----------------------------------------------------------------------------
+begin script OB_CheckBaron
+start
+
+	OB_BaronDead = OB_FALSE
+	
+	begin loop
+		if OB_OilBaron not exists or HEALTH of OB_OilBaron <= 0
+			OB_BaronDead = OB_TRUE
+		end if
+		
+	until OB_BaronDead == OB_TRUE
+	end loop
+
+end script OB_CheckBaron
+
+
+
+//---------------------------------------------------------------
+// Sabotage the pumps
+//---------------------------------------------------------------
+begin script OB_Sabotage(Sab)
+
+	SabCreate		= marker at {OB_SabHideout}
+	HideOut			= marker at {OB_SabHideout}
+	RandomPump		= 0
+	Torch			= 0
+	TorchFX			= 0
+	
+start
+
+	begin loop
+		// Create the saboteur
+		if OB_Sab[Sab] not exists and OB_BaronDead == OB_FALSE
+			OB_Sab[Sab] = create VILLAGER ASSASSIN at {SabCreate}
+			disable OB_Sab[Sab] reactable
+		else
+			if get game time > 7.00
+				run script OB_SabCamp(OB_Sab[Sab])
+			end if
+
+			if OB_Sab[Sab] exists
+				RandomPump = number from 0 to (OB_AMOUNT_OF_GUSHERS - 1)
+
+				//Move to target with chase script
+				run script OB_ChaseSab(OB_Sab[Sab], marker at {OB_Pumps[RandomPump]})		
+				
+				if not OB_Pumps[RandomPump] on fire
+					//Now he carries the torch
+					set OB_Sab[Sab] carrying CARRIED_OBJECT_TORCH
+
+					//speed him down and throw
+					SPEED of OB_Sab[Sab] = 0.4
+					wait 0.5 seconds
+
+					SPEED of OB_Sab[Sab] = 0.3
+					wait 0.5 seconds
+
+					SPEED of OB_Sab[Sab] = 0.2
+					wait 0.5 seconds
+
+					play animation "a_p_throw_torch_outofwalk" on OB_Sab[Sab]			
+					wait 2.4 seconds
+
+					//Throw the torch
+					set OB_Sab[Sab] carrying CARRIED_OBJECT_NONE
+					Torch = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at get world position from OB_Sab[Sab] to {-0.357, 0.057, 0.823}
+					override mesh for Torch with "m_generictorch"
+					TorchFX = create visual effect "gp_s_fire_storch.ves" strength 1 scale 0.1 on Torch time 5
+
+					set Torch velocity heading {OB_Pumps[RandomPump]} +  {0, 15, 0} speed 30
+
+					wait until {Torch} near {OB_Pumps[RandomPump]} radius 2 or 3 seconds
+					set Torch velocity heading {Torch} speed 0
+
+					enable OB_Pumps[RandomPump] on fire 1.0
+					OB_NumberOfGushersCapped--
+
+					wait 5 seconds
+					delete Torch
+				else
+					wait 5 seconds
+				end if
+			end if
+		end if
+		
+	until OB_Sab[Sab] not exists and OB_BaronDead == OB_TRUE
+	end loop
+
+end script OB_Sabotage
+
+
+
+//---------------------------------------------------------------
+// Chase Sab
+//---------------------------------------------------------------
+begin script OB_ChaseSab(Sab, Target)
+
+	TargetSwitch		= OB_FALSE
+	SwitchTimer			= 0
+	
+start
+
+	move Sab position to {Target}
+	SPEED of Sab = 0.5	
+
+	begin loop
+		if get distance from {Sab} to {OB_Creature}	< 16
+			move Sab position to {Sab} + ({Sab} - {OB_Creature})
+			SPEED of Sab = 0.6			
+			SwitchTimer = create timer for 2 seconds
+		end if
+
+		if get SwitchTimer time remaining == 0
+			TargetSwitch = OB_TRUE
+		end if
+
+		if TargetSwitch == OB_TRUE
+			move Sab position to {Target}
+			SPEED of Sab = 0.5
+			TargetSwitch = OB_FALSE
+		end if
+
+	until {Sab} near {Target} radius 15 or not Sab exists
+	end loop
+
+end script OB_ChaseSab
+
+
+
+//---------------------------------------------------------------
+// Sab Camp
+//---------------------------------------------------------------
+begin script OB_SabCamp(Sab)
+
+	EnterPos				= marker at {1302.687,112.798,1222.241}
+	ValleyPos				= marker at {1275.008,118.580,1293.572}
+	SabID					= 0
+	
+	CampfireSeats[3]
+	CurrentAction			= 0
+	CampFireActionLoop		= 0
+
+	//Meeting pos stuff
+	PlanPos					= marker at {1310.478,113.205,1228.004}
+	MeetingPos[3]
+	WanderPos_0[3]
+	WanderPos_1[3]
+	WanderPos_2[3]
+
+	ActionDecider			= 0
+	MoveDecider				= 0
+	
+start
+
+	//Setup positions	
+	CampfireSeats[0] = marker at get target from {0, 0, 0} to {OB_Campfire} distance 2 angle 0
+	CampfireSeats[1] = marker at get target from {0, 0, 0} to {OB_Campfire} distance 2 angle 120
+	CampfireSeats[2] = marker at get target from {0, 0, 0} to {OB_Campfire} distance 2 angle 240
+
+	MeetingPos[0] = marker at {OB_Campfire} + {10, 0, 10}
+  	MeetingPos[1] = marker at {OB_Campfire} + {12, 0, 12}
+  	MeetingPos[2] = marker at {OB_Campfire} + {14, 0, 14}
+
+  	WanderPos_0[0] = marker at {OB_Campfire} + {20, 0, 20}
+  	WanderPos_0[1] = marker at {OB_Campfire} + {22, 0, 22}
+  	WanderPos_0[2] = marker at {OB_Campfire} + {24, 0, 24}
+
+   	
+  	WanderPos_1[0] = marker at {OB_Campfire} + {30, 0, 30}
+  	WanderPos_1[1] = marker at {OB_Campfire} + {32, 0, 32}
+  	WanderPos_1[2] = marker at {OB_Campfire} + {34, 0, 34}
+
+   	
+  	WanderPos_2[0] = marker at {OB_Campfire} + {40, 0, 40}
+  	WanderPos_2[1] = marker at {OB_Campfire} + {42, 0, 42}
+ 	WanderPos_2[2] = marker at {OB_Campfire} + {44, 0, 44}
+
+	//Handle movement
+//	move Sab position to {ValleyPos}
+//	SPEED of Sab = 0.4
+//	wait until {Sab} near {ValleyPos} radius 15
+
+	move Sab position to {EnterPos}
+	SPEED of Sab = 0.4
+	wait until {Sab} at {EnterPos}
+
+	SabID = OB_SabID
+	OB_SabID++
+
+	if OB_CampfireFX == 0
+		OB_CampfireFX = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {OB_Campfire} time -1
+	end if
+
+	//Do idle stuff in camp
+	begin loop
+		move Sab position to {CampfireSeats[SabID]}
+		wait until {Sab} at {CampfireSeats[SabID]}
+		set Sab focus to {OB_Campfire}		
+
+		if OB_SabActionMeeting == OB_FALSE
+			ActionDecider = number from 0 to 6
+
+			//Prod the campfire and sit by it
+			if ActionDecider == 0
+				CurrentAction = 0
+
+			//Go to sleep
+			elsif ActionDecider < 3
+				CurrentAction = 1
+
+			//Wander about
+			else
+				CurrentAction = 3
+
+			end if
+		else
+			CurrentAction = 2
+		end if
+
+		//Conduct a meeting?
+		if number from 1 to 10 == 1
+			OB_SabActionMeeting = OB_TRUE
+		end if
+
+		//Prodding the campfire 
+		if CurrentAction == 0
+			while CampFireActionLoop < 5
+				if number from 1 to 2 == 1
+					play anim "a_p_sitting_down2_sitting_into" on Sab
+					wait until Sab played
+
+					play anim "a_p_sitting_down2_sitting" on Sab loop 4
+					wait until Sab played
+
+					play anim "a_p_sitting_down2_sitting_outof" on Sab
+					wait until Sab played
+				else
+					play anim "a_p_sit_prodding_campfire" on Sab
+					wait until Sab played
+				end if
+
+				CampFireActionLoop++
+			end while
+
+			wait 10 seconds
+
+		//Go to sleep
+		elsif CurrentAction == 1
+			play anim "a_p_sleeping_rough_loop" on Sab loop 20
+			wait until Sab played
+
+			wait 5 seconds
+		
+		//Conduct a meeting
+		elsif CurrentAction == 2
+			move Sab position to {MeetingPos[SabID]}	
+			wait until {Sab} at {MeetingPos[SabID]}
+			
+			set Sab focus to {PlanPos}
+			OB_SabsAtMeeting++
+
+			wait until OB_SabsAtMeeting == 3
+			
+			//Do anims
+			run background script SabMeetingDialogue
+			wait 20 seconds
+
+			OB_SabsAtMeeting--
+			OB_SabActionMeeting = OB_FALSE
+
+		//Wander about
+		elsif CurrentAction == 3
+			if SabID == 0
+				MoveDecider = number from 0 to 2
+				move Sab position to {WanderPos_0[MoveDecider]}
+				SPEED of Sab = 0.15
+				wait until {Sab} at {WanderPos_0[MoveDecider]}				
+				wait 3 seconds
+
+			elsif SabID == 1
+				MoveDecider = number from 0 to 2
+				move Sab position to {WanderPos_1[MoveDecider]}
+				SPEED of Sab = 0.15
+				wait until {Sab} at {WanderPos_1[MoveDecider]}
+				wait 3 seconds
+
+			elsif SabID == 2
+				MoveDecider = number from 0 to 2
+				SPEED of Sab = 0.15
+				move Sab position to {WanderPos_2[MoveDecider]}
+				wait until {Sab} at {WanderPos_2[MoveDecider]}
+				wait 3 seconds
+			end if
+		end if
+
+	until Sab not exists
+	until get game time > 19.00
+	end loop
+
+	stop visual effect OB_CampfireFX
+	OB_CampfireFX = 0
+
+	OB_SabID--
+
+	if Sab exists
+		move Sab position to {ValleyPos}
+		SPEED of Sab = 0.4
+		wait until {Sab} near {ValleyPos} radius 15
+	end if
+
+end script OB_SabCamp
+
+
+
+//---------------------------------------------------------------
+// Sab Meeting Dialogue
+//---------------------------------------------------------------
+begin script SabMeetingDialogue
+
+	DialogueTimer		= 0
+	TriggerPos			= marker at {1303.284,117.349,1288.521}
+	
+start
+	
+	DialogueTimer = create timer for 20 seconds
+
+	begin loop
+		if camera position near {TriggerPos} radius 20
+			begin dialogue
+
+				// SAB: The Greeks cannot be allowed to take control of the pumps.
+				say "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_110"
+				wait until read
+
+				wait 4 seconds
+			end dialogue
+		end if
+	until get DialogueTimer time remaining == 0
+	end loop
+
+end script SabMeetingDialogue
+
+//--------------------------------------------------------------------------
+// Temporary Intro to show Oil Refinery being set alight (to stop player completing challenge before clicking on scroll)
+//--------------------------------------------------------------------------
+
+begin script SabotageIntro
+
+SabCreate = marker at {1347.636, 122.133, 1374.252}
+SabRunTo = marker at {1345.604, 123.309, 1392.052}
+Torch = 0
+Sab = 0
+SabPos = 0
+TorchFX = 0
+TorchHeading = marker at {1348.746, 121.216, 1362.750}
+TorchHeading2 = marker at {1275.339, 120.613, 1339.825}
+
+
+start
+
+		begin cinema
+			// First
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+			set camera position to {1359.229, 126.292, 1378.475}
+			set camera focus to {1282.752, 121.952, 1314.193}
+			set camera lens 50
+			Sab = create VILLAGER ASSASSIN at {SabCreate}
+			ALTITUDE of Sab = -0.1
+			disable Sab reactable
+			set Sab carrying CARRIED_OBJECT_TORCH
+			set Sab focus to {OB_Pumps[1]}
+			move camera position to {1354.462, 126.028, 1380.234} time 8
+			move camera focus to {1290.733, 120.897, 1300.300} time 8
+			set fade in time 2
+			wait 2 seconds
+			play animation "a_p_throw_torch_outofwalk" on Sab			
+			wait 2.5 seconds
+			SabPos = marker at {Sab}
+			set Sab carrying CARRIED_OBJECT_NONE
+			Torch = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at get world position from Sab to {-0.357, 2.667, 0.823}
+			ALTITUDE of Torch = 2.5
+			//set Torch position to {SabPos}
+			override mesh for Torch with "m_generictorch"
+			TorchFX = create visual effect "gp_s_fire_storch.ves" strength 1 scale 0.5 on Torch time 5
+			set Torch velocity heading {TorchHeading} +  {0, 7, 0} speed 15
+			move Sab position to {SabRunTo}
+			SPEED of Sab = 0.5
+			wait until {Torch} near {TorchHeading} radius 5
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+			delete Sab
+
+			// Second
+			set camera position to {1268.255, 121.843, 1341.572}
+			set camera focus to {1358.855, 140.966, 1301.459}
+			set camera lens 70
+			Sab = create VILLAGER ASSASSIN at {1269.987, 121.128, 1340.230}
+			ALTITUDE of Sab = -0.06
+			disable Sab reactable
+			set Sab carrying CARRIED_OBJECT_TORCH
+			set Sab focus to {OB_Pumps[2]}
+			set fade in time 2
+			wait 2 seconds
+			play animation "a_p_throw_torch_outofwalk" on Sab			
+			wait 2.5 seconds
+			Torch = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at get world position from Sab to {-0.357, 2.667, 0.823}
+			set Sab carrying CARRIED_OBJECT_NONE
+			ALTITUDE of Torch = 2.0
+			override mesh for Torch with "m_generictorch"
+			TorchFX = create visual effect "gp_s_fire_storch.ves" strength 1 scale 0.5 on Torch time 5
+			set Torch velocity heading {TorchHeading2} +  {0, 5, 0} speed 15
+			move Sab position to {1273.409, 121.279, 1369.026}
+			SPEED of Sab = 0.5
+			wait 1 seconds
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+			delete Sab
+			delete TorchFX
+			delete Torch
+
+		end cinema
+
+
+
+
+ //marker at {1269.987, 121.128, 1340.230}
+ //camera pos {1268.255, 124.443, 1341.572}
+ //foc {1358.855, 110.966, 1301.459}
+
+end script SabotageIntro
+
+// Adds fire to Pump whilst funky effect is going on, this guarantees that the pump will still
+// be on fire, even if its a little crude.
+
+begin script wait_timer(ID)
+
+start
+
+		wait 2 seconds
+		enable OB_Pumps[ID] set on fire
+		enable OB_Pumps[ID] on fire 1.0
+		wait 2 seconds
+		enable OB_Pumps[ID] set on fire
+		enable OB_Pumps[ID] on fire 1.0
+		wait 2 seconds
+		enable OB_Pumps[ID] set on fire
+		enable OB_Pumps[ID] on fire 1.0
+		wait 2 seconds
+		enable OB_Pumps[ID] set on fire
+		enable OB_Pumps[ID] on fire 1.0
+		wait 2 seconds
+		enable OB_Pumps[ID] set on fire
+		enable OB_Pumps[ID] on fire 1.0
+		wait 2 seconds
+		enable OB_Pumps[ID] set on fire
+		enable OB_Pumps[ID] on fire 1.0
+		Reset[ID] = 0
+
+end script wait_timer
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

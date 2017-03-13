@@ -1,0 +1,310 @@
+//=============================================================================
+// Land 10 Objectives
+// Lenny
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
+define LO_FALSE		= 0
+define LO_TRUE		= 1
+
+//-----------------------------------------------------------------------------
+// Land 10 Objectives
+//-----------------------------------------------------------------------------
+begin script Land10Objectives
+
+	CreatureTreesObjective = LO_FALSE
+	CityObjective = LO_FALSE
+	CreatureOreObjective = LO_FALSE
+	CreatureKillObjective = LO_FALSE
+	CreatureFightObjective = LO_FALSE
+	FieldsObjective = LO_FALSE
+	SettlementsObjective = LO_FALSE
+	ImpressiveObjective = LO_FALSE
+
+start
+	
+	reset all objectives for player 0
+
+
+	//Parent objective - Rescue the women
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_10FINAL_OBJECTIVES_160" amount 0
+
+	//Child objectives - Rescue the women
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_10FINAL_OBJECTIVES_20"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 parent objective TRIBUTE_OBJECTIVE_LAND_1
+
+	//Wait until the stealth section is over before giving the other objectives
+	wait until L10_WomenSaved > 0 or L10_StealthSectionComplete == 1
+
+	wait 30 seconds
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 1
+
+	wait 5 seconds
+
+	reset all objectives for player 0
+	disable objective window
+
+	wait 3 seconds
+
+
+	///PRIMARY OBJECTIVES
+	//THESE ARE SCRIPT CONTROLLED
+
+	//PRIMARY - Dominate Land by Impressiveness or Force
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" start value 0 reward 250000 alignment 0.2
+
+	//Secondary Objectives
+	//These are controlled by CODE
+	
+	//SPECIAL objectives
+	
+	//Destroy all food in the land
+	set player 0 objective TRIBUTE_OBJECTIVE_AS_SOON_AS_FOOD_DESTROYED with amount 1 text "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_30" amount 1 description "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_31" start value 0 reward 10000 alignment -0.05
+
+	//Use Heal Miracle to heal people    
+	set player 0 objective TRIBUTE_OBJECTIVE_HEAL_VILLAGERS with amount 1 text "BW2T_SCRIPT_11FINAL_OBJECTIVE_GOOD_30" amount 1 description "BW2T_SCRIPT_11FINAL_OBJECTIVE_GOOD_31" start value 0 reward 10000 alignment 0.01
+	
+	//Take over all the  towns by impressiveness    
+	set player 0 objective TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_IMPRESSIVENESS with amount 4 text "BW2T_SCRIPT_GENERIC_PICKUP163" amount 4 description "BW2T_SCRIPT_09FINAL_OBJECTIVE_GOOD_21" start value 0 reward 20000 alignment 0.05
+	
+	////
+	//CHOOSE the miracle objective they haven't unlocked yet!!!	
+	if get research ARTEFACT_MAGIC_TYPE_FIRE_FIRE available  == variable RESEARCH_AVAILABILITY_AVAILABLE 
+		//Use Fire Miracle to defeat an army    
+  		set player 0 objective TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_FIRE with amount 1 text "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_70" amount 1 description "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_71" start value 0 reward 10000 alignment -0.02	  	
+	else
+		if get research ARTEFACT_MAGIC_TYPE_WATER_STORM available  == variable RESEARCH_AVAILABILITY_AVAILABLE 
+			//Use Electricity Miracle to defeat an army    
+	  		set player 0 objective TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_ELECTRICITY with amount 1 text "BW2T_SCRIPT_09FINAL_OBJECTIVE_EVIL_50" amount 1 description "BW2T_SCRIPT_09FINAL_OBJECTIVE_EVIL_51" start value 0 reward 10000 alignment -0.02	
+		else
+			if get research ARTEFACT_MAGIC_TYPE_EARTH_METEOR available  == variable RESEARCH_AVAILABILITY_AVAILABLE 
+				//Use Meteor Miracle to defeat an army
+				set player 0 objective TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_METEOR with amount 1 text "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_70" amount 1 description "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_71" start value 0 reward 10000 alignment -0.02
+			end if
+		end if
+	end if
+	
+	
+	//Kill enemy creature    
+	set player 0 objective TRIBUTE_OBJECTIVE_ENEMY_CREATURE_DEAD with amount 1 text "BW2T_SCRIPT_11FINAL_OBJECTIVE_EVIL_60" amount 1 description "BW2T_SCRIPT_11FINAL_OBJECTIVE_EVIL_61" start value 0 reward 20000
+	
+	
+	//TOWN OBJECTIVES
+	
+	
+	//Create 100 children    
+	set player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN with amount 100 text "BW2T_SCRIPT_11FINAL_OBJECTIVE_NEUTRAL_10" amount 100 description "BW2T_SCRIPT_11FINAL_OBJECTIVE_NEUTRAL_11" start value 0 reward 10000
+		
+	//Build a wonder
+	set player 0 objective TRIBUTE_OBJECTIVE_BUILD_WONDER with amount 1 text "BW2T_SCRIPT_10FINAL_OBJECTIVE_NEUTRAL_30" amount 1 description "BW2T_SCRIPT_10FINAL_OBJECTIVE_NEUTRAL_31" start value 0 reward 100000
+	
+	
+	//CREATURE OBJECTIVES
+	
+	//Creature kills all enemy platoons    
+	set player 0 objective TRIBUTE_OBJECTIVE_FAILABLE_CREATURE_KILL_PLATOON with amount 1 text "BW2T_SCRIPT_11FINAL_OBJECTIVE_EVIL_50" amount 1 description "BW2T_SCRIPT_11FINAL_OBJECTIVE_EVIL_51" start value 0 reward 20000
+	
+	//Creature to entertain 100 people at once
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_ENTERTAIN_AT_ONCE with amount 100 text "BW2T_SCRIPT_10FINAL_OBJECTIVE_GOOD_10" amount 100 description "BW2T_SCRIPT_10FINAL_OBJECTIVE_GOOD_11" start value 0 reward 10000
+	
+	//Creature Plant 15 trees
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_PLANT_TREES with amount 15 text "BW2T_SCRIPT_10FINAL_OBJECTIVE_NEUTRAL_40" amount 15 description "BW2T_SCRIPT_10FINAL_OBJECTIVE_NEUTRAL_41" start value 0 reward 5000
+
+	//Win X creature fight   
+	set player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT with amount 6 text "BW2T_SCRIPT_OBJECTIVES_PICKUP32" amount 6 description "BW2T_SCRIPT_06FINAL_OBJECTIVE_EVIL_41" start value 0 reward 8000
+	
+	
+	//ARMY OBJECTIVES
+	
+	//Kill enemy creature  with Armies    
+	set player 0 objective TRIBUTE_OBJECTIVE_KILL_ENEMY_CREATURE_WITH_ARMIES with amount 1 text "BW2T_SCRIPT_11FINAL_OBJECTIVE_EVIL_40" amount 1 description "BW2T_SCRIPT_11FINAL_OBJECTIVE_EVIL_41" start value 0 reward 10000
+	
+	//Take over all the  Towns by Force
+	set player 0 objective TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_FORCE with amount 4 text "BW2T_SCRIPT_GENERIC_PICKUP162" amount 4 description "BW2T_SCRIPT_06FINAL_OBJECTIVE_EVIL_21" start value 0 reward 20000 alignment -0.05
+		
+
+	//AMOUNT SETTING
+	//The amount setting must occur last
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_GOLD amount 20
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_SPECIAL amount 0
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_TOWN amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_ARMY amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_CREATURE amount 1
+	
+	
+/*	begin loop
+		
+		if CreatureTreesObjective == LO_FALSE
+			if 	player 0 objective TRIBUTE_OBJECTIVE_CREATURE_PLANT_TREES complete
+				begin dialogue
+					eject good spirit
+						//say "Your creature seems to have green fingers."
+						say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES_50"
+						wait until read
+					send good spirit home
+
+					CreatureTreesObjective = LO_TRUE
+					set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_PLANT_TREES value 1
+					wait 1.5 seconds
+					disable player 0 objective TRIBUTE_OBJECTIVE_CREATURE_PLANT_TREES
+
+					wait 1.5 seconds
+					disable objective window
+				end dialogue
+			end if
+		end if
+
+		if CityObjective == LO_FALSE
+			if 	player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION complete
+				begin dialogue
+					eject good spirit
+						//say "Our large town has just become a city. Well done!"
+						say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES_40"
+						wait until read
+					send good spirit home
+
+					CityObjective = LO_TRUE
+					set player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION value 1
+					wait 1.5 seconds
+					disable player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION
+
+					wait 1.5 seconds
+					disable objective window
+				end dialogue
+			end if
+		end if
+
+
+		if CreatureOreObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_ORE complete
+
+				begin dialogue
+					eject evil spirit
+					 //say "Ore! And loads of it! We can build masses of troops with this."
+					 say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES"
+					 wait until read
+					send evil spirit home
+				end dialogue
+
+				CreatureOreObjective = LO_TRUE
+				set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_ORE value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_ORE
+				wait 1.5 seconds
+				disable objective window
+			end if			
+		end if
+
+
+		if CreatureKillObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_ENEMY_CREATURE_DEAD complete
+
+				begin dialogue
+					eject evil spirit
+					// say "Another one bites the dust!"
+					say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES_20"
+					 wait until read
+					send evil spirit home
+				end dialogue
+
+				CreatureKillObjective = LO_TRUE
+				set player 0 objective TRIBUTE_OBJECTIVE_ENEMY_CREATURE_DEAD value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_ENEMY_CREATURE_DEAD
+				wait 1.5 seconds
+				disable objective window
+			end if			
+		end if
+
+
+		if CreatureFightObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT complete
+
+				begin dialogue
+					eject evil spirit
+					 //say "Our creature won! Bring 'em on!"
+					say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES_10"
+					 wait until read
+					send evil spirit home
+				end dialogue
+
+				CreatureFightObjective = LO_TRUE
+				set player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT
+				wait 1.5 seconds
+				disable objective window
+			end if			
+		end if
+
+
+		if FieldsObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_PLAYER_BUILD_FIELDS complete
+
+				begin dialogue
+					eject good spirit
+					 //say "Well done. You brought some farming to a dead land."
+					 say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES_70"
+					 wait until read
+					send good spirit home
+				end dialogue
+
+				FieldsObjective = LO_TRUE
+				set player 0 objective TRIBUTE_OBJECTIVE_PLAYER_BUILD_FIELDS value 1
+				enable objective window
+				wait 2.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_PLAYER_BUILD_FIELDS
+				wait 1.5 seconds
+				disable objective window
+			end if			
+		end if
+		
+
+		if SettlementsObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_PLAYER_TAKE_OVER_MINOR_SETTLEMENTS complete
+
+				begin dialogue
+					 //say "You are welcome to these weak traitors.."
+					 say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES_30"
+					 wait until read
+				end dialogue
+
+				SettlementsObjective = LO_TRUE
+				set player 0 objective TRIBUTE_OBJECTIVE_PLAYER_TAKE_OVER_MINOR_SETTLEMENTS value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_PLAYER_TAKE_OVER_MINOR_SETTLEMENTS
+				wait 1.5 seconds
+				disable objective window
+			end if			
+		end if
+
+		if ImpressiveObjective == LO_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_BUILD_IMPRESSIVE_BUILDINGS complete
+
+				begin dialogue
+					eject good spirit
+					 //say "Good job! That will make the villagers happier and our town more impressive to outsiders."
+					 say "BW2T_SCRIPT_10FINAL_ADVISORS_OBJECTIVES_90"
+					 wait until read
+					send good spirit home
+				end dialogue
+
+				ImpressiveObjective = LO_TRUE
+				set player 0 objective TRIBUTE_OBJECTIVE_BUILD_IMPRESSIVE_BUILDINGS value 1
+				wait 1.5 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_BUILD_IMPRESSIVE_BUILDINGS
+				wait 1.5 seconds
+				disable objective window
+			end if			
+		end if
+
+	end loop
+	*/
+
+end script Land10Objectives

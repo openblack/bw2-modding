@@ -1,0 +1,6 @@
+run script RunLand4GatehouseCheck
+
+begin script RunLand4GatehouseCheck
+start
+	run script Land4GatehouseCheck
+end script RunLand4GatehouseCheck

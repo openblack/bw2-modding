@@ -1,0 +1,6 @@
+run script RunLand2Teleport
+
+begin script RunLand2Teleport
+start
+	run script Land2Teleport
+end script RunLand2Teleport

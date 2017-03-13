@@ -1,0 +1,14 @@
+// General
+ChallengeHeaders.txt
+GameOver.txt
+GlobalScriptBalance.txt
+SirenSpell.txt
+VolcanoSpell.txt
+EarthquakeSpell.txt
+HurricaneSpell.txt
+UniversalGlobals.txt
+TownEventAmpitheatreBearFight.txt
+Reminders.txt
+SetupBuildings.txt
+SkippedCutscene.txt
+SaveLoadScript.txt

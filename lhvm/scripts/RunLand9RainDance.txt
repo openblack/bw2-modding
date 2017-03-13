@@ -1,0 +1,8 @@
+run script RunLand9RainDance
+
+begin script RunLand9RainDance
+start
+
+	run script Land9RainDance
+
+end script RunLand9RainDance

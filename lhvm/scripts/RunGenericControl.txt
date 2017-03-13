@@ -1,0 +1,6 @@
+run script RunGenericControl
+
+begin script RunGenericControl
+start
+	run script GenericLandControl
+end script RunGenericControl

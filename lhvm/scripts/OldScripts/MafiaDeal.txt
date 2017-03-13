@@ -1,0 +1,349 @@
+//===========================================================================
+// File: MafiaDeal
+// Author: Tid
+// Date: 27/02/03
+// Description:	This script details the MafiaDeal challenge. In it, the player
+//							is recruited by a group of Norsemen to recover a lost box and
+//							use their creature to deliver it to the Japanese daimyo, Toranaga.
+//							The box is found under a tree in a nearby forest. When the player
+//							uses their creature to transport it to Toranaga, it triggers a
+//							cutscene where we learn that the box contains the head of 
+//							Toranaga's lieutenant. This triggers the skirmishes between
+//							the Japanese and the Norse, and also causes the Japanese to 
+//							send a group of soldiers to harry the player
+//===========================================================================
+
+//Constants===================================================================
+define MD_TRUE = 1
+define MD_FALSE = 0
+
+//Setup Globals================================================================
+global MD_NorsePosition[5]
+global MD_JapanesePosition[4]
+
+//Setup Actors=================================================================
+global MD_ACFell = 0
+global MD_ACNorseHenchman1 = 0
+global MD_ACNorseHenchman2 = 0
+global MD_ACNorseHenchman3 = 0
+global MD_Bonfire = 0
+
+global MD_IsHenchman1Alive = 1
+global MD_IsHenchman2Alive = 1
+global MD_IsHenchman3Alive = 1
+
+global MD_ACToranaga = 0
+global MD_ACJapaneseHenchman1 = 0
+global MD_ACJapaneseHenchman2 = 0
+global MD_ACJapaneseHenchman3 = 0
+
+//Flags======================================================================
+global MD_FoundBox = MD_FALSE	//has the player found the box yet?
+global MD_QuestComplete = MD_FALSE	//has the player given the box to the Daimyo?
+global MD_GotQuest = MD_FALSE		//has the player been given the quest by the norse guy
+global MD_BoxWarning = MD_FALSE //has the player been warned about approaching the Japanese with the box
+global MD_Highlight = 0
+
+//Declare scripts to be used in this challenge==============================================
+define script MafiaDeal
+define script MD_CreateOutlawHighlight
+define script MD_IsTreeThere
+define script MD_SetupToranaga
+define script MD_FoundBox(MD_TreePos)
+define script MD_BoxDelivered(MD_Box)
+define script MD_NearToranaga(MD_Box)
+define script MD_ClickScrollAgain(MD_HighlightPos)
+
+//run script MafiaDeal
+
+//MD_SetupFell================================================================
+//Function: This script sets up the Norse bad guy and his cronies at their camp
+begin script MafiaDeal
+
+start
+
+//sets up the positions for the Norse outlaws
+MD_NorsePosition[0] = marker at {325.000,61.938,480.000}
+MD_NorsePosition[1] = marker at {330.000,61.938,480.000}
+MD_NorsePosition[2] = marker at {330.000,61.938,485.000}
+MD_NorsePosition[3] = marker at {325.000,61.938,485.000}
+MD_NorsePosition[4] = marker at {327.500,61.938,482.500}
+
+//Sets up the actor models for the outlaws at the correct positions
+MD_ACFell =	create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_NorsePosition[0]} 
+MD_ACNorseHenchman1 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_NorsePosition[1]} 
+MD_ACNorseHenchman2 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_NorsePosition[2]} 
+MD_ACNorseHenchman3 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_NorsePosition[3]} 
+MD_Bonfire = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {MD_NorsePosition[4]}
+
+//sets up the Henchmen to face into the centre of the camp
+set MD_ACFell focus to {MD_ACNorseHenchman2}
+set MD_ACNorseHenchman1 focus to {MD_ACFell}
+set MD_ACNorseHenchman2 focus to {MD_ACFell}
+set MD_ACNorseHenchman3 focus to {MD_ACNorseHenchman2}
+
+run script MD_SetupToranaga
+run background script MD_IsTreeThere
+run script MD_CreateOutlawHighlight
+
+end script MafiaDeal
+//===========================================================================
+
+//MD_SetupToranaga===========================================================
+//Function: This script sets up the Norse bad guy and his cronies at their camp
+begin script MD_SetupToranaga
+
+start
+
+say "setting up the japs"
+wait until read
+//sets up the positions for the Norse outlaws
+MD_JapanesePosition[0] = marker at {875.000,35.282,385.000}
+MD_JapanesePosition[1] = marker at {875.000,35.282,390.000}
+MD_JapanesePosition[2] = marker at {875.000,35.282,395.000}
+MD_JapanesePosition[3] = marker at {870.000,35.282,395.000}
+
+//Sets up the actor models for the outlaws at the correct positions
+MD_ACToranaga =	create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_JapanesePosition[0]} 
+MD_ACJapaneseHenchman1 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_JapanesePosition[1]} 
+MD_ACJapaneseHenchman2 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_JapanesePosition[2]} 
+MD_ACJapaneseHenchman3 = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {MD_JapanesePosition[3]} 
+
+//sets up the Henchmen to face into the centre of the camp
+set MD_ACToranaga focus to {MD_ACJapaneseHenchman1}
+set MD_ACJapaneseHenchman1 focus to {MD_ACToranaga}
+set MD_ACJapaneseHenchman2 focus to {MD_ACJapaneseHenchman3}
+set MD_ACJapaneseHenchman3 focus to {MD_ACJapaneseHenchman2}
+
+end script MD_SetupToranaga
+//===========================================================================
+
+//Create Highlight===========================================================
+//Function: This script creates the scroll that can be clicked to kick off the new script
+
+begin script MD_CreateOutlawHighlight
+
+MD_HighlightPos = marker at {327.500,75.438,482.500}
+ // this is the position for our scroll
+
+start
+	MD_Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {MD_HighlightPos} //creates the scroll at the position of the highlight
+	ALTITUDE of MD_Highlight = 3 //sets the altitude of the scroll
+
+	wait until MD_Highlight right clicked //tells the script to wait until the scroll is right clicked on
+//	if MD_FoundBox == MD_FALSE
+		if MD_GotQuest == MD_FALSE
+
+			begin cinema
+	//			move camera position to {1509.149,35.718,1421.877} time 2
+	//			move camera focus to {1507.886,34.499,1421.270} time 2
+
+				say "Fenrick emerges from his cave"
+				wait until read
+
+				MD_IsHenchman1Alive = get VILLAGER at {MD_ACNorseHenchman1} radius 4
+				MD_IsHenchman2Alive = get VILLAGER at {MD_ACNorseHenchman2} radius 4
+				MD_IsHenchman3Alive = get VILLAGER at {MD_ACNorseHenchman3} radius 4
+				
+				if (MD_IsHenchman1Alive not exists) or (MD_IsHenchman2Alive not exists) or (MD_IsHenchman3Alive not exists)
+
+					say "Fell wonders where all his men are"
+					wait until read
+
+				end if
+
+				say "Fell tells the player that a gift was sent to the Norse"
+				wait until read
+				say "Fell says that the gift was lost when the messenger was ambushed"
+				wait until read
+				say "Fell asks the player to find the gift and take it to the Japanese"
+				wait until read
+				say "Fell promises to use his influence to help the player win over the Norse town"
+				wait until read
+
+				MD_GotQuest = MD_TRUE
+			end cinema
+		end if
+
+		run background script MD_ClickScrollAgain(MD_HighlightPos)
+
+//	end if
+
+end script MD_CreateOutlawHighlight
+//===========================================================================
+
+// MD_ClickScrollAgain=========================================
+// Function: 
+
+begin script MD_ClickScrollAgain(MD_HighlightPos)
+
+start
+	while MD_QuestComplete == MD_FALSE //while the player hasn't brought the box to Toranaga
+		MD_Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {MD_HighlightPos} //creates the scroll at the position of the highlight
+		wait until MD_Highlight right clicked //tells the script to wait until the scroll is right clicked on
+		if MD_GotQuest == MD_TRUE //if the player has already received the quest
+			begin dialogue //begin a dialogue that quickly recaps
+				say "Advisor reminds player about finding the box and returning it"
+				wait until read
+			end dialogue
+		end if
+	end while
+
+end script MD_ClickScrollAgain
+//===========================================================================
+
+//MD_IsTreeThere=============================================================
+//Function: This function will check to see if there is a tree close to the box and show the box if there isn't
+begin script MD_IsTreeThere
+
+MD_TreePos = marker at {395.000,62.688,505.000} //this is the position of the tree with the box
+MD_TheTree = MD_FALSE //this variables refers to the tree with the box within
+
+start
+
+	while MD_FoundBox != MD_TRUE //while the player hasn't found the box
+		MD_TheTree = get TREE at {MD_TreePos} radius 1	//the MD_TheTree is a tree within the radius of the position
+														//and since there is only one tree within this radius this
+														//is our tree!
+
+		if MD_TheTree exists							//if the tree is within the radius
+			MD_TheTree = MD_FALSE						// do nothing
+		else
+			MD_FoundBox = MD_TRUE						//switch the flag to true to end the while loop
+			run script MD_FoundBox(MD_TreePos)			//and run this script
+		end if
+	end while			
+
+end script MD_IsTreeThere
+//=============================================================================
+
+//MD_FoundBox====================================================================
+//Function: This script is run when the player lifts the tree that hides the box
+begin script MD_FoundBox(MD_TreePos)
+
+MD_Box = MD_FALSE
+MD_HandPos = marker at hand position //this variable represents the position of the hand
+
+start
+	MD_Box = create OBJECT ROCK at {MD_TreePos} //this will spawn the object for the box (using a rock for placeholder)
+	if {MD_TreePos} near {MD_HandPos} radius 20 //if the position of the tree and the hand are very close
+		begin cinema //begin a cutscene
+		//	move camera position to {1259.235,12.552,1393.494} time 2
+		//	move camera focus to {1269.381,2.884,1394.489} time 2.5
+
+			if MD_GotQuest == MD_FALSE //if the player hasn't received the quest
+				eject evil spirit
+					say "Advisor wonders why there's a box under a tree"	//trigger a scene where the evil spirit
+					wait until read											//asks what the hell it's for
+				send evil spirit home
+			else															//but if they have received the quest....
+				eject good spirit
+					say "Advisor congratulates player on finding the box"	
+					wait until read
+				send good spirit home
+			end if
+
+		end cinema
+		else
+		begin dialogue
+			eject evil spirit
+//				make evil spirit point at {MD_Treepos}
+				say "Advisor informs player that something has been found when the woodcutters chop the tree"
+				wait until read
+			send evil spirit home
+		end dialogue
+	end if
+
+	run script MD_NearToranaga(MD_Box)		// once the box is discovered we will continuously run the script
+											// to check if the box has been delivered
+
+end script MD_FoundBox
+//===========================================================================
+
+//MD_NearToranaga============================================================
+// Function: Checks to see if the box is approaching the Japanese and warns the player
+begin script MD_NearToranaga(MD_Box)
+
+MD_ToranagaPos = marker at {775.000,35.594,445.000}
+
+start
+	while MD_BoxWarning != MD_TRUE //if the player has not yet been warned
+		if {MD_Box} near {MD_ToranagaPos} radius 80 //if the player is within 80 units of Toranaga
+
+			if MD_GotQuest == MD_FALSE //if the player has not received the quest
+			begin dialogue //have the evil spirit give a warning
+
+				eject evil spirit
+					say "Advisor warns player that the creature is getting near to the Japanese"
+					wait until read
+				send evil spirit home
+
+			end dialogue
+			MD_BoxWarning = MD_TRUE //switch the warning flag to true
+			end if
+
+			if MD_GotQuest == MD_TRUE //if the player has received the quest
+				begin dialogue //give this warning
+					eject evil spirit
+						say "Advisor warns player that the creature is getting near to the Japanese"
+						wait until read
+						MD_BoxWarning = MD_TRUE
+					send evil spirit home
+				end dialogue
+			end if
+		end if
+	end while
+
+	//insert scripting here to make the creature stop
+
+	run script MD_BoxDelivered(MD_Box)
+
+end script MD_NearToranaga
+//===========================================================================
+
+//MD_BoxDelivered============================================================
+// Function: Checks to see if the box is near Toranaga and runs his cut scene if it is
+begin script MD_BoxDelivered(MD_Box)
+
+MD_ToranagaPos = marker at {880.000,35.282,390.000}
+
+start
+	while MD_QuestComplete != MD_TRUE
+		if {MD_Box} near {MD_ToranagaPos} radius 10
+
+			if MD_GotQuest == MD_FALSE
+				begin dialogue	//this should be a cut-scene of Toranaga getting angered at the player
+								//with the emphasis on the player not having accepted the quest
+					say "Toranaga accepts the box and opens it"
+					wait until read
+					say "Yukas head rolls out onto the floor. Toranaga is quite unhappy about this"
+					wait until read
+					say "Toranaga swear vengeance"
+					wait until read
+				end dialogue
+			end if
+
+			if MD_GotQuest == MD_TRUE
+				begin dialogue	//this should be a cutscene of Toranaga getting angered at the player
+								//with the emphasis on the player having accepted the quest
+					say "Toranaga accepts the Norse gift"
+					wait until read
+					say "Yukas head rolls out onto the floor. Toranaga is quite unhappy about this"
+					wait until read
+					say "Toranaga swear vengeance"
+					wait until read
+				end dialogue
+			end if
+
+			MD_QuestComplete = MD_TRUE //Toranaga now pissed at the player
+			delete MD_Highlight //remove the challenge scroll
+			//ENTER CUT SCENE FOR TORANAGA FLIPPING OUT HERE
+			begin dialogue
+				say "Toranaga's armies leave the Japanese capital"
+				wait until read
+			end dialogue
+		end if
+	end while
+
+end script MD_BoxDelivered
+//============================================================================

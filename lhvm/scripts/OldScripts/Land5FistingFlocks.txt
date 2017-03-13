@@ -1,0 +1,477 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FF_FALSE = 0
+define FF_TRUE = 1
+define FF_NUMBER_OF_ANIMALS = 11
+define FF_Height = 100
+define FF_Radius = 60
+
+//Whe doing a distance check
+define FF_DISTANCE_STEP_1 = 120		//Terrible throw
+define FF_DISTANCE_STEP_2 = 250		//Quite a good throw
+define FF_DISTANCE_STEP_3 = 400		//Very good throw
+
+define FF_WATER_TIMER_TIME = 100
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FF_Animal[11]
+global FF_DoomedFlock = 0	
+global FE_AdvisorBusy = FF_FALSE
+global FF_FlockPos = 0
+global FF_BestThrow = 0
+
+global FF_WaterTimer = 0
+
+//-----------------------------------------------------------------------------
+//	Defines
+//-----------------------------------------------------------------------------
+define script FFlocks_AdvisorComment(AnimalID)
+define script FFlocks_ReStock
+define script FFlocks_BestThrow(ThisThrow)
+define script FFlocks_Leader
+
+//-----------------------------------------------------------------------------
+//	Land 5 Fisting Flocks
+//-----------------------------------------------------------------------------
+begin script Land5FistingFlocks			
+	Counter = 0	
+	IdleTimer = 0
+	BeenGone = FF_TRUE
+	Camera_Height = 0
+start
+	
+	//Globals
+	run background script Land5Globals
+	
+	FF_DoomedFlock = create flock container	
+	FF_FlockPos = marker at {607.934, 116.620, 594.364}
+		
+	//Create the flock			
+	run background script FFlocks_ReStock
+	
+	set FF_DoomedFlock properties inner 3 outer 4		
+	set flock FF_DoomedFlock to {FF_FlockPos} with radius 30
+	wait 0.5 seconds
+	//Creates a leader and keeps him on the hill
+	run background script FFlocks_Leader
+	begin loop
+		
+		if not camera position near {FF_FlockPos} radius FF_Radius
+			BeenGone = FF_TRUE
+			begin loop
+				Camera_Height = get camera altitude
+			until camera position near {FF_FlockPos} radius FF_Radius and {FF_FlockPos} viewed and Camera_Height < FF_Height
+			end loop
+			//say "Height = $d" with number Camera_Height		
+			//wait until read
+		end if
+		
+		//Advisor makes a comment or explains the flock mini-mini-mini-game based on past score
+		if BeenGone == FF_TRUE or FF_BestThrow == 0
+			
+			BeenGone = FF_FALSE
+			
+			begin dialogue
+				
+				eject evil spirit
+				
+				//The player has not seen the flock before
+				//----------------------------------------
+				if FF_BestThrow == 0
+					Camera_Height = get camera altitude
+					if camera position near {FF_FlockPos} radius FF_Radius and {FF_FlockPos} viewed and Camera_Height < FF_Height
+						//GA:Hey Boss. See those animals on the hill?
+						say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_INTRO_10"
+						make evil spirit point at {FF_FlockPos}
+						wait 4 seconds
+					else
+						send evil spirit home
+					end if
+					Camera_Height = get camera altitude
+					if camera position near {FF_FlockPos} radius FF_Radius and {FF_FlockPos} viewed and Camera_Height < FF_Height
+						//EA:How about you knock them over the edge HAHA!
+						say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_INTRO_20"
+						stop evil spirit pointing
+						wait 4 seconds
+					else
+						send evil spirit home
+					end if
+
+					Camera_Height = get camera altitude
+					if camera position near {FF_FlockPos} radius FF_Radius and {FF_FlockPos} viewed and Camera_Height < FF_Height
+						
+						eject good spirit
+						//GA:That's barbaric
+						say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_INTRO_30"
+						wait 4 seconds
+					end if
+					
+					Camera_Height = get camera altitude
+					if camera position near {FF_FlockPos} radius FF_Radius and {FF_FlockPos} viewed and Camera_Height < FF_Height
+						//EA:I know, just the way I like it
+						say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_INTRO_40"
+						wait 4 seconds
+						send evil spirit home
+						send good spirit home
+					else
+						send evil spirit home
+						send good spirit home
+					end if
+					
+
+				//The player got a terrible throw last time they were here
+				//----------------------------------------
+				elsif FF_BestThrow == 1
+					//EA:I really think you should push these animals off the edge Boss. your last attempt was just pathetic!				
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_REINTRO_10"
+					make evil spirit point at {FF_FlockPos}
+					wait 4 seconds
+					
+					eject good spirit
+					//GA:Dont listen to him leader. Lets go and admire some flowers
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_REINTRO_20"
+					wait 4 seconds
+									
+				//The player got a good throw last time they were here
+				//----------------------------------------
+				elsif FF_BestThrow == 2
+					//EA:Hey look, it's that flock you were tossing about earlier. Give it another go boss, for me.
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_REINTRO_30"
+					make evil spirit point at {FF_FlockPos}
+					wait 4 seconds
+					
+					eject good spirit
+					//GA:You left before leader, there's no need to return. Just carry on past
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_REINTRO_40"
+					wait 4 seconds
+								
+				//The player got a fantastic throw last time they were here
+				//----------------------------------------
+				elsif FF_BestThrow == 3
+					//EA:Oooh it's my favourite flocks. Throw them around, you know you want too
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_REINTRO_50"
+					make evil spirit point at {FF_FlockPos}
+					wait 4 seconds
+					
+					eject good spirit
+					//GA:I can't look 
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_REINTRO_60"
+					wait 4 seconds
+							
+				end if
+				
+				send good spirit home
+				send evil spirit home
+				
+			end dialogue			
+		
+		end if		
+		
+		//Start the timer
+		IdleTimer = create timer for 300 seconds
+		
+		//Look through until the idle timer has expired. Once this has we check if the player is still 
+		//in the area.
+		
+		while get IdleTimer time remaining > 0						
+				
+				while Counter < FF_NUMBER_OF_ANIMALS
+					if FF_Animal[Counter] is FLYING  and not {FF_Animal[Counter]} near {FF_FlockPos} radius 20												
+												
+						//Advisor comments
+						run background script FFlocks_AdvisorComment(Counter)
+						
+					end if
+					Counter++
+				end while
+				
+				Counter = 0
+				
+		end while						
+		
+	end loop
+	
+end script Land5FistingFlocks
+
+//-----------------------------------------------------------------------------
+//	Fisting Flocks - Advisor Happy
+//-----------------------------------------------------------------------------
+begin script FFlocks_AdvisorComment(AnimalID)	
+	RndAdvisor = 0
+	NoWater = FF_FALSE
+start
+	
+	//We dont talk if the advisor is already talking in another background script.. because
+	//then there's a delay and the message doesnt make sense
+	if FE_AdvisorBusy == FF_FALSE
+			
+		//Well we're busy now!
+		FE_AdvisorBusy = FF_TRUE
+		
+		//sometimes the wait comments mean we dont want to comment on the water
+		NoWater = FF_FALSE
+
+		//The faster the animals speed, the happier the advisor is	
+		begin dialogue
+			
+			eject evil spirit
+
+			RndAdvisor = number from 1 to 6
+
+			//EA: Looking good
+			if RndAdvisor == 1
+				say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTFIRST_10"
+				NoWater = FF_TRUE
+
+			//EA: Lets see how far that went
+			elsif RndAdvisor == 2
+				say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTFIRST_20"
+				NoWater = FF_TRUE
+
+			//EA: I love it when you do that
+			elsif RndAdvisor == 3
+				say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTFIRST_30"
+
+			//EA: Lets do this more often Boss
+			elsif RndAdvisor == 4
+				say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTFIRST_40"
+
+			//EA: Punish the animals!
+			elsif RndAdvisor == 5
+				say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTFIRST_50"
+
+			//EA: When he lands he'll have one hell of a bruise
+			elsif RndAdvisor == 6
+				say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTFIRST_60"
+				NoWater = FF_TRUE
+
+			end if
+
+			wait until read
+
+			wait until not FF_Animal[AnimalID] is FLYING or 2 seconds
+			
+			//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+			//Check to see whether the animal is in the sea
+			//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+			if not {FF_Animal[AnimalID]} on land and get FF_WaterTimer time remaining <= 0 and NoWater == FF_FALSE
+				
+				FF_WaterTimer = create timer for FF_WATER_TIMER_TIME seconds
+
+				//Now choose a random message about the sea
+				RndAdvisor = number from 1 to 3
+				
+				if RndAdvisor == 1
+				
+					eject good spirit
+					
+					//GA: Oh no, the poor creature he's drowning
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_10"
+					wait 4 seconds
+
+					eject evil spirit
+					
+					//EA: Yes but at least it's a quick death
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_20"
+					wait 4 seconds
+					
+					//GA: No it's not. It's a terrible way to die
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_30"
+					wait 4 seconds
+					
+					send good spirit home
+					send evil spirit home
+					
+				elsif RndAdvisor == 2
+				
+					eject evil spirit
+					
+					//EA: Whoooah he's not going to last long in these cold waters
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_40"
+					wait 4 seconds
+
+					eject good spirit
+					
+					//GA: Quick pull the animal out
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_50"
+					wait 4 seconds
+
+					//EA: Why would you do a stupid thing like that? I say leave it there to die
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_60"
+					wait 4 seconds
+					
+					send good spirit home
+					send evil spirit home
+					
+				elsif RndAdvisor == 3
+					
+					eject good spirit
+					
+					//GA: Fish live in the sea leader, not farm animals
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_70"
+					wait 4 seconds
+
+					eject evil spirit
+					
+					//EA: Your so much fun Boss, why not do that again?
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_80"
+					wait 4 seconds
+
+					//GA: Dont give him ideas you ghastly little demon
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTWATER_90"
+					wait 4 seconds
+					
+					send good spirit home
+					send evil spirit home
+					
+				end if
+			
+			//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+			// Distance comments
+			//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+			else								
+
+				//Terrible throw
+				if get distance from {FF_Animal[AnimalID]} to {FF_FlockPos} < FF_DISTANCE_STEP_1
+					//EA:Your distance throwing is, shocking
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTDISTANCE_10"
+					wait 3 seconds
+					
+					eject good spirit
+					//GA:You may have been gentle, but I'd rather you didnt throw them at all!
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTDISTANCE_20"
+					
+					run script FFlocks_BestThrow(1)
+				
+				//Good throw
+				elsif get distance from {FF_Animal[AnimalID]} to {FF_FlockPos} < FF_DISTANCE_STEP_2
+
+					//EA:Good distance on your throw there
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTDISTANCE_30"
+					wait 3 seconds
+					
+					eject good spirit
+
+					//GA:He's along way from his friends now
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTDISTANCE_40"
+					
+					run script FFlocks_BestThrow(2)
+
+				//Superb throw
+				//elsif get distance from {FF_Animal[AnimalID]} to {FF_FlockPos} > FF_DISTANCE_STEP_3
+				else
+					//EA: Superb distance on your throw boss!
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTDISTANCE_50"
+					wait 3 seconds
+					
+					eject good spirit
+					//GA:He's lost, poor little animal
+					say "BW2T_SCRIPT_05NEW_FISTINGFLOCKS_COMMENTDISTANCE_60"
+					
+					run script FFlocks_BestThrow(3)
+
+				end if
+
+				wait 3 seconds
+			end if
+			
+			//Now set the animal to nothing so it cannot be used again
+			release FF_Animal[AnimalID]
+			FF_Animal[AnimalID]  = 0
+			
+			//Not busy any more
+			FE_AdvisorBusy = FF_FALSE
+			
+		end dialogue
+	
+	end if		
+	
+end script FFlocks_AdvisorComment
+
+//-----------------------------------------------------------------------------
+//	Fisting Flocks - Advisor Happy
+//-----------------------------------------------------------------------------
+begin script FFlocks_ReStock
+	Counter = 0	
+	RndAnimal = 0
+start
+	
+
+	begin loop
+		
+		if not FF_Animal[Counter] exists
+			
+			RndAnimal = number from 1 to 3
+			
+			//Make a sheep
+			if RndAnimal == 1
+				FF_Animal[Counter] = create ANIMAL SHEEP at {FF_FlockPos} + {number from -5 to 5, number from -5 to 5}		
+			
+			//Make a cow
+			elsif RndAnimal == 2
+				FF_Animal[Counter] = create ANIMAL COW at {FF_FlockPos} + {number from -5 to 5, number from -5 to 5}		
+				
+			//Make a pig
+			elsif RndAnimal == 3
+				FF_Animal[Counter] = create ANIMAL PIG at {FF_FlockPos} + {number from -5 to 5, number from -5 to 5}		
+				
+			end if
+			
+			add FF_Animal[Counter] to flock FF_DoomedFlock
+			
+		end if
+		
+		Counter++
+
+		if Counter == FF_NUMBER_OF_ANIMALS
+			Counter = 0
+		end if
+
+
+		wait until not camera position near {FF_FlockPos} radius 75
+
+	end loop
+	
+end script FFlocks_ReStock
+
+//-----------------------------------------------------------------------------
+//	Best throw
+//-----------------------------------------------------------------------------
+begin script FFlocks_BestThrow(ThisThrow)
+start
+	if ThisThrow > FF_BestThrow
+		FF_BestThrow = ThisThrow
+	end if
+end script FFlocks_BestThrow
+
+//-----------------------------------------------------------------------------
+//	Flock Leader
+//-----------------------------------------------------------------------------
+begin script FFlocks_Leader
+	i = 0
+	FF_Leader = 0
+start
+	begin loop
+		i = 5
+		FF_Leader = 0
+		while FF_Leader not exists and i < 200
+			if i == 190 
+			end if
+			FF_Leader = get ANIMAL in FF_DoomedFlock at {FF_FlockPos} radius i
+			i += 5
+		end while
+		if FF_Leader exists
+			nominate FF_Leader as leader for flock FF_DoomedFlock
+			move FF_Leader position to {FF_FlockPos}
+			wait until FF_Leader is HELD or HEALTH of FF_Leader <= 0
+			if FF_Leader is HELD
+				wait until not FF_Leader is HELD
+				wait 3 seconds
+			end if
+		end if		
+	until i == 200
+	end loop
+end script FFlocks_Leader

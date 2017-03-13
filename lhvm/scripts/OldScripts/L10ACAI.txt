@@ -1,0 +1,24 @@
+//-----------------------------------------------------------------
+// LAND 10 AZTEC CREATURE AI
+//-----------------------------------------------------------------
+
+begin script L10ACAI
+
+ L10AztecCreaturePos = marker at {1824.752,90.131,665.690}
+
+start
+
+	L10AztecCreature = create CREATURE CREATURE_TYPE_APE at {L10AztecCreaturePos}
+	SCALE of L10AztecCreature = 0.9
+	ALIGNMENT of L10AztecCreature = -0.8
+
+	set player 1 creature to L10AztecCreature
+
+	release L10AztecCreature
+
+	begin loop
+		/// SCRIPTED BEHAVIOUR TO BE ADDED
+	until L10AztecConverted == 1
+	end loop
+
+end script L10ACAI

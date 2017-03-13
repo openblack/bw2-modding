@@ -1,0 +1,32 @@
+//-----------------------------------------------------------
+// LAND 5 GLOBALS
+//-----------------------------------------------------------
+global L5GreekTown = 0
+global L5NorseCapital = 0
+global L5NorseTown1 = 0
+global L5NorseTown2 = 0
+global L5NorseTown3 = 0
+global L5NorseTown4 = 0
+global L5NorseTown5 = 0
+global L5NorseTown6 = 0
+
+global L5CapitalConverted = 0
+
+global L5Complete = 0
+
+global L5MeteorShower = 0
+
+begin script Land5Globals
+start
+	L5GreekTown = get town with id 0
+	L5NorseCapital = get town with id 1
+	L5NorseTown1 = get town with id 2
+	L5NorseTown2 = get town with id 3
+	L5NorseTown3 = get town with id 4
+	L5NorseTown4 = get town with id 5
+	L5NorseTown5 = get town with id 6
+	L5NorseTown6 = get town with id 7
+
+	L5CapitalConverted = 0 //flag to control if major enemy town has been converted
+
+end script Land5Globals

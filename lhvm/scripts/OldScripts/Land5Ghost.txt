@@ -1,0 +1,104 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Land 5 - Ghost script
+// ~~~~~~~~~~~~~~~~~~~~~
+//
+//The Princess:
+//
+//The ghost of a Warrior is trying to get to a princess who is under guard behind the walls 
+//of a small old fort; she is surrounded by troops.
+//
+//He fights a ghost guard outside of the fort; then clambers up the wall.
+//On top of the wall he fights another guard but is killed by an arrow in the back from an archer.
+//He will repeat this until the player "saves" him by somehow stopping the archer.
+//If you help him he will then clamber down the other side and have more fights with other guards.
+//You can save him in a variety of ways; this will repeat each night.
+//A surprise is in store for the player when the Warrior finally succeeds in getting to the Princess.
+//He will slit her throat!
+//
+//Variations in the fights:
+//- Gets shot by an archer. (You can block the arrows or scare the archer so he misses/runs off)
+//- Gets outnumbered by sword wielding guards. (Topple a rock so it falls on 2 out of 3 of the troops)
+//- Falls into a trap. (Light up the trap so he can see it)
+//- Loses a fight against a better swordsman. (Freezing is a possible option here; or more rocks)
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define G5_FALSE			= 0
+define G5_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global G5_SomeThing		= G5_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script G5_Create_Characters
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land5Ghost
+
+start
+
+	run script G5_Create_Characters
+
+	wait 100 seconds
+
+	begin dialogue
+		say "Well done! Land 5 Ghost Script complete..."
+		wait until read
+		clear dialogue
+	end dialogue
+	
+	wait 10 seconds
+
+end script Land5Ghost
+//=============================
+
+
+
+//-----------------------------------------------------------------------------
+//	G5_Create_Characters
+//-----------------------------------------------------------------------------
+begin script G5_Create_Characters
+
+start
+
+end script G5_Create_Characters
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+/*
+	begin dialogue
+		eject good spirit
+		say "."
+		wait until read
+		clear dialogue
+	end dialogue
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

@@ -1,0 +1,341 @@
+//=================================================================
+// Land 3 Ill Villagers
+//=================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+define IV_FALSE = 0
+define IV_TRUE = 1
+
+define IV_MAX_BUILDERS = 5
+define IV_NUM_VILLAGERS = 35		//Villagers to start with
+
+define IV_WOOD_REQUIRED_TO_BUILD_ABODE_A = 700
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global IV_BuildHouse = 0
+global IV_CelebrateHouse = 0
+global IV_Builders = 0
+global IV_BuilderPositions[5]
+global IV_BuilderGates[5]
+global IV_IAmBusy[IV_NUM_VILLAGERS]
+
+//-----------------------------------------------------------------
+// Script defines
+//-----------------------------------------------------------------
+//define script IV_Villager(Me)
+define script IV_Builder(Me, House, ID)
+define script IV_LookForHouse
+define script IV_BuilderAction(Me, House)
+define script IV_BuildHouse(House)
+define script IV_ReallyBadAnimBodge(Me)
+define script IV_ReleaseInTime(Time)
+
+//-----------------------------------------------------------------
+// Villagers
+//-----------------------------------------------------------------
+begin script Land3IllVillagers
+	Villagers[IV_NUM_VILLAGERS]
+	VillagerLoop = 0
+	//VillagerType = 0
+	VillagerPosition = marker at {1086.176, 363.593, 1576.485}
+
+	RandomPos = marker at {0, 0, 0} //generated
+start
+
+	// Disable the town jobs of the players home town
+	disable town L3GreekTown job VILLAGER_JOB_FORESTER
+	disable town L3GreekTown job VILLAGER_JOB_FARMER
+	disable town L3GreekTown job VILLAGER_JOB_MINER
+
+	if not L3GreekTown exists
+		run script Land3Globals
+	end if
+
+	//Make sure the player has the town
+	PLAYER of L3GreekTown = 0
+	
+	L3RunningIllVillagers = 1
+
+	//run building look script
+//	run background script IV_LookForHouse
+
+	//Create the villagers
+	force while VillagerLoop < IV_NUM_VILLAGERS
+		//VillagerType = number from 1 to 2
+		
+		Villagers[VillagerLoop] = get VILLAGER at {VillagerPosition} radius 100 excluding scripted
+		
+		/*if VillagerType == 1
+			Villagers[VillagerLoop] = create VILLAGER GREEK_FARMER at {VillagerPosition} + {number from -7 to 7, 0, number from -7 to 7}
+		else
+			Villagers[VillagerLoop] = create VILLAGER GREEK_HOUSEWIFE at {VillagerPosition} + {number from -7 to 7, 0, number from -7 to 7}
+		end if*/
+
+		RandomPos = marker at {L3GreekTown} + {number from -30 to 30, 0, number from -30 to 30}
+		move Villagers[VillagerLoop] position to {RandomPos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+		run background script IV_ReallyBadAnimBodge(Villagers[VillagerLoop])
+
+		VillagerLoop++
+	end while
+
+	//Move the villagers	
+	begin loop
+
+		VillagerLoop = 0
+		begin loop
+			
+			//As long as I'm not busy
+			if IV_IAmBusy[VillagerLoop] == IV_FALSE
+	
+				//Ready to move?
+				if variable get Villagers[VillagerLoop] navigation state != variable NAV_STATE_NAVIGATING/* and not IV_CelebrateHouse exists*/
+					RandomPos = marker at {L3GreekTown} + {number from -30 to 30, 0, number from -30 to 30}
+					move Villagers[VillagerLoop] position to {RandomPos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+					run background script IV_ReallyBadAnimBodge(Villagers[VillagerLoop])					
+				end if
+/*
+				//Shall I go and build this house?
+				if IV_BuildHouse exists and IV_BuilderGates[5] == IV_FALSE
+					run background script IV_Builder(Villagers[VillagerLoop], IV_BuildHouse, VillagerLoop)
+				end if
+
+				if IV_CelebrateHouse exists and {Villagers[VillagerLoop]} near {IV_CelebrateHouse} radius 10
+					move villager Villagers[VillagerLoop] focus to {IV_CelebrateHouse}
+					play anim "a_p_clap1" on Villagers[VillagerLoop] loop 2
+				end if
+*/
+			end if
+
+			VillagerLoop++
+			wait 0.1 seconds
+
+		until VillagerLoop == IV_NUM_VILLAGERS
+		end loop
+		
+		// Should we release the villagers?
+		// L3FedTheVillagers is set in the starving villagers script
+		if L3FedTheVillagers == IV_TRUE
+			wait 2 seconds
+			L3VillagerRelease = IV_TRUE
+		end if
+
+	until L3VillagerRelease == IV_TRUE
+	end loop
+
+	//Reset anims on these villagers
+	VillagerLoop = 0
+	force while VillagerLoop < IV_NUM_VILLAGERS
+		HEALTH of Villagers[VillagerLoop] = 1.0
+		attach Villagers[VillagerLoop] to L3GreekTown
+		set Villagers[VillagerLoop] position to {Villagers[VillagerLoop]}
+		cancel Villagers[VillagerLoop] anim override
+		release Villagers[VillagerLoop]
+		VillagerLoop++
+	end while
+	
+	// This is used in the starving villagers script to signal that it's ok to start monitoring the health of the
+	// villagers
+	L3OkToCheckForHealthOfVillagers = IV_TRUE
+
+end script Land3IllVillagers
+
+//-----------------------------------------------------------------
+// Builders
+//-----------------------------------------------------------------
+begin script IV_Builder(Me, House, ID)
+	Builders[5]
+	BuilderPositions[5]
+	BuilderLoop = 0
+	Gate = 0
+start
+
+	//Builder positions
+	if IV_BuilderPositions[0] == 0
+		IV_BuilderPositions[0] = marker at get world position from House to {2.044, -0.002, -1.367}
+		IV_BuilderPositions[1] = marker at get world position from House to {3.744, -0.020, 0.585}
+		IV_BuilderPositions[2] = marker at get world position from House to {-2.078, 0.028, 1.853}
+		IV_BuilderPositions[3] = marker at get world position from House to {0.440,0.031,2.504}
+		IV_BuilderPositions[4] = marker at get world position from House to {-2.385, 0.018, -2.174}
+	end if
+
+	//find a position
+	Gate = 0
+	while IV_BuilderGates[Gate] == IV_TRUE and Gate < 5
+		Gate++
+	end while
+
+	if Gate < 5		
+		IV_IAmBusy[ID] = IV_TRUE
+		IV_BuilderGates[Gate] = IV_TRUE
+
+		cancel Me anim override
+
+		move Me position to {IV_BuilderPositions[Gate]}
+		wait until {Me} at {IV_BuilderPositions[Gate]}
+		move villager Me focus to {House}
+
+		run background script IV_BuildHouse(House)
+
+		run script IV_BuilderAction(Me, House)
+
+		//Force the script to reset positiosn when building the next
+		IV_BuilderPositions[0] = 0
+
+		IV_BuilderGates[Gate] = IV_FALSE
+		IV_IAmBusy[ID] = IV_FALSE
+	end if
+	
+end script IV_Builder
+
+//-----------------------------------------------------------------
+// Builders
+//-----------------------------------------------------------------
+begin script IV_LookForHouse
+	HouseBuffer[3]
+	ThisHouse = 0
+	Woodpile = 0
+	WoodAtHouse = 0
+start
+
+	begin loop
+		//No house is being built
+		if IV_Builders == 0
+			IV_BuildHouse = get HOUSE ABODE_INFO_GREEK_HOUSE_A at {L3GreekTown} radius 50 excluding scripted			
+
+			if IV_BuildHouse exists
+
+/*				//Wait until the woodpile exists
+				begin loop
+					WoodPile = get building woodpile in IV_BuildHouse
+					wait 0.1 seconds
+				until WoodPile exists
+				end loop
+
+				///wait until there is enough wood
+				begin loop
+					Wood = get resource RESOURCE_TYPE_WOOD in WoodPile
+				until Wood >= IV_WOOD_REQUIRED_TO_BUILD_ABODE_A
+				end loop
+*/
+				wait until BUILT of IV_BuildHouse >= 1.0
+				if not HouseBuffer[ThisHouse] exists
+					HouseBuffer[ThisHouse] = IV_BuildHouse
+					ThisHouse++
+				end if
+			end if
+
+		end if
+		wait 0.5 seconds
+	until L3VillagerRelease == IV_TRUE
+	end loop
+
+end script IV_LookForHouse
+
+//-----------------------------------------------------------------
+// Builder control
+//-----------------------------------------------------------------
+begin script IV_BuilderAction(Me, House)
+	RandomAction = 0
+start
+
+	begin loop
+		RandomAction = number from 1 to 3
+
+		//Hammer
+		if RandomAction == 1
+
+			set Me carrying CARRIED_OBJECT_HAMMER
+			play anim "a_p_hammering_into" on Me
+			wait until Me played
+
+			play anim "a_p_hammering" on Me loop 3
+			wait until Me played
+
+			play anim "a_p_hammering_outof" on Me
+			wait until Me played
+			set Me carrying CARRIED_OBJECT_NONE
+
+		//Hammer 2
+		elsif RandomAction == 2
+
+			set Me carrying CARRIED_OBJECT_MALLET_HEAVY
+			play anim "a_p_sledgehammer_into" on Me
+			wait until Me played
+
+			play anim "a_p_sledgehammer" on Me loop 3
+			wait until Me played
+
+			play anim "a_p_sledgehammer_outof" on Me
+			wait until Me played
+			set Me carrying CARRIED_OBJECT_NONE
+
+		//Saw
+		elsif RandomAction == 3
+
+			set Me carrying CARRIED_OBJECT_SAW
+			play anim "a_p_saw_wood_into" on Me
+			wait until Me played
+
+			play anim "a_p_saw_wood" on Me loop 3
+			wait until Me played
+
+			play anim "a_p_saw_wood_outof" on Me
+			wait until Me played
+			set Me carrying CARRIED_OBJECT_NONE
+
+		end if
+
+	until BUILT of House == 1.0 or L3VillagerRelease == IV_TRUE
+	end loop
+
+	set Me carrying CARRIED_OBJECT_NONE
+
+end script IV_BuilderAction
+
+//-----------------------------------------------------------------
+// Build House
+//-----------------------------------------------------------------
+begin script IV_BuildHouse(House)
+	BuildWait = 0
+start
+
+	//Build the house
+	begin loop		
+		BuildWait = (number from 0 to 10) / 10
+		wait BuildWait seconds
+		BUILT of House += 0.01
+	until BUILT of House == 1.0
+	end loop
+
+	release IV_BuildHouse
+	IV_BuildHouse = 0
+
+	IV_CelebrateHouse = House
+	wait 5 seconds
+	release IV_CelebrateHouse
+	IV_CelebrateHouse = 0
+
+end script IV_BuildHouse
+
+//-----------------------------------------------------------------
+// Really Bad Anim Bodge
+//-----------------------------------------------------------------
+begin script IV_ReallyBadAnimBodge(Me)
+start
+	wait 2 seconds
+	override Me anim "a_revolt_hungry_1"
+end script IV_ReallyBadAnimBodge
+
+
+//-----------------------------------------------------------------
+// Release in time
+//-----------------------------------------------------------------
+begin script IV_ReleaseInTime(Time)
+start
+	wait Time seconds
+	L3VillagerRelease = IV_TRUE
+end script IV_ReleaseInTime

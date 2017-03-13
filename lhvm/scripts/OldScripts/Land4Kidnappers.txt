@@ -1,0 +1,684 @@
+//==================================================================
+// Land 4 Kidnappings
+// Matt.L (rubbish version)
+// Tom.R (brand spanking new version)
+//==================================================================
+
+//---------------------------------------------------------
+// Cosntants
+//---------------------------------------------------------
+define KN_FALSE = 0
+define KN_TRUE = 1
+
+//Completed defines
+define KN_NOT_COMPLETED = 0
+define KN_COMPLETED_GAVE_FOOD = 1
+
+
+//---------------------------------------------------------
+// Globals
+//---------------------------------------------------------
+
+global Marauders = 0
+global Actor = 0
+global FoodDrop = 0
+global DayChanged = 0
+
+//---------------------------------------------------------
+// Script defines
+//---------------------------------------------------------
+define script KN_Intro
+define script KN_Outro(FinshedGood)
+define script KN_WatchTheDays
+
+
+//---------------------------------------------------------
+// Land 4 Kidnappings
+//---------------------------------------------------------
+begin script Land4Kidnappers
+	Scroll = 0
+	ScrollPos = marker at {1024.110, 232.518, 998.233}
+	
+	GetVillager = 0
+	MarauderTimer = create timer for 0 seconds
+	MaraudersNear = 0
+	Destination = marker at {1038.186, 236.220, 993.811}
+	Food = 0
+	StoragePit = 0
+	Moved = 0
+	FinalPos = marker at {394.239, 191.939, 1357.508}
+	FoodAdded = 0
+	DropPos = marker at {1080.759, 239.156, 1011.240}
+	TempRock = 0
+	Influence = 0
+	CurrFood = 0
+	FoodTake = marker at {1076.936, 239.228, 1014.440}
+	ActorPos = marker at {1030.762, 235.038, 998.350}
+	MovePos = marker at {926.725, 219.997, 998.104}
+
+start
+	
+	
+	//Quickstart the prison camp
+	//run script KN_PrisonCamp
+	//wait 50000000000 seconds
+	//run script KN_Outro(KN_FALSE)
+
+	//if KN_DEBUG_QUICKSTART == KN_FALSE
+		Scroll = create highlight SILVER name "BW2T_SCRIPT_04FINAL_KIDNAPPERS_10" remind "BW2T_SCRIPT_04FINAL_KIDNAPPERS_20" at {ScrollPos}
+		ALTITUDE of Scroll = 5
+		wait until Scroll right clicked
+
+		set fade red 0 green 0 blue 0 time 1
+		delete Scroll
+		wait 1 seconds
+
+		TempRock = create OBJECT ROCK at {DropPos} + {3,0}
+		SCALE of TempRock = 0.1
+		TempRock = create OBJECT ROCK at {DropPos} + {1.5,1.5}
+		SCALE of TempRock = 0.1
+		TempRock = create OBJECT ROCK at {DropPos} + {0,3}
+		SCALE of TempRock = 0.1
+		TempRock = create OBJECT ROCK at {DropPos} + {-1.5,-1.5}
+		SCALE of TempRock = 0.1
+		TempRock = create OBJECT ROCK at {DropPos} + {-3,0}
+		SCALE of TempRock = 0.1
+		TempRock = create OBJECT ROCK at {DropPos} + {-1.5,1.5}
+		SCALE of TempRock = 0.1
+		TempRock = create OBJECT ROCK at {DropPos} + {1.5,-1.5}
+		SCALE of TempRock = 0.1
+		TempRock = create OBJECT ROCK at {DropPos} + {0,-3}
+		SCALE of TempRock = 0.1
+
+		Actor = create VILLAGER NORSE_FARMER at {ActorPos}
+
+		Influence = create influence at {DropPos} radius 6
+		FoodDrop = create STORE FOOD at {DropPos}
+		enable villagers ignore FoodDrop resource
+				
+		//begin cinema
+		//	set camera position to {1033.657, 239.750, 999.374}
+		//	set camera focus to {948.891, 188.291, 986.489}
+
+		//	set fade in time 3
+			//say "BW2T_SCRIPT_04FINAL_ADVISORS_MARAUDER_EXTRA_10"
+			//wait until read
+
+			//say "Give them the food they want or help out the towns people"
+
+		//end cinema
+		run script KN_Intro
+		Marauders = create platoon PLATOON_INFO_MARAUDER at {MovePos} with 15 men and 0 women
+		set Marauders player 4
+		StoragePit = get STORE at {Destination} radius 500
+		release Actor
+
+		Scroll = create highlight SILVER name "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_REMINDER" remind "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_REMINDER" at {ScrollPos}
+		ALTITUDE of Scroll = 5
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 with amount 1 text "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_REMINDER" amount 1 description "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_REMINDER" class TRIBUTE_OBJECTIVE_CLASS_SPECIAL  reward GLOBAL_VALUE_TRIBUTE_LAND_4_KIDNAPPERS_KILLED
+		L4ShowingKidnappers = 1
+		run background script KN_WatchTheDays
+
+		//set MarauderTimer time to 120 seconds
+		while Marauders exists and MaraudersNear == 0
+			if  DayChanged == 3 and Moved == 0 //get MarauderTimer time remaining == 0
+				move Marauders position to {Destination}
+				Moved = 1
+				begin dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_50"
+					wait until read
+					send good spirit home
+				end dialogue
+			end if
+
+			if {Marauders} near {Destination} radius 30
+				MaraudersNear = 1
+			end if
+
+			//Keep the village food at 0 (might cause problems)
+			//if FoodAdded == 0
+				wait 1 second
+				remove resource RESOURCE_TYPE_FOOD 5000 from StoragePit
+			//end if
+ 
+			CurrFood = get resource RESOURCE_TYPE_FOOD in FoodDrop
+			if CurrFood > 5000 and FoodAdded < 1
+				FoodAdded++
+			end if
+
+			if FoodAdded == 1
+				//say "Enough food"
+				begin dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_110"
+					wait until read
+					send good spirit home
+				end dialogue
+				//set MarauderTimer time to 5 seconds
+				FoodAdded++
+			end if
+
+			
+		end while
+
+		if not Marauders exists
+			//You killed them
+			run script KN_Outro(KN_FALSE)
+
+			increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_KIDNAPPERS_KILLED
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+			wait 2.5 seconds
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+		
+		elsif {Marauders} near {Destination} radius 30
+		
+			begin dialogue
+			say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_80"
+			wait 15 seconds
+            end dialogue
+
+			add resource RESOURCE_TYPE_FOOD 1 to FoodDrop
+			CurrFood = get resource RESOURCE_TYPE_FOOD in FoodDrop
+			
+			if not Marauders exists
+				//Killed them
+				run script KN_Outro(KN_FALSE)
+
+				wait 1 seconds
+				increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_KIDNAPPERS_KILLED
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+				wait 2.5 seconds
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+			
+
+			//They took all your food
+			elsif FoodAdded != 0 and CurrFood > 5000
+				move Marauders position to {FoodTake}
+				wait 10 seconds
+
+				delete FoodDrop
+				run script KN_Outro(KN_TRUE)
+
+				increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_KIDNAPPERS_FED
+				move Marauders position to {FinalPos}
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+				wait 2.5 seconds
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+			else
+				//Smash the place up
+				begin dialogue
+				say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_90"
+				wait until read
+				end dialogue
+				//DEBUG - I'll take this out later if it causes problems, but it shouldn't
+				if L4NorseTown6 not exists
+					run script Land4Globals
+				end if
+				set Marauders attack L4NorseTown6 with severity 0.3
+				//add action PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN using L4NorseTown6 to Marauders action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {FinalPos} to Marauders action queue
+				//say "Oh dear you failed"
+				//Check for dead platoon
+				set MarauderTimer time to 30 seconds
+				while get MarauderTimer time remaining > 0
+					if not Marauders exists
+						//Killed them
+						run script KN_Outro(KN_FALSE)
+						wait 1 seconds
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_KIDNAPPERS_KILLED
+						set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+						wait 2.5 seconds
+						set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+						
+						set MarauderTimer time to 0 seconds
+
+					end if
+				end while
+
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_FAILED
+				wait 2.5 seconds
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_FAILED_HIDDEN
+
+			end if
+
+		end if
+
+		delete Influence
+		delete Scroll
+
+		
+		//Wait until night fall
+		//wait until get game time > 18.00
+		//run script KN_LookForFood		
+	//end if
+
+	//Setup the slave positions 
+//	KN_SlavePositions[0] = marker at {1701.087, 377.708, 1685.635}
+//	KN_SlavePositions[1] = marker at {1701.154, 377.710, 1684.869}
+//	KN_SlavePositions[2] = marker at {1695.661, 377.689, 1685.582}
+//	KN_SlavePositions[3] = marker at {1702.537, 377.854, 1682.888}
+//	KN_SlavePositions[4] = marker at {1696.690, 377.769, 1688.061}
+
+	//run script KN_NorseControl
+
+end script Land4Kidnappers
+
+
+
+//---------------------------------------------------------
+// Kid nap intro
+//---------------------------------------------------------
+begin script KN_Intro
+
+	Leader = 0
+	MarActors1 = 0
+	MarActors2 = 0
+start
+	
+	MarActors1 = create platoon PLATOON_INFO_MARAUDER at {996.141, 225.922, 963.937} with 7 men and 0 women
+	MarActors2 = create platoon PLATOON_INFO_MARAUDER at {971.744, 222.624, 982.294} with 7 men and 0 women
+	set MarActors1 player 4
+	set MarActors2 player 4
+
+
+	begin cinema
+		start music "cut_scene_evil_34s_01"
+		move game time 10.00 time 10
+		
+		set Actor position to {998.697, 224.523, 986.536}
+		move Actor position to {998.697, 224.523, 986.536}
+		set Actor focus to {997.214, 224.495, 984.963}
+		Leader = create VILLAGER JAILER at {986.014, 224.043, 974.366}
+		set Leader focus to {998.697, 224.523, 986.536}
+		
+		move Leader position to{997.214, 224.495, 984.963}
+		set camera lens 75
+		set camera position to {1043.573, 261.103, 999.081}
+		set camera focus to {967.108, 200.886, 976.132}
+		move camera position to {1010.212, 234.834, 989.055} time 24 easein 8 easeout 2
+		move camera focus to {933.717, 174.612, 966.210} time 24 easein 8 easeout 2
+		set camera lens 32 time 24
+		move MarActors1 position to {998.376, 224.740, 981.241}
+		move MarActors2 position to {991.811, 224.377, 985.873}
+		set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MAX of MarActors1 to 2.0
+		set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MAX of MarActors2 to 2.0
+		
+		wait 1.5 seconds
+		set fade in time 3
+		
+		wait 12 seconds
+		say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_10"
+		
+		
+		
+		//move camera position to {992.100, 241.876, 970.365} time 8
+		//move camera focus to {1014.494, 168.381, 1034.373} time 8
+		
+		wait until read
+		
+		
+		move Leader position to {975.522, 221.603, 960.105}
+		
+		
+		//wait 0.5 seconds
+		//set camera position to {993.509, 233.124, 969.764}
+		//set camera focus to {1014.468, 187.054, 1056.007}
+		//set camera lens 45
+		//move camera position to {993.370, 233.428, 969.194} time 8
+		//move camera focus to {1014.329, 187.358, 1055.436} time 8
+		
+		wait 2 seconds
+		move MarActors1 position to {975.522, 221.603, 960.105}
+		move MarActors2 position to {975.522, 221.603, 960.105}
+		wait 2 seconds
+		move camera position to {1011.852, 235.709, 991.350} time 10
+		move camera focus to {938.432, 170.977, 970.873} time 10
+		
+		
+		
+		
+
+		
+		
+		
+		
+		move Actor position to {1004.600, 225.389, 991.982}
+		wait 1 seconds
+		say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_20"
+		wait until read
+		wait 1 seconds
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		delete MarActors1
+		delete MarActors2
+		set camera position to {1084.587, 253.104, 994.500}
+		set camera focus to {1069.352, 188.753, 1069.512} 
+		set camera lens 70 
+		wait 1 seconds
+		eject good spirit
+		eject evil spirit
+		wait 1 seconds
+		set fade in time 1
+	
+		
+		
+		
+		say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_30"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_40"
+		wait until read
+
+		make good spirit point at {FoodDrop}
+		//say "Drop your food here"
+		say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_100"
+		wait until read
+
+		send good spirit home
+		send evil spirit home
+
+		stop music with fadetime 3
+	end cinema
+
+end script KN_Intro
+
+begin script KN_Outro(FinishedGood)
+	BPat1 = 0
+	BPat2 = 0
+	
+	D1 = 0
+	D2 = 0
+	D3 = 0
+	D4 = 0
+	D5 = 0
+	D6 = 0
+	
+	PartyPeople[20]
+	PP = 0
+	Counter = 0
+	SexNumber = 0
+	PartyPos = marker at {1038.749, 236.435, 997.895}
+	OMan = 0 
+	CinemaActor = 0
+	Align = 0	
+
+start
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	begin cinema
+		start music "cut_scene_happy_01" loop 1000
+		
+		
+		
+		
+		
+		
+	
+		//CinemaActor = create CHILD INDIGENOUS_HOUSEWIFE at {1124.642, 244.483, 1037.581}
+		//play anim "a_p_child_hopscotch2" on CinemaActor loop 10000
+		
+		
+		
+		//wait 50000 seconds
+		//set CinemaActor focus to {1107.734, 245.126, 1046.567}
+		//wait 50000 seconds
+		
+		//Walk1 = create VILLAGER NORSE_HOUSEWIFE at {1087.926, 237.268, 980.390}
+		//Walk2 = create VILLAGER NORSE_HOUSEWIFE at {1085.029, 236.969, 978.923}
+		//move Walk1 position to {1084.871, 237.245, 980.849}
+		//move Walk2 position to {1088.587, 237.042, 979.035}
+		
+		//marker at {1087.926, 237.268, 980.390}
+		//marker at {1084.871, 237.245, 980.849}
+		
+		//marker at {1085.029, 236.969, 978.923}
+		//marker at {1088.587, 237.042, 979.035}
+		//play anim "a_p_walk_female_good" on CinemaActor loop 10000
+		//play anim "a_p_waving_walking" on CinemaActor loop 10000
+		//play anim "a_p_dance_celebrate04" on CinemaActor loop 10000
+		//play anim "a_p_excited_2" on CinemaActor loop 10000
+		//play anim "a_p_bath_enjoying" on CinemaActor loop 10000
+		
+		
+		
+		
+		
+		set clipping window across 0 down 0.25 width 0.4 height 0.5 time 0
+		wait 0.5 seconds
+
+		set camera position to {1047.547, 330.776, 869.355}
+		set camera focus to {1103.468, 264.388, 919.007}
+		move camera position to {1049.165, 326.426, 874.913} time 10
+		move camera focus to {1105.085, 260.038, 924.565} time 10
+		
+		
+		set fade in time 3
+		wait 4 seconds
+		set fade red 0 green 0 blue 0 time 3
+		wait 3 seconds
+		
+		set clipping window across 0.2 down 0.5 width 0.2 height 0.25 time 0
+		wait 0.5 seconds
+		
+		
+		CinemaActor = create VILLAGER NORSE_HOUSEWIFE at {1109.350, 245.666, 1049.656}
+		set CinemaActor focus to {1107.734, 245.126, 1046.567}
+		play anim "a_p_excited_2" on CinemaActor loop 10000
+		set anim speed of CinemaActor to 0.8
+		set camera position to {1105.880, 251.421, 1047.606}
+		set camera focus to {1177.816, 181.973, 1049.254}
+		move camera position to {1106.331, 250.900, 1047.868} time 12
+		move camera focus to {1178.267, 181.453, 1049.516} time 12
+	
+		set fade in time 3
+		wait 4 seconds
+		set fade red 0 green 0 blue 0 time 3
+		wait 3 seconds
+		
+		set clipping window across 0.2 down 0.25 width 0.6 height 0.25 time 0
+		
+		set camera position to {1047.763, 237.141, 978.658}
+		set camera focus to {1114.462, 247.194, 1052.486}
+		move camera position to {1047.805, 237.194, 978.704} time 7
+		move camera focus to {1114.504, 247.247, 1052.532} time 7
+		BPat1 = create VILLAGER NORSE_FISHERMAN at {1048.750, 236.516, 980.886}
+		BPat2 = create VILLAGER NORSE_SHEPHERD at {1048.750, 236.516, 980.886}
+		enable BPat1 alternative mesh
+		disable BPat2 alternative mesh
+
+		set BPat1 focus to {1050.076, 236.473, 978.071}
+		set BPat2 focus to {1050.076, 236.473, 978.071}
+		play paired anim VILLAGER_PAIRED_ACTION_ELOI_BACK_PAT using BPat1 with BPat2 
+		
+		wait 0.5 seconds
+		
+			
+		set fade in time 3
+		wait 4 seconds
+		set fade red 0 green 0 blue 0 time 3
+		wait 3 seconds
+		
+		set clipping window across 0.4 down 0.5 width 0.2 height 0.25 time 0
+		wait 0.5 seconds
+		
+		set camera position to {1131.986, 249.924, 1022.128}
+		set camera focus to {1183.414, 225.879, 939.804}
+		set camera lens 88
+		move camera position to {1131.986, 250.021, 1022.128} time 5
+		move camera focus to {1183.414, 225.977, 939.804} time 5
+		D1 = create VILLAGER NORSE_FARMER at {1135.932, 243.634, 1011.636}
+		D2 = create VILLAGER NORSE_HOUSEWIFE at {1135.932, 243.634, 1011.636}
+		set D1 focus to {1135.932, 243.634, 1011.636}
+		set D2 focus to {1135.932, 243.634, 1011.636}
+		
+		D3 = create VILLAGER NORSE_FORESTER at {1140.214, 244.249, 1012.936}
+		D4 = create VILLAGER NORSE_HOUSEWIFE at {1140.214, 244.249, 1012.936}
+		set D3 focus to {1140.214, 244.249, 1012.936}
+		set D4 focus to {1140.214, 244.249, 1012.936}
+		
+		D5 = create VILLAGER NORSE_SHEPHERD at {1139.484, 243.593, 1007.739}
+		D6 = create VILLAGER NORSE_HOUSEWIFE at {1139.484, 243.593, 1007.739}
+		set D5 focus to {1140.212, 243.274, 1004.510}
+		set D6 focus to {1140.212, 243.274, 1004.510}
+		
+		
+		play paired anim VILLAGER_PAIRED_ACTION_DANCE_CELEBRATE_1 using D1 with D2
+		play paired anim VILLAGER_PAIRED_ACTION_DANCE_CELEBRATE_1 using D3 with D4
+		play paired anim VILLAGER_PAIRED_ACTION_DANCE_CELEBRATE_1 using D5 with D6
+		set anim speed of D1 to 0.5
+		set anim speed of D2 to 0.5
+		set anim speed of D3 to 0.5
+		set anim speed of D4 to 0.5
+		set anim speed of D5 to 0.5
+		set anim speed of D6 to 0.5
+		
+		
+		set fade in time 3
+		wait 4 seconds
+		set fade red 0 green 0 blue 0 time 3
+		wait 3 seconds
+		
+		set clipping window across 0.6 down 0.25 width 0.2 height 0.25 time 0
+		wait 0.5 seconds
+		
+		force while Counter < 20 
+			PP=marker at get target from {PartyPos} + {10, 0, 10} to {PartyPos} distance number from 4 to 8 angle Counter*18
+			SexNumber = number from 0 to 1
+			if SexNumber == 0
+				PartyPeople[Counter] = create VILLAGER NORSE_HOUSEWIFE at {PP}
+			else
+				PartyPeople[Counter] = create VILLAGER NORSE_FARMER at {PP}
+			end if 
+			
+			set PartyPeople[Counter] focus to {PartyPos} 
+			
+			Counter++
+		end while
+	
+		play anim "A_P_SHRUG_HAPPY" on PartyPeople[0] loop 100000
+		play anim "A_P_CROWD_WON_2" on PartyPeople[1] loop 100000
+		play anim "A_P_CELEBRATION3" on PartyPeople[2] loop 100000
+		play anim "A_P_CROWD_IMPRESSED_1" on PartyPeople[3] loop 100000
+		play anim "A_P_CELEBRATION2" on PartyPeople[4] loop 100000
+		play anim "A_P_EXCITED_2" on PartyPeople[5] loop 100000
+		play anim "A_P_CLAP1_LOOP" on PartyPeople[6] loop 100000
+		play anim "A_P_JAPAN_NOD_STAND" on PartyPeople[7] loop 100000
+		play anim "A_P_CLAP4_LOOP" on PartyPeople[8] loop 100000
+		play anim "A_P_REACT_PLEASANT" on PartyPeople[9] loop 100000
+		play anim "A_P_CROWD_IMPRESSED_2" on PartyPeople[10] loop 100000
+		play anim "A_P_CLAP3_LOOP" on PartyPeople[11] loop 100000
+		play anim "A_P_CLAP2_LOOP" on PartyPeople[12] loop 100000
+		play anim "A_P_AMUSEMENT" on PartyPeople[13] loop 100000
+		play anim "A_P_WELL_DONE_WOMAN" on PartyPeople[14] loop 100000
+		play anim "A_P_EXCITED_1" on PartyPeople[15] loop 100000
+		play anim "A_P_SCRATCHING_BUM" on PartyPeople[16] loop 100000
+		play anim "A_P_PICKETING_FOR_RIOT1" on PartyPeople[17] loop 100000
+		play anim "A_P_PICKETING_FOR_RIOT2" on PartyPeople[18] loop 100000
+		play anim "A_P_MALE_ENTRANCED" on PartyPeople[19] loop 100000
+		
+		set camera position to {1067.796, 248.938, 984.634}
+		set camera focus to {986.876, 190.335, 980.502}
+		move camera position to {1065.169, 247.108, 986.470} time 5
+		move camera focus to {984.248, 188.505, 982.338} time 5
+		
+		set fade in time 3
+		wait 4 seconds
+		set fade red 0 green 0 blue 0 time 3
+		wait 3 seconds
+		
+		set clipping window across 0.7 down 0.25 width 0.3 height 0.5 time 0
+		wait 0.5 seconds
+		
+		OMan = create VILLAGER NORSE_FARMER at {1030.545, 234.864, 1004.653}
+		set OMan focus to {1024.309, 232.741, 1002.471}
+		play anim "a_p_talk1_male" on OMan loop 10000
+		set camera position to {1025.198, 235.827, 1002.480}
+		set camera focus to {1081.948, 231.952, 1084.731}
+		set camera lens 70
+		move camera position to {1024.608, 235.847, 1002.265} time 10
+		move camera focus to {1081.359, 231.972, 1084.516} time 10
+		
+		set fade in time 3
+		
+		wait 2 seconds
+		if FinishedGood == KN_TRUE
+			say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_130"
+		else
+			say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_140"
+		end if
+		
+		wait until read
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		
+		if FinishedGood == KN_TRUE
+			say "BW2T_SCRIPT_04FINAL_NORSE_MARAUDERS_120"
+			wait until read
+		end if
+		
+		set fade red 0 green 0 blue 0 time 3
+		wait 3 seconds
+		set camera position to {1015.513, 277.024, 957.417}
+		set camera focus to {1086.924, 227.793, 1007.185}
+		clear clipping window time 0
+		
+		set fade in time 2
+		wait 2 seconds
+		stop music with fadetime 3
+	end cinema
+	
+	Counter = 0
+	force while Counter < 20 
+		delete PartyPeople[Counter]
+		Counter++
+	end while 
+	wait 2 seconds
+	set fade in time 1
+	delete BPat1
+	delete BPat2
+	
+	delete D1 
+	delete D2 
+	delete D3 
+	delete D4 
+	delete D5 
+	delete D6
+	
+	delete OMan
+	delete CinemaActor
+
+	//Alignment changes
+	if FinishedGood == KN_TRUE
+		Align = get player 0 alignment
+		set player 0 alignment Align + GLOBAL_VALUE_LAND_4_KIDNAPPERS_ALIGNMENT_GOOD
+	else
+		Align = get player 0 alignment
+		set player 0 alignment Align - GLOBAL_VALUE_LAND_4_KIDNAPPERS_ALIGNMENT_BAD
+	end if
+
+end script KN_Outro
+
+//---Stupid script to watch if 3 days have passed---//
+begin script KN_WatchTheDays
+
+Time = 0
+
+start
+
+	begin loop
+		Time = get game time
+		//say "Time = $d" with number Time
+		if Time >= 20.000 and Time <= 23.59
+			DayChanged++
+			begin loop
+				Time = get game time
+			until Time > 0.000 and Time < 20.000
+			end loop
+		end if
+
+	until DayChanged == 3
+	end loop
+
+
+end script KN_WatchTheDays

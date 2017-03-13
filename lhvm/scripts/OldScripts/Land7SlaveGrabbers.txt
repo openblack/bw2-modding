@@ -1,0 +1,255 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Land 7 - Slave Grabbers script
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+//The opponents on this map are always looking for new slaves to add them to their slave armies.
+//The opponents try to steal your villagers and convert them into slaves! 
+//During the middle of the night small squads of troops will grab anyone outside of your walls. 
+//(Villagers only, not troops). They will then hurry them back to their base and convert them 
+//into slaves to send out and fight you later on. The player will be able to stop this from happening 
+//by confronting the villager stealers if within range of a “smash & grab”.
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SA_FALSE			= 0
+define SA_TRUE			= 1
+define SA_PLAYER_OWNED	= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SA_Advisors_Tell_Of_Missing_Persons
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+
+//=============================
+begin script Land7SlaveGrabbers
+
+	SA_Travel_Pos[4]				//...The movement positions for the stealers
+	SA_Holding_Captives				= SA_FALSE
+	SA_First_Time_Stolen			= SA_TRUE
+	SA_First_Time_Clicked			= SA_TRUE
+	SA_No_Of_Platoons_Killed		= -1
+	SA_Players_Town					= 0
+	SA_Enemy_Town					= 0
+	SA_No_Of_People_Stolen			= 0
+	SA_Counter						= 0
+	SA_Platoon_A					= 0
+	SA_Platoon_B					= 0
+	SA_Woodsman						= 0
+	SA_Woodsman_Current_Pos			= 0
+	SA_NewGuy						= 0
+	SA_Current_No_Of_People_Stolen	= 0
+	SA_Scroll						= 0
+	SA_Scroll_Position				= 0
+
+start
+
+	SA_Players_Town	 = get TOWN at {1561.474,53.282,2083.872} radius 100 //{1744.493,26.924,776.366}
+	SA_Enemy_Town	 = get TOWN at {1737.328,57.364,523.627} radius 100
+	SA_Travel_Pos[0] = marker at {1737.089,62.611,598.890}//Start Pos
+	SA_Travel_Pos[1] = marker at {1404.459,74.299,967.997}//Walk Pos
+	SA_Travel_Pos[2] = marker at {1373.908,188.969,1591.266}//Hill Pos
+	SA_Travel_Pos[3] = marker at {1530.692,158.355,1651.595}//Grab Pos A
+
+	begin loop
+		//-----------------------
+		if SA_Platoon_A not exists
+			//PLATOON_INFO_NORSE_MELEE_1
+			SA_Platoon_A = create platoon PLATOON_INFO_EGYPTIAN_MELEE_1 at {SA_Travel_Pos[0]} with 30 men and 0 women
+			set SA_Platoon_A player 5
+			set player 0 ENEMY to player 5
+			SA_No_Of_Platoons_Killed++ //(This starts at -1 as no platoon exists.)
+		end if
+		//-----------------------
+
+		//-----------------------
+		if SA_Counter == 0
+			if SA_Holding_Captives == SA_TRUE
+				if {SA_Platoon_A} near {SA_Travel_Pos[0]} radius 15.0
+					//...If the platoon have captured people with them.
+					//...Split those grabbed away from the platoon.
+					enable platoon SA_Platoon_A split
+					SA_Platoon_B = 0
+					SA_Platoon_B = split 3 soldiers from platoon SA_Platoon_A
+					//...Move them near to the enemy town before release.
+					move SA_Platoon_B position to {SA_Enemy_Town}
+					//- Convert them into slaves. Grab 6 guys from the platoon; change them into slaves. Split platoon.
+					//CONVERT TYPE
+					//...Release them into the Aztec town (as Egyptians?)
+					set SA_Platoon_B player 1
+					wait 3 seconds
+					release SA_Platoon_B
+					begin dialogue
+						say "Releasing 3 new slaves into the Aztec town."
+						wait until read
+						clear dialogue
+					end dialogue
+					wait 3 seconds
+					SA_Holding_Captives = SA_FALSE
+				end if
+			else
+				if {SA_Platoon_A} near {SA_Travel_Pos[0]} radius 15.0
+					//say "Counter +1: Send them off to the second pos from the first pos"
+					SA_Counter++ //...Otherwise they must be starting their journey. Go to walk_pos - 1
+					//... Move to the next location.
+					move SA_Platoon_A position to {SA_Travel_Pos[SA_Counter]}
+					wait until {SA_Platoon_A} not near {SA_Travel_Pos[0]} radius 20.0
+				end if
+			end if
+		elsif SA_Counter == 1
+			if SA_Holding_Captives == SA_TRUE
+				if {SA_Platoon_A} near {SA_Travel_Pos[1]} radius 15.0
+					//say "Counter -1"
+					SA_Counter-- //...Must be on the way back to base. Decrement the counter.
+					//... Move to the next location.
+					move SA_Platoon_A position to {SA_Travel_Pos[SA_Counter]}
+					wait until {SA_Platoon_A} not near {SA_Travel_Pos[1]} radius 20.0
+				end if
+			else
+				if {SA_Platoon_A} near {SA_Travel_Pos[1]} radius 15.0
+					//say "Counter +1"
+					SA_Counter++ //...Otherwise they must be already on their journey. Go to next pos.
+					//... Move to the next location.
+					move SA_Platoon_A position to {SA_Travel_Pos[SA_Counter]}
+					wait until {SA_Platoon_A} not near {SA_Travel_Pos[1]} radius 20.0
+				end if
+			end if
+		elsif SA_Counter == 2
+			if SA_Holding_Captives == SA_TRUE
+				if {SA_Platoon_A} near {SA_Travel_Pos[2]} radius 15.0
+					//say "Counter -1"
+					SA_Counter-- //...Must be on the way back to base. Decrement the counter.
+					//... Move to the next location.
+					move SA_Platoon_A position to {SA_Travel_Pos[SA_Counter]}
+					wait until {SA_Platoon_A} not near {SA_Travel_Pos[2]} radius 20.0
+				end if
+			else
+				if {SA_Platoon_A} near {SA_Travel_Pos[2]} radius 15.0
+					//say "Counter +1"
+					SA_Counter++ //...Otherwise they must be already on their journey. Go to next pos.
+					//... Move to the next location.
+					move SA_Platoon_A position to {SA_Travel_Pos[SA_Counter]}
+					wait until {SA_Platoon_A} not near {SA_Travel_Pos[2]} radius 20.0
+				end if
+			end if
+		elsif SA_Counter == 3
+			if SA_Holding_Captives == SA_TRUE
+				if SA_First_Time_Stolen == SA_TRUE
+					move SA_Platoon_A position to {SA_Travel_Pos[3]}
+					wait until {SA_Platoon_A} near {SA_Travel_Pos[3]} radius 15.0
+					//... Run the advisor dialogue saying they've been nicked.
+					run background script SA_Advisors_Tell_Of_Missing_Persons
+					SA_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {SA_Scroll_Position}
+					ALTITUDE of SA_Scroll = 10
+					SA_First_Time_Stolen = SA_FALSE
+				end if
+				if {SA_Platoon_A} near {SA_Travel_Pos[3]} radius 25.0
+					//say "Counter -1: Time to go back"
+					SA_Counter-- //...Must have just grabbed some villagers - go back!
+					//... Move to the next location.
+					move SA_Platoon_A position to {SA_Travel_Pos[SA_Counter]}
+					wait until {SA_Platoon_A} not near {SA_Travel_Pos[3]} radius 50.0
+				end if
+			else
+				if SA_Current_No_Of_People_Stolen < 3 //Was 6
+					//... Grab the villagers
+					SA_Woodsman = get GREEK_FORESTER at {SA_Platoon_A} radius 150
+					// <<< Might be best to make this from a point at the other side of your forests...
+					if SA_Woodsman exists and PLAYER of SA_Woodsman == SA_PLAYER_OWNED
+						if {SA_Platoon_A} not near {SA_Woodsman} radius 10
+							move SA_Platoon_A position to {SA_Woodsman} radius 5
+						else
+							//Get his current pos; then delete him and replace with someone on your side... dodgy or what.
+							SA_Woodsman_Current_Pos = marker at {SA_Woodsman}
+							delete SA_Woodsman
+							SA_NewGuy = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at {SA_Woodsman_Current_Pos}
+							if SA_First_Time_Stolen == SA_TRUE
+								SA_Scroll_Position = marker at {SA_Woodsman_Current_Pos}
+							end if
+							add villager SA_NewGuy to platoon SA_Platoon_A
+							/*begin dialogue
+								say "Forester nabbed!" //temp
+								wait until read
+								clear dialogue
+							end dialogue*/
+							SA_Current_No_Of_People_Stolen++
+							SA_No_Of_People_Stolen++
+						end if
+					end if
+				else
+					say "Current Number of people stolen is > 3"
+					SA_Current_No_Of_People_Stolen = 0
+					SA_Holding_Captives = SA_TRUE
+				end if
+			end if
+		end if
+		//-----------------------
+
+		if SA_Scroll exists
+			if SA_Scroll right clicked
+				clear right clicked object
+				if SA_First_Time_Clicked == SA_TRUE
+					say "Stop the Aztecs from stealing anymore of our people and turning them into slaves!"
+					SA_First_Time_Clicked = SA_FALSE
+				else
+					say "Reminder: Stop the Aztecs from stealing anymore of our people and turning them into slaves!"
+				end if
+			end if
+		end if
+
+		until SA_No_Of_People_Stolen > 30 or SA_No_Of_Platoons_Killed > 2
+	end loop
+
+
+	begin dialogue
+		eject good spirit
+		if SA_No_Of_People_Stolen > 30
+			say "Oh dearie me. They've stolen over 30 of our people and turned them into slaves!"
+		else
+			say "Well done! I don't think those Aztecs will try and steal anymore of our people."
+		end if
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+end script Land7SlaveGrabbers
+//===========================
+
+
+//-----------------------------------------------------------------------------
+//	SA_Advisors_Tell_Of_Missing_Persons
+//-----------------------------------------------------------------------------
+begin script SA_Advisors_Tell_Of_Missing_Persons
+
+start
+
+	begin dialogue
+		eject evil spirit
+		say "Oi! Some cheeky goits have grabbed some of our villagers and are going to make them into slaves!"
+		wait until read
+		clear dialogue
+		say "Best be on the look out in case they try it again."
+		wait until read
+		clear dialogue
+		send evil spirit home
+	end dialogue
+
+end script SA_Advisors_Tell_Of_Missing_Persons
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+

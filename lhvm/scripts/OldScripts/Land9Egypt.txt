@@ -1,0 +1,151 @@
+//------------------------------------------------
+//  LAND 9 Egyptian TOWN AI
+//------------------------------------------------
+
+define script L9EgyptTownManagement
+define script L9EgyptArmyManagement
+
+begin script Land9Egypt
+ 
+start
+ run background script L9EgyptTownManagement
+ run background script L9EgyptArmyManagement
+
+	begin loop
+		if PLAYER of L9EgyptTown == 1
+			L9EgyptConverted = 1
+		end if
+
+	until L9EgyptConverted == 1
+	end loop
+
+	/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+	begin cinema
+		say "The Egyptian Submission scripts have not been implemented yet."
+		wait until read
+		say "It will show simple shots of the villagers reacting to the change."
+		wait until read
+		say "It then goes on to show Dimitrios meeting Sanura."
+		wait until read
+		say "The last scene shows Euronymous killing Sanura..."
+		wait until read
+		say "and sending her assassins to kill Dimitrios."
+		wait until read
+	end cinema
+
+	L9EgyptConverted = 2
+
+	L9AssassinsAttack = 1
+
+end script Land9Egypt
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script L9EgyptTownManagement
+
+ InitialEgyptReligiousTolerance = 0.6
+ InitialEgyptAggression = 0.20
+ AngeredEgyptAggression = 0.50
+ InitialGreekTolerance = 0.6
+ NewGreekTolerance = 0
+ FeudValue = 0
+ GreekPopulousReaction = 0
+ 
+start
+	// Initial army setup
+	set town L9EgyptTown platoon type ARMY_UNIT_TYPE_MELEE at ratio 0.2
+	set town L9EgyptTown army type ARMY_UNIT_TYPE_MELEE platoon ratio on wall to 0.4
+	set town L9EgyptTown platoon type ARMY_UNIT_TYPE_RANGED at ratio 0.2
+	set town L9EgyptTown army type ARMY_UNIT_TYPE_RANGED platoon ratio on wall to 0.4
+	///set town L9EgyptTown defence to 80%
+
+	// Initial villager setup
+	set town L9EgyptTown desire for GATHER_FOOD to 0.70
+	set town L9EgyptTown desire for GROW_FOOD to 0.70
+	set town L9EgyptTown desire for GATHER_WOOD to 0.50
+	set town L9EgyptTown desire for GATHER_ORE to 0.50
+	set town L9EgyptTown desire for BREED to 0.60
+	set town L9EgyptTown desire for ATTACK to 0.40
+	set town L9EgyptTown desire for DEFENCE to 0.60
+	set town L9EgyptTown desire for FUN to 0.30
+
+	// Initial feud status
+	set town L9EgyptTown interracial tolerance with town L9GreekTown to InitialGreekTolerance
+	set town L9EgyptTown racial aggression with town L9GreekTown to InitialEgyptAggression
+	set town L9EgyptTown religious tolerance with town L9GreekTown to InitialEgyptReligiousTolerance
+
+	set town L9EgyptTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L9GreekTown to 0
+
+	set town L9EgyptTown impressive threshold for town L9GreekTown to 0.9
+
+	begin loop
+		// reactionary changes to town variables
+
+		if size of L9GreekTown > 500 and GreekPopulousReaction == 0
+			set town L9EgyptTown platoon type ARMY_UNIT_TYPE_MELEE at ratio 0.3
+			set town L9EgyptTown army type ARMY_UNIT_TYPE_MELEE platoon ratio on wall to 0.5
+			set town L9EgyptTown platoon type ARMY_UNIT_TYPE_RANGED at ratio 0.35
+			set town L9EgyptTown army type ARMY_UNIT_TYPE_RANGED platoon ratio on wall to 0.5
+			set town L9EgyptTown racial aggression with town L9GreekTown to AngeredEgyptAggression
+
+			NewGreekTolerance = InitialGreekTolerance/2
+			set town L9EgyptTown interracial tolerance with town L9GreekTown to NewGreekTolerance
+
+			FeudValue = get town L9EgyptTown FEUD_SYSTEM_FEUD_ACTION_JEALOUSY feud value for town L9GreekTown
+			FeudValue += 50
+			set town L9EgyptTown FEUD_SYSTEM_FEUD_ACTION_JEALOUSY feud value for town L9GreekTown to FeudValue
+
+			set town L9EgyptTown desire for GATHER_FOOD to 0.50
+			set town L9EgyptTown desire for GROW_FOOD to 0.50
+			set town L9EgyptTown desire for GATHER_WOOD to 0.50
+			set town L9EgyptTown desire for GATHER_ORE to 0.70
+			set town L9EgyptTown desire for BREED to 0.60
+			set town L9EgyptTown desire for ATTACK to 0.60
+			set town L9EgyptTown desire for DEFENCE to 0.80
+			set town L9EgyptTown desire for FUN to 0.20
+
+			GreekPopulousReaction = 1
+		end if
+
+	until L9EgyptConverted == 1
+	end loop
+
+end script L9EgyptTownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script L9EgyptArmyManagement
+
+EgyptAttackTimer = create timer for 0 seconds
+EgyptAttackDelay = 900 // maximum time between attacks
+
+start
+	set EgyptAttackTimer time to EgyptAttackDelay seconds
+
+	begin loop
+		if town L9EgyptTown feud threshold with town L9GreekTown passed ///and no attacks active
+			// check if there's enough platoons idle to create a respectable army compared to Greek defences
+			/// get number of idle platoons
+			/// get size of Greek Army
+			/// if numbers are favourable (compare two values)
+			/// send a monstrous army to assault Greek town WITH THE CREATURE
+			set EgyptAttackTimer time to EgyptAttackDelay seconds
+		end if
+
+/*
+		if get EgyptAttackTimer time remaining <= 0 and no attacks active
+			///if number of idle warrriors enough to attack compared to Greek Defences
+				/// send a big attack to Greek town
+				set EgyptAttackTimer time to EgyptPopulousDelay seconds
+			///end if
+		end if
+*/
+	until L9EgyptConverted == 1
+	end loop
+end script L9EgyptArmyManagement
+

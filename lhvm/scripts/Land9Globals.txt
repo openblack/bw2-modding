@@ -1,0 +1,34 @@
+//-----------------------------------------------------------
+// LAND 9 GLOBALS
+//-----------------------------------------------------------
+global L9GreekTown = 0
+global L9AztecCapital = 0
+global LC9_MinorSettlement[9]
+global StartBuildingWonder = 0
+global LC9_RainDanceComplete = 0
+global LC9_HelpedFishTown = 0
+global LC9_Marauders = 0
+global LC9_Marauders2 = 0
+global L9Complete = 0
+global L9ShowingRainDanceObjective = 0
+global L9ShowingIslandNymphObjective = 0
+global L9ShowingSunDialObjective = 0
+global L9ShowingThrowBlokeObjective = 0
+global L9GatesCanOpen = 0
+
+begin script Land9Globals
+start
+
+	L9GreekTown = get town with id 0
+	L9AztecCapital = get town with id 1
+	LC9_MinorSettlement[0] = get town with id 3 // Centre Town // Akaba
+	LC9_MinorSettlement[1] = get town with id 6 // West of player // el-Armana
+	LC9_MinorSettlement[2] = get town with id 7 // far west of player // Meydum
+	LC9_MinorSettlement[3] = get town with id 8 // North of Player // Mirgissa
+	LC9_MinorSettlement[4] = get town with id 9 // Town To Build // Ylaruam
+	LC9_MinorSettlement[5] = get town with id 10 // NorthWestLake // Buto
+	LC9_MinorSettlement[6] = get town with id 12 // North Lake // Talita
+	LC9_MinorSettlement[7] = get town with id 13 // warrior town // Shalfak
+	LC9_MinorSettlement[8] = get town with id 14 // Fish town // Nuri
+
+end script Land9Globals

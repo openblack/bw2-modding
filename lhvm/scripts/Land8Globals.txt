@@ -1,0 +1,344 @@
+//-----------------------------------------------------------
+// Minor settlements
+//-----------------------------------------------------------
+define L8_NUM_OF_MINOR_SETTLEMENTS					= 4
+
+//-----------------------------------------------------------------------------
+//	True/False
+//-----------------------------------------------------------------------------
+define L8_TRUE										= 1
+define L8_FALSE										= 0
+define L8_NUM_GOOD_WALLS							= 4
+define L8_NUM_EVIL_WALLS							= 4
+
+//-----------------------------------------------------------------------------
+//	City Enum
+//-----------------------------------------------------------------------------
+define L8_GREEK										= 0
+define L8_WAR_JAPANESE								= 1
+define L8_CITY_JAPANESE								= 2
+
+//-----------------------------------------------------------------------------
+//	Land Complete
+//-----------------------------------------------------------------------------
+global L8_Complete = 0
+
+//-----------------------------------------------------------------------------
+//	Settlements
+//-----------------------------------------------------------------------------
+global L8_GreekTown = 0
+global L8_JapaneseWarCapital = 0
+global L8_JapaneseCityCapital = 0
+global L8_MinorSettlement[L8_NUM_OF_MINOR_SETTLEMENTS]
+
+//-----------------------------------------------------------------------------
+//	Challenge Booleans
+//-----------------------------------------------------------------------------
+global L9ShowingMonsterMineObjective = 0
+global L9ShowingOilBaronObjective = 0
+global L9ShowingChickenWolfGrainObjective = 0
+global L9ShowingDarkDisciplesObjective = 0
+global ThrowBlokeSacrificed = 0
+
+//-----------------------------------------------------------------------------
+//	Global Counters
+//-----------------------------------------------------------------------------
+global L8_PlayerUniqueSettlementsTaken				= 0
+
+//-----------------------------------------------------------------------------
+//	Enemy Creature
+//-----------------------------------------------------------------------------
+global L8_JapaneseCreature							= 0
+
+//-----------------------------------------------------------------------------
+//	Player Ownership Arrays
+//-----------------------------------------------------------------------------
+global L8_PlayerOwnsSettlement[L8_NUM_OF_MINOR_SETTLEMENTS]
+global L8_PlayerTakenTownMethod[L8_NUM_OF_MINOR_SETTLEMENTS]
+
+global L8_PlayerThreatenSettlement[L8_NUM_OF_MINOR_SETTLEMENTS]
+global L8_NumThreatenedSettlements = 0
+
+//-----------------------------------------------------------------------------
+//	Checks on building existance
+//-----------------------------------------------------------------------------
+global L8_Wonder = 0
+
+global L8_GoodWall[L8_NUM_GOOD_WALLS]
+global L8_EvilWall[L8_NUM_EVIL_WALLS]
+
+global L8_GoodGateHouse[2]
+global L8_EvilGateHouse[2]
+
+//-----------------------------------------------------------------------------
+//	start delay
+//-----------------------------------------------------------------------------
+global L8_StartEnemyActions = L8_FALSE
+global L8_IntroPlayed = L8_FALSE
+
+define script Land8Globals
+//define script L8_TotalPlayerMinorSettlements
+define script L8_TestLandComplete
+define script L8_GiveTributeForGainingTowns
+//define script L8_CheckPlayerThreatenSettlements
+define script L8_SetupPlayerCreature
+define script L8_GetWalls
+define script L8_WaitToStartEnemyActions
+
+begin script Land8Globals
+	Ctr				= 0
+	TownsOk			= L8_TRUE
+	CreaturesOk		= L8_TRUE
+	Validate		= L8_TRUE
+	Threshold		= 0
+	UnreasonableThreshold = 250000
+start
+
+	L8_GreekTown			= get town with id L8_GREEK			//----Coros----//
+	L8_JapaneseWarCapital	= get town with id L8_WAR_JAPANESE  //----Tekashi----//
+	L8_JapaneseCityCapital	= get town with id L8_CITY_JAPANESE //----Lamasu----//
+	L8_MinorSettlement[0]	= get town with id 3				//----Denkusu----//
+	L8_MinorSettlement[1]	= get town with id 4				//----Samarita----//
+	L8_MinorSettlement[2]	= get town with id 5				//----Irigo----//
+	L8_MinorSettlement[3]	= get town with id 6				//----Kaidan----//
+
+//----Set Max Populations For Non-Player Towns----//
+
+	set town L8_JapaneseWarCapital	 maximum population to 100	//----Tekashi----//
+	set town L8_JapaneseCityCapital	 maximum population to 100	//----Lamasu----//
+	set town L8_MinorSettlement[0]	 maximum population to 20	//----Denkusu----//
+	set town L8_MinorSettlement[1]	 maximum population to 20	//----Samarita----//
+	set town L8_MinorSettlement[2]	 maximum population to 20	//----Irigo----//
+	set town L8_MinorSettlement[3]	 maximum population to 20	//----Kaidan----//
+																
+	// set not gathering ore
+	disable town L8_MinorSettlement[0] job VILLAGER_JOB_MINER
+	disable town L8_MinorSettlement[1] job VILLAGER_JOB_MINER
+	disable town L8_MinorSettlement[2] job VILLAGER_JOB_MINER
+		
+	run script L8_SetupPlayerCreature
+	run script L8_GetWalls
+	run background script L8_TestLandComplete
+	run background script L8_GiveTributeForGainingTowns
+	run background script L8_WaitToStartEnemyActions
+	//run background script L8_CheckPlayerThreatenSettlements
+
+	////////////
+	// To Greek
+
+	// War Capital
+	Threshold = get town L8_JapaneseWarCapital impressiveness
+	set migration threshold from L8_JapaneseWarCapital to L8_GreekTown GLOBAL_VALUE_THRESHOLD_LAND_8_WARCAPITAL_TO_GREEK - Threshold
+
+	// City Capital
+	Threshold = get town L8_JapaneseCityCapital impressiveness
+	set migration threshold from L8_JapaneseCityCapital to L8_GreekTown GLOBAL_VALUE_THRESHOLD_LAND_8_CITYCAPITAL_TO_GREEK - Threshold
+
+	// T1
+	Threshold = get town L8_MinorSettlement[0] impressiveness
+	set migration threshold from L8_MinorSettlement[0] to L8_GreekTown GLOBAL_VALUE_THRESHOLD_LAND_8_SETTLEMENT1_TO_GREEK - Threshold
+
+	// T2
+	Threshold = get town L8_MinorSettlement[1] impressiveness
+	set migration threshold from L8_MinorSettlement[1] to L8_GreekTown GLOBAL_VALUE_THRESHOLD_LAND_8_SETTLEMENT2_TO_GREEK - Threshold
+
+	// T3
+	Threshold = get town L8_MinorSettlement[2] impressiveness
+	set migration threshold from L8_MinorSettlement[2] to L8_GreekTown GLOBAL_VALUE_THRESHOLD_LAND_8_SETTLEMENT3_TO_GREEK - Threshold
+
+	// T4
+	Threshold = get town L8_MinorSettlement[3] impressiveness
+	set migration threshold from L8_MinorSettlement[3] to L8_GreekTown GLOBAL_VALUE_THRESHOLD_LAND_8_SETTLEMENT4_TO_GREEK - Threshold
+
+	////////////
+	// To War
+
+	// Greek
+	set migration threshold from L8_GreekTown to L8_JapaneseWarCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// City Capital
+	set migration threshold from L8_JapaneseCityCapital to L8_JapaneseWarCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// T1
+	set migration threshold from L8_MinorSettlement[0] to L8_JapaneseWarCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// T2
+	set migration threshold from L8_MinorSettlement[1] to L8_JapaneseWarCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// T3
+	set migration threshold from L8_MinorSettlement[2] to L8_JapaneseWarCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// T4
+	set migration threshold from L8_MinorSettlement[3] to L8_JapaneseWarCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	////////////
+	// To City
+
+	// War Capital
+	set migration threshold from L8_JapaneseWarCapital to L8_JapaneseCityCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// Greek
+	Threshold = get town L8_GreekTown impressiveness
+	set migration threshold from L8_GreekTown to L8_JapaneseCityCapital GLOBAL_VALUE_THRESHOLD_LAND_8_GREEK_TO_CITYCAPITAL - Threshold
+
+	// T1
+	Threshold = get town L8_MinorSettlement[0] impressiveness
+	set migration threshold from L8_MinorSettlement[0] to L8_JapaneseCityCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// T2
+	Threshold = get town L8_MinorSettlement[1] impressiveness
+	set migration threshold from L8_MinorSettlement[1] to L8_JapaneseCityCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	// T3
+	Threshold = get town L8_MinorSettlement[2] impressiveness
+	set migration threshold from L8_MinorSettlement[2] to L8_JapaneseCityCapital GLOBAL_VALUE_THRESHOLD_LAND_8_SETTLEMENT3_TO_CITYCAPITAL - Threshold
+
+	// T4
+	set migration threshold from L8_MinorSettlement[3] to L8_JapaneseCityCapital GLOBAL_VALUE_THRESHOLD_UNREASONABLYHIGH
+
+	
+end script Land8Globals
+
+begin script L8_SetupPlayerCreature
+	CreaturePos	= marker at {1853.023,249.330,805.047}
+start
+
+	//Load the creature and get it into global
+	load my_creature at {CreaturePos}
+	MyCreature = get player 0 creature
+
+	if not MyCreature exists
+		MyCreature = create CREATURE CREATURE_TYPE_LAST at {CreaturePos}
+		set player 0 creature to MyCreature
+		release MyCreature
+	end if
+
+end script L8_SetupPlayerCreature
+
+begin script L8_TestLandComplete
+start
+	wait until PLAYER of L8_JapaneseWarCapital == 0 or variable get town L8_JapaneseWarCapital status == variable TOWN_STATUS_MIGRATION_STARTED
+	wait until PLAYER of L8_JapaneseCityCapital == 0 or variable get town L8_JapaneseCityCapital status == variable TOWN_STATUS_MIGRATION_STARTED
+	L8_Complete = L8_TRUE
+end script L8_TestLandComplete
+
+begin script L8_GiveTributeForGainingTowns
+	GotTributeFromSettlement[4]
+	CityTributeAmount[2]
+	GotTributeFromWarCapital = 0
+	GotTributeFromCityCapital = 0
+	CityTributeIndex = 0
+	Count = 0
+start
+	CityTributeAmount[0] = GLOBAL_VALUE_TRIBUTE_LAND_8_CITY1
+	CityTributeAmount[1] = GLOBAL_VALUE_TRIBUTE_LAND_8_CITY2
+
+	begin loop
+		Count = 0
+		while Count < 4
+			if GotTributeFromSettlement[Count] == L8_FALSE
+				if L8_MinorSettlement[Count] exists
+					if PLAYER of L8_MinorSettlement[Count] == 0 or (variable get town L8_MinorSettlement[Count] status == variable TOWN_STATUS_MIGRATED and PLAYER of get town L8_MinorSettlement[Count] is migrating to == 0)
+						GotTributeFromSettlement[Count] = L8_TRUE
+						L8_PlayerUniqueSettlementsTaken++
+						increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_8_SETLEMENT
+					end if
+				end if
+			end if
+			Count++
+		end while
+
+		if GotTributeFromCityCapital == L8_FALSE
+			if PLAYER of L8_JapaneseCityCapital == 0 or variable get town L8_JapaneseCityCapital status == variable TOWN_STATUS_MIGRATED
+				GotTributeFromCityCapital = L8_TRUE
+				increment tribute by CityTributeAmount[CityTributeIndex]
+				CityTributeIndex++
+			end if
+		end if
+		if GotTributeFromWarCapital == L8_FALSE
+			if PLAYER of L8_JapaneseWarCapital == 0 or variable get town L8_JapaneseWarCapital status == variable TOWN_STATUS_MIGRATED
+				GotTributeFromWarCapital = L8_TRUE
+				increment tribute by CityTributeAmount[CityTributeIndex]
+				CityTributeIndex++
+			end if
+		end if
+
+		wait 0.3 seconds
+	end loop
+end script L8_GiveTributeForGainingTowns
+
+/*
+begin script L8_CheckPlayerThreatenSettlements
+	Index = 0
+	TownStatus = 0
+	MigratingToTown = 0
+start
+	while L8_NumThreatenedSettlements < L8_NUM_OF_MINOR_SETTLEMENTS
+		Index = 0
+		while Index < L8_NUM_OF_MINOR_SETTLEMENTS
+			if L8_PlayerThreatenSettlement[Index] == L8_FALSE
+				TownStatus = variable get town L8_MinorSettlement[Index] status
+				if PLAYER of L8_MinorSettlement[Index] == 0
+					L8_PlayerThreatenSettlement[Index] = L8_TRUE
+					L8_NumThreatenedSettlements++
+				elsif TownStatus == variable TOWN_STATUS_MIGRATION_STARTED
+					MigratingToTown = get town L8_MinorSettlement[Index] is migrating to
+					if MigratingToTown exists
+						if PLAYER of MigratingToTown == 0
+							L8_PlayerThreatenSettlement[Index] = L8_TRUE
+							L8_NumThreatenedSettlements++
+						end if
+					end if
+				end if
+			end if
+			Index++
+		end while
+	end while
+end script L8_CheckPlayerThreatenSettlements
+*/
+
+begin script L8_GetWalls
+
+	GoodWallPos[L8_NUM_GOOD_WALLS]
+	EvilWallPos[L8_NUM_EVIL_WALLS]
+
+	Ctr						= 0
+
+	GateHouse = 0
+
+start
+
+	// Wall section markers
+	GoodWallPos[0] = marker at {1049.163,212.415,1655.704}				// Good guy - Left side right wall
+	GoodWallPos[1] = marker at {1014.926,212.703,1699.439}					// Good guy - Left side left wall
+	GoodWallPos[2] = marker at {1338.902,227.080,1666.257}				// Good guy - Right side left wall
+	GoodWallPos[3] = marker at {1379.270,226.095,1697.924}				// Good guy - Right side right wall
+
+	EvilWallPos[0] = marker at {954.683,209.071,709.507}					// Evil guy - Left gatehouse - left wall
+	EvilWallPos[1] = marker at {723.834,200.176,1114.525}					// Evil guy - Right gatehouse - right wall
+	EvilWallPos[2] = marker at {784.349,197.701,1073.515}					// Evil guy - Right gatehouse - left wall
+	EvilWallPos[3] = marker at {949.425,209.473,792.920}					// Evil guy - Left gatehouse - right wall
+
+	Ctr = 0
+	while Ctr < L8_NUM_EVIL_WALLS
+		L8_EvilWall[Ctr] = get wall segment nearest {EvilWallPos[Ctr]} radius 15
+		Ctr++
+	end while
+
+	Ctr = 0
+	while Ctr < L8_NUM_GOOD_WALLS
+		L8_GoodWall[Ctr] = get wall segment nearest {GoodWallPos[Ctr]} radius 15
+		Ctr++
+	end while
+
+	L8_EvilGateHouse[0] = get HOUSE GATEHOUSE at {940.541,207.356,746.448} radius 15
+	L8_EvilGateHouse[1] = get HOUSE GATEHOUSE at {748.304,206.475,1085.773} radius 15
+	L8_GoodGateHouse[0] = get HOUSE GATEHOUSE at {1034.661,203.047,1681.672} radius 15
+	L8_GoodGateHouse[1] = get HOUSE GATEHOUSE at {1353.949,221.587,1696.511} radius 15
+end script L8_GetWalls
+
+begin script L8_WaitToStartEnemyActions
+start
+	wait GLOBAL_VALUE_LAND_8_ENEMY_START_DELAY seconds
+	L8_StartEnemyActions = L8_TRUE
+end script L8_WaitToStartEnemyActions

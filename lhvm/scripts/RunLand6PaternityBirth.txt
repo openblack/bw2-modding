@@ -1,0 +1,6 @@
+run script RunLand6PaternityBirth
+
+begin script RunLand6PaternityBirth
+start
+	run script Land6PaternityBirth
+end script RunLand6PaternityBirth

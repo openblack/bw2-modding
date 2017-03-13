@@ -1,0 +1,10 @@
+run script RunLand3StarvingVillagers
+
+begin script RunLand3StarvingVillagers
+start
+
+	run script Land3StarvingVillagers
+	run script Land3BuildTutorial
+	run script Land3DiscipleTutorial
+	
+end script RunLand3StarvingVillagers

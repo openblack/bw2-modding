@@ -1,0 +1,538 @@
+// True and False
+define GCAI_FALSE									= 0
+define GCAI_TRUE									= 1
+
+// Task enum
+define GCAI_TASK_PERFORMROLE						= 0
+define GCAI_TASK_CASTFIREBALLS						= 1
+define GCAI_TASK_LEADPLATOON						= 2
+define GCAI_TASK_NONE								= 3
+
+// Interupt enum
+define GCAI_INTERUPT_NONE							= 0
+define GCAI_INTERUPT_CASTFIREBALL					= 1
+define GCAI_INTERUPT_ATTACK							= 2
+define GCAI_INTERUPT_LOOK							= 3
+define GCAI_INTERUPT_CASTVOLCANO					= 4
+define GCAI_INTERUPT_MOVETOPOS						= 5
+define GCAI_INTERUPT_SMASHWALL						= 6
+
+// Task Lead Platoon State enum
+define GCAI_TASK_LEADPLATOON_STATE_CATCHUP			= 0
+define GCAI_TASK_LEADPLATOON_STATE_MOVEAHEAD		= 1
+define GCAI_TASK_LEADPLATOON_STATE_WAIT				= 2
+
+// Task Lead Platoon Constants
+define GCAI_TASK_LEADPLATOON_CONSTANT_WAITDISTANCE			= 50
+define GCAI_TASK_LEADPLATOON_CONSTANT_CATCHUPDISTANCE		= 30
+define GCAI_TASK_LEADPLATOON_CONSTANT_STOPWAITDISTANCE		= 30
+define GCAI_TASK_LEADPLATOON_CONSTANT_CHECKWAIT				= 0.2
+define GCAI_TASK_LEADPLATOON_CONSTANT_INTERUPTCHANCE		= 35
+define GCAI_TASK_LEADPLATOON_CONSTANT_ENEMYCHECKRADIUS		= 20
+define GCAI_TASK_LEADPLATOON_CONSTANT_ENEMYATTACKRADIUS		= 50
+
+// Interupt Attack Constants
+define GCAI_INTERUPT_ATTACK_CONSTANT_CHECKWAIT				= 0.2
+
+// Creature
+global GCAI_Creature = 0
+
+// Tasks and Interupts
+global GCAI_CurrentTask = 0
+global GCAI_CurrentInterupt = GCAI_INTERUPT_NONE
+
+// Task Perform Role variables
+global GCAI_Task_PerformRole_Pos = 0
+global GCAI_Task_PerformRole_Radius = 0
+global GCAI_Task_PerformRole_Role = 0
+
+// Prev Task Perform Role variables
+global GCAI_Prev_Task_PerformRole_Pos = 0
+global GCAI_Prev_Task_PerformRole_Radius = 0
+global GCAI_Prev_Task_PerformRole_Role = 0
+
+// Task Cast Fireballs variables
+global GCAI_Task_CastFireballs_FromPos = 0
+global GCAI_Task_CastFireballs_ToPos = 0
+global GCAI_Task_CastFireballs_ToRadius = 0
+
+// Task Lead Platoon variables
+global GCAI_Task_LeadPlatoon_Platoon = 0
+global GCAI_Task_LeadPlatoon_CatchupTempTarget = 0
+global GCAI_Task_LeadPlatoon_Target = 0
+global GCAI_Task_LeadPlatoon_State = GCAI_TASK_LEADPLATOON_STATE_CATCHUP
+global GCAI_Task_LeadPlatoon_AutoAttackWhenArive = GCAI_FALSE
+global GCAI_Task_LeadPlatoon_AutoAttackRadius = 0
+
+// Interupt Cast Fireball variables
+global GCAI_Interupt_CastFireball_Target = 0
+
+// Interupt Attack variables
+global GCAI_Interupt_Attack_Target = 0
+global GCAI_Interupt_Attack_Radius = 0
+
+// Interupt Look variables
+global GCAI_Interupt_Look_Target = 0
+
+// Interupt Cast Volcano variable
+global GCAI_Interupt_CastVolcano_Target = 0
+
+// Interupt Move To Pos variable
+global GCAI_Interupt_MoveToPos_Pos = 0
+global GCAI_Interupt_MoveToPos_ShouldRun = 0
+
+// Interupt Smash Wall variable
+global GCAI_Interupt_SmashWall_FromPos = 0
+global GCAI_Interupt_SmashWall_Wall = 0
+global GCAI_Interupt_SmashWall_ShouldRun = 0
+
+// local scripts
+define script GCAI_SwitchLoop
+define script GCAI_DoTask_CastFireballs
+define script GCAI_DoTask_LeadPlatoonToPos
+define script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+define script GCAI_DoTask_PerformRole
+define script GCAI_DoTask_None
+define script GCAI_DoInterupt_CastFireball
+define script GCAI_DoInterupt_Attack
+define script GCAI_DoInterupt_Look
+define script GCAI_DoInterupt_CastVolcano
+define script GCAI_DoInterupt_MoveToPos
+define script GCAI_DoInterupt_SmashWall
+define script GCAI_IdleLoop
+
+//-----------------------------------------------------------------
+// Interface
+//-----------------------------------------------------------------
+define script GCAI_InitCreature(Pos,CreatureType,Scale,Alignment,PlayerOwner)
+//-----------------------------------------------------------------
+define script GCAI_SetTask_None
+define script GCAI_SetTask_PerformRole(Pos,Radius,Role)
+define script GCAI_SetTask_PerformRole_Previous
+define script GCAI_SetTask_LeadPlatoonToPos(Platoon,Target)
+define script GCAI_SetTask_LeadPlatoonToPosThenAttack(Platoon,Target,AttackRadius)
+define script GCAI_SetTask_CastFireballs(FromPos,ToPos,ToRadius)
+//-----------------------------------------------------------------
+define script GCAI_SetInteruption_CastFireball(Target)
+define script GCAI_SetInteruption_Attack(Target,Radius)
+define script GCAI_SetInteruption_Look(Target)
+define script GCAI_SetInteruption_CastVolcano(Target)
+define script GCAI_SetInteruption_MoveToPos(Pos,ShouldRun)
+define script GCAI_SetInteruption_SmashWall(FromPos,Wall,ShouldRun)
+//-----------------------------------------------------------------
+
+begin script GCAI_SwitchLoop
+	GoodToGo = 0
+start
+	begin loop
+		GoodToGo = 0
+		while GoodToGo == 0
+			if GCAI_Creature exists
+				if HEALTH of GCAI_Creature > 0
+					GoodToGo = 1
+				end if
+			end if
+		end while  
+		if GCAI_CurrentInterupt != GCAI_INTERUPT_NONE
+			if GCAI_CurrentInterupt == GCAI_INTERUPT_CASTFIREBALL
+				run script GCAI_DoInterupt_CastFireball
+			elsif GCAI_CurrentInterupt == GCAI_INTERUPT_LOOK
+				run script GCAI_DoInterupt_Look
+			elsif GCAI_CurrentInterupt == GCAI_INTERUPT_ATTACK
+				run script GCAI_DoInterupt_Attack
+			elsif GCAI_CurrentInterupt == GCAI_INTERUPT_CASTVOLCANO
+				run script GCAI_DoInterupt_CastVolcano
+			elsif GCAI_CurrentInterupt == GCAI_INTERUPT_MOVETOPOS
+				run script GCAI_DoInterupt_MoveToPos
+			elsif GCAI_CurrentInterupt == GCAI_INTERUPT_SMASHWALL
+				run script GCAI_DoInterupt_SmashWall
+			end if
+			GCAI_CurrentInterupt = GCAI_INTERUPT_NONE
+		else
+			if GCAI_CurrentTask == GCAI_TASK_PERFORMROLE
+				run script GCAI_DoTask_PerformRole
+			elsif GCAI_CurrentTask == GCAI_TASK_CASTFIREBALLS
+				run script GCAI_DoTask_CastFireballs
+			elsif GCAI_CurrentTask == GCAI_TASK_LEADPLATOON
+				run script GCAI_DoTask_LeadPlatoonToPos
+			elsif GCAI_CurrentTask == GCAI_TASK_NONE
+			end if
+		end if
+	end loop
+end script GCAI_SwitchLoop
+
+begin script GCAI_DoTask_PerformRole
+	CurrentPos = 0
+	CurrentRadius = 0
+	CurrentRole = 0
+start
+	CurrentPos = GCAI_Task_PerformRole_Pos
+	CurrentRadius = GCAI_Task_PerformRole_Radius
+	CurrentRole = GCAI_Task_PerformRole_Role
+
+	set creature GCAI_Creature role to constant GCAI_Task_PerformRole_Role radius GCAI_Task_PerformRole_Radius at {GCAI_Task_PerformRole_Pos}
+	release GCAI_Creature
+
+	wait until GCAI_CurrentTask != GCAI_TASK_PERFORMROLE or GCAI_CurrentInterupt != GCAI_INTERUPT_NONE or CurrentPos != GCAI_Task_PerformRole_Pos or CurrentRadius != GCAI_Task_PerformRole_Radius or CurrentRole != GCAI_Task_PerformRole_Role
+end script GCAI_DoTask_PerformRole
+
+begin script GCAI_DoTask_CastFireballs
+	Target = 0
+start
+	enable script creature GCAI_Creature run
+	move GCAI_Creature position to {GCAI_Task_CastFireballs_FromPos}
+	wait until creature GCAI_Creature finished script action or GCAI_CurrentTask != GCAI_TASK_CASTFIREBALLS or GCAI_CurrentInterupt != GCAI_INTERUPT_NONE
+	disable script creature GCAI_Creature run
+
+	while GCAI_CurrentTask == GCAI_TASK_CASTFIREBALLS and GCAI_CurrentInterupt == GCAI_INTERUPT_NONE and HEALTH of GCAI_Creature > 0
+		Target = marker at get target from {GCAI_Task_CastFireballs_ToPos} + {1,0,0} to {GCAI_Task_CastFireballs_ToPos} distance number from 0 to GCAI_Task_CastFireballs_ToRadius angle number from 0 to 360
+		force GCAI_Creature CREATURE_CAST_FIREBOMB_THROW Target at {Target}
+		wait until creature GCAI_Creature finished script action or GCAI_CurrentTask != GCAI_TASK_CASTFIREBALLS or GCAI_CurrentInterupt != GCAI_INTERUPT_NONE
+	end while
+end script GCAI_DoTask_CastFireballs
+
+begin script GCAI_DoTask_LeadPlatoonToPos
+	EnemyPlatoon = 0
+start
+	run script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+
+	while GCAI_CurrentTask == GCAI_TASK_LEADPLATOON and GCAI_CurrentInterupt == GCAI_INTERUPT_NONE and HEALTH of GCAI_Creature > 0
+
+		// first, make sure we still have backup
+		if GCAI_Task_LeadPlatoon_AutoAttackWhenArive == GCAI_FALSE and (not GCAI_Task_LeadPlatoon_Platoon exists or platoon GCAI_Task_LeadPlatoon_Platoon idle)
+			run script GCAI_SetTask_PerformRole_Previous
+		elsif GCAI_Task_LeadPlatoon_AutoAttackWhenArive == GCAI_TRUE and (not GCAI_Task_LeadPlatoon_Platoon exists or get distance from {GCAI_Creature} to {GCAI_Task_LeadPlatoon_Target} <= GCAI_Task_LeadPlatoon_AutoAttackRadius)
+			run script GCAI_SetTask_PerformRole(GCAI_Task_LeadPlatoon_Target,GCAI_Task_LeadPlatoon_AutoAttackRadius,variable CR_SOLDIER)
+		end if
+
+		if GCAI_CurrentTask == GCAI_TASK_LEADPLATOON
+			// second, check for any enemy units
+			EnemyPlatoon = get platoon of player 0 nearest {GCAI_Task_LeadPlatoon_Platoon} radius GCAI_TASK_LEADPLATOON_CONSTANT_ENEMYCHECKRADIUS
+			if not EnemyPlatoon exists
+				EnemyPlatoon = get platoon of player 0 nearest {GCAI_Creature} radius GCAI_TASK_LEADPLATOON_CONSTANT_ENEMYCHECKRADIUS
+			end if
+			if EnemyPlatoon exists
+				run background script GCAI_SetInteruption_Attack(EnemyPlatoon,GCAI_TASK_LEADPLATOON_CONSTANT_ENEMYATTACKRADIUS)
+			end if
+
+			if GCAI_CurrentTask == GCAI_TASK_LEADPLATOON
+				// catchup state
+				if GCAI_Task_LeadPlatoon_State == GCAI_TASK_LEADPLATOON_STATE_CATCHUP
+					// if we have caught up, start to move ahead
+					if {GCAI_Creature} near {GCAI_Task_LeadPlatoon_Platoon} radius GCAI_TASK_LEADPLATOON_CONSTANT_CATCHUPDISTANCE
+						GCAI_Task_LeadPlatoon_State = GCAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+						run script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// if they have significantly changed position, change our target
+					elsif get distance from {GCAI_Task_LeadPlatoon_Platoon} to {GCAI_Task_LeadPlatoon_CatchupTempTarget} > GCAI_TASK_LEADPLATOON_CONSTANT_CATCHUPDISTANCE
+						run script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+					end if
+
+				// move ahead state
+				elsif GCAI_Task_LeadPlatoon_State == GCAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+					// if we are too far ahead, wait for them
+					if not {GCAI_Creature} near {GCAI_Task_LeadPlatoon_Platoon} radius GCAI_TASK_LEADPLATOON_CONSTANT_WAITDISTANCE
+						GCAI_Task_LeadPlatoon_State = GCAI_TASK_LEADPLATOON_STATE_WAIT
+						run script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// do a special interupt to make us look inteligent (but only if we are significantly ahead)
+					elsif number from 1 to GCAI_TASK_LEADPLATOON_CONSTANT_INTERUPTCHANCE == 1 and (get distance from {GCAI_Creature} to {GCAI_Task_LeadPlatoon_Target}) + GCAI_TASK_LEADPLATOON_CONSTANT_STOPWAITDISTANCE < get distance from {GCAI_Task_LeadPlatoon_Platoon} to {GCAI_Task_LeadPlatoon_Target}
+						run background script GCAI_SetInteruption_Look(GCAI_Task_LeadPlatoon_Platoon)
+					end if
+
+				// wait state
+				else // GCAI_Task_LeadPlatoon_State == GCAI_TASK_LEADPLATOON_STATE_WAIT
+					// if they have caught up, move ahead
+					if {GCAI_Creature} near {GCAI_Task_LeadPlatoon_Platoon} radius GCAI_TASK_LEADPLATOON_CONSTANT_STOPWAITDISTANCE
+						GCAI_Task_LeadPlatoon_State = GCAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+						run script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// if they took a short cut, catch up to them
+					elsif get distance from {GCAI_Creature} to {GCAI_Task_LeadPlatoon_Target} > get distance from {GCAI_Task_LeadPlatoon_Platoon} to {GCAI_Task_LeadPlatoon_Target}
+						GCAI_Task_LeadPlatoon_State = GCAI_TASK_LEADPLATOON_STATE_CATCHUP
+						run script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// do a special interupt to make us look inteligent
+					elsif number from 1 to GCAI_TASK_LEADPLATOON_CONSTANT_INTERUPTCHANCE == 1
+						run background script GCAI_SetInteruption_Look(GCAI_Task_LeadPlatoon_Platoon)
+					end if
+				end if
+			end if
+		end if
+		wait GCAI_TASK_LEADPLATOON_CONSTANT_CHECKWAIT seconds
+	end while
+end script GCAI_DoTask_LeadPlatoonToPos
+
+begin script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+start
+	if GCAI_Task_LeadPlatoon_State == GCAI_TASK_LEADPLATOON_STATE_CATCHUP
+		//say "state catchup"
+		GCAI_Task_LeadPlatoon_CatchupTempTarget = marker at {GCAI_Task_LeadPlatoon_Platoon}
+		enable script creature GCAI_Creature run
+		set creature GCAI_Creature role to CR_SOLDIER radius 20 at {GCAI_Task_LeadPlatoon_CatchupTempTarget}
+	elsif GCAI_Task_LeadPlatoon_State == GCAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+		//say "state move ahead"
+		enable script creature GCAI_Creature run
+		set creature GCAI_Creature role to CR_SOLDIER radius GCAI_Task_LeadPlatoon_AutoAttackRadius at {GCAI_Task_LeadPlatoon_Target}
+	else // GCAI_Task_LeadPlatoon_State == GCAI_TASK_LEADPLATOON_STATE_WAIT
+		//say "state wait"
+		run background script GCAI_IdleLoop
+	end if
+end script GCAI_DoTask_LeadPlatoonToPos_SetStateAction
+
+begin script GCAI_DoTask_None
+start
+	wait until GCAI_CurrentTask != GCAI_TASK_NONE or GCAI_CurrentInterupt != GCAI_INTERUPT_NONE
+end script GCAI_DoTask_None
+
+begin script GCAI_DoInterupt_CastFireball
+start
+	force GCAI_Creature CREATURE_CAST_FIREBOMB_THROW GCAI_Interupt_CastFireball_Target at {GCAI_Interupt_CastFireball_Target}
+	wait until creature GCAI_Creature finished script action
+end script GCAI_DoInterupt_CastFireball
+
+begin script GCAI_DoInterupt_Attack
+start
+	set creature GCAI_Creature role to CR_SOLDIER radius GCAI_Interupt_Attack_Radius at {GCAI_Interupt_Attack_Target}
+	release GCAI_Creature
+
+	wait until not GCAI_Interupt_Attack_Target exists
+end script GCAI_DoInterupt_Attack
+
+begin script GCAI_DoInterupt_Look
+start
+	//say "interupt looking"
+	set GCAI_Creature focus to {GCAI_Interupt_Look_Target}
+	wait until creature GCAI_Creature finished script action
+	release GCAI_Creature focus
+end script GCAI_DoInterupt_Look
+
+begin script GCAI_DoInterupt_CastVolcano
+	FireInCHand = 0
+	InFrontOfCreature = 0
+	DistanceToTarget = 0
+	Multiplier = 0
+	TempPos1 = 0
+	TempPos2 = 0
+	TempPos3 = 0
+start
+	set GCAI_Creature focus to {GCAI_Interupt_CastVolcano_Target}
+	wait until creature GCAI_Creature finished script action
+
+	play anim C_SPELL_BUILDUP on GCAI_Creature loop 2
+
+	wait 1 seconds
+
+	DistanceToTarget = get distance from {GCAI_Creature} to {GCAI_Interupt_CastVolcano_Target}
+	Multiplier = 6/DistanceToTarget
+	TempPos1 = marker at {GCAI_Interupt_CastVolcano_Target} - {GCAI_Creature}
+	TempPos2 = marker at Multiplier * {TempPos1}
+	TempPos3 = marker at {TempPos2} + {GCAI_Creature}
+	InFrontOfCreature = marker at {TempPos3} + {0,6,0}
+
+	FireInCHand = create visual effect VISUAL_MIRACLE_METEOR_IN_HAND at {InFrontOfCreature} time 6
+	wait 6.5 seconds
+	play anim C_FIGHT_THREAT2 on GCAI_Creature
+	wait 1.5 seconds
+	FireInCHand = create visual effect VISUAL_MIRACLE_FIRE_IMPACT at {GCAI_Creature}
+
+	wait 15.5 seconds
+end script GCAI_DoInterupt_CastVolcano
+
+begin script GCAI_DoInterupt_MoveToPos
+start
+	if GCAI_Interupt_MoveToPos_ShouldRun == GCAI_TRUE
+		enable script creature GCAI_Creature run
+	end if
+	move GCAI_Creature position to {GCAI_Interupt_MoveToPos_Pos}
+	wait until creature GCAI_Creature finished script action
+	disable script creature GCAI_Creature run
+end script GCAI_DoInterupt_MoveToPos
+
+begin script GCAI_DoInterupt_SmashWall
+start
+	if GCAI_Interupt_SmashWall_ShouldRun == GCAI_TRUE
+		enable script creature GCAI_Creature run
+	end if
+	move GCAI_Creature position to {GCAI_Interupt_SmashWall_FromPos}
+	wait until creature GCAI_Creature finished script action
+	force GCAI_Creature CREATURE_SMASH_WALL_BY_POUNDING GCAI_Interupt_SmashWall_Wall
+	wait until creature GCAI_Creature finished script action
+	disable script creature GCAI_Creature run
+end script GCAI_DoInterupt_SmashWall
+
+begin script GCAI_IdleLoop
+start
+	while GCAI_Task_LeadPlatoon_State == GCAI_TASK_LEADPLATOON_STATE_WAIT and GCAI_CurrentTask == GCAI_TASK_LEADPLATOON
+		wait until GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+		force GCAI_Creature CREATURE_IDLE GCAI_Creature
+		wait until creature GCAI_Creature finished script action
+	end while
+end script GCAI_IdleLoop
+
+begin script GCAI_InitCreature(Pos,CreatureType,Scale,Alignment,PlayerOwner)
+start
+	GCAI_Creature = create CREATURE constant CreatureType at {Pos}
+	SCALE of GCAI_Creature = Scale
+	if Alignment < 0
+		ALIGNMENT of GCAI_Creature = -1
+	elsif Alignment > 0
+		ALIGNMENT of GCAI_Creature = 1
+	else
+		ALIGNMENT of GCAI_Creature = 0
+	end if
+	set player PlayerOwner creature to GCAI_Creature
+
+	disable GCAI_Creature action availability LA_EAT with LO_PLAYER_VILLAGER
+	disable GCAI_Creature action availability LA_EAT with LO_PLAYER_PLATOON
+	disable GCAI_Creature action availability LA_EAT with LO_ROCKS
+	disable GCAI_Creature action availability LA_EAT with LO_TREES
+	disable GCAI_Creature action availability LA_EAT with LO_TOYS
+	disable GCAI_Creature action availability LA_EAT with LO_POO
+	disable GCAI_Creature action availability LA_EAT with LO_SPELL_ORBS
+	disable GCAI_Creature action availability LA_POO with LO_PLAYER_VILLAGER
+	disable GCAI_Creature action availability LA_POO with LO_PLAYER_PLATOON
+	disable GCAI_Creature action availability LA_POO with LO_PLAYER_DEFENCES
+	disable GCAI_Creature action availability LA_POO with LO_PLAYER_STORAGE_PIT
+	disable GCAI_Creature action availability LA_POO with LO_PLAYER_BUILDING
+	disable GCAI_Creature action availability LA_PLAY
+	disable GCAI_Creature action availability LA_WATER with LO_PLAYER_VILLAGER
+	disable GCAI_Creature action availability LA_WATER with LO_PLAYER_PLATOON
+	disable GCAI_Creature action availability LA_HEAL with LO_OPPONENT_PLATOON
+	disable GCAI_Creature action availability LA_ATTACK with LO_PLAYER_VILLAGER
+	disable GCAI_Creature action availability LA_ATTACK with LO_PLAYER_PLATOON
+	disable GCAI_Creature action availability LA_ATTACK with LO_PLAYER_DEFENCES
+	disable GCAI_Creature action availability LA_ATTACK with LO_PLAYER_STORAGE_PIT
+	disable GCAI_Creature action availability LA_ATTACK with LO_CREATURE_PEN
+	disable GCAI_Creature action availability LA_ATTACK with LO_ROCKS
+	disable GCAI_Creature action availability LA_ATTACK with LO_MINE
+	disable GCAI_Creature action availability LA_ATTACK with LO_ORE_ROCKS
+	disable GCAI_Creature action availability LA_ATTACK with LO_TREES
+	disable GCAI_Creature action availability LA_ATTACK with LO_FIELDS
+	disable GCAI_Creature action availability LA_ATTACK with LO_POO
+	disable GCAI_Creature action availability LA_ATTACK with LO_SPELL_ORBS
+
+	run background script GCAI_SwitchLoop
+	run script GCAI_SetTask_PerformRole(Pos,100,variable CR_NONE)
+end script GCAI_InitCreature
+
+begin script GCAI_SetTask_None
+start
+	GCAI_CurrentTask = GCAI_TASK_NONE
+end script GCAI_SetTask_None
+
+begin script GCAI_SetTask_PerformRole(Pos,Radius,Role)
+start
+	if GCAI_CurrentTask == GCAI_TASK_PERFORMROLE
+		GCAI_Prev_Task_PerformRole_Pos = GCAI_Task_PerformRole_Pos
+		GCAI_Prev_Task_PerformRole_Radius = GCAI_Task_PerformRole_Radius
+		GCAI_Prev_Task_PerformRole_Role = GCAI_Task_PerformRole_Role
+	end if
+
+	GCAI_Task_PerformRole_Pos = Pos
+	GCAI_Task_PerformRole_Radius = Radius
+	GCAI_Task_PerformRole_Role = Role
+
+	GCAI_CurrentTask = GCAI_TASK_PERFORMROLE
+end script GCAI_SetTask_PerformRole
+
+begin script GCAI_SetTask_PerformRole_Previous
+	Current_Pos = 0
+	Current_Radius = 0
+	Current_Role = 0
+start
+	if GCAI_CurrentTask == GCAI_TASK_PERFORMROLE
+		Current_Pos = GCAI_Task_PerformRole_Pos
+		Current_Radius = GCAI_Task_PerformRole_Radius
+		Current_Role = GCAI_Task_PerformRole_Role
+
+		GCAI_Task_PerformRole_Pos = GCAI_Prev_Task_PerformRole_Pos
+		GCAI_Task_PerformRole_Radius = GCAI_Prev_Task_PerformRole_Radius
+		GCAI_Task_PerformRole_Role = GCAI_Prev_Task_PerformRole_Role
+
+		GCAI_Prev_Task_PerformRole_Pos = Current_Pos
+		GCAI_Prev_Task_PerformRole_Radius = Current_Radius
+		GCAI_Prev_Task_PerformRole_Role = Current_Role
+	end if
+	GCAI_CurrentTask = GCAI_TASK_PERFORMROLE
+end script GCAI_SetTask_PerformRole_Previous
+
+begin script GCAI_SetTask_CastFireballs(FromPos,ToPos,ToRadius)
+start
+	GCAI_Task_CastFireballs_FromPos = FromPos
+	GCAI_Task_CastFireballs_ToPos = ToPos
+	GCAI_Task_CastFireballs_ToRadius = ToRadius
+	GCAI_CurrentTask = GCAI_TASK_CASTFIREBALLS
+end script GCAI_SetTask_CastFireballs
+
+begin script GCAI_SetTask_LeadPlatoonToPos(Platoon,Target)
+start
+	GCAI_Task_LeadPlatoon_Platoon = Platoon
+	GCAI_Task_LeadPlatoon_Target = Target
+	GCAI_Task_LeadPlatoon_State = GCAI_TASK_LEADPLATOON_STATE_CATCHUP
+	GCAI_Task_LeadPlatoon_AutoAttackWhenArive = GCAI_FALSE
+	GCAI_CurrentTask = GCAI_TASK_LEADPLATOON
+end script GCAI_SetTask_LeadPlatoonToPos
+
+begin script GCAI_SetTask_LeadPlatoonToPosThenAttack(Platoon,Target,AttackRadius)
+start
+	if get distance from {GCAI_Creature} to {Target} <= AttackRadius
+		run script GCAI_SetTask_PerformRole(Target,AttackRadius,variable CR_SOLDIER)
+	elsif Platoon exists
+		GCAI_Task_LeadPlatoon_Platoon = Platoon
+		GCAI_Task_LeadPlatoon_Target = Target
+		GCAI_Task_LeadPlatoon_State = GCAI_TASK_LEADPLATOON_STATE_CATCHUP
+		GCAI_Task_LeadPlatoon_AutoAttackWhenArive = GCAI_TRUE
+		GCAI_Task_LeadPlatoon_AutoAttackRadius = AttackRadius
+		GCAI_CurrentTask = GCAI_TASK_LEADPLATOON
+	end if
+end script GCAI_SetTask_LeadPlatoonToPosThenAttack
+
+begin script GCAI_SetInteruption_CastFireball(Target)
+start
+	wait until GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+
+	GCAI_Interupt_CastFireball_Target = Target
+	GCAI_CurrentInterupt = GCAI_INTERUPT_CASTFIREBALL
+end script GCAI_SetInteruption_CastFireball
+
+begin script GCAI_SetInteruption_Attack(Target,Radius)
+start
+	wait until GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+
+	GCAI_Interupt_Attack_Target = Target
+	GCAI_Interupt_Attack_Radius = Radius
+	GCAI_CurrentInterupt = GCAI_INTERUPT_ATTACK
+end script GCAI_SetInteruption_Attack
+
+begin script GCAI_SetInteruption_Look(Target)
+start
+	//say "set look"
+	wait until GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+
+	GCAI_Interupt_Look_Target = Target
+	GCAI_CurrentInterupt = GCAI_INTERUPT_LOOK
+end script GCAI_SetInteruption_Look
+
+begin script GCAI_SetInteruption_CastVolcano(Target)
+start
+	wait until GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+
+	GCAI_Interupt_CastVolcano_Target = Target
+	GCAI_CurrentInterupt = GCAI_INTERUPT_CASTVOLCANO
+end script GCAI_SetInteruption_CastVolcano
+
+begin script GCAI_SetInteruption_MoveToPos(Pos,ShouldRun)
+start
+	wait until GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+
+	GCAI_Interupt_MoveToPos_Pos = Pos
+	GCAI_Interupt_MoveToPos_ShouldRun = ShouldRun
+	GCAI_CurrentInterupt = GCAI_INTERUPT_MOVETOPOS
+end script GCAI_SetInteruption_MoveToPos
+
+begin script GCAI_SetInteruption_SmashWall(FromPos,Wall,ShouldRun)
+start
+	wait until GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+
+	GCAI_Interupt_SmashWall_FromPos = FromPos
+	GCAI_Interupt_SmashWall_Wall = Wall
+	GCAI_Interupt_SmashWall_ShouldRun = ShouldRun
+	GCAI_CurrentInterupt = GCAI_INTERUPT_SMASHWALL
+end script GCAI_SetInteruption_SmashWall

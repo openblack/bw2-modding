@@ -1,0 +1,289 @@
+begin script Land6Siren(whichwonder, Siren)
+
+	Shockeddude = 0
+	Wonder = 0
+	MyDance = 0
+	Dancer = 0
+	Count = 0
+
+	WonderCamPosLinkup=0
+	WonderCamFocLinkup=0
+	
+	RelCamPos=0
+	RelCamFoc=0
+
+	StarVillager=0
+	StarNymph=0
+	AboveSiren=0
+
+	MeOldMateDave=0
+	MusicEventTimer=0
+	MusicEvent1=0
+	MusicEvent2=0
+	WaitUntilPairedAnimStarts=0
+	SirenMixer=0
+
+start
+
+begin interruptible cinema
+
+
+		//set camera lens 50.000
+		invoke Siren EPIC_MOVE_VILLAGERS //teleports enemy villagers to siren (not on screen)
+		//Stop the wonder sounds.
+		stop sound "SCRIPT4_SEPIC_FLAMETHROWERWHOOSH4"	//Wonder sound loop 1
+		stop sound "SCRIPT4_SEPIC_CASTSPELLFREEZE1"	//Wonder sound loop 2
+
+		//beam down from afar?///////////////////////////////////////////////////////////////////////
+		
+		//set camera position to {591.753, 461.451, 254.271}
+		//set camera focus to {632.073, 412.210, 331.405}
+
+		RelCamPos=marker at get world position from Siren  to {-216.376, 394.377, 530.233}
+		RelCamFoc=marker at get world position from Siren  to {-174.161, 342.338, 456.004}
+		wait 0.2 seconds
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+
+		invoke Siren EPIC_BEAM_DOWN //sEND BEAM DOWN
+play string sound "SCRIPT4_SEPIC_BEAMOFLIGHTSTART1"	//Short Beam Zap!
+		play string sound "SCRIPT4_SEPIC_BEAMOFLIGHT11"
+
+		wait 0.8 seconds
+		play string sound "SCRIPT4_SEPIC_BEAMOFLIGHTLOOP7"
+		wait 0.2 seconds
+		wait 1 seconds
+		wait 1 seconds
+		set camera lens 70.000
+	
+		RelCamPos=marker at get world position from Siren  to {-40.758, 28.688, 34.774}
+		RelCamFoc=marker at get world position from Siren  to {-40.010, 28.594, 34.117}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+/*
+		wait 0.5 seconds
+
+		
+		wait 0.5 second
+	
+		MeOldMateDave = get Siren star STAR_VILLAGER1
+		stop music
+		wait 2 seconds
+*/
+
+/*
+		set camera lens 34.000		
+		RelCamPos=marker at get world position from MeOldMateDave to {-4.750, 3.239, 5.303}
+		RelCamFoc=marker at get world position from MeOldMateDave to {-3.949, 2.902, 4.809}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 2 seconds
+*/
+		stop sound "SCRIPT4_SEPIC_BEAMOFLIGHT7"
+		stop sound "SCRIPT4_SEPIC_DECAYCHARGESPELL"
+		
+		invoke Siren EPIC_SHOW_SIREN //show siren
+		invoke Siren EPIC_SHUT_DOWN_BEAM
+		
+		set mixer SirenMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.7		
+
+		//Once beam hits ground
+		start music "SirenSong"
+
+		run background script SirenSubtitles
+
+		stop sound "SCRIPT4_SEPIC_BEAMOFLIGHTLOOP7"
+
+		//Create a timer for time up counting
+		MusicEventTimer=create timer for 0 seconds
+		MusicEvent1=get music "SirenSong" event "e1" time
+		MusicEvent2=get music "SirenSong" event "e2" time
+
+		wait 1 seconds
+		skip current cutscene
+
+		//new
+		set camera lens 50.000
+		
+		RelCamPos=marker at get world position from Siren to {0.299, 18.818, 0.665}
+		RelCamFoc=marker at get world position from Siren to {-14.789, -92.676, -38.880}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		RelCamPos=marker at get world position from Siren to {1.701, 60.175, -0.018}
+		RelCamFoc=marker at get world position from Siren to {-2.676, -45.344, -44.427}
+		move camera position to {RelCamPos} time 6.5
+		move camera focus to {RelCamFoc} time 6.5
+		
+		wait 6.5 seconds
+		//wait until camera ready
+
+		set camera position follow Siren offset {-0.751, 7.898, 24.249}
+		set camera focus follow Siren offset {1.475, -3.738, -89.701}
+
+		wait 6 seconds
+
+
+
+		//close up
+		set camera lens 18.000
+		set camera position follow Siren offset {19.979, 9.857, 15.356}
+		set camera focus follow Siren offset {-70.832, 7.366, -54.446}
+			
+		wait until get MusicEventTimer time since set >= MusicEvent1
+
+		set camera lens 50.000
+		set camera position follow Siren offset {1.072, 7.771, 24.721}
+		set camera focus follow Siren offset {-7.308, -4.887, -88.835}
+		set camera position to camera position
+		set camera focus to camera focus
+
+		invoke Siren EPIC_SUMMON_NYMPHS
+		wait 0.5 seconds
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		invoke Siren EPIC_ADD_NYMPHS //add nymphs
+		set camera position follow Siren offset {-0.253, 10.650, 22.440}
+		set camera focus follow Siren offset {-8.047, -10.598, -89.869}
+		wait 0.2 seconds
+		set camera position to camera position
+		set camera focus to camera focus
+			
+		set camera lens 70.000 time 3
+
+		MeOldMateDave = get Siren star STAR_VILLAGER1
+
+		wait 3 seconds		
+
+	//1st low tracking//////////////////////////////////////////////////////////////////////////////////
+
+		StarNymph = get Siren star STAR_NYMPH
+
+		RelCamPos=marker at get world position from MeOldMateDave to {0.509, 0.736, -1.712}
+		RelCamFoc=marker at get world position from MeOldMateDave to {0.651, 1.155, -0.815}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+			
+		RelCamPos=marker at get world position from MeOldMateDave to {-1.194, 0.721, -1.437}
+		RelCamFoc=marker at get world position from MeOldMateDave to {-1.052, 1.140, -0.540}
+		move camera position to {RelCamPos} time 7
+		move camera focus to {RelCamFoc} time 7
+		wait 6 seconds
+
+	//down siren leg//////////////////////////////////////////////////////////////////////////////////
+			
+		RelCamPos=marker at get world position from Siren  to {-3.240, 37.112, 3.494}
+		RelCamFoc=marker at get world position from Siren  to {24.455, 52.740, -55.142}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+			
+		RelCamPos=marker at get world position from Siren  to {-16.892, 18.205, 24.192}
+		RelCamFoc=marker at get world position from Siren  to {14.588, 37.534, -31.350}
+		move camera position to {RelCamPos} time 7
+		move camera focus to {RelCamFoc} time 7
+		wait 6 seconds
+
+	//follow nymph//////////////////////////////////////////////////////////////////////////////////
+
+		set camera position follow StarNymph offset {-0.983,-0.576,-1.214}
+		set camera focus follow StarNymph offset {4.980,4.667,11.096}
+		wait 5 seconds
+		//wait until get MusicEventTimer time since set >= MusicEvent2
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		RelCamPos=marker at get world position from Siren  to {-14.726, 27.090, 9.482}
+		RelCamFoc=marker at get world position from Siren  to {107.596, 61.052, -67.388}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//wait 2 seconds
+
+		invoke Siren EPIC_TRIGGER_NYMPHS_GESTURE //sic nymphs
+		wait 2 seconds
+		wait 1 seconds
+
+		invoke Siren EPIC_TRIGGER_NYMPHS //sic nymphs
+
+		RelCamPos=marker at get world position from Siren to {-14.726, 27.090, 9.482}
+		RelCamFoc=marker at get world position from Siren to {106.261, -55.985, 31.522}
+		move camera position to {RelCamPos} time 2.5
+		move camera focus to {RelCamFoc} time 2.5
+		wait 2.3 seconds
+
+		//play string sound "SCRIPT4_SEPIC_EPICTOWERLOOP1"	//Beam us up sample!
+
+		/*RelCamPos=marker at get world position from Siren  to {-35.153, 7.701, 28.173}
+		RelCamFoc=marker at get world position from Siren  to {-33.970, 7.373, 27.803}
+		move camera position to {RelCamPos} time 3*/
+
+		set camera lens 38.000
+		RelCamPos=marker at get world position from StarVillager to {0.820, 1.323, 1.452}
+		RelCamFoc=marker at get world position from StarVillager to {0.187, 1.248, 0.682}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 2 seconds
+		RelCamPos=marker at get world position from StarVillager to {3.891, 1.394, -1.827}
+		RelCamFoc=marker at get world position from StarVillager to {3.160, 1.347, -1.146}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 2 seconds
+
+		RelCamPos=marker at get world position from StarVillager to {11.107, 2.570, 6.509}
+		RelCamFoc=marker at get world position from StarVillager to {10.243, 2.511, 6.010}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 5 seconds
+			
+		RelCamPos=marker at get world position from StarVillager to {24.125, 12.082, 39.660}
+		RelCamFoc=marker at get world position from StarVillager to {23.729, 11.905, 38.759}
+		move camera position to {RelCamPos} time 8
+		move camera focus to {RelCamFoc} time 8
+
+		wait 8 seconds
+		//wait until camera ready
+
+		play string sound "SCRIPT4_SEPIC_SIRENDISAPPEAR"	
+		//stop sound "SCRIPT4_SEPIC_EPICTOWERLOOP1"
+
+		///this removal sample will now be played in code
+		//play string sound "SCRIPT4_SEPIC_BEAMOFLIGHTLOOP6"
+
+		invoke Siren EPIC_REMOVE_SIREN
+		set camera lens 70.000
+
+		RelCamPos=marker at get world position from Siren to {-0.137, 15.183, 43.739}
+		RelCamFoc=marker at get world position from Siren to {-0.093, 15.178, 42.740}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 2 seconds
+
+		RelCamPos=marker at get world position from Siren to {-0.137, 15.183, 43.739}
+		RelCamFoc=marker at get world position from Siren to {-0.094, 14.899, 42.781}
+		move camera position to {RelCamPos} time 4
+		move camera focus to {RelCamFoc} time 4
+	
+		invoke Wonder EPIC_WONDER_STAGE_5			
+		invoke Wonder EPIC_WONDER_STAGE_7			
+		wait 7 seconds
+
+		//reset sky colour 3 seconds//restore sky colour to normal
+		enable predefined sky "DEFAULT" time 3
+		wait 3 seconds
+
+		enable simulation sound
+
+		enable shadows
+		
+		stop music//kill the music
+
+		ATIEndFlag=1
+
+		wait 2 seconds
+	
+	end cinema//exit widescreen
+
+end script Land6Siren

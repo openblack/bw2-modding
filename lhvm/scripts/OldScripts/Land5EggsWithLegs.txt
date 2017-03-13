@@ -1,0 +1,158 @@
+
+define script ElderBehaviour (Elder, ElderPos, ElderFocus)
+
+//--------------------------------------------------
+// MAIN
+//--------------------------------------------------
+
+begin script Land5EggsWithLegs
+
+ // L5ElderPos[5] was made into a global so L5GCAI.txt etc could use it
+ ElderFocus[4]
+ ElderPlaced = 0
+ // L5Elder[5] was made into a global too
+ CreatureHideoutPosition = marker at {1090.529, 87.361, 1880.786}
+ Japanese1 = 0
+ Japanese2 = 0
+ Japanese1Pos = marker at {1274.567, 70.033, 624.008}
+ Japanese2Pos = marker at {1273.590, 70.058, 621.215}
+	
+start
+
+ ElderFocus[0] = marker at {1132.732, 118.618, 685.938}
+ ElderFocus[1] = marker at {1249.884, 158.254, 793.213}
+ ElderFocus[2] = marker at {1544.700, 168.736, 781.905}
+ ElderFocus[3] = marker at {1454.062, 109.681, 418.711}
+
+ MonkEldersDeadCount = 0
+ 
+ Japanese1 = create VILLAGER VILLAGER_INFO_JAPANESE_HOUSEWIFE_FEMALE at {Japanese1Pos}
+ ALTITUDE of Japanese1 = ALTITUDE of Japanese1Pos
+ disable Japanese1 alternative mesh
+ 
+ //Swap dim model depending if he is the acolyte or not. 
+ Japanese2 = create VILLAGER VILLAGER_INFO_DIMITRIOUS at {Japanese2Pos}
+ ALTITUDE of Japanese2 = ALTITUDE of Japanese2Pos + 0.3
+ 
+ play animation "a_p_out_of_pull_object" on Japanese2 loop 1 disable stand
+ wait 1.2 seconds
+ set anim speed of Japanese2 to 0.0
+ 
+ 
+ set Japanese1 focus to {1275.840, 58.563, 636.757}
+ set Japanese2 focus to {1238.632, 57.952, 623.599}
+ begin cinema
+	set camera position to {1274.384, 71.421, 626.376}
+	set camera focus to {1274.200, 70.792, 607.057}
+	set camera lens 23
+	move camera position to {1274.385, 71.425, 626.503} time 10
+	move camera focus to {1274.201, 70.796, 607.184} time 10
+	
+	wait 5 seconds
+	set camera lens 70
+	set camera position to {1163.181, 139.536, 665.735}
+	set camera focus to {1147.607, 130.582, 672.863}
+	move camera position to {1166.232, 139.536, 672.804} time 10
+	move camera focus to {1150.546, 129.862, 678.628} time 10
+	
+	wait 5 seconds
+	
+	set camera lens 40
+	set camera position to {1434.316, 124.017, 441.010}
+	set camera focus to {1443.768, 117.252, 425.565}
+	wait 5 seconds
+	
+	set camera lens 70
+	set camera position to {1031.117, 137.684, 1807.191}
+	set camera focus to {1004.469, 95.961, 1828.580}
+	wait 5 seconds
+	
+	set camera lens 30
+	set camera position to {1271.145, 71.556, 631.886}
+	set camera focus to {1280.899, 69.785, 615.294}
+	move camera position to {1270.712, 71.634, 632.624} time 4
+	move camera focus to {1280.466, 69.864, 616.031} time 4
+	wait 5 seconds
+	
+	set camera lens 70
+	set camera position to {1357.591, 105.216, 500.070}
+	set camera focus to {1292.820, 58.874, 635.265}
+	wait 2 seconds
+ end cinema
+ delete Japanese1
+ delete Japanese2
+
+ while ElderPlaced < 4
+	 L5Elder[ElderPlaced] = create VILLAGER VILLAGER_INFO_ROBIN_HOOD at {L5ElderPos[ElderPlaced]}
+	 run background script ElderBehaviour (L5Elder[ElderPlaced], L5ElderPos[ElderPlaced], ElderFocus[ElderPlaced])
+	 ElderPlaced++
+ end while
+
+ /// NEEDS AN INTRO CUT-SCENE!!
+ /*begin cinema
+	set camera position to {1142.396,124.723,672.955}
+	set camera focus to {1148.519,119.050,666.830}
+	move camera position to {1143.245,124.691,673.532} time 10
+	move camera focus to {1148.448,119.053,666.594} time 10
+	say "Eggs with legs cut scene!"
+	wait until read
+	say "Stop the enemy creature taking the monks!"
+	wait until read
+	set camera position to {1261.360,180.170,803.893}
+	set camera focus to {1243.425,158.716,789.685}
+	move camera position to {1266.484,170.148,780.972} time 6
+	move camera focus to {1245.008,158.622,789.789} time 6
+	say "Protect them as much as possible!"
+	wait until read
+	
+ end cinema*/
+
+end script Land5EggsWithLegs
+
+//--------------------------------------------------
+// ELDER BEHAVIOUR
+//--------------------------------------------------
+
+begin script ElderBehaviour (Elder, ElderPos, ElderFocus)
+
+ ElderKilled = 0
+ 
+start
+	begin loop
+		// The Elder tries to head back to his shrine whenever he is moved
+		if {Elder} not near {ElderPos} radius 2 and Elder is not HELD_ANY and Elder is not FLYING and HEALTH of Elder > 0
+			move Elder position to {ElderPos}
+			wait until {Elder} at {ElderPos} or Elder is HELD_ANY or Elder is FLYING or HEALTH of Elder <= 0 or 20 seconds
+		elsif {Elder} near {ElderPos} radius 2 and Elder is not HELD_ANY and Elder is not FLYING and HEALTH of Elder > 0 and Elder played
+			move Elder position to {Elder}
+			wait 0.2 seconds
+			set Elder focus to {ElderFocus}
+			play anim "A_P_PRAY" on Elder loop -1
+		end if
+
+		// Track if Elder is alive and well
+		if HEALTH of Elder <= 0
+			begin dialogue /// TEST BODGE
+				say "Elder has died!!"
+				wait until read
+			end dialogue
+
+			MonkEldersDeadCount++
+			ElderKilled = 1
+			release Elder
+		elsif {Elder} near {L5GreekSacrificePitPos} radius 5
+			begin dialogue
+				say "Sacrificing Elder!!" /// TEST BODGE
+				wait until read
+			end dialogue
+
+			HEALTH of Elder = 0
+			delete Elder with fade
+			MonkEldersDeadCount++
+			ElderKilled = 1
+		end if
+
+	until ElderKilled == 1
+	end loop
+
+end script ElderBehaviour

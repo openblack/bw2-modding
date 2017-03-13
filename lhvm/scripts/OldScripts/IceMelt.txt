@@ -1,0 +1,31 @@
+//------------------------------------------------
+//  LAND 3 ICE MELT CHALLENGE
+//------------------------------------------------
+
+
+begin script IceMelt
+ 
+ IceMeltHighlight = 0
+ IceMeltHighlightPos = marker at {0.000,0.000,0.000}
+ Eternity = 0
+
+start
+
+IceMeltHighlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {IceMeltHighlightPos}
+ALTITUDE of IceMeltHighlight = 3
+
+begin loop
+
+	wait until IceMeltHighlight clicked
+
+	begin dialogue
+		say "The Ice Melt Challenge has not been implemented yet."
+		wait until read
+		say "Awaiting Freeze Miracle Implementation"
+		wait until read
+	end dialogue
+
+until Eternity == 1
+end loop
+
+end script Ice Melt

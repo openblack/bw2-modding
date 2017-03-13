@@ -1,0 +1,16 @@
+begin script Land4ExitScroll
+
+EndScroll = 0
+EndScrollPos = marker at {1223.414, 119.403, 540.315}
+
+start
+
+if L4Complete == 0
+	EndScroll = create highlight GOLD name "BW2T_SCRIPT_04FINAL_EXITSCROLL_10" remind "BW2T_SCRIPT_04FINAL_EXITSCROLL_20"  at {EndScrollPos}
+	ALTITUDE of EndScroll = 18
+	wait until EndScroll right clicked
+	delete EndScroll
+	load map "./Data/Landscape/BW2/Land5.bwe"
+end if
+
+end script Land4ExitScroll

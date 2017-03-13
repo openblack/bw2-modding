@@ -1,0 +1,69 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 6 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land6Control
+
+TempFood = 0
+TempWood = 0
+TempOre = 0
+
+FoodPos = marker at {856.647, 55.252, 727.994}
+WoodPos = marker at {860.372, 55.498, 733.078}
+OrePos = marker at {863.340, 55.342, 727.981}
+
+start
+	set fade red 0 green 0 blue 0 time 0
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	
+	run script Land6DidYouKnow
+
+	run script Land6Globals
+	
+	// ---------- create resources --------------
+	
+	add resource RESOURCE_TYPE_FOOD 7000 to L6GreekTown
+
+    add resource RESOURCE_TYPE_WOOD 2000 to L6GreekTown
+
+    add resource RESOURCE_TYPE_ORE 500 to L6GreekTown
+
+	// ------------ set players default experience level -------------------
+	
+	set initial level of player melee platoon to ARMY_UNIT_TYPE_MELEE_1
+	
+	set initial level of player ranged platoon to ARMY_UNIT_TYPE_RANGED_1
+	
+	set initial level of player siege weapon to SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1
+
+	// Create the creature - needs to be loaded eventually
+	load my_creature at {L6GreekTown} + {20,20}
+	MyCreature = get player 0 creature
+
+	if MyCreature not exists
+		MyCreature = create CREATURE CREATURE_TYPE_LAST at {L6GreekTown} + {20,20}
+		set player 0 creature to MyCreature
+		release MyCreature
+	end if
+
+	reset all objectives for player 0
+
+	begin cinema
+		set camera position to {798.023, 377.750, 458.815}
+		set camera focus to {829.853, 327.500, 539.198}
+	end cinema
+
+	//----------- create starting resources -------------
+
+
+
+	run background script SetupBuildingsLand4Onwards
+	run background script Land6Objectives
+	run background script Land6JapaneseCapitalScript
+	run background script Land6ChopSuey
+	run background script Land6ForestAmbush
+	run background script Land6PaternityBirth
+//	run background script Land6SevenSamurai
+
+	enable game can be lost
+
+end script Land6Control

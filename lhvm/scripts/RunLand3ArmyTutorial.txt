@@ -1,0 +1,6 @@
+run script RunLand3ArmyTutorial
+
+begin script RunLand3ArmyTutorial
+start
+	run script Land3ArmyTutorial
+end script RunLand3ArmyTutorial

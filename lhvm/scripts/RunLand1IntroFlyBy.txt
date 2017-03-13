@@ -1,0 +1,6 @@
+run script RunLand1IntroFlyBy
+
+begin script RunLand1IntroFlyBy
+start
+	run script Land1IntroFlyBy
+end script RunLand1IntroFlyBy

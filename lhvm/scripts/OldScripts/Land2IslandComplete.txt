@@ -1,0 +1,162 @@
+//------------------------------------------------
+//  LAND 2 ISLAND COMPLETE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land2IslandComplete
+
+JailPos = marker at {1109.695,111.907,736.235}
+Jail = 0
+
+Dim=0
+Guard[2]
+DimPos[3]
+Captain=0
+CaptainPos[3]
+Lady[2]
+LadyPos[2]
+RelCamFoc=0
+RelCamPos=0
+
+start
+
+	Jail = get HOUSE at {JailPos}	
+
+ DimPos[2] = 0
+
+ DimPos[0] = marker at get world position from Jail to {-33.840,0.063,-2.076}
+ DimPos[1] = marker at get world position from Jail to {-34.314,0.089,-3.789}
+ DimPos[2] = marker at get world position from Jail to {-25.424,0.594,-25.877}
+
+ CaptainPos[0] = marker at get world position from Jail to {-34.852,0.097,-3.888}
+ CaptainPos[1] = marker at get world position from Jail to {-26.936,0.603,-26.030}
+
+ LadyPos[0] = marker at get world position from Jail to {-34.353,0.063,-1.283}
+ LadyPos[1] = marker at get world position from Jail to {-34.951,0.064,-1.133}
+
+
+
+	Dim = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {DimPos[0]}	
+	Lady[0] = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {LadyPos[0]}
+	Lady[1] = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {LadyPos[1]}
+	Captain = create SOLDIER PLATOON_INFO_GREEK_MELEE_1 at {CaptainPos[0]}
+			
+	set Dim focus to {Lady[0]}
+	set Lady[0] focus to {Dim}
+	set Lady[1] focus to {Dim}
+	set Captain focus to {Dim}
+
+		store camera details
+	
+	
+	begin cinema
+
+		//wide shot
+		set camera lens 70.000
+		RelCamPos=marker at get world position from Jail to {-31.983,2.397,-1.771}
+		RelCamFoc=marker at get world position from Jail to {-51.829,-11.417,6.847}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+				
+		say "Dimitrios.Dimitrios.Dimitrios."
+		wait until read
+		
+		//closer up
+		set camera lens 37.000
+		RelCamPos=marker at get world position from Jail to {-32.764,0.740,-2.040}
+		RelCamFoc=marker at get world position from Jail to {-57.597,-1.214,4.163}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 3 seconds
+
+		say "Dimitrios."
+		//show captain and dim turning
+		set camera lens 37.000
+		RelCamPos=marker at get world position from Jail to {-33.793,0.626,-0.282}
+		RelCamFoc=marker at get world position from Jail to {-41.084,0.826,-24.896}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 1 seconds
+		set Dim focus to {Captain}
+		wait 1 seconds
+		
+		set Dim focus to {Lady[0]}
+		wait 1 seconds
+
+		
+		say "Ladies, if you’ll excuse me."
+		wait until read
+		move Dim position to {DimPos[1]}
+		
+		//shot from other side of the two men coming together
+		
+		RelCamPos=marker at get world position from Jail to {-34.410,0.674,-5.477}
+		RelCamFoc=marker at get world position from Jail to {-37.394,0.874,20.020}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait until {Dim} near {DimPos[1]} radius 0.2
+		//wait until {Captain} near {CaptainPos[1]} radius 0.2
+
+		//SPEED of Dim = SPEED of Captain
+		
+		move Dim position to {DimPos[2]}
+		SPEED of Dim = 0.18
+		move Captain position to {CaptainPos[1]}
+wait 0.5 seconds
+		//move Captain position to {CaptainPos[2]}
+		
+	//wait 4 seconds
+		
+		//follow the two men
+		set camera position follow Dim offset {-0.614,0.543,2.257}
+		set camera focus follow Dim offset {14.869,0.893,-18.239}
+		
+		say "We’ve found some other refugees."
+		wait until read
+
+		say "The men or the children?"
+		wait until read
+		wait 3 seconds
+		move Dim position to {Dim}
+		move Captain position to {Captain}
+
+		//wait until {Dim} at {DimPos[2]}
+		wait 1 seconds
+		
+		//Close-up of Dimitrios shocked
+		set camera lens 32.000
+		RelCamPos=marker at get world position from Dim to {-0.207,0.758,0.645}
+		RelCamFoc=marker at get world position from Dim to {3.769,-0.533,-9.818}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 21.000 time 0.5
+		say "Oh my god."
+		wait 2 seconds
+		clear dialogue
+		
+		//pull back to show grave
+		set camera lens 34.000 time 10
+		RelCamPos=marker at get world position from Dim to {-4.067,5.010,12.977}
+		RelCamFoc=marker at get world position from Dim to {-0.327,0.992,3.135}
+		move camera position to {RelCamPos} time 10
+		move camera focus to {RelCamFoc} time 10
+
+		wait until camera ready
+		set fade red 0 green 0 blue 0 time 2
+		wait until fade ready
+		restore camera details
+		delete Dim
+		delete Captain
+		delete Lady[0]
+		delete Lady[1]
+		set fade in time 2
+		wait until fade ready
+		
+//wait 100 seconds
+
+	end cinema
+
+
+
+end script Land2IslandComplete

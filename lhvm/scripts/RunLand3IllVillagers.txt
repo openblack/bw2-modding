@@ -1,0 +1,6 @@
+run script RunLand3IllVillagers
+
+begin script RunLand3IllVillagers
+start
+	run script Land3IllVillagers
+end script RunLand3IllVillagers

@@ -1,0 +1,559 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Invisible_Stealer - Land 5
+//	~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+/*
+Invisible Stealer - Constant Event (Playing as Japanese)
+
+A man has the power of invisibility. He has become insane due to the loneliness and has now started to kill 
+people in your town.
+The player is first made aware of this after a murder has taken place. A scroll will appear above a villager’s
+head; namely the villager who was closest to the murder when it occurred.
+The Invisible Murderer (I.M.) will from now on run between his home in a cave or hut and the town itself. 
+He will stay in his place of occupancy for a short while; before returning to the town to commit another murder. 
+This will occur at regular intervals, at dawn or at dusk, which will help a player who can’t solve it, to expect
+the next one.
+The I.M. will stay invisible up until the point of a victim’s death; when he will appear briefly. He will attempt 
+to take the body back to his lair; but he will abandon this if you get close to him with the player’s hand.  
+He will then wait until the hand is far away before picking up the body again and trying to take it back to his lair.
+(The creature cannot see this character; but if it witnesses the murder it could point at it to draw your attention 
+to it. If possible it would be nice to have blood trails from the last body each time. i.e. footprints away from 
+the body that last longer because of the blood)
+The player has to stop these murders taking place by stopping the I.M. The player can use a number of spells to try 
+and catch him.
+Casting a flame spell for example will show him up to some degree. He is catch-able in this state. 
+(The fire will probably be put out if you hold him.)
+Casting freeze will allow the player to see a frozen outline. The player can obviously catch him whilst he remains frozen.
+*/
+	
+//Transfer over to new land 5
+//-------------------------------
+//	Get rid of fake witch's house. - add one in script for the new land??
+//	Get the real jail in - ask Ken for details. + wanted poster/s?
+//	If you smash the invisible man's house - what happens?
+//	Invisible means unpickupable too...
+//	Scroll always by someone who witnessed the last murder. (Reminder scroll if used.)
+//	Murderer de-cloaks whilst committing the crime.
+//	Scroll is above villager; waits until you click on him. Does this until another murder takes place. Change villager.
+//	
+//	Rewards:			Invisibility spell.
+//	Drawbacks:			Loss of villagers
+//
+//	Start date:			28-03-03?	 		By:	Phil
+//	Last Update:		01-04-03			By: Phil
+//
+//	Requires:			Invisibility spell.
+//
+//	Notes: Playing as Japanese (South), Aztecs are the main threat (roughly to the centre of the map). 
+//	Euronymous has a small Greek City to the North. Monastry is past a little way North of the Aztecs.
+//
+//	To Do:		Make a villager anim of being carried (by an invisble guy)
+//				Tie in with Global Wanted
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define INV_FALSE				= 0
+define INV_TRUE					= 1
+define INV_WAYPOINT_RADIUS		= 20
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global INV_Murderer_Dead				= INV_FALSE
+global INV_Murderer_In_Jail				= INV_FALSE
+global INV_Initial_Scroll_Used			= INV_FALSE
+global INV_Initial_Murder_Committed		= INV_FALSE
+global INV_Murderer_Invisible			= INV_TRUE
+global INV_Murderer_Home_Pos			= 0
+global INV_Murderer_Home_Building		= 0
+global INV_Murderer						= 0
+global INV_Storage_Pit_Hiding_Pos		= 0
+global INV_Pos_Near_Town				= 0
+global INV_Scroll						= 0
+global INV_Reminder_Scroll				= 0
+global INV_Scroll_Position				= 0
+global INV_Counter_A					= 0
+//global INV_Temp_Jail					= 0
+//global INV_Position_In_Jail				= 0
+global INV_Target						= 0
+global INV_Murderer_Temperature			= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+/*
+define script INV_Commit_A_Murder
+define script INV_Detect_Murderer_Placed_In_Jail
+define script INV_Advisor_Help_Explain_Murders
+define script INV_Control_Scrolls
+define script INV_Fake_Invisibility
+define script INV_Detect_Murderer_Killed
+define script INV_Detect_Murderer_Temperature
+*/
+
+//========================================================================================
+//	MAIN script
+//========================================================================================
+
+
+begin script Land5InvisibleStealer
+
+	INV_Murderer_Spawn_Position = 0
+
+start
+/*
+	INV_Murderer_Home_Pos		= marker at {1384.781,63.714,357.813}
+	INV_Pos_Near_Town			= marker at {1320.116,58.719,582.036}
+	INV_Storage_Pit_Hiding_Pos	= marker at {1275.303,58.347,565.687}
+	INV_Murderer_Spawn_Position = marker at {1376.447,62.879,354.582}
+
+	//... Create the home for the invisible murderer //yy
+	INV_Murderer_Home_Pos = marker at {1384.781,63.714,357.813}
+	INV_Murderer_Home_Building = create with angle 135 and scale 1.0 HOUSE ABODE_INFO_GREEK_SHACK_X at {INV_Murderer_Home_Pos}
+
+	//... Create the Murderer character.
+	INV_Murderer = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Murderer_Spawn_Position}
+
+	// TEMP SPEED BOOST	
+	SPEED of INV_Murderer = 1.1
+	
+	// TEMP SCALE CHANGE
+	SCALE of INV_Murderer = 5.0
+	wait 3 seconds
+
+	run background script INV_Commit_A_Murder
+	run background script INV_Detect_Murderer_Placed_In_Jail
+	run background script INV_Detect_Murderer_Killed
+	run background script INV_Control_Scrolls
+	run background script INV_Fake_Invisibility
+	run background script INV_Detect_Murderer_Temperature
+			
+	wait until INV_Murderer_Dead == INV_TRUE or INV_Murderer_In_Jail == INV_TRUE
+
+	wait 10 seconds
+	say "Invisible Murderer script ending in 10"
+	wait 10 seconds
+*/
+end script Land5InvisibleStealer
+//==============================
+
+
+/*
+//-----------------------------------------------------------------------------
+//	INV_Advisor_Help_Explain_Murders
+//-----------------------------------------------------------------------------
+begin script INV_Advisor_Help_Explain_Murders
+
+EnDimitriosis=0
+Guard1 = 0
+Guard2 = 0
+Guard1Pos = 0
+Guard2Pos = 0
+JapTownCentrage = 0
+DimPos = 0
+Guard1Target = 0
+Guard2Target = 0
+RelCamPos = 0
+RelCamFoc = 0
+
+start
+
+JapTownCentrage = get HOUSE at {1313.910, 61.936, 590.710}
+
+DimPos = marker at get world position from JapTownCentrage to {-13.365,0.000,-13.224}
+Guard1Pos = marker at get world position from JapTownCentrage to {-8.696,0.000,-9.936}
+Guard2Pos = marker at get world position from JapTownCentrage to {-9.400,0.000,-9.163}
+
+EnDimitriosis = create VILLAGER DIMITRIOUS_ACOLYTE at {DimPos}
+
+ALTITUDE of EnDimitriosis = 6.1
+
+Guard1Target = marker at get world position from JapTownCentrage to {-12.292,0.000,-11.925}
+Guard2Target = marker at get world position from JapTownCentrage to {-11.682,0.000,-10.925}
+
+begin cinema
+
+	set camera lens 29.000
+
+	RelCamPos=marker at get world position from JapTownCentrage to {-14.527,3.730,-13.597}
+	RelCamFoc=marker at get world position from JapTownCentrage to {-5.801,2.920,-9.410}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	wait 3 seconds
+
+	RelCamPos=marker at get world position from JapTownCentrage to {-12.782,3.704,-12.716}
+	RelCamFoc=marker at get world position from JapTownCentrage to {-21.052,3.475,-17.806}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	Guard1 = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {Guard1Pos}
+	Guard2 = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {Guard2Pos}
+	ALTITUDE of Guard1 = 6.1
+	ALTITUDE of Guard2 = 6.1
+	wait 1 seconds
+
+	move Guard1 position to {Guard1Target}
+	move Guard2 position to {Guard2Target}
+
+	wait 1 seconds
+
+	RelCamPos=marker at get world position from JapTownCentrage to {-14.527,3.730,-13.597}
+	RelCamFoc=marker at get world position from JapTownCentrage to {-5.961,2.920,-9.092}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+
+	wait until {Guard1} at {Guard1Target}
+	wait until {Guard2} at {Guard2Target}
+
+	set Guard1 focus to {EnDimitriosis}
+	set Guard2 focus to {EnDimitriosis}
+
+	RelCamPos=marker at get world position from JapTownCentrage to {-13.415,3.755,-12.618}
+	RelCamFoc=marker at get world position from JapTownCentrage to {-11.561,2.944,-22.118}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "Hey Dimster!"
+
+	set EnDimitriosis focus to {Guard1}
+
+	wait 1 seconds
+
+	ALTITUDE of EnDimitriosis = 6.1
+	ALTITUDE of Guard1 = 6.1
+	ALTITUDE of Guard2 = 6.1
+
+	wait 1 seconds
+
+	RelCamPos=marker at get world position from JapTownCentrage to {-13.961,3.757,-12.818}
+	RelCamFoc=marker at get world position from JapTownCentrage to {-5.381,2.946,-8.340}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "Our food keeps disappearing, and it's a bit wack"
+	play anim "A_P_TALK2_MALE" on Guard1
+	wait until read
+
+	RelCamPos=marker at get world position from JapTownCentrage to {-13.356,3.670,-12.094}
+	RelCamFoc=marker at get world position from JapTownCentrage to {-12.944,3.092,-21.781}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "Okay men. I'll look into the matter, or maybe god should since he's actually the player"
+	play anim "A_P_TALK2_MALE" on EnDimitriosis
+	wait until read
+
+	RelCamPos=marker at get world position from JapTownCentrage to {-14.527,3.730,-13.597}
+	RelCamFoc=marker at get world position from JapTownCentrage to {-5.801,2.920,-9.410}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	set EnDimitriosis focus to get world position from JapTownCentrage to {-21.133,3.207,-13.000}
+
+	say "hmm......"
+
+	move Guard1 position to {Guard1Pos}
+	move Guard2 position to {Guard2Pos}
+
+	wait until read
+	clear dialogue
+
+end cinema
+
+end script INV_Advisor_Help_Explain_Murders
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Murderer_Placed_In_Jail
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Murderer_Placed_In_Jail
+
+start
+
+	//... Detect whether the Murderer has been placed in the jail.
+	
+	wait until {INV_Murderer} near {INV_Position_In_Jail} radius 30 and INV_Murderer is not HELD
+	INV_Murderer_In_Jail = INV_TRUE
+
+	move INV_Murderer position to {INV_Position_In_Jail}
+	
+	begin dialogue
+		//temp
+		say "Murderer is now in jail."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait until {INV_Murderer} near {INV_Position_In_Jail} radius 3
+
+end script INV_Detect_Murderer_Placed_In_Jail
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Murderer_Killed
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Murderer_Killed
+
+	//INV_Counter_F = 0
+
+start
+	
+	while INV_Murderer_Dead == INV_FALSE
+		if HEALTH of INV_Murderer <= 0
+			INV_Murderer_Dead = INV_TRUE
+		end if
+		wait 0.4 seconds
+	end while
+
+	begin dialogue
+		//temp
+		eject good spirit
+		say "Murderer is dead."
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+end script INV_Detect_Murderer_Killed
+
+
+//-----------------------------------------------------------------------------
+//	INV_Commit_A_Murder
+//-----------------------------------------------------------------------------
+begin script INV_Commit_A_Murder
+
+	INV_Target_Current_Pos		= 0
+	INV_Focus_Man				= 0
+	INV_Murderer_Focus			= 0
+	INV_Current_Pos_Of_Murderer = 0
+	INV_Body					= 0
+
+start
+
+	begin loop
+		begin loop
+			while INV_Target not exists
+				INV_Target = get VILLAGER JAPANESE_FARMER at {L5JapaneseTown} radius 100
+			end while
+			SCALE of INV_Target = 5.0
+
+			INV_Target_Current_Pos = 0
+
+			//------------------------------------
+			//Move murderer to target
+			//------------------------------------
+			move INV_Murderer position to {INV_Pos_Near_Town}
+			wait until {INV_Murderer} near {INV_Pos_Near_Town} radius 100
+			begin loop	
+				move INV_Murderer position to {INV_Target} radius 20
+				until {INV_Murderer} near {INV_Target} radius 30
+			end loop
+			say "Murderer close to villager - stopping target"
+			stop INV_Target moving
+			say "INV_Target should now be stationary."
+			wait 10 seconds
+			move INV_Murderer position to {INV_Target} radius 10
+			wait until {INV_Murderer} near {INV_Target} radius 15
+			//------------------------------------
+
+			INV_Murderer_Invisible = INV_FALSE
+
+			//------------------------------------
+			// COMMIT THE DASTARDLY ACT!
+			//------------------------------------
+			INV_Murderer_Focus = marker at focus position of INV_Target
+			INV_Focus_Man = marker at get target from {INV_Murderer_Focus} to {INV_Target} distance 3 angle 180
+			//play anim "A_P_TURN_180" on INV_Target 
+			//wait until INV_Target played
+			set INV_Target focus to {INV_Focus_Man}
+			//Make the murderer visible
+			INV_Murderer_Invisible = INV_FALSE
+			wait 1 second
+			//... Play killing anims
+			play anim "a_p_meleecombat_swing01" on INV_Murderer 
+			wait until INV_Murderer played
+			//... Play Death anim
+			play anim "a_p_meleecombat_deathbyaxe_back" on INV_Target 
+			wait until INV_Target played
+			delete INV_Target
+			say "HaHa! Another one bites the dust!"
+			//------------------------------------
+
+			wait 3 seconds
+			say "Temp Murder committed!"
+			INV_Initial_Murder_Committed = INV_TRUE
+			INV_Murderer_Invisible = INV_TRUE
+			
+			//------------------------------------
+			//Carry_Body_Back_To_House
+			//------------------------------------
+			//use Kelly's carry body anim
+			move INV_Murderer position to {INV_Murderer_Home_Pos}
+
+			while not {INV_Murderer} near {INV_Murderer_Home_Pos} radius 3
+				if hand position near {INV_Murderer} radius 20
+					say "Hand is near the murderer. He drops the body and moves away."
+					INV_Current_Pos_Of_Murderer = marker at {INV_Murderer}
+					INV_Body = create VILLAGER VILLAGER_INFO_JAPANESE_SHEPHERD_MALE at {INV_Current_Pos_Of_Murderer}
+					SCALE of INV_Body = 5.0
+					play anim "a_p_dead1" on INV_Body loop -1
+					move INV_Murderer position to {INV_Pos_Near_Town} radius 5
+					wait until hand position not near {INV_Murderer} radius 80 and hand position not near {INV_Body} radius 80
+					if INV_Body exists
+						move INV_Murderer position to {INV_Body} radius 3
+						wait until {INV_Murderer} near {INV_Body} radius 5 or INV_Body not exists
+						delete INV_Body
+					end if
+					move INV_Murderer position to {INV_Murderer_Home_Pos}
+				end if
+			end while
+
+			wait until {INV_Murderer} near {INV_Murderer_Home_Pos} radius 3
+			//------------------------------------
+
+			//Pause - wait until dusk/dawn again
+			say "Should pause here for 30 seconds"
+			wait 30 seconds
+			//wait 30 seconds
+			//say "This is after the pause of 60 seconds - although it was probably only 30."
+			say "30 seconds passed."
+			until INV_Murderer not exists or INV_Murderer_In_Jail == INV_TRUE or INV_Murderer_Dead == INV_TRUE
+		end loop
+		until INV_Murderer_In_Jail == INV_TRUE or INV_Murderer_Dead == INV_TRUE
+	end loop
+
+end script INV_Commit_A_Murder
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Control_Scrolls
+//-----------------------------------------------------------------------------
+begin script INV_Control_Scrolls
+		
+start
+
+	wait until INV_Initial_Murder_Committed == INV_TRUE
+
+	//... Scroll Pos
+	// TEMP POSITION - needs to be above the head of the last villager to see the crime.
+	INV_Scroll_Position = marker at {1313.901,58.719,579.489}
+
+	//... Create Scroll
+	if INV_Scroll not exists
+		INV_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Scroll_Position}
+	end if
+
+	begin dialogue
+		eject good spirit
+		say "A scroll has appeared above a villager in your town; I wonder what's happened?"
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+	wait until INV_Scroll exists
+	
+	//... Wait until scroll clicked
+	wait until INV_Scroll right clicked
+	INV_Initial_Scroll_Used = INV_TRUE
+	
+	//wait until INV_Scroll right clicked
+	delete INV_Scroll
+	
+	run script INV_Advisor_Help_Explain_Murders
+		
+	wait 3 seconds
+
+	begin loop
+		if INV_Reminder_Scroll not exists
+			INV_Reminder_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Scroll_Position}
+		end if
+		if INV_Reminder_Scroll right clicked
+			begin dialogue
+				eject good spirit
+				say "You must solve the mystery of the murders that take place at dawn."
+				wait until read
+				clear dialogue
+			end dialogue
+		end if
+		until INV_Murderer_Dead == INV_TRUE or INV_Murderer_In_Jail == INV_TRUE
+	end loop
+	
+	if INV_Scroll exists
+		delete INV_Scroll
+	end if
+	if INV_Reminder_Scroll exists
+		delete INV_Reminder_Scroll
+	end if
+
+end script INV_Control_Scrolls
+
+
+//-----------------------------------------------------------------------------
+//	INV_Fake_Invisibility
+//-----------------------------------------------------------------------------
+begin script INV_Fake_Invisibility
+
+	INV_Been_Said_Invisible = INV_FALSE
+	INV_Been_Said_Visible = INV_FALSE
+
+start
+	
+	begin loop
+		if INV_Murderer_Invisible == INV_TRUE and INV_Been_Said_Invisible == INV_FALSE
+			say "Murderer status: INVISIBLE"
+			INV_Been_Said_Invisible = INV_TRUE
+			INV_Been_Said_Visible = INV_FALSE
+		elsif INV_Murderer_Invisible == INV_FALSE and INV_Been_Said_Visible == INV_FALSE
+			say "Murderer status: Hey we can see him; he's VISIBLE"
+			INV_Been_Said_Visible = INV_TRUE
+			INV_Been_Said_Invisible = INV_FALSE
+		end if
+		wait 0.3 seconds
+		until INV_Murderer not exists
+	end loop
+
+end script INV_Fake_Invisibility
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Murderer_Temperature
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Murderer_Temperature
+
+start
+	
+	begin loop
+		INV_Murderer_Temperature = get INV_Murderer temperature
+		if INV_Murderer_Temperature > 0 and not INV_Murderer_Invisible == INV_FALSE
+			INV_Murderer_Invisible = INV_FALSE
+			say "Temperature: $d" with number INV_Murderer_Temperature
+		elsif INV_Murderer_Temperature <= 0 and not INV_Murderer_Invisible == INV_TRUE
+			INV_Murderer_Invisible = INV_TRUE
+			say "Temperature: $d" with number INV_Murderer_Temperature
+		end if
+		wait 0.3 seconds
+	end loop
+
+end script INV_Detect_Murderer_Temperature
+
+*/
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+/*
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

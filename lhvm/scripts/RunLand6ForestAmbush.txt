@@ -1,0 +1,7 @@
+run script RunLand6ForestAmbush
+
+begin script RunLand6ForestAmbush
+start
+	run script Land6ForestAmbush
+
+end script RunLand6ForestAmbush

@@ -1,0 +1,21 @@
+begin script Land1RescueThePrincess
+Scroll = 0
+start
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {}
+	while
+		if scroll clicked on and still on island
+		end if
+		
+		if not on island and not in any hand
+			ok ending
+		end if 
+		
+		if dead
+		end if 
+		
+		if placed in norse town
+		end if 
+		
+	end while
+	delete scroll
+end script Land1RescueThePrincess

@@ -1,0 +1,367 @@
+
+global GameStarted
+global JustArrived
+global TutorialStatus[21]	// 0 = unavailable, 1 = Tutorial Needed, 2 = Tutorial Not Needed, 3 = Tutorial Done
+
+
+//-------------------------------------------------------------------------
+// Welcome Tour Script
+//-------------------------------------------------------------------------
+
+begin script WelcomeTour
+
+start
+
+ begin cinema
+	//fade to grey
+	set fade red 200 green 200 blue 255 time 0.5
+	wait 0.5 seconds
+	set camera position to {1308.339,571.615,689.789}
+	set camera focus to {1135.921,31.389,1378.906}
+	enable highlight draw
+	// show whole land
+	move camera position to {1224.766,309.763,1023.810} time 4
+	move camera focus to {1135.941,31.451,1378.827} time 4
+	set fade in time 3
+	wait 3 seconds
+	eject good spirit
+	say "Welcome to the God's Playground."
+	wait until read
+	say "This is where you can come to learn."
+	wait until read	
+	say "The island is split up into three areas."
+	wait until read
+	wait 1 second
+
+	// show God control section		
+	move camera position to {1174.806,138.747,1377.483} time 4
+	move camera focus to {1049.530,34.328,1339.572} time 4
+	say "This section will teach you all you need to know about being a god."
+	wait until read
+	move camera position to {1043.993,63.529,1191.093} time 6
+	move camera focus to {945.067,7.248,1279.397} time 6
+	say "Everything from moving yourself around to casting miracles."
+	wait until read
+	wait until camera ready
+	
+	// show Micromanagement section	
+	move camera position to {1077.996,81.817,1411.680} time 4
+	move camera focus to {1123.453,26.374,1498.879} time 4
+	say "Over here is the Village section."
+	wait until read
+	wait until camera ready
+	move camera position to {1046.677,62.563,1490.328} time 6
+	move camera focus to {1124.767,26.346,1495.620} time 6
+	say "Here you can learn all about the villagers and buildings."
+	wait until read
+	wait until camera ready
+	
+	// camera moves to show creature section	
+	move camera position to {1170.368,99.143,1334.854} time 4
+	move camera focus to {1251.917,29.997,1420.089} time 4
+	say "Finally there is the Creature Section up in these hills."
+	wait until read
+	wait until camera ready
+	move camera position to {1238.967,62.755,1533.698} time 9
+	move camera focus to {1331.610,19.323,1485.029} time 9
+	say "Here you can learn everything about training and controlling your creature."
+	wait until read
+	say "As new features appear in the main game their tutorials will be added here."
+	wait until read
+	wait until camera ready
+	//fade to black
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds	
+
+
+	set camera position to {1108.534,45.880,1497.063}
+	set camera focus to {1266.240,0.034,705.525}
+	set fade in time 2
+	move camera position to {1141.517,46.557,1404.937} time 6 // zoom in to Tablet
+	make good spirit point at {1148.260,46.108,1375.118} // points at tablet one
+	say "These tablets will show you which lessons have been completed."
+	wait until read
+	stop good spirit pointing
+	make good spirit point at {1149.760,46.108,1376.618} in world // points at "New" marker
+	say "It will also highlight what's new to the land since your last visit."
+	wait until read
+	say "Touch one of the links and you will be taken directly there."
+	wait until read
+	stop good spirit pointing
+	send good spirit home
+	say "**HAND DEMO** Clicking link."
+	wait until read
+	
+	move camera position to {1104.936,37.231,1363.475} time 2
+	move camera focus to {1098.077,26.685,1386.293} time 2
+	wait until camera ready
+	say "This tutorial teaches you how to move around the world."
+	wait until read
+	say "**HAND DEMO** Clicking scroll."
+	wait 1 second
+	say "To activate a scroll move the hand over the scroll like this.."
+	wait until read
+	say "and then just click on it with the left mouse button."
+	wait until read
+ end cinema
+ 
+ if GameStarted == 0
+	 // If they selected tutorial from front end then automatically trigger first tutorial
+	 ///TriggerCameraControlTutorial = 1
+	 // not required if clicking scroll tutorial is added
+ end if
+
+
+end script WelcomeTour
+
+//-----------------------------------------------------------------------------
+// Script that goes through the tutorial list until it finds one you need to do
+//-----------------------------------------------------------------------------
+
+begin script TutorialAnalysis
+
+ GotOne = 0
+ // markers for pointing at all the hyperlinks on the tablets
+ CameraLink = marker at {0.000,0.000,0.000}
+ ThrowingLink = marker at {0.000,0.000,0.000}
+ Count = 0
+
+start
+	while GotOne == 0
+		if TutorialStatus[Count] == 1
+			if Count == 0 // Camera control
+				// check if Interface Analysis shows player has used all camera movement types enough
+				/// if not
+					///begin dialogue
+						///eject good spirit
+						///say "Boss, You still haven't used all the basic controls"
+						///wait until read
+						///make good spirit point at {CameraLink}
+						///say "This tutorial will tell you more."
+						///wait until read
+					///end dialogue
+					GotOne = 1
+				/// else
+					///set TutorialStatus[Count] = 2
+				/// end if
+
+			elsif Count == 1 // Throwing
+				/// check if Interface Analysis shows the player has picked up and thrown enough
+				/// if not
+					///begin dialogue
+						///eject good spirit
+						///say "Boss, You still haven't used all the hand controls"
+						///wait until read
+						///make good spirit point at {ThrowingLink}
+						///say "This tutorial will tell you more."
+						///wait until read
+					///end dialogue
+					GotOne = 1				
+				/// else
+					 ///set TutorialStatus[Count] = 2			
+				/// end if
+			elsif Count == 2 // Charging Miracles
+				// check if Interface Analysis shows the player has charged miracles enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 3 // Disciples
+				// check if Interface Analysis shows the player has created enough disciples
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 4 // Storage pit
+				// check if Interface Analysis shows the player has used the storage pit enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 5 // Workshop
+				// check if Interface Analysis shows the player has used the workshop enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 6 // Warrior training
+				// check if Interface Analysis shows the player has trained enough warriors
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 7 // Creature Training
+				// check if Interface Analysis shows the player has used leashes enough and trained creature enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 8 // Creature Fighting
+				// check if Interface Analysis shows if player has used all the basic fight moves enough
+				// if so set TutorialStatus[Count] = 2
+			elsif Count == 9 // Creature Leader
+				// check if Interface Analysis shows if the player has used all the creature leader features enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 10 // Creature Cave
+				// check if Interface Analysis shows player has been to cave enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 11 // Gestures and Power-Ups
+				// check if Interface Analysis shows player has used gestures and power-ups enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 12 // Oneshots
+				// check if Interface Analysis shows if one-shots have been tapped enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 13 // Seige Workshop
+				// check if Interface Analysis shows if Rams have been built enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 14 // Town Upgrade
+				// check if Interface Analysis shows the player has upgraded a village to a town
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 15 // Archer Extension
+				// check if Interface Analysis shows the player has trained enough archers
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 16 // City Upgrade
+				// check if Interface Analysis shows the player has upgraded a town to a city
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 17 // Walls and Gates
+				// check if Interface Analysis shows player has used all wall features successfully
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 18 // Seige Extension
+				// check if Interface Analysis shows the player has built enough catapults
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 19 // Tech 1
+				// check if Interface Analysis shows the player has used Tech 1 enough
+				// if so set TutorialStatus[Count] = 2			
+			elsif Count == 20 // Tech 2
+				// check if Interface Analysis shows the player has used Tech 1 enough
+				// if so set TutorialStatus[Count] = 2
+			else
+				GotOne = 1
+			end if
+		end if
+		Count++
+	end while
+	GotOne = 0
+	
+end script TutorialAnalysis
+
+//-------------------------------------------------------------------------
+// Tiny Secret Script - triggers only after Dark Warlock killed
+//-------------------------------------------------------------------------
+
+
+begin script TheSecretBloke
+
+ SecretBlokePos = marker at {1242.736,24.206,1885.024}
+ SecretBloke = create VILLAGER MALE at {SecretBlokePos}
+ OutToSea = marker at {1222.922,0.000,1909.728}
+ SecretComplete = 0
+ RewardPos = marker at {1314.146,26.253,1798.233}
+ Reward = 0
+ SecretTotem = 0
+ TotemPos = marker at {1242.600,24.011,1886.828}
+ BlokeNailed = 0
+ Nukeage = 0
+
+start
+	///wait until DarkWarlockDefeated == 1	// waits until the Dark Warlock has been defeated on Land X in the main game.
+	//SecretTotem = create with angle 0 and scale 1 OBJECT IDOL at {TotemPos}
+	SecretTotem = create with angle 0 and scale 1 SCRIPT_OBJECT_TYPE_TOTEM ABODE_INFO_AFRICAN_TOTEM at {TotemPos}
+	//SCRIPT_OBJECT_PROPERTY_TYPE_HEIGHT of SecretTotem = SCRIPT_OBJECT_PROPERTY_TYPE_MAX_HEIGHT of SecretTotem
+	disable SecretTotem pickup
+	disable SecretBloke pickup
+	set SecretBloke focus to {TotemPos}
+	SecretBloke play ANM_P_PRAY loop -1
+	
+	begin loop
+		wait 1 second
+		if {SecretBloke} not near {SecretBlokePos} radius 5 and BlokeNailed == 0
+			begin dialogue
+				BlokeNailed = 1
+				eject evil spirit
+				if SecretBloke exists
+					make evil spirit point at {SecretBloke} in world
+				end if
+				say "Hah! That'll ruin his view."
+				wait until read
+			end dialogue			
+		end if
+		if HEALTH of SecretTotem < 1 or SecretTotem hit
+			clear hit object
+			// Nuke Totem with Megablast1
+			Nukeage = cast SPELL_EXPLOSION_LEVEL_1 spell at {TotemPos} from {TotemPos} radius 5.0 time 15 curl 0
+			wait 1 seconds
+			delete SecretBloke with explosion			
+			delete SecretTotem with explosion
+			begin dialogue
+				Reward = create highlight CHALLENGE_DOLPHIN_SHOOT HIGHLIGHT_CHALLENGE at {RewardPos}
+				ALTITUDE of Reward = 15
+				eject evil spirit
+				make evil spirit point at {TotemPos} in world
+				say "They'll be no false idols in our afterlife!"
+				wait until read
+				eject good spirit
+				make good spirit point at {Reward}
+				say "Oooh, we've triggered a secret scroll, Boss!"
+				wait until read
+			end dialogue
+			SecretComplete = 1
+		end if
+	until SecretComplete == 1
+	end loop
+	
+	begin loop
+		wait until Reward right clicked
+		clear right clicked object
+		begin dialogue
+			eject evil spirit
+			say "SECRET CLUE: The Tombstone of the Damned has many uses."
+			wait until read
+			say "SECRET CLUE: It can guide you to where lost souls wander."
+			wait until read
+		end dialogue
+	end loop
+
+end script TheSecretBloke
+
+
+//-------------------------------------------------------------------------
+// Control Script
+//-------------------------------------------------------------------------
+
+begin script PlaygroundControl
+
+ CitadelViewPos = marker at {1127.286,46.557,1461.121}
+ CitadelViewFoc = marker at {1106.538,26.434,1379.059}
+ 
+start
+	// set up global array
+	 TutorialStatus[0] = 1 // Camera control
+	 TutorialStatus[1] = 1 // Throwing
+	 TutorialStatus[2] = 1 // Charging Miracles
+	 TutorialStatus[3] = 1 // Disciples
+	 TutorialStatus[4] = 1 // Storage pit
+	 TutorialStatus[5] = 1 // Workshop
+	 TutorialStatus[6] = 1 // Warrior training
+	 TutorialStatus[7] = 1 // Creature Training
+	 TutorialStatus[8] = 1 // Creature Fighting
+	 TutorialStatus[9] = 1 // Creature Leader
+	 TutorialStatus[10] = 1 // Creature Cave
+	 TutorialStatus[11] = 1 // Gestures and Power-Ups
+	 TutorialStatus[12] = 1 // Oneshots	 
+	 TutorialStatus[13] = 0 // Seige Workshop
+	 TutorialStatus[14] = 0 // Town Upgrade
+	 TutorialStatus[15] = 0 // Archer Extension
+	 TutorialStatus[16] = 0 // City Upgrade
+	 TutorialStatus[17] = 0 // Walls and Gates
+	 TutorialStatus[18] = 0 // Seige Extension
+	 TutorialStatus[19] = 0 // Tech 1
+	 TutorialStatus[20] = 0 // Tech 2
+	 
+	// Run all scripts that are needed at start
+		///run background script PlaygroundScoreboard
+		run background script TheSecretBloke
+		run background script AssaultCourse
+		run background script ThrowingMiniGame
+		run background script Firecatcher
+		run background script MiracleTutorial
+		///run background script MicromanagementControl
+		///run background script CreatureStuff
+
+	run script WelcomeTour
+			
+	begin loop
+		if not in widescreen and (camera position near {CitadelViewPos} radius 10 and camera focus near {CitadelViewFoc} radius 50) // Either just arrived on land or double tapped spacebar to see tablets
+			///run script TutorialAnalysis
+			begin dialogue
+				say "**Tutorial Advice Script Currently Commented Out.**"
+				wait until read
+			end dialogue
+			wait until camera position not near {CitadelViewPos} radius 100
+		end if
+	end loop
+	
+	
+end script PlaygroundControl

@@ -1,0 +1,259 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define JF_True = 1
+define JF_False = 0
+define JF_Jack_Time = 6.00
+define JF_MIN_NUMBER_OF_VILLAGERS = 10
+define JF_MIN_NUMBER_OF_FIELDS = 2
+define JF_NUMBER_OF_SPAWN_POS = 6
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global JF_Jack_Frost = 0
+global JF_Jack_Dead = JF_False
+global JF_Jack_Spawn_Pos = 0
+global JF_Jacks_Speed = 0.5
+global JF_Jack_Is_Wet = JF_False
+global JF_Player_Town = 0
+global JF_Jack_Safe = JF_True
+global JF_Jack_Is_Burnt = JF_False
+global JF_Advisors = 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script JF_Create_Jack
+define script JF_Jack_Hunt
+define script JF_Jack_Runs_Away
+define script JF_Field_Frozen(JF_Field)
+define script JF_Jack_Frozen
+define script JF_Jack_Wet
+define script JF_Jacks_Trail
+define script JF_Jack_Dead
+define script JF_Jack_Burnt
+define script JF_Advisors
+//define script JF_Jack_Offshore
+//-----------------------------------------------------------------------------
+//run script Land2JackFrost // Main function, calls other scripts
+//-----------------------------------------------------------------------------
+begin script Land2JackFrost
+start
+	run background script JF_Create_Jack
+	run background script JF_Jack_Runs_Away
+	run background script JF_Jack_Frozen
+	run background script JF_Jack_Wet
+	run background script JF_Jacks_Trail
+	run background script JF_Jack_Dead
+	run background script JF_Jack_Burnt
+end script Land2JackFrost
+//-----------------------------------------------------------------------------
+// JF_Create_Jack -- Creates Jack Frost at JF_Jack_Time when jack doesn't exist
+//-----------------------------------------------------------------------------
+begin script JF_Create_Jack
+	JF_Jack_Random_Spawn_Pos[JF_NUMBER_OF_SPAWN_POS]
+	JF_Random_Number = 0
+	JF_Wait_A_Day_Timer = 0
+start
+	JF_Jack_Random_Spawn_Pos[0] = marker at {1155.763, 138.874, 1795.179}
+	JF_Jack_Random_Spawn_Pos[1] = marker at {1161.163, 161.028, 1641.527}
+	JF_Jack_Random_Spawn_Pos[2] = marker at {1121.337, 147.553, 1542.202}
+	JF_Jack_Random_Spawn_Pos[3] = marker at {1018.682, 144.435, 1486.840}
+	JF_Jack_Random_Spawn_Pos[4] = marker at {1045.327, 141.978, 1783.033}
+	JF_Jack_Random_Spawn_Pos[5] = marker at {808.981, 132.841, 1706.526}
+	JF_Player_Town = get TOWN at {1142.699, 158.750, 1613.203} radius 20
+	
+	begin loop
+		wait until JF_Jack_Frost not exists and JF_Wait_A_Day_Timer == 0
+			JF_Wait_A_Day_Timer = create timer for 200 seconds 
+			wait until get game time >= JF_Jack_Time and get game time <= (JF_Jack_Time+1) and size of JF_Player_Town >= JF_MIN_NUMBER_OF_VILLAGERS and get number of type SCRIPT_OBJECT_TYPE_FIELD in JF_Player_Town min built 1.0 >= JF_MIN_NUMBER_OF_FIELDS 
+				JF_Random_Number = number from 0 to (JF_NUMBER_OF_SPAWN_POS-1)
+				JF_Jack_Spawn_Pos = JF_Jack_Random_Spawn_Pos[JF_Random_Number]
+				JF_Jack_Frost = create VILLAGER VILLAGER_INFO_FENRICK at {JF_Jack_Spawn_Pos}
+				enable JF_Jack_Frost indestructible
+				enable JF_Jack_Frost immune to spells
+				SCALE of JF_Jack_Frost = 2.0
+				JF_Jacks_Speed  = 0.3
+				SPEED of JF_Jack_Frost = JF_Jacks_Speed 
+				run background script JF_Jack_Hunt
+				JF_Jack_Safe = JF_False
+	until JF_Jack_Dead == JF_True
+	end loop
+end script JF_Create_Jack
+//-----------------------------------------------------------------------------
+// JF_Jack_Hunt -- Directs Jack To The Player's Fields
+//-----------------------------------------------------------------------------
+begin script JF_Jack_Hunt
+	JF_Freezing_Pos = 0
+	JF_Field = 0
+	JF_Radius = 20
+	JF_Victim_Count = 0
+start
+	JF_Freezing_Pos = JF_Player_Town
+	JF_Field = 0
+	JF_Radius = 20 
+	while JF_Field not exists
+		JF_Field = get SCRIPT_OBJECT_TYPE_FIELD in JF_Player_Town
+	end while
+	if JF_Jack_Is_Wet == JF_False// and JF_Field isnt frozen
+		move JF_Jack_Frost position to {JF_Field}
+	end if
+	wait until {JF_Jack_Frost} at {JF_Field} or JF_Jack_Is_Wet == JF_True or JF_Jack_Frost not exists
+	if JF_Field exists and JF_Jack_Is_Wet == JF_False and JF_Jack_Frost exists//and JF_Field is not frozen
+		run background script JF_Field_Frozen(JF_Field)
+		run background script JF_Advisors
+		run background script JF_Jack_Runs_Away
+	end if
+end script JF_Jack_Hunt
+//-----------------------------------------------------------------------------
+// JF_Jack_Runs_Away -- Directs Jack to safety
+//-----------------------------------------------------------------------------
+begin script JF_Jack_Runs_Away
+start
+	attach reaction JF_Jack_Frost REACTION_FLEE_FROM_OBJECT
+	if JF_Jack_Is_Wet == JF_False
+		move JF_Jack_Frost position to {JF_Jack_Spawn_Pos} 
+	end if
+	wait until {JF_Jack_Frost} at {JF_Jack_Spawn_Pos} or JF_Jack_Is_Wet == JF_True or JF_Jack_Frost not exists
+	if JF_Jack_Frost exists and JF_Jack_Is_Wet == JF_False
+		JF_Jack_Safe = JF_True
+		delete JF_Jack_Frost
+	end if
+end script JF_Jack_Runs_Away
+//-----------------------------------------------------------------------------
+// JF_Field_Frozen -- Freezes A Field And The Villagers Near It for a period of time
+//-----------------------------------------------------------------------------
+begin script JF_Field_Frozen(JF_Field)
+	JF_Freeze_Timer = 0
+start
+	JF_Freeze_Timer = create timer for 10 seconds 
+	begin loop
+		add effect EFFECT_TYPE_BURN at {JF_Field} strength - 1 radius 5.0
+	until get JF_Freeze_Timer time remaining == 0
+	end loop
+end script JF_Field_Frozen
+//-----------------------------------------------------------------------------
+// script JF_Jack_Frozen -- Increases Speed of Jack when he is frozen
+//-----------------------------------------------------------------------------
+begin script JF_Jack_Frozen
+	JF_Ice_Spell = 0
+start
+	begin loop
+		wait until JF_Jack_Frost exists
+			JF_Ice_Spell = get spell MAGIC_TYPE_BOMB_ICE at {JF_Jack_Frost} radius 8 
+			if JF_Ice_Spell exists
+				JF_Jacks_Speed += 0.2
+				SPEED of JF_Jack_Frost = JF_Jacks_Speed
+				wait 0.5 seconds
+			end if
+	until JF_Jack_Dead == JF_True
+	end loop 
+end script JF_Jack_Frozen
+//-----------------------------------------------------------------------------
+// script JF_Jack_Wet -- Turns Jack into a block of ice when he is wet
+//-----------------------------------------------------------------------------
+begin script JF_Jack_Wet
+	JF_Water_Spell = 0
+	JF_Frozen_Timer = 0
+start
+	begin loop
+		while JF_Jack_Is_Wet == JF_False
+			wait until JF_Jack_Frost exists
+				if not {JF_Jack_Frost} on land and JF_Jack_Frost is not HELD
+					//run background script JF_Jack_Offshore
+				else
+					JF_Water_Spell = get spell MAGIC_TYPE_VECTOR_WATER at {JF_Jack_Frost} radius 3 
+					if JF_Water_Spell exists
+						JF_Jack_Is_Wet = JF_True
+					end if
+				end if
+		end while
+		move JF_Jack_Frost position to {JF_Jack_Frost}
+		JF_Jacks_Speed = 0.2
+		SPEED of JF_Jack_Frost = JF_Jacks_Speed
+		disable JF_Jack_Frost indestructible
+		JF_Frozen_Timer = create timer for 30 seconds
+		wait until get JF_Frozen_Timer time remaining == 0 or JF_Jack_Is_Wet == JF_False
+		wait until {JF_Jack_Frost} on land
+			JF_Jack_Is_Wet = JF_False
+			enable JF_Jack_Frost indestructible
+			run background script JF_Jack_Runs_Away
+	until JF_Jack_Dead == JF_True
+	end loop
+end script JF_Jack_Wet
+//-----------------------------------------------------------------------------
+// script JF_Jacks_Trail -- Leaves An Icy Trail Everywhere Jack Goes
+//-----------------------------------------------------------------------------
+begin script JF_Jacks_Trail
+	JF_Frozen_Building = 0
+start
+	begin loop
+		wait until JF_Jack_Frost exists
+			add effect EFFECT_TYPE_BURN at {JF_Jack_Frost} strength - 0.6 radius 0.1
+			JF_Frozen_Building = 0
+			JF_Frozen_Building = get HOUSE at {JF_Jack_Frost} radius 12
+			if  JF_Frozen_Building exists and get JF_Frozen_Building temperature < 0
+				set JF_Frozen_Building temperature 0
+			end if
+	until JF_Jack_Dead == JF_True
+	end loop
+end script JF_Jacks_Trail
+//-----------------------------------------------------------------------------
+// script JF_Jack_Dead -- Checks If The Player Has Killed Jack 
+//-----------------------------------------------------------------------------
+begin script JF_Jack_Dead
+start
+	begin loop
+		if JF_Jack_Safe == JF_False and (JF_Jack_Frost not exists or HEALTH of JF_Jack_Frost == 0)
+			JF_Jack_Dead = JF_True
+		end if
+	until JF_Jack_Dead == JF_True
+	end loop
+end script JF_Jack_Dead
+//-----------------------------------------------------------------------------
+// script JF_Jack_Burnt -- Melts Jack When He Is burned
+//-----------------------------------------------------------------------------
+begin script JF_Jack_Burnt
+	JF_Fire_Spell1 = 0
+	JF_Fire_Spell2 = 0
+start
+	begin loop
+		while JF_Jack_Is_Burnt == JF_False
+			wait until JF_Jack_Frost exists
+				JF_Fire_Spell1 = get spell MAGIC_TYPE_VECTOR_FLAME  at {JF_Jack_Frost} radius 4 
+				JF_Fire_Spell2 = get spell MAGIC_TYPE_BOMB_FIRE at {JF_Jack_Frost} radius 4 
+				if JF_Fire_Spell1 exists or JF_Fire_Spell2 exists
+					JF_Jack_Is_Burnt = JF_True
+				end if
+		end while
+		if JF_Jack_Is_Wet == JF_True
+			JF_Jack_Is_Wet = JF_False
+		else
+			JF_Jack_Safe = JF_True
+			delete JF_Jack_Frost
+		end if	
+	until JF_Jack_Dead == JF_True
+	end loop
+end script JF_Jack_Burnt
+//-----------------------------------------------------------------------------
+// script JF_Advisors -- Controls The Advisor Dialogue
+//-----------------------------------------------------------------------------
+begin script JF_Advisors
+start
+	if JF_Advisors == 0
+		begin dialogue
+			eject good spirit
+			say "Oh my!  Hes frozen our crops."
+			wait 4 seconds
+			eject evil spirit
+			say "Don't let him get away with that Boss!"
+			wait 4 seconds
+		end dialogue
+		JF_Advisors++
+	end if 
+end script JF_Advisors
+//-----------------------------------------------------------------------------
+// script JF_Jack_Offshore -- Washes Jack Up To The Shore
+//-----------------------------------------------------------------------------
+begin script JF_Jack_Offshore
+start
+end script JF_Jack_Offshore

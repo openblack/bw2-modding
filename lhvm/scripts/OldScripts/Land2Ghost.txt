@@ -1,0 +1,613 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+//	L2Ghost
+//	~~~~~~~
+//	Description:
+//	This script has a girl taking medicine to her ill granny.
+//	She has to pass through a wood to get to her grannies house and on the way
+//	she runs into a pack of wolves. The wolves attck and kill her so her granny
+//	also dies. The haunted soul of the young girl plays out the scenario night
+//	after night trying to get to her grannies house and give her the medicine.
+//
+//	Resolutiuons:
+//	The only one is to save the girl by ?????
+//	When the girl dies the script is restarted the following night
+//
+//	Rewards:
+//	Unknown
+//
+//	Start date:			08-09-03			By:	Steve
+//	Update date:		21-09-03			By: Steve
+//
+///////////////////////////////////////////////////////////////////////////////
+//
+//	TODOS:
+//	~~~~~~
+//	Design the resolution to the script
+//	Put in the wolves instead of using the villagers
+//	Make the ghosts, ghosts (objects pass through them). Will need game and script functions to do this
+//	Reposition script onto land 2
+//	Need a house positioned on the map to be used as the grannies house
+//	Need to get the grannies house
+//	Make the wolves roam about a bit and make sure they kill the girl by default
+//	Make the wolf attack the girl (need wolf and attack anims)
+//		
+//	ASSETS REQUIRED:
+//	~~~~~~~~~~~~~~~~
+//	Need a wolf mesh with anims
+//	Need a unique villager for the granny???
+//	Turn objects into ghosts
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L2G_FALSE				= 0
+define L2G_TRUE					= 1
+define L2G_WOLF_FLOCK_SIZE		= 10
+define L2G_NUM_WOLF_WAYPOINTS	= 6
+define L2G_GHOST_GIRL			= 0
+define L2G_GHOST_GRANNY			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global L2G_Wolf[L2G_WOLF_FLOCK_SIZE]
+
+global L2G_GhostGirl				= 0
+global L2G_GhostGranny				= 0
+global L2G_WolfFlock				= 0
+global L2G_Time						= 0
+global L2G_GranniesHouse			= 0
+global L2G_WolvesAttackedGirl		= L2G_FALSE
+global L2G_IsNightime				= L2G_FALSE
+global L2G_AlreadyRunThisNight		= L2G_FALSE
+global L2G_GirlDead					= L2G_FALSE
+global L2G_GhostGirlHealedGranny	= L2G_FALSE
+global L2G_GhostScriptResolved		= L2G_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script L2G_KeepTrackOfTime
+define script L2G_ActivateGhostChallenge
+define script L2G_CreateGhostGirl
+define script L2G_CreateWolves
+define script L2G_CreateGhostGranny
+define script L2G_CreateGhostGrannysHouse
+define script L2G_HandleGhostGirlActions
+define script L2G_HandleWolfActions
+define script L2G_CheckForWolfKillingGirl(Wolf)
+define script L2G_HandleGhostGrannyActions
+define script L2G_CheckForPlayerCompletingChallenege
+define script L2G_GivePlayerReward
+define script L2G_FadeOutGhost(Ghost)
+define script L2G_CleanUpActors
+
+
+// <TEMP>
+define script L2G_CreateDayAndNightToggleRock
+// </TEMP>
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land2Ghost
+start
+
+// <TEMP>
+run background script L2G_CreateDayAndNightToggleRock
+// </TEMP>
+
+	// Make sure the grannys house is created
+	run script L2G_CreateGhostGrannysHouse
+
+	// Keep track of the time of day and night
+	run background script L2G_KeepTrackOfTime
+
+	// Ok to run the challenge initially (once nightime comes)
+	L2G_AlreadyRunThisNight = L2G_FALSE
+
+	// Keep looping while the script has not been successfully completed
+	while L2G_GhostScriptResolved == L2G_FALSE
+		// Kick the script off during the night (only happens once per night)
+		if (L2G_IsNightime == L2G_TRUE and L2G_AlreadyRunThisNight == L2G_FALSE)
+			// Flag that the script has been run once this night
+			L2G_AlreadyRunThisNight = L2G_TRUE
+			run script L2G_ActivateGhostChallenge
+		end if
+
+		// Has the script been completed?
+		if L2G_GhostGirlHealedGranny == L2G_TRUE
+			L2G_GhostScriptResolved = L2G_TRUE
+		end if
+	end while
+
+	// Get the reward
+	run script L2G_GivePlayerReward
+
+	// Clean up the script
+	run script L2G_CleanUpActors
+
+end script Land2Ghost
+
+
+//-----------------------------------------------------------------------------
+// Keep track of the time of day and flag whether it's nightime or not
+//-----------------------------------------------------------------------------
+begin  script L2G_KeepTrackOfTime
+start
+
+	while L2G_GhostScriptResolved == L2G_FALSE
+		// Get the current time of day
+		L2G_Time = get game time
+
+		// Is it nightime?
+		if (L2G_Time > 22.00 or L2G_Time < 7.30)
+			L2G_IsNightime = L2G_TRUE
+		else
+			L2G_IsNightime = L2G_FALSE
+
+			// Make sure the script is only run once per night - ok to reset as it is now daytime
+			L2G_AlreadyRunThisNight = L2G_FALSE
+		end if
+	end while
+
+end script L2G_KeepTrackOfTime
+
+
+//-----------------------------------------------------------------------------
+// Start the events of the script
+//-----------------------------------------------------------------------------
+begin script L2G_ActivateGhostChallenge
+start
+
+	// Setup the actors
+	run script L2G_CreateGhostGirl
+	run script L2G_CreateWolves
+	run script L2G_CreateGhostGranny
+
+	// Setup the AI
+	run background script L2G_HandleGhostGirlActions
+	run background script L2G_HandleWolfActions
+	run background script L2G_HandleGhostGrannyActions
+
+	// Check for completing the challenge
+	run background script L2G_CheckForPlayerCompletingChallenege
+
+	// Wait here until the girl is dead or she has healed her granny or the night has ended
+	wait until L2G_GirlDead == L2G_TRUE or L2G_GhostGirlHealedGranny == L2G_TRUE or L2G_IsNightime == L2G_FALSE
+
+end script L2G_ActivateGhostChallenge
+
+
+//-----------------------------------------------------------------------------
+// Create the main ghost actor
+//-----------------------------------------------------------------------------
+begin script L2G_CreateGhostGirl
+
+	GhostGirlPos	= marker at {1192.543,99.477,2088.267}
+
+start
+
+	// Make sure the ghost girl is created off screen
+	//wait until {GhostGirlPos} not viewed
+
+	// Initialise the variables
+	L2G_GirlDead = L2G_FALSE
+	L2G_GhostGirlHealedGranny = L2G_FALSE
+
+	// Create the ghost girl
+	L2G_GhostGirl = create CHILD VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {GhostGirlPos}
+	// set L2G_GhostGirl as ghost
+	disable L2G_GhostGirl pickup
+	enable L2G_GhostGirl indestructible
+
+end script L2G_CreateGhostGirl
+
+
+//-----------------------------------------------------------------------------
+// Create the wolves that kill LRRH (These wolves are real, not ghosts)
+//-----------------------------------------------------------------------------
+begin script L2G_CreateWolves
+
+	FlockPos		= marker at {1237.981,88.896,2181.996}
+	Counter			= 0
+
+start
+
+	// Make sure the flock is created off screen
+	//wait until {FlockPos} not viewed
+
+	// Initialise the variables
+	L2G_WolvesAttackedGirl = L2G_FALSE
+
+	// Create the flock of wolves
+	L2G_WolfFlock = flock at {FlockPos}
+	set L2G_WolfFlock properties inner 5 outer 10
+
+	// Create the wolves and attach them to the flock
+	while Counter < L2G_WOLF_FLOCK_SIZE
+//		L2G_Wolf[Counter] = create ANIMAL WOLF at {FlockPos} + {number from -5 to 5, number from -5 to 5}
+		L2G_Wolf[Counter] = create VILLAGER VILLAGER_INFO_NORSE_LEADER_MALE at {FlockPos} + {number from -5 to 5, number from -5 to 5}
+		attach L2G_Wolf[Counter] to L2G_WolfFlock
+		state L2G_Wolf[Counter] LIVING_MOVE_IN_FLOCK
+		Counter++
+	end while
+
+end script L2G_CreateWolves
+
+
+//-----------------------------------------------------------------------------
+// Create the girls granny
+//-----------------------------------------------------------------------------
+begin script L2G_CreateGhostGranny
+
+	GhostGrannyPos		= marker at {1269.068,83.837,2184.840}
+
+start
+
+	// Create the ghost granny
+	L2G_GhostGranny = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {GhostGrannyPos}
+	ANGLE of L2G_GhostGranny = 180
+	// set L2G_GhostGranny as ghost
+	disable L2G_GhostGranny pickup
+	enable L2G_GhostGranny indestructible
+
+end script L2G_CreateGhostGranny
+
+
+//-----------------------------------------------------------------------------
+// Create grannys house
+//-----------------------------------------------------------------------------
+begin script L2G_CreateGhostGrannysHouse
+
+	GranniesHousePos	= marker at {1271.202,83.855,2185.134}
+
+start
+
+	// Setup the grannies house position. This is where the girl walks to
+	// Need to get the grannies house eventually
+	if not L2G_GranniesHouse exists
+		//L2G_GranniesHouse = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER2_CHALK at {GranniesHousePos}
+		L2G_GranniesHouse = create with angle 135 and scale 1 HOUSE ABODE_INFO_GREEK_HUT at {GranniesHousePos}
+		disable L2G_GranniesHouse pickup
+		disable L2G_GranniesHouse moveable
+	end if
+
+end script L2G_CreateGhostGrannysHouse
+
+
+//-----------------------------------------------------------------------------
+// Play out the girls actions that lead to her death
+//-----------------------------------------------------------------------------
+begin script L2G_HandleGhostGirlActions
+
+	GirlDiedOnRoute			= L2G_FALSE
+	GirlMadeItToGrannies	= L2G_FALSE
+
+start
+	
+	// Need to walk the girl to her grannies house
+	//move L2G_GhostGirl position to {L2G_GranniesHouse}
+	move L2G_GhostGirl position to {L2G_GhostGranny}
+
+	// Check to see if she made it there
+	while GirlDiedOnRoute == L2G_FALSE and GirlMadeItToGrannies == L2G_FALSE
+		// Did the girl get killed by the wolves?
+		if L2G_WolvesAttackedGirl == L2G_TRUE
+			GirlDiedOnRoute = L2G_TRUE
+		end if
+
+		// Did the girl make it to her grannies house?
+		if {L2G_GhostGirl} near {L2G_GranniesHouse} radius 10
+			GirlMadeItToGrannies = L2G_TRUE
+		end if
+
+	// Quit looping if it is no longer nightime
+	until L2G_IsNightime == L2G_FALSE
+	end while
+
+	// Handle the girls death
+	if GirlDiedOnRoute == L2G_TRUE
+		begin dialogue
+			say "The girl was killed by the wolves."
+			wait until read
+		end dialogue
+		L2G_GirlDead = L2G_TRUE
+	end if
+
+	// Handle the girl getting to her grannies house
+	if GirlMadeItToGrannies == L2G_TRUE
+		move L2G_GhostGirl position to {L2G_GhostGranny} - {1.000,0.000,1.000}
+		wait until {L2G_GhostGirl} near {L2G_GhostGranny} - {1.000,0.000,1.000} radius 2 or 10 seconds
+		begin dialogue
+			say "The girl made it to her grannies house and saved her."
+			wait until read
+		end dialogue
+		L2G_GhostGirlHealedGranny = L2G_TRUE
+	end if
+
+	// Fade the girl out
+	run script L2G_FadeOutGhost(L2G_GHOST_GIRL)
+
+end script L2G_HandleGhostGirlActions
+
+
+//-----------------------------------------------------------------------------
+// Handle the wolves actions (Kill LRRH)
+//-----------------------------------------------------------------------------
+begin script L2G_HandleWolfActions
+
+	Waypoint[L2G_NUM_WOLF_WAYPOINTS]
+
+	CriticalPoint		= marker at {1234.218,94.249,2135.181}
+	InterceptPoint		= marker at {1256.359,81.427,2165.181}
+
+	GetAnotherWaypoint	= L2G_TRUE
+	NextWaypoint		= 0
+	CurrentWaypoint		= 0
+	Counter				= 0
+
+	WaitingTimerSet		= L2G_FALSE
+	WaitAtWaypointTimer	= create timer for 0 seconds
+
+start
+
+	// Check to see if the girl has been killed by a wolf
+	while Counter < L2G_WOLF_FLOCK_SIZE
+		run background script L2G_CheckForWolfKillingGirl(L2G_Wolf[Counter])
+		Counter++
+	end while
+
+	// Do the wandering for the wolves
+	// These are the waypoints the wolves wander through
+	Waypoint[0] = marker at {1247.752,91.608,2202.784}
+	Waypoint[1] = marker at {1238.691,89.260,2176.992}
+	Waypoint[2]	= marker at {1256.426,84.885,2178.583}
+	Waypoint[3]	= marker at {1261.540,101.291,2218.159}
+	Waypoint[4]	= marker at {1260.163,87.794,2189.342}
+	Waypoint[5]	= marker at {1263.855,79.144,2169.717}
+
+	// Setup the current waypoint for the wolves as a random one
+	CurrentWaypoint = marker at {Waypoint[number from 0 to (L2G_NUM_WOLF_WAYPOINTS - 1)]}
+	NextWaypoint = CurrentWaypoint
+
+	// Keep looping while the girl is alive and hasn't made it to the grannies house
+	while L2G_GirlDead == L2G_FALSE and L2G_GhostGirlHealedGranny == L2G_FALSE
+		// Get a waypoint for the wolves to go to, but make sure the girl is not too close to the critical point
+
+		// Is the girl near the critical point?
+		if {L2G_GhostGirl} near {CriticalPoint} radius 20
+			// The girl is almost at the critical point (her death point) so move the wolves in to intercept
+			move L2G_WolfFlock position to {InterceptPoint}
+			GetAnotherWaypoint = L2G_FALSE
+				say "Going to the Intercept pos"
+		end if
+
+		// If we're ok to get another waypoint then get one
+		if GetAnotherWaypoint == L2G_TRUE
+			while NextWaypoint == CurrentWaypoint
+				NextWaypoint = marker at {Waypoint[number from 0 to (L2G_NUM_WOLF_WAYPOINTS - 1)]}
+			end while
+
+			// Move the flock to the next waypoint
+			move L2G_WolfFlock position to {NextWaypoint}
+			GetAnotherWaypoint = L2G_FALSE
+		end if
+
+		// See if the flock is at the waypoint they're going to then wait a while and then get another point
+		if {L2G_WolfFlock} near {NextWaypoint} radius 5 and WaitingTimerSet == L2G_FALSE
+			// We made it to the waypoint so wait here for a while
+			CurrentWaypoint = NextWaypoint
+			set WaitAtWaypointTimer time to number from 2 to 7 seconds
+			WaitingTimerSet = L2G_TRUE
+		end if
+
+		// Shall we get another waypoint?
+		if WaitingTimerSet == L2G_TRUE
+			// Has the timer run out?
+			if get WaitAtWaypointTimer time remaining <= 0
+				GetAnotherWaypoint = L2G_TRUE
+				WaitingTimerSet = L2G_FALSE
+			end if
+		end if
+
+	// Quit looping if it is no longer nightime - no need to search for girl as she no longer exists
+	until L2G_IsNightime == L2G_FALSE
+	end while
+
+end script L2G_HandleWolfActions
+
+
+//-----------------------------------------------------------------------------
+// Checks to see if the girl has been killed by a wolf
+//-----------------------------------------------------------------------------
+begin script L2G_CheckForWolfKillingGirl(Wolf)
+start
+
+	// Keep checking while the girl is alive and the girl hasn't healed her granny
+	while L2G_GirlDead == L2G_FALSE and L2G_GhostGirlHealedGranny == L2G_FALSE
+		// Check to see if the girl is close to the wolf
+		if {L2G_GhostGirl} near {Wolf} radius 10
+			// Make the wolf attack the girl here...
+			L2G_WolvesAttackedGirl = L2G_TRUE
+		end if
+	end while
+
+end script L2G_CheckForWolfKillingGirl
+
+
+//-----------------------------------------------------------------------------
+// Handle the grannies actions (groaning etc)
+//-----------------------------------------------------------------------------
+begin script L2G_HandleGhostGrannyActions
+
+	DELAY		= 10
+	GroanTimer	= create timer for DELAY seconds
+
+start
+
+	// Keep playing the dying anim
+	play anim "A_P_DYING" on L2G_GhostGranny loop -1
+
+	// Keep looping while the girl is alive and hasn't made it to the grannies house
+	while L2G_GirlDead == L2G_FALSE and L2G_GhostGirlHealedGranny == L2G_FALSE
+		// Get a groan from the granny if it's time to - needs to be a 3d sound
+		if get GroanTimer time remaining <= 0
+			begin dialogue
+				say "GRANNY: Ahhh, please help me."
+				wait until read
+			end dialogue
+			set GroanTimer time to number from 5 to 20 seconds
+		end if
+	// Quit looping if it is no longer nightime
+	until L2G_IsNightime == L2G_FALSE
+	end while
+
+	// Find out what happened.
+	// Handle the grannies death
+	if L2G_GirlDead == L2G_TRUE
+		begin dialogue
+			say "I'm dead because my grand-daughter died on route."
+			wait until read
+		end dialogue
+	end if
+
+	// Handle the grannies healing
+	if L2G_GhostGirlHealedGranny == L2G_TRUE
+		begin dialogue
+			say "I'm saved and we can rest in peace now."
+			wait until read
+		end dialogue
+	end if
+
+	// Fade the granny out
+	run script L2G_FadeOutGhost(L2G_GHOST_GRANNY)
+
+end script L2G_HandleGhostGrannyActions
+
+
+//-----------------------------------------------------------------------------
+// Check to see if the player helps the ghost girl to survive the wolves
+//-----------------------------------------------------------------------------
+begin script L2G_CheckForPlayerCompletingChallenege
+start
+end script L2G_CheckForPlayerCompletingChallenege
+
+
+//-----------------------------------------------------------------------------
+// Give the reward to the player for saving the ghost girl
+//-----------------------------------------------------------------------------
+begin script L2G_GivePlayerReward
+start
+
+	begin dialogue
+		say "Reward is given - no idea what it is yet, but it's given."
+		wait until read
+	end dialogue
+
+end script L2G_GivePlayerReward
+
+
+//-----------------------------------------------------------------------------
+// Fade out the ghost
+//-----------------------------------------------------------------------------
+begin script L2G_FadeOutGhost(Ghost)
+start
+
+	// Fade out the ghost who is passed
+	if Ghost == L2G_GHOST_GIRL
+		// Girl
+		if L2G_GhostGirl exists
+			delete L2G_GhostGirl with fade
+		end if
+	else
+		// Granny
+		if L2G_GhostGranny exists
+			delete L2G_GhostGranny with fade
+		end if
+	end if
+
+end script L2G_FadeOutGhost
+
+
+//-----------------------------------------------------------------------------
+// Clean up the script
+//-----------------------------------------------------------------------------
+begin script L2G_CleanUpActors
+
+	Counter		= 0
+
+start
+
+	// Delete the girl
+	run script L2G_FadeOutGhost(L2G_GHOST_GIRL)
+
+	// Delete the granny
+	run script L2G_FadeOutGhost(L2G_GHOST_GRANNY)
+
+	// Delete the wolves
+	while Counter < L2G_WOLF_FLOCK_SIZE
+		if L2G_Wolf[Counter] exists
+			detach L2G_Wolf[Counter] from L2G_WolfFlock
+			delete L2G_Wolf[Counter] with fade
+		end if
+		Counter++
+	end while
+
+	// Delete the flock
+	if L2G_WolfFlock exists
+		delete L2G_WolfFlock
+	end if
+
+end script L2G_CleanUpActors
+
+
+//-----------------------------------------------------------------------------
+// End of script
+//-----------------------------------------------------------------------------
+
+
+// <TEMP>
+begin script L2G_CreateDayAndNightToggleRock
+	
+	Rock		= 0
+	RockInHand	= L2G_FALSE
+
+start
+
+	if Rock not exists
+		Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER2_CHALK at {1192.543,99.477,2088.267} + {10, 10}
+		SCALE of Rock = 2
+		enable Rock indestructible
+	end if
+
+	while L2G_GhostScriptResolved == L2G_FALSE
+		if Rock is HELD
+			if RockInHand == L2G_FALSE
+				if L2G_IsNightime == L2G_TRUE
+					L2G_IsNightime = L2G_FALSE
+					set game time 7.30
+				else
+					L2G_IsNightime = L2G_TRUE
+					set game time 22.00
+				end if
+				RockInHand = L2G_TRUE
+			end if
+		else
+			RockInHand = L2G_FALSE
+		end if
+	end while
+
+	if Rock exists
+		delete Rock
+	end if
+
+end script L2G_CreateDayAndNightToggleRock
+// </TEMP>

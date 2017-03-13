@@ -1,0 +1,284 @@
+//================================================================
+// Global Treasure
+// Lenny
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+define GT_FALSE		= 0
+define GT_TRUE		= 1
+
+define GT_MAX_LOCATIONS		= 5
+define GT_CAPTURE_RADIUS	= 15
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global GT_TreasureLocations[GT_MAX_LOCATIONS]
+global GT_VisitedLocation[GT_MAX_LOCATIONS]
+global GT_TreasureBags[GT_MAX_LOCATIONS]
+global GT_RewardAmount	= 0
+global GT_CaughtThief	= GT_FALSE
+global GT_ThiefDead		= GT_FALSE
+
+//-----------------------------------------------------------------
+// Script defines
+//-----------------------------------------------------------------
+define script GT_TreasureThief(Pos)
+define script GT_TreasureMarker(ID)
+define script GT_TreasureThiefMonitor(Thief)
+
+//-----------------------------------------------------------------
+// Global Hidden Treasure
+//-----------------------------------------------------------------
+begin script GlobalTreasure
+	Looper			= 0
+	FailedSetup		= GT_TRUE
+	CreatePos		= 0
+	Scroll			= 0
+	ScrollPos		= 0
+start
+
+	if get land number == 6
+
+		GT_TreasureLocations[0]	= marker at {976.466, 55.043, 591.598}
+		GT_TreasureLocations[1]	= marker at {715.566, 60.994, 613.749}
+		GT_TreasureLocations[2]	= marker at {750.417, 59.123, 691.135}
+		GT_TreasureLocations[3]	= marker at {993.020, 64.372, 783.444}
+		GT_TreasureLocations[4]	= -1
+
+		CreatePos		= marker at {923.999, 55.409, 757.553}
+
+		GT_RewardAmount	= 2000
+		FailedSetup		= GT_FALSE
+		ScrollPos		= marker at {1012.980, 65.055, 772.375}
+
+	end if
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_06FINAL_GLOBALTREASURE_10" remind "BW2T_SCRIPT_06FINAL_GLOBALTREASURE_20" at {ScrollPos}	
+	wait until Scroll right clicked
+
+	delete Scroll with fade
+
+	begin cinema
+
+		say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_INTRO_10"
+		wait until read
+
+		say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_INTRO_20"
+		wait until read
+
+		eject evil spirit
+		say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_INTRO_30"
+		wait until read
+
+	end cinema
+
+	if FailedSetup == GT_FALSE
+		run background script GT_TreasureThief(marker at {CreatePos})	//Create theif at first treasure location
+
+		wait until GT_CaughtThief == GT_TRUE or GT_ThiefDead == GT_TRUE
+
+		if GT_CaughtThief == GT_TRUE
+
+			while GT_TreasureLocations[Looper] != -1
+				//if GT_VisitedLocation[Looper] == GT_TRUE
+					run background script GT_TreasureMarker(Looper)
+				//end if
+				Looper++
+			end while
+
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_IMPRISONED_20"
+				wait until read
+
+				say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_IMPRISONED_20"
+				wait until read
+			end dialogue
+
+		elsif GT_ThiefDead == GT_TRUE
+			
+			Scroll = create highlight SILVER name "BW2T_SCRIPT_06FINAL_GLOBALTREASURE_30" remind "BW2T_SCRIPT_06FINAL_GLOBALTREASURE_40" at {ScrollPos}	
+			wait until Scroll right clicked
+
+			delete Scroll with fade
+
+			begin cinema
+
+				say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_OUTRO_10"
+				wait until read
+
+				say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_OUTRO_20"
+				wait until read
+
+				say "BW2T_SCRIPT_GENERIC_TREASURETHIEF_OUTRO_30"
+				wait until read
+
+			end cinema
+
+			increment tribute by 3500
+		end if
+
+	end if
+	
+
+end script GlobalTreasure
+
+//-----------------------------------------------------------------
+// Treasure Thief
+//-----------------------------------------------------------------
+begin script GT_TreasureThief(Pos)
+	Thief			= 0
+	LocationLooper	= 0
+	GreekHouse		= 0
+	StealTown		= get town with id 0
+	FX				= 0
+	Prison			= 0
+start
+	
+	Thief = create VILLAGER ASSASSIN at {Pos}
+	reset Thief speed
+	enable villager Thief can be imprisoned
+
+	run background script GT_TreasureThiefMonitor(Thief)
+
+	begin loop
+		while GT_VisitedLocation[LocationLooper] == GT_FALSE
+
+			//Visit a house in the players town to steal from it
+			GreekHouse = get random home in town StealTown
+
+			move Thief position to extra position 1 of GreekHouse using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+
+			begin loop
+				if Thief is HELD
+					wait until not Thief is HELD
+					Prison = get HOUSE at {Thief} radius 15
+					if Prison exists
+						wait 10 seconds
+					end if
+					move Thief position to extra position 1 of GreekHouse using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation				
+				end if
+			until {Thief} at extra position 1 of GreekHouse
+			end loop
+
+			/*		//This doesnt work and causes "Trying to move an object not in map asserts - why?"
+			wait 0.3 seconds
+			move Thief to limbo
+			
+			wait 2 seconds
+
+			release Thief from limbo
+
+			wait 2 seconds
+			*/
+
+			//Come out with a bag of loot
+			set Thief carrying CARRIED_OBJECT_BAG
+
+			//Move to location
+			move Thief position to {GT_TreasureLocations[LocationLooper]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+
+			SPEED of Thief = 0.5
+			wait until not {Thief} near {StealTown} radius 100
+
+			SPEED of Thief = 0.3
+			wait until not {Thief} near {StealTown} radius 150
+
+			reset Thief speed
+
+			begin loop
+				if Thief is HELD
+					wait until not Thief is HELD
+					Prison = get HOUSE at {Thief} radius 15
+					if Prison exists
+						wait 10 seconds
+					end if
+					move Thief position to {GT_TreasureLocations[LocationLooper]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+				end if
+				until {Thief} near {GT_TreasureLocations[LocationLooper]} radius 1
+			end loop
+
+			//Dig a hole to bury the treasure
+			set Thief carrying CARRIED_OBJECT_SPADE
+
+			play anim "a_p_farmer" on Thief loop 2
+			wait until Thief played
+
+			set Thief carrying CARRIED_OBJECT_NONE
+
+			GT_TreasureBags[LocationLooper] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {GT_TreasureLocations[LocationLooper]}
+			override mesh for GT_TreasureBags[LocationLooper] with "m_genericsack"
+			SCALE of GT_TreasureBags[LocationLooper] = 1.5
+			PITCH of GT_TreasureBags[LocationLooper] = 0
+			ALTITUDE of GT_TreasureBags[LocationLooper] = 0.5
+			//FX = VISUAL_EFFECT_MANA_EXHAUSTVISUAL_EFFECT_MANA_EXHAUST
+			FX = create visual effect VISUAL_EFFECT_MANA_EXHAUST at {GT_TreasureBags[LocationLooper]} + {0, 1, 0} time 2
+			set FX colour red 220 green 188 blue 8
+
+			LocationLooper++
+		end while
+
+	end loop
+
+until GT_CaughtThief == GT_TRUE or get prison of Thief exists
+end script GT_TreasureThief
+
+//-----------------------------------------------------------------
+// Treasure Marker
+//-----------------------------------------------------------------
+begin script GT_TreasureMarker(ID)
+	SiTT	= 0
+	GotGold	= GT_FALSE
+start
+
+	SiTT = create tooltip at {GT_TreasureLocations[ID]} with text "BW2T_SCRIPT_GENERIC_TREASURETHIEF_TOOLTIP_20"
+
+	begin loop
+		if {MyCreature} near {GT_TreasureLocations[ID]} radius GT_CAPTURE_RADIUS 
+			GotGold	= GT_TRUE
+		end if
+
+		if get platoon of player 0 nearest {GT_TreasureLocations[ID]} radius 10 exists
+			GotGold	= GT_TRUE
+		end if
+
+		wait 2 seconds
+	until GotGold == GT_TRUE
+	end loop
+	
+	increment tribute by GT_RewardAmount
+
+	delete SiTT
+
+end script GT_TreasureMarker
+
+//-----------------------------------------------------------------
+// Treasure Theif Tooltip
+//-----------------------------------------------------------------
+begin script GT_TreasureThiefMonitor(Thief)
+	SiTT = 0
+start
+
+	begin loop
+
+		if get object hand is over == Thief
+			SiTT = create tooltip on Thief with text "BW2T_SCRIPT_GENERIC_TREASURETHIEF_TOOLTIP_10"
+			wait until not get object hand is over == Thief
+			delete SiTT
+		end if
+
+		if get prison of Thief exists
+			GT_CaughtThief = GT_TRUE
+		end if
+
+		if not Thief exists
+			GT_ThiefDead = GT_TRUE
+		end if
+
+	until GT_CaughtThief == GT_TRUE
+	end loop
+
+end script GT_TreasureThiefMonitor

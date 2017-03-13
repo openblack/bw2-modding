@@ -1,0 +1,6 @@
+run script RunLand4Geysers
+
+begin script RunLand4Geysers
+start
+	run script Land4Geysers	
+end script RunLand4Geysers

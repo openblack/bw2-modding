@@ -1,0 +1,50 @@
+define script L10_SetupCreature
+
+//------------------------------------------------------------------------------------------------------------------------
+// Land 10 Control
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land10Control
+start
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	
+	run script Land10DidYouKnow
+
+	//Setup scripts
+	run background script SetupBuildingsLand4Onwards
+	run background script L10_SetupCreature
+
+	//Land control scripts
+	run background script Land10AztecCapital
+	run background script Land10Stealth
+	run background script Land10CreatureAI
+	//run background script Land10AztecCapital
+
+	//Intro
+	run script Land10Intro
+	run background script Land10Objectives
+
+	wait until L10_WomenSaved > 0
+
+	run background script Land10SmokeSignals
+
+end script Land10Control
+
+//-----------------------------------------------------------------------------
+// Setup Greeks
+//-----------------------------------------------------------------------------
+begin script L10_SetupCreature
+	CreaturePos	= marker at {1349.751, 228.470, 763.143}
+	//marker at {1914.181, 309.393, 1711.534}
+start
+
+	//Load the creature and get it into global
+	load my_creature at {CreaturePos}
+	MyCreature = get player 0 creature
+
+	if not MyCreature exists
+		MyCreature = create CREATURE CREATURE_TYPE_LAST at {CreaturePos}
+		set player 0 creature to MyCreature
+		release MyCreature
+	end if
+
+end script L10_SetupCreature

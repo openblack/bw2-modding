@@ -1,0 +1,2941 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NC_True = 1
+define NC_False = 0
+
+define MAXIMUM_NUMBER_OF_PLATOONS = 10 //----Doesn't really relate, just make sure this is bigger than the amount of guards or attack platoons----//
+define NUMBER_OF_TOWNS = 7
+define NUMBER_OF_GATE_HOUSES = 3
+define MINIMUM_SIZE_OF_ATTACK_FORCE = 10 //----Minimum size of a norse attack squad----//
+define MAXIMUM_SIZE_OF_ATTACK_FORCE = 50 //----Maximum size of a norse attack squad----//
+define MAXIMUM_AMOUNT_OF_ATTACK_PLATOONS = 3 //----Maximum amount of attack platoons the norse can have at one time----//
+define HANDICAP = 10  //----Increase this to make the norse weaker----//
+define MINIMUM_SILENT_TIME = 50
+define STORY_SILENT_TIME = 240
+
+define STATE_INITIAL = 0	
+define STATE_PATROL = 1		//This is an impressiveness state
+define STATE_ATTACK_CLOSEST_TOWN = 2	//This state occurs for both
+define STATE_ATTACK_BEST_DEFENDED_TOWN = 3	//This is a war state
+define STATE_ATTACK_THE_TWO_BEST_DEFENDED_TOWNS = 4	//This is a war state
+define STATE_WAR = 5	//This is a war state
+define STATE_SIEGE = 6	//This is an impressiveness state
+define STATE_NULL = 7
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global NC_GameState = STATE_INITIAL
+global NC_Attacking = NC_False
+global NC_CapitalGuard[MAXIMUM_NUMBER_OF_PLATOONS]
+global NC_CapitalAttackPlatoon[MAXIMUM_NUMBER_OF_PLATOONS]
+global NC_CapitalSiegePlatoon[MAXIMUM_NUMBER_OF_PLATOONS] //----Use these guys for the impressive version of the script----//
+global NC_CommentTimer	= 0								//----Set this each time you say something, stops random banter from spamming player----//
+global NC_StoryTimer = 0
+global NC_NumberOfCapitalGuards = 1
+global NC_NumberOfCapitalAttackPlatoons = 0
+global NC_NumberOfCapitalSiegePlatoons = 0
+global NC_CloseTheGates = NC_False			//----Use this to decide when to close the city gates----//
+global NC_BattleInProgress = NC_False		//----Use this to decide when a battle is in progress----//
+global NC_TakeOverInProgress = NC_False		//----Use this to decide when a Town is being taken over----//
+global NC_Wall_Platoon = 0					//----One of set of guys don't need to use the management scripts----//
+global NC_SettlementGuard1 = 0
+global NC_SettlementGuard2 = 0
+
+global NC_Ipressing = NC_False
+global NC_BuildingArmies = NC_False
+global NC_CantTalk = NC_True
+global NC_NorseDefeated = NC_False
+global NC_ChangedState = NC_False
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+
+//----AI Structure----//
+
+define script Land4NC_NorseArmyManagement
+define script Land4NC_NorseGeneralManagement
+define script Land4NC_NorseGateManagement
+define script Land4NC_NorseCityManagement
+
+//----Assisting function----//
+
+define script NC_RecruitCapitalArmies
+define script NC_Peace
+define script NC_Patrol
+define script NC_TakeOverNearestTown
+define script NC_BuildWallAttack
+define script NC_AttackBestDefendedTown
+define script NC_AttackTheTwoBestDefendedTowns
+define script NC_War
+define script NC_Siege
+define script NC_ObjectivesUpdate
+define script NC_TownTributes
+
+//----Old/Redundant function----//
+
+define script NC_ArchersOnGates
+//-----------------------------------------------------------------------------
+//----Land4NorseCapitalScript----// 
+//-----------------------------------------------------------------------------
+begin script Land4NorseCapitalScript
+	Counter = 0
+start
+	NC_CommentTimer = create timer for 0 seconds
+	NC_StoryTimer = create timer for 0 seconds
+
+//----Initialise the town----//
+
+	if L4NorseCity not exists
+		run script Land4Globals
+	end if
+	
+	run background script Land4NC_NorseArmyManagement
+	run background script Land4NC_NorseGeneralManagement
+	run background script NC_TownTributes
+	
+	run background script Land4NC_NorseGateManagement
+	//run background script Land4NC_NorseCityManagement
+	
+end script Land4NorseCapitalScript
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseGeneralManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseGeneralManagement
+	MinorSettlements[NUMBER_OF_TOWNS]
+	TownMigrated[NUMBER_OF_TOWNS]
+	TownTaken[NUMBER_OF_TOWNS]
+
+	MeleeArmouryCommentSaid = NC_False
+	ArcherArmouryCommentSaid = NC_False
+	CivicBuildingCommentSaid = NC_False
+	ArmyCommentSaid = NC_False
+	Army100CommentSaid = NC_False
+	Army200CommentSaid = NC_False
+	BuildWallCommentSaid = NC_False
+	ArmyCrossedBoundaryCommentSaid = NC_False
+	MeleeArmouryComment2Said = NC_False
+	ImpressivenessAt20000CommentSaid = NC_False
+	PlayerPlatoonWithinNorseWallsSaid = NC_False
+	PlayerPlatoonAttackingNorseTCSaid = NC_False
+	ObjectiveCommentSaid = NC_False
+	GeneralGettingJumpyCommentSaid = NC_False
+	CreatureIsASoldier = NC_False
+	
+	ImpressivePlayer = NC_True
+	ArchersReleased = NC_False
+	
+	WestPos = marker at {848.245, 234.321, 878.463}
+	EastPos = marker at {1119.677, 258.261, 732.471}
+	SouthEastPos = marker at {1038.067, 256.084, 485.947}
+	SouthWestPos = marker at {701.127, 244.656, 681.839}
+	WolfStartPos = marker at {1752.578,379.418,1650.735}
+
+	CenterOfNorseTownPos = marker at {1690.527,381.001,1768.273}
+	RadiusOfNorseTown = 0
+	PlatoonDummy = 0
+	
+	Comment2Timer = create timer for 0 seconds
+	IdleTimer = create timer for 0 seconds
+	
+	Counter = 0
+	VillagerComment = 0
+	NumberOfPlayerHomes = 0
+	HomeComment = 0	
+	NumberOfTownsPlayerOwns = 1
+	NumberOfPlayerVillagers = 100
+	TownCenter = 0
+	Comment = 0
+	StoryComment = 0
+	PlayersPlatoon = 0
+	NumberOfTownsTakenByImpressiveness = 0
+	NumberOfTownsTakenByArmies = 0
+	ObjectivesComplete = 0
+	NumberOfHomes = 0
+start
+
+	MinorSettlements[0] = get town with id 3
+	MinorSettlements[1] = get town with id 4
+	MinorSettlements[2] = get town with id 6
+	MinorSettlements[3] = get town with id 7
+	MinorSettlements[4] = get town with id 9
+	MinorSettlements[5] = get town with id 10
+	MinorSettlements[6] = get town with id 11
+	
+	TownMigrated[0] = NC_False
+	TownMigrated[1] = NC_False
+	TownMigrated[2] = NC_False
+	TownMigrated[3] = NC_False
+	TownMigrated[4] = NC_False
+	TownMigrated[5] = NC_False
+	TownMigrated[6] = NC_False
+	
+	TownTaken[0] = NC_False
+	TownTaken[1] = NC_False
+	TownTaken[2] = NC_False
+	TownTaken[3] = NC_False
+	TownTaken[4] = NC_False
+	TownTaken[5] = NC_False
+	TownTaken[6] = NC_False
+	
+	TownCenter = get building ABODE_NUMBER_TOWN_CENTRE in L4GreekTown min built 1.0 
+	
+	//NumberOfPlayerHomes = get number of type HOUSE in L4GreekTown min built 0
+	//NumberOfPlayerHomes += 2
+
+	RadiusOfNorseTown = get distance from {CenterOfNorseTownPos} to {1536.699,383.486,1767.032}
+	
+ 	set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+	set NC_StoryTimer time to STORY_SILENT_TIME seconds
+
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_90"
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_WALL_100"
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 parent objective TRIBUTE_OBJECTIVE_LAND_1
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 amount 1
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_WALL_110"
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 parent objective TRIBUTE_OBJECTIVE_LAND_1
+	//set player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION amount 200
+	//set player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION text "BW2T_SCRIPT_04FINAL_OBJECTIVES_60"
+	//enable objective window
+	run background script NC_ObjectivesUpdate
+	ObjectivesComplete = get total of stat STATS_AGC_OBJECTIVES_NUM_COMPLETED
+	ObjectivesComplete += 2
+	
+//----Pause----//	
+	wait 15 seconds
+	
+	begin dialogue
+		eject good spirit
+		//GA: "Come along, Leader. We need to start building." 
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_470"
+			wait until read
+		//GA: "We need to create fields."
+			//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_480"
+			//wait until read
+		//GA: "We should start making houses."
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_490"
+			wait until read
+		send good spirit home
+	end dialogue
+	set IdleTimer time to 600 seconds
+	
+//----Wait until player has awakened the Norse----//
+	while NC_CantTalk == NC_True
+		if get IdleTimer time remaining == 0
+			NC_CantTalk = NC_False
+		elsif get number of built ABODE_NUMBER_STORAGE_PIT in L4GreekTown > 0  
+			NumberOfHomes = 0 
+			NumberOfHomes += get number of built ABODE_NUMBER_A in L4GreekTown
+			NumberOfHomes += get number of built ABODE_NUMBER_B in L4GreekTown
+			NumberOfHomes += get number of built ABODE_NUMBER_C in L4GreekTown
+			NumberOfHomes += get number of built ABODE_NUMBER_D in L4GreekTown
+			NumberOfHomes += get number of built ABODE_NUMBER_E in L4GreekTown
+			
+			if NumberOfHomes > 3
+				if get number of built ABODE_NUMBER_ALTAR in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_CRECHE in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_TEMPLE in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_SHRINE in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_PUB in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_WORKSHOP in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_STUDY in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_UNIVERSITY in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_PRISON in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_SMELTER in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_GRANARY in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_LUMBERMILL in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_MARKET_POT in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_MARKET_STATUE in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_MARKET_PLANT in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_AMPITHEATRE in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_GRAVEYARD in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_OLD_PERSONS_HOME in L4GreekTown > 0
+					NC_CantTalk = NC_False 
+				elsif get number of built ABODE_NUMBER_BATHHOUSE in L4GreekTown > 0
+					NC_CantTalk = NC_False
+				elsif get number of platoon warriors belonging to player 0 > 0
+					NC_CantTalk = NC_False
+				end if
+			end if 
+		elsif get number of built ABODE_NUMBER_MELEE_ARMOURY in L4GreekTown > 0
+			NC_CantTalk = NC_False 
+		elsif get number of built ABODE_NUMBER_RANGED_ARMOURY in L4GreekTown > 0
+			NC_CantTalk = NC_False
+		elsif get next town percentage to migrate to town L4GreekTown >= 0.75
+			NC_CantTalk = NC_False
+		elsif {MyCreature} and {L4NorseCity} on same side of line between {1286.895, 325.651, 1687.802} and {1815.431, 289.240, 1314.565}
+			NC_CantTalk = NC_False
+		elsif town L4NorseCity is under takeover from player 0
+			NC_CantTalk = NC_False
+		elsif get number of platoon warriors belonging to player 0 > 0
+			NC_CantTalk = NC_False
+		elsif L4BuildWallComplete == NC_True
+			NC_CantTalk = NC_False
+		end if
+	end while
+	
+//----Begin the game analysis loop----//
+	begin loop
+		
+	//----2 Objectives Completed----//
+	
+		if get total of stat STATS_AGC_OBJECTIVES_NUM_COMPLETED >= ObjectivesComplete and ObjectiveCommentSaid == NC_False
+			begin dialogue
+				eject good spirit
+				//GA: "If you need a reminder of what your objectives are, go to the objectives part of the Menu."
+					say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_410"
+					wait until read
+				send good spirit home
+			end dialogue
+			ObjectiveCommentSaid = NC_True
+		end if
+	
+	//----Random Banter----//
+	
+		if get NC_StoryTimer time remaining == 0	
+			begin dialogue
+				request dialogue EVENT_TYPE_GENERIC_GENERAL_STORY
+			end dialogue
+			set NC_StoryTimer time to STORY_SILENT_TIME seconds
+			StoryComment += 1
+		end if
+
+		if get NC_CommentTimer time remaining == 0 and NC_BattleInProgress == NC_False
+			
+			if NC_BuildingArmies == NC_True
+				Comment = number from 0 to 20
+				begin dialogue
+					request dialogue EVENT_TYPE_GENERIC_GENERAL_TAUNT_GREEK_ARMIES
+					set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				end dialogue
+			elsif NC_Ipressing == NC_True
+				Comment = number from 0 to 20
+				begin dialogue
+					request dialogue EVENT_TYPE_GENERIC_GENERAL_TAUNT_GREEK_IMPRESS
+					set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				end dialogue
+			else
+				begin dialogue
+					request dialogue EVENT_TYPE_GENERIC_GENERAL_TAUNT
+					set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				end dialogue
+			end if	
+		end if
+		
+//----Check game states, not used much at the mo' but will probably be usefull later for state specific dialogue----//
+//----INITIAL----//
+	
+		if NC_GameState == STATE_INITIAL
+			if get next town percentage to migrate to town L4GreekTown >= 0.75
+				if get next town object to migrate to town L4GreekTown != L4NorseCity
+					begin dialogue
+					//GEN: "I must find out what they are doing!"
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_360"
+						wait until read
+					end dialogue
+					NC_GameState = STATE_PATROL
+				end if
+			end if
+			
+//----PATROL----//
+
+		elsif NC_GameState == STATE_PATROL
+
+//----ATTACK_CLOSEST_TOWN----//
+
+		elsif NC_GameState == STATE_ATTACK_CLOSEST_TOWN
+
+//----WAR----//
+		
+		elsif NC_GameState == STATE_ATTACK_BEST_DEFENDED_TOWN
+
+		end if
+	
+	//----Check if the player takes a minor settlement by impressiveness----//	
+	
+		Counter = 0
+		while Counter < NUMBER_OF_TOWNS 
+			if get town MinorSettlements[Counter] migrating == L4GreekTown and TownMigrated[Counter] == NC_False
+				TownMigrated[Counter] = NC_True
+				NumberOfTownsTakenByImpressiveness++
+	
+				if NumberOfTownsTakenByImpressiveness > 2 and NC_Ipressing == NC_False
+					// init impressive random banter
+					NC_Ipressing = NC_True
+				end if
+//***----Increase our Impressiveness state this ones a bit complex but it should be clever----***//
+			
+				if NC_GameState < STATE_ATTACK_CLOSEST_TOWN 
+					NC_GameState = STATE_ATTACK_CLOSEST_TOWN
+					
+					begin dialogue
+						eject good spirit
+					//GA: "Look! Those people are migrating! They want to live in our Town! They're bringing all their worldly goods. Hooray!"
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_680"
+						wait until read
+						send good spirit home
+					//GEN: Turn that settlement into a military outpost. Build armies there for defence against these people!
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_160"
+						wait until read
+						set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						if GeneralGettingJumpyCommentSaid == NC_False
+							eject evil spirit
+						//EA: "wow, he's getting pretty jumpy"
+							say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_500"
+							wait until read
+
+							eject good spirit
+						//GA: "look, we need to get our defenses going"
+							say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_510"
+							wait until read
+
+						//EA: "we should really get an army going"
+							say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_520"
+							wait until read
+							
+							send evil spirit home
+							send good spirit home
+							GeneralGettingJumpyCommentSaid = NC_True
+						end if
+					end dialogue
+				
+				elsif NC_GameState == STATE_ATTACK_CLOSEST_TOWN
+					NC_GameState = STATE_SIEGE
+					
+					begin dialogue
+					//GEN: These Greeks build impressive cities. They are tempting our people. It must stop!
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_170"
+						wait until read
+						set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+					end dialogue
+					
+				elsif NC_GameState == STATE_SIEGE
+					Comment = number from 0 to 1
+					
+					if Comment == 0
+						begin dialogue
+						//GEN: No! Why do honest Norsemen leave our settlements for these newcomer Greeks?
+ 							say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_150"
+ 							wait until read
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end dialogue	
+					else
+						begin dialogue
+							//GEN: Followers! Do not be envious of the Greek Town! It is a trick to tempt you!
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_IMPRESS_150"
+							wait until read
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end dialogue
+					end if
+				
+				elsif NC_GameState == STATE_ATTACK_BEST_DEFENDED_TOWN
+	
+				//----Reset the attack----//
+				
+					NC_GameState = STATE_NULL 
+					wait 1 seconds
+					NC_GameState = STATE_ATTACK_BEST_DEFENDED_TOWN
+
+					begin dialogue
+					//GEN: These Greeks are an aggressive people. But they won't withstand my ferocious Norse warriors.
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_180"
+						wait until read
+						set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+					end dialogue
+					
+				elsif NC_GameState == STATE_ATTACK_THE_TWO_BEST_DEFENDED_TOWNS
+		
+				//----Reset the attack----//
+					
+					NC_GameState = STATE_NULL
+					wait 1 seconds
+					NC_GameState = STATE_ATTACK_THE_TWO_BEST_DEFENDED_TOWNS
+		
+					begin dialogue
+					//GEN: This is an outrage! Take the nearest settlement! We must stop this Greek invasion!
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_200"
+						wait until read
+						set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+					end dialogue
+					
+				elsif NC_GameState == STATE_WAR	
+				
+					begin dialogue
+					//GEN: Mobilise everyone! Defend our borders and send out the creature! We must win this war!
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_210"
+						wait until read
+					end dialogue
+					set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+					
+				end if
+			end if
+			Counter++
+		end while
+		
+	//----Check if the player takes a minor settlement by armies----//	
+		Counter = 0
+		while Counter < NUMBER_OF_TOWNS 
+			if PLAYER of MinorSettlements[Counter] == 0 and TownTaken[Counter] == NC_False
+				TownTaken[Counter] = NC_True
+			
+				if TownMigrated[Counter] == NC_False
+		
+					NumberOfTownsTakenByArmies++
+			
+				//***----Increase our force state----***//
+				
+					if NC_GameState < STATE_ATTACK_CLOSEST_TOWN 
+						
+						NC_GameState = STATE_ATTACK_CLOSEST_TOWN
+						
+						begin dialogue
+						//GEN: How dare they take over settlements in Norse land? I will watch these intruders closely.
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_140"
+							wait until read
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end dialogue
+						
+					elsif NC_GameState == STATE_ATTACK_CLOSEST_TOWN or NC_GameState == STATE_SIEGE
+						
+						NC_GameState = STATE_ATTACK_BEST_DEFENDED_TOWN
+
+						begin dialogue
+						//GEN: These Greeks are an aggressive people. But they won't withstand my ferocious Norse warriors.
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_180"
+							wait until read
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end dialogue
+					
+					elsif NC_GameState == STATE_ATTACK_BEST_DEFENDED_TOWN 
+
+						NC_GameState = STATE_ATTACK_THE_TWO_BEST_DEFENDED_TOWNS
+
+						begin dialogue
+						//GEN: This is an outrage! Take the nearest settlement! We must stop this Greek invasion!
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_200"
+							wait until read
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end dialogue
+						
+					elsif NC_GameState == STATE_ATTACK_THE_TWO_BEST_DEFENDED_TOWNS
+						
+						NC_GameState = STATE_WAR
+					
+						begin dialogue
+						//GEN: Mobilise everyone! Defend our borders and send out the creature! We must win this war!
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_210"
+							wait until read
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end dialogue
+					end if
+				end if
+			end if
+			Counter++
+		end while
+		
+	//----Check if the player places a melee armoury scaffold----//	
+		
+		if MeleeArmouryCommentSaid == NC_False and get number of unbuilt ABODE_NUMBER_MELEE_ARMOURY in L4GreekTown > 0 
+			MeleeArmouryCommentSaid = NC_True
+			begin dialogue
+			//GEN: I thought these Greeks were a peaceful race? I must watch closely.
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_220"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+
+	//----Check if the player places a melee armoury----//	
+		
+		if MeleeArmouryComment2Said == NC_False and get number of built ABODE_NUMBER_MELEE_ARMOURY in L4GreekTown > 0 
+			MeleeArmouryComment2Said = NC_True
+			begin dialogue
+			//GEN: They wish to wage war against me? So be it!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_240"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+
+	//----Check if the player builds a archery armoury----//		
+
+		if ArcherArmouryCommentSaid == NC_False and get number of built ABODE_NUMBER_RANGED_ARMOURY in L4GreekTown > 0 
+			ArcherArmouryCommentSaid = NC_True 
+			begin dialogue
+			//GEN: Men? Watch out for ranged attacks. They have archers now!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_230"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+		
+	//----Check if the player builds an army----//		
+		
+		if ArmyCommentSaid == NC_False and get army size in town L4GreekTown > 0
+			begin dialogue
+				//GEN: So the Greeks have recruited a platoon? Let's see how it fares against Norse iron!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_180"
+				wait until read
+			end dialogue
+			ArmyCommentSaid = NC_True
+			
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+
+	//----Check if the player builds an army of 15 of more----//		
+		
+		if NC_BuildingArmies == NC_False and get army size in town L4GreekTown > 15
+			NC_BuildingArmies = NC_True
+			begin dialogue
+			//GEN: "The Greek warriors are no match for Norsemen."
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_50"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+
+	//----Check if the player's army leaves their town----//	
+		
+		if ArmyCrossedBoundaryCommentSaid == NC_False 
+			PlayersPlatoon = get platoon of player 0 nearest {L4NorseCity} radius 6000
+			if PlayersPlatoon exists 
+				if not {PlayersPlatoon} and {L4GreekTown} on same side of line between {WestPos} and {EastPos} or not {PlayersPlatoon} and {L4GreekTown} on same side of line between {EastPos} and {SouthEastPos} or not {PlayersPlatoon} and {L4GreekTown} on same side of line between {WestPos} and {SouthWestPos}
+					begin dialogue
+					//GEN: What? A Greek army is coming? Get ready, men. War is upon us!
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_190"
+						wait until read
+					end dialogue	
+					ArmyCrossedBoundaryCommentSaid = NC_True
+				end if
+			end if
+		end if
+		
+	//----Check if a battle is happening----//
+		
+		if platoon NC_CapitalGuard[0] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[1] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[2] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[3] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[4] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[5] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[6] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[7] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[8] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalGuard[9] melee fighting
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[0] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[1] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[2] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[3] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[4] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[5] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[6] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[7] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[8] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif platoon NC_CapitalAttackPlatoon[9] melee fighting 
+			NC_BattleInProgress = NC_True
+		elsif town L4GreekTown is under takeover from player 1
+			NC_BattleInProgress = NC_True
+		else
+			NC_BattleInProgress = NC_False
+		end if
+		
+		if town L4NorseCity is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		elsif town L4NorseTown1 is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		elsif town L4NorseTown2 is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		elsif town L4NorseTown3 is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		elsif town L4NorseTown4 is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		elsif town L4NorseTown5 is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		elsif town L4NorseTown6 is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		elsif town L4NorseTown7 is under takeover from player 0
+			NC_TakeOverInProgress = NC_True
+		else
+			NC_TakeOverInProgress = NC_False
+		end if
+
+	//----Check if the player builds a large building----//		
+
+		if CivicBuildingCommentSaid == NC_False and (get number of built ABODE_NUMBER_TEMPLE in L4GreekTown > 0 or get number of built ABODE_NUMBER_CRECHE in L4GreekTown > 0 or get number of built ABODE_NUMBER_UNIVERSITY in L4GreekTown > 0 or get number of built ABODE_NUMBER_MARKET_POT in L4GreekTown > 0 or get number of built ABODE_NUMBER_MARKET_STATUE in L4GreekTown > 0 or get number of built ABODE_NUMBER_MARKET_PLANT in L4GreekTown > 0 or get number of built ABODE_NUMBER_PUB in L4GreekTown > 0 or get number of built ABODE_NUMBER_PRISON in L4GreekTown > 0 or get number of built ABODE_NUMBER_AMPITHEATRE in L4GreekTown > 0 or get number of built ABODE_NUMBER_GRAVEYARD in L4GreekTown > 0 or get number of built ABODE_NUMBER_BATHHOUSE in L4GreekTown > 0 or get number of built ABODE_NUMBER_OLD_PERSONS_HOME in L4GreekTown > 0)
+			CivicBuildingCommentSaid = NC_True
+			begin dialogue
+			//GEN: They are advanced builders. Our people must be faithful and strong of heart.
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_250"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+				
+	//----Check if players army reaches 50 warriors----//		
+		
+		if get army size in town L4GreekTown >= 50 and Army100CommentSaid == NC_False 
+			Army100CommentSaid = NC_True
+			begin dialogue
+			//GEN: "Their strength grows. We must prepare for war."
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_260"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+		
+	//----Check if players army reaches 100 warriors----//		
+
+		if get army size in town L4GreekTown >= 100 and Army200CommentSaid == NC_False 
+			begin dialogue
+				Army200CommentSaid = NC_True
+				
+			//GEN: "They have an impressive army."	
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_270"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+
+	//----Check if player has completed build a wall challenge----//
+		
+		if L4BuildWallComplete == NC_True and BuildWallCommentSaid == NC_False
+			begin dialogue
+				BuildWallCommentSaid = NC_True
+			//GEN: These crafty Greeks are building walls. And so they should! Send a troop to their city walls!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_280"
+				wait until read
+			end dialogue
+			set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+		end if
+		
+	//----Check the player's population----//
+	
+		if NumberOfPlayerVillagers <= size of L4GreekTown
+			if VillagerComment == 0
+				begin dialogue
+				//GEN: These Greeks seem to thrive, their numbers increase. But not for long.
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_90" 
+					wait until read
+				end dialogue
+				set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				NumberOfPlayerVillagers = 150
+				VillagerComment++
+			elsif VillagerComment == 1
+				begin dialogue
+				//GEN: The Greek ranks swell. They breed like rabbits. Pah!
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_100" 
+					wait until read
+				end dialogue
+				set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				NumberOfPlayerVillagers = 200
+				VillagerComment++
+			elsif VillagerComment == 2
+				begin dialogue
+				//GEN: The Greeks must be stamped out before their are too many to count.
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_110" 
+					wait until read
+				end dialogue
+				set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				NumberOfPlayerVillagers = 300
+				VillagerComment++
+			elsif VillagerComment == 3
+				begin dialogue
+				//GEN: They are a plague, their city overflows!
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_120" 
+					wait until read
+				end dialogue
+				set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				VillagerComment++
+			end if
+		end if
+	
+	//----Check the player's city size----//
+		
+		//if NumberOfPlayerHomes <= get number of type HOUSE in L4GreekTown min built 0
+			//if HomeComment == 0
+			//	begin dialogue
+			//	//GEN: They build houses? How futile.
+			//		say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_130"
+			//		wait until read
+			//	end dialogue
+			//	set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+			//	HomeComment++
+			//	NumberOfPlayerHomes = get number of type HOUSE in L4GreekTown min built 0
+			//	NumberOfPlayerHomes += 10
+			//elsif HomeComment == 1
+			//	begin dialogue
+			//	//GEN: Greek architecture disgusts me. Their city is an urban sprawl.
+			//		say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_140"
+			//		wait until read
+			//	end dialogue
+			//	set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+			//	HomeComment++
+			//	NumberOfPlayerHomes = get number of type HOUSE in L4GreekTown min built 0
+			//	NumberOfPlayerHomes += 15
+			//elsif HomeComment == 2
+			//	begin dialogue
+			//	//GEN: Their city is a scar on this beautiful island.
+			//		say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_150"
+			//		wait until read
+			//	end dialogue
+			//	set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+			//	HomeComment++
+			//	NumberOfPlayerHomes = get number of type HOUSE in L4GreekTown min built 0
+			//	NumberOfPlayerHomes += 25
+			//elsif HomeComment == 3
+			//	begin dialogue
+			//	//GEN: They have spread too much. I must stop them before they engulf us!
+			//		say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_160"
+			//		wait until read
+			//	end dialogue
+			//	set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+			//	HomeComment++
+			//end if 
+		//end if
+		
+	//----Check if the player has 2000 impressiveness----//		
+
+		if ImpressivenessAt20000CommentSaid == NC_False
+			if get town L4GreekTown impressiveness >= 20000
+				ImpressivenessAt20000CommentSaid = NC_True
+				begin dialogue
+					// GEN: "These Greeks are impressive"
+					say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_10"
+					wait until read
+					// GEN: "Their dedication to culture and fairness are second to none"
+					say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_20"
+					wait until read
+					// GEN: "Maybe an alliance would be to our advantage."
+					say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_30"
+					wait until read
+
+					eject good spirit
+					// GA: "Their people are impressed; they are waivering. If we just build up a bit more the Norse will surely join us."
+					say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_40"
+					wait until read
+
+					eject evil spirit
+					// EA: "It's never too late to attack though!"
+					say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_50"
+					wait until read
+
+					send good spirit home
+					send evil spirit home
+				end dialogue
+				set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+			end if
+		end if
+
+		if PlayerPlatoonWithinNorseWallsSaid == NC_False
+			PlatoonDummy = get platoon of player 0 nearest {L4NorseCity} radius 6000
+			if PlatoonDummy exists
+				if {PlatoonDummy} and {L4NorseCity} on same side of line between {1579.554, 400.962, 1856.351} and {1531.830, 385.540, 1699.664} and {PlatoonDummy} and {L4NorseCity} on same side of line between {1542.274, 385.247, 1664.480} and {1700.840, 373.803, 1572.983} and {PlatoonDummy} and {L4NorseCity} on same side of line between {1792.991, 369.098, 1585.663} and {1845.603, 386.451, 1730.989}
+					PlayerPlatoonWithinNorseWallsSaid = NC_True
+					begin dialogue
+						eject evil spirit
+					//EA: Here we go, here we go, here we go!
+						say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_60"
+						wait until read
+					//EA "Yeah! This is it! Attack!"
+						say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_280"
+						wait until read
+						send evil spirit home
+					//GEN: Their force is overwhelming.
+						say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_70"
+						wait until read
+					end dialogue
+					set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				end if
+			end if
+		end if
+
+		if PlayerPlatoonAttackingNorseTCSaid == NC_False
+			if town L4NorseCity is under takeover from player 0
+				PlayerPlatoonAttackingNorseTCSaid = NC_True
+				begin dialogue
+				//GEN: All troops to me! We must defend against the brutal Greeks!
+					say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_80"
+					wait until read
+
+					eject evil spirit
+				//EA: Yes - we've got them!
+					say "BW2T_SCRIPT_04FINAL_PLAYTHROUGH30_90"
+					wait until read
+				
+					send evil spirit home
+				end dialogue
+				set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+			end if
+		end if
+		
+		if town L4NorseCity is under takeover from player 0
+			if CreatureIsASoldier == NC_False
+				run script GCAI_SetTask_PerformRole(WolfStartPos,350,variable CR_SOLDIER)
+				CreatureIsASoldier = NC_True
+			end if
+		elsif CreatureIsASoldier == NC_True
+			run script GCAI_SetTask_PerformRole(WolfStartPos,350,variable CR_GATHERER)
+			CreatureIsASoldier = NC_False
+		end if
+		
+	until PLAYER of L4NorseCity != 1 or variable get town L4NorseCity status == variable TOWN_STATUS_MIGRATION_STARTED
+	end loop
+	
+	NC_NorseDefeated = NC_True
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 value 1
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_CAPITAL
+	enable objective window
+	
+	//TA: ADDING the completing of objectives here!
+	if PLAYER of L4NorseCity == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment -0.1		
+	else
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment 0.1				
+	end if
+	//Either way we have completed the land.
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+	
+	
+//----Check if player Wins Via armies----//
+
+
+	/*if variable get town L4NorseCity method of last conversion == variable LAST_CAPTURE_AGGRESSIVE
+		begin cinema
+			eject evil spirit
+		//EA:We've done it! Victory! Your evilness knows no bounds, Boss!
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_10"
+			wait until read
+			send evil spirit home
+
+			//My people bow low before the Greeks.
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_20"
+			wait until read
+			//Their brutality knows no equal. Not even the Aztecs.
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_30"
+			wait until read
+			//We respect this power, this strength. But will the Japanese? And will our rulers, the Aztecs?
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_40"
+			wait until read
+			//I wonder if the old Prophecy is true? If the Greeks are the weak race brought to strength by a god?
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_50"
+			wait until read
+			//If so, will they fulfill the next chapter and go to Honshai, where their separated Greek brethren wait for them?
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_WAR_WIN_60"
+			wait until read
+
+		end cinema
+		
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 1
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_4
+		enable objective window
+		wait 2 seconds
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+		disable objective window
+	
+		L4CapitalConverted = NC_True
+		
+//----Check if player Wins Via impressiveness----//
+
+	else
+		/*begin cinema
+			//I have never seen such nobility in a tribe. The Greeks have shown a way other than war.
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_10"
+			wait until read
+			//I am inspired by their fairness and their civilisation.
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_20"
+			wait until read
+			//I shall consider becoming allies with these Greeks. They have culture far beyond that of the Aztecs.
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_30"
+			wait until read
+			//And maybe the Prophecy is true. A returning god saving a weak tribe...
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_40"
+			wait until read
+			//It will be interesting to see how they fare against the strong Japanese. And the brutal Aztecs.
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_50"
+			wait until read
+			//I wonder if the Greeks will follow the Prophecy and go to Honshai, where some of their brethren survive?
+			say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_60"
+			wait until read
+
+			eject good spirit
+				//GA:Hurrah! Goodness and impressing has won the day!
+				say "BW2T_SCRIPT_04FINAL_PDM_ENDLAND_IMPRESS_WIN_70"
+				wait until read
+			send good spirit home
+		end cinema
+		*/
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value 1
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+		enable objective window
+		wait 2 seconds
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_4
+		disable objective window
+		
+		L4CapitalConverted = NC_True
+	end if
+
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_1
+	disable objective window*/
+
+end script Land4NC_NorseGeneralManagement
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseArmyManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseArmyManagement
+start
+	run background script NC_RecruitCapitalArmies
+	run background script NC_BuildWallAttack
+
+//----Begin the army analysis loop----//
+
+	begin loop
+	
+	//----Check which state the army is in----//
+	
+		if NC_GameState == STATE_INITIAL
+			NC_NumberOfCapitalGuards = 2
+			NC_NumberOfCapitalAttackPlatoons = 0
+			NC_ChangedState = NC_True
+			run script NC_Peace
+		elsif NC_GameState == STATE_PATROL
+		
+		//----Set the number of guards----//
+		
+			NC_NumberOfCapitalGuards = 2
+			NC_NumberOfCapitalSiegePlatoons = 0
+			NC_NumberOfCapitalAttackPlatoons = 1
+			
+		//----Give army there orders----//
+			NC_ChangedState = NC_True
+			run script NC_Patrol
+		elsif NC_GameState == STATE_ATTACK_CLOSEST_TOWN
+
+		//----Set the number of guards----//
+		
+			NC_NumberOfCapitalGuards = 2
+			NC_NumberOfCapitalSiegePlatoons = 0
+			NC_NumberOfCapitalAttackPlatoons = 1
+			
+		//----Give army there orders----//
+			NC_ChangedState = NC_True
+			run script NC_TakeOverNearestTown
+		elsif NC_GameState == STATE_ATTACK_BEST_DEFENDED_TOWN
+		
+		//----Set the number of guards----//
+	
+			NC_NumberOfCapitalGuards = 3
+			NC_NumberOfCapitalSiegePlatoons = 0
+			NC_NumberOfCapitalAttackPlatoons = 2
+			
+		//----Give army there orders----//
+			NC_ChangedState = NC_True
+			run script NC_AttackBestDefendedTown
+		elsif NC_GameState == STATE_ATTACK_THE_TWO_BEST_DEFENDED_TOWNS
+		
+		//----Set the number of guards----//
+	
+			NC_NumberOfCapitalGuards = 4
+			NC_NumberOfCapitalAttackPlatoons = 2
+			NC_NumberOfCapitalSiegePlatoons = 0
+			
+		//----Give army there orders----//
+			NC_ChangedState = NC_True
+			run script NC_AttackTheTwoBestDefendedTowns
+		elsif NC_GameState == STATE_WAR
+
+		//----Set the number of guards----//
+
+			NC_NumberOfCapitalGuards = 5
+			NC_NumberOfCapitalSiegePlatoons = 0
+			NC_NumberOfCapitalAttackPlatoons = 3
+			
+		//----Give army there orders----//
+			NC_ChangedState = NC_True
+			run script NC_War
+		
+		elsif NC_GameState == STATE_SIEGE
+			NC_NumberOfCapitalSiegePlatoons = 3
+			NC_NumberOfCapitalGuards = 3
+			NC_NumberOfCapitalAttackPlatoons = 0
+			NC_ChangedState = NC_True
+			run script NC_Siege
+			
+		end if
+
+	until NC_NorseDefeated == NC_True
+	end loop
+end script Land4NC_NorseArmyManagement
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseGateManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseGateManagement
+	LeftPos = marker at {1008.719, 194.507, 1850.648}
+	RightPos = marker at {2062.500, 265.821, 1297.354}
+	GateHouse[NUMBER_OF_GATE_HOUSES]
+	WarIsComingSaid = NC_False
+	ArchersReleased = NC_False
+	GateClosed[NUMBER_OF_GATE_HOUSES] 
+	PlayersPlatoon = 0
+	PlayersInWalls = NC_False
+	Counter = 0
+	PlayersCatapult = 0
+start
+	GateHouse[0] = get HOUSE ABODE_NUMBER_GATEHOUSE at {1538.301, 385.522, 1680.052}
+	GateHouse[1] = get HOUSE ABODE_NUMBER_GATEHOUSE at {1711.817, 373.563, 1571.560}
+	GateHouse[2] = get HOUSE ABODE_NUMBER_GATEHOUSE at {1807.444, 375.130, 1597.305}
+
+	if not gate GateHouse[0] is open
+		set gate GateHouse[0] open
+	end if
+
+	if not gate GateHouse[1] is open
+		set gate GateHouse[1] open
+	end if
+
+	if not gate GateHouse[2] is open
+		set gate GateHouse[2] open
+	end if
+	
+	GateClosed[0] = NC_False 
+	GateClosed[1] = NC_False 
+	GateClosed[2] = NC_False 
+
+	begin loop 
+	//----Check if the player's army approaches the norse capital----//	
+		if town L4NorseCity is under takeover from player 0
+			PlayersInWalls = NC_True
+		else
+			PlayersInWalls = NC_False
+		end if
+		
+		if PlayersInWalls == NC_False
+			if MyCreature exists
+				if {MyCreature} and {L4NorseCity} on same side of line between {1587.802, 390.872, 1823.152} and {1580.075, 377.169, 1630.473} and {MyCreature} and {L4NorseCity} on same side of line between {1575.062, 377.896, 1649.414} and {1771.380, 376.936, 1617.662} and {MyCreature} and {L4NorseCity} on same side of line between {1771.380, 376.936, 1617.662} and {1779.332, 381.385, 1759.232}
+					PlayersInWalls = NC_True
+				end if
+			end if
+		end if
+		
+		if PlayersInWalls == NC_True 
+			if not gate GateHouse[0] is open
+				set gate GateHouse[0] open
+			end if
+			if not gate GateHouse[1] is open
+				set gate GateHouse[1] open
+			end if
+			if not gate GateHouse[2] is open
+				set gate GateHouse[2] open
+			end if
+			GateClosed[0] = NC_False 
+			GateClosed[1] = NC_False 
+			GateClosed[2] = NC_False 
+		end if
+		
+		if PlayersInWalls == NC_False
+			Counter = 0
+			while Counter < NUMBER_OF_GATE_HOUSES
+				PlayersPlatoon = get platoon of player 0 nearest {GateHouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+				PlayersCatapult = get siege weapon of player 0 nearest {GateHouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+				
+				if PlayersPlatoon exists or PlayersCatapult exists or get distance from {MyCreature} to {GateHouse[Counter]} < GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE_FOR_CREATURE
+					if gate GateHouse[Counter] is open
+						set gate GateHouse[Counter] close
+					end if
+					GateClosed[Counter] = NC_True
+					if ArchersReleased == NC_False
+						ArchersReleased = NC_True
+						run background script NC_ArchersOnGates
+					end if
+					if WarIsComingSaid == NC_False
+						WarIsComingSaid = NC_True
+						begin dialogue
+						//GEN: Men. Sharpen your blades. War is coming.
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_ARMIES_120"
+							wait until read
+						end dialogue	
+					end if
+				elsif GateClosed[Counter] == NC_True 
+					PlayersPlatoon = get platoon of player 0 nearest {GateHouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					PlayersCatapult = get siege weapon of player 0 nearest {GateHouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+
+					if not PlayersPlatoon exists and not PlayersCatapult exists and get distance from {MyCreature} to {GateHouse[Counter]} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE_FOR_CREATURE
+						if not gate GateHouse[Counter] is open
+							set gate GateHouse[Counter] open
+						end if
+						GateClosed[Counter] = NC_False
+					end if
+				end if
+				Counter++
+			end while
+		end if
+		
+	until NC_NorseDefeated == NC_True
+	end loop
+	
+	if not gate GateHouse[0] is open
+		set gate GateHouse[0] open
+	end if
+
+	if not gate GateHouse[1] is open
+		set gate GateHouse[1] open
+	end if
+
+	if not gate GateHouse[2] is open
+		set gate GateHouse[2] open
+	end if
+	
+end script Land4NC_NorseGateManagement
+//-----------------------------------------------------------------------------
+//----Land4NC_NorseCityManagement----//
+//-----------------------------------------------------------------------------
+begin script Land4NC_NorseCityManagement
+start
+end script Land4NC_NorseCityManagement
+//-----------------------------------------------------------------------------
+//----NC_RecruitCapitalArmies----//
+//-----------------------------------------------------------------------------
+begin script NC_RecruitCapitalArmies
+	PlatoonSpawn = marker at {1633.082, 374.777, 1673.806}
+	Counter = 0
+	NumberOfSoldiers = 0
+	CommentTimer = create timer for 0 seconds
+	AttackRecruitTimer = create timer for 0 seconds
+	GuardRecruitTimer = create timer for 0 seconds
+	SiegeFirstTime = NC_True
+	Random = 0
+start
+
+//----Create initial guard----//
+
+	NC_CapitalGuard[0] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {PlatoonSpawn} with 10 men and 0 women 
+	attach NC_CapitalGuard[0] to L4NorseCity
+	enable platoon NC_CapitalGuard[Counter] respond to town L4NorseCity attack
+	
+//----Create platoons as the need arises----//
+
+	begin loop
+	
+		if NC_ChangedState == NC_True
+			set GuardRecruitTimer time to 0 seconds
+			set AttackRecruitTimer time to 0 seconds
+			NC_ChangedState = NC_False
+		end if
+	
+	//----Only recruit if we have at least 20 villagers----//	
+		if adult size of L4NorseCity - get number of platoon warriors belonging to player 1 > 20
+			if get GuardRecruitTimer time remaining == 0
+			
+			//----Recruit norse guards----//
+				Counter = 0
+				while Counter < MAXIMUM_NUMBER_OF_PLATOONS
+					if Counter < NC_NumberOfCapitalGuards
+						if NC_CapitalGuard[Counter] not exists and can town L4NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size 10
+							NC_CapitalGuard[Counter] = recruit ARMY_UNIT_TYPE_MELEE_1 town L4NorseCity platoon of size 10
+								if get CommentTimer time remaining == 0 and NC_CantTalk == NC_False
+									begin dialogue
+										if get number of platoon warriors belonging to player 0 == 0
+										//GEN: Prepare a force to destroy these Greek troops
+											say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_ARMIES_150"
+											wait until read
+										else
+											Random = number from 0 to 1
+											if Random == 0
+											//GEN: Prepare a force to destroy these Greek troops
+												say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_ARMIES_150"
+												wait until read
+											elsif Random == 1
+											//GEN: Recruit an army to send against their puny forces.
+												say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_60"
+												wait until read
+											end if
+										end if
+									end dialogue
+									set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+									set CommentTimer time to MINIMUM_SILENT_TIME seconds
+								end if
+						//----Order them to have guard behaviour----//
+							wait until not NC_CapitalGuard[Counter] recruiting
+							if NC_ChangedState == NC_False
+								wait 30 seconds
+							end if
+							set GuardRecruitTimer time to GLOBAL_VALUE_ARMIES_LAND4_GUARD_RECRUITMENT_FREQUENCY seconds
+							enable platoon NC_CapitalGuard[Counter] respond to town L4NorseCity attack
+						end if
+					elsif NC_CapitalGuard[Counter] exists 
+						if not NC_CapitalGuard[Counter] recruiting and get size of NC_CapitalGuard[Counter] action queue == 0
+							disband platoon NC_CapitalGuard[Counter]
+						end if
+					end if
+					Counter++
+				end while
+			end if
+			
+			if get AttackRecruitTimer time remaining == 0
+			
+				//wait until not L4GreekTown recruiting
+				
+				if NC_NumberOfCapitalAttackPlatoons > 0
+					//if get number of platoon warriors belonging to player 0 > get number of platoon warriors belonging to player 1
+						NumberOfSoldiers = get number of platoon warriors belonging to player 0 
+						//NumberOfSoldiers -= HANDICAP
+						NumberOfSoldiers /= (MAXIMUM_AMOUNT_OF_ATTACK_PLATOONS*2)
+					//else
+						//NumberOfSoldiers = 0
+					//end if
+				end if
+				
+				if NumberOfSoldiers < MINIMUM_SIZE_OF_ATTACK_FORCE //or NumberOfSoldiers > get army size in town L4GreekTown
+					NumberOfSoldiers = MINIMUM_SIZE_OF_ATTACK_FORCE
+				//elsif NumberOfSoldiers > MAXIMUM_SIZE_OF_ATTACK_FORCE
+					//NumberOfSoldiers = MAXIMUM_SIZE_OF_ATTACK_FORCE
+				end if
+				
+			//----Recruit norse attack forces----//
+			
+				Counter = 0
+				while Counter < MAXIMUM_NUMBER_OF_PLATOONS
+					if Counter < NC_NumberOfCapitalAttackPlatoons 
+						if NC_CapitalAttackPlatoon[Counter] not exists and can town L4NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size NumberOfSoldiers
+							NC_CapitalAttackPlatoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_1 town L4NorseCity platoon of size NumberOfSoldiers
+								if get CommentTimer time remaining == 0 and NC_CantTalk == NC_False
+									begin dialogue
+										if get number of platoon warriors belonging to player 0 == 0
+										//GEN: Prepare a force to destroy these Greek troops
+											say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_ARMIES_150"
+											wait until read
+										else
+											Random = number from 0 to 1
+											if Random == 0
+											//GEN: Prepare a force to destroy these Greek troops
+												say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_ARMIES_150"
+												wait until read
+											elsif Random == 1
+											//GEN: Recruit an army to send against their puny forces.
+												say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_60"
+												wait until read
+											end if
+										end if
+									end dialogue
+									set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+									set CommentTimer time to MINIMUM_SILENT_TIME seconds
+								end if
+						//----Order them to have soldier behaviour, they do this by default but i put it in incase someone changes it to not default----//
+							wait until not NC_CapitalAttackPlatoon[Counter] recruiting
+							if NC_ChangedState == NC_False
+								wait 30 seconds
+							end if
+							set AttackRecruitTimer time to GLOBAL_VALUE_ARMIES_LAND4_ATTACK_RECRUITMENT_FREQUENCY seconds
+							enable platoon NC_CapitalAttackPlatoon[Counter] respond to local platoon attack
+						end if
+					elsif NC_CapitalAttackPlatoon[Counter] exists 
+						if not NC_CapitalAttackPlatoon[Counter] recruiting and get size of NC_CapitalAttackPlatoon[Counter] action queue == 0
+							disband platoon NC_CapitalAttackPlatoon[Counter]
+						end if
+					end if
+					Counter++
+				end while
+				
+			end if
+			
+		//----Recruit norse siege force----//
+			
+			Counter = 0
+			while Counter < MAXIMUM_NUMBER_OF_PLATOONS
+				if Counter < NC_NumberOfCapitalSiegePlatoons 
+					if NC_CapitalSiegePlatoon[Counter] not exists and can town L4NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size 15
+						NC_CapitalSiegePlatoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_1 town L4NorseCity platoon of size 15
+							if get CommentTimer time remaining == 0 and NC_CantTalk == NC_False
+								begin dialogue
+									if get number of platoon warriors belonging to player 0 == 0
+									//GEN: Prepare a force to destroy these Greek troops
+										say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_ARMIES_150"
+										wait until read
+									else
+										Random = number from 0 to 1
+										if Random == 0
+										//GEN: Prepare a force to destroy these Greek troops
+											say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_GREEK_ARMIES_150"
+											wait until read
+										elsif Random == 1
+										//GEN: Recruit an army to send against their puny forces.
+											say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_60"
+											wait until read
+										end if
+									end if
+								end dialogue
+								set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+								set CommentTimer time to MINIMUM_SILENT_TIME seconds
+							end if
+					//----Order them to have soldier behaviour, they do this by default but i put it in incase someone changes it to not default----//
+						wait until not NC_CapitalSiegePlatoon[Counter] recruiting
+						enable platoon NC_CapitalSiegePlatoon[Counter] respond to local platoon attack
+					end if
+				elsif NC_CapitalSiegePlatoon[Counter] exists 
+					if not NC_CapitalSiegePlatoon[Counter] recruiting and get size of NC_CapitalSiegePlatoon[Counter] action queue == 0
+						disband platoon NC_CapitalSiegePlatoon[Counter]
+					end if
+				end if
+				Counter++
+			end while
+		end if
+	until NC_NorseDefeated == NC_True
+	end loop
+	
+end script NC_RecruitCapitalArmies
+//-----------------------------------------------------------------------------
+//----NC_Peace----//
+//-----------------------------------------------------------------------------
+begin script NC_Peace
+	PatrolRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	Route1Waypoint[10]
+	Route2Waypoint[7]
+	Counter = 0
+start
+
+//----Initialise waypoints----//
+
+	Route1Waypoint[0] = marker at {1612.680, 380.882, 1799.321}
+	Route1Waypoint[1] = marker at {1613.966, 381.582, 1752.925}
+	Route1Waypoint[2] = marker at {1547.333, 383.340, 1741.300}
+	Route1Waypoint[3] = marker at {1557.340, 382.681, 1669.012}
+	Route1Waypoint[4] = marker at {1635.017, 369.443, 1606.499}
+	Route1Waypoint[5] = marker at {1742.704, 375.127, 1589.716}
+	Route1Waypoint[6] = marker at {1790.049, 372.028, 1606.206}
+	Route1Waypoint[7] = marker at {1773.304, 382.555, 1681.913}
+	Route1Waypoint[8] = marker at {1746.760, 383.193, 1777.658}
+	Route1Waypoint[9] = marker at {1676.095, 381.125, 1764.266}
+
+	Route2Waypoint[0] = marker at {1542.383, 394.261, 1841.134}
+	Route2Waypoint[1] = marker at {1515.637, 387.285, 1757.247}
+	Route2Waypoint[2] = marker at {1517.127, 385.803, 1671.084}
+	Route2Waypoint[3] = marker at {1581.636, 375.730, 1590.388}
+	Route2Waypoint[4] = marker at {1712.119, 373.560, 1557.083}
+	Route2Waypoint[5] = marker at {1809.155, 368.566, 1575.510}
+	Route2Waypoint[6] = marker at {1868.255, 376.474, 1666.915}
+
+//----Initialise waypoint routes----//
+
+	while Counter < 10
+		add {Route1Waypoint[Counter]} to waypoint list PatrolRoute1
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 7
+		add {Route2Waypoint[Counter]} to waypoint list PatrolRoute2
+		Counter++
+	end while
+
+//----Make guards patrol----//
+
+	while NC_GameState == STATE_INITIAL and NC_NorseDefeated == NC_False
+		if NC_CapitalGuard[0] exists
+			if get size of NC_CapitalGuard[0] action queue == 0
+				move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if 
+		if NC_CapitalGuard[1] exists 
+			if get size of NC_CapitalGuard[1] action queue == 0
+				move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+	end while
+
+//----Clear patrol orders----// 
+
+	if NC_CapitalGuard[1] exists
+		clear NC_CapitalGuard[1] action queue
+	end if
+end script NC_Peace
+//-----------------------------------------------------------------------------
+//----NC_Patrol----//
+//-----------------------------------------------------------------------------
+begin script NC_Patrol
+	PatrolRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	Route1Waypoint[10] 
+	Route2Waypoint[4]
+	Route3Waypoint[4]
+	Counter = 0
+start
+
+//----Initialise waypoints----//
+
+	Route1Waypoint[0] = marker at {1612.680, 380.882, 1799.321}
+	Route1Waypoint[1] = marker at {1613.966, 381.582, 1752.925}
+	Route1Waypoint[2] = marker at {1547.333, 383.340, 1741.300}
+	Route1Waypoint[3] = marker at {1557.340, 382.681, 1669.012}
+	Route1Waypoint[4] = marker at {1635.017, 369.443, 1606.499}
+	Route1Waypoint[5] = marker at {1742.704, 375.127, 1589.716}
+	Route1Waypoint[6] = marker at {1790.049, 372.028, 1606.206}
+	Route1Waypoint[7] = marker at {1773.304, 382.555, 1681.913}
+	Route1Waypoint[8] = marker at {1746.760, 383.193, 1777.658}
+	Route1Waypoint[9] = marker at {1676.095, 381.125, 1764.266}
+
+	Route2Waypoint[0] = marker at {1650.708, 376.447, 1547.900}
+	Route2Waypoint[1] = marker at {1716.700, 373.602, 1547.222}
+	Route2Waypoint[2] = marker at {1821.717, 366.536, 1576.911}
+	Route2Waypoint[3] = marker at {1863.363, 375.214, 1665.203}
+
+	Route3Waypoint[0] = marker at {1521.551, 385.712, 1676.160}
+	Route3Waypoint[1] = marker at {1446.182, 382.338, 1667.766}
+	Route3Waypoint[2] = marker at {1421.277, 376.278, 1650.971}
+	Route3Waypoint[3] = marker at {1407.709, 380.728, 1684.620}
+	
+//----Initialise waypoint routes----//
+
+	while Counter < 10
+		add {Route1Waypoint[Counter]} to waypoint list PatrolRoute1
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 4
+		add {Route2Waypoint[Counter]} to waypoint list PatrolRoute2
+		add {Route3Waypoint[Counter]} to waypoint list PatrolRoute3
+		Counter++
+	end while
+	
+//----Give patrol orders----//
+
+	while NC_GameState == STATE_PATROL and NC_NorseDefeated == NC_False
+
+		if NC_CapitalGuard[0] exists and get size of NC_CapitalGuard[0] action queue == 0
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+
+		if NC_CapitalGuard[1] exists and get size of NC_CapitalGuard[1] action queue == 0
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+
+		if NC_CapitalAttackPlatoon[0] exists and get size of NC_CapitalGuard[0] action queue == 0
+			move NC_CapitalAttackPlatoon[0] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalAttackPlatoon[0] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+
+	end while
+
+//----Clear patrol orders----//
+
+	if NC_CapitalGuard[1] exists
+		clear NC_CapitalGuard[1] action queue
+	end if
+	if NC_CapitalAttackPlatoon[0] exists
+		clear NC_CapitalAttackPlatoon[0] action queue
+	end if
+end script NC_Patrol
+//-----------------------------------------------------------------------------
+//----NC_TakeOverNearestTown----//
+//-----------------------------------------------------------------------------
+begin script NC_TakeOverNearestTown
+	PatrolRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	
+	Route1Waypoint[10] 
+	Route2Waypoint[4]
+	Route3Waypoint[4]
+	
+	Counter = 0
+	L4NorseTown1TownCenter = 0
+	
+	TakeOverTownComment = NC_False
+start
+	L4NorseTown1TownCenter = get building ABODE_NUMBER_TOWN_CENTRE in L4NorseTown1 min built 1.0 
+	
+//----Initialise waypoints----//
+
+	Route1Waypoint[0] = marker at {1612.680, 380.882, 1799.321}
+	Route1Waypoint[1] = marker at {1613.966, 381.582, 1752.925}
+	Route1Waypoint[2] = marker at {1547.333, 383.340, 1741.300}
+	Route1Waypoint[3] = marker at {1557.340, 382.681, 1669.012}
+	Route1Waypoint[4] = marker at {1635.017, 369.443, 1606.499}
+	Route1Waypoint[5] = marker at {1742.704, 375.127, 1589.716}
+	Route1Waypoint[6] = marker at {1790.049, 372.028, 1606.206}
+	Route1Waypoint[7] = marker at {1773.304, 382.555, 1681.913}
+	Route1Waypoint[8] = marker at {1746.760, 383.193, 1777.658}
+	Route1Waypoint[9] = marker at {1676.095, 381.125, 1764.266}
+
+	Route2Waypoint[0] = marker at {1650.708, 376.447, 1547.900}
+	Route2Waypoint[1] = marker at {1716.700, 373.602, 1547.222}
+	Route2Waypoint[2] = marker at {1821.717, 366.536, 1576.911}
+	Route2Waypoint[3] = marker at {1863.363, 375.214, 1665.203}
+
+	Route3Waypoint[0] = marker at {1521.551, 385.712, 1676.160}
+	Route3Waypoint[1] = marker at {1446.182, 382.338, 1667.766}
+	Route3Waypoint[2] = marker at {1421.277, 376.278, 1650.971}
+	Route3Waypoint[3] = marker at {1407.709, 380.728, 1684.620}
+
+//----Initialise waypoint routes----//
+
+	while Counter < 10
+		add {Route1Waypoint[Counter]} to waypoint list PatrolRoute1
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 4
+		add {Route2Waypoint[Counter]} to waypoint list PatrolRoute2
+		add {Route3Waypoint[Counter]} to waypoint list PatrolRoute3
+		Counter++
+	end while
+	
+//----Give patrol orders----//
+
+	while NC_GameState == STATE_ATTACK_CLOSEST_TOWN and NC_NorseDefeated == NC_False
+		
+		if NC_CapitalGuard[0] exists and get size of NC_CapitalGuard[0] action queue == 0
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+
+		if NC_CapitalGuard[1] exists and get size of NC_CapitalGuard[1] action queue == 0
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+		
+		if NC_CapitalAttackPlatoon[0] exists and get size of NC_CapitalAttackPlatoon[0] action queue == 0 
+			if PLAYER of L4NorseTown1 != 1
+				add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown1 to NC_CapitalAttackPlatoon[0] action queue
+			else
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+		
+	//----Check if the platoon is about to capture the town----//
+
+		if TakeOverTownComment == NC_False
+			if NC_CapitalAttackPlatoon[0] exists and town L4NorseTown1 is under takeover from player 1
+				begin dialogue
+				//GEN: This is an outrage! Take the nearest settlement! We must stop this Greek invasion!
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_200"
+					wait until read
+				end dialogue
+				set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+				TakeOverTownComment = NC_True
+			end if
+		end if
+
+	end while
+	
+//----Clear patrol orders----//
+	
+	if NC_CapitalGuard[1] exists
+		clear NC_CapitalGuard[1] action queue
+	end if
+	if NC_CapitalAttackPlatoon[0] exists and PLAYER of L4NorseTown1 == 1
+		clear NC_CapitalAttackPlatoon[0] action queue
+	end if
+end script NC_TakeOverNearestTown
+//-----------------------------------------------------------------------------
+//----NC_BuildWallAttack----//
+//-----------------------------------------------------------------------------
+begin script NC_BuildWallAttack
+	HalfWayTherePos = marker at {1703.331, 238.452, 1046.798}
+	BuildWallStakeOutPos = marker at {1130.094,166.955,614.014}
+	ValleyPos1 = marker at {978.811, 302.062, 1450.792}
+	ValleyPos2 = marker at {1332.645, 329.465, 1351.158}
+	DefendTownPos1 = marker at {889.971, 263.988, 1313.133}
+	DefendTownPos2 = marker at {1304.740, 325.437, 1162.725}
+	DefendTownPos3 = marker at {1517.696, 273.218, 988.591}
+	NearestPlayersPlatoon = 0
+	DefendYourTowns = NC_False
+	WallAttackSent = NC_False
+	WallPatrol = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+start
+	
+	add {1082.822, 177.125, 640.226} to waypoint list WallPatrol
+	add {1053.595, 177.133, 572.602} to waypoint list WallPatrol
+	add {1101.329, 177.148, 630.534} to waypoint list WallPatrol
+	add {1069.743, 177.143, 560.765} to waypoint list WallPatrol
+
+	
+	NC_Wall_Platoon = create platoon PLATOON_INFO_NORSE_MELEE_1 at {HalfWayTherePos} with GLOBAL_VALUE_ARMY_LAND_4_INITIAL_SETTLEMENT_GUARDING_PLATOON_SIZE men and 0 women 
+	enable platoon NC_Wall_Platoon respond to local platoon attack
+	attach NC_Wall_Platoon to L4NorseCity
+
+	NC_SettlementGuard1 = create platoon PLATOON_INFO_NORSE_MELEE_1 at {ValleyPos1} with GLOBAL_VALUE_ARMY_LAND_4_INITIAL_SETTLEMENT_GUARDING_PLATOON_SIZE men and 0 women 
+	enable platoon NC_SettlementGuard1 respond to local platoon attack
+	attach NC_SettlementGuard1 to L4NorseCity
+	
+	NC_SettlementGuard2 = create platoon PLATOON_INFO_NORSE_MELEE_1 at {ValleyPos2} with GLOBAL_VALUE_ARMY_LAND_4_INITIAL_SETTLEMENT_GUARDING_PLATOON_SIZE men and 0 women 
+	enable platoon NC_SettlementGuard2 respond to local platoon attack	
+	attach NC_SettlementGuard2 to L4NorseCity
+
+	begin loop
+		NearestPlayersPlatoon = get platoon of player 0 nearest {L4NorseCity} radius 6000
+		if NearestPlayersPlatoon exists
+			if {NearestPlayersPlatoon} and {L4NorseCity} on same side of line between {506.727, 263.140, 1357.433} and {1412.063, 265.093, 904.518}
+				DefendYourTowns = NC_True
+			else
+				DefendYourTowns = NC_False
+			end if
+		else
+			DefendYourTowns = NC_False
+		end if
+		if WallAttackSent == NC_False
+			if NC_Wall_Platoon exists
+				if L4BuildWallComplete == NC_True 
+					WallAttackSent = NC_True
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {BuildWallStakeOutPos} to NC_Wall_Platoon action queue
+				else
+					if DefendYourTowns == NC_True and not {NC_Wall_Platoon} near {DefendTownPos3} radius 5
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos3} to NC_Wall_Platoon action queue
+					elsif DefendYourTowns == NC_False and not {NC_Wall_Platoon} near {HalfWayTherePos} radius 5
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {HalfWayTherePos} to NC_Wall_Platoon action queue
+					end if
+				end if
+			end if
+		else
+			if NC_Wall_Platoon exists
+				if get size of NC_Wall_Platoon action queue == 0
+					move NC_Wall_Platoon along WallPatrol with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+				end if
+			end if
+		end if
+		if NC_SettlementGuard1 exists
+			if DefendYourTowns == NC_True and not {NC_SettlementGuard1} near {DefendTownPos1} radius 5
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos1} to NC_SettlementGuard1 action queue
+			elsif DefendYourTowns == NC_False and not {NC_SettlementGuard1} near {ValleyPos1} radius 5
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {ValleyPos1} to front of NC_SettlementGuard1 action queue
+			end if
+		end if
+		
+		if NC_SettlementGuard2 exists
+			if DefendYourTowns == NC_True and not {NC_SettlementGuard2} near {DefendTownPos2} radius 5
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos2} to NC_SettlementGuard2 action queue
+			elsif DefendYourTowns == NC_False and not {NC_SettlementGuard2} near {ValleyPos2} radius 5
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {ValleyPos2} to front of NC_SettlementGuard2 action queue
+			end if
+		end if
+
+	until NC_Wall_Platoon not exists and NC_SettlementGuard1 not exists and NC_SettlementGuard2 not exists or NC_NorseDefeated == NC_True
+	end loop
+end script NC_BuildWallAttack
+//-----------------------------------------------------------------------------
+//----NC_AttackBestDefendedTown----//
+//-----------------------------------------------------------------------------
+begin script NC_AttackBestDefendedTown
+	Counter = 0
+	TargetTown = 0
+	NumberOfDefenders = 0
+	Town[NUMBER_OF_TOWNS]
+	TownConverted = NC_False
+	AttackSent = NC_False
+	PlatoonKilledCommentSaid = NC_False
+	
+	PatrolRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute4 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute5 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	
+	Route1Waypoint[10] 
+	Route2Waypoint[4]
+	Route3Waypoint[5]
+	Route4Waypoint[4]
+	Route5Waypoint[4]
+
+	PlayersPlatoon = 0
+start
+//----Initialise waypoints----//
+
+	Route1Waypoint[0] = marker at {1612.680, 380.882, 1799.321}
+	Route1Waypoint[1] = marker at {1613.966, 381.582, 1752.925}
+	Route1Waypoint[2] = marker at {1547.333, 383.340, 1741.300}
+	Route1Waypoint[3] = marker at {1557.340, 382.681, 1669.012}
+	Route1Waypoint[4] = marker at {1635.017, 369.443, 1606.499}
+	Route1Waypoint[5] = marker at {1742.704, 375.127, 1589.716}
+	Route1Waypoint[6] = marker at {1790.049, 372.028, 1606.206}
+	Route1Waypoint[7] = marker at {1773.304, 382.555, 1681.913}
+	Route1Waypoint[8] = marker at {1746.760, 383.193, 1777.658}
+	Route1Waypoint[9] = marker at {1676.095, 381.125, 1764.266}
+
+	Route2Waypoint[0] = marker at {1712.219, 373.635, 1562.582}
+	Route2Waypoint[1] = marker at {1693.615, 376.587, 1527.369}
+	Route2Waypoint[2] = marker at {1756.664, 342.386, 1411.669}
+	Route2Waypoint[3] = marker at {1769.621, 320.675, 1354.581}
+
+	Route3Waypoint[0] = marker at {1815.107, 368.541, 1584.894}
+	Route3Waypoint[1] = marker at {1857.738, 360.799, 1578.329}
+	Route3Waypoint[2] = marker at {1881.742, 356.194, 1545.031}
+	Route3Waypoint[3] = marker at {1906.039, 354.517, 1553.708}
+	Route3Waypoint[4] = marker at {1978.346, 311.785, 1492.152}
+	
+	Route4Waypoint[0] =	marker at {1530.345, 385.496, 1679.016}
+	Route4Waypoint[1] = marker at {1421.723, 376.267, 1650.784}
+	Route4Waypoint[2] = marker at {1407.146, 371.639, 1635.708}
+	Route4Waypoint[3] = marker at {1351.770, 335.642, 1413.266}
+
+	Route5Waypoint[0] =	marker at {1273.185, 292.144, 1036.315}
+	Route5Waypoint[1] = marker at {1097.879, 243.863, 1042.558}
+	Route5Waypoint[2] = marker at {1059.775, 237.923, 1005.188}
+	Route5Waypoint[3] = marker at {997.193, 224.795, 984.808}
+
+//----Initialise waypoint routes----//
+
+	while Counter < 10
+		add {Route1Waypoint[Counter]} to waypoint list PatrolRoute1
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 4
+		add {Route2Waypoint[Counter]} to waypoint list PatrolRoute2
+		add {Route4Waypoint[Counter]} to waypoint list PatrolRoute4
+		add {Route5Waypoint[Counter]} to waypoint list PatrolRoute5
+		Counter++
+	end while
+
+	Counter = 0
+	while Counter < 5
+		add {Route3Waypoint[Counter]} to waypoint list PatrolRoute3
+		Counter++
+	end while
+	
+//----Initialise towns----//
+
+	Town[0] = get town with id 3
+	Town[1] = get town with id 4
+	Town[2] = get town with id 6
+	Town[3] = get town with id 7
+	Town[4] = get town with id 9
+	Town[5] = get town with id 10
+	Town[6] = get town with id 11
+
+//----Search for the most defended player town----//
+
+	while Counter < NUMBER_OF_TOWNS 
+		if PLAYER of Town[Counter] == 0 
+			if TargetTown not exists
+				TargetTown = Town[Counter]
+			end if
+			
+			PlayersPlatoon = get platoon of player 0 nearest {Town[Counter]} radius 100
+			
+			if PlayersPlatoon exists
+				if get number of villagers in platoon PlayersPlatoon > NumberOfDefenders
+					TargetTown = Town[Counter]
+					NumberOfDefenders = get number of villagers in platoon PlayersPlatoon
+				end if
+			end if
+		end if
+		Counter++
+	end while
+	
+//----Give platoons their orders----//
+
+	while NC_GameState == STATE_ATTACK_BEST_DEFENDED_TOWN and NC_NorseDefeated == NC_False
+		
+		if NC_CapitalGuard[0] exists 
+			if get size of NC_CapitalGuard[1] action queue == 0
+				move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+
+		if NC_CapitalGuard[1] exists 
+			if get size of NC_CapitalGuard[2] action queue == 0
+				move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+		
+		if NC_CapitalGuard[2] exists 
+			if get size of NC_CapitalGuard[3] action queue == 0
+				move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+	
+		
+		if NC_CapitalAttackPlatoon[0] exists 
+			if get size of NC_CapitalAttackPlatoon[0] action queue == 0
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+		
+	//----Send this platoon to attack the most defended town----//
+	
+		if NC_CapitalAttackPlatoon[1] exists 
+			if get size of NC_CapitalAttackPlatoon[1] action queue == 0 
+				if AttackSent == NC_False
+					if TargetTown exists
+						clear NC_CapitalAttackPlatoon[1] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTown to NC_CapitalAttackPlatoon[1] action queue
+						AttackSent = NC_True
+						begin dialogue
+						//GEN: Take over that town!
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_300"
+							wait until read
+						end dialogue
+						set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+					end if
+				else
+					move NC_CapitalAttackPlatoon[1] along PatrolRoute5 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+					move NC_CapitalAttackPlatoon[1] along PatrolRoute5 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+				end if
+			end if
+			if PLAYER of TargetTown == 1
+				if AttackSent == NC_True and get distance from {NC_CapitalAttackPlatoon[1]} to {L4NorseTown6} < 15 and not platoon NC_CapitalAttackPlatoon[1] fighting and PLAYER of L4NorseTown6 == 0
+					if not platoon NC_CapitalAttackPlatoon[1] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown6
+						clear NC_CapitalAttackPlatoon[1] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown6 to NC_CapitalAttackPlatoon[1] action queue
+					end if
+				end if
+			end if
+		end if
+	
+	//----Check if the player kills the attack----//
+	
+		if AttackSent == NC_True and NC_CapitalAttackPlatoon[1] not exists and PlatoonKilledCommentSaid == NC_False
+			begin dialogue
+			//GEN: No! The Greeks defeated my elite troops!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_80"
+				wait until read
+			end dialogue
+			NC_NumberOfCapitalAttackPlatoons--
+			PlatoonKilledCommentSaid = NC_True
+		end if
+	end while
+
+//----Clear patrol orders----//
+
+	if NC_CapitalGuard[1] exists
+		clear NC_CapitalGuard[1] action queue
+	end if
+	if NC_CapitalGuard[2] exists
+		clear NC_CapitalGuard[2] action queue
+	end if
+end script NC_AttackBestDefendedTown
+//-----------------------------------------------------------------------------
+//----NC_AttackTheTwoBestDefendedTowns----//
+//-----------------------------------------------------------------------------
+begin script NC_AttackTheTwoBestDefendedTowns
+	Counter = 0
+	TargetTown1 = 0
+	TargetTown2 = 0
+	NumberOfDefenders = 0
+	Town[NUMBER_OF_TOWNS]
+	
+	TownConverted1 = NC_False
+	TownConverted2 = NC_False
+	AttackSent1 = NC_False
+	AttackSent2 = NC_False
+	Platoon1KilledCommentSaid = NC_False
+	Platoon2KilledCommentSaid = NC_False
+	
+	PatrolRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute4 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute5 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute6 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	
+	Route1Waypoint[10] 
+	Route2Waypoint[4]
+	Route3Waypoint[5]
+	Route4Waypoint[4]
+	Route5Waypoint[8]
+	Route6Waypoint[5]
+	
+	PlayersPlatoon = 0
+	
+	CommentTimer = create timer for 0 seconds
+start
+
+//----Initialise waypoints----//
+
+	Route1Waypoint[0] = marker at {1612.680, 380.882, 1799.321}
+	Route1Waypoint[1] = marker at {1613.966, 381.582, 1752.925}
+	Route1Waypoint[2] = marker at {1547.333, 383.340, 1741.300}
+	Route1Waypoint[3] = marker at {1557.340, 382.681, 1669.012}
+	Route1Waypoint[4] = marker at {1635.017, 369.443, 1606.499}
+	Route1Waypoint[5] = marker at {1742.704, 375.127, 1589.716}
+	Route1Waypoint[6] = marker at {1790.049, 372.028, 1606.206}
+	Route1Waypoint[7] = marker at {1773.304, 382.555, 1681.913}
+	Route1Waypoint[8] = marker at {1746.760, 383.193, 1777.658}
+	Route1Waypoint[9] = marker at {1676.095, 381.125, 1764.266}
+
+	Route2Waypoint[0] = marker at {1712.219, 373.635, 1562.582}
+	Route2Waypoint[1] = marker at {1693.615, 376.587, 1527.369}
+	Route2Waypoint[2] = marker at {1756.664, 342.386, 1411.669}
+	Route2Waypoint[3] = marker at {1769.621, 320.675, 1354.581}
+
+	Route3Waypoint[0] = marker at {1815.107, 368.541, 1584.894}
+	Route3Waypoint[1] = marker at {1857.738, 360.799, 1578.329}
+	Route3Waypoint[2] = marker at {1881.742, 356.194, 1545.031}
+	Route3Waypoint[3] = marker at {1906.039, 354.517, 1553.708}
+	Route3Waypoint[4] = marker at {1978.346, 311.785, 1492.152}
+	
+	Route4Waypoint[0] =	marker at {1530.345, 385.496, 1679.016}
+	Route4Waypoint[1] = marker at {1421.723, 376.267, 1650.784}
+	Route4Waypoint[2] = marker at {1407.146, 371.639, 1635.708}
+	Route4Waypoint[3] = marker at {1351.770, 335.642, 1413.266}
+
+	Route5Waypoint[0] =	marker at {890.546, 265.187, 1323.626}
+	Route5Waypoint[1] = marker at {901.893, 234.754, 1209.326}
+	Route5Waypoint[2] = marker at {928.075, 226.832, 1172.269}
+	Route5Waypoint[3] = marker at {929.262, 221.432, 1121.102}
+	Route5Waypoint[4] = marker at {914.562, 218.337, 1102.333}
+	Route5Waypoint[5] = marker at {936.894, 221.312, 1059.241}
+	Route5Waypoint[6] = marker at {968.738, 221.367, 1005.757}
+	Route5Waypoint[7] = marker at {997.420, 224.820, 984.956}
+
+	Route6Waypoint[0] =	marker at {997.643, 224.814, 985.135}
+	Route6Waypoint[1] = marker at {1062.282, 238.052, 1007.613}
+	Route6Waypoint[2] = marker at {1098.947, 244.038, 1042.984}
+	Route6Waypoint[3] = marker at {1220.726, 270.756, 1024.076}
+	Route6Waypoint[4] = marker at {1273.244, 292.177, 1036.395}
+	
+//----Initialise waypoint routes----//
+
+	while Counter < 10
+		add {Route1Waypoint[Counter]} to waypoint list PatrolRoute1
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 4
+		add {Route2Waypoint[Counter]} to waypoint list PatrolRoute2
+		add {Route4Waypoint[Counter]} to waypoint list PatrolRoute4
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 5
+		add {Route3Waypoint[Counter]} to waypoint list PatrolRoute3
+		add {Route6Waypoint[Counter]} to waypoint list PatrolRoute6
+		Counter++
+	end while
+
+	Counter = 0
+	while Counter < 8
+		add {Route5Waypoint[Counter]} to waypoint list PatrolRoute5
+		Counter++
+	end while
+
+//----Initialise town----//
+
+	Town[0] = get town with id 3
+	Town[1] = get town with id 4
+	Town[2] = get town with id 6
+	Town[3] = get town with id 7
+	Town[4] = get town with id 9
+	Town[5] = get town with id 10
+	Town[6] = get town with id 11
+	
+//----Find the most defended town----//
+
+	while Counter < NUMBER_OF_TOWNS 
+		if PLAYER of Town[Counter] == 0  
+			if TargetTown1 not exists
+				TargetTown1 = Town[Counter]
+			end if
+			PlayersPlatoon = get platoon of player 0 nearest {Town[Counter]} radius 100
+			
+			if PlayersPlatoon exists
+				if get number of villagers in platoon PlayersPlatoon > NumberOfDefenders
+					TargetTown1 = Town[Counter]
+					NumberOfDefenders = get number of villagers in platoon PlayersPlatoon
+				end if
+			end if
+		end if
+		Counter++
+	end while
+	
+	NumberOfDefenders = 0
+	Counter = 0
+	
+//----Find the second most defended town----//
+
+	while Counter < NUMBER_OF_TOWNS 
+		if PLAYER of Town[Counter] == 0 and Town[Counter] != TargetTown1
+			if TargetTown2 not exists
+				TargetTown2 = Town[Counter]
+			end if
+			PlayersPlatoon = get platoon of player 0 nearest {Town[Counter]} radius 100
+			
+			if PlayersPlatoon exists
+				if get number of villagers in platoon PlayersPlatoon > NumberOfDefenders
+					TargetTown2 = Town[Counter]
+					NumberOfDefenders = get number of villagers in platoon PlayersPlatoon
+				end if
+			end if
+		end if
+		Counter++
+	end while
+
+//----Give platoons their orders----//
+
+	while NC_GameState == STATE_ATTACK_THE_TWO_BEST_DEFENDED_TOWNS and NC_NorseDefeated == NC_False
+		
+		if NC_CapitalGuard[0] exists 
+			if get size of NC_CapitalGuard[0] action queue == 0
+				move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+
+		if NC_CapitalGuard[1] exists 
+			if get size of NC_CapitalGuard[1] action queue == 0
+				move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+		
+		if NC_CapitalGuard[2] exists 
+			if get size of NC_CapitalGuard[2] action queue == 0
+				move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+		
+		if NC_CapitalGuard[3] exists 
+			if get size of NC_CapitalGuard[3] action queue == 0
+				move NC_CapitalGuard[3] along PatrolRoute4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalGuard[3] along PatrolRoute4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+		end if
+	
+	//----Send this platoon to attack the most defended town----//
+		
+		if NC_CapitalAttackPlatoon[0] exists 
+			if AttackSent1 == NC_False
+				if TargetTown1 exists
+					clear NC_CapitalAttackPlatoon[0] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTown1 to NC_CapitalAttackPlatoon[0] action queue
+					begin dialogue
+					//GEN: Take over that town!
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_LAND_DONE_300"
+						wait until read
+					end dialogue
+					set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+					AttackSent1 = NC_True
+				end if
+			elsif get size of NC_CapitalAttackPlatoon[0] action queue == 0 
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute5 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute5 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+			
+			if PLAYER of TargetTown1 == 1
+				if AttackSent1 == NC_True and get distance from {NC_CapitalAttackPlatoon[0]} to {L4NorseTown2} < 15 and not platoon NC_CapitalAttackPlatoon[0] fighting and PLAYER of L4NorseTown2 == 0
+					if not platoon NC_CapitalAttackPlatoon[0] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown2
+						clear NC_CapitalAttackPlatoon[0] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown2 to NC_CapitalAttackPlatoon[0] action queue
+					end if
+				end if
+			end if
+		end if
+		
+	//----Send this platoon to attack the 2nd most defended town----//
+		
+		if NC_CapitalAttackPlatoon[1] exists 
+			if AttackSent2 == NC_False
+				if TargetTown2 exists
+					clear NC_CapitalAttackPlatoon[0] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTown2 to NC_CapitalAttackPlatoon[0] action queue
+					AttackSent2 = NC_True
+				end if
+			elsif get size of NC_CapitalAttackPlatoon[12] action queue == 0 
+				move NC_CapitalAttackPlatoon[1] along PatrolRoute6 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalAttackPlatoon[1] along PatrolRoute6 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+			if PLAYER of TargetTown2 == 1
+				if AttackSent2 == NC_True and get distance from {NC_CapitalAttackPlatoon[1]} to {L4NorseTown6} < 15 and not platoon NC_CapitalAttackPlatoon[1] fighting and PLAYER of L4NorseTown6 == 0
+					if not platoon NC_CapitalAttackPlatoon[1] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown6
+						clear NC_CapitalAttackPlatoon[1] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown6 to NC_CapitalAttackPlatoon[1] action queue
+					end if
+				end if
+			end if
+		end if
+		
+	//----Check if the player kills the attacks----//
+	
+		if AttackSent1 == NC_True and NC_CapitalAttackPlatoon[0] not exists and Platoon1KilledCommentSaid == NC_False
+			begin dialogue
+			//GEN: No! The Greeks defeated my elite troops!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_80"
+				wait until read
+			end dialogue
+			NC_NumberOfCapitalAttackPlatoons--
+			Platoon1KilledCommentSaid = NC_True
+		end if
+		
+		if AttackSent2 == NC_True and NC_CapitalAttackPlatoon[1] not exists and Platoon2KilledCommentSaid == NC_False
+			begin dialogue
+			//GEN: No! The Greeks defeated my elite troops!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_80"
+				wait until read
+			end dialogue
+			NC_NumberOfCapitalAttackPlatoons--
+			Platoon2KilledCommentSaid = NC_True
+		end if
+
+	end while
+
+//----Clear patrol orders----//
+
+	if NC_CapitalGuard[1] exists
+		clear NC_CapitalGuard[1] action queue
+	end if
+	if NC_CapitalGuard[2] exists
+		clear NC_CapitalGuard[2] action queue
+	end if
+	if NC_CapitalGuard[3] exists
+		clear NC_CapitalGuard[3] action queue
+	end if
+	
+end script NC_AttackTheTwoBestDefendedTowns
+//-----------------------------------------------------------------------------
+//----NC_War----//
+//-----------------------------------------------------------------------------
+begin script NC_War
+	Counter = 0
+	TargetTown1 = 0
+	TargetTown2 = 0
+	NumberOfDefenders = 0
+	Town[7] //----Eight town in here because i now include the players city----//
+	
+	AttackSent1 = NC_False
+	AttackSent2 = NC_False
+	AttackSent3 = NC_False
+
+	Platoon1KilledCommentSaid = NC_False
+	Platoon2KilledCommentSaid = NC_False
+	Platoon3KilledCommentSaid = NC_False
+	
+	PatrolRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute4 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute5 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute6 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute7 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute8 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	
+	Route1Waypoint[10] 
+	Route2Waypoint[4]
+	Route3Waypoint[4]
+	Route4Waypoint[4]
+	Route5Waypoint[5]
+	Route6Waypoint[5]
+	Route7Waypoint[8]
+	Route8Waypoint[6]
+
+	PlayersPlatoon = 0
+
+	CommentTimer = create timer for 0 seconds
+start
+	
+//----Initialise waypoints----//
+
+	Route1Waypoint[0] = marker at {1612.680, 380.882, 1799.321}
+	Route1Waypoint[1] = marker at {1613.966, 381.582, 1752.925}
+	Route1Waypoint[2] = marker at {1547.333, 383.340, 1741.300}
+	Route1Waypoint[3] = marker at {1557.340, 382.681, 1669.012}
+	Route1Waypoint[4] = marker at {1635.017, 369.443, 1606.499}
+	Route1Waypoint[5] = marker at {1742.704, 375.127, 1589.716}
+	Route1Waypoint[6] = marker at {1790.049, 372.028, 1606.206}
+	Route1Waypoint[7] = marker at {1773.304, 382.555, 1681.913}
+	Route1Waypoint[8] = marker at {1746.760, 383.193, 1777.658}
+	Route1Waypoint[9] = marker at {1676.095, 381.125, 1764.266}
+
+	Route2Waypoint[0] = marker at {1406.533, 371.485, 1635.812}
+	Route2Waypoint[1] = marker at {1372.813, 361.328, 1618.429}
+	Route2Waypoint[2] = marker at {1126.968, 295.448, 1650.484}
+	Route2Waypoint[3] = marker at {1005.867, 300.040, 1499.164}
+
+	Route3Waypoint[0] = marker at {1528.763, 385.530, 1678.770}
+	Route3Waypoint[1] = marker at {1444.414, 382.229, 1667.073}
+	Route3Waypoint[2] = marker at {1407.192, 371.805, 1636.445}
+	Route3Waypoint[3] = marker at {1352.958, 335.310, 1410.773}
+
+	Route4Waypoint[0] =	marker at {1713.368, 373.569, 1566.224}
+	Route4Waypoint[1] = marker at {1693.820, 376.466, 1527.227}
+	Route4Waypoint[2] = marker at {1753.049, 347.513, 1421.070}
+	Route4Waypoint[3] = marker at {1774.589, 316.072, 1347.110}
+
+	Route5Waypoint[0] =	marker at {1810.877, 369.066, 1590.760}
+	Route5Waypoint[1] = marker at {1855.992, 361.292, 1580.608}
+	Route5Waypoint[2] = marker at {1882.675, 356.050, 1545.289}
+	Route5Waypoint[3] = marker at {1903.065, 354.601, 1553.778}
+	Route5Waypoint[4] = marker at {1944.662, 337.053, 1514.366}
+	
+	Route6Waypoint[0] =	marker at {890.546, 265.187, 1323.626}
+	Route6Waypoint[1] = marker at {901.893, 234.754, 1209.326}
+	Route6Waypoint[2] = marker at {928.075, 226.832, 1172.269}
+	Route6Waypoint[3] = marker at {929.262, 221.432, 1121.102}
+	Route6Waypoint[4] =	marker at {914.562, 218.337, 1102.333}
+						
+	Route7Waypoint[0] =	marker at {936.894, 221.312, 1059.241}
+	Route7Waypoint[1] =	marker at {968.738, 221.367, 1005.757}
+	Route7Waypoint[2] =	marker at {997.420, 224.820, 984.956}
+	Route7Waypoint[3] =	marker at {997.643, 224.814, 985.135}
+	Route7Waypoint[4] =	marker at {1062.282, 238.052, 1007.613}
+	Route7Waypoint[5] =	marker at {1098.947, 244.038, 1042.984}
+	Route7Waypoint[6] =	marker at {1220.726, 270.756, 1024.076}
+	Route7Waypoint[7] =	marker at {1273.244, 292.177, 1036.395}
+	
+	Route8Waypoint[0] = marker at {1273.856, 292.345, 1036.468}
+	Route8Waypoint[1] = marker at {1350.629, 287.961, 986.261}
+	Route8Waypoint[2] = marker at {1419.114, 276.285, 978.961}
+	Route8Waypoint[3] = marker at {1466.773, 275.852, 1003.507}
+	Route8Waypoint[4] = marker at {1494.455, 274.581, 992.431}
+	Route8Waypoint[5] = marker at {1534.829, 270.997, 992.235}
+	
+//----Initialise waypoint routes----//
+
+	while Counter < 10
+		add {Route1Waypoint[Counter]} to waypoint list PatrolRoute1
+		Counter++
+	end while
+
+	Counter = 0
+	while Counter < 4
+		add {Route2Waypoint[Counter]} to waypoint list PatrolRoute2
+		add {Route3Waypoint[Counter]} to waypoint list PatrolRoute3
+		add {Route4Waypoint[Counter]} to waypoint list PatrolRoute4
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 5
+		add {Route5Waypoint[Counter]} to waypoint list PatrolRoute5
+		add {Route6Waypoint[Counter]} to waypoint list PatrolRoute6
+		Counter++
+	end while
+
+	Counter = 0
+	while Counter < 8
+		add {Route7Waypoint[Counter]} to waypoint list PatrolRoute7
+		Counter++
+	end while
+
+	Counter = 0
+	while Counter < 6
+		add {Route8Waypoint[Counter]} to waypoint list PatrolRoute8
+		Counter++
+	end while
+
+//----Initialise town----//
+
+	Town[0] = get town with id 3
+	Town[1] = get town with id 4
+	Town[2] = get town with id 6
+	Town[3] = get town with id 7
+	Town[4] = get town with id 9
+	Town[5] = get town with id 10
+	Town[6] = get town with id 11
+	//Town[7] = get town with id 0
+	
+//----Give platoons their orders----//
+
+	while NC_GameState == STATE_WAR and NC_NorseDefeated == NC_False
+
+	//----Find the most defended town----//
+	
+		TargetTown1 = 0
+		while Counter < NUMBER_OF_TOWNS 
+			if PLAYER of Town[Counter] == 0  
+				if TargetTown1 not exists
+					TargetTown1 = Town[Counter]
+				end if
+				PlayersPlatoon = get platoon of player 0 nearest {Town[Counter]} radius 100
+				
+				if PlayersPlatoon exists
+					if get number of villagers in platoon PlayersPlatoon > NumberOfDefenders
+						TargetTown1 = Town[Counter]
+						NumberOfDefenders = get number of villagers in platoon PlayersPlatoon
+					end if
+				end if
+			end if
+			Counter++
+		end while
+		
+		NumberOfDefenders = 0
+		Counter = 0
+		
+	//----Find the 2nd most defended town----//
+	
+		TargetTown2 = 0
+		while Counter < NUMBER_OF_TOWNS 
+			if PLAYER of Town[Counter] == 0 and Town[Counter] != TargetTown1
+				if TargetTown2 not exists
+					TargetTown2 = Town[Counter]
+				end if
+				PlayersPlatoon = get platoon of player 0 nearest {Town[Counter]} radius 100
+				
+				if PlayersPlatoon exists
+					if get number of villagers in platoon PlayersPlatoon > NumberOfDefenders
+						TargetTown2 = Town[Counter]
+						NumberOfDefenders = get number of villagers in platoon PlayersPlatoon
+					end if
+				end if
+			end if
+			Counter++
+		end while
+		
+		if NC_CapitalGuard[0] exists and get size of NC_CapitalGuard[0] action queue == 0
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+
+		if NC_CapitalGuard[1] exists and get size of NC_CapitalGuard[1] action queue == 0
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+		
+		if NC_CapitalGuard[2] exists and get size of NC_CapitalGuard[2] action queue == 0
+			move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+		
+		if NC_CapitalGuard[3] exists and get size of NC_CapitalGuard[3] action queue == 0
+			move NC_CapitalGuard[3] along PatrolRoute4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[3] along PatrolRoute4 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+		
+		if NC_CapitalGuard[4] exists and get size of NC_CapitalGuard[4] action queue == 0
+			move NC_CapitalGuard[4] along PatrolRoute5 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[4] along PatrolRoute5 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+		
+	//----Send this platoon to attack the most defended town----//
+		
+		if NC_CapitalAttackPlatoon[0] exists 
+			if TargetTown1 exists 
+				if PLAYER of TargetTown1 != 1 and not platoon NC_CapitalAttackPlatoon[0] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTown1
+					disable platoon NC_CapitalAttackPlatoon[0] respond to town L4NorseCity attack
+					clear NC_CapitalAttackPlatoon[0] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTown1 to NC_CapitalAttackPlatoon[0] action queue
+					AttackSent1 = NC_True
+					if get CommentTimer time remaining == 0
+						begin dialogue
+						//GEN: My warriors will finish them here. They won't withstand another battle.
+							say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_40"
+							wait until read
+						end dialogue
+						set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+						set CommentTimer time to MINIMUM_SILENT_TIME seconds
+					end if
+				end if
+			end if
+			if get size of NC_CapitalAttackPlatoon[0] action queue == 0
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute6 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalAttackPlatoon[0] along PatrolRoute6 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+			if TargetTown1 not exists and get distance from {NC_CapitalAttackPlatoon[0]} to {L4NorseTown2} < 15 and not platoon NC_CapitalAttackPlatoon[0] fighting and PLAYER of L4NorseTown2 == 0
+				if not platoon NC_CapitalAttackPlatoon[0] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown2
+					clear NC_CapitalAttackPlatoon[0] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown2 to NC_CapitalAttackPlatoon[0] action queue
+				end if
+			end if
+		end if
+
+	//----Send this platoon to attack the most defended town----//
+		if NC_CapitalAttackPlatoon[1] exists 
+			if TargetTown1 exists 
+				if PLAYER of TargetTown1 != 1 
+					if not platoon NC_CapitalAttackPlatoon[1] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using get building ABODE_NUMBER_TOWN_CENTRE in TargetTown1 min built 0 
+						disable platoon NC_CapitalAttackPlatoon[1] respond to town L4NorseCity attack
+						clear NC_CapitalAttackPlatoon[1] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTown1 to NC_CapitalAttackPlatoon[1] action queue
+						AttackSent2 = NC_True
+						if get CommentTimer time remaining == 0
+							begin dialogue
+							//GEN: My warriors will finish them here. They won't withstand another battle.
+								say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_40"
+								wait until read
+							end dialogue
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+							set CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end if
+					end if
+				end if
+			end if
+			
+			if get size of NC_CapitalAttackPlatoon[1] action queue == 0 
+				move NC_CapitalAttackPlatoon[1] along PatrolRoute7 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalAttackPlatoon[1] along PatrolRoute7 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+			
+			if TargetTown1 not exists and get distance from {NC_CapitalAttackPlatoon[1]} to {L4NorseTown6} < 15 and not platoon NC_CapitalAttackPlatoon[1] fighting and PLAYER of L4NorseTown6 == 0
+				if not platoon NC_CapitalAttackPlatoon[1] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using get building ABODE_NUMBER_TOWN_CENTRE in L4NorseTown6 min built 0 
+					clear NC_CapitalAttackPlatoon[1] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown6 to NC_CapitalAttackPlatoon[1] action queue
+				end if
+			end if
+		end if
+		
+	//----Send this platoon to attack the 2nd most defended town----//
+		
+		if NC_CapitalAttackPlatoon[2] exists 
+			if TargetTown2 exists
+				if PLAYER of TargetTown1 != 1 
+					if not platoon NC_CapitalAttackPlatoon[2] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using get building ABODE_NUMBER_TOWN_CENTRE in TargetTown2 min built 0 
+						disable platoon NC_CapitalAttackPlatoon[2] respond to town L4NorseCity attack
+						clear NC_CapitalAttackPlatoon[2] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using TargetTown2 to NC_CapitalAttackPlatoon[2] action queue
+						AttackSent3 = NC_True
+						if get CommentTimer time remaining == 0
+							begin dialogue
+							//GEN: My warriors will finish them here. They won't withstand another battle.
+								say "BW2T_SCRIPT_04FINAL_ADVISORS_INTRO_40"
+								wait until read
+							end dialogue
+							set NC_CommentTimer time to MINIMUM_SILENT_TIME seconds
+							set CommentTimer time to MINIMUM_SILENT_TIME seconds
+						end if
+					end if
+				end if
+			end if
+		
+			if get size of NC_CapitalAttackPlatoon[2] action queue == 0
+				move NC_CapitalAttackPlatoon[2] along PatrolRoute8 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+				move NC_CapitalAttackPlatoon[2] along PatrolRoute8 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+			end if
+
+			if TargetTown2 not exists and get distance from {NC_CapitalAttackPlatoon[2]} to {L4NorseTown7} < 15 and not platoon NC_CapitalAttackPlatoon[2] fighting and PLAYER of L4NorseTown7 == 0
+				if not platoon NC_CapitalAttackPlatoon[2] current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using get building ABODE_NUMBER_TOWN_CENTRE in L4NorseTown7 min built 0 
+					clear NC_CapitalAttackPlatoon[2] action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L4NorseTown7 to NC_CapitalAttackPlatoon[2] action queue
+				end if
+			end if
+		end if
+	
+	//----Check if the player kills the attacks----//
+	
+		if AttackSent1 == NC_True and NC_CapitalAttackPlatoon[0] not exists 
+			begin dialogue
+			//GEN: No! The Greeks defeated my elite troops!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_80"
+				wait until read
+			end dialogue
+			AttackSent1 = NC_False
+		end if
+		
+		if AttackSent2 == NC_True and NC_CapitalAttackPlatoon[1] not exists 
+			begin dialogue
+			//GEN: No! The Greeks defeated my elite troops!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_80"
+				wait until read
+			end dialogue
+			AttackSent2 = NC_False
+		end if
+		
+		if AttackSent3 == NC_True and NC_CapitalAttackPlatoon[2] not exists 
+			begin dialogue
+			//GEN: No! The Greeks defeated my elite troops!
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_NORSE_TAUNTS_80"
+				wait until read
+			end dialogue
+			AttackSent3 = NC_False
+		end if
+		
+	end while
+	
+//----Clear patrol orders----//
+
+	if NC_CapitalGuard[0] exists
+		clear NC_CapitalGuard[0] action queue
+	end if
+	if NC_CapitalGuard[1] exists
+		clear NC_CapitalGuard[1] action queue
+	end if
+	if NC_CapitalGuard[2] exists
+		clear NC_CapitalGuard[2] action queue
+	end if
+	if NC_CapitalGuard[3] exists
+		clear NC_CapitalGuard[3] action queue
+	end if
+	if NC_CapitalGuard[4] exists
+		clear NC_CapitalGuard[4] action queue
+	end if
+end script NC_War
+//-----------------------------------------------------------------------------
+//----NC_Siege----//
+//-----------------------------------------------------------------------------
+begin script NC_Siege
+	NumberOfPlayerTowns = 0
+	OutsideTownPos[10]
+	BurnHouse = 0
+	Counter = 0
+	EnemyPlatoon = 0
+	Attacking = NC_False
+	DELAYTIME = 0
+	AttackTimer = create timer for 0 seconds
+	
+	PatrolRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	PatrolRoute3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.000,0.000,0.000}
+	
+	Route1Waypoint[10] 
+	Route2Waypoint[4]
+	Route3Waypoint[4]
+start
+
+//----Initialise positions----//
+
+	OutsideTownPos[0] = marker at {1028.322, 207.200, 899.495}
+	OutsideTownPos[1] = marker at {942.470, 220.408, 985.945}
+	OutsideTownPos[2] = marker at {1115.612, 226.466, 919.003}
+	OutsideTownPos[3] = marker at {947.665, 185.241, 868.155}
+	OutsideTownPos[4] = marker at {1071.888, 198.999, 865.971}
+	OutsideTownPos[5] = marker at {994.999, 209.940, 917.753}
+	OutsideTownPos[6] = marker at {1089.436, 217.782, 894.760}
+	OutsideTownPos[7] = marker at {1047.710, 215.800, 911.191}
+	OutsideTownPos[8] = marker at {1003.516, 226.542, 968.945}
+	OutsideTownPos[9] = marker at {1053.726, 223.195, 925.464}
+	
+	Route1Waypoint[0] = marker at {1612.680, 380.882, 1799.321}
+	Route1Waypoint[1] = marker at {1613.966, 381.582, 1752.925}
+	Route1Waypoint[2] = marker at {1547.333, 383.340, 1741.300}
+	Route1Waypoint[3] = marker at {1557.340, 382.681, 1669.012}
+	Route1Waypoint[4] = marker at {1635.017, 369.443, 1606.499}
+	Route1Waypoint[5] = marker at {1742.704, 375.127, 1589.716}
+	Route1Waypoint[6] = marker at {1790.049, 372.028, 1606.206}
+	Route1Waypoint[7] = marker at {1773.304, 382.555, 1681.913}
+	Route1Waypoint[8] = marker at {1746.760, 383.193, 1777.658}
+	Route1Waypoint[9] = marker at {1676.095, 381.125, 1764.266}
+
+	Route2Waypoint[0] = marker at {1650.708, 376.447, 1547.900}
+	Route2Waypoint[1] = marker at {1716.700, 373.602, 1547.222}
+	Route2Waypoint[2] = marker at {1821.717, 366.536, 1576.911}
+	Route2Waypoint[3] = marker at {1863.363, 375.214, 1665.203}
+
+	Route3Waypoint[0] = marker at {1521.551, 385.712, 1676.160}
+	Route3Waypoint[1] = marker at {1446.182, 382.338, 1667.766}
+	Route3Waypoint[2] = marker at {1421.277, 376.278, 1650.971}
+	Route3Waypoint[3] = marker at {1407.709, 380.728, 1684.620}
+
+//----Initialise waypoint routes----//
+
+	while Counter < 10
+		add {Route1Waypoint[Counter]} to waypoint list PatrolRoute1
+		Counter++
+	end while
+	
+	Counter = 0
+	while Counter < 4
+		add {Route2Waypoint[Counter]} to waypoint list PatrolRoute2
+		add {Route3Waypoint[Counter]} to waypoint list PatrolRoute3
+		Counter++
+	end while
+	
+	while NC_GameState == STATE_SIEGE and NC_NorseDefeated == NC_False
+	
+		if NC_CapitalGuard[0] exists and get size of NC_CapitalGuard[0] action queue == 0
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[0] along PatrolRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+
+		if NC_CapitalGuard[1] exists and get size of NC_CapitalGuard[1] action queue == 0
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[1] along PatrolRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+		
+		if NC_CapitalGuard[2] exists and get size of NC_CapitalGuard[2] action queue == 0
+			move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+			move NC_CapitalGuard[2] along PatrolRoute3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_REVERSE
+		end if
+		
+	//----Check if timer is 0 and wait until last attack is dead----//
+	
+		//----Give siege platoons their orders----//
+		
+		if NC_CapitalSiegePlatoon[0] exists 
+			if get size of NC_CapitalSiegePlatoon[0] action queue == 0 and not {NC_CapitalSiegePlatoon[0]} near {OutsideTownPos[0]} radius 5
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {OutsideTownPos[0]} to NC_CapitalSiegePlatoon[0] action queue
+			end if
+		end if
+		if NC_CapitalSiegePlatoon[1] exists 
+			if get size of NC_CapitalSiegePlatoon[1] action queue == 0 and not {NC_CapitalSiegePlatoon[1]} near {OutsideTownPos[1]} radius 5
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {OutsideTownPos[1]} to NC_CapitalSiegePlatoon[1] action queue
+			end if
+		end if
+		if NC_CapitalSiegePlatoon[2] exists 
+			if get size of NC_CapitalSiegePlatoon[2] action queue == 0 and not {NC_CapitalSiegePlatoon[2]} near {OutsideTownPos[2]} radius 5
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {OutsideTownPos[2]} to NC_CapitalSiegePlatoon[2] action queue
+			end if
+		end if
+		
+		/*EnemyPlatoon = get platoon of player 1 nearest {L4GreekTown} radius 6000
+		if EnemyPlatoon exists
+			if {EnemyPlatoon} and {L4GreekTown} on same side of line between {857.629, 229.121, 864.552} and {1074.271, 198.536, 742.041} and {EnemyPlatoon} and {L4GreekTown} on same side of line between {1073.401, 180.345, 678.700} and {997.969, 215.110, 533.137}
+				set AttackTimer time to DELAYTIME seconds
+				if DELAYTIME > 180
+					DELAYTIME -= 30
+				end if
+			end if
+		end if*/
+
+	//----Get a house to burn----//
+		if BurnHouse not exists
+			BurnHouse = get building ABODE_NUMBER_A in L4GreekTown min built 1
+			if BurnHouse not exists
+				BurnHouse = get building ABODE_NUMBER_B in L4GreekTown min built 1
+				if BurnHouse not exists
+					BurnHouse = get building ABODE_NUMBER_C in L4GreekTown min built 1
+					if BurnHouse not exists
+						BurnHouse = get building ABODE_NUMBER_D in L4GreekTown min built 1
+						if BurnHouse not exists
+							BurnHouse = get building ABODE_NUMBER_E in L4GreekTown min built 1
+						end if
+					end if
+				end if
+			end if
+		else
+			if NC_CapitalSiegePlatoon[0] exists 
+				if {NC_CapitalSiegePlatoon[0]} near {OutsideTownPos[0]} radius 5
+					if get size of NC_CapitalSiegePlatoon[0] action queue == 0
+						add action PLATOON_AGENDA_ACTION_ATTACK using BurnHouse to NC_CapitalSiegePlatoon[0] action queue
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {OutsideTownPos[0]} to NC_CapitalSiegePlatoon[0] action queue
+					end if
+				end if
+			elsif NC_CapitalSiegePlatoon[1] exists 
+				if {NC_CapitalSiegePlatoon[1]} near {OutsideTownPos[1]} radius 5
+					if get size of NC_CapitalSiegePlatoon[1] action queue == 0
+						add action PLATOON_AGENDA_ACTION_ATTACK using BurnHouse to NC_CapitalSiegePlatoon[1] action queue
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {OutsideTownPos[1]} to NC_CapitalSiegePlatoon[1] action queue
+					end if
+				end if
+			elsif NC_CapitalSiegePlatoon[2] exists 
+				if {NC_CapitalSiegePlatoon[2]} near {OutsideTownPos[2]} radius 5
+					if get size of NC_CapitalSiegePlatoon[2] action queue == 0
+						add action PLATOON_AGENDA_ACTION_ATTACK using BurnHouse to NC_CapitalSiegePlatoon[2] action queue
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {OutsideTownPos[2]} to NC_CapitalSiegePlatoon[2] action queue
+					end if
+				end if
+			end if
+		end if
+	end while
+	
+	if NC_CapitalSiegePlatoon[0] exists
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {L4NorseCity} to NC_CapitalSiegePlatoon[0] action queue
+	end if
+	if NC_CapitalSiegePlatoon[1] exists
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {L4NorseCity} to NC_CapitalSiegePlatoon[1] action queue
+	end if
+	if NC_CapitalSiegePlatoon[2] exists
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {L4NorseCity} to NC_CapitalSiegePlatoon[2] action queue
+	end if
+	
+end script NC_Siege
+//-----------------------------------------------------------------------------
+//----NC_ObjectivesUpdate----//
+//-----------------------------------------------------------------------------
+begin script NC_ObjectivesUpdate
+
+DisabledPopulation = NC_False
+
+start
+
+	begin loop
+		if player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION complete and DisabledPopulation == NC_False
+			wait 3 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION
+			DisabledPopulation = NC_True
+		end if
+	end loop
+
+end script NC_ObjectivesUpdate
+//-----------------------------------------------------------------------------
+//----NC_TownTributes----// Gives the player tribute when they take a town for the first time
+//-----------------------------------------------------------------------------
+begin script NC_TownTributes
+	TributeGiven[NUMBER_OF_TOWNS]
+	Tribute[NUMBER_OF_TOWNS]
+	MinorSettlement[NUMBER_OF_TOWNS]
+	Counter = 0
+	
+	TotalTaken = 0
+start
+	TributeGiven[0] = NC_False
+	TributeGiven[1] = NC_False
+	TributeGiven[2] = NC_False
+	TributeGiven[3] = NC_False
+	TributeGiven[4] = NC_False
+	TributeGiven[5] = NC_False
+	TributeGiven[6] = NC_False
+	
+	Tribute[0] = GLOBAL_VALUE_TRIBUTE_LAND_4_IRONFIST
+	Tribute[1] = GLOBAL_VALUE_TRIBUTE_LAND_4_BIERTOWN
+	Tribute[2] = GLOBAL_VALUE_TRIBUTE_LAND_4_METALMOUNTAIN
+	Tribute[3] = GLOBAL_VALUE_TRIBUTE_LAND_4_THANOSPASS
+	Tribute[4] = GLOBAL_VALUE_TRIBUTE_LAND_4_SPIRITHAVEN
+	Tribute[5] = GLOBAL_VALUE_TRIBUTE_LAND_4_HILLDALE
+	Tribute[6] = GLOBAL_VALUE_TRIBUTE_LAND_4_WOODVALE
+	
+	MinorSettlement[0]	= get town with id 3	//Iron Fist
+	MinorSettlement[1]	= get town with id 4	//Bier Towne
+	MinorSettlement[2]	= get town with id 6	//Metal Mountain
+	MinorSettlement[3]	= get town with id 7	//Thanos Pass
+	MinorSettlement[4]	= get town with id 9	//Spirit Haven
+	MinorSettlement[5]	= get town with id 10	//Hilldale Farms
+	MinorSettlement[6]	= get town with id 11		//Woodvale
+
+	begin loop 
+		Counter = 0
+		while Counter < NUMBER_OF_TOWNS
+			if TributeGiven[Counter] == NC_False
+				if PLAYER of MinorSettlement[Counter] == 0
+					increment tribute by Tribute[Counter]
+					TributeGiven[Counter] = NC_True
+					TotalTaken++
+				elsif variable get town MinorSettlement[Counter] status == variable TOWN_STATUS_MIGRATED
+					if PLAYER of get town MinorSettlement[Counter] is migrating to == 0
+						increment tribute by Tribute[Counter]
+						TributeGiven[Counter] = NC_True
+						TotalTaken++
+					end if
+				end if
+			end if
+			Counter++
+		end while
+	until TotalTaken == NUMBER_OF_TOWNS
+	end loop
+
+end script NC_TownTributes
+
+//--------------------------------------------Old functions that i use for reference---------------------//
+
+//-----------------------------------------------------------------------------
+//----NC_ArchersOnGates----//
+//-----------------------------------------------------------------------------
+begin script NC_ArchersOnGates
+	ArcherPlatoon1 = 0
+	ArcherPlatoon2 = 0
+	ArcherPlatoon3 = 0
+	ArcherPlatoon4 = 0
+	ArcherRecruited[4]
+	WallPos[4]
+	Wall[4]
+start
+	WallPos[0] = marker at {1532.899, 384.330, 1726.352}
+	WallPos[1] = marker at {1552.407, 382.076, 1651.094}
+	WallPos[2] = marker at {1668.508, 373.676, 1581.305}
+	WallPos[3] = marker at {1765.016, 373.006, 1580.120}
+	
+	ArcherRecruited[0] = NC_False
+	ArcherRecruited[1] = NC_False
+	ArcherRecruited[2] = NC_False
+	ArcherRecruited[3] = NC_False
+	begin loop
+		if ArcherPlatoon1 not exists and can town L4NorseCity recruit ARMY_UNIT_TYPE_RANGED_1 platoon of size 10 and get number of type VILLAGER SEX_MALE in L4NorseCity > 10
+			if ArcherRecruited[0] == NC_False
+				ArcherPlatoon1 = recruit ARMY_UNIT_TYPE_RANGED_1 town L4NorseCity platoon of size 10
+				enable platoon ArcherPlatoon1 respond to town L4NorseCity attack
+				ArcherRecruited[0] = NC_True
+			end if
+		elsif ArcherPlatoon1 exists and get size of ArcherPlatoon1 action queue == 0
+			Wall[0] = get wall segment nearest {WallPos[0]} radius 30
+			if Wall[0] exists
+				add action PLATOON_AGENDA_ACTION_GET_ON_WALL using Wall[0] to ArcherPlatoon1 action queue
+				//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {ArcherPlatoon1} to ArcherPlatoon1 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {WallPos[0]} to ArcherPlatoon1 action queue
+			end if
+		end if
+		
+		if ArcherPlatoon2 not exists and can town L4NorseCity recruit ARMY_UNIT_TYPE_RANGED_1 platoon of size 10 and get number of type VILLAGER SEX_MALE in L4NorseCity > 10
+			if ArcherRecruited[1] == NC_False
+				ArcherPlatoon2 = recruit ARMY_UNIT_TYPE_RANGED_1 town L4NorseCity platoon of size 10
+				enable platoon ArcherPlatoon2 respond to town L4NorseCity attack
+				ArcherRecruited[1] = NC_True
+			end if
+		elsif ArcherPlatoon2 exists and get size of ArcherPlatoon2 action queue == 0
+			Wall[1] = get wall segment nearest {WallPos[1]} radius 30
+			if Wall[1] exists
+				add action PLATOON_AGENDA_ACTION_GET_ON_WALL using Wall[1] to ArcherPlatoon2 action queue
+				//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {ArcherPlatoon2} to ArcherPlatoon2 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {WallPos[1]} to ArcherPlatoon2 action queue
+			end if
+		end if
+		
+		if ArcherPlatoon3 not exists and can town L4NorseCity recruit ARMY_UNIT_TYPE_RANGED_1 platoon of size 10 and get number of type VILLAGER SEX_MALE in L4NorseCity > 10
+			if ArcherRecruited[2] == NC_False
+				ArcherPlatoon3 = recruit ARMY_UNIT_TYPE_RANGED_1 town L4NorseCity platoon of size 10
+				enable platoon ArcherPlatoon3 respond to town L4NorseCity attack
+				ArcherRecruited[2] = NC_True
+			end if
+		elsif ArcherPlatoon3 exists and get size of ArcherPlatoon3 action queue == 0
+			Wall[2] = get wall segment nearest {WallPos[2]} radius 30
+			if Wall[2] exists
+				add action PLATOON_AGENDA_ACTION_GET_ON_WALL using Wall[2] to ArcherPlatoon3 action queue
+				//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {ArcherPlatoon3} to ArcherPlatoon3 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {WallPos[2]} to ArcherPlatoon3 action queue
+			end if
+		end if
+		
+		if ArcherPlatoon4 not exists and can town L4NorseCity recruit ARMY_UNIT_TYPE_RANGED_1 platoon of size 10 and get number of type VILLAGER SEX_MALE in L4NorseCity > 10
+			if ArcherRecruited[3] == NC_False
+				ArcherPlatoon4 = recruit ARMY_UNIT_TYPE_RANGED_1 town L4NorseCity platoon of size 10
+				enable platoon ArcherPlatoon4 respond to town L4NorseCity attack
+				ArcherRecruited[3] = NC_True
+			end if
+		elsif ArcherPlatoon4 exists and get size of ArcherPlatoon4 action queue == 0
+			Wall[3] = get wall segment nearest {WallPos[3]} radius 30
+			if Wall[3] exists
+				add action PLATOON_AGENDA_ACTION_GET_ON_WALL using Wall[3] to ArcherPlatoon4 action queue
+				//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {ArcherPlatoon4} to ArcherPlatoon4 action queue
+			else
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {WallPos[3]} to ArcherPlatoon4 action queue
+			end if
+		end if
+		
+	until NC_NorseDefeated == NC_True
+	end loop
+				
+end script NC_ArchersOnGates
+

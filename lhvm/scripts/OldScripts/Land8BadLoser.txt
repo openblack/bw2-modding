@@ -1,0 +1,28 @@
+//Land8BadLoser.txt
+begin script Land8BadLoser
+Rock = 0
+start
+	begin cinema
+		say "Bad loser cinema"
+		wait 5 seconds
+	end cinema
+	
+	
+	Rock = create OBJECT ROCK at {1762.849,31.308,928.437}
+	wait (60*1) seconds
+	
+	if not {Rock} near {1762.849,31.308,928.437} radius 10
+		//Failed
+		begin cinema
+			say "WOMD failed - wonder does not exist"
+			wait 5 seconds
+		end cinema
+	else
+		//Succeded
+		begin cinema
+			say "WOMD firing"
+			wait 5 seconds
+		end cinema
+	end if
+
+end script Land8BadLoser

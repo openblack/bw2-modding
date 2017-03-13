@@ -1,0 +1,522 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L5WG_DEBUG = 1 // set to 1 to skip cutscenes and stuff
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global GLOBAL_L5WG_ExitChallange = 0
+global GLOBAL_L5WG_AllHousesDestroyed = 0
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script WaitForExit
+define script WaitForAllDestroyed
+define script WreckingGroundIntro
+define script WreckingGroundOutro
+define script L5WG_Reminder1(view_loc)
+define script L5WG_Reminder2(view_loc)
+define script L5WG_Reminder3(view_loc)
+
+define script ClearRubbleAtPosition(Position)
+
+//-----------------------------------------------------------------------------
+//	Wrecking Grounds
+//-----------------------------------------------------------------------------
+begin script Land5WreckingGround
+
+
+	Scroll = 0
+	ScrollPos = marker at {1905.983, 66.188, 1146.103}
+
+	HouseToDestroy = 0
+
+	Rocks[20]
+	NextRock = 0
+	WatchedCutscene = 0
+
+	Influence = 0
+	NearRock = 0
+
+	RockSpawnPos = marker at {1952.852, 71.970, 1218.877}
+
+	PrevCamPos = 0
+	PrevCamFocus = 0
+
+	Blueprint = 0
+
+start
+	if L5WG_DEBUG == 1
+		WatchedCutscene = 1
+	else
+		//wait 600 seconds // how long do we want to wait before we start?
+	end if	
+
+	while GLOBAL_L5WG_AllHousesDestroyed == 0
+
+		Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+		wait until Scroll right clicked
+		clear right clicked object
+		delete Scroll
+
+		if WatchedCutscene == 0
+			run script WreckingGroundIntro
+			run background script L5WG_Reminder1(ScrollPos)
+		end if
+
+		//This monitors the houses and waits for them to be destroyed
+		run background script WaitForAllDestroyed
+
+		GLOBAL_L5WG_ExitChallange = 0
+		run background script WaitForExit
+
+		PrevCamPos = marker at camera position
+		PrevCamFocus = marker at camera focus
+		Influence = create influence at {RockSpawnPos} radius 40
+
+		begin interactive camera
+			set camera position to {1974.322, 92.441, 1209.040}
+			set camera focus to {1973.608, 91.778, 1208.815}
+			while GLOBAL_L5WG_ExitChallange == 0 and GLOBAL_L5WG_AllHousesDestroyed == 0
+				NearRock = 0
+				NearRock = get ROCK_OBJECT at {RockSpawnPos} radius 10
+				if NearRock not exists
+					if Rocks[NextRock] exists
+						delete Rocks[NextRock]
+					end if
+					Rocks[NextRock] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {RockSpawnPos}
+					NextRock++
+					if NextRock == 20
+						NextRock = 0
+					end if
+				end if
+				wait 2 seconds
+			end while
+			set camera position to {PrevCamPos}
+			set camera focus to {PrevCamFocus}
+		end interactive camera
+
+		delete Influence
+	end while
+
+	run script WreckingGroundOutro
+
+	// need skyscraper 5
+	Blueprint = create blueprint RESEARCH_ITEM_ABODE_NUMBER_SKYSCRAPER at {ScrollPos}
+	wait until Blueprint right clicked
+
+end script Land5WreckingGround
+
+//-----------------------------------------------------------------------------
+//	Wait for Exit
+//-----------------------------------------------------------------------------
+begin script WaitForExit
+	Scroll = 0
+	ScrollPos = marker at {1956.478, 66.815, 1172.834}
+start
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+	wait until key KB_SPACE down or Scroll right clicked
+	clear right clicked object
+	delete Scroll
+
+	GLOBAL_L5WG_ExitChallange = 1
+end script WaitForExit
+
+//-----------------------------------------------------------------------------
+//	Wait for All Destroyed
+//-----------------------------------------------------------------------------
+begin script WaitForAllDestroyed
+	HousePos[12]
+	CurrentHouse = 0
+	House = 0
+
+	HousesDestroyed = 0
+start
+	HousePos[0] = marker at {1816.321, 55.281, 1064.011}
+	HousePos[1] = marker at {1857.956, 55.500, 1093.640}
+	HousePos[2] = marker at {1891.935, 56.243, 1117.044}
+	HousePos[3] = marker at {1848.151, 55.554, 1133.046}
+	HousePos[4] = marker at {1905.095, 56.194, 1144.477}
+	HousePos[5] = marker at {1862.539, 55.656, 1157.731}
+	HousePos[6] = marker at {1808.636, 57.931, 1196.400}
+	HousePos[7] = marker at {1851.206, 54.156, 1211.299}
+	HousePos[8] = marker at {1884.238, 53.813, 1206.957}
+	HousePos[9] = marker at {1865.323, 54.781, 1241.483}
+	HousePos[10] = marker at {1880.647, 53.954, 1240.179}
+	HousePos[11] = marker at {1828.557, 55.342, 1186.110}
+
+	begin loop
+
+		House = get HOUSE at {HousePos[CurrentHouse]}
+
+		if HEALTH of House < 0.2 and House exists
+			delete House
+			HousesDestroyed++
+			run background script ClearRubbleAtPosition(House)
+		end if
+
+		CurrentHouse++
+		if CurrentHouse == 12
+			CurrentHouse = 0
+		end if
+	
+	until HousesDestroyed == 12
+	end loop
+
+	GLOBAL_L5WG_AllHousesDestroyed = 1
+end script WaitForAllDestroyed
+
+//-----------------------------------------------------------------------------
+//	Reminder
+//-----------------------------------------------------------------------------
+begin script L5WG_Reminder1(view_loc)
+start
+	wait number from 500 to 1000 seconds
+	if GLOBAL_L5WG_AllHousesDestroyed == 0
+		wait until ({view_loc} not viewed and camera position not near {view_loc} radius 500) or GLOBAL_L5WG_AllHousesDestroyed != 0
+		if GLOBAL_L5WG_AllHousesDestroyed == 0
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_WRECKGROUND_REMINDER_10" //by evil spirit
+				wait 2 seconds
+				send evil spirit home
+			end dialogue
+		end if
+	end if
+
+	if GLOBAL_L5WG_AllHousesDestroyed == 0
+		run background script L5WG_Reminder2(view_loc)
+	end if
+end script L5WG_Reminder1
+
+//-----------------------------------------------------------------------------
+//	Reminder 2
+//-----------------------------------------------------------------------------
+begin script L5WG_Reminder2(view_loc)
+start
+	wait number from 400 to 1000 seconds
+	if GLOBAL_L5WG_AllHousesDestroyed == 0
+		wait until ({view_loc} viewed and camera position near {view_loc} radius 500) or GLOBAL_L5WG_AllHousesDestroyed != 0
+		if GLOBAL_L5WG_AllHousesDestroyed == 0
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_WRECKGROUND_REMINDER_10" //by good spirit
+				wait 2 seconds
+				send good spirit home
+			end dialogue
+		end if
+	end if
+
+	if GLOBAL_L5WG_AllHousesDestroyed == 0
+		run background script L5WG_Reminder3(view_loc)
+	end if
+end script L5WG_Reminder2
+
+//-----------------------------------------------------------------------------
+//	Reminder 3
+//-----------------------------------------------------------------------------
+begin script L5WG_Reminder3(view_loc)
+start
+	wait number from 400 to 1000 seconds
+	if GLOBAL_L5WG_AllHousesDestroyed == 0
+		wait until ({view_loc} not viewed and camera position not near {view_loc} radius 500) or GLOBAL_L5WG_AllHousesDestroyed != 0
+		if GLOBAL_L5WG_AllHousesDestroyed == 0
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_WRECKGROUND_REMINDER_30" //by evil spirit
+				wait 2 seconds
+				send evil spirit home
+			end dialogue
+		end if
+	end if
+end script L5WG_Reminder3
+
+//-----------------------------------------------------------------------------
+//	Wrecking Ground Intro
+//-----------------------------------------------------------------------------
+begin script WreckingGroundIntro
+
+DemolishBuilding =0
+HyperDude = 0
+RelCamPos=0
+RelCamFoc=0
+HyperDest=0
+HyperFoc=0
+MyRubble[4]
+BreakStuff=0
+Dust[3]
+
+start
+
+	begin cinema
+
+		start music "cut_scene_wrecking_01"
+		DemolishBuilding = get HOUSE at {1905.020, 56.191, 1144.729}
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		HyperDest = marker at extra position "BWS_EP_CS_WRECKSTART" from DemolishBuilding
+		HyperFoc = marker at extra position "BWS_EP_CS_WRECKSTART" focus from DemolishBuilding
+
+		HyperDude = create VILLAGER JAPANESE_FORESTER at get target from {HyperFoc} to {HyperDest} distance 3 angle 0//get world position from DemolishBuilding to {-0.930, 0.041, 6.162}
+
+		BreakStuff = marker at get world position from DemolishBuilding to  {-0.616, 2.073, 1.875}
+		
+		set HyperDude position to {HyperDest}
+		set HyperDude focus to {HyperFoc}
+			
+		set HyperDude carrying CARRIED_OBJECT_MALLET_HEAVY
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-5.314, 2.929, 7.114}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-4.559, 2.726, 6.491}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	
+		set fade in time 1
+
+		//wait until HyperDude played
+		wait 1.8 seconds		
+
+		wait until {HyperDude} at {HyperDest}
+
+		play anim "a_p_wreckgrd_intro" on HyperDude blend time 0
+
+		wait 4 seconds
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-2.553, 1.588, 2.658}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-1.558, 1.630, 2.569}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		/*set camera lens 37.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-2.219, 1.213, 1.872}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-1.432, 1.497, 2.420}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	*/
+		wait 3 seconds
+		say "BW2T_SCRIPT_05NEW_WRECKGROUND_INTRO_10" by HyperDude
+		wait 0.7 seconds
+		play string sound "MANHITHOUSE1"
+		Dust[0] = create visual effect "gp_s_rubble_dust.ves" strength 1 scale 1 at {BreakStuff} time 3
+		
+		start pwave camera shake strength 6.0
+		wait 0.4 seconds
+		start pwave camera shake strength 0.0
+		//wait 0.7 seconds
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-5.314, 2.929, 7.114}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-4.559, 2.726, 6.491}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	
+		say "BW2T_SCRIPT_05NEW_WRECKGROUND_INTRO_20" by HyperDude
+		
+		wait 0.7 seconds
+
+		set camera lens 37.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-2.219, 1.213, 1.872}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-1.432, 1.497, 2.420}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	
+		wait 0.5 seconds
+		
+
+		/*set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-5.314, 2.929, 7.114}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-4.559, 2.726, 6.491}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	*/
+		say "BW2T_SCRIPT_05NEW_WRECKGROUND_INTRO_30" by HyperDude
+		/*wait until HyperDude played
+		play anim "a_p_sledgehammer" on HyperDude disable stand*/
+		wait 1 seconds
+
+		/*set camera lens 37.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-2.219, 1.213, 1.872}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-1.432, 1.497, 2.420}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	*/
+		say "BW2T_SCRIPT_05NEW_WRECKGROUND_INTRO_40" by HyperDude
+		wait 0.5 seconds
+		play string sound "MANHITHOUSE4"
+		Dust[2] = create visual effect "gp_s_rubble_dust.ves" strength 1 scale 1 at {BreakStuff} time 3
+		
+		start pwave camera shake strength 6.0
+
+		wait 1.3 seconds
+		set HyperDude carrying CARRIED_OBJECT_NONE
+		start pwave camera shake strength 0.0
+		//play anim "a_p_sledgehammer" on HyperDude
+		//wait until HyperDude played
+
+		/*set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-5.314, 2.929, 7.114}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-4.559, 2.726, 6.491}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	*/
+		//wait 2 seconds
+
+		/*set camera lens 37.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-1.458, 1.696, 1.686}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-0.977, 1.753, 2.561}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}*/
+		//
+
+		/*set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-2.946, 1.687, 3.229}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-1.950, 1.703, 3.138}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}	*/
+
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-3.884, 1.771, 9.653}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-3.310, 1.798, 8.835}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait until HyperDude played
+		move HyperDude position to get world position from DemolishBuilding to {-2.236, 0.033, 9.522}
+		override HyperDude anim "a_p_walk_male_evil"
+		say "BW2T_SCRIPT_05NEW_WRECKGROUND_INTRO_50" by HyperDude
+
+		wait 1 seconds
+
+		wait 3 seconds
+		set camera lens 70.000
+		RelCamPos=marker at get world position from DemolishBuilding  to {-11.491, 16.933, 20.494}
+		RelCamFoc=marker at get world position from DemolishBuilding  to {-10.914, 16.737, 19.701}
+		move camera position to {RelCamPos} time 6
+		move camera focus to {RelCamFoc} time 6
+		wait 2 seconds
+
+		eject good spirit
+		eject evil spirit
+
+		say "BW2T_SCRIPT_05NEW_WRECKGROUND_INTRO_60"
+		wait until read
+		say "BW2T_SCRIPT_05NEW_WRECKGROUND_INTRO_70"
+		wait until read
+
+		send evil spirit home
+		send good spirit home
+
+		delete HyperDude
+
+	end cinema
+
+end script WreckingGroundIntro
+
+//-----------------------------------------------------------------------------
+//	Wrecking Groud Outro
+//-----------------------------------------------------------------------------
+begin script WreckingGroundOutro
+
+HyperDude=0
+ForemanStart=marker at {1906.397, 56.281, 1133.607}
+ForemanEnd=marker at {1904.081, 56.247, 1140.654}
+MyMixer=0
+
+start
+
+begin cinema
+
+	MyMixer = create mixer
+	set mixer MyMixer channel AUDIO_MIXER_CHANNEL_ASSET_2 to 0.0
+
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	set fade in time 1
+
+	start music "cut_scene_wrecking_02"
+
+	set camera lens 37.000
+	set camera position to {1908.349, 58.127, 1143.739}
+	set camera focus to {1907.621, 57.990, 1143.067}
+
+	HyperDude = create VILLAGER JAPANESE_FORESTER at {ForemanStart}
+	move HyperDude position to {ForemanEnd}
+	override HyperDude anim "a_p_walk_male_miserable"	
+
+	wait 5 seconds
+
+	set camera position to {1903.952, 57.408, 1143.100}
+	set camera focus to {1903.798, 57.369, 1142.112}
+//wait 3 seconds
+	//wait until {HyperDude} near {ForemanEnd} radius 2
+	wait until HyperDude played
+	play anim "a_p_wreckgrd_miserable_walk_outof" on HyperDude disable stand
+	wait 2 seconds
+	set camera position to {1904.527, 57.563, 1138.238}
+	set camera focus to {1904.346, 57.599, 1139.221}
+
+	wait until HyperDude played
+	//wait 1 seconds
+
+	play anim "a_p_celebration4" on HyperDude
+	wait 0.6 seconds
+	set camera lens 70.000
+	set camera position to {1904.692, 56.720, 1144.104}
+	set camera focus to {1904.210, 56.820, 1143.233}
+	say "BW2T_SCRIPT_05NEW_WRECKGROUND_OUTRO_10"
+	wait until HyperDude played
+
+	move HyperDude position to get target from {ForemanStart} to {ForemanEnd} distance 30 angle 0
+	override HyperDude anim "a_p_walk_cartwheel"
+
+	//set camera position to {1907.544, 57.423, 1136.222}
+	//set camera focus to {1906.853, 57.384, 1136.943}
+	move camera position to {1904.692, 56.720, 1144.104} time 5.5
+	move camera focus to {1903.920, 56.869, 1144.722} time 5.5
+	wait until HyperDude played
+	override HyperDude anim "a_p_walk_male_good"
+	wait until HyperDude played
+	
+	override HyperDude anim "a_p_walk_clicking_heels"
+
+	//wait 5 seconds
+
+	eject good spirit
+	eject evil spirit
+
+	say "BW2T_SCRIPT_05NEW_WRECKGROUND_OUTRO_20"
+	wait 3 seconds
+	override HyperDude anim "a_p_walk_male_good"
+	say "BW2T_SCRIPT_05NEW_WRECKGROUND_OUTRO_30"
+	wait until read
+
+	wait 4 seconds
+	send evil spirit home
+	send good spirit home
+
+end cinema
+
+end script WreckingGroundOutro
+
+//-----------------------------------------------------------------------------
+//	Clear Rubble At Position
+//-----------------------------------------------------------------------------
+begin script ClearRubbleAtPosition(Position)
+	Rubble = 0
+start
+	begin loop
+		Rubble = get SCRIPT_OBJECT_TYPE_MOBILE_STATIC at {Position} radius 20
+		delete Rubble
+
+		//Need to try and get a piece of rubble again or we'll quit in the first loop
+		Rubble = get SCRIPT_OBJECT_TYPE_MOBILE_STATIC at {Position} radius 20
+	until not Rubble exists
+	end loop
+
+	say "Rubble clear"
+	wait 1 seconds
+
+end script ClearRubbleAtPosition

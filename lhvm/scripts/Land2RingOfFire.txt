@@ -1,0 +1,612 @@
+//==================================================================
+// Land 2 Ring Of Fire
+// Matt.L
+//==================================================================
+
+//---------------------------------------------------------
+// Constants
+//---------------------------------------------------------
+define RF_FALSE								= 0
+define RF_TRUE								= 1
+
+//Other stuff
+define RF_NUM_VILLAGES_TO_RESCUE			= 5
+define RF_IMMUNE_TIME						= 25
+
+//Restcoker
+define RF_RESTOCK_MAX						= 15
+
+//Advisors
+define RF_ADVISORS_RING_OF_FIRE_PICKUP		= 7
+define RF_ADVISORS_RING_OF_FIRE_PUTDOWN 	= 8
+
+//---------------------------------------------------------
+// Globals
+//---------------------------------------------------------
+global RF_Buildings[6]
+global RF_RunRing							= 0
+global RF_NumVillagersSaved					= 0
+global RF_MoveCameraToShowRescuePos			= 0
+global RF_NumVillagers						= 0
+
+global RF_ClearExit							= RF_FALSE
+global RF_SayPickup							= RF_TRUE
+global RF_SayPutDown						= RF_TRUE
+
+global RF_TeleportPos						= 0
+
+//---------------------------------------------------------
+// Script defines
+//---------------------------------------------------------
+define script RF_BlockPassage
+define script RF_Villager(Position)
+define script RF_MoveOn
+define script RF_Advisors(ID)
+define script RF_RestockFromHouses
+
+//Explosions, coolness etc
+define script RF_ExplodeHouses
+define script RF_SetTreesOnFire
+define script RF_SpeshulBench
+
+//---------------------------------------------------------
+// Land2RingOfFire
+//---------------------------------------------------------
+begin script Land2RingOfFire
+	RescueFX		= 0
+start
+
+	RF_TeleportPos	= marker at {1639.376, 141.168, 1629.175}
+	run script Land2_DisableObjects(marker at {RF_TeleportPos}, 100)
+
+	//Ring of fire scripts
+	run background script RF_RestockFromHouses
+	run background script RF_ExplodeHouses
+	run background script RF_SetTreesOnFire
+	run background script RF_BlockPassage
+	run background script RF_SpeshulBench		//Easter Egg...shhhh!
+
+	//Wait until the camera is ready
+	wait until RF_RunRing == 1	
+
+	//Camera trigger script
+	run background script RF_MoveOn	
+
+	RescueFX = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {RF_TeleportPos} + {0, 1.2, 0} time -1
+	SCALE of RescueFX = 0.7
+	ALTITUDE of RescueFX = 4	
+
+	wait until RF_RunRing == 2
+
+	stop visual effect RescueFX
+
+end script Land2RingOfFire
+
+//---------------------------------------------------------
+// Block Passage
+//---------------------------------------------------------
+begin script RF_BlockPassage
+	Statue				= 0
+	CreatePos			= marker at {1649.120, 141.155, 1619.549}
+	HeadPos				= marker at {1649.995, 141.148, 1610.716}
+	RandomObjects[25]
+	RandType			= 0
+	CurrObj				= 0
+	CreateObjPos		= marker at {1650.332, 141.143, 1609.967}
+	StatueStablePos		= 0
+	RandOffsetX			= 7
+	RandOffsetY			= 6
+	RandOffsetZ			= 5
+start
+
+	Statue = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {CreatePos}
+	override mesh for Statue with "M_GreekBeautificationColumnStatue.bwm"
+	SCALE of Statue = 0.7
+	ANGLE of Statue = -5
+	PITCH of Statue = 20
+	ALTITUDE of Statue = 0.4
+	enable Statue indestructible		
+
+	CreateObjPos = marker at {CreateObjPos} - {4, 0, 4}
+
+	force while CurrObj < 25
+		RandType = CurrObj % 4
+
+		if RandType == 0
+			RandomObjects[CurrObj] = create OBJECT GREEK_URN_01 at {CreateObjPos} + {RandOffsetX, 0, RandOffsetZ}
+		elsif RandType == 1
+			RandomObjects[CurrObj] = create OBJECT GREEK_URN_03 at {CreateObjPos} + {RandOffsetX, 0, RandOffsetZ}
+		elsif RandType == 2
+			RandomObjects[CurrObj] = create OBJECT GREEK_BARREL_01 at {CreateObjPos} + {RandOffsetX, 0, RandOffsetZ}
+		elsif RandType == 3
+			RandomObjects[CurrObj] = create OBJECT GREEK_URN_04 at {CreateObjPos} + {RandOffsetX, 0, RandOffsetZ}
+		end if
+
+		disable RandomObjects[CurrObj] pickup
+		
+		RandOffsetX = (RandOffsetX + RandOffsetY + 37.2) % 8
+		RandOffsetY = (RandOffsetY + RandOffsetZ + 21.5) % 8
+		RandOffsetZ = (RandOffsetZ + RandOffsetX + 29.7) % 8
+
+		CurrObj++
+	end while
+	CreateObjPos = marker at {CreateObjPos} + {4, 0, 4}
+	
+	wait until RF_RunRing == 1	
+
+	wait 4.5 seconds
+
+	delete all objects in physics
+	wait 0.4 seconds
+
+	disable Statue pickup
+	set Statue velocity heading {HeadPos} speed 3
+
+	wait until PITCH of Statue > 75
+	play string sound "SCRIPT29_STATUEHITGROUND"
+	
+	set physics at position {CreateObjPos} with strength {0.05, 0.02, 0.05} radius 5 random 0
+/*
+	CurrObj = 0
+	force while CurrObj < 25
+	set RandomObjects[CurrObj] velocity heading {RandomObjects[CurrObj]} + {number from -5 to 5, 45, number from -5 to 5} speed 30
+		CurrObj++
+	end while
+*/
+	set Statue velocity heading {HeadPos} speed 0
+
+	wait until not Statue is MOVING
+	
+	wait until not {StatueStablePos} near {Statue} radius 1
+	RF_ClearExit = RF_TRUE
+
+	wait until RF_RunRing == 2
+
+	//Cleanup
+	CurrObj = 0
+	force while CurrObj < 25
+		delete RandomObjects[CurrObj]
+		CurrObj++
+	end while
+
+	delete Statue
+
+end script RF_BlockPassage
+
+//---------------------------------------------------------
+// RF_Villager
+//---------------------------------------------------------
+begin script RF_Villager(Position)
+	MoveCentre	= marker at {1637.207, 141.149, 1606.802}
+	MovePos		= marker at {0.000,0.000,0.000} //generated
+	Me			= 0
+	ImmuneTimer = create timer for 0 seconds
+	RemoveMe	= RF_FALSE
+	Type		= 0
+	MoveOffPos	= marker at {1630.576, 156.052, 1565.561}
+
+	MeStill		= RF_FALSE
+	Rand		= 0
+	Quitter		= RF_FALSE
+	KillMe		= 0
+	OnlyKillMeOnce = 0
+start
+
+	Type = number from 1 to 2
+
+	if Type == 1 
+		Me = create VILLAGER GREEK_FARMER at {Position}
+	else
+		Me = create VILLAGER GREEK_HOUSEWIFE at {Position}
+	end if
+
+	disable Me reactable
+	disable Me set on fire
+	enable Me indestructible
+
+	RF_NumVillagers++
+
+	wait until RF_RunRing == 1
+	set ImmuneTimer time to RF_IMMUNE_TIME seconds
+
+	Rand = number from 1 to 3
+
+	//I'm going to be still, run out of house to a pos then stand there like a Rodney
+	if Rand == 1
+
+		MovePos = marker at {MoveCentre} + {number from -8 to 8, 0, number from -8 to 8}
+		move Me position to {MovePos}
+		SPEED of Me = 0.4
+		wait until {Me} at {MovePos} or Me is HELD
+
+		if not Me is HELD
+			move villager Me focus to camera position		
+			play anim "a_p_attract_your_attention" on Me loop -1
+		end if
+
+		MeStill = RF_TRUE
+
+	else
+		MovePos = marker at {MoveCentre} + {number from -8 to 8, 0, number from -8 to 8}
+		move Me position to {MovePos}
+		SPEED of Me = 0.4
+		MeStill = RF_FALSE
+	end if
+
+	begin loop
+
+		if MeStill == RF_FALSE and {Me} at {MovePos}
+
+			MovePos = marker at {MoveCentre} + {number from -10 to 10, 0, number from -10 to 10}
+			move Me position to {MovePos}// using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+
+			SPEED of Me = 0.45
+
+			wait until Me played
+
+			override Me anim "a_p_run_on_fire"
+
+
+			if get ImmuneTimer time remaining == 0
+				enable Me set on fire
+			end if
+			
+		end if
+	
+		if Me is HELD
+			play string sound "REWARD6"
+			wait until not Me is HELD 
+			if {Me} near {RF_TeleportPos} radius 7 and HEALTH of Me > 0
+				enable Me indestructible
+				Quitter = RF_TRUE
+			else
+				set Me position to {Me}
+				move villager Me focus to camera position
+				play anim "a_p_attract_your_attention" on Me loop -1
+				MeStill = RF_TRUE
+			end if
+		end if
+
+		if not {Me} near {MoveCentre} radius 15
+			if not {Me} near {RF_TeleportPos} radius 8
+				if OnlyKillMeOnce == 0 and RF_NumVillagersSaved < 5
+					KillMe = create missiles MISSILE_ARROW launch MISSILE_LAUNCH_LOW size 1 from {1655.239, 158.992, 1628.364} to {Me}+{0,0.5,0} speed 17
+					wait 0.2 seconds
+					HEALTH of Me = 0
+					disable Me pickup
+					OnlyKillMeOnce = 1
+				end if
+
+			end if
+		end if
+
+		if {Me} near {RF_TeleportPos} radius 7 and not Me is HELD and not Me is FLYING and HEALTH of Me > 0
+			Quitter = RF_TRUE
+		end if
+
+		if RF_RunRing == 2
+			delete Me
+		end if
+
+		if RF_MoveCameraToShowRescuePos == RF_TRUE
+			disable Me indestructible
+		end if
+
+		until Quitter == RF_TRUE or not Me exists or not {Me} near {MoveCentre} radius 35 or HEALTH of Me == 0
+	end loop
+
+	RF_NumVillagers--
+
+	if Me exists
+		if Quitter == RF_TRUE
+			if RF_SayPutDown == RF_TRUE
+				RF_SayPutDown = RF_FALSE
+				run background script RF_Advisors(RF_ADVISORS_RING_OF_FIRE_PUTDOWN)			
+			end if			
+
+			///Update saved
+			RF_NumVillagersSaved++
+			run script Land2UpdateSaved
+			
+			//Update objective malarkey
+			if RF_NumVillagersSaved <= 5
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_RING_60" amount (5-RF_NumVillagersSaved)
+			end if
+			if RF_NumVillagersSaved >= 5
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 1
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+			end if
+			
+			run script LT_TeleportDude(Me, marker at {RF_TeleportPos})
+
+		else
+			wait 10 seconds
+			delete Me with fade
+		end if
+	end if
+
+end script RF_Villager
+
+//---------------------------------------------------------
+// Camera Move on 
+//---------------------------------------------------------
+begin script RF_MoveOn
+	Loop	= 0
+	//Rock	= 0
+	PhysPos	= marker at {1638.901, 141.168, 1607.081}
+start
+	wait until RF_NumVillagersSaved >= RF_NUM_VILLAGES_TO_RESCUE
+
+	//Make buildings destructible again,
+	Loop = 0
+	force while Loop < 6		
+		disable RF_Buildings[Loop] indestructible
+		Loop++
+	end while
+
+	RF_MoveCameraToShowRescuePos = 1
+
+	delete all objects in physics
+	wait 1 seconds
+	set physics at position {PhysPos} with strength {15, 30, 15} radius 20 random 1
+	
+	//Rock = create ROCK_OBJECT NORSE_ROCK_MEDIUM at {RF_Buildings[5]}
+	//set Rock velocity heading {RF_Buildings[5]} + {10, 20, 15} speed 30
+
+	wait 1.5 seconds
+end script RF_MoveOn
+
+//---------------------------------------------------------
+// Ring of Fire Advisors
+//---------------------------------------------------------
+begin script RF_Advisors(ID)
+start
+	begin known cinema
+		if ID == RF_ADVISORS_RING_OF_FIRE_PICKUP
+			eject good spirit
+			make good spirit fly across 0.8 down 0.15
+
+			say "BW2T_SCRIPT_02FINAL_FIELDS_140"
+			wait until read
+		elsif ID == RF_ADVISORS_RING_OF_FIRE_PUTDOWN
+			eject good spirit
+			make good spirit fly across 0.8 down 0.15
+
+			say "BW2T_SCRIPT_02FINAL_FIELDS_150"
+			wait until read
+		end if
+
+		send good spirit home
+		send evil spirit home
+	end known cinema
+end script RF_Advisors
+
+//---------------------------------------------------------
+// Update Objectives
+//---------------------------------------------------------
+begin script RF_RestockFromHouses
+	Rand		= 0
+	RandHouse	= 0
+	Pos			= 0
+start
+
+	begin loop
+
+		if RF_NumVillagers < RF_RESTOCK_MAX
+
+			Rand = number from 0 to 6
+			RandHouse = RF_Buildings[Rand]
+
+			if RandHouse exists
+				Pos = marker at extra position 0 of RandHouse
+				run background script RF_Villager(marker at {Pos})
+			end if
+
+			wait 0.1 seconds
+
+		end if
+
+	until RF_MoveCameraToShowRescuePos == RF_TRUE
+	end loop
+
+end script RF_RestockFromHouses
+
+//---------------------------------------------------------
+// Explode House
+//---------------------------------------------------------
+begin script RF_ExplodeHouses
+	BuildLoop		= 0
+	GetHousePos		= marker at {1638.736, 141.169, 1606.272}
+	FX				= 0
+	Rand			= 0
+	Loop			= 0
+	MaxFXChange		= 0
+	FireFX[5]
+	SmokeFX[5]
+	FXAlpha[5]
+start
+
+	//Get buildings and set them indestructible
+	RF_Buildings[0] = get HOUSE at {1648.703, 141.157, 1598.370} radius 5
+	RF_Buildings[1] = get HOUSE at {1633.938, 141.154, 1593.284} radius 5
+	RF_Buildings[2] = get HOUSE at {1625.283, 141.160, 1600.810} radius 5
+	RF_Buildings[3] = get HOUSE at {1626.273, 141.150, 1611.649} radius 5
+	RF_Buildings[4] = get HOUSE at {1633.025, 141.160, 1620.789} radius 5
+	RF_Buildings[5] = get HOUSE at {1644.882, 141.152, 1619.498} radius 5
+
+	while Loop < 6
+		FXAlpha[Loop] = 1
+		enable RF_Buildings[Loop] indestructible
+		Loop++
+	end while
+
+	wait until L2_Trigger_StartRingOfFireFires == 1
+
+	//Set 0, 2, 4 on fire
+	FireFX[0] = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL at {RF_Buildings[0]}time -1
+	FireFX[2] = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL at {RF_Buildings[2]}time -1
+	FireFX[4] = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL at {RF_Buildings[4]}time -1
+	SmokeFX[0]= create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMOKE at {RF_Buildings[0]}time -1
+	SmokeFX[2]= create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMOKE at {RF_Buildings[2]}time -1
+	SmokeFX[4]= create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMOKE at {RF_Buildings[4]}time -1
+
+	wait 7 seconds
+	FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 0.5 at {RF_Buildings[1]} - {0, 40, 0} time 5	
+	FX = create visual effect "fr_s_bounce.ves" strength 1 scale 3 at {RF_Buildings[1]} time 5
+
+	//Fire on 3
+	FireFX[3] = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL at {RF_Buildings[3]}time -1
+	SmokeFX[3]= create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMOKE at {RF_Buildings[3]}time -1
+
+	wait 3 seconds
+	FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 0.5 at {RF_Buildings[1]} - {0, 40, 0} time 5	
+	FX = create visual effect "fr_s_bounce.ves" strength 1 scale 3 at {RF_Buildings[1]} time 5
+
+	wait 2 seconds
+
+	//Fire on 1
+	FireFX[1] = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL at {RF_Buildings[1]}time -1
+	SmokeFX[1]= create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMOKE at {RF_Buildings[1]}time -1
+
+	begin loop
+		Rand = number from 1 to 5
+
+		if Rand == 1
+			run background script Land2FlyingCrap(marker at {1623.489, 141.166, 1606.557}, number from 1 to 10)
+		elsif Rand == 2
+			run background script Land2FlyingCrap(marker at {1634.732, 141.577, 1575.336}, number from 1 to 10)
+		elsif Rand == 3
+			run background script Land2FlyingCrap(marker at {1607.140, 152.756, 1518.388}, number from 1 to 10)
+		elsif Rand == 4
+			run background script Land2FlyingCrap(marker at {1627.960, 141.155, 1617.866}, number from 1 to 10)
+		elsif Rand == 5
+			run background script Land2FlyingCrap(marker at {1640.878, 141.153, 1594.955}, number from 1 to 10)
+		end if
+
+		wait 5 seconds
+
+	until L2_Trigger_CalmRingOfFireSmoke == 1
+	end loop
+
+	delete all objects in physics
+
+	Loop = 0
+	force while Loop < 6
+		FXAlpha[Loop] = 1
+		Loop++
+	end while
+
+	while MaxFXChange < 5
+
+		Loop = 0
+		begin loop
+			
+			FXAlpha[Loop] -= 0.1
+
+			set FireFX[Loop] alpha FXAlpha[Loop]
+			SCALE of FireFX[Loop] -= 0.04
+
+			set SmokeFX[Loop] alpha FXAlpha[Loop]
+			SCALE of SmokeFX[Loop] -= 0.1
+
+			Loop++
+		until Loop == 5
+		end loop
+
+		MaxFXChange++
+	end while
+
+	wait until RF_RunRing == 2
+
+	wait 1 seconds
+
+	while BuildLoop < 5		
+		remove visual effect FireFX[BuildLoop] target at {RF_Buildings[BuildLoop]}
+		remove visual effect SmokeFX[BuildLoop] target at {RF_Buildings[BuildLoop]}
+		BuildLoop++
+	end while
+
+end script RF_ExplodeHouses
+
+//---------------------------------------------------------
+// Set Trees On Fire
+//---------------------------------------------------------
+begin script RF_SetTreesOnFire
+	SearchPos	= marker at {1638.736, 141.169, 1606.272}
+	Tree[15]
+	FX[15]
+	Loop		= 0
+	Rand		= 0
+	Time		= 0
+start
+	
+	wait until L2_Trigger_StartRingOfFireFires == 1
+
+	Tree[Loop] = get TREE at {SearchPos} radius 60 excluding scripted
+
+	begin loop
+		//Randomly choose whether to set this tree on fire or not
+		Tree[Loop] = get TREE at {SearchPos} radius 60 excluding scripted
+		//If this tree dosnt exist, carry on..
+		if Tree[Loop] exists
+			FX[Loop] =  create visual effect VISUAL_EFFECT_SPREAD_FIRE_TREE at {Tree[Loop]}time -1
+			disable Tree[Loop] pickup
+			wait 0.1 seconds
+			Loop++
+		end if
+
+		Time = (number from 1 to 5) / 10
+
+		wait Time seconds
+
+	until Loop == 15// or not Tree[Loop] exists
+	end loop
+
+	wait until RF_RunRing == 2
+
+	//Delete visuals on trees
+	Loop = 0
+	while Loop < 15
+		remove visual effect FX[Loop] target at {Tree[Loop]}
+		Loop++
+	end while
+
+end script RF_SetTreesOnFire
+
+//---------------------------------------------------------
+// Spechul Bench
+//---------------------------------------------------------
+begin script RF_SpeshulBench
+	Bench		= 0
+	Weather		= 0
+start
+
+	Bench = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {1637.473, 141.185, 1595.118}
+	override mesh for Bench with "..\features\m_greek_tf_bench01_n"
+
+	wait until RF_RunRing == 1
+
+	wait 1 seconds
+
+	enable Bench pickup
+
+	wait until ({Bench} near {1639.376, 141.168, 1629.175} radius 10 and not Bench is HELD)  or RF_RunRing == 2
+
+	if {Bench} near {1639.376, 141.168, 1629.175} radius 10
+
+		Weather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {Bench} + {0, 100, 0}
+		set cloud for Weather above {Bench} + {0, 100, 0}
+		set cloud generation 4
+		set Weather properties rainfall 0 snowfall 0 overcast 0.7
+
+		set lightning strike at {Bench} from Weather scale 0.3
+
+		set persistent data "SPESHUL_BENCH" to 1
+	else
+		set persistent data "SPESHUL_BENCH" to 0		
+
+	end if
+
+	delete Bench
+
+end script RF_SpeshulBench

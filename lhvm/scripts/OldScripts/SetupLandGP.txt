@@ -1,0 +1,15 @@
+// --- God's Playground Global Variables
+
+global StopMiracleInHandTutorials		= 0
+global AssaultCourseAvailable			= 1
+global AssaultCourseTutorialOnly		= 1
+global GestureGameAvailable				= 1
+global TriggerCameraControlTutorial		= 0
+global TriggerFirecatcherActive			= 0
+
+//------------------------------------------------------------------------------------------------------------------------
+begin script SetupLandGP
+
+start
+
+end script SetupLandGP

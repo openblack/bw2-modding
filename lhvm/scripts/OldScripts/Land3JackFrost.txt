@@ -1,0 +1,173 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FB_True = 1
+define FB_False = 0
+define FB_Jack_Time = 6.00
+define FB_MIN_NUMBER_OF_VILLAGERS = 10
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FB_Jack_Frost = 0
+global FB_Jack_Dead = FB_False
+global FB_Jack_Wants_To_Hunt = FB_False
+global FB_Jack_Spawn_Pos = 0
+global FB_Jacks_Speed = 0.5
+global FB_Jack_Is_Wet = FB_False
+global FB_Player_Town = 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FB_Create_Jack
+define script FB_Jack_Hunt
+define script FB_Jack_Runs_Away
+define script FB_Villager_Frozen(FB_Victim)
+define script FB_Jack_Frozen
+define script FB_Jack_Wet
+//define script FB_Jack_Burnt
+//define script FB_Jack_Vunerable
+//-----------------------------------------------------------------------------
+run script Land2FrostBite // Main function, calls other scripts
+//-----------------------------------------------------------------------------
+begin script Land2FrostBite
+start
+	run background script FB_Create_Jack
+	run background script FB_Jack_Hunt
+	run background script FB_Jack_Runs_Away
+	run background script FB_Jack_Frozen
+	run background script FB_Jack_Wet
+end script Land2FrostBite
+//-----------------------------------------------------------------------------
+// FB_Create_Jack -- Creates Jack Frost at FB_Jack_Time when jack doesn't exist
+//-----------------------------------------------------------------------------
+begin script FB_Create_Jack
+start
+	FB_Jack_Spawn_Pos = marker at {987.737, 33.438, 882.027}
+	FB_Player_Town = get TOWN at {1142.699, 158.750, 1613.203} radius 20
+	begin loop
+		wait until FB_Jack_Frost not exists
+			wait until get game time >= FB_Jack_Time and get game time <= (FB_Jack_Time+1) and size of FB_Player_Town >= FB_MIN_NUMBER_OF_VILLAGERS
+				FB_Jack_Frost = create VILLAGER VILLAGER_INFO_FENRICK at {FB_Jack_Spawn_Pos}
+				enable FB_Jack_Frost indestructible
+				SCALE of FB_Jack_Frost = 2.0
+				FB_Jacks_Speed  = 0.5
+				SPEED of FB_Jack_Frost = FB_Jacks_Speed 
+				//attach reaction FB_Jack_Frost REACTION_FLEE_FROM_OBJECT
+				FB_Jack_Wants_To_Hunt = FB_True
+				say "Jack created"
+				wait until read
+	until FB_Jack_Dead == FB_True
+	end loop
+end script FB_Create_Jack
+//-----------------------------------------------------------------------------
+// FB_Jack_Hunt -- Directs Jack to his victims
+//-----------------------------------------------------------------------------
+begin script FB_Jack_Hunt
+FB_Freezing_Pos = 0
+FB_Victim = 0
+FB_Radius = 20
+FB_Victim_Count = 0
+start
+	begin loop
+		FB_Freezing_Pos = FB_Player_Town
+		wait until FB_Jack_Wants_To_Hunt == FB_True and FB_Jack_Frost exists//also check population of town and that none are frozen
+			while FB_Jack_Wants_To_Hunt == FB_True and FB_Jack_Frost exists
+				FB_Victim = 0
+				FB_Radius = 20 
+				while FB_Victim not exists and FB_Radius < 500 
+					FB_Victim = get VILLAGER at {FB_Freezing_Pos} radius FB_Radius excluding scripted
+					if PLAYER of FB_Victim != 0 or get FB_Victim temperature < 0
+						FB_Victim = 0
+						FB_Radius = 20
+					end if
+					FB_Radius += 20
+				end while
+				while FB_Victim exists and FB_Jack_Wants_To_Hunt == FB_True and FB_Jack_Is_Wet == FB_False and not {FB_Jack_Frost} at {FB_Victim} and FB_Victim is not HELD
+					move FB_Jack_Frost position to {FB_Victim}				
+				end while
+				if FB_Jack_Wants_To_Hunt == FB_True and FB_Victim exists and FB_Victim is not HELD
+					run background script FB_Villager_Frozen(FB_Victim)
+					FB_Freezing_Pos = marker at {FB_Victim}
+					FB_Victim_Count++
+					if FB_Victim_Count >= 6 or size of FB_Player_Town < FB_MIN_NUMBER_OF_VILLAGERS
+						FB_Jack_Wants_To_Hunt = FB_False
+						FB_Victim_Count = 0
+					end if
+				end if
+			end while
+	until FB_Jack_Dead == FB_True
+	end loop
+end script FB_Jack_Hunt
+//-----------------------------------------------------------------------------
+// FB_Jack_Runs_Away -- Directs Jack to safety
+//-----------------------------------------------------------------------------
+begin script FB_Jack_Runs_Away
+start
+	begin loop
+		wait until FB_Jack_Wants_To_Hunt == FB_False and FB_Jack_Frost exists
+			while FB_Jack_Wants_To_Hunt == FB_False and FB_Jack_Frost exists and not {FB_Jack_Frost} at {FB_Jack_Spawn_Pos} and FB_Jack_Is_Wet == FB_False
+				move FB_Jack_Frost position to {FB_Jack_Spawn_Pos} 
+			end while
+			if FB_Jack_Wants_To_Hunt == FB_False and FB_Jack_Frost exists
+				delete FB_Jack_Frost
+			end if
+	until FB_Jack_Dead == FB_True
+	end loop
+end script FB_Jack_Runs_Away
+//-----------------------------------------------------------------------------
+// FB_Villager_Frozen -- Freezes the villager for a period of time
+//-----------------------------------------------------------------------------
+begin script FB_Villager_Frozen(FB_Victim)
+FB_Freeze_Timer = 0
+start
+	set FB_Victim temperature -1
+	FB_Freeze_Timer = create timer for 100 seconds
+	begin loop
+		if get FB_Victim temperature > -1
+			set FB_Victim temperature -1
+		end if
+	until get FB_Freeze_Timer time remaining == 0
+	end loop
+	set FB_Victim temperature 0
+	HEALTH of FB_Victim = 1.0
+end script FB_Villager_Frozen
+//-----------------------------------------------------------------------------
+// script FB_Jack_Frozen -- Increases Speed of Jack when he is frozen
+//-----------------------------------------------------------------------------
+begin script FB_Jack_Frozen
+start
+	begin loop
+		wait until FB_Jack_Frost exists and get FB_Jack_Frost temperature < 0
+			FB_Jacks_Speed += 0.2
+			SPEED of FB_Jack_Frost = FB_Jacks_Speed
+			set FB_Jack_Frost temperature 0
+			wait 1 seconds
+	until FB_Jack_Dead == FB_True
+	end loop 
+end script FB_Jack_Frozen
+//-----------------------------------------------------------------------------
+// script FB_Jack_Wet -- Turns Jack into a block of ice when he is wet
+//-----------------------------------------------------------------------------
+begin script FB_Jack_Wet
+FB_Water_Spell = 0
+start
+	begin loop
+		wait until FB_Jack_Frost exists
+			if not {FB_Jack_Frost} on land and FB_Jack_Frost is not HELD
+				wait 1 seconds
+				say "Jack is wet"
+				wait until read
+				FB_Jack_Is_Wet = FB_True
+			//else
+				//FB_Water_Spell = get spell MAGIC_TYPE_VECTOR_WATER at {FB_Jack_Frost} radius 2 
+				//if FB_Water_Spell exists
+					//say "Jack is wet"
+					//wait until read
+				//end if
+			end if
+			wait until {FB_Jack_Frost} on land
+				wait 30 seconds
+					FB_Jack_Is_Wet = FB_False
+	until FB_Jack_Dead == FB_True
+	end loop
+end script FB_Jack_Wet

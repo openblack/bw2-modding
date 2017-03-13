@@ -1,0 +1,399 @@
+//-----------------------------------------------------------
+
+define RFalse = 0
+define RTrue = 1
+
+define script LookAfterCampfire
+define script LookAfterRooster(NumberOfFastCallsToCompletion, SecondsToMakeFastCall, RoosterLostHisVoice, Rooster, Villager)
+
+global RScriptFinished 
+
+//-----------------------------------------------------------
+
+begin script Rooster
+Rooster = 0
+Villager = 0
+Scroll = 0
+NewAlignment = 0
+PlayersChangedTime = 0
+SheepA = 0
+SheepB = 0
+SheepC = 0
+Dust = 0
+start
+
+	// wait until player has changed the time of day once
+	PlayersChangedTime = get total of stat STATS_ACC_TIME_OF_DAY_CHANGE
+	PlayersChangedTime += 1
+	
+	//begin loop
+		
+	//until get total of stat STATS_ACC_TIME_OF_DAY_CHANGE >= PlayersChangedTime
+	//end loop
+
+	RScriptFinished = RFalse
+	Rooster = create ANIMAL AMBIENTANIMAL_INFO_ROOSTER at {829.738, 410.290, 1562.190}
+	enable Rooster indestructible
+	disable Rooster pickup
+	
+	SCALE of Rooster = 1.5
+	Villager = create VILLAGER VILLAGER_INFO_FAIN at {831.657, 406.714, 1565.130}
+	set Villager focus to {Rooster}
+	
+	
+	
+	play anim "A_p_L3rooster_farmer_sleep_loop" on Villager loop 1000
+	
+	//play anim "a_chicken_die" on Rooster loop 1000
+	//wait 50000 seconds
+	//play anim "a_l3rooster_rooster_looses_voice" on Rooster loop 1000
+	
+	SheepA = create ANIMAL SHEEP at {830.263, 406.722, 1566.593}
+	SheepB = create ANIMAL SHEEP at {829.792, 406.726, 1568.091}
+	SheepC = create ANIMAL SHEEP at {830.301, 406.754, 1568.133}
+	
+	
+	set SheepB focus to {830.401, 406.723, 1565.571}
+	set SheepC focus to {830.401, 406.723, 1565.571}
+	
+	play anim "a_l3rooster_sheep_sit_loop" on SheepA loop 10000
+	play anim "a_sheep_idle2" on SheepC loop 10000
+	
+	run background script LookAfterCampfire
+
+	//play anim "a_p_sleeping_rough_loop" on Villager loop 10000
+	
+	
+	
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_03FINAL_ROOSTER_10" remind "BW2T_SCRIPT_03FINAL_ROOSTER_REMINDER" at {818.672, 414.346, 1560.048}
+	wait until HEALTH of Villager <= 0 or (Scroll right clicked and dialogue ready)
+	
+	delete Scroll
+	
+	if HEALTH of Villager > 0
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		begin cinema
+			wait 2 seconds
+			
+			set camera lens 50
+			set camera position to {834.059, 407.165, 1568.435}
+			set camera focus to {777.949, 404.976, 1485.695}
+			move camera position to {833.989, 407.162, 1568.331} time 10
+			move camera focus to {777.879, 404.974, 1485.592} time 10
+			start music "cut_scene_wrecking_02"
+			set fade in time 3
+		
+			wait 7 seconds
+			
+			move camera position to {833.989, 407.162, 1568.330} time 4
+			move camera focus to {777.959, 426.928, 1487.898} time 4
+			
+			set camera lens 30 time 4
+			wait 4 seconds
+			//ALTITUDE of Rooster = 0.04
+			//play anim "a_l3rooster_rooster_crow_loop" on Rooster loop 1
+			play anim "a_chicken_startled" on Rooster loop 1
+			
+			
+			play anim "a_l3rooster_sheep_turning_head" on SheepA loop -1
+			stop music with fadetime 0
+			play sound "SCRIPT30_SINGINGROOSTER2" at camera position
+			wait 0.2 seconds
+			
+			play anim "A_p_L3rooster_farmer_wake_up" on Villager disable stand
+			
+			set camera position to {830.060, 410.534, 1560.157}
+			set camera focus to {838.623, 350.566, 1639.723}
+			set camera lens 30
+			move camera position to {830.055, 410.566, 1560.114} time 30
+			move camera focus to {838.618, 350.599, 1639.679} time 30
+			wait until Rooster played 
+			play anim "a_l3rooster_rooster_idle" on Rooster loop -1
+			wait until Villager played
+			play anim "a_p_l3rooster_farmer_angry_at_rooster" on Villager loop 1 
+			
+			wait 0.5 seconds
+			
+			
+			
+			//play anim "a_p_sleeping_rough_outof" on Villager loop 1
+			//wait until Villager played
+			
+			
+			//play anim "a_p_jump_at_hand2" on Villager loop -1
+			
+			
+			
+			/*eject good spirit
+			eject evil spirit
+			say "BW2T_SCRIPT_03FINAL_ROOSTER_30"
+			wait until read
+			say "BW2T_SCRIPT_03FINAL_ROOSTER_40"
+			wait until read
+			say "BW2T_SCRIPT_03FINAL_ROOSTER_50"
+			wait until read
+			say "BW2T_SCRIPT_03FINAL_ROOSTER_60"
+			wait until read
+			say "BW2T_SCRIPT_03FINAL_ROOSTER_70"
+			wait until read*/
+			
+			say "BW2T_SCRIPT_03FINAL_CHALLENGE_ROOSTER_10"
+			wait 5.6 seconds
+			play anim "a_chicken_startled" on Rooster loop 1
+			play sound "SCRIPT30_SINGINGROOSTER1" at camera position
+			wait until Rooster played
+			play anim "a_l3rooster_rooster_idle" on Rooster loop -1
+		
+			wait until read
+			
+			eject good spirit
+			say "BW2T_SCRIPT_03FINAL_CHALLENGE_ROOSTER_20"
+			wait until Villager played
+			play anim "A_p_L3rooster_farmer_angry_at_rooster1_loop" on Villager loop -1
+			wait until read
+			
+			
+			
+			
+			set camera position to {841.376, 412.118, 1558.287}
+			set camera focus to {754.145, 389.996, 1601.890}
+			set camera lens 70
+			move camera position to {842.465, 412.394, 1557.743} time 10
+			move camera focus to {755.233, 390.272, 1601.346} time 10
+			say "BW2T_SCRIPT_03FINAL_CHALLENGE_ROOSTER_30"
+			wait until read
+			
+			
+			say "BW2T_SCRIPT_03FINAL_CHALLENGE_ROOSTER_40"
+			wait until read
+
+			send good spirit home
+
+		end cinema
+
+		Scroll = create highlight SILVER name "BW2T_SCRIPT_03FINAL_ROOSTER_REMINDER" remind "BW2T_SCRIPT_03FINAL_ROOSTER_REMINDER" at {818.672, 414.346, 1560.048}
+
+		reset player 0 objective TRIBUTE_OBJECTIVE_LAND_24
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_ROOSTER_10" amount 1 description "BW2T_SCRIPT_03FINAL_ROOSTER_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_3_ROOSTER1
+
+		run script LookAfterRooster(3, 7, RFalse, Rooster, Villager)
+	end if
+
+	if HEALTH of Villager > 0
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		begin cinema
+			wait 2 seconds
+		
+			start music "cut_scene_wrecking_02"
+			set camera position to {830.060, 410.534, 1560.157}
+			set camera focus to {838.623, 350.566, 1639.723}
+			set camera lens 30
+			move camera position to {830.055, 410.566, 1560.114} time 30
+			move camera focus to {838.618, 350.599, 1639.679} time 30
+			
+			set fade in time 2
+			play anim "a_l3rooster_rooster_looses_voice" on Rooster loop -1
+			wait 1 seconds
+			play sound "SCRIPT30_SINGINGROOSTER1" at camera position
+			wait 2 seconds
+			play sound "SCRIPT30_SINGINGROOSTER1" at camera position
+			
+			wait 3 seconds
+			//play anim "A_p_L3rooster_farmer_thanksGod" on Villager
+			//say "BW2T_SCRIPT_03FINAL_CHALLENGE_ROOSTER_70"
+			//wait until Villager played 
+			play anim "A_p_L3rooster_farmer_sleep_into" on Villager disable stand
+			wait until Villager played
+			play anim "A_p_L3rooster_farmer_sleep_loop" on Villager loop -1
+			wait until read
+			
+			
+			
+			set camera position to {839.385, 418.886, 1559.841}
+			set camera focus to {776.036, 347.365, 1589.370}
+			set camera lens 70
+			eject good spirit
+			//GA: Well done! That irritating rooster has lost its voice!
+			say "BW2T_SCRIPT_03FINAL_CHALLENGE_ROOSTER_60"
+			wait until read
+			//Rooster man: Oh sweet relief! That dang rooster won't be waking me for a few days now! Here's some tribute!
+			send good spirit home
+			wait 1 seconds
+			stop music with fadetime 2
+		end cinema
+
+		wait 2 seconds
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+		L3RoosterChallengeState = 1
+		// helping the man out is worth good points
+		NewAlignment = get player 0 alignment + GLOBAL_VALUE_ALIGNMENT_LAND_3_ROOSTER_FIRST
+		set player 0 alignment NewAlignment
+
+		delete Scroll
+
+		wait 3 seconds
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+	
+	end if
+
+	if HEALTH of Villager <= 0
+
+		begin cinema
+			eject evil spirit
+			//EA: Scratch one pleb!
+			say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_06"
+			wait until read
+			send evil spirit home
+		end cinema
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 status to TRIBUTE_OBJECTIVE_STATE_FAILED
+		wait 2.5 seconds
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 status to TRIBUTE_OBJECTIVE_STATE_FAILED_HIDDEN
+	end if
+
+	run script LookAfterRooster(4, 5, RTrue, Rooster, Villager)
+	
+	if HEALTH of Villager > 0
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		begin cinema
+			wait 2 seconds
+			
+			start music "cut_scene_wrecking_02"
+			set camera position to {830.060, 410.534, 1560.157}
+			set camera focus to {838.623, 350.566, 1639.723}
+			set camera lens 30
+			move camera position to {830.055, 410.566, 1560.114} time 30
+			move camera focus to {838.618, 350.599, 1639.679} time 30
+			
+		
+			//move Rooster position to {829.864, 410.328, 1561.572}
+			set fade in time 2
+			wait 3 seconds
+			play anim "a_l3rooster_rooster_looses_voice" on Rooster loop 1
+			wait 1 seconds
+			play sound "SCRIPT30_SINGINGROOSTER1" at camera position
+			play anim "a_chicken_startled" on Rooster loop 1
+			wait 1.2 seconds
+			
+			play anim "a_chicken_die" on Rooster loop 1 disable stand
+			wait 1 seconds
+			stop music with fadetime 0
+			play sound "SQUASHANIMAL" at camera position
+			
+			wait 1.5 seconds
+			
+			play anim "a_p_l3rooster_farmer_chuckle" on Villager disable stand
+			wait until Villager played
+			play anim "A_p_L3rooster_farmer_sleep_loop" on Villager loop -1
+			
+			
+			
+			//EA: Ha ha! He won't be waking that farmer ever again!
+			say "BW2T_SCRIPT_03FINAL_CHALLENGE_ROOSTER_80"
+			wait until read
+			
+			wait 1 seconds
+			set camera position to {836.842, 415.687, 1558.987}
+			set camera focus to {776.216, 347.468, 1599.856}
+			set camera lens 70
+			wait 1 seconds
+		end cinema
+		wait 2 seconds
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_ROOSTER2
+		// killing the rooster by changing time again quickly is worth bad points
+		NewAlignment = get player 0 alignment - GLOBAL_VALUE_ALIGNMENT_LAND_3_ROOSTER_SECOND
+		set player 0 alignment NewAlignment
+		RScriptFinished=RTrue					
+	end if
+
+	wait 500000 seconds
+end script Rooster
+
+//-----------------------------------------------------------
+
+begin script LookAfterRooster(NumberOfFastCallsToCompletion, SecondsToMakeFastCall, RoosterLostHisVoice, Rooster, Villager)
+TimeOfDay = 0
+CallTimer = create timer for 0 seconds
+FastCalls = 0
+start
+	begin loop
+		//Wait for night time to start.
+		TimeOfDay = get game time
+		until TimeOfDay > 20.00 or TimeOfDay < 6.00 or HEALTH of Villager <= 0
+	end loop
+	
+	set CallTimer time to SecondsToMakeFastCall seconds
+			
+	// wait until player has changed the time of day once
+	/*PlayersChangedTime = get total of stat STATS_ACC_TIME_OF_DAY_CHANGE
+	PlayersChangedTime += 1
+	
+	begin loop
+		
+	until get total of stat STATS_ACC_TIME_OF_DAY_CHANGE >= PlayersChangedTime
+	end loop*/
+
+	while FastCalls < NumberOfFastCallsToCompletion and HEALTH of Villager > 0
+		//Time of day is 24.00 hours.
+		
+		//6.00 to 20.00 is classed as day
+		//20.00 to 6.00 is classed as night
+		
+		begin loop
+			//Wait for day.
+			TimeOfDay = get game time
+			until TimeOfDay > 6.00 and TimeOfDay < 20.00 or HEALTH of Villager <= 0
+		end loop
+		
+		//Daybreak - do rooster call.
+		if not get CallTimer time remaining <= 0
+			FastCalls++
+			play anim "a_chicken_startled" on Rooster loop 1
+			if RoosterLostHisVoice == RTrue
+				play sound "SCRIPT30_SINGINGROOSTER1" at camera position
+			else
+				play sound "SCRIPT30_SINGINGROOSTER2" at camera position
+			end if
+			wait 0.8 seconds
+			play anim "a_l3rooster_rooster_idle" on Rooster loop -1
+	
+	
+			wait 0.4 seconds
+			ALTITUDE of Rooster = 0.0
+		else
+			if RoosterLostHisVoice == RTrue
+				play sound "SCRIPT30_SINGINGROOSTER1" at camera position
+			else
+				play sound "SCRIPT30_SINGINGROOSTER3" at camera position
+			end if
+		end if
+		
+		begin loop
+			//Wait for night time. 
+			TimeOfDay = get game time
+			until TimeOfDay > 20.00 or TimeOfDay < 6.00 or FastCalls >= NumberOfFastCallsToCompletion or HEALTH of Villager <= 0
+		end loop
+
+		set CallTimer time to SecondsToMakeFastCall seconds
+	end while
+end script LookAfterRooster
+
+//-----------------------------------------------------------
+
+begin script LookAfterCampfire
+	CF = 0
+	CampfireFX = 0
+start
+	CF = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {831.442, 406.793, 1566.971}
+	//override mesh for CF with "..\features\m_generic_bonfire"
+	//CampfireFX = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {CF} time -1
+
+	wait until CF is HELD
+
+	//delete CampfireFX
+
+end script LookAfterCampfire

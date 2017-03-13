@@ -1,0 +1,23 @@
+//-----------------------------------------------------------------------------
+// RunCreatureIcons
+//
+// Paul Nettleton
+//
+// This script runs the creature icons
+//
+//-----------------------------------------------------------------------------
+
+run script RunCreatureIcons
+
+//-----------------------------------------------------------------------------
+
+begin script RunCreatureIcons
+start
+	
+	run script CreatureIcons
+	
+end script RunCreatureIcons
+
+
+//-----------------------------------------------------------------------------
+

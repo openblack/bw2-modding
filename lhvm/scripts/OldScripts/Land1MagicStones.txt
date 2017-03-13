@@ -1,0 +1,127 @@
+//===============================================================
+// THE Magic Stones
+// Tiddlers
+//===============================================================
+
+//---------------------------------------------------------------
+// Globals
+//---------------------------------------------------------------
+global L1_MS_FIRST_STONE_FOUND = 0
+global L1_MS_Stone[10]
+global L1_MS_StonesFound = 0
+
+//---------------------------------------------------------------
+// Script defines
+//---------------------------------------------------------------
+
+define script L1_MS_CheckCameraPos
+define script L1_MS_ClickToWin
+
+//---------------------------------------------------------------
+// Magic Stones Control
+//---------------------------------------------------------------
+begin script Land1MagicStones
+	Counter = 0	
+	L1_MS_StonePos[10]
+start
+
+	//Setup walk markers
+	L1_MS_StonePos[0] = marker at {1027.318,53.876,1648.543}
+	L1_MS_StonePos[1] = marker at {817.762,122.798,1814.745}
+	L1_MS_StonePos[2] = marker at {1164.955,52.250,1938.371}
+	L1_MS_StonePos[3] = marker at {1450.905,37.706,1979.409}
+	L1_MS_StonePos[4] = marker at {1678.502,41.421,1993.057}
+	L1_MS_StonePos[5] = marker at {1278.335,244.721,1678.027}
+	L1_MS_StonePos[6] = marker at {1408.674,81.613,1579.756}
+	L1_MS_StonePos[7] = marker at {1507.051,65.795,1433.896}
+	L1_MS_StonePos[8] = marker at {1654.912,39.025,1286.171}
+	L1_MS_StonePos[9] = marker at {1493.270,47.305,793.523}
+
+	while Counter != 10
+		L1_MS_Stone[Counter] = create OBJECT MOBILE_STATIC_INFO_ORE_ROCK_LARGE at {L1_MS_StonePos[Counter]}
+		Counter++
+	end while
+
+	run background script L1_MS_CheckCameraPos
+	run background script L1_MS_ClickToWin
+
+end script Land1MagicStones
+
+//***********************************************************************
+
+begin script L1_MS_CheckCameraPos
+
+Counter = 0
+
+start
+
+	while L1_MS_FIRST_STONE_FOUND == 0
+		if camera position near {L1_MS_Stone[Counter]} radius 100 and {L1_MS_Stone[Counter]} viewed
+			L1_MS_FIRST_STONE_FOUND = 1
+			begin dialogue
+				eject good spirit
+				eject evil spirit
+				//say "Can you see that pretty glowing rock? That is a magic stone!"
+				say "BW2T_SCRIPT_01FINAL_ADVISORSAPPEAR_250"
+				wait until read
+				//say "Very rare. Very valuable!"
+				say "BW2T_SCRIPT_01FINAL_ADVISORSAPPEAR_260"
+				wait until read
+				//say "Indeed! Collect those, O Great One, and you can spend them on all kinds of wonderful things!"
+				say "BW2T_SCRIPT_01FINAL_ADVISORSAPPEAR_270"
+				wait until read
+				//say "Like new weapons and new death-dealing spells."
+				say "BW2T_SCRIPT_01FINAL_ADVISORSAPPEAR_280"
+				wait until read
+				send good spirit home
+				send evil spirit home
+			end dialogue
+		end if
+		Counter++
+		if Counter == 10
+			Counter = 0
+		end if
+	end while
+
+end script L1_MS_CheckCameraPos
+
+//*********************************************************************
+
+begin script L1_MS_ClickToWin
+
+AllFound = 0
+Counter = 0
+DisappearEffect = 0
+CurrentReward = 0
+GetFirstStone = 0
+
+start
+
+	while AllFound != 1
+		CurrentReward = get current reward
+		if L1_MS_Stone[Counter] right clicked
+			DisappearEffect = create visual effect "gp_s_gapuff.ves" strength 0.3 scale 0.5 at {L1_MS_Stone[Counter]} time 1
+			delete L1_MS_Stone[Counter]
+			if GetFirstStone == 0
+				say "You got a stone!"
+				wait until read
+				GetFirstStone = 1
+			end if
+			increment reward by 1
+			clear right clicked object
+		end if
+		Counter++
+		if Counter == 10
+			Counter = 0
+		end if
+
+		if CurrentReward == 10
+			AllFound = 1
+			say "you have found all of the rewards"
+			wait until read
+		end if
+
+	end while
+
+
+end script L1_MS_ClickToWin

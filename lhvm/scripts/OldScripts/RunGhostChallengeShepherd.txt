@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run GhostChallengeShepherd script
+//-----------------------------------------------------------------------------
+run script RunGhostChallengeShepherd
+
+begin script RunGhostChallengeShepherd
+
+start
+
+	run script GhostChallengeShepherd
+
+end script RunGhostChallengeShepherd

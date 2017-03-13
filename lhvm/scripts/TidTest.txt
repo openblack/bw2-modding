@@ -1,0 +1,21 @@
+run script Test
+
+begin script Test
+
+Platoon = 0
+PlatoonCreatePos = 0
+PlayerTown = 0
+
+start
+
+PlayerTown = get town with id 0
+
+clear left button clicked
+
+wait until mouse left button clicked
+
+PlatoonCreatePos = marker at hand position
+Platoon = create platoon PLATOON_INFO_AZTEC_MELEE_3 at {PlatoonCreatePos} with 50 men and 0 women 
+set Platoon attack PlayerTown with severity 1
+
+end script Test

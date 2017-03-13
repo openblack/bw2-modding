@@ -1,0 +1,223 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NUMBER_OF_STATUES = 7
+define SS_True = 1
+define SS_False = 0
+define RED = 0
+define ORANGE = 1
+define YELLOW = 2
+define GREEN = 3
+define BLUE = 4
+define INDIGO = 5
+define VIOLET = 6
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SS_Challenge_Over = SS_False
+global SS_Statue_On_Stand[NUMBER_OF_STATUES]
+global SS_Statue_Home[NUMBER_OF_STATUES]
+global SS_Statue_Pos[NUMBER_OF_STATUES]
+global SS_Statue_Effect_Colour_Red[NUMBER_OF_STATUES]
+global SS_Statue_Effect_Colour_Blue[NUMBER_OF_STATUES]
+global SS_Statue_Effect_Colour_Green[NUMBER_OF_STATUES]
+global SS_Prism = 0
+global SS_Prism_Pos = 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SS_Statue(Colour)
+//-----------------------------------------------------------------------------
+//----Land6SevenSamuraiInitGlobals----//
+//-----------------------------------------------------------------------------
+begin script Land6SevenSamuraiInitGlobals
+	count = 0
+start
+	SS_Prism_Pos = marker at {1128.615, 49.056, 598.829}
+
+	SS_Statue_Home[0] = marker at {1120.087, 51.046, 582.626}
+	SS_Statue_Home[1] = marker at {1114.718, 49.622, 587.297}
+	SS_Statue_Home[2] = marker at {1111.686, 50.908, 594.739}
+	SS_Statue_Home[3] = marker at {1111.463, 51.472, 602.804}
+	SS_Statue_Home[4] = marker at {1114.352, 50.855, 610.573}
+	SS_Statue_Home[5] = marker at {1119.560, 50.860, 615.732}
+	SS_Statue_Home[6] = marker at {1124.740, 50.066, 618.221}
+
+	SS_Statue_Pos[0] = marker at {1111.686, 50.908, 594.739}
+	SS_Statue_Pos[1] = marker at {648.066, 86.614, 1160.023}
+	SS_Statue_Pos[2] = marker at {801.540, 66.456, 1261.026}
+	SS_Statue_Pos[3] = marker at {1044.109, 65.945, 1297.012}
+	SS_Statue_Pos[4] = marker at {715.790, 74.537, 1602.766}
+	SS_Statue_Pos[5] = marker at {899.953, 70.827, 1756.742}
+	SS_Statue_Pos[6] = marker at {1181.353, 66.775, 1570.906}
+
+	SS_Statue_Effect_Colour_Red[0] = 255
+	SS_Statue_Effect_Colour_Red[1] = 255
+	SS_Statue_Effect_Colour_Red[2] = 255
+	SS_Statue_Effect_Colour_Red[3] = 0
+	SS_Statue_Effect_Colour_Red[4] = 0
+	SS_Statue_Effect_Colour_Red[5] = 128
+	SS_Statue_Effect_Colour_Red[6] = 255
+
+	SS_Statue_Effect_Colour_Green[0] = 0
+	SS_Statue_Effect_Colour_Green[1] = 128
+	SS_Statue_Effect_Colour_Green[2] = 255
+	SS_Statue_Effect_Colour_Green[3] = 255
+	SS_Statue_Effect_Colour_Green[4] = 0
+	SS_Statue_Effect_Colour_Green[5] = 0
+	SS_Statue_Effect_Colour_Green[6] = 0
+
+	SS_Statue_Effect_Colour_Blue[0] = 0
+	SS_Statue_Effect_Colour_Blue[1] = 0
+	SS_Statue_Effect_Colour_Blue[2] = 0
+	SS_Statue_Effect_Colour_Blue[3] = 0
+	SS_Statue_Effect_Colour_Blue[4] = 255
+	SS_Statue_Effect_Colour_Blue[5] = 192
+	SS_Statue_Effect_Colour_Blue[6] = 192
+
+	while count < NUMBER_OF_STATUES
+		SS_Statue_On_Stand[count] = SS_False
+		count++
+	end while
+//----Create Prism----//	
+
+	SS_Prism = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {SS_Prism_Pos}
+	enable SS_Prism indestructible
+	disable SS_Prism set on fire	
+	disable SS_Prism pickup
+
+end script Land6SevenSamuraiInitGlobals
+//-----------------------------------------------------------------------------
+//----Land6SevenSamurai----//
+//-----------------------------------------------------------------------------
+begin script Land6SevenSamurai
+	StandFull[NUMBER_OF_STATUES]
+	StatueAtPos = 0
+	Counter = 0
+	HeldObject = 0
+	HeldObjectType = 0
+start
+	run script Land6SevenSamuraiInitGlobals
+
+	StandFull[0] = SS_False
+	StandFull[1] = SS_False
+	StandFull[2] = SS_False
+	StandFull[3] = SS_False 
+	StandFull[4] = SS_False
+	StandFull[5] = SS_False
+	StandFull[6] = SS_False
+		
+//----Give statues there behaviour----//	
+	
+	run background script SS_Statue(RED)
+	run background script SS_Statue(ORANGE)
+	run background script SS_Statue(YELLOW)
+	run background script SS_Statue(GREEN)
+	run background script SS_Statue(BLUE)
+	run background script SS_Statue(INDIGO)
+	run background script SS_Statue(VIOLET)
+	
+//----Check if the statues are on the stand----//
+
+	while not (SS_Statue_On_Stand[0] == SS_True and SS_Statue_On_Stand[1] == SS_True and SS_Statue_On_Stand[2] == SS_True and SS_Statue_On_Stand[3] == SS_True and SS_Statue_On_Stand[4] == SS_True and SS_Statue_On_Stand[5] == SS_True and SS_Statue_On_Stand[6] == SS_True) 
+		Counter = 0
+		while Counter < NUMBER_OF_STATUES
+			StatueAtPos = get OBJECT MOBILE_STATIC_INFO_NORSE_STATUE at {SS_Statue_Home[Counter]} radius 3
+			if StatueAtPos exists and StandFull[Counter] == SS_False
+				set StatueAtPos position to {SS_Statue_Home[Counter]}
+				StandFull[Counter] = SS_True
+				StatueAtPos = 0
+			elsif not StatueAtPos exists
+				StandFull[Counter] = SS_False
+			end if
+			Counter++
+		end while
+		wait 0.2 seconds
+	end while
+	
+	SS_Challenge_Over = SS_True
+	
+//----Play Cut scene----//
+
+	say "play cutscene"
+	wait until read
+	
+	delete SS_Prism
+	
+end script Land6SevenSamurai
+//-----------------------------------------------------------------------------
+//----SS_Statue----// 
+//-----------------------------------------------------------------------------
+begin script SS_Statue(Colour)
+	Statue_Lit = SS_False
+	Statue_Beam_On = SS_False
+	Statue_Ball_Effect = 0
+	Statue_Ray_Effect = 0
+	Prism_Ball_Effect = 0
+	Statue = 0
+	RayLength = 0
+	RayTarget = 0
+	Influence = 0
+start	
+	begin loop
+//----Create Statue----//	
+
+		if Statue not exists
+			Statue = create OBJECT MOBILE_STATIC_INFO_NORSE_STATUE at {SS_Statue_Pos[Colour]} 
+			//Influence = create influence on Statue radius 3
+			SCALE of Statue = 0.1
+			enable Statue indestructible
+			disable Statue set on fire	
+			enable Statue pickup
+		end if
+		
+//----Light Statue----//
+	
+		if Statue_Lit == SS_False
+			Statue_Ball_Effect = create visual effect "gp_s_rayfxball.ves" strength 1 scale 1 on Statue time -1 
+			set Statue_Ball_Effect colour red SS_Statue_Effect_Colour_Red[Colour] green SS_Statue_Effect_Colour_Green[Colour] blue SS_Statue_Effect_Colour_Blue[Colour]
+			Statue_Lit = SS_True
+		end if
+		
+//----Check if Statue is on its stand----//
+
+		if {Statue} at {SS_Statue_Home[Colour]} and Statue_Beam_On == SS_False
+			RayLength = get distance from {SS_Prism_Pos} to {Statue}
+			RayTarget = marker at get target from {SS_Prism_Pos} to {Statue} + {0,4,0} distance RayLength angle 0
+			Statue_Ray_Effect = create visual effect "gp_s_rayfx.ves" strength 3 scale 0.3 at {Statue} + {0,4,0} time -1
+			set Statue_Ray_Effect focus to {RayTarget}
+			Prism_Ball_Effect = create visual effect "gp_s_rayfxglow.ves" strength 0.5 scale 0.5 on SS_Prism time -1
+			
+			set Statue_Ray_Effect colour red SS_Statue_Effect_Colour_Red[Colour] green SS_Statue_Effect_Colour_Green[Colour] blue SS_Statue_Effect_Colour_Blue[Colour]
+			set Prism_Ball_Effect colour red SS_Statue_Effect_Colour_Red[Colour] green SS_Statue_Effect_Colour_Green[Colour] blue SS_Statue_Effect_Colour_Blue[Colour]
+
+			Statue_Beam_On = SS_True
+
+			if Statue is not HELD
+				SS_Statue_On_Stand[Colour] = SS_True
+			end if
+		elsif not {Statue} at {SS_Statue_Home[Colour]}
+			Statue_Beam_On = SS_False
+			SS_Statue_On_Stand[Colour] = SS_False
+			stop visual effect Statue_Ray_Effect
+			stop visual effect Prism_Ball_Effect
+		end if
+		
+//----Delete Statue If Under Water----//
+	
+		if {Statue} under water and not Statue is HELD
+			delete Statue
+			Statue_Lit = SS_False
+		end if
+
+		wait 0.2 seconds
+		
+	until SS_Challenge_Over == SS_True
+	end loop
+	
+	stop visual effect Statue_Ray_Effect
+	stop visual effect Prism_Ball_Effect
+	stop visual effect Statue_Ball_Effect
+	delete Statue
+	
+end script SS_Statue

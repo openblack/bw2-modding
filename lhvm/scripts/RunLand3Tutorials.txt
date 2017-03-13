@@ -1,0 +1,36 @@
+run script RunLand3Tutorials
+
+begin script RunLand3Tutorials
+
+	Villager = 0
+	NumberOfPeopleSaved = 20
+	SavedCounter = 0
+	Type = 0
+	RandomNumber = 0
+	StartPos = 0
+	TownToAttach = get TOWN at {1089.576, 363.598, 1615.925} radius 50
+	
+start
+
+	while SavedCounter < NumberOfPeopleSaved
+		StartPos = marker at {1056.694, 364.698, 1563.011} + {number from -5 to 5, 0, number from -5 to 5}
+		Type = number from 0 to 1
+		if Type == 0	
+			Villager = create VILLAGER GREEK_FARMER at {StartPos}
+		else
+			Villager = create VILLAGER GREEK_HOUSEWIFE at {StartPos}
+		end if
+		
+		RandomNumber = number from 2 to 5
+		HEALTH of Villager = RandomNumber / 10
+			
+		attach Villager to TownToAttach
+		release Villager
+		
+		SavedCounter++
+	end while 
+
+//	run script Land3Intro
+	run script Land3Tutorials
+
+end script RunLand3Tutorials

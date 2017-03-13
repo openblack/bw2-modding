@@ -1,0 +1,11 @@
+run script Test
+
+begin script Test
+
+start
+
+	set initial level of player melee platoon to ARMY_UNIT_TYPE_MELEE_6
+	set initial level of player ranged platoon to ARMY_UNIT_TYPE_RANGED_6
+	set initial level of player siege weapon to SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_6
+
+end script Test

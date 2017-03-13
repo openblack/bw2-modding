@@ -1,0 +1,4581 @@
+///////////////////////////////////////////////////////////////////////////////
+//	LAND 3 TUTORIALS
+//	~~~~~~~~~~~~~~~~
+//
+//	This handles the land 3 tutorial scripts
+//	
+//	Tutorial Order:
+//	Feed Villagers
+//	Create Disciple Farmer
+//	Stock up Storage Yard with wood
+//	Create Disciple Forester
+//	Place a building
+//	Add Wood to foundation
+//	Create Disciple Builder
+//	Copy building
+//	Build Building using GodBuild(tm)
+//	Create Disciple Breeders
+//	Create a large enough population
+//
+//	Rewards:			None
+//
+//	Start date:			06-04-05			By:	Steve
+//	Update date:		09-06-05			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define TUT_TRUE										= 1
+define TUT_FALSE									= 0
+define TUT_MALE										= 1
+define TUT_FEMALE									= 2
+define TUT_NUM_VILLAGERS							= 35
+
+define TUT_FOOD_AMOUNT								= 200
+define TUT_WOOD_AMOUNT								= 800
+define TUT_NUM_HOUSES_TO_BUILD						= 12
+define TUT_NUM_HOUSES_TO_BUILD_2					= 9
+define TUT_NUM_DISCIPLES_TO_CREATE					= 3
+define TUT_NUM_POP									= 75
+define TUT_NUM_PEEPS_FOR_ANOTHER_FIELD				= 50
+
+// Advisor defines
+define TUT_ADVISOR_NONE								= 0
+define TUT_ADVISOR_INTRO							= 1
+define TUT_ADVISOR_HAND_OVER_FIELD					= 2
+define TUT_ADVISOR_PICKED_UP_FOOD					= 3
+define TUT_ADVISOR_FOOD_IN_STORE					= 4
+define TUT_ADVISOR_NOT_ENOUGH						= 5
+define TUT_ADVISOR_TREE_IN_HAND						= 6
+define TUT_ADVISOR_NOT_ENOUGH_WOOD					= 7
+define TUT_ADVISOR_COMPLETED						= 8
+define TUT_ADVISOR_ALREADY_DONE_FOOD_TASK			= 9
+define TUT_ADVISOR_ALREADY_DONE_WOOD_TASK			= 10
+define TUT_ADVISOR_MISSED_STORAGEPIT_FOOD			= 11
+define TUT_ADVISOR_MISSED_STORAGEPIT_WOOD			= 12
+define TUT_ADVISOR_BUILDING_IN_HAND					= 13
+define TUT_ADVISOR_VILLAGERS_BUILDING				= 14
+define TUT_ADVISOR_DROP_THE_TREE					= 15
+define TUT_ADVISOR_TREE_DROPPED						= 16
+define TUT_ADVISOR_DROP_THE_WOOD					= 17
+define TUT_ADVISOR_BUILD_MORE_HOUSES				= 18
+define TUT_ADVISOR_BUILD_MORE_HOUSES_2				= 19
+define TUT_ADVISOR_ALREADY_BUILT_ALL_HOUSES			= 20
+define TUT_ADVISOR_ALREADY_BUILT_A_HOUSE			= 21
+define TUT_ADVISOR_BUILD_GODBUILD_NOT_KNOWN_ABOUT	= 22
+define TUT_ADVISOR_BUILD_GODBUILD_KNOWN_ABOUT		= 23
+define TUT_ADVISOR_VILLAGER_IN_HAND					= 24
+define TUT_ADVISOR_MADE_ONE_FARMER					= 25
+define TUT_ADVISOR_MADE_ONE_FORESTER				= 26
+define TUT_ADVISOR_NOT_A_DISCIPLE					= 27
+define TUT_ADVISOR_NOT_A_FORESTER_DISCIPLE			= 28
+define TUT_ADVISOR_MADE_3_FARMERS					= 29
+define TUT_ADVISOR_MADE_ONE_BREEDER					= 30
+define TUT_ADVISOR_MADE_3_BREEDERS					= 31
+define TUT_ADVISOR_CHILD							= 32
+define TUT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES	= 33
+define TUT_ADVISOR_ALREADY_CREATED_A_DISCIPLE		= 34
+define TUT_ADVISOR_NEED_TO_EXPAND					= 35
+define TUT_ADVISOR_CREATE_DISCIPLE_FORESTER			= 36
+define TUT_ADVISOR_VILLAGER_IN_HAND_CREATE_FORESTER	= 37
+define TUT_ADVISOR_MADE_3_FORESTERS					= 38
+define TUT_ADVISOR_CREATE_BREEDERS					= 39
+define TUT_ADVISOR_CREATE_DISCIPLE_BUILDERS			= 40
+define TUT_ADVISOR_VILLAGER_IN_HAND_CREATE_BUILDER	= 41
+define TUT_ADVISOR_NOT_A_BUILDER_DISCIPLE			= 42
+define TUT_ADVISOR_MADE_3_BUILDERS					= 43
+define TUT_ADVISOR_MADE_ONE_BUILDER					= 44
+define TUT_ADVISOR_DONE_BUILDING_TUT				= 45
+define TUT_ADVISOR_INCREASE_POP						= 46
+define TUT_ADVISOR_DONE_POP_INCREASE				= 47
+define TUT_ADVISOR_VILLAGERS_BUILDING_ADD_WOOD		= 48
+define TUT_ADVISOR_FEED_PEEPS_INTRO					= 49
+define TUT_ADVISOR_SHOW_ABOUT_FARMERS				= 50
+define TUT_ADVISOR_TELL_ABOUT_TOWN_CENTRE			= 51
+define TUT_OUTSIDE_INFLUENCE						= 52
+define TUT_ADVISOR_BUILD_MORE_HOUSES_AFTER_GOD_BUILD	= 53
+define TUT_ADVISOR_BUILD_BY_DUPLICATING_HOUSES		= 54
+define TUT_ADVISOR_THROWN_A_VILLAGER				= 55
+// Reminder defines
+define TUT_REMINDER_NEED_FOOD						= 0
+define TUT_REMINDER_NEED_WOOD						= 1
+define TUT_REMINDER_FOOD_RUNNING_LOW				= 2
+define TUT_REMINDER_VILLAGER_DIED					= 3
+define TUT_REMINDER_PULL_BUILDING_OFF_CENTRE		= 4
+define TUT_REMINDER_DROP_TREE_ON_FOUNDATION			= 5
+define TUT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD	= 6
+define TUT_REMINDER_NEED_TO_BUILD_ANOTHER_HOUSE		= 7
+define TUT_REMINDER_DONT_SHAKE_OUT_OF_HAND			= 8
+define TUT_REMINDER_CREATE_FARMER					= 9
+define TUT_REMINDER_CREATE_FORESTER					= 10
+define TUT_REMINDER_CREATE_BREEDER					= 11
+define TUT_REMINDER_DROP_NEXT_TO_FIELD				= 12
+define TUT_REMINDER_DROP_NEXT_TO_TREE				= 13
+define TUT_REMINDER_DROP_NEXT_TO_BUILDING			= 14
+define TUT_REMINDER_CREATE_BUILDER					= 15
+define TUT_REMINDER_POP_INCREASING					= 16
+define TUT_REMINDER_POP_DECREASING					= 17
+define TUT_REMINDER_POP_SAME						= 18
+define TUT_REMINDER_PULL_BUILDING_OFF_CENTRE_OR_HOUSE	= 19
+
+// Objectives
+define TUT_OBJECTIVE_PRIMARY						= 0
+define TUT_OBJECTIVE_FOOD							= 1
+define TUT_OBJECTIVE_WOOD							= 2
+define TUT_OBJECTIVE_FARMER_DISCIPLE				= 3
+define TUT_OBJECTIVE_FORESTER_DISCIPLE				= 4
+define TUT_OBJECTIVE_BUILDER_DISCIPLE				= 5
+define TUT_OBJECTIVE_BREEDER_DISCIPLE				= 6
+define TUT_OBJECTIVE_POPULATION						= 7
+define TUT_OBJECTIVE_BUILD_HOUSES					= 8
+define TUT_GOOD										= 0
+define TUT_EVIL										= 1
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global TUT_House								= 0
+global TUT_FieldPos								= 0
+global TUT_DoingHandDemo						= TUT_FALSE
+global TUT_GodBuilt								= TUT_FALSE
+global TUT_ExplainedGodBuild					= TUT_FALSE
+global TUT_FedTheVillagers						= TUT_FALSE
+global TUT_VillagersReleased					= TUT_FALSE
+global TUT_LetVillagersLookAfterThemselves		= TUT_FALSE
+
+global TUT_SetFoodToPrimary						= TUT_FALSE
+global TUT_SetWoodToPrimary						= TUT_FALSE
+global TUT_SetFarmerToPrimary					= TUT_FALSE
+global TUT_SetForesterToPrimary					= TUT_FALSE
+global TUT_SetBuilderToPrimary					= TUT_FALSE
+global TUT_SetBreederToPrimary					= TUT_FALSE
+global TUT_SetPopToPrimary						= TUT_FALSE
+global TUT_SetHouseToPrimary					= TUT_FALSE
+
+global TUT_SkippedTutorials						= TUT_FALSE
+global TUT_FinishedTutorials					= TUT_FALSE
+global TUT_GreekTC								= 0
+global TUT_PlayerMadeAWoodPile					= TUT_FALSE
+global TUT_NextAdvisorToSpeak					= TUT_GOOD
+global TUT_KilledVillagerTimer					= 0
+global TUT_ADDWOODNOW							= TUT_FALSE
+global TUT_WOODADDED							= TUT_FALSE
+global TUT_Timer								= 0
+global TUT_ThrownTimer							= 0
+global TUT_FillStoreHouse						= TUT_TRUE
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script TUT_FeedVillagers
+define script TUT_CreateDiscipleFarmer
+define script TUT_AddWoodToYard
+define script TUT_CreateDiscipleForester
+define script TUT_ExplainAboutTownCentre
+define script TUT_ExplainAboutBuildingFromTownCentre
+define script TUT_PlaceBuildingFoundation
+define script TUT_AddWoodToFoundation
+define script TUT_CreateDiscipleBuilder
+define script TUT_Build9Houses
+//define script TUT_CreateAnotherBlueprint
+define script TUT_CreateDiscipleBreeder
+define script TUT_IncreasePopulation
+
+define script TUT_Advisors(ID, ForceSayLine)
+define script TUT_Reminder(ID)
+
+define script TUT_AddObjective(Objective, TextAmount)
+define script TUT_RemoveObjective(Objective)
+define script TUT_DetectFirstBuilding
+define script TUT_HandleIllVillagers
+define script TUT_AlertPlayerOfLowFoodOrDyingVillagers
+
+define script TUT_DetectForField
+define script TUT_DetectForClickingOutsideInfluence
+define script TUT_CelebrateFirstHouseBeingBuilt
+define script TUT_TellAboutCreatureSleeping
+
+define script TUT_CheckForTellingAboutCreatingMoreBreeders
+define script TUT_CheckForTeachingPlayerAboutCreatingAnotherField
+
+define script TUT_TestForQuitting
+
+//----Alexs additional scripts----//
+define script TUT_RevisedBuildingTutorial
+define script TUT_HouseObjective
+define script TUT_CheckForWoodPiles(UnBuiltHouse)
+define script TUT_WoodObjective
+define script TUT_FoodObjective
+define script TUT_FarmerObjective
+define script TUT_ForesterObjective
+define script TUT_BuilderObjective
+define script TUT_BreederObjective
+define script TUT_KilledAVillager
+define script TUT_MoveVillagerAround(MyActor)
+define script TUT_AddWoodToFoundationObjective
+define script TUT_KeepTheStoreHouseFullOfFood
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land3Tutorials
+start
+	TUT_Timer = create timer for 0 seconds
+	TUT_ThrownTimer = create timer for 0 seconds
+	// Get the players town
+	if not L3GreekTown exists
+		run script Land3Globals
+	end if
+	TUT_KilledVillagerTimer	= create timer for 0 seconds
+	TUT_GreekTC = get building ABODE_NUMBER_TOWN_CENTRE in L3GreekTown min built 0 
+
+	// Disable the town jobs of the players home town
+	disable town L3GreekTown job VILLAGER_JOB_MINER
+	disable town L3GreekTown job VILLAGER_JOB_BUILDER
+	disable town L3GreekTown job VILLAGER_JOB_FARMER
+	disable town L3GreekTown job VILLAGER_JOB_FORESTER
+
+	TUT_FieldPos = marker at {1087.233, 363.609, 1645.364}
+	
+	// Look after the ill villagers and interactions with the creature while he's asleep
+	run background script TUT_HandleIllVillagers
+	run background script TUT_TellAboutCreatureSleeping
+	run background script TUT_DetectForClickingOutsideInfluence
+	run background script TUT_DetectForField
+
+	// Give the objective for clicking on the scroll
+	// GA: Click on the Gold Scroll.
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 0
+
+	// Run the tutorials
+	run script TUT_FeedVillagers
+	run background script TUT_KeepTheStoreHouseFullOfFood
+	//add resource RESOURCE_TYPE_FOOD 2000 to L3GreekTown
+	
+	disable disciple placedown speech
+	run script TUT_CreateDiscipleFarmer
+	enable disciple placedown speech
+	
+	enable town L3GreekTown job VILLAGER_JOB_FARMER
+	wait 40 seconds
+	run script TUT_AddWoodToYard
+	add resource RESOURCE_TYPE_WOOD 2000 to L3GreekTown
+	
+	disable disciple placedown speech
+	run script TUT_CreateDiscipleForester
+	enable disciple placedown speech
+	
+	run script TUT_ExplainAboutTownCentre
+	run script TUT_RevisedBuildingTutorial
+	//run script TUT_PlaceBuildingFoundation
+	run script TUT_Build9Houses
+	
+	wait 20 seconds
+	
+	disable disciple placedown speech
+	run script TUT_CreateDiscipleBreeder
+	enable disciple placedown speech
+	
+	// Enable the town jobs of the players home town
+	enable town L3GreekTown job VILLAGER_JOB_MINER
+	
+	// Increase the population to the required amount
+	//run background script TUT_CheckForTeachingPlayerAboutCreatingAnotherField
+	
+	run background script TUT_IncreasePopulation
+
+	TUT_FinishedTutorials = TUT_TRUE
+
+end script Land3Tutorials
+
+
+//-----------------------------------------------------------------------------
+//	Feed the villagers by dropping food into the storage pit
+//-----------------------------------------------------------------------------
+begin script TUT_FeedVillagers
+
+	Delay			= 30
+	
+	Object			= 0
+	Type			= 0
+	Food			= 0
+	NewFoodAmount	= 0
+	FoodInPit		= 0
+	ObjectUnderHand	= 0
+	FieldIcon		= 0
+	StoreIcon		= 0
+	Field			= 0
+	
+	FieldIconExists	= TUT_FALSE
+	StoreIconExists	= TUT_FALSE
+	OverFieldGiven	= TUT_FALSE
+	ToldToPutInPit	= TUT_FALSE
+	
+	TaskDone		= TUT_FALSE
+	AlreadyDoneTask	= TUT_FALSE
+	
+	ReminderTimer	= create timer for 60 seconds
+	CommentTimer	= create timer for 0 seconds
+	Reminded		= 0
+start
+
+	// Get the field
+	Field = get FIELD_OBJECT at {TUT_FieldPos} radius 100
+
+	// Scroll is now created in the land 3 intro script
+	begin loop
+		// Display the mouse button press to interact with the scroll
+		ObjectUnderHand = get object hand is over	
+		if ObjectUnderHand == L3TutorialsScroll
+			enable hand icon draw
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+		else
+			disable hand icon draw
+		end if
+
+		// Give the reminder
+		if get ReminderTimer time remaining <= 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {L3TutorialsScroll}
+				// GA: Click on the Gold Scroll.
+				say "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL"
+				wait until read
+			end dialogue
+			if Reminded == 0
+				set ReminderTimer time to 180 seconds
+				Reminded++
+			elsif Reminded > 0
+				set ReminderTimer time to 300 seconds
+			end if
+		end if
+	
+	until L3TutorialsScroll right clicked
+	end loop
+	delete L3TutorialsScroll
+	disable hand icon draw
+
+	// The objective has been done so tick it
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 1
+	wait 0.5 seconds
+
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Setup the initial camera
+		begin fullscreen cinema
+			move camera position to {1107.373, 385.168, 1640.937} time 2
+			move camera focus to {1032.556, 321.432, 1659.369} time 2
+			wait until camera ready
+			wait 0.5 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+		end cinema
+
+		// Start checking to see if the tutorials have been escaped out of
+//		run background script TUT_TestForQuitting
+		
+		// Setup the objectives for the player for the tutorial
+		run	script TUT_AddObjective(TUT_OBJECTIVE_PRIMARY, 0)
+
+		// The player has clicked the scroll so check to see if the task is still valid
+		Food = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+		
+		// Only go into the tutorial if the player hasn't already done the task
+		if Food < TUT_FOOD_AMOUNT
+			// Setup the initial amount before the hand demo
+			//run script TUT_AddObjective(TUT_OBJECTIVE_FOOD, TUT_FOOD_AMOUNT)
+			
+			run background script TUT_FoodObjective
+			
+			// Get the instructions and the hand demo
+			run script TUT_Advisors(TUT_ADVISOR_FEED_PEEPS_INTRO, TUT_TRUE)
+			set CommentTimer time to 30 seconds
+			set ReminderTimer time to Delay seconds
+			
+			// Update with the new amount after the hand demo
+			Food = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit 
+
+			// Handle putting the food into the storage pit
+			begin loop
+				Food = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+
+				// Has the player moved their hand over the field for the first time?
+				ObjectUnderHand = get object hand is over
+				if ObjectUnderHand exists
+					if variable get ObjectUnderHand type == variable FIELD_OBJECT
+						if OverFieldGiven == TUT_FALSE and get CommentTimer time remaining == 0
+							run background script TUT_Advisors(TUT_ADVISOR_HAND_OVER_FIELD, TUT_FALSE)
+							set ReminderTimer time to Delay seconds
+							OverFieldGiven = TUT_TRUE
+							set CommentTimer time to 20 seconds
+						end if
+						
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+					else
+						disable hand icon draw
+					end if
+				else
+					disable hand icon draw
+				end if
+				
+				// Test to see if the player has picked up some food
+				Object = get object held
+				
+				if Object exists			
+					Type = variable get Object sub type
+					if Type == variable POT_INFO_HAND_FOOD
+						// Play a success sound
+						play string sound "tributedone"
+
+						// We've got some food in the hand so put the icon on the stor and the hand (remove from field)
+						if StoreIconExists == TUT_FALSE					
+							//StoreIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {TUT_StoragePit} + {0,10,0} time -1 
+							//set StoreIcon colour red 192 green 128 blue 0
+							//set StoreIcon alpha 0.7
+							enable TUT_StoragePit pulse speed 0.5
+							StoreIconExists = TUT_TRUE
+						end if
+						
+						stop visual effect FieldIcon
+						delete FieldIcon
+						//disable Field pulse with fadetime 1
+						FieldIconExists = TUT_FALSE
+										
+						// Store the amount of food in the storage pit before the player drops it
+						FoodInPit = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+					
+						// Tell the player when he's got enough in his hand
+						begin loop
+							
+							// We've got enough in the hand so tell the player to drop it into the yard
+							if Food + FoodInPit >= TUT_FOOD_AMOUNT and ToldToPutInPit == TUT_FALSE
+								run background script TUT_Advisors(TUT_ADVISOR_PICKED_UP_FOOD, TUT_FALSE)
+								set ReminderTimer time to Delay seconds
+								ToldToPutInPit = TUT_TRUE
+							end if
+							
+							// Draw the RMB to indicate that the player needs to drop the food
+							ObjectUnderHand = get object hand is over
+							if ObjectUnderHand == TUT_StoragePit
+								enable hand icon draw
+								set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+							else
+								disable hand icon draw
+							end if
+						until not Object is HELD
+						end loop
+											
+						// See if the player added the food to the pit successfully
+						if get resource RESOURCE_TYPE_FOOD in TUT_StoragePit > FoodInPit
+							// Yep the food was added ok so have we got enough in there?
+							Food = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+
+							if Food < TUT_FOOD_AMOUNT
+								NewFoodAmount = TUT_FOOD_AMOUNT - Food
+								//run script TUT_AddObjective(TUT_OBJECTIVE_FOOD, NewFoodAmount)
+								run background script TUT_Advisors(TUT_ADVISOR_NOT_ENOUGH, TUT_TRUE)
+							else
+								//run script TUT_AddObjective(TUT_OBJECTIVE_FOOD, 0)
+								disable hand icon draw
+								stop visual effect FieldIcon
+								delete FieldIcon
+								//stop visual effect StoreIcon
+								//delete StoreIcon
+								disable TUT_StoragePit pulse with fadetime 0
+								//disable Field pulse with fadetime 1
+								TaskDone = TUT_TRUE
+							end if
+						else
+							// The player missed the pit
+							run background script TUT_Advisors(TUT_ADVISOR_MISSED_STORAGEPIT_FOOD, TUT_TRUE)
+						end if
+						
+						set ReminderTimer time to Delay seconds
+					end if
+					
+				else
+					// We've got nothing in the hand so put a pickup icon on the field and the hand
+					if FieldIconExists == TUT_FALSE
+						FieldIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {Field} + {0,3,0} time -1 
+						set FieldIcon colour red 192 green 128 blue 0
+						set FieldIcon alpha 0.7
+						//enable Field pulse speed 0.5
+						FieldIconExists = TUT_TRUE
+					end if
+					disable TUT_StoragePit pulse with fadetime 0
+					//stop visual effect StoreIcon
+					//delete StoreIcon
+					StoreIconExists = TUT_FALSE				
+				end if
+				
+				// Remind the player what they need to do
+				if get ReminderTimer time remaining <= 0
+					run background script TUT_Reminder(TUT_REMINDER_NEED_FOOD)	
+					set ReminderTimer time to Delay seconds
+				end if
+				
+			until TaskDone == TUT_TRUE or get resource RESOURCE_TYPE_FOOD in TUT_StoragePit >= TUT_FOOD_AMOUNT
+			until TUT_SkippedTutorials == TUT_TRUE
+			end loop
+			
+			// Get rid of the hand icons and objective
+			disable hand icon draw
+			stop visual effect FieldIcon
+			delete FieldIcon
+			//stop visual effect StoreIcon
+			//delete StoreIcon
+			//disable Field pulse with fadetime 1
+			disable TUT_StoragePit pulse with fadetime 0
+			wait 2 seconds
+			run background script TUT_RemoveObjective(TUT_OBJECTIVE_FOOD)
+			
+		else
+			// The player has already done the tutorial so make a comment about how clever they are
+			AlreadyDoneTask = TUT_TRUE
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_DONE_FOOD_TASK, TUT_TRUE)
+		end if
+		
+		// We've done the task
+		TUT_FedTheVillagers = TUT_TRUE
+		//run background script TUT_AlertPlayerOfLowFoodOrDyingVillagers
+		
+		// Give a response depending on whether the player completed the task before clicking on the scroll or not
+		if AlreadyDoneTask == TUT_FALSE
+			run background script TUT_Advisors(TUT_ADVISOR_FOOD_IN_STORE, TUT_TRUE)
+		end if
+	end if
+
+end script TUT_FeedVillagers
+
+
+//-----------------------------------------------------------------------------
+//	Teach the player how to create a disciple farmer
+//-----------------------------------------------------------------------------
+begin script TUT_CreateDiscipleFarmer
+
+	TaskDone				= TUT_FALSE
+	Delay					= 30
+	Object					= 0
+	Type					= 0
+	ObjectUnderHand			= 0
+	Disciple				= 0
+	NumFarmers				= 0
+	PrevNumFarmers			= 0
+	Villager				= 0
+	VillagerIcon			= 0
+	FieldIcon				= 0
+	Field					= 0
+	VillagerIconExists		= TUT_FALSE
+	FieldIconExists			= TUT_FALSE
+	DoneIntroBit			= TUT_FALSE
+	SaidToDrop				= TUT_FALSE
+	ReminderTimer			= create timer for 60 seconds
+	VillagerPos				= marker at {1083.288, 363.600, 1633.657}
+
+start
+
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Get the field
+		Field = get FIELD_OBJECT at {TUT_FieldPos} radius 100	
+
+		// Check to see if the task has already been done
+		NumFarmers = get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown
+
+		if NumFarmers < TUT_NUM_DISCIPLES_TO_CREATE
+			//run script TUT_AddObjective(TUT_OBJECTIVE_FARMER_DISCIPLE, 3)
+			
+			// Keep looping and doing the checks
+			begin loop
+				// Get the number of farmers
+				NumFarmers = get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown
+				
+				// Update the number of farmers left to get
+				if NumFarmers >= TUT_NUM_DISCIPLES_TO_CREATE
+					TaskDone = TUT_TRUE
+					
+				elsif NumFarmers > PrevNumFarmers
+					// Update the amount of disciples left to get
+					if NumFarmers == 1
+						// You need to get 2 more farmers
+						run background script TUT_Advisors(TUT_ADVISOR_MADE_ONE_FARMER, TUT_TRUE)
+					elsif NumFarmers == 2
+						// You need to get 1 more farmer
+						// say that you made another disciple here???
+					end if
+
+					// Record the previous amount of farmers
+					PrevNumFarmers = NumFarmers
+					set ReminderTimer time to Delay seconds
+				end if
+				
+				// Do the intro / hand demo?
+				if DoneIntroBit == TUT_FALSE and get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown < 3
+					run script TUT_Advisors(TUT_ADVISOR_SHOW_ABOUT_FARMERS, TUT_TRUE)
+					run background script TUT_FarmerObjective
+					set ReminderTimer time to Delay seconds
+					DoneIntroBit = TUT_TRUE
+				end if
+					
+				// Do the checks here...
+				Object = get object held	
+				
+				if not Object exists
+					// Get a villager to put the icon on
+					Villager = get adult at hand position radius 100 excluding disciple VILLAGER_DISCIPLE_FARMER
+				
+					// We've got nothing in the hand so put the icon on a villager
+					if VillagerIconExists == TUT_FALSE					
+						//VillagerIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Villager
+						VillagerIconExists = TUT_TRUE
+					end if
+					
+					//stop visual effect FieldIcon
+					//delete FieldIcon
+					disable Field pulse with fadetime 1
+					FieldIconExists = TUT_FALSE				
+				
+				
+					// Display the RMB for pickup if near a villager
+					ObjectUnderHand = get object hand is over
+					if variable get ObjectUnderHand type == variable VILLAGER and variable get ObjectUnderHand type != variable CHILD and get player 0 influence at hand position > 0
+						// Make sure only non disciple farmers are highlighted
+						if variable get ObjectUnderHand disciple type != variable VILLAGER_DISCIPLE_FARMER
+							enable hand icon draw
+							set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+						end if
+					else
+						disable hand icon draw
+					end if		
+			
+				else
+					// An object is in the hand, lets see what it is
+					Type = variable get Object type
+
+					if Type == variable CHILD
+						run background script TUT_Advisors(TUT_ADVISOR_CHILD, TUT_FALSE)
+						set ReminderTimer time to Delay seconds					
+						wait until not Object is HELD
+
+					//Looking for forester positions
+					elsif Type == variable VILLAGER
+						if SaidToDrop == TUT_FALSE
+							run background script TUT_Advisors(TUT_ADVISOR_VILLAGER_IN_HAND, TUT_FALSE)
+							set ReminderTimer time to Delay seconds
+							SaidToDrop = TUT_TRUE
+						end if
+						
+						// We've got a valid villager in hand so put a pickup icon on the field
+						if FieldIconExists == TUT_FALSE
+							//FieldIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {Field} + {0,3,0} time -1 
+							//set FieldIcon colour red 192 green 128 blue 0
+							//set FieldIcon alpha 0.7
+							enable Field pulse speed 0.5
+							FieldIconExists = TUT_TRUE
+						end if
+					
+						VillagerIconExists = TUT_FALSE	
+						
+						begin loop						
+							// Should we draw the mouse button to drop the villager?
+							Disciple = variable get Object disciple type
+							if Disciple == variable VILLAGER_DISCIPLE_FARMER and get player 0 influence at hand position > 0
+								enable hand icon draw
+								set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+							else						
+								disable hand icon draw
+							end if
+
+							if get ReminderTimer time remaining <= 0						
+								run background script TUT_Reminder(TUT_REMINDER_DROP_NEXT_TO_FIELD)								
+								set ReminderTimer time to Delay seconds
+							end if
+							
+						until not Object is HELD
+						end loop
+											
+						// Check to see if the disciple was created
+						if not Object is FLYING
+							Disciple = variable get Object disciple type
+							if Disciple != variable VILLAGER_DISCIPLE_FARMER
+								run background script TUT_Advisors(TUT_ADVISOR_NOT_A_DISCIPLE, TUT_TRUE)						
+								run background script TUT_Reminder(TUT_REMINDER_DROP_NEXT_TO_FIELD)								
+								set ReminderTimer time to Delay seconds
+							end if
+						else
+							run background script TUT_Advisors(TUT_ADVISOR_THROWN_A_VILLAGER, TUT_TRUE)
+						end if
+					end if
+				end if
+				
+				// Remind the player what they need to do
+				if get ReminderTimer time remaining <= 0
+					run background script TUT_Reminder(TUT_REMINDER_CREATE_FARMER)
+					set ReminderTimer time to 60 seconds
+				end if
+				
+			until TaskDone == TUT_TRUE
+			until TUT_SkippedTutorials == TUT_TRUE
+			end loop
+
+			// Get rid of the hand icons
+			stop visual effect FieldIcon
+			delete FieldIcon
+			disable hand icon draw
+			
+			// Give the summing up and change the objectives
+			//run	script TUT_AddObjective(TUT_OBJECTIVE_FARMER_DISCIPLE, 0)	
+			//run background script TUT_Advisors(TUT_ADVISOR_MADE_3_FARMERS, TUT_TRUE)
+			set ReminderTimer time to Delay seconds
+			run background script TUT_RemoveObjective(TUT_OBJECTIVE_FARMER_DISCIPLE)
+			
+		else
+			// The player has already done the task
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES, TUT_TRUE)
+		end if
+	end if
+
+end script TUT_CreateDiscipleFarmer
+
+
+//-----------------------------------------------------------------------------
+//	Add wood to the storage pit
+//-----------------------------------------------------------------------------
+begin script TUT_AddWoodToYard
+
+	Delay				= 30
+	Object				= 0
+	Tree				= 0
+	Wood				= 0
+	Type				= 0
+	ObjectUnderHand		= 0
+	WoodInPit			= 0
+	NewWoodAmount		= 0
+	TreeIcon			= 0
+	StoreIcon			= 0
+	TreeIconExists		= TUT_FALSE
+	StoreIconExists		= TUT_FALSE
+	TaskDone			= TUT_FALSE
+	ReminderTimer		= create timer for Delay seconds
+
+start
+
+	if TUT_SkippedTutorials == TUT_FALSE
+		// See if the task is still valid
+		Wood = get resource RESOURCE_TYPE_WOOD in TUT_StoragePit
+		
+		// Only go into the tutorial if the player hasn't already done the task
+		if Wood < TUT_WOOD_AMOUNT
+			// Setup the initial amount before the hand demo
+			//run	script TUT_AddObjective(TUT_OBJECTIVE_WOOD, TUT_WOOD_AMOUNT)
+			run	background script TUT_WoodObjective
+
+			// Need to put wood into the pit
+			run script TUT_Advisors(TUT_ADVISOR_NEED_TO_EXPAND, TUT_TRUE)
+			set ReminderTimer time to Delay seconds
+			
+			// Update with the new amount after the hand demo
+			Wood = get resource RESOURCE_TYPE_WOOD in TUT_StoragePit
+			NewWoodAmount = TUT_WOOD_AMOUNT - Wood
+					
+			// Handle putting the wood into the storage pit
+			begin loop
+				// Get a tree to put an icon on
+				if Tree not exists
+					Tree = get TREE at {TUT_StoragePit} radius 100
+				end if
+			
+				// Display the RMB for pickup if near a tree
+				ObjectUnderHand = get object hand is over
+				if variable get ObjectUnderHand type == variable TREE and get player 0 influence at hand position > 0
+					enable hand icon draw
+					set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+				else
+					disable hand icon draw
+				end if
+			
+				// Test to see if the player has picked up some wood
+				Object = get object held
+				
+				if Object exists
+					Type = variable get Object type
+
+					//Don't know the enum for this
+					if Type == 22					
+						run background script TUT_Advisors(TUT_ADVISOR_TREE_IN_HAND, TUT_FALSE)
+						set ReminderTimer time to Delay seconds
+						
+						
+						
+						// We've got a tree in the hand so put the icon on the stor and the hand (remove from field)
+						if StoreIconExists == TUT_FALSE					
+							//StoreIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {TUT_StoragePit} + {0,10,0} time -1
+							//set StoreIcon colour red 192 green 128 blue 0
+							//set StoreIcon alpha 0.7
+							enable TUT_StoragePit pulse speed 0.5
+							StoreIconExists = TUT_TRUE
+						end if
+						
+						TreeIconExists = TUT_FALSE
+						
+						// Store the amount of wood in the storage pit before the player drops it
+						WoodInPit = get resource RESOURCE_TYPE_WOOD in TUT_StoragePit
+						
+						// Wait until the player drops the wood
+						begin loop
+							// Draw the RMB to indicate that the player needs to drop the food
+							ObjectUnderHand = get object hand is over						
+							if ObjectUnderHand == TUT_StoragePit
+								enable hand icon draw
+								set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+							else
+								disable hand icon draw
+							end if
+							
+						until not Object is HELD
+						end loop
+											
+						// Check to see if the player dropped the wood into the storage pit			
+						if get resource RESOURCE_TYPE_WOOD in TUT_StoragePit > WoodInPit
+							Wood = get resource RESOURCE_TYPE_WOOD in TUT_StoragePit
+
+							if Wood < TUT_WOOD_AMOUNT
+								NewWoodAmount = TUT_WOOD_AMOUNT - Wood
+								//run script TUT_AddObjective(TUT_OBJECTIVE_WOOD, NewWoodAmount)
+								run background script TUT_Advisors(TUT_ADVISOR_NOT_ENOUGH_WOOD, TUT_TRUE)
+							else
+								stop visual effect StoreIcon	
+								delete StoreIcon
+								disable hand icon draw
+								//run script TUT_AddObjective(TUT_OBJECTIVE_WOOD, 0)
+								TaskDone = TUT_TRUE
+							end if
+							set ReminderTimer time to Delay seconds		
+						else
+							run background script TUT_Advisors(TUT_ADVISOR_MISSED_STORAGEPIT_WOOD, TUT_TRUE)
+						end if			
+					end if
+				else
+					// We've got nothing in the hand so put a pickup icon on the field and the hand
+					if TreeIconExists == TUT_FALSE
+						TreeIconExists = TUT_TRUE
+					end if
+					
+					disable TUT_StoragePit pulse with fadetime 0
+					//stop visual effect StoreIcon
+					//delete StoreIcon
+					StoreIconExists = TUT_FALSE	
+				end if
+				
+				// Remind the player what they need to do
+				if get ReminderTimer time remaining <= 0
+					run background script TUT_Reminder(TUT_REMINDER_NEED_WOOD)	
+					set ReminderTimer time to Delay seconds
+				end if
+			
+			until TaskDone == TUT_TRUE or get resource RESOURCE_TYPE_WOOD in TUT_StoragePit >= TUT_WOOD_AMOUNT
+			until TUT_SkippedTutorials == TUT_TRUE
+			end loop
+			
+			disable hand icon draw
+			disable TUT_StoragePit pulse with fadetime 0
+			//stop visual effect StoreIcon
+			//delete StoreIcon
+			wait 2 seconds
+			run background script TUT_RemoveObjective(TUT_OBJECTIVE_WOOD)
+		else
+			// The player has already done the task
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_DONE_WOOD_TASK, TUT_TRUE)
+		end if
+	end if
+
+end script TUT_AddWoodToYard
+
+
+//-----------------------------------------------------------------------------
+//	Teach the player how to create a disciple forester
+//-----------------------------------------------------------------------------
+begin script TUT_CreateDiscipleForester
+
+	TaskDone			= TUT_FALSE
+	NumForesters		= 0
+	PrevNumForesters	= 0
+	NearestVillager		= 0
+	Object				= 0
+	Type				= 0
+	ObjectUnderHand		= 0
+	Disciple			= 0
+
+	Villager			= 0
+	VillagerIcon		= 0
+	TreeIcon			= 0
+	Tree				= 0
+	VillagerIconExists	= TUT_FALSE
+	TreeIconExists		= TUT_FALSE
+	
+	Delay				= 30
+	DoneIntroBit		= TUT_FALSE
+	SaidToDrop			= TUT_FALSE	
+	ReminderTimer		= create timer for Delay seconds
+
+start
+
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Check to see if the task has already been done
+		NumForesters = get number of disciples VILLAGER_DISCIPLE_FORESTER in town L3GreekTown
+		
+		if NumForesters < TUT_NUM_DISCIPLES_TO_CREATE
+			run background script TUT_ForesterObjective
+			//run script TUT_AddObjective(TUT_OBJECTIVE_FORESTER_DISCIPLE, 3)					
+
+			// Keep looping and doing the checks
+			begin loop				
+				// Get the number of foresters
+				NumForesters = get number of disciples VILLAGER_DISCIPLE_FORESTER in town L3GreekTown
+				
+				// Do the checks here...
+				Object = get object held
+			
+				if not Object exists
+					if NumForesters >= TUT_NUM_DISCIPLES_TO_CREATE
+						TaskDone = TUT_TRUE
+						
+					elsif NumForesters > PrevNumForesters
+						if NumForesters == 1
+							// You need to get 2 more foresters
+							//run script TUT_AddObjective(TUT_OBJECTIVE_FORESTER_DISCIPLE, 2)
+							run background script TUT_Advisors(TUT_ADVISOR_MADE_ONE_FORESTER, TUT_FALSE)
+						elsif NumForesters == 2
+							// You need to get 1 more forester
+							//run script TUT_AddObjective(TUT_OBJECTIVE_FORESTER_DISCIPLE, 1)					
+							// say that you made another disciple here???
+						end if
+						
+						// Record the previous amount of farmers
+						PrevNumForesters = NumForesters
+						set ReminderTimer time to Delay seconds
+					end if
+				end if
+				
+				
+				// Do the intro / hand demo?
+				if DoneIntroBit == TUT_FALSE
+					run script TUT_Advisors(TUT_ADVISOR_CREATE_DISCIPLE_FORESTER, TUT_TRUE)
+					set ReminderTimer time to Delay seconds
+					DoneIntroBit = TUT_TRUE
+				end if
+					
+				// Do the checks here...
+				Object = get object held
+			
+				if not Object exists
+					Villager = get adult at hand position radius 100 excluding disciple VILLAGER_DISCIPLE_FORESTER
+				
+					// We've got nothing in the hand so put the icon on a villager
+					if VillagerIconExists == TUT_FALSE					
+						//VillagerIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Villager
+						VillagerIconExists = TUT_TRUE
+					end if
+					
+					TreeIconExists = TUT_FALSE
+					
+					
+					// Display the RMB for pickup if near a villager
+					ObjectUnderHand = get object hand is over
+					if variable get ObjectUnderHand type == variable VILLAGER and variable get ObjectUnderHand type != variable CHILD and get player 0 influence at hand position > 0
+						// Make sure only non disciple foresters are highlighted
+						if variable get ObjectUnderHand disciple type != variable VILLAGER_DISCIPLE_FORESTER
+							enable hand icon draw
+							set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+						end if
+					else
+						disable hand icon draw
+					end if
+								
+				else
+					Type = variable get Object type
+				
+					if Type == variable CHILD
+						run background script TUT_Advisors(TUT_ADVISOR_CHILD, TUT_FALSE)
+						set ReminderTimer time to Delay seconds
+						wait until not Object is HELD
+						
+					// Looking for forester positions
+					elsif Type == variable VILLAGER
+						if SaidToDrop == TUT_FALSE
+							run background script TUT_Advisors(TUT_ADVISOR_VILLAGER_IN_HAND_CREATE_FORESTER, TUT_FALSE)
+							set ReminderTimer time to Delay seconds
+							SaidToDrop = TUT_TRUE
+						end if
+						
+						// Get a tree near the villager
+						if Tree not exists
+							Tree = get TREE at hand position radius 100 excluding scripted
+						end if
+						
+						if Tree exists
+							// We've got a valid villager in hand so put a pickup icon on a tree
+							if TreeIconExists == TUT_FALSE
+								//TreeIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Tree
+								TreeIconExists = TUT_TRUE
+							end if
+						
+							VillagerIconExists = TUT_FALSE
+						end if
+						
+							
+						// Give the correct reminder to the player
+						begin loop
+							// Should we draw the mouse button to drop the villager?
+							Disciple = variable get Object disciple type
+							if Disciple == variable VILLAGER_DISCIPLE_FORESTER and get player 0 influence at hand position > 0
+								enable hand icon draw
+								set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+							else						
+								disable hand icon draw
+							end if
+						
+							// Do the reminder check
+							if get ReminderTimer time remaining <= 0						
+								run background script TUT_Reminder(TUT_REMINDER_DROP_NEXT_TO_TREE)								
+								set ReminderTimer time to Delay seconds
+							end if						
+						until not Object is HELD
+						end loop
+										
+						// Check to see if the disciple was created
+						if not Object is FLYING
+							Disciple = variable get Object disciple type
+							if Disciple != variable VILLAGER_DISCIPLE_FORESTER
+								run background script TUT_Advisors(TUT_ADVISOR_NOT_A_FORESTER_DISCIPLE, TUT_TRUE)						
+								run background script TUT_Reminder(TUT_REMINDER_DROP_NEXT_TO_TREE)								
+								set ReminderTimer time to Delay seconds
+							end if
+						else 
+							run background script TUT_Advisors(TUT_ADVISOR_THROWN_A_VILLAGER, TUT_TRUE)
+						end if
+					end if
+				end if
+				
+				// Remind the player what they need to do
+				if get ReminderTimer time remaining <= 0
+					run background script TUT_Reminder(TUT_REMINDER_CREATE_FORESTER)
+					set ReminderTimer time to Delay seconds
+				end if
+				
+			until TaskDone == TUT_TRUE
+			until TUT_SkippedTutorials == TUT_TRUE
+			end loop
+			
+			disable hand icon draw
+							
+			//run	script TUT_AddObjective(TUT_OBJECTIVE_FORESTER_DISCIPLE, 0)
+			run script TUT_Advisors(TUT_ADVISOR_MADE_3_FORESTERS, TUT_TRUE)
+			set ReminderTimer time to Delay seconds
+			
+			run background script TUT_RemoveObjective(TUT_OBJECTIVE_FORESTER_DISCIPLE)
+
+		else
+			// The player has already done the task
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES, TUT_TRUE)
+		end if
+	end if
+
+end script TUT_CreateDiscipleForester
+
+
+//-----------------------------------------------------------------------------
+//	Explain about the town centre and the statues
+//-----------------------------------------------------------------------------
+begin script TUT_ExplainAboutTownCentre
+
+	ResourceDesiresStatue		= marker at {1080.776, 370.557, 1610.444}
+	AlignmentStatue				= marker at {1081.639, 363.606, 1625.654}
+	VillagerDesireStatue		= marker at {1096.374, 368.563, 1623.855}
+	ImpressiveScroll			= marker at {1094.412, 363.574, 1610.161}
+	Beam						= 0
+	PlayersAlignment			= 0
+	Scroll						= 0
+	CommentTimer				= create timer for 40 seconds
+	Reminded					= 0
+start
+	Scroll = create highlight GOLD name "BW2T_SCRIPT_04FINAL_TOWNTUTORIAL_10" remind "BW2T_SCRIPT_04FINAL_TOWNTUTORIAL_20" at {1096.696, 363.612, 1604.498}
+	// Give the objective for clicking on the scroll
+	// GA: Click on the Gold Scroll.
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 with amount 1 text "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value 0
+	
+	begin loop
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {Scroll}
+				// GA: Click on the Gold Scroll.
+				say "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL"
+				wait until read
+			end dialogue
+			if Reminded == 0
+				Reminded++
+				set CommentTimer time to 180 seconds
+			elsif Reminded > 0
+				set CommentTimer time to 300 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	
+	delete Scroll
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_4
+	
+	enable build menu override with ABODE_NUMBER_C
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_FOOD to 1
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_HOMES to 1
+	
+	if TUT_SkippedTutorials == TUT_FALSE
+		begin cinema
+			eject good spirit
+			move camera position to get world position from TUT_GreekTC to {-1.374, 17.505, -23.869} time 3
+			move camera focus to get world position from TUT_GreekTC to {-1.511, -39.975, 63.635} time 3
+			wait until camera ready
+		//GA: This is the town centre, the single most important building in your town
+			//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_10"
+			//wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+		//GA: "The statues on you town centre represent your towns desires."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_15"
+			wait until read or TUT_SkippedTutorials == TUT_TRUE
+			wait until camera ready
+			
+			move camera position to get world position from TUT_GreekTC to {0.396, 13.050, -11.221} time 2
+			move camera focus to get world position from TUT_GreekTC to {0.237, -55.718, 61.388} time 2
+			wait until camera ready
+			make good spirit point at {L3GreekTown} + {0,5,0}
+		//GA: "This tells you what your people would like to build next keeping your people happy is important and they will let you know if they desire a building type"
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_25"
+			wait until read or TUT_SkippedTutorials == TUT_TRUE
+			stop good spirit pointing	
+			
+			move camera position to get world position from TUT_GreekTC to {-2.852, 11.729, -9.239} time 2
+			move camera focus to get world position from TUT_GreekTC to {-61.055, -27.409, 62.044} time 2
+			wait until camera ready
+			make good spirit point at {ResourceDesiresStatue} + {0,3,0}
+		//GA: "See how this statue is carrying grain? Well that represents the people’s desires for food. If they need more ore or wood they will let you know. Keep and eye on the statue as it will change so you can"
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_35"
+			wait 3 seconds
+			stop good spirit pointing	
+			wait until read 
+			send good spirit home
+			eject evil spirit
+			move camera position to get world position from TUT_GreekTC to {-0.313, 10.587, -0.657} time 2
+			move camera focus to get world position from TUT_GreekTC to {0.489, -37.920, 86.785} time 2
+			wait until camera ready
+			make evil spirit point at {AlignmentStatue} + {0,2,0}
+		//EA: "This plinth's height represents the strength of your alignment, how good or evil you are. From its top a flame or fountain will spring as you perform evil or good acts. The whole city will shift to show you if you are good or evil, or even neutral."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_55"
+			PlayersAlignment = get player 0 alignment 
+			set player 0 alignment 1
+			wait 1 seconds
+			stop evil spirit pointing
+			wait until read or TUT_SkippedTutorials == TUT_TRUE
+			set player 0 alignment PlayersAlignment
+			send evil spirit home
+			eject good spirit
+			move camera position to get world position from TUT_GreekTC to {-0.897, 11.022, 0.516} time 2
+			move camera focus to get world position from TUT_GreekTC to {91.687, -26.774, 0.661} time 2
+			wait until camera ready
+		//GA: "This statue lets you know your peoples desires, what they need or want the most. Watch the height of the statue, the higher it is the more they need the thing they desire."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_45"
+			make good spirit point at {VillagerDesireStatue} + {0,2,0}
+			wait 2 seconds
+			stop good spirit pointing
+			wait until read 
+			move camera position to get world position from TUT_GreekTC to {-0.029, 6.317, -18.287} time 2
+			move camera focus to get world position from TUT_GreekTC to {-0.266, -42.035, 69.246} time 2
+			wait until camera ready
+			make good spirit point at {ImpressiveScroll} + {0,2,0}
+		//GA: "This scroll shows the impressiveness of your city, the happiness of your people, the population of your city and lots of other useful bits of information about your growing metropolis. Refer to it often."
+			say "BW2T_SCRIPT_04FINAL_TOWNTUTORIAL_30"
+			wait 2 seconds
+			stop good spirit pointing
+			wait until read 
+
+			move camera position to get world position from TUT_GreekTC to {-1.374, 17.505, -23.869} time 3
+			move camera focus to get world position from TUT_GreekTC to {-1.511, -39.975, 63.635} time 3
+			wait until camera ready
+			//GA: Hold your hand over the statues AND leave it there to get more detail.
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_14"
+			wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			send good spirit home
+		end cinema
+	end if
+	
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_FOOD to -1
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_HOMES to -1
+	enable build menu override with ABODE_NUMBER_LAST
+end script TUT_ExplainAboutTownCentre
+
+
+//-----------------------------------------------------------------------------
+//	Explain how to build from the town centre
+//-----------------------------------------------------------------------------
+begin script TUT_ExplainAboutBuildingFromTownCentre
+start
+
+	if TUT_SkippedTutorials == TUT_FALSE	
+		// Setup the camera position
+		begin fullscreen cinema
+			move camera position to {1101.473, 386.430, 1598.262} time 2
+			move camera focus to {1056.331, 316.139, 1653.230} time 2
+			wait until camera ready
+		end cinema
+
+		run script TUT_Advisors(TUT_ADVISOR_TELL_ABOUT_TOWN_CENTRE, TUT_TRUE)
+	end if
+
+end script TUT_ExplainAboutBuildingFromTownCentre
+
+
+//-----------------------------------------------------------------------------
+//	Drag a building off the town centre
+//-----------------------------------------------------------------------------
+begin script TUT_PlaceBuildingFoundation
+
+	// Valid houses
+	HUT_A						= variable ABODE_NUMBER_A
+	HUT_B						= variable ABODE_NUMBER_B
+	HUT_C						= variable ABODE_NUMBER_C
+	HUT_D						= variable ABODE_NUMBER_D
+	HUT_E						= variable ABODE_NUMBER_E
+	
+	Delay						= 30
+	Object						= 0
+	Type						= 0
+	SubT						= 0
+	ObjectUnderHand				= 0
+	BuiltHouses					= 0
+	BuiltHousesTest				= 0
+	SaidAboutPlacing			= TUT_FALSE
+	DoneTask					= TUT_FALSE
+	
+	ReminderTimer				= create timer for Delay seconds
+
+start
+
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Check to see if the player has already done the task (all building tasks)
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+				
+		// Only advance to the next tutorial if they've already fully built at least 1 house
+		if BuiltHouses > 0
+			if BuiltHouses >= TUT_NUM_HOUSES_TO_BUILD
+				run script TUT_Advisors(TUT_ADVISOR_ALREADY_BUILT_ALL_HOUSES, TUT_TRUE)				
+			elsif BuiltHouses >= 1
+				run script TUT_Advisors(TUT_ADVISOR_ALREADY_BUILT_A_HOUSE, TUT_TRUE)
+			end if
+			
+			// Go onto the next tutorial as we've done this one already		
+		else
+			// Setup the initial objective
+			run	script TUT_AddObjective(TUT_OBJECTIVE_BUILD_HOUSES, 3)
+
+			// Setup the camera position
+			begin fullscreen cinema
+				move camera position to {1101.473, 386.430, 1598.262} time 2
+				move camera focus to {1056.331, 316.139, 1653.230} time 2
+				wait until camera ready
+			end cinema
+					
+			// We've still got to do the tutorial - do hand demo
+			run script TUT_Advisors(TUT_ADVISOR_TELL_ABOUT_TOWN_CENTRE, TUT_TRUE)
+			set ReminderTimer time to Delay seconds
+			
+			// Do the checks
+			begin loop
+				// Need to mention about placing next to roads after the hand demo (do not need to pick up the next house first)
+
+				// Check to see if the hand is near the town centre
+				// Draw the RMB to indicate that the player needs to drop the food
+				if hand position near {L3GreekTown} radius 3
+					enable hand icon draw
+					set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+				else
+					disable hand icon draw						
+				end if
+				
+				Object = get object held
+
+				// Looking for building in hand
+				if Object exists
+					Type = variable get Object type
+					
+					if Type == variable HOUSE
+						// Get the sub type of the object
+						SubT = variable get Object sub type
+
+						// Check to see if the sun type of the object is a valid building (house)
+						if SubT == HUT_A or SubT == HUT_B or SubT == HUT_C or SubT == HUT_D or SubT == HUT_E
+							if SaidAboutPlacing == TUT_FALSE
+								run background script TUT_Advisors(TUT_ADVISOR_BUILDING_IN_HAND, TUT_FALSE)
+								set ReminderTimer time to Delay seconds
+								SaidAboutPlacing = TUT_TRUE
+							end if
+							
+							begin loop
+								ObjectUnderHand = get object hand is over
+								if object in hand can be placed and get player 0 influence at hand position > 0						
+									enable hand icon draw
+									set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+								else
+									disable hand icon draw
+								end if
+								
+							until not Object is HELD
+							end loop
+							
+							wait 0.1 seconds
+							
+							TUT_House = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.99//get HOUSE at hand position excluding scripted
+								
+							if TUT_House exists
+								run background script TUT_Advisors(TUT_ADVISOR_VILLAGERS_BUILDING, TUT_FALSE)
+								disable hand icon draw
+								DoneTask = TUT_TRUE
+							else					// They may have shook the house out of their hand
+								run background script TUT_Reminder(TUT_REMINDER_DONT_SHAKE_OUT_OF_HAND)
+							end if
+							set ReminderTimer time to Delay seconds
+						end if			
+					end if
+				end if
+				
+				// Remind the player what they need to do
+				if get ReminderTimer time remaining <= 0
+					run background script TUT_Reminder(TUT_REMINDER_PULL_BUILDING_OFF_CENTRE)
+					set ReminderTimer time to 120 seconds
+				end if
+				
+			until DoneTask == TUT_TRUE
+			until TUT_SkippedTutorials == TUT_TRUE
+			end loop
+
+			disable hand icon draw
+		end if
+	end if
+
+end script TUT_PlaceBuildingFoundation
+
+
+//-----------------------------------------------------------------------------
+//	Add wood to the foundation (not godbuild)
+//-----------------------------------------------------------------------------
+begin script TUT_AddWoodToFoundation
+
+	// Valid houses
+	HUT_A						= variable ABODE_NUMBER_A
+	HUT_B						= variable ABODE_NUMBER_B
+	HUT_C						= variable ABODE_NUMBER_C
+	HUT_D						= variable ABODE_NUMBER_D
+	HUT_E						= variable ABODE_NUMBER_E
+	
+	Delay				= 30
+	Object				= 0
+	Type				= 0
+	SubT				= 0
+	ObjectUnderHand		= 0
+	Wood				= 0
+	WoodPile			= 0
+	BuiltHouses			= 0
+	AlreadyBuilt		= TUT_FALSE
+	TaskDone			= TUT_FALSE
+	SaidDropTree		= TUT_FALSE
+	SaidDropWood		= TUT_FALSE
+	
+	ReminderTimer		= create timer for Delay seconds
+
+start
+
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Check to see if the player has already done the task
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+				
+		// Only advance to the next tutorial if they've already fully built at least 1 house
+		if BuiltHouses > 0
+			TaskDone = TUT_TRUE
+			AlreadyBuilt = TUT_TRUE
+		end if
+
+		// Tell the player that they can drop wood onto the foundations to help speed up the building process
+		run background script TUT_Advisors(TUT_ADVISOR_VILLAGERS_BUILDING_ADD_WOOD, TUT_TRUE)
+		set ReminderTimer time to Delay seconds
+
+		begin loop
+			// Draw the mouse icon
+			ObjectUnderHand = get object hand is over
+			if variable get ObjectUnderHand type == variable TREE and get player 0 influence at hand position > 0
+				enable hand icon draw
+				set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+			else
+				disable hand icon draw
+			end if
+			
+			Object = get object held
+			Type = variable get Object type
+		
+			// Tree or wood from storage pit
+			if Type == variable TREE or Type == variable WOODSTORE
+				if Type == variable TREE
+					if SaidDropTree == TUT_FALSE
+						run background script TUT_Advisors(TUT_ADVISOR_DROP_THE_TREE, TUT_FALSE)
+						set ReminderTimer time to Delay seconds
+						SaidDropTree = TUT_TRUE
+					end if
+				else
+					if SaidDropWood	== TUT_FALSE
+						run background script TUT_Advisors(TUT_ADVISOR_DROP_THE_WOOD, TUT_FALSE)
+						set ReminderTimer time to Delay seconds
+						SaidDropWood = TUT_TRUE					
+					end if
+				end if
+				
+				// Draw the mouse icon
+				ObjectUnderHand = get object hand is over
+				if variable get ObjectUnderHand type == variable HOUSE and get player 0 influence at hand position > 0
+					enable hand icon draw
+					set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+				else
+					disable hand icon draw
+				end if
+			end if
+			
+			// Reset the flags - if you only want the lines said once don't reset the flags.
+			if not Object is HELD
+				SaidDropTree = TUT_FALSE
+				SaidDropWood = TUT_FALSE
+			end if
+			
+			// Has the wood been added to the foundation?
+			WoodPile = get building resource RESOURCE_TYPE_WOOD in TUT_House
+			Wood = get resource RESOURCE_TYPE_WOOD in WoodPile
+			
+			// Check to see if there is a woodpile for the house of if it's been built (assumes godbuild for built)
+			if Wood > 1
+				run background script TUT_Advisors(TUT_ADVISOR_TREE_DROPPED, TUT_TRUE)
+				set ReminderTimer time to Delay seconds
+				disable hand icon draw			
+				TaskDone = TUT_TRUE
+				
+			elsif get BUILT of TUT_House == 1.0
+				// The house has been god built so move onto the next stage
+				TUT_GodBuilt = TUT_TRUE
+				disable hand icon draw
+				TaskDone = TUT_TRUE
+			end if
+			
+			// Give the reminder
+			if get ReminderTimer time remaining <= 0
+				run background script TUT_Reminder(TUT_REMINDER_DROP_TREE_ON_FOUNDATION)
+				set ReminderTimer time to Delay seconds	
+			end if
+					
+		until TaskDone == TUT_TRUE
+		until TUT_SkippedTutorials == TUT_TRUE
+		end loop
+
+		disable hand icon draw
+	end if
+	
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Don't go into here if we've already built the house before the task was given to us		
+		if AlreadyBuilt == TUT_FALSE
+			if TUT_GodBuilt == TUT_TRUE			
+				// If the player god built the last house then update the objectives
+				run	script TUT_AddObjective(TUT_OBJECTIVE_BUILD_HOUSES, 2)
+				run script TUT_Advisors(TUT_ADVISOR_BUILD_MORE_HOUSES, TUT_TRUE)
+			else
+				// The god built mode has not been used so go straight into the disciple builder script
+				// and run a background script to detect when the first house has been built
+				run background script TUT_DetectFirstBuilding
+			end if
+		end if
+	end if
+
+end script TUT_AddWoodToFoundation
+
+
+//-----------------------------------------------------------------------------
+//	Teach the player how to create a disciple builder
+//-----------------------------------------------------------------------------
+begin script TUT_CreateDiscipleBuilder
+
+	// Valid houses
+	HUT_A						= variable ABODE_NUMBER_A
+	HUT_B						= variable ABODE_NUMBER_B
+	HUT_C						= variable ABODE_NUMBER_C
+	HUT_D						= variable ABODE_NUMBER_D
+	HUT_E						= variable ABODE_NUMBER_E
+
+	NumBuilders			= 0
+	PrevNumBuilders		= 0
+	Object				= 0
+	Type				= 0
+	SubT				= 0
+	ObjectUnderHand		= 0
+	NearestBuilding		= 0
+	Disciple			= 0
+	Delay				= 30
+	Villager			= 0
+	VillagerIcon		= 0
+	BuildingIcon		= 0
+	Building			= 0
+	House				= 0
+	TaskDone			= TUT_FALSE
+	GotHouse			= TUT_FALSE
+	VillagerIconExists	= TUT_FALSE
+	BuildingIconExists	= TUT_FALSE
+	DoneIntroBit		= TUT_FALSE
+	SaidToDrop			= TUT_FALSE
+	ReminderTimer		= create timer for Delay seconds
+
+start
+	while House not exists
+		House = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.99
+	end while
+	disable disciple placedown speech
+		// Check to see if the task has already been done
+		NumBuilders = get number of disciples VILLAGER_DISCIPLE_BUILDER in town L3GreekTown
+		
+		if NumBuilders < TUT_NUM_DISCIPLES_TO_CREATE
+			run background script TUT_BuilderObjective
+			//run	script TUT_AddObjective(TUT_OBJECTIVE_BUILDER_DISCIPLE, 3)
+		
+			// Keep looping and doing the checks
+			begin loop			
+				// Get the number of builders
+				NumBuilders = get number of disciples VILLAGER_DISCIPLE_BUILDER in town L3GreekTown
+			
+				// Do the checks here...
+				Object = get object held			
+				
+				if not Object exists
+					if NumBuilders >= TUT_NUM_DISCIPLES_TO_CREATE			
+						TaskDone = TUT_TRUE
+						
+					elsif NumBuilders > PrevNumBuilders
+						if NumBuilders == 1
+							// You need to get 2 more builders
+							//run	script TUT_AddObjective(TUT_OBJECTIVE_BUILDER_DISCIPLE, 2)
+							run background script TUT_Advisors(TUT_ADVISOR_MADE_ONE_BUILDER, TUT_FALSE)
+						elsif NumBuilders == 2
+							// You need to get 1 more builders
+							//run	script TUT_AddObjective(TUT_OBJECTIVE_BUILDER_DISCIPLE, 1)
+							// say that you made another disciple here???
+						end if
+						
+						// Record the previous amount of farmers
+						PrevNumBuilders = NumBuilders
+						set ReminderTimer time to Delay seconds
+					end if
+				end if
+				
+				
+				// Do the intro / hand demo?
+				if DoneIntroBit == TUT_FALSE
+					run script TUT_Advisors(TUT_ADVISOR_CREATE_DISCIPLE_BUILDERS, TUT_TRUE)
+					set ReminderTimer time to Delay seconds
+					DoneIntroBit = TUT_TRUE
+				end if
+				
+				// Do the checks here...
+				Object = get object held			
+				
+				if not Object exists
+					// Get a villager to put the icon on
+					Villager = get adult at hand position radius 100 excluding disciple VILLAGER_DISCIPLE_BUILDER
+					
+					// We've got nothing in the hand so put the icon on a villager
+					if VillagerIconExists == TUT_FALSE					
+						//VillagerIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Villager
+						VillagerIconExists = TUT_TRUE
+					end if
+					
+					disable Building pulse with fadetime 0
+					//stop visual effect BuildingIcon
+					//delete BuildingIcon
+					BuildingIconExists = TUT_FALSE				
+					
+					
+					// Display the RMB for pickup if near a villager
+					ObjectUnderHand = get object hand is over
+					if variable get ObjectUnderHand type == variable VILLAGER and variable get ObjectUnderHand type != variable CHILD and get player 0 influence at hand position > 0
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+					else
+						disable hand icon draw
+					end if
+				
+				else
+					Type = variable get Object type
+				
+					if Type == variable CHILD
+						run background script TUT_Advisors(TUT_ADVISOR_CHILD, TUT_FALSE)
+						set ReminderTimer time to Delay seconds
+						wait until not Object is HELD					
+
+					// Looking for builder positions
+					elsif Type == variable VILLAGER
+						if SaidToDrop == TUT_FALSE					
+							run background script TUT_Advisors(TUT_ADVISOR_VILLAGER_IN_HAND_CREATE_BUILDER, TUT_FALSE)
+							set ReminderTimer time to Delay seconds
+							SaidToDrop = TUT_TRUE
+						end if
+						
+						
+						// Get a building near the villager
+						while GotHouse == TUT_FALSE
+							Building = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.99
+													
+							SubT = variable get Building sub type
+													
+							if Building exists and SubT == HUT_A or SubT == HUT_B or SubT == HUT_C or SubT == HUT_D or SubT == HUT_E
+								GotHouse = TUT_TRUE
+							end if
+						end while
+						
+						// We've got a valid villager in hand so put a pickup icon on a tree
+						if BuildingIconExists == TUT_FALSE
+							enable Building pulse speed 0.5
+							
+							//BuildingIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {Building} + {0,3,0} time -1  
+							//set BuildingIcon colour red 192 green 128 blue 0
+							//set BuildingIcon alpha 0.7
+							BuildingIconExists = TUT_TRUE
+						end if
+					
+						VillagerIconExists = TUT_FALSE
+						
+						// Give the correct reminder to the player
+						begin loop
+							// Should we draw the mouse button to drop the villager?
+							Disciple = variable get Object disciple type
+							if Disciple == variable VILLAGER_DISCIPLE_BUILDER and get player 0 influence at hand position > 0
+								enable hand icon draw
+								set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+							else						
+								disable hand icon draw
+							end if
+						
+							// Do reminder check
+							if get ReminderTimer time remaining <= 0						
+								run background script TUT_Reminder(TUT_REMINDER_DROP_NEXT_TO_BUILDING)								
+								set ReminderTimer time to Delay seconds
+							end if						
+						until not Object is HELD
+						end loop
+																
+						// Check to see if the disciple was created
+						if not Object is FLYING
+							Disciple = variable get Object disciple type
+							if Disciple != variable VILLAGER_DISCIPLE_BUILDER
+								run background script TUT_Advisors(TUT_ADVISOR_NOT_A_BUILDER_DISCIPLE, TUT_TRUE)						
+								run background script TUT_Reminder(TUT_REMINDER_DROP_NEXT_TO_BUILDING)								
+								set ReminderTimer time to Delay seconds
+							end if
+						else
+							run background script TUT_Advisors(TUT_ADVISOR_THROWN_A_VILLAGER, TUT_TRUE)
+						end if
+					end if
+				end if
+				
+				// Remind the player what they need to do
+				if get ReminderTimer time remaining <= 0
+					run background script TUT_Reminder(TUT_REMINDER_CREATE_BUILDER)
+					set ReminderTimer time to Delay seconds
+				end if
+				
+			until TaskDone == TUT_TRUE or get number of disciples VILLAGER_DISCIPLE_BUILDER in town L3GreekTown >= TUT_NUM_DISCIPLES_TO_CREATE
+			until TUT_SkippedTutorials == TUT_TRUE
+			end loop
+			
+			disable Building pulse with fadetime 0
+			//stop visual effect BuildingIcon
+			//delete BuildingIcon
+			disable hand icon draw
+			
+			//run script TUT_AddObjective(TUT_OBJECTIVE_BUILDER_DISCIPLE, 0)
+			run script TUT_Advisors(TUT_ADVISOR_MADE_3_BUILDERS, TUT_TRUE)
+			set ReminderTimer time to Delay seconds
+			
+			run background script TUT_RemoveObjective(TUT_OBJECTIVE_BUILDER_DISCIPLE)
+		
+		else
+			// The player has already done the task
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES, TUT_TRUE)
+		end if
+		enable disciple placedown speech
+end script TUT_CreateDiscipleBuilder
+
+
+//-----------------------------------------------------------------------------
+//	Build another 9 houses
+//-----------------------------------------------------------------------------
+begin script TUT_Build9Houses
+
+	BuiltHouses				= 0
+	PlacedHouses			= 0
+	HousesBeingBuilt		= 0
+	Object					= 0
+	ObjectUnderHand			= 0
+	Type					= 0
+	SType					= 0
+	TaskDone				= TUT_FALSE
+	SaidAboutGodBuild		= TUT_FALSE
+	RemindedPlayerWhatToDo	= TUT_FALSE
+	BuildMoreHomesComment	= TUT_FALSE
+	DragOffHousesComment	= TUT_FALSE
+	DiscipleBuildersMade	= TUT_FALSE
+	ShowMouseOnHand			= TUT_TRUE
+	ReminderTimer			= create timer for 60 seconds
+start
+
+	// Setup the initial objective - reset the objectives for so that the houses are not ticked at the incorrect time
+	begin loop
+		// Keep track of the total count of building built and building placed
+		BuiltHouses = 0
+		PlacedHouses = 0
+		//BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+		//BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+		//BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+		//BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+		//PlacedHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 0.0
+		//PlacedHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 0.0
+		PlacedHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 0.0
+		//PlacedHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 0.0
+		//PlacedHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 0.0
+		
+		if BuiltHouses > 11
+			TaskDone = TUT_TRUE
+		end if
+		
+		if hand position near {L3GreekTown} radius 5 and PlacedHouses < 12
+			enable hand icon draw
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION with arrow ARROW_TYPE_LEFT
+		else
+			disable hand icon draw	
+		end if
+
+	//----Check for the first house being built built----//
+
+		if BuiltHouses >= 1 and BuildMoreHomesComment == TUT_FALSE
+			BuildMoreHomesComment = TUT_TRUE
+			run background script TUT_Advisors(TUT_ADVISOR_BUILD_MORE_HOUSES, TUT_TRUE)
+			if get ReminderTimer time remaining < 30
+				set ReminderTimer time to 30 seconds
+			end if
+		end if
+		
+		if PlacedHouses >= 4 and DragOffHousesComment == TUT_FALSE and get TUT_Timer time remaining == 0
+			DragOffHousesComment = TUT_TRUE
+			run script TUT_Advisors(TUT_ADVISOR_BUILD_BY_DUPLICATING_HOUSES, TUT_TRUE)
+			if get TUT_Timer time remaining < 30
+				set TUT_Timer time to 30 seconds
+			end if
+			if get ReminderTimer time remaining < 30
+				set ReminderTimer time to 30 seconds
+			end if
+		end if 
+		
+		if PlacedHouses >= 8 and DiscipleBuildersMade == TUT_FALSE and TUT_WOODADDED == TUT_TRUE and get TUT_Timer time remaining == 0
+			DiscipleBuildersMade = TUT_TRUE
+			run background script TUT_CreateDiscipleBuilder
+			if get TUT_Timer time remaining < 30
+				set TUT_Timer time to 30 seconds
+			end if
+			if get ReminderTimer time remaining < 30
+				set ReminderTimer time to 30 seconds
+			end if
+		end if 
+
+		// Show a mouse icon if we have nothing in the hand and we're over a house
+		/*Object = get object held
+			
+		if not Object exists
+			// Display the RMB for pickup if over a house
+			ObjectUnderHand = get object hand is over
+			if ObjectUnderHand exists
+				if variable get ObjectUnderHand type == variable HOUSE and get player 0 influence at hand position > 0
+					SType = variable get ObjectUnderHand sub type
+					if SType == variable ABODE_C 
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+					else
+						disable hand icon draw
+					end if
+				else
+					disable hand icon draw
+				end if
+			end if
+		else
+			// Object exists so get it's type
+			Type = variable get Object type
+			
+			// Should we display a mouse icon?
+			if Type == variable HOUSE
+				if object in hand can be placed and get player 0 influence at hand position > 0
+					enable hand icon draw
+					set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+				else
+					disable hand icon draw
+				end if
+			end if
+		end if*/
+
+		// Have we done the task
+
+		// Check to make sure we have built at least 1 house and we have at least 1 foundation laid
+		// before giving the message about GodBuilding(tm)
+		if BuiltHouses >= 3 and PlacedHouses >= 1 and SaidAboutGodBuild == TUT_FALSE
+			if PlacedHouses > BuiltHouses
+				// Mention about god building
+				if TUT_GodBuilt == TUT_FALSE
+					run script TUT_Advisors(TUT_ADVISOR_BUILD_GODBUILD_NOT_KNOWN_ABOUT, TUT_TRUE)
+					if get ReminderTimer time remaining < 30
+						set ReminderTimer time to 30 seconds
+					end if
+				else
+					if TUT_ExplainedGodBuild == TUT_FALSE
+						run script TUT_Advisors(TUT_ADVISOR_BUILD_GODBUILD_KNOWN_ABOUT, TUT_TRUE)
+						if get ReminderTimer time remaining < 30
+							set ReminderTimer time to 30 seconds
+						end if
+					end if
+				end if							
+				SaidAboutGodBuild = TUT_TRUE
+			end if
+		end if
+
+		// Remind the player what they need to do
+		if get ReminderTimer time remaining == 0 and TaskDone == TUT_FALSE
+			HousesBeingBuilt = 0
+			HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 0
+			HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 0
+			HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 0
+			HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 0
+			HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 0
+		
+			if HousesBeingBuilt < TUT_NUM_HOUSES_TO_BUILD
+				run background script TUT_Reminder(TUT_REMINDER_NEED_TO_BUILD_ANOTHER_HOUSE)
+			end if
+				
+			set ReminderTimer time to 120 seconds
+		end if
+	until TaskDone == TUT_TRUE and SaidAboutGodBuild == TUT_TRUE and get number of disciples VILLAGER_DISCIPLE_BUILDER in town L3GreekTown >= TUT_NUM_DISCIPLES_TO_CREATE
+	end loop
+
+	// Get rid of the hand icon
+	disable hand icon draw
+
+	// Give the tribute here
+	if TUT_SkippedTutorials == TUT_FALSE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_BUILDHOUSESTUTORIAL
+	end if
+	
+	// Give a well done message
+	run script TUT_Advisors(TUT_ADVISOR_DONE_BUILDING_TUT, TUT_TRUE)
+	L3OkToDoRoadTutorial = TUT_TRUE										// Kick off the road tutorial
+
+	// Override the building on the TC to make it a field - disabled after the population is achieved
+	// in TUT_IncreasePopulation script
+
+end script TUT_Build9Houses
+
+/*
+//-----------------------------------------------------------------------------
+//	Build another building
+//-----------------------------------------------------------------------------
+begin script TUT_CreateAnotherBlueprint
+
+	PlacedHouses			= 0
+	BuiltHouses				= 0
+	HousesBeingBuilt		= 0
+	Object					= 0
+	ObjectUnderHand			= 0
+	Type					= 0
+	SType					= 0
+	SaidAboutGodBuild		= TUT_FALSE
+	RemindedPlayerWhatToDo	= TUT_FALSE
+	TaskDone				= TUT_FALSE
+	Delay					= 30
+	ReminderTimer			= create timer for Delay seconds
+
+start
+
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Build the other buildings
+		begin loop
+			BuiltHouses = 0
+			PlacedHouses = 0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+			PlacedHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 0.0
+			PlacedHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 0.0
+			PlacedHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 0.0
+			PlacedHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 0.0
+			PlacedHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 0.0
+			
+			
+			// Show a mouse icon if we have nothing in the hand and we're over a house
+			Object = get object held
+				
+			if not Object exists
+				// Display the RMB for pickup if over a house
+				ObjectUnderHand = get object hand is over
+				if ObjectUnderHand exists
+					if variable get ObjectUnderHand type == variable HOUSE and get player 0 influence at hand position > 0
+						SType = variable get ObjectUnderHand sub type
+						if SType == variable ABODE_A or SType == variable ABODE_B or SType == variable ABODE_C or SType == variable ABODE_D or SType == variable ABODE_E
+							enable hand icon draw
+							set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+						else
+							disable hand icon draw
+						end if
+					else
+						disable hand icon draw
+					end if
+				end if
+			else
+				// Object exists so get it's type
+				Type = variable get Object type
+				
+				// Should we display a mouse icon?
+				if Type == variable HOUSE
+					if object in hand can be placed and get player 0 influence at hand position > 0
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+					else
+						disable hand icon draw
+					end if
+				end if
+			end if
+			
+			
+			// Have we done the task
+			if BuiltHouses >= TUT_NUM_HOUSES_TO_BUILD
+				// We've done the task
+				run	script TUT_AddObjective(TUT_OBJECTIVE_BUILD_HOUSES, 0)			
+				TaskDone = TUT_TRUE
+				
+			else
+				// Give the correct objective text
+				if BuiltHouses == 1
+					run	script TUT_AddObjective(TUT_OBJECTIVE_BUILD_HOUSES, 2)
+				elsif BuiltHouses == 2
+					run	script TUT_AddObjective(TUT_OBJECTIVE_BUILD_HOUSES, 1)
+				end if
+			
+				// Check to make sure we have built at least 1 house and we have at least 1 foundation laid
+				// before giving the message about GodBuilding(tm)
+				if BuiltHouses >= 1 and PlacedHouses >= 1 and SaidAboutGodBuild == TUT_FALSE
+					if PlacedHouses > BuiltHouses					// Use this if you don't have the god build hand demo
+	//				if PlacedHouses == BuiltHouses					// Use this if you do have the god build hand demo
+						// Mention about god building
+						if TUT_GodBuilt == TUT_FALSE
+							run script TUT_Advisors(TUT_ADVISOR_BUILD_GODBUILD_NOT_KNOWN_ABOUT, TUT_TRUE)
+						else
+							if TUT_ExplainedGodBuild == TUT_FALSE
+								run script TUT_Advisors(TUT_ADVISOR_BUILD_GODBUILD_KNOWN_ABOUT, TUT_TRUE)
+							end if
+						end if
+						
+						// Added when the god build hand demo was added - remove if the god build hand demo goes
+						run script TUT_Advisors(TUT_ADVISOR_BUILD_MORE_HOUSES_AFTER_GOD_BUILD, TUT_TRUE)
+						
+						SaidAboutGodBuild = TUT_TRUE
+					end if
+				end if
+
+				if RemindedPlayerWhatToDo == TUT_FALSE
+					// Get the reminder straight away
+					set ReminderTimer time to 0 seconds
+					RemindedPlayerWhatToDo = TUT_TRUE
+				end if
+			end if
+			
+			// Remind the player what they need to do
+			if get ReminderTimer time remaining <= 0 and TaskDone == TUT_FALSE
+				HousesBeingBuilt = 0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 0.0
+			
+				if BuiltHouses < TUT_NUM_HOUSES_TO_BUILD
+					if BuiltHouses >= HousesBeingBuilt
+						run background script TUT_Reminder(TUT_REMINDER_NEED_TO_BUILD_ANOTHER_HOUSE)
+					else
+	//					run background script TUT_Reminder(TUT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD)
+					end if
+				end if
+					
+				set ReminderTimer time to Delay seconds
+			end if
+		
+		until TaskDone == TUT_TRUE
+		end loop
+		
+		// Get rid of the hand icon
+		disable hand icon draw
+		
+		run background script TUT_RemoveObjective(TUT_OBJECTIVE_BUILD_HOUSES)
+
+		// Give a well done message
+		run script TUT_Advisors(TUT_ADVISOR_DONE_BUILDING_TUT, TUT_TRUE)
+	end if
+
+end script TUT_CreateAnotherBlueprint
+*/
+
+//-----------------------------------------------------------------------------
+//	Teach the player how to create a disciple breeder
+//-----------------------------------------------------------------------------
+begin script TUT_CreateDiscipleBreeder
+
+	TaskDone				= TUT_FALSE
+	NumBreeders				= 0
+	PrevNumBreeders			= 0
+	Object					= 0
+	Type					= 0
+	ObjectUnderHand			= 0
+	Disciple				= 0
+	
+	Villager				= 0
+	OtherVillager			= 0
+	VillagerIcon			= 0
+	OtherVillagerIcon		= 0
+	VillagerSex				= 0
+	OtherVillagerSex		= 0
+	VillagerIconExists		= TUT_FALSE
+	OtherVillagerIconExists = TUT_FALSE
+	GotVillager				= TUT_FALSE
+	
+	Delay					= 30
+	DoneIntroBit			= TUT_FALSE
+	ReminderTimer			= create timer for Delay seconds
+
+start
+	if TUT_SkippedTutorials == TUT_FALSE
+		// Check to see if the task has already been done
+		NumBreeders = get number of disciples VILLAGER_DISCIPLE_BREEDER in town L3GreekTown
+		
+		// Do the checks
+		if NumBreeders < TUT_NUM_DISCIPLES_TO_CREATE
+			//run script TUT_AddObjective(TUT_OBJECTIVE_BREEDER_DISCIPLE, 3)
+			
+			run background script TUT_BreederObjective
+			
+			// Keep looping and doing the checks
+			begin loop
+				// Get the number of breeders					
+				NumBreeders = get number of disciples VILLAGER_DISCIPLE_BREEDER in town L3GreekTown
+							
+				// Do the checks here...
+				Object = get object held
+			
+				if not Object exists	
+					if NumBreeders >= TUT_NUM_DISCIPLES_TO_CREATE
+						TaskDone = TUT_TRUE
+						
+					elsif NumBreeders > PrevNumBreeders
+						if NumBreeders == 1
+							// You need to get 2 more breeders
+							//run	script TUT_AddObjective(TUT_OBJECTIVE_BREEDER_DISCIPLE, 2)
+							run background script TUT_Advisors(TUT_ADVISOR_MADE_ONE_BREEDER, TUT_FALSE)
+						elsif NumBreeders == 2
+							// You need to get 1 more breeder
+							//run	script TUT_AddObjective(TUT_OBJECTIVE_BREEDER_DISCIPLE, 1)
+							// say that you made another disciple here???
+						end if
+						
+						// Record the previous amount of farmers
+						PrevNumBreeders = NumBreeders
+						set ReminderTimer time to Delay seconds
+					end if	
+				end if		
+			
+			
+				// Do the intro / hand demo?
+				if DoneIntroBit == TUT_FALSE
+					run script TUT_Advisors(TUT_ADVISOR_CREATE_BREEDERS, TUT_TRUE)
+					set ReminderTimer time to Delay seconds
+					DoneIntroBit = TUT_TRUE
+				end if
+					
+					
+				// Do the checks here...
+				Object = get object held
+			
+				if not Object exists
+					// Get a villager to put the icon on
+					Villager = get adult at hand position radius 100 excluding disciple VILLAGER_DISCIPLE_BREEDER
+				
+					// We've got nothing in the hand so put the icon on a villager
+					if VillagerIconExists == TUT_FALSE					
+						//VillagerIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Villager
+						VillagerIconExists = TUT_TRUE
+					end if
+					
+					remove world icon OtherVillagerIcon
+					OtherVillagerIconExists = TUT_FALSE	
+						
+						
+					// Display the RMB for pickup if near a villager
+					ObjectUnderHand = get object hand is over
+					if variable get ObjectUnderHand type == variable VILLAGER and variable get ObjectUnderHand type != variable CHILD and get player 0 influence at hand position > 0
+						enable hand icon draw
+						set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+					else
+						disable hand icon draw
+					end if
+										
+				else
+					Type = variable get Object type
+
+					if Type == variable CHILD
+						run background script TUT_Advisors(TUT_ADVISOR_CHILD, TUT_FALSE)
+						set ReminderTimer time to Delay seconds
+						wait until not Object is HELD
+						
+					elsif Type == variable VILLAGER
+						// Get the sex of the villager in the hand
+						if Object is male
+							VillagerSex = TUT_MALE
+						else
+							VillagerSex = TUT_FEMALE
+						end if
+						
+
+						// Get a villager of the opposite sex to put the icon on
+						GotVillager = TUT_FALSE
+						while GotVillager == TUT_FALSE
+							OtherVillager = get adult at hand position radius 100 excluding disciple VILLAGER_DISCIPLE_NONE
+							
+							if OtherVillager is male
+								OtherVillagerSex = TUT_MALE
+							else
+								OtherVillagerSex = TUT_FEMALE
+							end if
+							
+							if OtherVillager exists
+								if OtherVillagerSex != VillagerSex
+									GotVillager = TUT_TRUE
+								end if
+							end if
+						end while
+						
+											
+						// We've got a valid villager in hand so put a drop by icon on a valid nearby villager
+						if OtherVillagerIconExists == TUT_FALSE
+							//OtherVillagerIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on OtherVillager
+							OtherVillagerIconExists = TUT_TRUE
+						end if
+					
+						remove world icon VillagerIcon
+						VillagerIconExists = TUT_FALSE	
+					
+					
+						// We need to make sure the object in hand is not a disciple breeder as we need to drop them
+						// before they become a breeder
+						begin loop
+							// Should we draw the mouse button to drop the villager?
+							Disciple = variable get Object disciple type
+							if Disciple == variable VILLAGER_DISCIPLE_BREEDER and get player 0 influence at hand position > 0
+								enable hand icon draw
+								set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+							else						
+								disable hand icon draw
+							end if
+						
+						until not Object is HELD
+						end loop
+					end if
+				end if
+				
+				// Remind the player what they need to do
+				if get ReminderTimer time remaining <= 0
+					run background script TUT_Reminder(TUT_REMINDER_CREATE_BREEDER)
+					set ReminderTimer time to Delay seconds
+				end if
+				
+			until TaskDone == TUT_TRUE
+			until TUT_SkippedTutorials == TUT_TRUE
+			end loop
+			
+			// Disable the hand icons
+			remove world icon VillagerIcon
+			remove world icon OtherVillagerIcon
+			disable hand icon draw
+
+			// Get the suummary
+			//run	background script TUT_AddObjective(TUT_OBJECTIVE_BREEDER_DISCIPLE, 0)
+			run script TUT_Advisors(TUT_ADVISOR_MADE_3_BREEDERS, TUT_TRUE)
+			set ReminderTimer time to Delay seconds
+			
+			run background script TUT_RemoveObjective(TUT_OBJECTIVE_BREEDER_DISCIPLE)
+
+		else
+			// We've already done the task
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES, TUT_TRUE)
+		end if
+	end if
+	wait 30 seconds
+
+end script TUT_CreateDiscipleBreeder
+
+
+//-----------------------------------------------------------------
+// Get the player to increase the population
+//-----------------------------------------------------------------
+begin script TUT_IncreasePopulation
+	
+	StartingPop			= 0
+	NumVillagers		= 0
+	PrevNumVillagers	= NumVillagers
+
+	SaidDoingGreatLine	= TUT_FALSE
+	
+start
+	
+	// Give the task
+	// We need to reach 75 people so work out the difference and show that
+	StartingPop = size of L3GreekTown
+	
+	if TUT_NUM_POP >= StartingPop
+		run script TUT_Advisors(TUT_ADVISOR_INCREASE_POP, TUT_TRUE)
+		run	script TUT_AddObjective(TUT_OBJECTIVE_POPULATION, TUT_NUM_POP - StartingPop)
+	end if
+	
+	begin loop
+		// Handle the updates for the population objective
+		NumVillagers = size of L3GreekTown
+		
+		if NumVillagers > PrevNumVillagers
+			run	script TUT_AddObjective(TUT_OBJECTIVE_POPULATION, TUT_NUM_POP - NumVillagers)
+		end if
+		
+		PrevNumVillagers = NumVillagers
+
+		// When we're half way to reaching the target say a well done line
+		/*if SaidDoingGreatLine == TUT_FALSE and NumVillagers >= StartingPop + ((TUT_NUM_POP - StartingPop) / 2)
+			begin dialogue
+				// GA: You're doing well. Why not explore the land while our villagers work?
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_50"
+				wait until read
+			end dialogue
+			SaidDoingGreatLine = TUT_TRUE
+		end if*/
+	
+	until size of L3GreekTown >= TUT_NUM_POP
+	end loop
+	
+	// Sum up the objective and then delete them	
+	run	script TUT_AddObjective(TUT_OBJECTIVE_POPULATION, 0)
+	wait 2 seconds
+	run background script TUT_RemoveObjective(TUT_OBJECTIVE_POPULATION)
+
+end script TUT_IncreasePopulation
+
+
+//-----------------------------------------------------------------
+// Check for a field and put icons on them for the first time
+//-----------------------------------------------------------------
+begin script TUT_DetectForField
+
+	Field				= 0
+	ObjectInHand		= 0	
+	DoneIconDraw		= TUT_FALSE
+
+start
+
+	begin loop
+		ObjectInHand = get object held
+		
+		if ObjectInHand exists
+			if variable get ObjectInHand sub type == variable FIELD_OBJECT
+				// Draw the icons on the hand
+				if object in hand can be placed
+					enable hand icon draw
+					set bindable hand icon BINDABLE_ACTION_TYPE_ACTION with arrow ARROW_TYPE_LEFT_RIGHT
+
+					wait until not ObjectInHand is HELD
+					
+					Field = get FIELD_OBJECT at hand position
+					
+					if Field exists
+						DoneIconDraw = TUT_TRUE
+					else
+						disable hand icon draw
+					end if
+				end if
+			end if
+		end if
+		
+	until DoneIconDraw == TUT_TRUE
+	end loop
+	
+	disable hand icon draw
+
+end script TUT_DetectForField
+
+
+//-----------------------------------------------------------------
+// Give the dialogue from the advisors about the tasks at hand
+//-----------------------------------------------------------------
+begin script TUT_Advisors(ID, ForceSayLine)
+
+	LEFT							= 0.6
+	TOP								= 0.1
+	WIDTH							= 0.3
+	HEIGHT							= 0.225
+
+	Building[TUT_NUM_HOUSES_TO_BUILD]
+	BuildingToUse					= 0
+	NearestTree						= 0
+	WoodPile						= 0
+	FoodInPit						= 0
+	Ctr								= 0
+	Field							= 0
+	ShITT							= 0
+	MyHelperIcon					= 0
+	
+	Food							= 0
+	Wood							= 0
+	NumFarmers						= 0
+	BuiltHouses						= 0
+
+	ThrownComment					= 0
+
+	ExampleVideo					= 0
+	Villager						= 0
+	VillagerPos						= 0
+	SittHouse						= 0
+	GotHouse						= TUT_FALSE
+	PlayPickUpGrainVideo			= TUT_FALSE
+	PlayCreateFarmerDiscipleVideo	= TUT_FALSE
+	PlayDropTreeInStoreVideo		= TUT_FALSE
+	PlayCreateBreederDiscipleVideo	= TUT_FALSE
+	PlaceBuildingVideo				= TUT_FALSE
+	PlayGodBuildVideo				= TUT_FALSE
+	
+start
+	if ForceSayLine != TUT_FALSE
+		wait until dialogue ready
+	end if
+
+	if dialogue ready
+		begin dialogue
+			if ID == TUT_ADVISOR_HAND_OVER_FIELD
+				eject good spirit
+				// GA: Now right click and hold to pick up the grain.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_HANDOVERFIELD_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_PICKED_UP_FOOD
+				eject good spirit
+				// GA: Now put the food in the Storehouse.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_PICKEDUPFOOD_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_FOOD_IN_STORE
+				eject good spirit
+				// GA: Ah, we now have enough food.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_GOTENOUGHFOOD_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_NEED_TO_EXPAND		
+				eject evil spirit
+			// EA: Those farmers can handle that small field with  no problem, Boss.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+				NearestTree = get TREE at {TUT_StoragePit} radius 50
+				
+				// EA: We need wood if our villagers are to build and our town expand.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_GOTENOUGHFOOD_20"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				enable NearestTree pulse speed 0.5
+				ShITT = create tooltip on NearestTree with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_940"
+				//MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on NearestTree
+				
+				ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+				set ExampleVideo clipping window left 0 top 0 width 1 height 1
+				play video "Land3 Drop Tree in Storage Pit"		
+
+				make evil spirit point at {NearestTree}
+				// EA: Grab and pull a tree out of the ground and throw it into the Storehouse.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_GOTENOUGHFOOD_30"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				wait until not video is playing
+				delete ShITT
+				//remove world icon MyHelperIcon
+				
+				// Only play the hand demo if we haven't got any wood
+				Wood = get resource RESOURCE_TYPE_WOOD in TUT_StoragePit
+				if Wood <= 0
+					PlayDropTreeInStoreVideo = TUT_TRUE
+				end if
+				disable NearestTree pulse with fadetime 1
+			elsif ID == TUT_ADVISOR_NOT_ENOUGH
+				eject evil spirit
+				// EA: There ain't enough food in there, Boss!
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_NOTENOUGHFOOD_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_TREE_IN_HAND
+				eject evil spirit
+				// EA: Now put it in the Storehouse.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_TREEINHAND_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_NOT_ENOUGH_WOOD
+				eject evil spirit
+				// EA: There isn’t enough wood. Drop in another tree.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_NOTENOUGHWOOD_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_ALREADY_DONE_FOOD_TASK
+				eject good spirit
+				//say "Excellent work leader you've already given the villagers enough food for now."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_691"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_ALREADY_DONE_WOOD_TASK
+				eject good spirit
+				//say "The storage yard is well stocked with wood leader. Well done."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_681"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+			
+			elsif ID == TUT_ADVISOR_MISSED_STORAGEPIT_FOOD
+				eject good spirit
+				//say "Drop the food in the storage pit leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_937"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MISSED_STORAGEPIT_WOOD
+				eject good spirit
+				//say "Drop the wood in the storage pit leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_682"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_BUILDING_IN_HAND
+				//eject good spirit
+				// GA: Moving the house near a road will make the door stick to it like a magnet.
+				//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGINHAND_10"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+				eject evil spirit
+				// EA: Click the Action button again to place it down.
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGINHAND_20"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID ==	TUT_ADVISOR_VILLAGERS_BUILDING
+				eject evil spirit
+				// EA: Cool your minions will now build the building for you
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGHOUSE_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_VILLAGERS_BUILDING_ADD_WOOD
+				eject evil spirit
+				
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.99
+				NearestTree = get TREE at {BuildingToUse} radius 100
+				make evil spirit point at {NearestTree}
+							
+				ShITT = create tooltip on BuildingToUse with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_943"
+				enable BuildingToUse pulse speed 0.5
+				
+				//MyHelperIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {BuildingToUse} + {0,3,0} time -1  
+				//set MyHelperIcon colour red 192 green 128 blue 0
+				//set MyHelperIcon alpha 0.7
+				// EA: We can speed it up though by picking up a tree and dropping it on the building
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGHOUSE_20"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				delete ShITT
+				
+				disable BuildingToUse pulse with fadetime 0
+				//stop visual effect MyHelperIcon
+				//delete MyHelperIcon
+				release BuildingToUse
+			elsif ID == TUT_ADVISOR_DROP_THE_TREE
+				eject evil spirit
+				
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.9
+				enable BuildingToUse pulse speed 0.5
+				//MyHelperIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {BuildingToUse} + {0,3,0} time -1  			
+				//set MyHelperIcon colour red 192 green 128 blue 0
+				//set MyHelperIcon alpha 0.7
+				make evil spirit point at {BuildingToUse}
+				
+				// EA: Now drop the tree over the house foundation.
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_PICKEDUPTREE_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				disable BuildingToUse pulse with fadetime 0
+				//stop visual effect MyHelperIcon
+				//delete MyHelperIcon
+				
+			elsif ID == TUT_ADVISOR_TREE_DROPPED
+				eject good spirit
+				
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.9
+				
+				WoodPile = get building resource RESOURCE_TYPE_WOOD in BuildingToUse
+				if WoodPile exists
+					ShITT = create tooltip on WoodPile with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_944"
+					make good spirit point at {WoodPile}
+				end if
+				
+				// GA: Look at the pile of wood. Your villagers will use that to build the house with
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_DROPPEDTREE_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				disable player 0 objective TRIBUTE_OBJECTIVE_LAND_1
+				delete ShITT			
+			
+			elsif ID == TUT_ADVISOR_DROP_THE_WOOD
+				eject good spirit
+				
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.9
+				
+				enable BuildingToUse pulse speed 0.5
+				//MyHelperIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {BuildingToUse} + {0,3,0} time -1  			
+				//set MyHelperIcon colour red 192 green 128 blue 0
+				//set MyHelperIcon alpha 0.7
+				make good spirit point at {BuildingToUse}
+				
+				//say "Now drop the wood over the house foundation."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_683"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				disable BuildingToUse pulse with fadetime 0
+				//stop visual effect MyHelperIcon			
+				//delete MyHelperIcon
+				stop good spirit pointing
+				
+			elsif ID == TUT_ADVISOR_BUILD_MORE_HOUSES
+			
+				// Do the celebrations here for completing the first house
+				run background script TUT_CelebrateFirstHouseBeingBuilt
+			
+				eject good spirit
+				eject evil spirit
+				// GA The house is finished, look how happy the villagers are
+				make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_BUILDTUTORIAL_HOUSEFINISHED_E_10
+				make good spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_BUILDTUTORIAL_HOUSEFINISHED_G_10
+				wait until read
+				//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_10"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+				// EA: Yea happy people whatever
+				//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_20"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+				// EA: If we're to rebuild the Greek race then we need mroe houses. Two more will satisfy this lot
+				//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_30"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_BUILD_MORE_HOUSES_AFTER_GOD_BUILD					// NEW: Added this when god build hand demo added
+				eject good spirit
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown min built 1.0
+				make good spirit point at {BuildingToUse}
+				
+				enable BuildingToUse pulse speed 0.5
+				//MyHelperIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {BuildingToUse} + {0,3,0} time -1  			
+				//set MyHelperIcon colour red 192 green 128 blue 0
+				//set MyHelperIcon alpha 0.7
+				
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+				
+				// Give the relevant lines depending on whether the house that is god built in the hand demo
+				// is the last one needed or not
+				if BuiltHouses >= TUT_NUM_HOUSES_TO_BUILD
+					// GA: And that's how to god build leader.
+					say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_70"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+					
+					// GA: You can also drag a building blueprint off an existing house.
+					say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_80"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+				else
+					// GA: And that's how to god build leader. Now for another building.
+					say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_60"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+				end if
+				
+				// GA: Move your hand over the existing house, hold down your right mosue button and drag to get the blueprint
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_40"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				//stop visual effect MyHelperIcon			
+				//delete MyHelperIcon
+				
+				disable BuildingToUse pulse with fadetime 0
+				stop good spirit pointing
+				eject evil spirit
+
+				// EA: Placing houses close together will save space and over time create a wicked slum
+				//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_50"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+			
+			elsif ID == TUT_ADVISOR_BUILD_BY_DUPLICATING_HOUSES
+				eject good spirit
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown min built 1.0
+				make good spirit point at {BuildingToUse}
+				enable BuildingToUse pulse speed 0.5
+				//MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on BuildingToUse with arrow ARROW_TYPE_LEFT				
+
+				// GA: You can also drag a building blueprint off an existing house.
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_80"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+				// GA: Move your hand over the existing house, hold down your right mosue button and drag to get the blueprint
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_40"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				disable BuildingToUse pulse with fadetime 0
+				//remove world icon MyHelperIcon			
+				stop good spirit pointing
+				eject evil spirit
+
+				// EA: Placing houses close together will save space and over time create a wicked slum
+				//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_50"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+				send evil spirit home
+				
+			//GA: "If you want to cancel an action and empty your Hand, simply shake it briskly left and right."
+				say "BW2T_SCRIPT_03FINAL_PICKUP1"
+				// Play a video of GodBuilding
+				//ExampleVideo = create video window with left LEFT top TOP width WIDTH height HEIGHT with border
+				//set ExampleVideo clipping window left 0 top 0 width 1 height 1
+				//play video "cancelling"	
+					
+				wait until read
+				//wait until not video is playing
+				
+			elsif ID == TUT_ADVISOR_BUILD_MORE_HOUSES_2
+				eject good spirit
+				//say "Hmmm! That house has been destroyed."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_684"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				//say "Try again leader and build 3 houses for our poeple."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_685"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				//say "Once you have a house built you can drag a new blueprint off the house as you can with the town centre."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_686"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_ALREADY_BUILT_ALL_HOUSES
+				eject good spirit
+				//say "Wow you've already built enough houses leader. Amazing!"
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_688"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_ALREADY_BUILT_A_HOUSE
+				eject good spirit
+				//say "Well done leader you've already built a house. Maybe you could build a couple more to house all our villagers."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_689"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_BUILD_GODBUILD_NOT_KNOWN_ABOUT
+				eject good spirit
+				//say "You can also help to build buildings yourself leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_690"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+	/*			
+				// Point out the tree and the building
+				Ctr = 0
+				while Ctr < TUT_NUM_HOUSES_TO_BUILD and GotHouse == TUT_FALSE
+					Building[Ctr] = get HOUSE at {L3GreekTown} radius 100 excluding scripted
+					if Building[Ctr] exists
+						if BUILT of Building[Ctr] < 1.0
+							BuildingToUse = Building[Ctr]
+							GotHouse = TUT_TRUE
+						end if
+					end if
+					Ctr++
+				end while
+	*/			
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.9			
+				NearestTree = get TREE at {BuildingToUse} radius 50
+				//MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on NearestTree
+				make good spirit fly across 0.3 down 0.5
+				
+				// Play a video of GodBuilding
+				ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+				set ExampleVideo clipping window left 0 top 0 width 1 height 1
+				play video "god build"		
+				
+			//say "This is Godbuilding. Yes, you do it by picking up resources the building needs."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_701"
+				
+				enable NearestTree pulse speed 0.5
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+			//say "Then hold your hand over the building and press and hold the right mouse button."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_704"
+				disable NearestTree pulse with fadetime 0
+				
+				enable BuildingToUse pulse speed 0.5
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				enable interface action MANACOST_BALANCE_TYPE_GODBUILD
+				set town L3GreekTown desire for TOWN_DESIRE_FOR_HOMES to -1
+				set town L3GreekTown desire for TOWN_DESIRE_TO_BUILD to -1
+				set town L3GreekTown desire for TOWN_DESIRE_TO_BREED to -1
+				set town L3GreekTown desire for TOWN_DESIRE_FOR_SPARE_TIME to -1
+				
+				//say "This is very useful but you do lose some of the wood in the process."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_706"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				//remove world icon MyHelperIcon
+				disable BuildingToUse pulse with fadetime 0
+				
+				wait until not video is playing
+				PlayGodBuildVideo = TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_BUILD_GODBUILD_KNOWN_ABOUT
+				eject good spirit
+				//say "It seems you've discovered the GodBuilding(tm) mode leader. Here's a quick recap."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_702"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				//say "Godbuilding(tm) lets you assist in the construction of any building."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_703"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+	/*			
+				// Point out the tree and the building
+				Ctr = 0
+				while Ctr < TUT_NUM_HOUSES_TO_BUILD and GotHouse == TUT_FALSE
+					Building[Ctr] = get HOUSE at {L3GreekTown} radius 100 excluding scripted
+					if Building[Ctr] exists
+						if BUILT of Building[Ctr] < 1.0
+							BuildingToUse = Building[Ctr]
+							GotHouse = TUT_TRUE
+						end if
+					end if
+					Ctr++				
+				end while
+	*/			
+				BuildingToUse = get building ABODE_NUMBER_C in L3GreekTown maximum built 0.9			
+				NearestTree = get TREE at {BuildingToUse} radius 50
+				make good spirit point at {NearestTree}
+				MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on NearestTree
+				
+				//say "You do it by picking up a tree or some wood, then while holding your hand over the building"
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_707"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				remove world icon MyHelperIcon
+				make good spirit point at {BuildingToUse}
+				MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on BuildingToUse
+				
+				//say "press and hold the right mouse button."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_708"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				remove world icon MyHelperIcon
+				
+				//say "This is very useful but you do not get the full value of the wood going into the house."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_709"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				PlayGodBuildVideo = TUT_TRUE			
+				
+			elsif ID == TUT_ADVISOR_VILLAGER_IN_HAND
+				eject good spirit
+				// GA: Now place the villager down over the field.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_VILLAGERINHAND_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MADE_ONE_FARMER
+				eject evil spirit
+				// EA: Yeah. Looks like  your new disciple has started to work the field.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADEONEFARMER_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				if get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown == 1
+					eject good spirit
+					// GA: Another two farmers should satisfy the village's food requirements for now.
+					say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADEONEFARMER_20"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+				end if
+							
+			elsif ID == TUT_ADVISOR_NOT_A_DISCIPLE
+				eject good spirit
+				// GA: No, that's not a farmer disciple.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_NOTAFARMER_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MADE_3_FARMERS
+				eject evil spirit
+				// EA: Those farmers can handle that small field with  no problem, Boss.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+			elsif ID == TUT_ADVISOR_CREATE_BREEDERS
+				eject evil spirit
+				// EA: What we need now is more people.
+				//say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_20"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+				eject good spirit
+				//GA: "We must get the people to multiply.  Oh dear.  It's embarrassing talking about this..."
+				make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_TUT_E_320_330
+				//EA: "No it ain't.  He's talking about breeeding, Boss! Ya hear me, Goody?"
+				make good spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_TUT_G_320_330
+				wait until read
+				
+			// GA: We need three breeder disciples to satisfy the village's needs.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_50"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				// GA: "Creating breeder disciples will help to expand your population quickly."
+				//say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_30"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+				// GA: Simply pick up a villager then place them down to another village of the opposite sex
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_40"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				PlayCreateBreederDiscipleVideo = TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MADE_ONE_BREEDER
+				if get number of disciples VILLAGER_DISCIPLE_BREEDER in town L3GreekTown == 1
+					eject good spirit
+					// GA: Excellent. We need two more to satisfy the villages needs.
+					say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADEONEBREEDER_10"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+				end if
+			elsif ID == TUT_ADVISOR_MADE_3_BREEDERS
+				eject good spirit
+				// GA: Marvellous. You've now created enough breeders.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEBREEDERS_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+			
+				//say "Villagers will try and keep the town running without your management leader"
+				//say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_710"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				//say "They work on the most needy desires. A disciple however will stick to their allotted task and work longer hours."
+				//say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_720"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+										
+				//say "Any disciple will carry on doing that one job forever unless you give them another job."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_923"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+					
+			elsif ID == TUT_ADVISOR_CHILD
+				eject evil spirit
+				// EA: Children aren't old enough to work! It's rather a shame.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_CHILD_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES
+				eject good spirit
+				//say "Wow it looks like you've got the hang of creating disciples leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_913"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_ALREADY_CREATED_A_DISCIPLE
+				eject good spirit
+				//say "Excellent leader you've created a number of disciples. Why not create some more."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_913"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_CREATE_DISCIPLE_FORESTER
+				eject good spirit
+				//say "We could really do with some disciple foresters to collect wood for us leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_912"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				NearestTree = get TREE at {TUT_StoragePit} radius 60	
+				enable NearestTree pulse speed 0.5		
+				make good spirit point at {NearestTree}
+				
+				//say "Pick up a villager and drop them next to a tree to make them a disciple forester."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_935"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				//say "Make a total of 3 foresters leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_911"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				disable NearestTree pulse with fadetime 0
+			elsif ID == TUT_ADVISOR_VILLAGER_IN_HAND_CREATE_FORESTER
+				eject evil spirit
+			//EA: "Now place the villager next to a tree."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_910"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_NOT_A_FORESTER_DISCIPLE
+				eject evil spirit
+				//say "No, that's not a forester disciple."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_909"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MADE_3_FORESTERS
+				eject evil spirit
+				//say "Cool! We've got some nifty foresting going on Boss."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_908"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MADE_ONE_FORESTER
+	//			eject evil spirit
+	//			//say "Yeah. Looks like  your new disciple has started to work on those trees."
+	//			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_907"
+	//			wait until read or TUT_SkippedTutorials == TUT_TRUE
+				if get number of disciples VILLAGER_DISCIPLE_FORESTER in town L3GreekTown == 1
+					eject good spirit
+				//GA: "Make two Disciple Foresters."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_906"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+				end if
+			elsif ID == TUT_ADVISOR_CREATE_DISCIPLE_BUILDERS
+				eject good spirit
+				//say "We can also create some disciple builders to help with our city building."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_905"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				//say "Just drop a villager by a house that's under construction to create one."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_904"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			//GA: "Make three disciple builders."
+				say "BW2T_SCRIPT_03FINAL_PDMRON_PICKUP118"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_VILLAGER_IN_HAND_CREATE_BUILDER
+				eject good spirit
+				//say "Now drop the person by a planned building."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_902"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_NOT_A_BUILDER_DISCIPLE
+				eject good spirit
+				//say "No, that's not a builder disciple."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_901"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MADE_3_BUILDERS
+				eject good spirit
+				//say "Excellent! We've got a nice little troupe of builders."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_900"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_MADE_ONE_BUILDER
+	//			eject evil spirit
+	//			//say "Yeah. Looks like  your new disciple has started to work on that building."
+	//			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_899"
+	//			wait until read or TUT_SkippedTutorials == TUT_TRUE
+				if get number of disciples VILLAGER_DISCIPLE_BUILDER in town L3GreekTown == 1
+					eject good spirit
+				//GA: "Make two disciple builders."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_903"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+				end if
+			elsif ID == TUT_ADVISOR_DONE_BUILDING_TUT
+				eject good spirit
+				//say "Excellent leader you've built enough houses for now."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_898"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_INCREASE_POP
+				eject good spirit
+			//GA: "Our Town is now in a good condition."
+				//say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_897"
+				//wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				//say "What we need to do is increase our population."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_896"
+				wait until read
+				
+				//say "Now we've got some breeders it should be easy to get 75 villagers."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_895"
+				wait until read
+				
+				//say "Just make sure they are well fed and housed leader."
+				//say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_894"
+				//wait until read
+				
+			elsif ID == TUT_ADVISOR_DONE_POP_INCREASE
+			//GA: "Excellent work. We've got a nice big Town now."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_893"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				//say "You've worked very hard, why not do some exploration of this wonderful land."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_892"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+			elsif ID == TUT_ADVISOR_FEED_PEEPS_INTRO
+				if get resource RESOURCE_TYPE_FOOD in TUT_StoragePit < TUT_FOOD_AMOUNT
+					eject good spirit
+					//make good spirit fly across 0.3 down 0.5
+					// GA: Your villagers are going to need food very soon leader."
+					say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_INTRO_10"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+					Field = get FIELD_OBJECT at {TUT_FieldPos} radius 100
+					ShITT = create tooltip on Field with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_938"
+					//enable Field pulse speed 0.5
+					
+					MyHelperIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {Field} + {0,3,0} time -1 
+					make good spirit point at {Field}
+					
+					// GA: Move your hand over this field then right click and hold to pick up the grain.
+					say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_INTRO_20"
+					ExampleVideo = create video window with left 0.05 top 0.55 width 0.35 height 0.3 with border
+					set ExampleVideo clipping window left 0 top 0 width 1 height 1
+					play video "Land3 Pick Up Grain"		
+
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+					
+					delete ShITT
+					stop visual effect MyHelperIcon
+					delete MyHelperIcon
+					
+					ShITT = create tooltip on TUT_StoragePit with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_939"
+					//MyHelperIcon = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {TUT_StoragePit} + {0,10,0} time -1 
+					//set MyHelperIcon colour red 192 green 128 blue 0
+					//set MyHelperIcon alpha 0.7
+					//disable Field pulse with fadetime 0
+					enable TUT_StoragePit pulse speed 0.5
+					
+					make good spirit point at {TUT_StoragePit} + {0,5,0}
+					// GA: "When you’ve got 200 food in your hand drop or throw it into the Storehouse."
+					say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_INTRO_30"
+					wait until read or TUT_SkippedTutorials == TUT_TRUE
+					wait until not video is playing
+					stop good spirit pointing
+					
+					delete ShITT
+					
+					disable TUT_StoragePit pulse with fadetime 0
+					
+					//stop visual effect MyHelperIcon
+					//delete MyHelperIcon
+				end if	
+				// Only play the hand demo if we haven't got any food
+				Food = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+				if Food <= 0
+					PlayPickUpGrainVideo = TUT_TRUE
+				end if
+				
+			elsif ID == TUT_ADVISOR_SHOW_ABOUT_FARMERS
+				eject evil spirit
+				// EA: We need to get our people working if we want to rebuild., Boss.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_10"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+				eject good spirit
+				// GA: Villagers can be turned into Disciples who will work at the job you assign them.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_20"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+//				// EA: We need to get a good supply of food going or we won't be able to create enemy-crushing armies.
+//				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_30"
+//				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+//				// GA: Farmer Disciples plant crops in fields and nurture them until they are ready to harvest.
+//				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_40"
+//				wait until read or TUT_SkippedTutorials == TUT_TRUE
+
+//				// GA: When the crops are ready  they'll take them to the Storehouse.
+//				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_50"
+//				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				ExampleVideo = create video window with left 0.55 top 0.10 width 0.4 height 0.35 with border
+				set ExampleVideo clipping window left 0 top 0 width 1 height 1
+				play video "Land3 Make Disciple Farmer"	
+					
+				// GA: Pick up a villager, then put them down on a field.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_60"
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				wait until not video is playing
+				// Only play the hand demo if we haven't got a disciple farmer
+				NumFarmers = get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown
+				if NumFarmers == 0
+					PlayCreateFarmerDiscipleVideo = TUT_TRUE
+				end if
+				
+			elsif ID == TUT_ADVISOR_TELL_ABOUT_TOWN_CENTRE
+				eject good spirit
+				//SittHouse = get HOUSE at {TUT_GreekTC} radius 20 excluding scripted
+				ShITT = create tooltip on TUT_GreekTC with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_941"
+				MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on TUT_GreekTC with arrow ARROW_TYPE_LEFT				
+
+			// GA: Your people desire houses. Move your hand over the rotating building then right click and hold to drag it off
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_50"
+				wait 3 seconds
+				make good spirit point at {TUT_GreekTC}
+				wait 3 seconds
+				stop good spirit pointing
+				make good spirit fly across 0.8 down 0.5
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				
+				eject evil spirit
+
+				// EA: We'll need the right buildings and food if we're going to support a powerful army.
+				say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_60"
+
+				wait until read or TUT_SkippedTutorials == TUT_TRUE
+				delete ShITT
+				remove world icon MyHelperIcon
+				
+				// Only play the hand demo if we haven't got any houses placed
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 0.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 0.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 0.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 0.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 0.0
+				//if BuiltHouses == 0
+				//	PlaceBuildingVideo = TUT_TRUE
+				//end if
+			
+			elsif ID == TUT_OUTSIDE_INFLUENCE
+				eject good spirit
+				//GA: "No. That's not right!" 
+					say "BW2T_HELP_TEXT_GUIDANCE_RANDOM_ADVISOR_26"
+					wait until read
+				//GA: "The green ring you see is the extent of your influence."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_NEW_INTRO_50"
+					wait until read 
+					
+			elsif ID == TUT_ADVISOR_THROWN_A_VILLAGER
+				if get TUT_ThrownTimer time remaining == 0
+					set TUT_ThrownTimer time to 10 seconds
+					ThrownComment = number from 0 to 7
+					if ThrownComment == 0
+						eject good spirit
+						//GA: "That was disgraceful."
+							say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_20"
+							wait until read
+					elsif ThrownComment == 1
+						eject good spirit
+						//GA: "Stop it!"
+							say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_14"
+							wait until read
+					elsif ThrownComment == 3
+						eject good spirit
+						//GA: "Steady on!"
+							say "BW2T_HELP_TEXT_GUIDANCE_OPPOSITE_GA_04"
+							wait until read
+					elsif ThrownComment == 4
+						eject good spirit
+						//GA: "You're getting bad habits!"
+							say "BW2T_HELP_TEXT_GUIDANCE_OPPOSITE_GA_12"
+							wait until read
+					elsif ThrownComment == 5
+						eject evil spirit
+						//EA: "It's gotta hurt when they hit the dirt."
+							say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_01"
+							wait until read
+					elsif ThrownComment == 6
+						eject evil spirit
+						//EA: "No pain, no gain."
+							say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_18"
+							wait until read
+					elsif ThrownComment == 7
+						eject evil spirit
+						//EA: "That is sweet!"
+							say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_16"
+							wait until read
+					end if
+				end if
+			end if
+
+			send good spirit home
+			send evil spirit home
+		end dialogue
+	end if	
+	
+	
+	// Should we play any videos/hand demos?
+	if PlayPickUpGrainVideo == TUT_TRUE and TUT_SkippedTutorials == TUT_FALSE
+		// Play the video
+
+//		TUT_DoingHandDemo = TUT_TRUE
+//		begin cinema
+//			start hand demo "PutFoodInPit"
+//			wait until hand demo played
+//		end cinema
+//		TUT_DoingHandDemo = TUT_FALSE
+	
+	elsif PlayCreateFarmerDiscipleVideo == TUT_TRUE and TUT_SkippedTutorials == TUT_FALSE
+		// Play the video
+		
+//		VillagerPos = marker at {1083.288, 363.600, 1633.657}
+//		Villager = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {VillagerPos}
+//		set Villager focus to camera position
+//		attach Villager to L3GreekTown
+//		release Villager
+//		MyHelperIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Villager
+
+//		TUT_DoingHandDemo = TUT_TRUE		
+//		begin cinema
+//			start hand demo "CreateDisciple"
+//			wait until hand demo played
+//		end cinema
+//		TUT_DoingHandDemo = TUT_FALSE
+//		
+//		remove world icon MyHelperIcon
+
+	
+	elsif PlayDropTreeInStoreVideo == TUT_TRUE and TUT_SkippedTutorials == TUT_FALSE
+		// Play the video
+		
+//		TUT_DoingHandDemo = TUT_TRUE
+//		begin cinema
+//			start hand demo "PutTreeInPit"
+//			wait until hand demo played
+//		end cinema
+//		TUT_DoingHandDemo = TUT_FALSE
+		
+//	elsif PlayCreateBreederDiscipleVideo == TUT_TRUE and TUT_SkippedTutorials == TUT_FALSE
+//		// Play the video
+//		ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+//		set ExampleVideo clipping window left 0 top 0 width 1 height 1
+//		play video "Land3 Breeder"		
+//		wait until not video is playing
+
+//	elsif PlaceBuildingVideo == TUT_TRUE and TUT_SkippedTutorials == TUT_FALSE
+//		TUT_DoingHandDemo = TUT_TRUE
+//		begin cinema
+//			start hand demo "PullBuildingOffTownCentre"
+//			wait until hand demo played			
+//		end cinema
+//		TUT_DoingHandDemo = TUT_FALSE
+		
+//	elsif PlayGodBuildVideo == TUT_TRUE and TUT_SkippedTutorials == TUT_FALSE
+//		TUT_DoingHandDemo = TUT_TRUE
+//		begin cinema
+//			start hand demo "GodBuild"
+//			wait until hand demo played			
+//		end cinema
+//		TUT_DoingHandDemo = TUT_FALSE
+	end if
+
+end script TUT_Advisors
+
+//-----------------------------------------------------------------
+// Give the dialogue reminders from the advisors about the tasks at hand
+//-----------------------------------------------------------------
+begin interruptible script TUT_Reminder(ID)
+start
+	// Only remind the player if we haven't waited for too long
+	if dialogue ready
+		begin dialogue
+			eject good spirit
+			
+			if ID == TUT_REMINDER_NEED_FOOD
+				//say "You need to put $d food in the storage pit leader." with number TUT_FOOD_AMOUNT
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_890"
+			elsif ID == TUT_REMINDER_NEED_WOOD
+				//say "You need to put trees into the storage pit leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_889"
+			elsif ID == TUT_REMINDER_FOOD_RUNNING_LOW
+				//say "Leader the food in the Storage Yard is getting low, put some more in."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_888"
+			elsif ID == TUT_REMINDER_VILLAGER_DIED
+				//say "Leader! A villager has died through starvation. Put some food in the Storage Yard."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_887"
+			elsif ID == TUT_REMINDER_PULL_BUILDING_OFF_CENTRE
+				//say "Pull a building off the town centre and right click to place it."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_886"
+				wait until read
+				eject evil spirit
+				//EA: "Hold the Action button on it and pull away to grab it!"
+				say "BW2T_SCRIPT_03FINAL_TOWN_CENTRE_50"
+				wait until read
+			elsif ID == TUT_REMINDER_DROP_TREE_ON_FOUNDATION
+				//say "Drop a tree onto the building foundation."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_885"
+			elsif ID == TUT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD
+				//say "Your villagers are building away."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_884"
+			elsif ID == TUT_REMINDER_NEED_TO_BUILD_ANOTHER_HOUSE
+				//say "Keep going."
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_103"
+			elsif ID == TUT_REMINDER_DONT_SHAKE_OUT_OF_HAND
+				//say "Ooopps. Looks liked you shaked the building out of your hand. Try again."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_882"
+			elsif ID == TUT_REMINDER_CREATE_FARMER
+				//say "You need to create a disciple farmer leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_881"
+			elsif ID == TUT_REMINDER_CREATE_FORESTER
+				//say "You need to create a disciple forester leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_880"
+			elsif ID == TUT_REMINDER_CREATE_BREEDER
+				//say "You need to create a disciple breeder leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_879"
+			elsif ID == TUT_REMINDER_DROP_NEXT_TO_FIELD				
+				//say "You need to drop the villager near a field to make them a disciple farmer leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_878"
+			elsif ID == TUT_REMINDER_DROP_NEXT_TO_TREE
+				//say "You need to drop the villager next to a tree to make them a disciple forester leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_877"
+			elsif ID == TUT_REMINDER_DROP_NEXT_TO_BUILDING
+				//say "You need to drop the person by a planned building to create a disciple builder."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_876"
+			elsif ID == TUT_REMINDER_CREATE_BUILDER
+				//say "You need to create a disciple builder leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_875"
+			elsif ID == TUT_REMINDER_POP_INCREASING
+				//say "Your population is increasing nicely leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_874"
+			elsif ID == TUT_REMINDER_POP_DECREASING
+				//say "Oh dear! Your population is decreasing leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_873"
+			elsif ID == TUT_REMINDER_POP_SAME
+				//say "Hmmm, your population hasn't increased for a while leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_872"
+			elsif ID == TUT_REMINDER_PULL_BUILDING_OFF_CENTRE_OR_HOUSE
+				//say "Pull a building off the town centre or another house and right click to place it."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_871"
+			end if
+					
+			wait until read or TUT_SkippedTutorials == TUT_TRUE
+			send good spirit home
+			send evil spirit home
+		end dialogue
+	end if
+
+end script TUT_Reminder
+
+
+//-----------------------------------------------------------------
+// Set the objective for the tutorials
+//-----------------------------------------------------------------
+begin script TUT_AddObjective(Objective, TextAmount)
+start
+
+	// Add the relevant objective to the list
+	if Objective == TUT_OBJECTIVE_PRIMARY
+		// Establish a town.	
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_90"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 amount 0 force open
+		
+	elsif Objective == TUT_OBJECTIVE_FOOD
+		// Collect 200 food.
+		if TextAmount == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_101" amount TUT_FOOD_AMOUNT		
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 value 1
+		else		
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_05" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetFoodToPrimary == TUT_FALSE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 amount 1 force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 parent objective TRIBUTE_OBJECTIVE_LAND_10
+			TUT_SetFoodToPrimary = TUT_TRUE
+		end if
+		
+	elsif Objective == TUT_OBJECTIVE_WOOD
+		// Collect 800 wood.
+		if TextAmount == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_111" amount TUT_WOOD_AMOUNT
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 value 1
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_30" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetWoodToPrimary == TUT_FALSE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 amount TUT_WOOD_AMOUNT force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 parent objective TRIBUTE_OBJECTIVE_LAND_10
+			TUT_SetWoodToPrimary = TUT_TRUE
+		end if
+
+	elsif Objective == TUT_OBJECTIVE_FARMER_DISCIPLE
+		// Create 3 disciple farmers.
+		if TextAmount == 0		
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_121" amount TUT_NUM_DISCIPLES_TO_CREATE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 value 1
+		elsif  TextAmount == 1
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_10" amount TUT_NUM_DISCIPLES_TO_CREATE
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_20" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetFarmerToPrimary == TUT_FALSE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 amount TUT_NUM_DISCIPLES_TO_CREATE force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 parent objective TRIBUTE_OBJECTIVE_LAND_10
+			TUT_SetFarmerToPrimary = TUT_TRUE
+		end if
+	
+	elsif Objective == TUT_OBJECTIVE_FORESTER_DISCIPLE
+		// Create 3 disciple foresters.
+		if TextAmount == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_131" amount TUT_NUM_DISCIPLES_TO_CREATE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 value 1
+		elsif TextAmount == 1
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_20" amount TextAmount
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_40" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetForesterToPrimary == TUT_FALSE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 amount TUT_NUM_DISCIPLES_TO_CREATE force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 parent objective TRIBUTE_OBJECTIVE_LAND_10
+			TUT_SetForesterToPrimary = TUT_TRUE
+		end if
+
+	elsif Objective == TUT_OBJECTIVE_BUILDER_DISCIPLE
+		// Create 3 disciple builders.
+		if TextAmount == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_141" amount TUT_NUM_DISCIPLES_TO_CREATE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 1
+		elsif TextAmount == 1
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_40" amount TextAmount
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_60" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetBuilderToPrimary == TUT_FALSE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 amount TUT_NUM_DISCIPLES_TO_CREATE force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 parent objective TRIBUTE_OBJECTIVE_LAND_18
+			TUT_SetBuilderToPrimary = TUT_TRUE
+		end if
+
+	elsif Objective == TUT_OBJECTIVE_BREEDER_DISCIPLE
+		// Create 3 disciple breeders.
+		if TextAmount == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_151" amount TUT_NUM_DISCIPLES_TO_CREATE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 value 1
+		elsif TextAmount == 1
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_30" amount TextAmount
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_70" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetBreederToPrimary == TUT_FALSE		
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 amount TUT_NUM_DISCIPLES_TO_CREATE force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 parent objective TRIBUTE_OBJECTIVE_LAND_10
+			TUT_SetBreederToPrimary = TUT_TRUE
+		end if
+	
+	elsif Objective == TUT_OBJECTIVE_POPULATION
+		// Increase the population to 75.
+		if TextAmount == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_171" amount TUT_NUM_POP
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 value TUT_NUM_POP
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 value 1
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_170" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetPopToPrimary == TUT_FALSE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_17 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_170" amount TextAmount parent TRIBUTE_OBJECTIVE_LAND_10 reward GLOBAL_VALUE_TRIBUTE_LAND_3_INCREASEPOPULATION force open
+			TUT_SetPopToPrimary = TUT_TRUE
+		end if
+	
+	elsif Objective == TUT_OBJECTIVE_BUILD_HOUSES
+		// Build 3 houses.
+		if TextAmount == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_161" amount TUT_NUM_HOUSES_TO_BUILD
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 value 1
+		elsif TextAmount == -1
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_161" amount TUT_NUM_HOUSES_TO_BUILD + TUT_NUM_HOUSES_TO_BUILD_2
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 value TUT_NUM_HOUSES_TO_BUILD + TUT_NUM_HOUSES_TO_BUILD_2
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_50" amount TextAmount
+		end if
+		
+		// Set this once!
+		if TUT_SetHouseToPrimary == TUT_FALSE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_18 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_50" amount TUT_NUM_HOUSES_TO_BUILD reward GLOBAL_VALUE_TRIBUTE_LAND_3_BUILDHOUSESTUTORIAL force open
+			TUT_SetHouseToPrimary = TUT_TRUE
+		end if
+	end if
+	
+	// Put the objectives window up on screen
+	enable objective window
+
+end script TUT_AddObjective
+
+
+//-----------------------------------------------------------------
+// Remove the objective from the list
+//-----------------------------------------------------------------
+begin script TUT_RemoveObjective(Objective)
+start
+
+	wait 2 seconds
+	
+	if Objective == TUT_OBJECTIVE_PRIMARY
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_10
+	elsif Objective == TUT_OBJECTIVE_FOOD
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_11
+	elsif Objective == TUT_OBJECTIVE_WOOD
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_12
+	elsif Objective == TUT_OBJECTIVE_FARMER_DISCIPLE
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_13
+	elsif Objective == TUT_OBJECTIVE_FORESTER_DISCIPLE
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_14
+	elsif Objective == TUT_OBJECTIVE_BUILDER_DISCIPLE
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	elsif Objective == TUT_OBJECTIVE_BREEDER_DISCIPLE
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_16
+	elsif Objective == TUT_OBJECTIVE_POPULATION
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_17
+	elsif Objective == TUT_OBJECTIVE_BUILD_HOUSES
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_18
+	end if
+
+end script TUT_RemoveObjective
+
+
+//-----------------------------------------------------------------
+// Check to see when we've finished the first building and then give a congrats message
+//-----------------------------------------------------------------
+begin script TUT_DetectFirstBuilding
+
+	BuiltHouses		= 0
+
+start
+	
+	begin loop
+	
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+	
+	until BuiltHouses >= 1
+	end loop
+
+	// Give the congrats here
+	run	script TUT_AddObjective(TUT_OBJECTIVE_BUILD_HOUSES, 2)
+	run script TUT_Advisors(TUT_ADVISOR_BUILD_MORE_HOUSES, TUT_TRUE)
+
+end script TUT_DetectFirstBuilding
+
+
+//-----------------------------------------------------------------
+// Look after the ill villagers
+//-----------------------------------------------------------------
+begin script TUT_HandleIllVillagers
+
+	Villagers[TUT_NUM_VILLAGERS]
+	
+	RandomPos			= 0
+	VillagerLoop		= 0
+	ExampleVideo		= 0
+	AllDead				= TUT_FALSE
+	VillagerRelease		= TUT_FALSE
+	VillagerPosition	= marker at {1086.176, 363.593, 1576.485}
+
+start
+
+	// Get the villagers that have come through the teleport from the land 3 intro script
+	force while VillagerLoop < TUT_NUM_VILLAGERS		
+		Villagers[VillagerLoop] = get VILLAGER in L3GreekTown excluding scripted//VILLAGER at {VillagerPosition} radius 100 excluding scripted
+		if Villagers[VillagerLoop] exists
+			run background script TUT_MoveVillagerAround(Villagers[VillagerLoop])
+		end if
+		VillagerLoop++
+	end while
+	
+	begin loop 			
+		if size of L3GreekTown == 0
+			set TUT_KilledVillagerTimer time to 100 seconds
+			begin dialogue 
+				eject good spirit
+				//GA: "You killed them. I can't believe it."
+					say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_03"
+					wait until read
+				send good spirit home
+				AllDead = TUT_TRUE
+			end dialogue
+		end if
+	until TUT_FedTheVillagers == TUT_TRUE or AllDead == TUT_TRUE
+	end loop
+	
+	enable game can be lost
+	TUT_VillagersReleased = TUT_TRUE
+	
+end script TUT_HandleIllVillagers
+
+
+//-----------------------------------------------------------------
+// Keep track of the amount of food in the storage pit
+//-----------------------------------------------------------------
+begin script TUT_AlertPlayerOfLowFoodOrDyingVillagers
+
+	Villager[TUT_NUM_VILLAGERS]
+
+	DELAY					= 45					// Offset against the normal reminders which are set to 30
+	SomeoneDied				= TUT_FALSE
+	FoodInPit				= 0
+	Ctr						= 0
+	Reminder				= create timer for DELAY seconds
+
+start
+	
+	// Make sure we only get the villagers once they've been released,
+	// this is done in the main loop of the ill villagers script
+	wait until TUT_VillagersReleased == TUT_TRUE
+	
+	// Get the villagers
+	Villager[Ctr] = get VILLAGER in L3GreekTown excluding scripted
+	force while Ctr < TUT_NUM_VILLAGERS
+		Villager[Ctr] = get VILLAGER in L3GreekTown excluding scripted
+		Ctr++
+	end while
+
+	// Do the checks
+	begin loop
+		FoodInPit = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+		
+		// Check for low food in the storage pit
+		if FoodInPit < 200
+			if get Reminder time remaining <= 0
+				run script TUT_Reminder(TUT_REMINDER_FOOD_RUNNING_LOW)
+			end if
+			set Reminder time to DELAY seconds
+		end if
+		
+		// Check for a villager dying
+		if SomeoneDied == TUT_FALSE
+			Ctr = 0
+			while Ctr < TUT_NUM_VILLAGERS			
+				if Villager[Ctr] not exists or HEALTH of Villager[Ctr] <= 0
+					run script TUT_Reminder(TUT_REMINDER_VILLAGER_DIED)
+					SomeoneDied = TUT_TRUE
+					set Reminder time to DELAY seconds
+				end if
+				Ctr++
+			end while
+		end if
+	
+	until TUT_LetVillagersLookAfterThemselves == TUT_TRUE
+	end loop
+
+end script TUT_AlertPlayerOfLowFoodOrDyingVillagers
+
+
+//-----------------------------------------------------------------------------
+//	Get the cheers etc for completing the first house
+//-----------------------------------------------------------------------------
+begin script TUT_CelebrateFirstHouseBeingBuilt
+start
+
+	// Give the cheers here...
+	play string sound "script37_crowd"
+	
+	// Add a slight delay before carrying on
+	wait 5 seconds
+
+end script TUT_CelebrateFirstHouseBeingBuilt
+
+
+//-----------------------------------------------------------------------------
+//	Tell the player about clicking outside of the influence
+//-----------------------------------------------------------------------------
+begin script TUT_DetectForClickingOutsideInfluence
+
+	TimesSaid		= 0
+	ObjectInHand	= 0
+	ObjectUnderHand = 0
+	SayLine			= TUT_FALSE
+	Counter			= 0
+	Threshold		= 0
+start
+
+	begin loop
+		if dialogue ready and bindable action BINDABLE_ACTION_TYPE_ACTION performed and get player 0 influence at hand position <= 0
+			
+			ObjectInHand = get object held
+			ObjectUnderHand = get object hand is over
+			MyCreature = get player 0 creature
+			
+			if variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_TREE 
+				SayLine = TUT_TRUE
+				Counter++
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_DEAD_TREE 
+				SayLine = TUT_TRUE
+				Counter++
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_ORE_ROCK 
+				SayLine = TUT_TRUE
+				Counter++
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_ROCK 
+				SayLine = TUT_TRUE
+				Counter++
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_MINE 
+				SayLine = TUT_TRUE
+				Counter++
+			end if
+
+			// Clicking on the sky
+			if hand over sky
+				SayLine = TUT_FALSE
+			end if
+			
+			// Clicking on objects
+			if variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_CREATURE and PLAYER of ObjectUnderHand == 0
+				SayLine = TUT_FALSE
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_HIGHLIGHT
+				SayLine = TUT_FALSE
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_PLATOON and PLAYER of ObjectUnderHand == 0
+				SayLine = TUT_FALSE
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_SIEGE_WEAPON and PLAYER of ObjectUnderHand == 0
+				SayLine = TUT_FALSE
+			elsif variable get ObjectUnderHand type == variable SCRIPT_OBJECT_TYPE_ARMY_FLAG and PLAYER of ObjectUnderHand == 0
+				SayLine = TUT_FALSE
+			end if
+			
+			// Holding objects
+			if ObjectInHand exists
+				if variable get ObjectInHand type == variable SCRIPT_OBJECT_TYPE_ARMY_FLAG
+					SayLine = TUT_FALSE
+				end if
+			end if
+			
+			// Leashed creature
+			if MyCreature exists and MyCreature leashed
+				SayLine = TUT_FALSE
+			end if
+			
+			// Toolbar
+			if toolbar is held
+				SayLine = TUT_FALSE
+			end if
+	
+			// Say the line?
+			if SayLine == TUT_TRUE and Counter >= Threshold
+				Threshold = (Counter*2)
+				SayLine = TUT_FALSE
+				run script TUT_Advisors(TUT_OUTSIDE_INFLUENCE, TUT_FALSE)
+			end if
+		end if
+	end loop
+
+end script TUT_DetectForClickingOutsideInfluence
+
+
+//-----------------------------------------------------------------------------
+//	If the player clicks on the creature or the creature pen tell them that the creature is asleep
+//-----------------------------------------------------------------------------
+begin script TUT_TellAboutCreatureSleeping
+
+	CheckDist			= 30
+	ShITT				= 0
+
+start
+
+	MyCreature = get player 0 creature
+
+	begin loop
+		if MyCreature exists and L3CreaturePen exists
+			if get object hand is over == MyCreature
+				if ShITT not exists
+					//say "The creature is asleep leader. Let's not disturb him now."
+					ShITT = create tooltip on MyCreature with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_936"
+				end if
+			else
+				if ShITT exists
+					delete ShITT
+				end if
+			end if
+		end if
+	
+	until L3CreatureSleeping == TUT_FALSE
+	end loop
+	
+	// Make sure the tooltip is deleted
+	delete ShITT
+
+end script TUT_TellAboutCreatureSleeping
+
+
+//-----------------------------------------------------------------------------
+//	Tell the player aboout creating more breeders
+//-----------------------------------------------------------------------------
+begin script TUT_CheckForTellingAboutCreatingMoreBreeders
+
+	NumPeeps			= 0
+	AdultCapacity		= 0
+	NumBreeders			= 0
+	SaidLine			= TUT_FALSE
+
+start
+
+	while SaidLine == TUT_FALSE
+		NumPeeps = size of L3GreekTown
+		AdultCapacity = adult capacity of L3GreekTown
+		NumBreeders = get number of disciples VILLAGER_DISCIPLE_BREEDER in town L3GreekTown
+
+		if AdultCapacity >= NumPeeps + 15
+			// Advise the player to create more breeders
+
+			begin dialogue
+				eject good spirit
+				// GA: "Well done. You could make more breeders now to populate these houses."
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_40"
+				wait until read
+			end dialogue
+
+			SaidLine = TUT_TRUE
+		end if
+	end while
+
+end script TUT_CheckForTellingAboutCreatingMoreBreeders
+
+
+//-----------------------------------------------------------------------------
+//	Teach the player about creating another field
+//-----------------------------------------------------------------------------
+begin script TUT_CheckForTeachingPlayerAboutCreatingAnotherField
+
+	NumPeeps		= 0
+	NumFields		= 0
+	SaidLine		= TUT_FALSE
+
+start
+
+	while SaidLine == TUT_FALSE
+		NumPeeps = size of L3GreekTown
+		NumFields = get number of type HOUSE ABODE_NUMBER_FIELD in L3GreekTown min built 1.0
+
+		if NumPeeps >= 100 and NumFields <= 1
+			// Tell the player how to make another field here
+
+			begin dialogue
+				eject good spirit
+				// GA: Our field is too small to provide enough food for the population. We need to create a larger field.
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_90"
+			end dialogue
+
+			SaidLine = TUT_TRUE
+		end if
+
+	end while
+
+end script TUT_CheckForTeachingPlayerAboutCreatingAnotherField
+
+
+//-----------------------------------------------------------------------------
+//	We need to be able to quit the tutorials
+//-----------------------------------------------------------------------------
+begin script TUT_TestForQuitting
+start
+
+	begin loop
+		if key KB_ESC down
+			if TUT_SkippedTutorials == TUT_FALSE
+				TUT_SkippedTutorials = TUT_TRUE
+			end if
+		end if
+		
+	until TUT_FinishedTutorials == TUT_TRUE
+	end loop
+
+end script TUT_TestForQuitting
+//-----------------------------------------------------------------------------
+//----TUT_RevisedBuildingTutorial----//
+//-----------------------------------------------------------------------------
+begin script TUT_RevisedBuildingTutorial
+	// Valid houses
+	HUT_A						= variable ABODE_NUMBER_A
+	HUT_B						= variable ABODE_NUMBER_B
+	HUT_C						= variable ABODE_NUMBER_C
+	HUT_D						= variable ABODE_NUMBER_D
+	HUT_E						= variable ABODE_NUMBER_E
+	
+	Delay						= 30
+	Object						= 0
+	Type						= 0
+	SubT						= 0
+	ObjectUnderHand				= 0
+	BuiltHouses					= 0
+	BuiltHousesTest				= 0
+	UnBuiltHouse				= 0
+	
+	SaidAboutPlacing			= TUT_FALSE
+	DoneTask					= TUT_FALSE
+	SaidDropTree				= TUT_FALSE
+	SaidDropWood				= TUT_FALSE
+	TaskDone					= TUT_FALSE
+	ReminderTimer				= create timer for Delay seconds
+	CommentTimer				= create timer for 60 seconds
+	Scroll						= 0
+	Reminded					= 0
+start
+	Scroll = create highlight GOLD name "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_MISC_50" remind "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_MISC_50" at {1080.578, 363.608, 1641.314}
+	// Give the objective for clicking on the scroll
+	// GA: Click on the Gold Scroll.
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 with amount 1 text "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL" force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value 0
+	begin loop
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {Scroll}
+				// GA: Click on the Gold Scroll.
+				say "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL"
+				wait until read
+			end dialogue
+			if Reminded == 0
+				Reminded++
+				set CommentTimer time to 180 seconds
+			elsif Reminded > 0
+				set CommentTimer time to 300 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	
+	delete Scroll
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_4
+	
+	enable build menu override with ABODE_NUMBER_C
+	// Setup the initial objective
+	run	background script TUT_HouseObjective
+
+//----PlaceBuildingFoundation----//
+
+	// Check to see if the player has already done the task (all building tasks)
+	BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+	BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+	BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+	BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+	BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+			
+	// Only advance to the next tutorial if they've already fully built at least 1 house
+	if BuiltHouses > 0
+		if BuiltHouses >= TUT_NUM_HOUSES_TO_BUILD
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_BUILT_ALL_HOUSES, TUT_TRUE)				
+		elsif BuiltHouses >= 1
+			run script TUT_Advisors(TUT_ADVISOR_ALREADY_BUILT_A_HOUSE, TUT_TRUE)
+		end if
+		
+		// Go onto the next tutorial as we've done this one already		
+	else
+
+		// Setup the camera position
+		begin fullscreen cinema
+			move camera position to {1101.473, 386.430, 1598.262} time 2
+			move camera focus to {1056.331, 316.139, 1653.230} time 2
+			wait until camera ready
+		end cinema
+		// We've still got to do the tutorial - do hand demo
+		run script TUT_Advisors(TUT_ADVISOR_TELL_ABOUT_TOWN_CENTRE, TUT_TRUE)
+		set ReminderTimer time to Delay seconds
+		
+		// Do the checks
+		begin loop
+			// Need to mention about placing next to roads after the hand demo (do not need to pick up the next house first)
+
+			// Check to see if the hand is near the town centre
+			// Draw the RMB to indicate that the player needs to pick up the house
+			if hand position near {L3GreekTown} radius 5 
+				enable hand icon draw
+				set bindable hand icon BINDABLE_ACTION_TYPE_ACTION with arrow ARROW_TYPE_LEFT	
+			else
+				disable hand icon draw						
+			end if
+			
+			Object = get object held
+
+			// Looking for building in hand
+			if Object exists
+				Type = variable get Object type
+				
+				if Type == variable HOUSE
+					// Get the sub type of the object
+					SubT = variable get Object sub type
+
+					// Check to see if the sun type of the object is a valid building (house)
+					if SubT == HUT_A or SubT == HUT_B or SubT == HUT_C or SubT == HUT_D or SubT == HUT_E
+						if SaidAboutPlacing == TUT_FALSE
+							run background script TUT_Advisors(TUT_ADVISOR_BUILDING_IN_HAND, TUT_FALSE)
+							set ReminderTimer time to Delay seconds
+							SaidAboutPlacing = TUT_TRUE
+						end if
+						
+						begin loop
+							ObjectUnderHand = get object hand is over
+							if object in hand can be placed and get player 0 influence at hand position > 0						
+								enable hand icon draw
+								set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+							else
+								disable hand icon draw
+							end if
+							
+						until not Object is HELD
+						end loop
+						
+						wait 0.1 seconds
+						
+						TUT_House = get HOUSE at hand position excluding scripted
+							
+						if TUT_House exists
+							run background script TUT_Advisors(TUT_ADVISOR_VILLAGERS_BUILDING, TUT_FALSE)
+							disable hand icon draw
+							DoneTask = TUT_TRUE
+						else					// They may have shook the house out of their hand
+							run background script TUT_Reminder(TUT_REMINDER_DONT_SHAKE_OUT_OF_HAND)
+						end if
+						set ReminderTimer time to Delay seconds
+					end if			
+				end if
+			end if
+			
+			// Remind the player what they need to do
+			if get ReminderTimer time remaining == 0
+				run background script TUT_Reminder(TUT_REMINDER_PULL_BUILDING_OFF_CENTRE)
+				set ReminderTimer time to Delay seconds
+			end if
+			
+		until DoneTask == TUT_TRUE or get number of type HOUSE ABODE_NUMBER_C in L3GreekTown > 0
+		end loop
+
+		disable hand icon draw
+		
+		begin dialogue
+			eject good spirit
+			//GA: "That's right."
+				say "BW2T_SCRIPT_GENERIC_07"
+				wait until read
+			//GA: "Keep going."
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_103"
+				wait until read
+			send good spirit home
+		end dialogue
+	end if
+	
+//----AddWoodToFoundation----//
+
+	// Tell the player that they can drop wood onto the foundations to help speed up the building process
+	run background script TUT_Advisors(TUT_ADVISOR_VILLAGERS_BUILDING_ADD_WOOD, TUT_TRUE)
+	set ReminderTimer time to Delay seconds
+	TUT_ADDWOODNOW = TUT_TRUE
+	
+	run background script TUT_AddWoodToFoundationObjective
+	
+end script TUT_RevisedBuildingTutorial
+//-----------------------------------------------------------------------------
+//----TUT_HouseObjective----//
+//-----------------------------------------------------------------------------
+begin script TUT_HouseObjective
+	BuiltHouses = 0
+	PlacedHouses = 0
+	LastPlacedHouses = 0
+	LastHouses = 0
+	VILLAOBJECTIVE = 0
+	WOODOBJECTIVE = TUT_FALSE
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_20 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_BUILD_20" amount TUT_NUM_HOUSES_TO_BUILD parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	
+	while BuiltHouses < TUT_NUM_HOUSES_TO_BUILD
+		
+		LastHouses = BuiltHouses
+		LastPlacedHouses = PlacedHouses
+		PlacedHouses = 0
+		PlacedHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 0
+		PlacedHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 0
+		PlacedHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 0
+		PlacedHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 0
+		PlacedHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 0
+
+		BuiltHouses = 0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+		BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+		if not player 0 objective TRIBUTE_OBJECTIVE_LAND_20 complete
+			if PlacedHouses >= TUT_NUM_HOUSES_TO_BUILD
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_20 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_BUILD_20" amount TUT_NUM_HOUSES_TO_BUILD 	
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_20 value 1
+				enable build menu override with ABODE_NUMBER_LAST
+				wait 2 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_LAND_20
+			elsif PlacedHouses != LastPlacedHouses  
+				if PlacedHouses == 11
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_20 text "BW2T_SCRIPT_GENERIC_FINALPICKUPS_74" amount TUT_NUM_HOUSES_TO_BUILD - PlacedHouses		
+				else
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_20 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_BUILD_20" amount TUT_NUM_HOUSES_TO_BUILD - PlacedHouses		
+				end if 
+			end if
+		else 
+			if VILLAOBJECTIVE == TUT_FALSE
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_BUILD_30" amount TUT_NUM_HOUSES_TO_BUILD - BuiltHouses parent TRIBUTE_OBJECTIVE_LAND_10 force open
+				VILLAOBJECTIVE = TUT_TRUE
+			end if
+			if BuiltHouses >= TUT_NUM_HOUSES_TO_BUILD
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_BUILD_30" amount TUT_NUM_HOUSES_TO_BUILD 	
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+				wait 2 seconds
+				disable player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+			elsif BuiltHouses != LastHouses
+				if BuiltHouses == 11
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_GENERIC_FINALPICKUPS_75" amount TUT_NUM_HOUSES_TO_BUILD - BuiltHouses		
+				else
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_BUILD_30" amount TUT_NUM_HOUSES_TO_BUILD - BuiltHouses		
+				end if
+			end if
+		end if
+	end while 
+end script TUT_HouseObjective
+//-----------------------------------------------------------------------------
+//----TUT_CheckForWoodPiles----//
+//-----------------------------------------------------------------------------
+begin script TUT_CheckForWoodPiles(UnBuiltHouse)
+	WoodPile = 0
+	Wood = 0
+start
+	begin loop
+	// Has the wood been added to the foundation?
+		WoodPile = get building resource RESOURCE_TYPE_WOOD in UnBuiltHouse
+		Wood = get resource RESOURCE_TYPE_WOOD in WoodPile
+		if WoodPile exists
+			Wood = get resource RESOURCE_TYPE_WOOD in WoodPile
+		end if
+		if Wood > 0
+			TUT_PlayerMadeAWoodPile = TUT_TRUE
+		end if
+	until TUT_PlayerMadeAWoodPile == TUT_TRUE
+	end loop
+end script TUT_CheckForWoodPiles
+//-----------------------------------------------------------------------------
+//----TUT_WoodObjective----//
+//-----------------------------------------------------------------------------
+begin script TUT_WoodObjective
+	WoodNeeded = TUT_WOOD_AMOUNT
+	WoodInPit = 0
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_30" amount TUT_WOOD_AMOUNT parent TRIBUTE_OBJECTIVE_LAND_10 reward GLOBAL_VALUE_TRIBUTE_LAND_3_ADDWOODTUTORIAL force open
+
+	begin loop
+		if WoodInPit != get resource RESOURCE_TYPE_WOOD in TUT_StoragePit
+			WoodInPit = get resource RESOURCE_TYPE_WOOD in TUT_StoragePit
+			if WoodInPit < TUT_WOOD_AMOUNT
+				WoodNeeded = TUT_WOOD_AMOUNT - WoodInPit
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_30" amount WoodNeeded
+			else
+				WoodNeeded = 0
+			end if
+		end if
+	until WoodNeeded == 0
+	end loop	
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_111" amount TUT_WOOD_AMOUNT
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 value 1
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_ADDWOODTUTORIAL
+	run background script TUT_CelebrateFirstHouseBeingBuilt
+end script TUT_WoodObjective
+//-----------------------------------------------------------------------------
+//----TUT_FoodObjective----//
+//-----------------------------------------------------------------------------
+begin script TUT_FoodObjective
+	FoodNeeded = TUT_FOOD_AMOUNT
+	FoodInPit = 0
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_05" amount TUT_FOOD_AMOUNT parent TRIBUTE_OBJECTIVE_LAND_10 reward GLOBAL_VALUE_TRIBUTE_LAND_3_FEEDVILLAGERSTUTORIAL force open
+	begin loop
+		if FoodInPit != get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+			FoodInPit = get resource RESOURCE_TYPE_FOOD in TUT_StoragePit
+			if FoodInPit < TUT_FOOD_AMOUNT
+				FoodNeeded = TUT_FOOD_AMOUNT - FoodInPit
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_05" amount FoodNeeded		
+			else
+				FoodNeeded = 0
+			end if
+		end if
+	until FoodNeeded == 0
+	end loop	
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_101" amount TUT_FOOD_AMOUNT
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 value 1
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_FEEDVILLAGERSTUTORIAL
+	run background script TUT_CelebrateFirstHouseBeingBuilt
+end script TUT_FoodObjective
+//-----------------------------------------------------------------------------
+//----TUT_FarmerObjective----//
+//-----------------------------------------------------------------------------
+begin script TUT_FarmerObjective
+	FarmersNeeded = TUT_NUM_DISCIPLES_TO_CREATE
+	FarmersMade = 0
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_20" amount TUT_NUM_DISCIPLES_TO_CREATE parent TRIBUTE_OBJECTIVE_LAND_10 reward GLOBAL_VALUE_TRIBUTE_LAND_3_FEEDVILLAGERSTUTORIAL force open
+	begin loop
+		if FarmersMade != get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown
+			FarmersMade = get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown
+			if FarmersMade < TUT_NUM_DISCIPLES_TO_CREATE
+				if FarmersMade == 0
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_20" amount TUT_NUM_DISCIPLES_TO_CREATE		
+				elsif FarmersMade == 1
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_20" amount 2		
+				elsif FarmersMade == 2
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_10"
+				end if
+			else
+				FarmersNeeded = 0
+			end if
+		end if
+	until FarmersNeeded == 0
+	end loop	
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_121" amount TUT_NUM_DISCIPLES_TO_CREATE
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 value 1
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_DESCIPLEFARMERTUTORIAL
+
+end script TUT_FarmerObjective
+//-----------------------------------------------------------------------------
+//----TUT_ForesterObjective----//
+//-----------------------------------------------------------------------------
+begin script TUT_ForesterObjective
+	ForestersNeeded = TUT_NUM_DISCIPLES_TO_CREATE
+	ForestersMade = 0
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_40" amount TUT_NUM_DISCIPLES_TO_CREATE parent TRIBUTE_OBJECTIVE_LAND_10 reward GLOBAL_VALUE_TRIBUTE_LAND_3_DESCIPLEFORESTERTUTORIAL force open
+	
+	begin loop
+		if ForestersMade != get number of disciples VILLAGER_DISCIPLE_FORESTER in town L3GreekTown
+			ForestersMade = get number of disciples VILLAGER_DISCIPLE_FORESTER in town L3GreekTown
+			if ForestersMade < TUT_NUM_DISCIPLES_TO_CREATE
+				if ForestersMade == 0
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_40" amount TUT_NUM_DISCIPLES_TO_CREATE
+				elsif ForestersMade == 1
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_40" amount 2
+				elsif ForestersMade == 2
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_20"
+				end if
+			else
+				ForestersNeeded = 0
+			end if
+		end if
+	until ForestersNeeded == 0
+	end loop	
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_131" amount TUT_NUM_DISCIPLES_TO_CREATE
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_14 value 1
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_DESCIPLEFORESTERTUTORIAL
+
+end script TUT_ForesterObjective
+//-----------------------------------------------------------------------------
+//----TUT_BuilderObjective----//
+//-----------------------------------------------------------------------------
+begin script TUT_BuilderObjective
+	BuildersNeeded = TUT_NUM_DISCIPLES_TO_CREATE
+	BuildersMade = 0
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_60" amount TUT_NUM_DISCIPLES_TO_CREATE parent TRIBUTE_OBJECTIVE_LAND_10 reward GLOBAL_VALUE_TRIBUTE_LAND_3_DESCIPLEBUILDERTUTORIAL force open
+	
+	begin loop
+		if BuildersMade != get number of disciples VILLAGER_DISCIPLE_BUILDER in town L3GreekTown
+			BuildersMade = get number of disciples VILLAGER_DISCIPLE_BUILDER in town L3GreekTown
+			if BuildersMade < TUT_NUM_DISCIPLES_TO_CREATE
+				if BuildersMade == 0
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_60" amount TUT_NUM_DISCIPLES_TO_CREATE
+				elsif BuildersMade == 1
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_60" amount 2
+				elsif BuildersMade == 2
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_40"
+				end if
+			else
+				BuildersNeeded = 0
+			end if
+		end if
+	until BuildersNeeded == 0
+	end loop	
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_141" amount TUT_NUM_DISCIPLES_TO_CREATE
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 1
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_DESCIPLEBUILDERTUTORIAL
+
+end script TUT_BuilderObjective
+//-----------------------------------------------------------------------------
+//----TUT_BreederObjective----//
+//-----------------------------------------------------------------------------
+begin script TUT_BreederObjective
+	BreedersNeeded = TUT_NUM_DISCIPLES_TO_CREATE
+	BreedersMade = 0
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 with amount 1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_70" amount TUT_NUM_DISCIPLES_TO_CREATE parent TRIBUTE_OBJECTIVE_LAND_10 reward GLOBAL_VALUE_TRIBUTE_LAND_3_DESCIPLEBREEDERTUTORIAL force open
+
+	begin loop
+		if BreedersMade != get number of disciples VILLAGER_DISCIPLE_BREEDER in town L3GreekTown
+			BreedersMade = get number of disciples VILLAGER_DISCIPLE_BREEDER in town L3GreekTown
+			if BreedersMade < TUT_NUM_DISCIPLES_TO_CREATE
+				if BreedersMade == 0
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_70" amount TUT_NUM_DISCIPLES_TO_CREATE
+				elsif BreedersMade == 1
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_70" amount 2
+				elsif BreedersMade == 2
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_VILLAGERTUTORIAL_30" 
+				end if
+			else
+				BreedersNeeded = 0
+			end if
+		end if
+	until BreedersNeeded == 0
+	end loop	
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_L3_TUTORIALS_151" amount TUT_NUM_DISCIPLES_TO_CREATE
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_16 value 1
+	
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_DESCIPLEBREEDERTUTORIAL
+	
+end script TUT_BreederObjective
+
+begin script TUT_KilledAVillager
+	Comment = 0
+start	
+	if get TUT_KilledVillagerTimer time remaining == 0
+		set TUT_KilledVillagerTimer time to 100 seconds
+		if TUT_NextAdvisorToSpeak == TUT_GOOD
+			TUT_NextAdvisorToSpeak = TUT_EVIL
+			Comment = number from 1 to 11
+			begin dialogue
+				eject good spirit
+					if Comment == 1
+					//GA: "What a senseless waste of human life!"
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_01"
+					elsif Comment == 2
+					//GA: "That was a sickening act of violence."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_02"
+					elsif Comment == 3
+					//GA: "Please, please stop murdering people."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_05"
+					elsif Comment == 4
+					//GA: "Do you imagine that was fair?"
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_07"
+					elsif Comment == 5
+					//GA: "What a waste of a good worshipper."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_09"
+					elsif Comment == 6
+					//GA: "Oh I can't watch."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_11"
+					elsif Comment == 7
+					//GA: "Another life tossed away in vain."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_16"
+					elsif Comment == 8
+					//GA: "That was disgraceful."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_20"
+					elsif Comment == 9
+					//GA: "Don't include me in this wanton carnage."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_21"
+					elsif Comment == 10
+					//GA: "I deplore this. For the record."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_22"
+					elsif Comment == 11
+					//GA: "Are you doing this to shock me?"
+						say "BW2T_HELP_TEXT_GUIDANCE_OPPOSITE_GA_11"
+					end if
+					wait until read
+				send good spirit home
+			end dialogue
+		else
+			TUT_NextAdvisorToSpeak = TUT_GOOD
+			Comment = number from 1 to 8
+			begin dialogue
+				eject evil spirit
+					if Comment == 1
+					//EA: "A killing's always good fun."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_04"
+					elsif Comment == 2
+					//EA: "Scratch one pleb!."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_06"
+					elsif Comment == 3
+					//EA: "His ghost is toast!"
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_07"
+					elsif Comment == 4
+					//EA: "See ya in the hot place, mortal!"
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_08"
+					elsif Comment == 5
+					//EA: "Ah, the smell of blood!"
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_11"
+					elsif Comment == 6
+					//EA: "No pain, no gain."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_18"
+					elsif Comment == 7
+					//EA: "Come on. Let's do another!"
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_14"
+					elsif Comment == 8
+					//EA: "Kill 'em and grill 'em."
+						say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_09"
+					end if
+				wait until read
+				send evil spirit home
+			end dialogue
+		end if
+	end if
+	set TUT_KilledVillagerTimer time to 3 seconds
+end script TUT_KilledAVillager
+
+begin script TUT_MoveVillagerAround(MyActor)
+	RandomPos = 0
+	Dead = TUT_FALSE
+start
+	move MyActor position to {MyActor}
+	// Move the villagers and check to see if they're ready to be released
+	begin loop
+		if MyActor exists
+			if variable get MyActor navigation state != variable NAV_STATE_NAVIGATING
+				RandomPos = marker at {L3GreekTown} + {number from -30 to 30, 0, number from -30 to 30}
+				if not {RandomPos} near {TUT_GreekTC} radius 20
+					move MyActor position to {RandomPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+				end if
+			end if
+				
+			if HEALTH of MyActor == 0
+				run background script TUT_KilledAVillager
+				Dead = TUT_TRUE
+			end if
+		end if	
+	until TUT_FedTheVillagers == TUT_TRUE or Dead == TUT_TRUE
+	end loop
+	
+	if MyActor exists
+		if HEALTH of MyActor > 0 
+			HEALTH of MyActor = 1
+		end if
+		
+		release MyActor
+	end if 
+
+end script TUT_MoveVillagerAround
+
+begin script TUT_AddWoodToFoundationObjective
+	TaskDone = TUT_FALSE
+	SaidDropTree = TUT_FALSE
+	SaidDropWood = TUT_FALSE
+	ObjectUnderHand = 0
+	Object = 0
+	Type = 0
+	UnBuiltHouse = 0
+	Delay = 30
+	ReminderTimer = create timer for Delay seconds
+start
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_BUILD_40" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+
+	begin loop
+		// Draw the mouse icon
+		ObjectUnderHand = get object hand is over
+		if variable get ObjectUnderHand type == variable TREE and get player 0 influence at hand position > 0
+			enable hand icon draw
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+		else
+			disable hand icon draw
+		end if
+		
+		Object = get object held
+		if Object exists
+			Type = variable get Object type
+		else 
+			Type = 0
+		end if
+		
+		// Tree or wood from storage pit
+		if Type == variable TREE or Type == variable WOODSTORE
+			if Type == variable TREE
+				if SaidDropTree == TUT_FALSE
+					run background script TUT_Advisors(TUT_ADVISOR_DROP_THE_TREE, TUT_FALSE)
+					set ReminderTimer time to Delay seconds
+					SaidDropTree = TUT_TRUE
+				end if
+			else
+				if SaidDropWood	== TUT_FALSE
+					run background script TUT_Advisors(TUT_ADVISOR_DROP_THE_WOOD, TUT_FALSE)
+					set ReminderTimer time to Delay seconds
+					SaidDropWood = TUT_TRUE					
+				end if
+			end if
+			
+			// Draw the mouse icon
+			ObjectUnderHand = get object hand is over
+			if variable get ObjectUnderHand type == variable HOUSE and get player 0 influence at hand position > 0
+				enable hand icon draw
+				set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+			else
+				disable hand icon draw
+			end if
+		end if
+		
+		// Reset the flags - if you only want the lines said once don't reset the flags.
+		if not Object is HELD
+			SaidDropTree = TUT_FALSE
+			SaidDropWood = TUT_FALSE
+		end if
+		
+		// Check to see if there is a woodpile for the house of if it's been built (assumes godbuild for built)
+		if TUT_PlayerMadeAWoodPile == TUT_TRUE
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 value 1
+			wait 1 seconds
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_1
+			run script TUT_Advisors(TUT_ADVISOR_TREE_DROPPED, TUT_TRUE)
+			set TUT_Timer time to 30 seconds
+			set ReminderTimer time to Delay seconds
+			disable hand icon draw			
+			TaskDone = TUT_TRUE
+		else
+			UnBuiltHouse = get random home in town L3GreekTown min built 0 excluding scripted
+			 
+			if UnBuiltHouse exists
+				run background script TUT_CheckForWoodPiles(UnBuiltHouse)
+			end if
+		end if	
+		
+		// Give the reminder
+		if get ReminderTimer time remaining <= 0
+			run background script TUT_Reminder(TUT_REMINDER_DROP_TREE_ON_FOUNDATION)
+			set ReminderTimer time to 60 seconds	
+		end if
+				
+	until TaskDone == TUT_TRUE
+	end loop
+	
+	disable hand icon draw
+	enable town L3GreekTown job VILLAGER_JOB_BUILDER
+	enable town L3GreekTown job VILLAGER_JOB_FORESTER
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_HOMES to 1
+	set town L3GreekTown desire for TOWN_DESIRE_TO_BUILD to 1
+	set town L3GreekTown desire for TOWN_DESIRE_TO_BREED to 0
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_SPARE_TIME to 0
+	TUT_WOODADDED = TUT_TRUE
+end script TUT_AddWoodToFoundationObjective
+
+begin script TUT_KeepTheStoreHouseFullOfFood
+start
+	while TUT_FillStoreHouse == TUT_TRUE
+		if get resource RESOURCE_TYPE_FOOD in TUT_StoragePit < 5000 and not {TUT_StoragePit} viewed
+			add resource RESOURCE_TYPE_FOOD 500 to L3GreekTown
+		end if
+	end while
+end script TUT_KeepTheStoreHouseFullOfFood
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

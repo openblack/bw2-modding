@@ -1,0 +1,35 @@
+//-----------------------------------------------------------
+// LAND 1 GLOBALS
+//-----------------------------------------------------------
+define L1_TRUE = 1
+define L1_FALSE = 0
+
+global CreatureArray[4]
+global L1_Weather[5]
+
+//Objective flags
+global L1_HandComplete					= 0
+global L1_FollowCreatureComplete		= 0
+global L1_PickupTutorialComplete		= 0
+global L1_DiscipleTutorialComplete		= 0
+global L1_EloiComplete					= 0
+global L1_WaterfallComplete				= 0
+global L1_RockManComplete				= 0
+global L1_RockManEndingPlayed			= 0
+global L1_LandEnd						= 0
+
+global L1_ShowEloi						= 0
+global L1_ShowDiscipleTutorialScroll	= 0
+global L1_DisplayRockManScroll			= 0
+
+global L1_Town							= 0
+global L1_EloiDebug						= 0
+global L1_SetStatue						= 0
+global L1_InAScroll						= 0
+global TutScroll						= 0
+global InRockMan						= 0
+
+begin script Land1Globals
+start
+	L1_Town = get town with id 0
+end script Land1Globals

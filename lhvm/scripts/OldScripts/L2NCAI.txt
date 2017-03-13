@@ -1,0 +1,1413 @@
+///////////////////////////////////////////////////////////////////////////////
+//	NORSE CREATURE AI
+//	~~~~~~~~~~~~~~~~~
+//	Description:
+//	This is a script that gives some life to the norse creature as it no
+//	longer has any affiliation with the norse tribe. This is to make the
+//	creature look more interesting and give him something to do in the absence
+//	of looking after the norse town.
+//
+//	Creature Tasks:		Patrol the chasms
+//						Find food
+//						Have a crap
+//						Look after the garden
+//						Show off
+//						Get a sacrifice from the norse town
+//						Get a sacrifice from the players town
+//						Attack the farming community
+//
+//	Rewards:			None
+//
+//	Start date:			Unknown				By:	Ken
+//	Update date:		16-03-04			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L2NCAI_TRUE					= 1
+define L2NCAI_FALSE					= 0
+
+// The different tasks the creature will perform
+define L2NCAI_TASK_NONE				= 0
+define L2NCAI_TASK_PATROL_CHASMS	= 1
+define L2NCAI_TASK_FIND_FOOD		= 2
+define L2NCAI_TASK_RELIEVE_HIMSELF	= 3
+define L2NCAI_TASK_TEND_GARDEN		= 4
+define L2NCAI_TASK_SHOW_OFF			= 5
+define L2NCAI_TASK_SCARE_FARMERS	= 6
+define L2NCAI_ANNOYANCE_LEVEL_1		= 1
+define L2NCAI_ANNOYANCE_LEVEL_2		= 2
+define L2NCAI_ANNOYANCE_LEVEL_3		= 3
+define L2NCAI_ANNOYANCE_LEVEL_4		= 4
+define L2NCAI_SACRIFICE_TIME		= 11.00
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global L2NCAI_CreatureIsAlive		= L2NCAI_FALSE
+global L2NCAI_PerformingSacrifice	= L2NCAI_FALSE
+global L2NCAI_ScaringFarmers		= L2NCAI_FALSE
+global L2NCAI_SacrificeFromPlayer	= L2NCAI_FALSE
+global L2NCAI_PlayerGivenSacrifice	= L2NCAI_FALSE
+global L2NCAI_AlreadyAttackedPlayer	= L2NCAI_FALSE
+global L2NCAI_CurrentTask			= L2NCAI_TASK_NONE
+global L2NCAI_PreviousTask			= L2NCAI_TASK_NONE
+
+global L2NCAI_TimeOfDay				= 0
+global L2NCAI_TreasuredItem			= 0
+global L2NCAI_TreasuredItemPos		= 0
+global L2NCAI_TreasuredItemStolen	= L2NCAI_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script L2NCAI_CreateNorseCreature(CreatePos)		// TEMP: Will be loaded (I imagine)
+define script L2NCAI_CheckForCreatureDeath(SpawnPos)	// TEMP: Should be handled by the game eventually
+define script L2NCAI_GetTask
+define script L2NCAI_PerformTask
+define script L2NCAI_TrackTime
+
+
+// Sacrifice
+define script L2NCAI_CheckForSacrificeDue
+define script L2NCAI_CreaturePatientWithPlayer
+define script L2NCAI_CreatureImpatientWithPlayer
+define script L2NCAI_CreatureAnnoyedWithPlayer
+define script L2NCAI_CreatureAttacksPlayer
+define script L2NCAI_AdvisorsSignalStateOfCreature(AnnoyanceLevel)
+define script L2NCAI_SacrificeGivenToCreature(Sacrifice)
+
+
+// Tasks
+define script L2NCAI_PatrolChasms
+define script L2NCAI_FindFood
+define script L2NCAI_RelieveHimself
+define script L2NCAI_TendGarden
+define script L2NCAI_ShowOff
+define script L2NCAI_GetNorseSacrifice
+define script L2NCAI_GetPlayerSacrifice
+
+
+// Scare the farmers in the farming community
+define script L2NCAI_CheckForScareFarmers
+define script L2NCAI_ScareFarmers
+
+
+// Bjollok's treasured item(s)					// Use the item to lure the creature to Fain
+define script L2NCAI_CreateTreasuredItem
+define script L2NCAI_IsTreasuredItemStolen
+define script L2NCAI_FindTreasuredItem
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script L2NCAI
+
+	CreatureCreatePos		= marker at {1667.063,106.799,1134.661}
+
+start
+
+// **** REQUEST STUFF ****
+// Requet move
+// request creature MyCreature move to {MyPos} distance 5
+
+// Request play individual anim
+// request creature MyCreature play individual anim "MyAnim"
+
+// Request play static anim
+// request creature MyCreature play static anim "MyAnim" 5 seconds
+
+// Request act on object
+// request creature MyCreature action CREATURE_ACTION ObjectToActOn ObjectToUse
+// **** END OF REQUEST STUFF ****
+
+	// Do the setup stuff and continuous checks here...
+	run script L2NCAI_CreateNorseCreature(CreatureCreatePos)
+	run script L2NCAI_CreateTreasuredItem
+	run background script L2NCAI_CheckForCreatureDeath(CreatureCreatePos)
+	run background script L2NCAI_TrackTime
+	run background script L2NCAI_CheckForSacrificeDue
+	run background script L2NCAI_IsTreasuredItemStolen
+	run background script L2NCAI_CheckForScareFarmers
+
+	// Keep looping forever - the scripted AI will only end when the level ends
+	begin loop
+		// Do the AI stuff here...
+		run script L2NCAI_GetTask
+		run script L2NCAI_PerformTask
+	end loop
+
+end script L2NCAI
+
+
+//-----------------------------------------------------------------------------
+// This temporarily sets up a norse creature but will be loaded eventually
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CreateNorseCreature(CreatePos)
+start
+
+	// Create Norse Creature with a neutral alignment and make him just about half size
+	L2_NorseKong = create CREATURE CREATURE_TYPE_GORILLA at {CreatePos}
+	SCALE of L2_NorseKong = 1
+	ALIGNMENT of L2_NorseKong = 0
+
+	// Make sure the creature is not attached to any player - need to do this so we can get him again after
+	// releasing him from script
+	set player 6 creature to L2_NorseKong
+
+	// TODO: Setup the knowledge of the creature here...
+
+	// Setup control flags
+	L2NCAI_CreatureIsAlive = L2NCAI_TRUE
+
+end script L2NCAI_CreateNorseCreature
+
+
+//-----------------------------------------------------------------------------
+// This temporarily checks to see if the creature dies, and then respawns him
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CheckForCreatureDeath(SpawnPos)
+
+	RESPAWN_DELAY	= 30
+
+start
+
+	// Has the creature been killed? - check for the entirety of the land
+	begin loop
+		// Make sure he exists
+		if L2_NorseKong exists and HEALTH of L2_NorseKong > 0
+			// He's alive, but don't know if he's controlled by script
+			L2NCAI_CreatureIsAlive = L2NCAI_TRUE
+		else
+			// He's dead.
+			// Reset the controlling variables
+			L2NCAI_CreatureIsAlive = L2NCAI_FALSE
+
+			// Wait a little while before respawning the creature
+			wait RESPAWN_DELAY seconds
+			run script L2NCAI_CreateNorseCreature(SpawnPos)
+		end if
+	end loop
+
+end script L2NCAI_CheckForCreatureDeath
+
+
+//-----------------------------------------------------------------------------
+// Get a task for the creature to perform
+//-----------------------------------------------------------------------------
+begin script L2NCAI_GetTask
+
+	GotValidTask		= L2NCAI_FALSE
+	ProvisionalTask		= L2NCAI_TASK_NONE
+
+start
+
+	// Make sure there are no new tasks while a sacrifice is being handled
+	if L2NCAI_PerformingSacrifice == L2NCAI_FALSE
+
+// <TEMP>
+/*
+begin dialogue
+say "Getting Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+
+		if L2NCAI_ScaringFarmers == L2NCAI_FALSE
+			// Only get a new task if the creature is alive and there are no tasks current
+			if L2NCAI_CreatureIsAlive == L2NCAI_TRUE and L2NCAI_CurrentTask == L2NCAI_TASK_NONE
+				while GotValidTask == L2NCAI_FALSE
+					ProvisionalTask = number from L2NCAI_TASK_PATROL_CHASMS to L2NCAI_TASK_SHOW_OFF
+
+					// Make sure we haven't got the same task as the last one done
+					if not ProvisionalTask == L2NCAI_PreviousTask
+						L2NCAI_CurrentTask = ProvisionalTask
+						GotValidTask = L2NCAI_TRUE
+					end if
+				until L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+				end while
+			end if
+		else
+			// Should scare the farmers next
+			L2NCAI_CurrentTask = L2NCAI_TASK_SCARE_FARMERS
+		end if
+	end if
+
+end script L2NCAI_GetTask
+
+
+//-----------------------------------------------------------------------------
+// Carry out the current task
+//-----------------------------------------------------------------------------
+begin script L2NCAI_PerformTask
+start
+
+	// Make sure there are no new tasks while a sacrifice is being handled
+	if L2NCAI_PerformingSacrifice == L2NCAI_FALSE
+
+// <TEMP>
+/*
+begin dialogue
+say "Performing Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+		// Carry out the next task
+		if L2NCAI_CurrentTask == L2NCAI_TASK_PATROL_CHASMS
+			run script L2NCAI_PatrolChasms
+		elsif L2NCAI_CurrentTask == L2NCAI_TASK_FIND_FOOD
+			run script L2NCAI_FindFood
+		elsif L2NCAI_CurrentTask == L2NCAI_TASK_RELIEVE_HIMSELF
+			run script L2NCAI_RelieveHimself
+		elsif L2NCAI_CurrentTask == L2NCAI_TASK_TEND_GARDEN
+			run script L2NCAI_TendGarden
+		elsif L2NCAI_CurrentTask == L2NCAI_TASK_SHOW_OFF
+			run script L2NCAI_ShowOff
+		elsif L2NCAI_CurrentTask == L2NCAI_TASK_SCARE_FARMERS
+			run script L2NCAI_ScareFarmers
+		end if
+	end if
+
+	// The task is complete so update the task trackers
+	L2NCAI_PreviousTask = L2NCAI_CurrentTask
+	L2NCAI_CurrentTask = L2NCAI_TASK_NONE
+
+end script L2NCAI_PerformTask
+
+
+//-----------------------------------------------------------------------------
+// The creature walks through the labyrinths of walkways
+//-----------------------------------------------------------------------------
+begin script L2NCAI_PatrolChasms
+
+	NUM_PATROL_POINTS	= 6
+	MAX_TIME_PATROLLING	= 600
+	PatrolPoint[6]
+	Counter				= 0
+	CurrentWaypoint		= -1
+	NextWaypoint		= -1
+	GotDestination		= L2NCAI_FALSE
+	MadeDestination		= L2NCAI_FALSE
+	KeepPatrolling		= L2NCAI_TRUE
+	PatrolTimer			= create timer for 0 seconds	
+
+start
+
+// <TEMP>
+/*
+begin dialogue
+say "Patrolling Chasms"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+		// Setup the patrol waypoints
+		// Test waypoints that are near his starting point (these are temporary for testing purposes)
+		PatrolPoint[0] = marker at {1192.590,142.956,1348.891}
+		PatrolPoint[1] = marker at {1190.765,139.065,1379.534}
+		PatrolPoint[2] = marker at {1204.495,134.549,1364.385}
+		PatrolPoint[3] = marker at {1243.276,115.673,1349.746}
+		PatrolPoint[4] = marker at {1246.349,112.689,1369.961}
+		PatrolPoint[5] = marker at {1233.907,118.881,1362.251}
+
+		// Do the patrolling stuff
+		while KeepPatrolling == L2NCAI_TRUE
+			// Get a waypoint
+			if GotDestination == L2NCAI_FALSE
+				// Make sure we don't get the waypoint we're currently at
+				while NextWaypoint == CurrentWaypoint
+					NextWaypoint = (number from 1 to NUM_PATROL_POINTS) - 1 // remember NUM_PATROL_POINTS does not consider 0
+				end while
+
+				// Move to the waypoint
+				request creature L2_NorseKong move to {PatrolPoint[NextWaypoint]} distance 5
+//				move L2_NorseKong position to {PatrolPoint[NextWaypoint]}
+				GotDestination = L2NCAI_TRUE
+				MadeDestination = L2NCAI_FALSE
+			end if
+						
+			// Check to see if we made the destination
+			//if {L2_NorseKong} near {PatrolPoint[NextWaypoint]} radius 10 and MadeDestination == L2NCAI_FALSE
+			if creature L2_NorseKong finished script action
+				CurrentWaypoint = NextWaypoint
+				GotDestination = L2NCAI_FALSE
+				MadeDestination = L2NCAI_TRUE
+			end if
+
+			// Do some stuff once the creature is at the waypoint
+			if MadeDestination == L2NCAI_TRUE
+				// Do some stuff at the waypoint
+
+				// Should we continue patrolling?
+				if get PatrolTimer time since set >= MAX_TIME_PATROLLING
+					KeepPatrolling = L2NCAI_FALSE
+				end if
+			end if
+
+		until L2NCAI_PerformingSacrifice == L2NCAI_TRUE
+		until L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+		end while
+	end if
+
+end script L2NCAI_PatrolChasms
+
+
+//-----------------------------------------------------------------------------
+// The creature feeds himself
+//-----------------------------------------------------------------------------
+begin script L2NCAI_FindFood
+start
+
+// <TEMP>
+/*
+begin dialogue
+say "Finding Food Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+/*
+		begin dialogue
+			say "Not sure what to do here..."
+			wait until read
+		end dialogue
+*/
+	end if
+
+end script L2NCAI_FindFood
+
+
+//-----------------------------------------------------------------------------
+// The creature looks after his garden
+//-----------------------------------------------------------------------------
+begin script L2NCAI_TendGarden
+
+	NUM_TREES_TO_TEND	= 10
+	TreeList[10]
+
+	SleepPos			= marker at {1364.505,56.549,1452.527}
+	Pos1				= marker at {1339.057,55.034,1425.200}
+	Pos2				= marker at {1311.046,56.815,1422.913}
+	GardenPos			= 0
+	TreeToTend			= 0
+	RandomChance		= 0
+	Counter				= 0
+
+start
+
+// <TEMP>
+/*
+begin dialogue
+say "Tending Garden Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+		// Check to see if the treasured item is missing from the pen
+		if L2NCAI_TreasuredItemStolen == L2NCAI_TRUE
+			run script L2NCAI_FindTreasuredItem
+		else
+			// Make the creature water the trees in his garden area
+			RandomChance = number from 1 to 2
+			if RandomChance == 1
+				GardenPos = marker at {Pos1}
+			else
+				GardenPos = marker at {Pos2}
+			end if
+
+			request creature L2_NorseKong move to {GardenPos} distance 5
+//			move L2_NorseKong position to {GardenPos}
+			wait until {L2_NorseKong} near {GardenPos} radius 10 or L2NCAI_PerformingSacrifice == L2NCAI_TRUE
+
+			while Counter < NUM_TREES_TO_TEND
+				TreeToTend = get TREE at {L2_NorseKong} radius 50 excluding scripted
+
+				// Make sure there is a tree that exists
+				if TreeToTend exists
+					request creature L2_NorseKong move to {TreeToTend} distance 5
+//					move L2_NorseKong position to {TreeToTend}
+					wait until {L2_NorseKong} near {TreeToTend} radius 20
+					set L2_NorseKong focus to {TreeToTend}
+					TreeList[Counter] = TreeToTend
+
+					// Cast the water spell on the tree
+/*
+					begin dialogue
+					say "Creature casts a water spell on tree $d here." with number Counter+1
+					wait until read
+					end dialogue
+*/
+				else
+/*
+					begin dialogue
+					say "Creature cannot find a tree to water near him. Trying again..."
+					wait until read
+					end dialogue
+*/
+				end if
+
+				Counter++
+			until L2NCAI_PerformingSacrifice == L2NCAI_TRUE
+			until L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+			end while
+
+			// Make the creature take a little nap before moving onto the next task (maybe)
+			if RandomChance == 1
+				request creature L2_NorseKong move to {SleepPos} distance 3
+//				move L2_NorseKong position to {SleepPos}
+				wait until {L2_NorseKong} near {SleepPos} radius 5 or L2NCAI_PerformingSacrifice == L2NCAI_TRUE
+/*
+				say "Make the creature take a nap here..."
+				wait until read
+*/
+			end if
+		end if
+	end if
+
+end script L2NCAI_TendGarden
+
+
+//-----------------------------------------------------------------------------
+// The creature goes to his show off point and plays impressive anims
+//-----------------------------------------------------------------------------
+begin script L2NCAI_ShowOff
+
+	PosePos					= marker at {1279.381, 335.064, 1249.224}
+	DonePosing				= L2NCAI_FALSE
+	GotDestination			= L2NCAI_FALSE
+	MadeDestination			= L2NCAI_FALSE
+
+start
+
+// <TEMP>
+/*
+begin dialogue
+say "Showing Off Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+		// Keep looping until the posing has been done
+		while DonePosing == L2NCAI_FALSE
+			// Move the creature to his posing point
+			if GotDestination == L2NCAI_FALSE
+				request creature L2_NorseKong move to {PosePos} distance 5
+//				move L2_NorseKong position to {PosePos}
+				GotDestination = L2NCAI_TRUE
+				MadeDestination = L2NCAI_FALSE
+			end if
+
+			// Check to see if he's made it yet
+			if {L2_NorseKong} near {PosePos} radius 10 and MadeDestination == L2NCAI_FALSE
+				MadeDestination = L2NCAI_TRUE
+			end if
+
+			// Do the posing
+			if MadeDestination == L2NCAI_TRUE
+				// Let him do his stuff
+//				request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+				play anim C_FIGHT_THREAT1 on L2_NorseKong loop 2
+				wait until L2_NorseKong played
+//				request creature L2_NorseKong play individual anim "C_INDIVIDUAL_SUMMON"
+				play anim C_INDIVIDUAL_SUMMON on L2_NorseKong
+				wait until L2_NorseKong played
+//				request creature L2_NorseKong play individual anim "C_INDIVIDUAL_IMPRESS"
+				play anim C_INDIVIDUAL_IMPRESS on L2_NorseKong
+				wait until L2_NorseKong played
+				DonePosing = L2NCAI_TRUE
+			end if
+
+		until L2NCAI_PerformingSacrifice == L2NCAI_TRUE
+		until L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+		end while
+	end if
+
+end script L2NCAI_ShowOff
+
+
+//-----------------------------------------------------------------------------
+// The creature attacks the norse tribe
+//-----------------------------------------------------------------------------
+begin script L2NCAI_GetNorseSacrifice
+
+	Guard1						= 0
+	Guard2						= 0
+	Sacrifice					= 0
+	CallForSacrificePos			= marker at {957.263,75.587,967.161}
+	SacrificePartyCreatePos		= marker at {908.945,77.157,942.703}
+	SacrificePos				= marker at {964.859,75.895,923.271}
+	HomePos						= marker at {1230.344,131.766,1135.311}
+
+start
+
+// <TEMP>
+/*
+begin dialogue
+say "Getting Norse Sacrifice Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+		// Move the creature over to the Norse gates and get him to roar
+		move L2_NorseKong position to {CallForSacrificePos} radius 5
+		wait until {L2_NorseKong} near {CallForSacrificePos} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+
+		if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+			/// GET GATE LOC AND FOC REQUIRED
+			// Threaten Norse Town
+			/// go to a safe distance from Norse gates
+			/// roar and flex a few times
+			/// wait a while for villager sacrifice to be escorted out and left for him
+			/// Eat villager sacrifice, roar and flex then head home
+
+			// Get the creature to call to the village
+//			request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+			play anim C_FIGHT_THREAT1 on L2_NorseKong
+			wait until L2_NorseKong played
+//			request creature L2_NorseKong play individual anim "C_INDIVIDUAL_SUMMON"
+			play anim C_INDIVIDUAL_SUMMON on L2_NorseKong
+			wait until L2_NorseKong played
+//			request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+			play anim C_FIGHT_THREAT1 on L2_NorseKong
+			wait until L2_NorseKong played
+/*
+say "Calling out the sacrifice here"
+wait until read
+*/
+
+			// This variable is used in the town script to make people go up onto the walls to watch the sacrifice
+			L2NCDemandsSacrificeOffNorse = L2NCAI_TRUE
+
+			// Make the sacrifice party come out and give the sacrifice to the creature
+			Guard1 = create VILLAGER VILLAGER_INFO_NORSE_LEADER_MALE at {SacrificePartyCreatePos} + {0.500,0.000,0.000}
+			Guard2 = create VILLAGER VILLAGER_INFO_NORSE_LEADER_MALE at {SacrificePartyCreatePos} + {0.000,0.000,0.500}
+			Sacrifice = create VILLAGER FEMALE at {SacrificePartyCreatePos}
+
+			// Move the sacrifice party to their positions
+			move Guard1 position to {SacrificePos} - {1.000,0.000,0.000}
+			move Guard2 position to {SacrificePos} - {0.000,0.000,1.000}
+			move Sacrifice position to {SacrificePos}
+
+			// Make the creature look at the sacrifice
+			set L2_NorseKong focus on Sacrifice
+
+			// Wait until they are at the sacrifice pos
+			wait until {Guard1} near {SacrificePos} - {1.000,0.000,0.000} radius 1
+			wait until {Guard2} near {SacrificePos} - {0.000,0.000,1.000} radius 1
+			wait until {Sacrifice} near {SacrificePos} radius 1
+
+			// Make the woman sacrifice look at the creature
+			set Sacrifice focus on L2_NorseKong
+			wait 2 seconds
+
+			// Move the guards back to the town
+			SPEED of Guard1 = 0.5
+			SPEED of Guard2 = 0.5
+			move Guard1 position to {SacrificePartyCreatePos} - {1.000,0.000,0.000}
+			move Guard2 position to {SacrificePartyCreatePos} - {0.000,0.000,1.000}
+
+			// Move the creature closer to the sacrifice
+			request creature L2_NorseKong move to {SacrificePos} - {5.000,0.000,0.000} distance 5
+//			move L2_NorseKong position to {SacrificePos} - {5.000,0.000,0.000}
+			wait until {L2_NorseKong} near {SacrificePos} - {5.000,0.000,0.000} radius 10
+			set L2_NorseKong focus to {Sacrifice}
+
+			// Make the creature roar
+//			request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+			play anim C_FIGHT_THREAT1 on L2_NorseKong
+			wait until L2_NorseKong played
+/*
+say "Roaring here"
+wait until read
+*/
+
+			// Make the creature eat the sacrifice
+/*
+say "Eating the sacrifice here"
+wait until read
+*/
+			//force L2_NorseKong
+			delete Sacrifice
+
+			// Get the creature to roar at the town once more then leave
+			set L2_NorseKong focus to {SacrificePartyCreatePos}
+//			request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+			play anim C_FIGHT_THREAT1 on L2_NorseKong
+			wait until L2_NorseKong played
+//			request creature L2_NorseKong play individual anim "C_INDIVIDUAL_IMPRESS"
+			play anim C_INDIVIDUAL_IMPRESS on L2_NorseKong
+			wait until L2_NorseKong played
+//			request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+			play anim C_FIGHT_THREAT1 on L2_NorseKong
+			wait until L2_NorseKong played
+/*
+say "Roaring and playing impressive here"
+wait until read
+*/
+
+			// Send the creature away after the sacrifice has been taken
+			request creature L2_NorseKong move to {HomePos} distance 5
+//			move L2_NorseKong position to {HomePos}
+			wait until {L2_NorseKong} near {HomePos} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+
+			// Clean up the remaining actors
+			delete Guard1
+			delete Guard2
+
+			// Allow the people who watched the sacrifice to go back to their jobs
+			L2NCDemandsSacrificeOffNorse = L2NCAI_FALSE
+		end if
+	end if
+
+end script L2NCAI_GetNorseSacrifice
+
+
+//-----------------------------------------------------------------------------
+// The creature attacks the players town
+//-----------------------------------------------------------------------------
+begin script L2NCAI_GetPlayerSacrifice
+
+	TimesCreatureRoared		= 0
+	TimerDelay				= 0
+	ItemGivenToCreature		= 0
+	ItemType				= 0
+	TownTrashed				= L2NCAI_FALSE
+	WarningLevel1Done		= L2NCAI_FALSE
+	WarningLevel2Done		= L2NCAI_FALSE
+	WarningLevel3Done		= L2NCAI_FALSE
+	CallForSacrificePos		= marker at {751.448,79.030,2160.947}
+	AnnoyedTimer			= create timer for 0 seconds
+
+start
+
+// <TEMP>
+/*
+begin dialogue
+say "Getting Player Sacrifice Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+
+	/// GET GATE LOC AND FOC REQUIRED
+	// Threaten player's town
+	/// go to a safe distance from Greek gates
+	/// roar and flex a few times, trigger advisors to point him out and say he wants his fresh virgin to munch
+	/// wait a while for villager sacrifice to be given (if grain given then throw it back at the gates)
+	/// - If villager or food given then eat, roar and flex then head home
+	/// - If no villager or food given after X minutes then attack the gates until X damage done before heading home
+
+
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+		// Move the creature over to the players gates and get him to roar
+		request creature L2_NorseKong move to {CallForSacrificePos} distance 5
+//		move L2_NorseKong position to {CallForSacrificePos} radius 5
+		wait until {L2_NorseKong} near {CallForSacrificePos} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+
+		// Only continue if the creature is alive
+		if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+			set AnnoyedTimer time to 0 seconds
+			L2NCAI_PlayerGivenSacrifice = L2NCAI_FALSE
+
+			// Keep looping until the sacrifice is given or the creature has trashed the place or the creature
+			// has been killed
+			while L2NCAI_PlayerGivenSacrifice == L2NCAI_FALSE and TownTrashed == L2NCAI_FALSE and L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+				// Check for giving the creature something
+				ItemGivenToCreature = get object held
+				if ItemGivenToCreature exists
+					wait until ItemGivenToCreature is not HELD
+					if {ItemGivenToCreature} near {L2_NorseKong} radius 10
+						ItemType = variable get ItemGivenToCreature type
+
+						if ItemType == variable VILLAGER
+							L2NCAI_PlayerGivenSacrifice = L2NCAI_TRUE
+							// Get the creature to eat the sacrifice, roar and leave
+							// Make the advisors say something
+							run background script L2NCAI_SacrificeGivenToCreature(ItemGivenToCreature)
+						end if
+					end if
+				end if
+
+				// Check to see if the creature is getting angrier with the player
+				if L2NCAI_PlayerGivenSacrifice == L2NCAI_FALSE
+					if get AnnoyedTimer time since set >= 300
+						run background script L2NCAI_AdvisorsSignalStateOfCreature(L2NCAI_ANNOYANCE_LEVEL_4)
+						run script L2NCAI_CreatureAttacksPlayer
+						TownTrashed = L2NCAI_TRUE
+					elsif get AnnoyedTimer time since set >= 180 and WarningLevel3Done == L2NCAI_FALSE
+						run background script L2NCAI_AdvisorsSignalStateOfCreature(L2NCAI_ANNOYANCE_LEVEL_3)
+						run background script L2NCAI_CreatureAnnoyedWithPlayer
+						WarningLevel3Done = L2NCAI_TRUE
+					elsif get AnnoyedTimer time since set >= 100 and WarningLevel2Done == L2NCAI_FALSE
+						run background script L2NCAI_AdvisorsSignalStateOfCreature(L2NCAI_ANNOYANCE_LEVEL_2)
+						run background script L2NCAI_CreatureImpatientWithPlayer
+						WarningLevel2Done = L2NCAI_TRUE
+					elsif get AnnoyedTimer time since set >= 0 and WarningLevel1Done == L2NCAI_FALSE
+						run background script L2NCAI_AdvisorsSignalStateOfCreature(L2NCAI_ANNOYANCE_LEVEL_1)
+						run background script L2NCAI_CreaturePatientWithPlayer
+						WarningLevel1Done = L2NCAI_TRUE
+					end if
+				end if
+			end while
+		end if
+	end if
+
+end script L2NCAI_GetPlayerSacrifice
+
+
+//-----------------------------------------------------------------------------
+// The creature is waiting patiently for a sacrifice
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CreaturePatientWithPlayer
+start
+
+	// Get the creature to call to the player
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_INDIVIDUAL_SUMMON"
+	play anim C_INDIVIDUAL_SUMMON on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+
+// <TEMP>
+/*
+	wait until dialogue ready
+begin dialogue
+	say "The creature wanders around here between points and plays some anims quite contently."
+	wait until read
+end dialogue
+*/
+// </TEMP>
+
+end script L2NCAI_CreaturePatientWithPlayer
+
+
+//-----------------------------------------------------------------------------
+// The creature is getting a bit impatient with the player about his sacrifice
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CreatureImpatientWithPlayer
+start
+
+	// Get the creature to call to the player
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_INDIVIDUAL_SUMMON"
+	play anim C_INDIVIDUAL_SUMMON on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+
+// <TEMP>
+/*
+	wait until dialogue ready
+begin dialogue
+	say "The creature wanders around here between points and plays some anims quite and looks a bit impatient."
+	wait until read
+end dialogue
+*/
+// </TEMP>
+
+end script L2NCAI_CreatureImpatientWithPlayer
+
+
+//-----------------------------------------------------------------------------
+// The creature is getting annoyed with the player about not getting his sacrifice
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CreatureAnnoyedWithPlayer
+start
+
+	// Get the creature to call to the player
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_INDIVIDUAL_SUMMON"
+	play anim C_INDIVIDUAL_SUMMON on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+
+// <TEMP>
+/*
+	wait until dialogue ready
+begin dialogue
+	say "The creature wanders around here and starts getting quite agitated, and starts getting angry."
+	wait until read
+end dialogue
+*/
+// </TEMP>
+
+end script L2NCAI_CreatureAnnoyedWithPlayer
+
+
+//-----------------------------------------------------------------------------
+// The creature is very annoyed with the player that no sacrifice is here and starts attacking the player
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CreatureAttacksPlayer
+start
+
+	// Get the creature to call to the player
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_INDIVIDUAL_SUMMON"
+	play anim C_INDIVIDUAL_SUMMON on L2_NorseKong
+	wait until L2_NorseKong played
+//	request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+	play anim C_FIGHT_THREAT1 on L2_NorseKong
+	wait until L2_NorseKong played
+
+// <TEMP>
+/*
+	wait until dialogue ready
+begin dialogue
+	say "The creature loses it and starts attacking the players walls or buildings."
+	wait until read
+	say "Once X amount of damage is done he leaves and gets on with his next task."
+	wait until read
+end dialogue
+*/
+// </TEMP>
+
+end script L2NCAI_CreatureAttacksPlayer
+
+
+//-----------------------------------------------------------------------------
+// The advisors advise the player of the state of the creature
+//-----------------------------------------------------------------------------
+begin script L2NCAI_AdvisorsSignalStateOfCreature(AnnoyanceLevel)
+start
+
+	// Give dialogue from the advisors depending on the state of the creature
+	if AnnoyanceLevel == L2NCAI_ANNOYANCE_LEVEL_1
+		begin dialogue
+			if L2NCAI_AlreadyAttackedPlayer == L2NCAI_FALSE
+				// Give introduction from advisors
+				eject good spirit
+				// GA: "What does that creature want leader."
+				say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_10"
+				wait until read
+				make good spirit point to L2_NorseKong
+				wait until read
+				eject evil spirit
+				// EA: "Hey Boss, I've seen this guy before. He got sacrifices off the Norse tribe. Cool."
+				say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_20"
+				wait until read
+				stop good spirit pointing
+				// GA: "That's terrible leader, try and get rid of him, but don't hurt him."
+				say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_30"
+				wait until read
+				// EA: "Hell no either you kick his ass or you give him some sacrifices. I don't mind which."
+				say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_40"
+				wait until read
+				send good spirit home
+				send evil spirit home
+
+				L2NCAI_AlreadyAttackedPlayer = L2NCAI_TRUE
+			else
+				// Give an "Oh he's back." type line
+				eject good spirit
+				// GA: "Leader, that Gorilla is back for his sacrifice again."
+				say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_50"
+				wait until read
+				eject evil spirit
+				// EA: "Cool, lets give him the sacrifice, or if you don't want to do that; kick his ass."
+				say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_60"
+				wait until read
+				send good spirit home
+				send evil spirit home
+			end if
+		end dialogue
+	elsif AnnoyanceLevel == L2NCAI_ANNOYANCE_LEVEL_2
+		begin dialogue
+			eject good spirit
+			eject evil spirit
+			// GA: "He looks like he's getting a little annoyed with you leader."
+			say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_70"
+			wait until read
+			// EA: "Let him get annoyed, I don't care."
+			say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_80"
+			wait until read
+			// EA: "But come to think of it how funny would it be to sacrifice someone."
+			say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_90"
+			wait until read
+			send good spirit home
+			send evil spirit home
+		end dialogue
+	elsif AnnoyanceLevel == L2NCAI_ANNOYANCE_LEVEL_3
+		begin dialogue
+			eject good spirit
+			eject evil spirit
+			// GA: "LEADER! I don't think he's going to wait around much longer. Get rid of him somehow."
+			say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_100"
+			wait until read
+			// EA: "I'm getting bored with this now. Boss fry his ass."
+			say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_110"
+			wait until read
+			send good spirit home
+			send evil spirit home
+		end dialogue
+	else
+		begin dialogue
+			eject good spirit
+			eject evil spirit
+			// GA: "Oh NOooo. Quick stop him, he's going to do so much damage."
+			say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_120"
+			wait until read
+			// EA: "That's going too far. Boss he's crossed that line, toast him."
+			say "BW2T_SCRIPT_02C_01CREATUREAI_ADVISORWARNING_130"
+			wait until read
+			send good spirit home
+			send evil spirit home
+		end dialogue
+	end if
+
+end script L2NCAI_AdvisorsSignalStateOfCreature
+
+
+//-----------------------------------------------------------------------------
+// A sacrifice has been given to the creature
+//-----------------------------------------------------------------------------
+begin script L2NCAI_SacrificeGivenToCreature(Sacrifice)
+
+	LeftTownPos		= marker at {871.674,52.922,1995.203}
+
+start
+
+	// Make the creature eat the sacrifice here
+/*
+	say "Eating the sacrifice here."
+	wait until read
+*/
+	delete Sacrifice					// Should be handled automatically when the creature eats the sacrifice
+
+	// Move the creature away from the players town
+	request creature L2_NorseKong move to {LeftTownPos} distance 5
+//	move L2_NorseKong position to {LeftTownPos}
+
+	wait until dialogue ready
+
+	begin dialogue
+		eject good spirit
+		// GA: "Ohh Leader. How could you do such a thing."
+		say "BW2T_SCRIPT_02C_01CREATUREAI_SACRIFICED_VILLAGER_10"
+		wait until read
+		eject evil spirit
+		// EA: "He he he. That was cool Boss."
+		say "BW2T_SCRIPT_02C_01CREATUREAI_SACRIFICED_VILLAGER_20"
+		wait until read
+	end dialogue
+
+end script L2NCAI_SacrificeGivenToCreature
+
+
+//-----------------------------------------------------------------------------
+// The creature relieves himself in the mine
+//-----------------------------------------------------------------------------
+begin script L2NCAI_RelieveHimself
+
+	DISTANCE				= 5
+	MineToUseAsToiletPos	= marker at {1469.081, 143.953, 1066.128}
+	AlternativeToiletPos	= marker at {1460.329, 145.584, 1041.492}
+	MinePos					= marker at {1455.034, 146.352, 1066.577}
+	Mine					= 0
+	MinePooFocus			= 0
+	DoneBusiness			= L2NCAI_FALSE
+	GotDestination			= L2NCAI_FALSE
+	MadeDestination			= L2NCAI_FALSE
+
+start
+
+// <TEMP>
+/*
+begin dialogue
+say "Relieving Himself Task"
+wait until read
+end dialogue
+*/
+// </TEMP>
+
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+		// Is there a mine built?
+		Mine = get HOUSE at {MinePos} radius 10
+
+		// Keep looping until the creature has relieved himself
+		while DoneBusiness == L2NCAI_FALSE
+			// Move the creature to his toilet
+			if GotDestination == L2NCAI_FALSE
+				request creature L2_NorseKong move to {MineToUseAsToiletPos} distance 3
+//				move L2_NorseKong position to {MineToUseAsToiletPos}
+				GotDestination = L2NCAI_TRUE
+				MadeDestination = L2NCAI_FALSE
+			end if
+
+			// Check to see if we made the destination
+			if {L2_NorseKong} near {MineToUseAsToiletPos} radius DISTANCE and MadeDestination == L2NCAI_FALSE
+				MadeDestination = L2NCAI_TRUE
+			end if
+
+			// See if the creature made it to his destination
+			if MadeDestination == L2NCAI_TRUE
+				if Mine exists
+					// There is a mine built there now
+					// Get angry but find somewhere else to go
+					set L2_NorseKong focus to {Mine}
+					wait 1 second
+//					request creature L2_NorseKong play individual anim "C_INDIVIDUAL_ANGRY"
+					play anim C_INDIVIDUAL_ANGRY on L2_NorseKong
+					wait until L2_NorseKong played
+					request creature L2_NorseKong move to {AlternativeToiletPos} distance 3
+//					move L2_NorseKong position to {AlternativeToiletPos}
+					wait until {L2_NorseKong} near {AlternativeToiletPos} radius DISTANCE
+					
+					// Let him do his business
+					set L2_NorseKong focus to {Mine}
+					wait 1 second
+					force L2_NorseKong CREATURE_POO AlternativeToiletPos
+					wait until L2_NorseKong played
+					DoneBusiness = L2NCAI_TRUE
+				else
+					// Let him do his business
+					MinePooFocus = marker at get target from {Mine} to {L2_NorseKong} distance 10 angle 0
+					set L2_NorseKong focus to {MinePooFocus}
+					wait 1 second
+					force L2_NorseKong CREATURE_POO MinePos
+					wait until L2_NorseKong played
+					DoneBusiness = L2NCAI_TRUE
+				end if
+			end if
+
+		until L2NCAI_PerformingSacrifice == L2NCAI_TRUE
+		until L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+		end while
+	end if
+
+end script L2NCAI_RelieveHimself
+
+
+//-----------------------------------------------------------------------------
+// Track the time of day because the creature wants his sacrifice once a day
+//-----------------------------------------------------------------------------
+begin script L2NCAI_TrackTime
+start
+
+	begin loop
+		L2NCAI_TimeOfDay = get game time
+	end loop
+
+end script L2NCAI_TrackTime
+
+
+//-----------------------------------------------------------------------------
+// Have we got to get a sacrifice
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CheckForSacrificeDue
+start
+
+	begin loop
+		// If it's time to get a sacrifice do so even if you have to interrupt what the creature is doing
+		if L2NCAI_TimeOfDay >= L2NCAI_SACRIFICE_TIME and L2NCAI_TimeOfDay <= L2NCAI_SACRIFICE_TIME + 0.2
+			if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+				// Flag that we are performing a sacrifice
+				L2NCAI_PerformingSacrifice = L2NCAI_TRUE
+
+				if L2NCAI_SacrificeFromPlayer == L2NCAI_TRUE
+					run script L2NCAI_GetPlayerSacrifice
+					L2NCAI_SacrificeFromPlayer = L2NCAI_FALSE
+				else
+					run script L2NCAI_GetNorseSacrifice
+					L2NCAI_SacrificeFromPlayer = L2NCAI_TRUE
+				end if
+
+				// Flag that we have finished the sacrifice
+				L2NCAI_PerformingSacrifice = L2NCAI_FALSE
+			end if
+		end if
+	end loop
+
+end script L2NCAI_CheckForSacrificeDue
+
+
+//-----------------------------------------------------------------------------
+//	Create the treasured item in the creatures pen
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CreateTreasuredItem
+start
+
+	// Create the treasured item (a rock for now)
+	L2NCAI_TreasuredItemPos = marker at {1682.018,106.743,1130.657}
+	L2NCAI_TreasuredItem = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {L2NCAI_TreasuredItemPos}
+	L2NCAI_TreasuredItemStolen = L2NCAI_FALSE
+
+end script L2NCAI_CreateTreasuredItem
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the item has been stolen
+//-----------------------------------------------------------------------------
+begin script L2NCAI_IsTreasuredItemStolen
+
+	ItemDestroyed	= L2NCAI_FALSE
+
+start
+
+	begin loop
+		if L2NCAI_TreasuredItem exists
+			if not {L2NCAI_TreasuredItem} near {L2NCAI_TreasuredItemPos} radius 100
+				L2NCAI_TreasuredItemStolen = L2NCAI_TRUE
+			else
+				L2NCAI_TreasuredItemStolen = L2NCAI_FALSE
+			end if
+		else
+			L2NCAI_TreasuredItemStolen = L2NCAI_FALSE
+			ItemDestroyed = L2NCAI_TRUE
+		end if
+	until ItemDestroyed == L2NCAI_TRUE
+	end loop
+
+end script L2NCAI_IsTreasuredItemStolen
+
+
+//-----------------------------------------------------------------------------
+//	Make the creature go and recover his stolen toy
+//-----------------------------------------------------------------------------
+begin script L2NCAI_FindTreasuredItem
+
+	Waypoint		= 0
+	GotItem			= L2NCAI_FALSE
+	ItemDestroyed	= L2NCAI_FALSE
+	MovingToItem	= L2NCAI_FALSE
+
+start
+
+	while GotItem == L2NCAI_FALSE and ItemDestroyed == L2NCAI_FALSE
+		if L2NCAI_TreasuredItem exists
+			// Move to the item
+			if not {L2_NorseKong} near {L2NCAI_TreasuredItem} radius 5 and MovingToItem == L2NCAI_FALSE
+				// Need to move the creature to the treasured item
+				Waypoint = marker at {L2NCAI_TreasuredItem}
+				request creature L2_NorseKong move to {Waypoint} distance 5
+//				move L2_NorseKong position to {Waypoint}
+				MovingToItem = L2NCAI_TRUE
+			else
+				// Make the creature pick up the item and take it back to his pen
+				// Pick up the item
+				force L2_NorseKong CREATURE_HOLD_OBJECT L2NCAI_TreasuredItem
+				//wait until L2NCAI_TreasuredItem in L2_NorseKong hand
+				//CREATURE_HOLD_OBJECT
+				//CREATURE_EXAMINE_BY_PICKING_UP
+
+// <TEMP>
+disable L2NCAI_TreasuredItem moveable
+disable L2NCAI_TreasuredItem pickup
+enable L2NCAI_TreasuredItem indestructible
+// </TEMP>
+/*
+				say "The creature has got his treasured item and will return it to his pen."
+				wait until read
+*/
+				GotItem = L2NCAI_TRUE
+				MovingToItem = L2NCAI_FALSE
+			end if
+
+			// Wait until the creature is near his destination
+			if MovingToItem == L2NCAI_TRUE
+				wait until {L2_NorseKong} near {Waypoint} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+			end if
+		else
+/*
+			say "The Treasured Item has been destroyed."
+			wait until read
+*/
+			ItemDestroyed = L2NCAI_TRUE
+		end if
+	end while
+
+	// Make the creature take his treasured item back to his pen
+	if GotItem == L2NCAI_TRUE
+		request creature L2_NorseKong move to {L2NCAI_TreasuredItemPos} distance 3
+//		move L2_NorseKong position to {L2NCAI_TreasuredItemPos}
+		wait until {L2_NorseKong} near {L2NCAI_TreasuredItemPos} radius 5 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+		// Put the item down
+		force L2_NorseKong CREATURE_HOLD_OBJECT L2NCAI_TreasuredItem
+		//wait until L2_NorseKong played
+
+// <TEMP>
+enable L2NCAI_TreasuredItem moveable
+enable L2NCAI_TreasuredItem pickup
+disable L2NCAI_TreasuredItem indestructible
+set L2NCAI_TreasuredItem position to {L2NCAI_TreasuredItemPos}
+// </TEMP>
+/*
+		say "The item has been returned to the pen."
+		wait until read
+*/
+	end if
+
+end script L2NCAI_FindTreasuredItem
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if it's time to scare the farmers
+//-----------------------------------------------------------------------------
+begin script L2NCAI_CheckForScareFarmers
+
+	ATTACK_FREQUENCY			= 600								// Attack the farmers every 10 mins
+	AttackFarmersTimer			= create timer for 0 seconds
+
+start
+
+	begin loop
+		if get AttackFarmersTimer time since set >= ATTACK_FREQUENCY
+			// Make sure we're not performing a sacrifice
+			wait until L2NCAI_PerformingSacrifice == L2NCAI_FALSE
+			
+			// We should scare the farmers next
+			L2NCAI_ScaringFarmers = L2NCAI_TRUE
+
+			// Don't reset the timer until the scaring of the farmers has been completed
+			wait until L2NCAI_ScaringFarmers == L2NCAI_FALSE
+
+			// Reset the timer
+			set AttackFarmersTimer time to 0 seconds
+		end if
+	end loop
+
+end script L2NCAI_CheckForScareFarmers
+
+
+//-----------------------------------------------------------------------------
+//	Go over, scare the farmers and steal their food
+//-----------------------------------------------------------------------------
+begin script L2NCAI_ScareFarmers
+
+	RADIUS_CHECK				= 50
+	CreatureVictim				= 0
+	PooFocus					= 0
+	EnterFarmingCommunityPos	= marker at {848.424, 109.820, 997.250}
+	CentreofFarmingCommunity	= marker at {792.057, 101.340, 993.600}
+
+start
+
+	// Eats / Attacks armies first
+	// Eats / Attacks villagers second
+	// Eats from field last
+
+	// Make sure the creature is alive before doing anything with him
+	if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+		// Do the attack on the farming community here
+		request creature L2_NorseKong move to {EnterFarmingCommunityPos} distance 5
+//		move L2_NorseKong position to {EnterFarmingCommunityPos}
+		wait until {L2_NorseKong} near {EnterFarmingCommunityPos} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+
+		// Check to see if the creature has made it into the farming community
+		if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+			if {L2_NorseKong} near {EnterFarmingCommunityPos} radius 15
+				// Give a welcoming roar
+				set L2_NorseKong focus to {CentreofFarmingCommunity}
+				wait 1 second
+//				request creature L2_NorseKong play individual anim "C_FIGHT_THREAT1"
+				play anim C_FIGHT_THREAT1 on L2_NorseKong loop 1
+				wait until L2_NorseKong played
+
+				// Get the target for the creature
+				// Check for a platoon first, then a villager and finally a field
+				CreatureVictim = get platoon nearest {CentreofFarmingCommunity} radius RADIUS_CHECK
+				if not CreatureVictim exists
+					// No platoon is found so try and get a villager
+					CreatureVictim = get VILLAGER at {CentreofFarmingCommunity} radius RADIUS_CHECK
+					if not CreatureVictim exists
+						// No villager is found so try and get a field
+						CreatureVictim = get FIELD at {CentreofFarmingCommunity} radius RADIUS_CHECK
+						if not CreatureVictim exists
+							// No field is found so make him annoyed and take a crap in the community :)
+							PooFocus = marker at get target from {CentreofFarmingCommunity} to {L2_NorseKong} distance 10 angle 0
+							set L2_NorseKong focus to {CentreofFarmingCommunity}
+//							request creature L2_NorseKong play individual anim "C_INDIVIDUAL_ANGRY"
+							play anim C_INDIVIDUAL_ANGRY on L2_NorseKong
+							wait until L2_NorseKong played								
+							force L2_NorseKong CREATURE_POO CentreofFarmingCommunity
+							wait until L2_NorseKong played
+						else
+							// Got a field
+/*
+say "Found a field"
+wait until read
+*/
+							request creature L2_NorseKong move to {CreatureVictim} distance 5
+//							move L2_NorseKong position to {CreatureVictim}
+							wait until {L2_NorseKong} near {CreatureVictim} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+
+							if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+								force L2_NorseKong CREATURE_EAT_OBJECT CreatureVictim
+								wait until L2_NorseKong played
+							end if
+						end if
+					else
+						// Got a villager
+/*
+say "Found a villager"
+wait until read
+*/
+						request creature L2_NorseKong move to {CreatureVictim} distance 5
+//						move L2_NorseKong position to {CreatureVictim}
+						wait until {L2_NorseKong} near {CreatureVictim} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+
+						if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+							force L2_NorseKong CREATURE_EAT_OBJECT CreatureVictim
+							wait until L2_NorseKong played
+						end if
+					end if
+				else
+					// Got a platoon
+/*
+say "Found a platoon"
+wait until read
+*/
+					request creature L2_NorseKong move to {CreatureVictim} distance 5
+//					move L2_NorseKong position to {CreatureVictim}
+					wait until {L2_NorseKong} near {CreatureVictim} radius 10 or L2NCAI_CreatureIsAlive == L2NCAI_FALSE
+
+					if L2NCAI_CreatureIsAlive == L2NCAI_TRUE
+						force L2_NorseKong CREATURE_EAT_OBJECT CreatureVictim
+						wait until L2_NorseKong played
+					end if
+				end if
+			end if
+		end if
+	end if
+
+	// We're donne here
+	L2NCAI_ScaringFarmers = L2NCAI_FALSE
+
+end script L2NCAI_ScareFarmers
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

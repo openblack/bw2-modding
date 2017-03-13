@@ -1,0 +1,661 @@
+///////////////////////////////////////////////////////////////////////////////
+//	FERRYMAN
+//	~~~~~~~~
+//	Description:
+//	The basic premise of the challenge is that the ferryman is ferrying ore to the 2 Japanese
+//	outposts from the unlimited mine that is located on the ferryman island (island that has no land links).
+//	Once the player has taken the nearest Japanese outpost (2) the Archery challenge will be executed.
+//	This introduces a unique character (Miner Archer) who wants to rid the Ferryman Isle of the Japanese
+//	forces that control it, and free his family members (miners) who are slave labour. You need to transport
+//	him to the island and you can do this by ringing the bell which summons the
+//	ferryman (that is now in your influence). Once he has arrived the archer gets into the boat,
+//	but nothing happens. You need to figure out that the bell on the other side of the water needs to be
+//	rung to move the boat. This can be done by throwing rocks at it. On the island there is a mine being mined
+//	by the Japanese using slaves, but also there are 10 Japanese archers patrolling the pathways to protect the mine.
+//	You control the miner archer and have to move him close enough to a target to attack him but make sure
+//	they stay out of sight of any other guards. Then once in range you can attack the guard and kill him.
+//	If successful you need to move onto the next before the dead body or the miner archer is discovered.
+//	You keep doing this until all of the guards are dead at which point the challenge is complete and the island
+//	is now yours. To shoot at the patrolling guards the player activates a firing mode that stops the Miner Archer
+//	in his tracks and swings the camera down to an almost 1st Person perspective.
+//	The longer the player holds down the fire button the stronger the pull back is on the bow and hence the truer
+//	it will fly. If you are seen or your attack misses then you have been discovered and the Miner Archer
+//	flees to the beach in a cut-scene. The player can then click on a scroll there to restart the
+//	challenge with any dead guards replenished. Once you have control of the island the miners keep mining but
+//	they do it to thank you for freeing them. The ore they produce is dumped into a huge pile near the mine.
+//	The player can always pick up the ore in this pile. Also the player can now use the ferry as a
+//	limited transport for moving his troops about the land thus reducing the impact of the tidal shifts.
+//	There will be a few bells dotted about the landscape that the player can ring to move
+//	the ferry to their location. Some of these will be out of the players influence and behind enemy lines
+//	and so will need to be activated by throwing rocks or using the creature.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			28-10-03			By:	Steve
+//	Update date:		07-01-04			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FM_TRUE								= 1
+define FM_FALSE								= 0
+define FM_AMOUNT_OF_JAPANESE_GUARDS			= 10
+define FM_AMOUNT_OF_PATROL_WAYPOINTS		= 10
+define FM_AMOUNT_OF_BELLS					= 3
+define FM_AMOUNT_OF_THROWING_STONES			= 5
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FM_JapaneseGuard[FM_AMOUNT_OF_JAPANESE_GUARDS]
+global FM_JapaneseGuardStartPos[FM_AMOUNT_OF_JAPANESE_GUARDS]
+global FM_GuardPatrolWaypoint[FM_AMOUNT_OF_PATROL_WAYPOINTS]
+global FM_PatrolWaypointOccupied[FM_AMOUNT_OF_PATROL_WAYPOINTS]
+global FM_Bell[FM_AMOUNT_OF_BELLS]
+global FM_BellPos[FM_AMOUNT_OF_BELLS]
+global FM_TRock[FM_AMOUNT_OF_THROWING_STONES]
+
+global FM_Archer							= 0
+global FM_LastBellRung						= 0
+global FM_ChallengeComplete					= FM_FALSE
+global FM_ChallengeReset					= FM_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FM_CreateArcher
+define script FM_CreateBells
+define script FM_CreateAndMaintainThrowingStones
+define script FM_IntroFromArcher
+define script FM_FerrymanSetup
+define script FM_HandleBellsBeingRung
+define script FM_HandleFerrymansActions
+define script FM_HandleGuardsActions
+define script FM_HandleSlaveMinersActions
+define script FM_MinersThankPlayerForRescue
+define script FM_SetupJapaneseGuards
+define script FM_SpawnDeadGuards
+define script FM_MakeGuardPatrol(Guard, GuardID)
+define script FM_CheckForBellBeingRung(Bell, BellID)
+define script FM_CheckForChallengeCompleted
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land4Ferryman
+
+//	NearestJapaneseOutpost		= get TOWN at {2135.528,30.795,1500.650} radius 100
+	NearestJapaneseOutpost		= get TOWN at {518.545,61.417,1091.182} radius 100
+
+start
+
+	// Do the setup stuff here
+	run script FM_FerrymanSetup
+
+	// Wait until the player has taken over the nearest Japanese outpost
+	wait until PLAYER of NearestJapaneseOutpost == FM_TRUE
+
+	// Can kick off the Japanese Archer dude now
+	run script FM_CreateArcher
+	run script FM_IntroFromArcher
+
+end script Land4Ferryman
+
+
+//-----------------------------------------------------------------------------
+//	Make sure all the background actions and checks are kicked off
+//-----------------------------------------------------------------------------
+begin script FM_FerrymanSetup
+start
+
+	run background script FM_HandleBellsBeingRung
+	run background script FM_HandleFerrymansActions
+	run background script FM_HandleGuardsActions
+	run background script FM_HandleSlaveMinersActions
+
+end script FM_FerrymanSetup
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the bells are being rung to help navigate the ferryman
+//-----------------------------------------------------------------------------
+begin script FM_HandleBellsBeingRung
+
+	Counter			= 0
+
+start
+
+	// Create the bells
+	FM_LastBellRung = -1											// Make sure there is no bell rung initially
+	run script FM_CreateBells
+	run background script FM_CreateAndMaintainThrowingStones
+
+	while Counter < FM_AMOUNT_OF_BELLS
+		run background script FM_CheckForBellBeingRung(FM_Bell[Counter], Counter)
+		Counter++
+	end while
+
+end script FM_HandleBellsBeingRung
+
+
+//-----------------------------------------------------------------------------
+//	Check each individual bell to see if it has been rung
+//-----------------------------------------------------------------------------
+begin script FM_CheckForBellBeingRung(Bell, BellID)
+
+	ObjectWhichHit	= 0
+
+start
+
+	begin loop
+		// Has the bell been hit?
+		if Bell hit
+			clear hit object
+
+			// Yes....
+			ObjectWhichHit = get object which hit
+
+			// A bell has been rung check to see if it is different from the last one hit
+			if FM_LastBellRung != BellID
+				FM_LastBellRung = BellID
+			end if
+
+			say "Hit bell $d." with number BellID
+			wait until read
+		end if
+	end loop
+
+end script FM_CheckForBellBeingRung
+
+
+//-----------------------------------------------------------------------------
+//	Make the ferryman ferry the ore cargo back and forth between the 2 outposts
+//-----------------------------------------------------------------------------
+begin script FM_HandleFerrymansActions
+start
+
+	begin loop
+	end loop
+
+end script FM_HandleFerrymansActions
+
+
+//-----------------------------------------------------------------------------
+//	Handle the actions for the guards guarding the mine and the slaves
+//-----------------------------------------------------------------------------
+begin script FM_HandleGuardsActions
+
+	AmountOfGuardsKilled		= 0
+	Counter						= 0
+
+start
+
+	// Create the guards
+	run script FM_SetupJapaneseGuards
+
+	while FM_ChallengeComplete == FM_FALSE
+		// Handle their actions
+		while Counter < FM_AMOUNT_OF_JAPANESE_GUARDS
+			run background script FM_MakeGuardPatrol(FM_JapaneseGuard[Counter], Counter)
+			Counter++
+		end while
+
+		// Wait until the challenge is reset or won before continuing with the next loop
+		wait until FM_ChallengeComplete == FM_TRUE or FM_ChallengeReset == FM_TRUE
+
+		// Recreate the dead guards at their start positions
+		if FM_ChallengeReset == FM_TRUE
+			run script FM_SpawnDeadGuards
+		end if
+	end while
+
+end script FM_HandleGuardsActions
+
+
+//-----------------------------------------------------------------------------
+//	Make the individual guards patrol
+//-----------------------------------------------------------------------------
+begin script FM_MakeGuardPatrol(Guard, GuardID)
+
+	GuardAlive			= FM_TRUE
+	GotDestination		= FM_FALSE
+	MovingToDestination	= FM_FALSE
+	Destination			= 0
+	Counter				= 0
+
+start
+
+	begin loop
+		// Make sure the guard is alive
+		if Guard exists and HEALTH of Guard > 0
+			// Do we need to find a destination?
+			if GotDestination == FM_FALSE
+				// Yes...so select a waypoint to move to (make sure it's not the same one that he is currently at)
+				while Counter < FM_AMOUNT_OF_PATROL_WAYPOINTS and GotDestination == FM_FALSE
+					if FM_PatrolWaypointOccupied[Counter] == FM_FALSE
+						FM_PatrolWaypointOccupied[Counter] = FM_TRUE
+						GotDestination = FM_TRUE
+						Destination = marker at {FM_GuardPatrolWaypoint[Counter]}
+					end if
+					Counter++
+				end while
+			end if
+
+			// Move the guard to his destination
+			if MovingToDestination == FM_FALSE and GotDestination == FM_TRUE
+				if Guard exists and HEALTH of Guard > 0
+					move Guard position to {Destination}
+					MovingToDestination = FM_TRUE
+				end if
+			end if
+
+			// Check to see if the guard has made his destination
+			if MovingToDestination == FM_TRUE and Guard exists and HEALTH of Guard > 0
+				if {Guard} near {Destination} radius 2
+					// We've made it to the destination
+					GotDestination = FM_FALSE
+					MovingToDestination = FM_FALSE
+				end if
+			end if
+		else
+			GuardAlive = FM_FALSE
+		end if
+
+	until GuardAlive == FM_FALSE
+	until FM_ChallengeComplete == FM_TRUE
+	end loop
+
+	// Get rid of the guard if he exists - he shouldn't, but it just makes sure :)
+	if Guard exists
+		delete Guard with fade
+	end if
+
+end script FM_MakeGuardPatrol
+
+
+//-----------------------------------------------------------------------------
+//	Handle the actions of the miners
+//-----------------------------------------------------------------------------
+begin script FM_HandleSlaveMinersActions
+
+	BeenThanked		= FM_FALSE
+
+start
+
+	begin loop
+		// Have the slave miners been rescued?
+		if FM_ChallengeComplete == FM_TRUE
+			if BeenThanked == FM_FALSE
+				run background script FM_MinersThankPlayerForRescue
+				BeenThanked = FM_TRUE
+			end if
+		end if
+	end loop
+
+end script FM_HandleSlaveMinersActions
+
+
+//-----------------------------------------------------------------------------
+//	Create the archer dude
+//-----------------------------------------------------------------------------
+begin script FM_CreateArcher
+
+//	ArcherPos		= marker at {2277.507,23.476,1449.659}
+	ArcherPos		= marker at {415.772,55.438,1102.238}
+
+start
+
+	// Make sure the Archer is not on screen when he is created
+	wait until not {ArcherPos} viewed
+	FM_Archer = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {ArcherPos}
+	HEALTH of FM_Archer = 1
+
+end script FM_CreateArcher
+
+
+//-----------------------------------------------------------------------------
+//	Setup the guards
+//-----------------------------------------------------------------------------
+begin script FM_SetupJapaneseGuards
+start
+
+	// Setup the start positions for the guards
+//	FM_JapaneseGuardStartPos[0] = marker at {2274.808,27.032,961.310}
+//	FM_JapaneseGuardStartPos[1] = marker at {2203.969,18.449,981.110}
+//	FM_JapaneseGuardStartPos[2] = marker at {2162.847,26.713,974.308}
+//	FM_JapaneseGuardStartPos[3] = marker at {2148.205,29.713,959.454}
+//	FM_JapaneseGuardStartPos[4] = marker at {2117.863,45.387,935.495}
+//	FM_JapaneseGuardStartPos[5] = marker at {2113.849,63.203,830.145}
+//	FM_JapaneseGuardStartPos[6] = marker at {2173.596,75.096,820.002}
+//	FM_JapaneseGuardStartPos[7] = marker at {2159.094,89.349,772.260}
+//	FM_JapaneseGuardStartPos[8] = marker at {2175.294,99.162,748.955}
+//	FM_JapaneseGuardStartPos[9] = marker at {2237.702,99.342,740.419}
+
+	// Setup the start positions for the guards
+	FM_JapaneseGuardStartPos[0] = marker at {355.694,98.393,1521.130}
+	FM_JapaneseGuardStartPos[1] = marker at {465.272,83.419,1467.901}
+	FM_JapaneseGuardStartPos[2] = marker at {577.492,78.015,1519.693}
+	FM_JapaneseGuardStartPos[3] = marker at {563.746,99.808,1563.656}
+	FM_JapaneseGuardStartPos[4] = marker at {557.929,73.704,1652.228}
+	FM_JapaneseGuardStartPos[5] = marker at {347.100,112.647,1582.153}
+	FM_JapaneseGuardStartPos[6] = marker at {415.836,77.497,1744.458}
+	FM_JapaneseGuardStartPos[7] = marker at {473.010,96.600,1712.964}
+	FM_JapaneseGuardStartPos[8] = marker at {397.787,127.578,1688.079}
+	FM_JapaneseGuardStartPos[9] = marker at {491.135,116.700,1548.684}
+
+	// Setup the patrol waypoints for the guards
+//	FM_GuardPatrolWaypoint[0] = marker at {2260.461,22.921,971.392}
+//	FM_GuardPatrolWaypoint[1] = marker at {2204.602,27.403,950.477}
+//	FM_GuardPatrolWaypoint[2] = marker at {2181.105,28.784,952.480}
+//	FM_GuardPatrolWaypoint[3] = marker at {2163.749,44.882,927.093}
+//	FM_GuardPatrolWaypoint[4] = marker at {2142.900,59.167,892.263}
+//	FM_GuardPatrolWaypoint[5] = marker at {2143.039,66.111,833.438}
+//	FM_GuardPatrolWaypoint[6] = marker at {2140.909,77.102,799.188}
+//	FM_GuardPatrolWaypoint[7] = marker at {2175.239,89.452,779.833}
+//	FM_GuardPatrolWaypoint[8] = marker at {2198.972,96.188,760.041}
+//	FM_GuardPatrolWaypoint[9] = marker at {2257.006,102.602,761.302}
+
+	// Setup the patrol waypoints for the guards
+	FM_GuardPatrolWaypoint[0] = marker at {365.645,99.396,1531.484}
+	FM_GuardPatrolWaypoint[1] = marker at {492.975,81.697,1500.579}
+	FM_GuardPatrolWaypoint[2] = marker at {537.833,84.206,1510.032}
+	FM_GuardPatrolWaypoint[3] = marker at {589.739,95.651,1592.340}
+	FM_GuardPatrolWaypoint[4] = marker at {518.826,89.576,1686.953}
+	FM_GuardPatrolWaypoint[5] = marker at {341.624,102.435,1631.146}
+	FM_GuardPatrolWaypoint[6] = marker at {358.803,102.436,1697.234}
+	FM_GuardPatrolWaypoint[7] = marker at {425.530,77.201,1740.325}
+	FM_GuardPatrolWaypoint[8] = marker at {447.138,123.850,1682.599}
+	FM_GuardPatrolWaypoint[9] = marker at {475.079,98.305,1529.439}
+
+	// Create the guards
+	run script FM_SpawnDeadGuards
+
+	// Ok to start checking for the death of all the guards
+	run background script FM_CheckForChallengeCompleted
+
+end script FM_SetupJapaneseGuards
+
+
+//-----------------------------------------------------------------------------
+//	Create or recreate any missing guards
+//-----------------------------------------------------------------------------
+begin script FM_SpawnDeadGuards
+
+	Counter		= 0
+
+start
+
+	// Create the Japanese guards
+	while Counter < FM_AMOUNT_OF_JAPANESE_GUARDS
+		// Only create dead or non existant guards
+		if not FM_JapaneseGuard[Counter] exists or HEALTH of FM_JapaneseGuard[Counter] <= 0
+			FM_JapaneseGuard[Counter] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {FM_JapaneseGuardStartPos[Counter]}
+			set FM_JapaneseGuard[Counter] ranged tech level 0				// tech level is from 0 - 2
+			HEALTH of FM_JapaneseGuard[Counter] = 1
+		end if
+		Counter++
+	end while
+
+end script FM_SpawnDeadGuards
+
+
+//-----------------------------------------------------------------------------
+//	Create the bells that are scattered around the land
+//-----------------------------------------------------------------------------
+begin script FM_CreateBells
+
+	Counter		= 0
+
+start
+
+	// Setup the positions of the bells
+//	FM_BellPos[0] = marker at {2270.723,23.829,1433.446}
+//	FM_BellPos[1] = marker at {2353.862,24.534,1017.411}
+//	FM_BellPos[2] = marker at {1262.863,31.996,491.367}
+
+	FM_BellPos[0] = marker at {421.521,55.438,1104.181}		// Next to archer
+	FM_BellPos[1] = marker at {483.482,58.889,1364.189}		// On mine island
+	FM_BellPos[2] =	marker at {1373.296,108.566,2061.510}		// Otherside of Japanese outpost
+
+	// Create the bells
+	while Counter < FM_AMOUNT_OF_BELLS
+		FM_Bell[Counter] = create HOUSE ABODE_INFO_JAPANESE_WALLTOWER at {FM_BellPos[Counter]}
+		enable FM_Bell[Counter] indestructible
+		disable FM_Bell[Counter] moveable
+		disable FM_Bell[Counter] pickup
+		disable FM_Bell[Counter] set on fire
+		Counter++
+	end while
+
+end script FM_CreateBells
+
+
+//-----------------------------------------------------------------------------
+//	Create an infinate amount of throwing stones near the first bell
+//-----------------------------------------------------------------------------
+begin script FM_CreateAndMaintainThrowingStones
+
+	TRockPos			= marker at {FM_BellPos[0]} + {5.000,0.000,0.000}
+	Counter				= 0
+
+start
+
+	begin loop
+		Counter = 0
+
+		// Maintain the rocks
+		while Counter < FM_AMOUNT_OF_THROWING_STONES
+			if FM_TRock[Counter] exists
+				// Check to see if the rock needs to be repositioned
+				if not {FM_TRock[Counter]} near {TRockPos} radius 20
+					if not FM_TRock[Counter] is FLYING and not FM_TRock[Counter] is HELD
+						// The rock is stationary, not in the players hand and it is too far away from the pile
+						// Reposition it
+						set FM_TRock[Counter] position to {TRockPos}
+					end if
+				end if
+			else
+				// The rock doesn't exist
+				// Create another rock
+				FM_TRock[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {TRockPos}
+			end if
+
+			Counter++
+		end while
+	end loop
+
+end script FM_CreateAndMaintainThrowingStones
+
+
+//-----------------------------------------------------------------------------
+//	Get a cutscene from the miners thanking the player and telling them they will still mine ore for him
+//-----------------------------------------------------------------------------
+begin script FM_MinersThankPlayerForRescue
+
+	Scroll		= 0
+	Miner		= 0
+	Mine		= 0
+//	MinePos		= marker at {2290.074,92.782,839.107}
+	MinePos		= marker at {460.362,128.094,1627.062}
+//	TalkPos		= marker at {2290.648,95.557,830.370}
+	TalkPos		= marker at {459.497,127.834,1633.489}
+	RemindTimer	= create timer for 0 seconds
+
+start
+
+	// Create a scroll for the player to click on
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {MinePos}
+	ALTITUDE of Scroll = 10
+
+	// TODO: Need to highlight the scroll with the advisors properly
+	begin loop
+		if camera position near {MinePos} radius 100 and Scroll viewed
+			if get RemindTimer time remaining <= 0
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					say "GA: Leader something requires your attention at the mine."
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set RemindTimer time to 30 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	// Get the cutscene with a miner thanking you
+	begin cinema
+		// Get the mine
+		Mine = get HOUSE at {MinePos} radius 30
+
+		// Create the miner and move him out of the mine to talk to the player
+		Miner = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {Mine}
+		move Miner position to {TalkPos}
+
+		move camera position to {TalkPos} + {-1.500,0.500,-1.500} time 3
+		move camera focus to {TalkPos} + {0.000,1.000,0.000} time 3
+		wait until camera ready
+		wait until {Miner} near {TalkPos} radius 1
+		set Miner focus to camera position
+
+		say "Thank you for freeing us from the Japanese tyranny." by Miner
+		wait until read
+		say "We will continue to mine as it's all we know, but we will provide you with the ore" by Miner
+		wait until read
+		say "instead of the Japanese." by Miner
+		wait until read
+		say "We will put the ore here." by Miner
+		wait until read
+
+		// Move the miner back into the mine
+		move Miner position to {MinePos}
+		move camera position to {TalkPos} + {0.000,5.000,0.000} time 8
+		move camera focus to {MinePos} time 8
+
+		eject good spirit
+		eject evil spirit
+		say "GA: That's nice of them leader. I'm glad we saved them from those nasty Japanese."
+		wait until read
+		say "EA: Well I'm not impressed. Where's the slave labour gone if they're happy working."
+		wait until read
+	end cinema
+
+	// Clean up the miner
+	wait until {Miner} near {MinePos} radius 1 or HEALTH of Miner <= 0
+	delete Miner
+
+end script FM_MinersThankPlayerForRescue
+
+
+//-----------------------------------------------------------------------------
+//	Get the introduction from the archer
+//-----------------------------------------------------------------------------
+begin script FM_IntroFromArcher
+
+	Scroll		= 0
+	ScrollPos	= marker at {FM_Archer}
+	RemindTimer	= create timer for 0 seconds
+
+start
+
+	// Create a scroll for the player to click on
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+	ALTITUDE of Scroll = 10
+
+	// TODO: Need to highlight the scroll with the advisors properly
+	begin loop
+		if camera position near {ScrollPos} radius 100 and Scroll viewed
+			if get RemindTimer time remaining <= 0
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					say "GA: Leader this little man has something to say to you."
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set RemindTimer time to 30 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	// Get the intro from the archer dude
+	begin cinema
+		move camera position to {FM_Archer} + {1.500,0.500,1.500} time 3
+		move camera focus to {FM_Archer} + {0.000,1.000,0.000} time 3
+		wait until camera ready
+
+		set FM_Archer focus to camera position
+		say "Please help me mighty one." by FM_Archer
+		wait until read
+		say "My family are enslaved on the Ferrymans Isle across the water." by FM_Archer
+		wait until read
+		say "I must do something to help them, but cannot cross." by FM_Archer
+		wait until read
+		say "Please will you help me by calling the ferryman over so I may cross." by FM_Archer
+		wait until read
+		say "You need to ring the bells to call the ferryman." by FM_Archer
+		wait until read
+		say "Please help me or I fear my family will be lost forever." by FM_Archer
+		wait until read
+	end cinema
+
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "GA: Oh leader that is a heart wrenching story. Let's help him rescue his family."
+		wait until read
+		say "EA: Hell no, unless there's some decent suffering involved I'm not interested."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script FM_IntroFromArcher
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the challenge has been completed (Miners have been rescued)
+//-----------------------------------------------------------------------------
+begin script FM_CheckForChallengeCompleted
+
+	AmountOfGuardsDead		= 0
+	Counter					= 0
+
+start
+
+	while FM_ChallengeComplete == FM_FALSE
+		// Reset the counters
+		Counter = 0
+		AmountOfGuardsDead = 0
+
+		// See if the guards are dead
+		while Counter < FM_AMOUNT_OF_JAPANESE_GUARDS
+			if not FM_JapaneseGuard[Counter] exists or HEALTH of FM_JapaneseGuard[Counter] <= 0
+				AmountOfGuardsDead++
+			end if
+			Counter++
+		end while
+
+		// Have all of the guards been killed?
+		if AmountOfGuardsDead == FM_AMOUNT_OF_JAPANESE_GUARDS
+			FM_ChallengeComplete = FM_TRUE
+		end if
+	end while
+
+end script FM_CheckForChallengeCompleted
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

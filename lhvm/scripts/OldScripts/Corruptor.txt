@@ -1,0 +1,316 @@
+
+global RockPlacementRadius = 30
+global GoodRemaining
+global EvilRemaining
+global GoodAlignmentChange
+global EvilAlignmentChange
+global StrengthReduction
+global StrengthIncrease
+global CorruptorActive = 0 // set for eternity currently
+global OriginalAlignment
+global SacrificePos = 0
+
+//-------------------------------------------------------------------------------------------------------
+// ** GOOD ROCK SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleGoodCorruptorRock (RockPos, RockScale, BaseAlignment)
+
+ RockAlignment = 0
+ RockDestroyed = 0
+ RockEffectRadius = 40
+ TempAlignmentChange = 0
+ Rock = 0
+ Distance = 0
+ TempStrengthReduction = 0
+ TempStrengthIncrease = 0
+
+start
+ Rock = create with angle 0 and scale RockScale OBJECT ROCK at {RockPos}
+ enable Rock indestructible
+ if BaseAlignment == 0
+	RockAlignment = 3
+ elsif BaseAlignment == 1
+	RockAlignment = 5
+ elsif BaseAlignment == 2
+	RockAlignment = 8
+ elsif BaseAlignment == 3
+	RockAlignment = 12
+ else
+	RockAlignment = 16
+ end if
+ GoodRemaining = GoodRemaining + RockAlignment
+
+/// REPLACE OriginalAlignment with REAL_ALIGNMENT below
+ 
+ begin loop
+	//wait 0.1 seconds
+	if Rock not exists
+		Rock = create with angle 0 and scale RockScale OBJECT ROCK at {RockPos}
+		enable Rock indestructible
+	elsif {Rock} near {SacrificePos} radius 5 and Rock is not HELD_ANY
+		GoodRemaining = GoodRemaining - RockAlignment
+		delete Rock with explosion
+		RockDestroyed = 1
+	elsif {Rock} not near {RockPos} radius 1 and Rock is not HELD_ANY and Rock is not FLYING
+		set Rock position to {RockPos}
+	elsif Rock is HELD_ANY
+		// try and affect GoodAlignmentChange based full rock potence
+		TempAlignmentChange = (RockAlignment/10)
+		if TempAlignmentChange > 0 and TempAlignmentChange > GoodAlignmentChange
+			GoodAlignmentChange = TempAlignmentChange
+		end if
+		// Reduce MyCreature Strength if alignment opposed to Rock's, Increase if not
+		if get ALIGNMENT of MyCreature < 0 // alignment opposed to rock's
+			TempStrengthReduction = -(TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthReduction > StrengthReduction
+				StrengthReduction = TempStrengthReduction
+			end if
+		elsif get ALIGNMENT of MyCreature > 0 // alignment same as rock's
+			TempStrengthIncrease = (TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthIncrease > StrengthIncrease
+				StrengthIncrease = TempStrengthIncrease
+			end if		
+		end if		
+	elsif {MyCreature} near {Rock} radius RockEffectRadius
+		Distance = get distance from {MyCreature} to {Rock}
+		// try and affect GoodAlignmentChange based on Distance
+		TempAlignmentChange = (1 - ((Distance)/(RockEffectRadius))) * (RockAlignment/10)
+		if TempAlignmentChange > 0 and TempAlignmentChange > GoodAlignmentChange
+			GoodAlignmentChange = TempAlignmentChange
+		end if
+		
+		// Reduce MyCreature Strength if alignment opposed to Rock's, Increase if not
+		if OriginalAlignment < 0 // alignment opposed to rock's
+			TempStrengthReduction = -(TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthReduction > StrengthReduction
+				StrengthReduction = TempStrengthReduction
+			end if
+		elsif OriginalAlignment > 0 // alignment same as rock's
+			TempStrengthIncrease = (TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthIncrease > StrengthIncrease
+				StrengthIncrease = TempStrengthIncrease
+			end if		
+		end if
+	end if
+ until RockDestroyed == 1
+ end loop
+
+end script HandleGoodCorruptorRock
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** EVIL ROCK SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleEvilCorruptorRock (RockPos, RockScale, BaseAlignment)
+
+ RockAlignment = 0
+ RockDestroyed = 0
+ RockEffectRadius = 40
+ TempAlignmentChange = 0
+ Rock = 0
+ Distance = 0
+ TempStrengthIncrease = 0
+ TempStrengthReduction = 0
+
+start
+ Rock = create with angle 0 and scale RockScale OBJECT MOBILE_STATIC_INFO_BOULDER1_VOLCANIC at {RockPos}
+ enable Rock indestructible
+ if BaseAlignment == 0 // hmm can't do 2 to the power of BaseAlignment
+	RockAlignment = 3
+ elsif BaseAlignment == 1
+	RockAlignment = 5
+ elsif BaseAlignment == 2
+	RockAlignment = 8
+ elsif BaseAlignment == 3
+	RockAlignment = 12
+ else
+	RockAlignment = 16
+ end if
+ EvilRemaining = EvilRemaining + RockAlignment
+
+/// REPLACE OriginalAlignment with REAL_ALIGNMENT below
+ 
+ begin loop
+	//wait 0.1 seconds
+	if Rock not exists
+		Rock = create with angle 0 and scale RockScale OBJECT MOBILE_STATIC_INFO_BOULDER1_VOLCANIC at {RockPos}
+		enable Rock indestructible
+	elsif {Rock} near {SacrificePos} radius 5 and Rock is not HELD_ANY
+		EvilRemaining = EvilRemaining - RockAlignment
+		delete Rock with explosion
+		RockDestroyed = 1
+	elsif {Rock} not near {RockPos} radius 1 and Rock is not HELD_ANY and Rock is not FLYING
+		set Rock position to {RockPos}
+	elsif Rock is HELD_ANY
+		// try and affect EvilAlignmentChange based full rock potence
+		TempAlignmentChange = (RockAlignment/10)
+		if TempAlignmentChange > 0 and TempAlignmentChange > EvilAlignmentChange
+			EvilAlignmentChange = TempAlignmentChange
+		end if
+		// Reduce MyCreature Strength if alignment opposed to Rock's, Increase if not
+		if get ALIGNMENT of MyCreature > 0 // alignment opposed to rock's
+			TempStrengthReduction = (TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthReduction > StrengthReduction
+				StrengthReduction = TempStrengthReduction
+			end if
+		elsif get ALIGNMENT of MyCreature < 0 // alignment same as rock's
+			TempStrengthIncrease = -(TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthIncrease > StrengthIncrease
+				StrengthIncrease = TempStrengthIncrease
+			end if		
+		end if		
+	elsif {MyCreature} near {Rock} radius RockEffectRadius
+		Distance = get distance from {MyCreature} to {Rock}
+		// try and affect EvilAlignmentChange based on Distance
+		TempAlignmentChange = (1 - ((Distance)/(RockEffectRadius))) * (RockAlignment/10)
+		if TempAlignmentChange > 0 and TempAlignmentChange > EvilAlignmentChange
+			EvilAlignmentChange = TempAlignmentChange
+		end if
+		
+		// Reduce MyCreature Strength if alignment opposed to Rock's, Increase if not
+		if OriginalAlignment > 0 // alignment opposed to rock's
+			TempStrengthReduction = (TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthReduction > StrengthReduction
+				StrengthReduction = TempStrengthReduction
+			end if
+		elsif OriginalAlignment < 0 // alignment same as rock's
+			TempStrengthIncrease = -(TempAlignmentChange * (OriginalAlignment))
+			if TempStrengthIncrease > StrengthIncrease
+				StrengthIncrease = TempStrengthIncrease
+			end if		
+		end if
+	end if
+ until RockDestroyed == 1
+ end loop
+
+end script HandleEvilCorruptorRock
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** STRENGTH SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script StrengthLoop
+
+ FinalStrengthChange = 0
+ OriginalStrength = get STRENGTH of MyCreature
+
+start
+begin loop
+	FinalStrengthChange = StrengthIncrease - StrengthReduction
+	if FinalStrengthChange != 0
+		/// should be setting SCRIPT STRENGTH and checking script_STRENGTH instead of OriginalStrength
+		STRENGTH of MyCreature = OriginalStrength + FinalStrengthChange
+	elsif StrengthIncrease == 0 and StrengthReduction == 0
+		/// botch instead of switching off SCRIPT_STRENGTH
+		STRENGTH of MyCreature = OriginalStrength
+	end if
+	wait 0.1 seconds
+	StrengthIncrease = 0
+	StrengthReduction = 0
+	wait 0.1 seconds
+	
+until CorruptorActive == 1
+end loop
+end script StrengthLoop
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** MAIN SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script Corruptor
+
+ GoodRockPos[5]
+ EvilRockPos[5]
+ //CorruptorHutPos = marker at {1390.224,5.360,1310.209}
+ CorruptorHutPos = marker at {1146.500,14.740,1621.739}
+ CorrupterHut = create HOUSE ABODE_INFO_EGYPTIAN_SHACK_Y at {CorruptorHutPos}
+ OffsetAngle = 0
+ Highlight = 0
+ HighlightPos = marker at {CorruptorHutPos}
+ Count = 0
+ GoodCentre = 0
+ EvilCentre = 0
+ TempMarker = 0
+ TempAngle = 0
+ RockScale = 0
+ RockScaleBoost = 0.4
+ RockScaleIncrement = 0.3
+ FinalAlignmentChange = 0
+ LandAlignmentChange = 0
+ LastLandAlignmentChange = 0
+
+start
+ MyCreature=get player 1 creature
+ SacrificePos = marker at {1121.485,14.523,1545.137}
+ OriginalAlignment = get ALIGNMENT of MyCreature
+ // place Centre Markers
+ TempMarker = marker at {CorruptorHutPos}+{0,-10}
+ TempAngle = 90 - OffsetAngle
+ GoodCentre = marker at get target from {TempMarker} to {CorruptorHutPos} distance RockPlacementRadius angle TempAngle
+ TempAngle = 270 - OffsetAngle
+ EvilCentre = marker at get target from {TempMarker} to {CorruptorHutPos} distance RockPlacementRadius angle TempAngle
+ 
+ // place good rocks
+ Count = 0
+ while Count < 5
+	TempAngle = 270 + ((Count)*54)
+	if TempAngle > 360
+		TempAngle = TempAngle - 360
+	end if
+	GoodRockPos[Count] = marker at get target from {CorruptorHutPos} to {GoodCentre} distance RockPlacementRadius angle TempAngle
+	// set size of rock based on Count
+	RockScale = RockScaleBoost + ((Count+1)* RockScaleIncrement)
+	run background script HandleGoodCorruptorRock (GoodRockPos[Count], RockScale, Count)
+	Count++
+end while
+
+ // place Evil rocks
+ Count = 0
+ while Count < 5
+	TempAngle = 270 + ((Count)*54)
+	if TempAngle > 360
+		TempAngle = TempAngle - 360
+	end if
+	EvilRockPos[Count] = marker at get target from {CorruptorHutPos} to {EvilCentre} distance RockPlacementRadius angle TempAngle
+	// set size of rock based on Count
+	RockScale = RockScaleBoost + ((Count+1)* RockScaleIncrement)
+	//EvilRock[Count] = create with angle 0 and scale RockScale OBJECT ROCK at {EvilRockPos[Count]}
+	run background script HandleEvilCorruptorRock (EvilRockPos[Count], RockScale, Count)
+	Count++
+end while
+
+run background script StrengthLoop
+begin loop
+	FinalAlignmentChange = GoodAlignmentChange - EvilAlignmentChange
+	if FinalAlignmentChange != 0
+		/// should be setting SCRIPT ALIGNMENT and checking script_alignment instead of OriginalAlignment
+		ALIGNMENT of MyCreature = OriginalAlignment + FinalAlignmentChange
+	elsif GoodAlignmentChange == 0 and EvilAlignmentChange == 0 and get ALIGNMENT of MyCreature != OriginalAlignment
+		/// botch instead of switching off SCRIPT_ALIGNMENT
+		ALIGNMENT of MyCreature = OriginalAlignment
+	end if
+	wait 0.1 seconds
+	GoodAlignmentChange = 0
+	EvilAlignmentChange = 0
+	wait 0.1 seconds
+	
+	///Use (GoodRemaining - EvilRemaining) to alter all town alignments on land
+	LandAlignmentChange = (GoodRemaining - EvilRemaining)/22 // Best Result: 44/22 == 2
+	if LandAlignmentChange != LastLandAlignmentChange
+		begin dialogue
+			say "** ADJUSTING THE ALIGNMENT OF ENTIRE POPULATION **"
+			wait until read
+			say "Land Alignment Change = $d" with number LandAlignmentChange
+			wait until read
+		end dialogue
+		LastLandAlignmentChange = LandAlignmentChange
+	end if
+	
+until CorruptorActive == 1
+end loop
+
+end script Corruptor

@@ -1,0 +1,29 @@
+//Land6Wanted.txt
+//------------------------------------------------
+//  LAND 6 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land6Wanted
+
+ L6Actor1Pos = marker at {1526.116,53.629,828.841}	// Between Greek and Aztecs
+ L6Actor1 = create VILLAGER MALE at {L6Actor1Pos}
+ PosterPos1 = marker at {1453.008,61.282,1237.707}
+ L6Actor2Pos = marker at {1008.713,83.019,1621.115}	// Behind central mountains nearer Egyptians
+ L6Actor2 = create VILLAGER MALE at {L6Actor2Pos}
+ PosterPos2 = marker at {1458.996,61.250,1238.263}
+ L6Actor3Pos = marker at {824.409,39.834,1571.530}	// On coast between Aztecs and Egyptians
+ L6Actor3 = create VILLAGER MALE at {L6Actor3Pos}
+ PosterPos3 = marker at {1463.875,61.219,1237.807}
+ JailLocation = marker at {1458.582,61.219,1232.951} // hut near Greek TC
+
+start
+	
+	run background script GlobalWanted (15, L6Actor1, L6Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (16, L6Actor2, L6Actor2Pos, JailLocation, PosterPos2)
+
+	run background script GlobalWanted (17, L6Actor3, L6Actor3Pos, JailLocation, PosterPos3)
+
+
+end script Land6Wanted
+

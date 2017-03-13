@@ -1,0 +1,83 @@
+
+begin script Land4NorseAttacks
+
+IdlePlatoonsAtNorseTown = 0
+PlatoonForAction = 0
+PlatoonTarget = 0
+Waypoint1 = marker at {2035.132, 135.371, 1509.108}
+Waypoint3 = marker at {1732.021, 124.033, 1051.891}
+Waypoint2 = marker at {1668.469, 127.133, 970.426}
+IdlePlatoons = 0
+GotPlatoon = 0
+PlayerSpiedEnemy = 0
+
+BodgePlatoon1 = 0
+BodgePlatoon1Pos = marker at {1831.781, 236.186, 1855.631}
+
+Platoon1InAction = 0
+TargetVillager1 = 0
+TargetVillager2 = 0
+
+LurkPos = marker at {1443.861, 152.560, 947.680}
+
+start
+
+IdlePlatoons = get idle platoons in town L4NorseCity
+
+BodgePlatoon1 = create platoon PLATOON_INFO_NORSE_RANGED_1 at {BodgePlatoon1Pos} with 20 men and 0 women 
+PLAYER of BodgePlatoon1 = 1
+disable platoon BodgePlatoon1 camp
+
+while L4CapitalConverted == 0
+//if IdlePlatoons >= 2 and GotPlatoon == 0
+//	PlatoonForAction = get idle platoon of type PLATOON_INFO_NORSE_MELEE_1 of town L4NorseTown
+//	if PlatoonForAction != 0
+//		GotPlatoon = 1
+//	end if
+//end if
+	if PlayerSpiedEnemy == 0
+		if camera position near {BodgePlatoon1} radius 60 and {BodgePlatoon1} viewed
+			begin dialogue
+			eject good spirit
+				say "Hairy men in leather with dangerous looking weapons. What on earth could they want?"
+				wait until read
+			eject evil spirit
+				say "They mean to kill us, you buffoon! Boss, make some troops and slaughter them!"
+				wait until read
+			send evil spirit home
+				say "No, no, no. We should build walls to protect our people."
+				wait until read
+			send good spirit home
+			end dialogue
+			PlayerSpiedEnemy = 1
+		end if
+	end if
+
+
+	if Platoon1InAction == 0
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {Waypoint1} to next in BodgePlatoon1 action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {Waypoint2} to next in BodgePlatoon1 action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {Waypoint3} to next in BodgePlatoon1 action queue
+		Platoon1InAction = 1
+	end if
+
+	if {BodgePlatoon1} near {Waypoint2} radius 10
+		if L4BuildWallComplete == 0
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {LurkPos} to next in BodgePlatoon1 action queue
+		end if
+		enable platoon BodgePlatoon1 camp
+	end if
+
+	//if {BodgePlatoon1} near {LurkPos} radius 10
+	//	TargetVillager1 = get 
+	//	if AttackTimer == 0
+	//	wait 5 seconds
+	//	say "In position"
+	//	wait until read
+	//	add action PLATOON_AGENDA_ACTION_RANGED_ATTACK_MAINTAINING_DISTANCE using {L4GreekTown} to next in BodgePlatoon1 action queue
+	//	end if
+	//end if
+
+end while
+
+end script Land4NorseAttacks

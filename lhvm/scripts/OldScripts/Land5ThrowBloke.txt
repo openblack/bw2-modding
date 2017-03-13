@@ -1,0 +1,313 @@
+//================================================================
+// Throw Bloke
+// Matt.L
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+define TB_FALSE = 0
+define TB_TRUE = 1
+
+define TB_GAME_SPEED = 0.1
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global TB_Bloke = 0
+global TB_FireFX = 0
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+define script TB_CreaturePoo
+define script TB_Camp
+
+//-----------------------------------------------------------------
+// Throw Bloke
+//-----------------------------------------------------------------
+begin script Land5ThrowBloke
+	BlokeCreate = marker at {1395.155, 51.841, 1362.039}
+	BlokeCamp = marker at {1391.155, 51.841, 1362.039}
+
+	OnFireMovePos = 0
+	Campfire = 0
+	MaxPans = 4
+	Pans = 0
+	CamPos = 0
+	OldTarget = 0
+start
+      
+	//Get the players creature
+	//MyCreature = get player 0 creature
+
+	//Create bloke
+	TB_Bloke = create VILLAGER MERRYMAN1 at {BlokeCreate}
+	enable TB_Bloke indestructible
+	enable TB_Bloke pickup
+
+
+	//Create the campfire
+	Campfire = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {BlokeCamp}
+	override mesh for Campfire with "..\features\m_generic_bonfire"
+	ALTITUDE of Campfire = 0.2
+
+	begin loop
+      
+		//The Bloke has been thrown
+		if TB_Bloke is FLYING and not {TB_Bloke} under water
+			store camera details
+			OldTarget = marker at {TB_Bloke}
+			wait 1 seconds
+			begin cinema 
+				
+				while ALTITUDE of TB_Bloke > 20 and not {TB_Bloke} under water
+					wait 0.5 seconds
+					//run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+					//NO_NewCamPos = marker at get target from {Face} to {Target} distance NO_CamDistance angle NO_CamAngle
+					//NO_NewCamPos = marker at get world position from {NO_NewCamPos} facing {Target} to {Offset}
+					CamPos = marker at get target from {OldTarget} to {TB_Bloke} distance 5 angle 180
+					move camera position to {CamPos} time 1
+					move camera focus to {TB_Bloke} time 1			
+					//until not TB_Bloke is FLYING or {TB_Bloke} under water
+				end while
+			      
+				if not {TB_Bloke} under water and ALTITUDE of TB_Bloke > 1
+					set game speed to TB_GAME_SPEED
+
+					set camera roll -20 time 0.00000001
+					set camera position to get world position from TB_Bloke to {-0.584, 1.483, 2.967}
+					set camera focus to get world position from TB_Bloke to {-0.410, 1.274, 2.004}
+					if not camera position is under landscape and not camera position under water
+						wait TB_GAME_SPEED seconds
+						wait TB_GAME_SPEED seconds
+					end if
+
+					set camera roll 35 time 0.00000001
+					set camera position to get world position from TB_Bloke to {-2.863, 5.250, 2.029}
+					set camera focus to get world position from TB_Bloke to {-2.379, 4.521, 1.543}
+					if not camera position is under landscape and not camera position under water
+						wait TB_GAME_SPEED seconds
+						wait TB_GAME_SPEED seconds
+					end if
+
+					set camera roll -21 time 0.00000001
+					set camera position to get world position from TB_Bloke to {-0.640, 2.191, -6.096}
+					set camera focus to get world position from TB_Bloke to {-0.478, 1.977, -5.132}
+					if not camera position is under landscape and not camera position under water
+						wait TB_GAME_SPEED seconds
+						wait TB_GAME_SPEED seconds
+					end if
+
+					set camera roll 15 time 0.00000001
+					set camera position to get world position from TB_Bloke to {0.962, 4.162, -4.323}
+					set camera focus to get world position from TB_Bloke to {0.996, 3.597, -3.499}
+					move camera focus to {TB_Bloke} time 0.1
+					//wait until camera ready
+					if not camera position is under landscape and not camera position under water
+						wait TB_GAME_SPEED seconds
+						wait TB_GAME_SPEED seconds
+					end if
+				end if
+					
+				OldTarget = marker at {TB_Bloke}
+				set game speed to 1 
+				
+				while TB_Bloke is FLYING and not {TB_Bloke} under water
+					
+					CamPos = marker at get target from {OldTarget} to {TB_Bloke} distance 5 angle 180
+					move camera position to {CamPos}+{0.0,3.0,0.0} time 1
+					move camera focus to {TB_Bloke} time 1
+					wait 0.5 seconds				
+				end while
+				
+				if {TB_Bloke} under water
+					set camera position to get world position from TB_Bloke to {1.237,3.932,2.723}
+					set camera focus to get world position from TB_Bloke to {0.879,3.136,2.235}
+					wait 3 seconds
+					//restore camera details
+				end if
+	
+				//wait until not TB_Bloke is FLYING
+				
+
+			end cinema
+
+		else
+
+			//In the creatures hand.. might be eaten
+			if TB_Bloke in MyCreature hand
+				wait until not TB_Bloke in MyCreature hand or not TB_Bloke exists
+
+				if not TB_Bloke exists
+					run script TB_CreaturePoo
+				end if
+
+			else
+
+				//Man is on fire
+				if TB_Bloke on fire and not TB_Bloke is HELD
+					//Run round the spot being on fire
+					begin loop
+						OnFireMovePos = marker at {TB_Bloke} + {0.000,0.000,0.000}
+						if TB_Bloke can navigate to {OnFireMovePos}
+							move TB_Bloke position to {OnFireMovePos} using NAV_FAILURE_MODE_STOP_IMMEDIATELY navigation
+						end if
+
+						SPEED of TB_Bloke = 0.5
+						wait 1 seconds
+					until not TB_Bloke on fire or TB_Bloke is HELD or TB_Bloke is FLYING
+					end loop
+
+					reset TB_Bloke anim speed
+				else
+					//Held over the campfire
+					if TB_Bloke is HELD and {TB_Bloke} near {Campfire} radius 2 and TB_FireFX exists
+						enable TB_Bloke on fire 0.5
+					else
+					
+						//Campfire actions - Only run if other non important actions cannot occur
+						if {TB_Bloke} near {BlokeCamp} radius 20 and not TB_Bloke is HELD
+							run script TB_Camp
+						end if
+
+					end if //Held over campfire
+				end if	//On fire
+			end if //In creatures hand
+		end if //Flying
+
+	end loop
+
+end script Land5ThrowBloke
+
+//-----------------------------------------------------------------
+// Creature Poo
+//-----------------------------------------------------------------
+begin script TB_CreaturePoo
+      ArsePos = 0
+      FlyPos = 0
+start
+
+      play anim C_INDIVIDUAL_NEED_A_POO on MyCreature
+      wait until creature MyCreature finished script action
+
+      force MyCreature CREATURE_FART MyCreature
+      wait until creature MyCreature finished script action
+
+      ArsePos = marker at arse position of MyCreature 
+      FlyPos = marker at get world position from MyCreature to {1.020, 0.194, -3.249}
+
+      set TB_Bloke position to {ArsePos} 
+      set TB_Bloke target {FlyPos} time 1
+      
+      //Don't want the cut scenery when this script exits
+      wait until not TB_Bloke is FLYING
+
+end script TB_CreaturePoo
+
+//-----------------------------------------------------------------
+// Thorw Bloke Camp
+//-----------------------------------------------------------------
+begin script TB_Camp	
+	CampfireSitPos = marker at {1394.155, 51.841, 1362.039}
+	CampfirePos = marker at {1391.155, 51.841, 1362.039}
+	LightFirePos = marker at {1392.155, 51.841, 1362.039}
+	
+	SmokeFX = 0
+
+	RandomAction = 0
+	SitLoops = 0
+start
+	begin loop
+		move TB_Bloke position to {CampfireSitPos}
+		wait until {TB_Bloke} at {CampfireSitPos}
+		
+		//Light the campfire
+		
+		if not TB_FireFX exists
+						
+			move TB_Bloke position to {LightFirePos}
+			wait until {TB_Bloke} at {LightFirePos}
+
+			move villager TB_Bloke focus to {CampfirePos}
+			play anim "a_p_lighting_campfire" on TB_Bloke
+			wait 4 seconds
+			
+			TB_FireFX = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {CampfirePos} time -1
+			SmokeFX = create visual effect "Gp_s_smoke_chimney.ves" strength 0.5 scale 0.8 at {CampfirePos} + {0.000,1.000,0.000} time -1
+			wait until TB_Bloke played
+
+		end if
+
+		//Idle fire stuff now
+		begin loop
+
+			RandomAction = number from 1 to 2
+
+			//Sitting action
+			if RandomAction == 1
+				play anim "a_p_norse_sitting_into" on TB_Bloke
+				wait until TB_Bloke played
+
+				//Sit for a while
+				SitLoops = number from 5 to 15
+
+				play anim "a_p_norse_sitting" on TB_Bloke loop SitLoops
+				wait until TB_Bloke played
+
+				play anim "a_p_norse_sitting_outof" on TB_Bloke
+				wait until TB_Bloke played
+
+			//Prodding the fire action
+			elsif RandomAction == 2
+				
+				set TB_Bloke carrying CARRIED_OBJECT_CROOK
+				play anim "a_p_prod_campfire" on TB_Bloke loop 2
+				wait 0.5 seconds
+				SCALE of TB_FireFX = 0.55
+				wait 0.5 seconds
+				SCALE of TB_FireFX = 0.6
+				wait 0.5 seconds
+				SCALE of TB_FireFX = 0.65
+				wait 0.5 seconds
+				SCALE of TB_FireFX = 0.7
+
+				wait until TB_Bloke played
+				set TB_Bloke carrying CARRIED_OBJECT_NONE
+				
+
+				wait 0.2 seconds
+				SCALE of TB_FireFX = 0.65
+				wait 0.2 seconds
+				SCALE of TB_FireFX = 0.60
+				wait 0.2 seconds
+				SCALE of TB_FireFX = 0.55
+				wait 0.2 seconds
+				SCALE of TB_FireFX = 0.50
+
+			//Sleeping action
+			elsif RandomAction == 3
+
+				play anim "a_p_sleeping_rough_into" on TB_Bloke
+				wait until TB_Bloke played
+
+				//Sit for a while
+				SitLoops = number from 5 to 15
+
+				play anim "a_p_sleeping_rough_loop" on TB_Bloke loop SitLoops
+				wait until TB_Bloke played
+				
+				play anim "a_p_sleeping_rough_outof" on TB_Bloke
+				wait until TB_Bloke played
+
+			end if
+
+		end loop
+
+		//a_p_prod_campfire.anm
+
+		wait 30 seconds
+	until TB_Bloke is HELD or TB_Bloke is FLYING
+	end loop
+
+end script TB_Camp

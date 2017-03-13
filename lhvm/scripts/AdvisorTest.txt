@@ -1,0 +1,107 @@
+run script AdvisorTest
+
+begin script AdvisorTest
+
+start
+
+begin loop
+
+	begin dialogue
+		eject good spirit
+		//make good spirit point at {967.30, 958.09}
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_10"
+		wait until read
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_20"
+		eject evil spirit
+		wait until read
+		wait until read
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_30"
+		wait until read
+		/// make evil spirit face Norse Town and shake fist or something
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_40"
+		wait until read
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_50"
+		wait until read
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_60"
+		wait until read
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_70"
+		wait until read
+		say "BW2T_SCRIPT_03C_07VIKRAID_START_80"
+		wait until read
+	end dialogue
+
+
+/*
+begin dialogue
+	make evil spirit cling across 1 down 0.5
+	wait 5 seconds
+	make good spirit cling across 0 down 0.5
+	make good spirit point at {967.30, 958.09}
+	wait 5 seconds
+	make good spirit look at {967.30, 958.09}
+	wait 5 seconds
+	stop good spirit pointing
+	eject evil spirit
+	//say "Watch out, Boss! A Norse platoon is heading into our town!"
+	//say "BW2T_SCRIPT_03C_CONTROL_ATTACKWARNING_10"
+	//wait until read
+	make evil spirit fly across 0.5 down 0.5
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_SHRUG
+	wait 10 seconds
+	make evil spirit fly across 0.5 down 1.0
+	make evil spirit play across 0.5 down 1.0 HELPDUDE_LAUGH
+	wait 10 seconds
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_SHAKEFINGER
+	wait 10 seconds
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_NODHEAD
+	wait 10 seconds
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_SHAKEHEAD
+	wait 10 seconds
+	//make evil spirit play HELPDUDE_LAUGH at {0.5,0.5} in world
+	//wait 10 seconds
+
+end dialogue
+*/
+
+begin dialogue
+	eject good spirit
+	//make good spirit fly across 0.5 down 0.5
+	make good spirit point at {967.30, 100, 958.09}
+	wait 10 seconds
+	make good spirit disappear
+	make evil spirit appear
+	make evil spirit point at {967.30, 100, 958.09}
+	wait 10 seconds
+end dialogue
+
+begin dialogue
+	eject good spirit
+	make good spirit look at {967.30, 100, 958.09}
+	wait 10 seconds
+	make good spirit disappear
+	make evil spirit appear
+	make evil spirit look at {967.30, 100, 958.09}
+	wait 10 seconds
+end dialogue
+
+
+begin dialogue
+	eject evil spirit
+	make evil spirit play HELPDUDE_SHAKEFINGER at {967.30, 958.09} in world
+	wait 5 seconds
+	make evil spirit fly across 0.5 down 0.5
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_SHRUG
+	wait 5 seconds
+	make evil spirit play across 0.5 down 1.0 HELPDUDE_LAUGH
+	wait 5 seconds
+	make evil spirit play across 0.5 down 0.0 HELPDUDE_SHAKEFINGER
+	wait 5 seconds
+	make evil spirit play across 0.0 down 0.5 HELPDUDE_NODHEAD
+	wait 5 seconds
+	make evil spirit play across 1.0 down 0.5 HELPDUDE_SHAKEHEAD
+	wait 5 seconds
+end dialogue
+
+end loop
+
+end script AdvisorTest

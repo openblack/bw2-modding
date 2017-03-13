@@ -1,0 +1,6 @@
+run script RunSingingPengions
+
+begin script RunSingingPengions
+start
+	run script SingingPengions
+end script RunSingingPengions

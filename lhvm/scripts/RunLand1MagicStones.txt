@@ -1,0 +1,6 @@
+run script RunLand1MagicStones
+
+begin script RunLand1MagicStones
+start
+	run script Land1MagicStones
+end script RunLand1MagicStones

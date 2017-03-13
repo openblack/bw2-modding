@@ -1,0 +1,12 @@
+run script RunLand5Gardens
+
+begin script RunLand5Gardens
+
+start
+
+	if L5GreekTown not exists
+		run background script Land5Globals
+	end if
+	run script Land5Gardens
+
+end script RunLand5Gardens

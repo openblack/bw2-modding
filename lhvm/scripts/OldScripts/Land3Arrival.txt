@@ -1,0 +1,431 @@
+//------------------------------------------------
+//  LAND 3 ARRIVAL CUT-SCENE (Yuka's Capture)
+//------------------------------------------------
+
+
+begin script Land3Arrival
+
+RelCamPos=0
+RelCamFoc=0
+
+MrFenrik=0
+Yuka=0
+YukaStand = 0
+FenrikStart = 0
+JapGuard1 = 0
+JapGuard2 = 0
+JapGuard1Pos = 0
+JapGuard2Pos = 0
+FenrikMoves = 0
+
+TownCentrePos = 0
+TownCentre = 0
+
+Messenger = 0
+
+norseguard1=0
+norseguard2=0
+
+norseguard1pos=0
+norseguard2pos=0
+
+Fell=0
+FellStart=0
+
+Captain=0
+CaptainStart=0
+
+start
+
+	begin cinema
+
+		set camera position to {1677.007,162.411,585.006}
+		set camera focus to {1746.365,91.789,682.690}
+
+		say "This cutscene will begin with Dimitrios and the Greeks landing on the island and starting to build up"
+		wait until read
+		clear dialogue
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		TownCentrePos = marker at {1235.095,285.406,1490.500}
+		TownCentre = get HOUSE at {TownCentrePos}
+
+		YukaStand = marker at get world position from TownCentre to {3.815,10.667,11.899}
+		FenrikStart = marker at get world position from TownCentre to {1.844,10.667,7.938}
+		JapGuard1Pos = marker at get world position from TownCentre to {3.381,10.665,9.125}
+		JapGuard2Pos = marker at get world position from TownCentre to {0.375,10.670,9.349}
+		disable Yuka alternative mesh
+		Yuka=create VILLAGER VILLAGER_INFO_JAPANESE_HOUSEWIFE_FEMALE at {YukaStand}
+		MrFenrik=create VILLAGER VILLAGER_INFO_NORSE_LEADER_MALE at {FenrikStart}
+		JapGuard1= create SOLDIER PLATOON_INFO_JAPANESE_MELEE_1 at {JapGuard1Pos}
+		JapGuard2=create SOLDIER PLATOON_INFO_JAPANESE_MELEE_1 at {JapGuard2Pos}
+
+		CaptainStart = marker at get world position from TownCentre to {4.803,10.667,6.343}
+		Captain = create SOLDIER PLATOON_INFO_NORSE_MELEE_2 at {CaptainStart}
+		set Captain focus to {FenrikMoves}
+
+		FenrikMoves = marker at get target from {MrFenrik} to {Yuka} distance 0.5 angle 180
+
+		ALTITUDE of Yuka = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of YukaStand - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Yuka)
+		ALTITUDE of MrFenrik = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of FenrikStart - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of MrFenrik)
+		ALTITUDE of JapGuard1 = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of JapGuard1Pos - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of JapGuard1)
+		ALTITUDE of JapGuard2 = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of JapGuard2Pos - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of JapGuard2)
+		ALTITUDE of Captain = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of CaptainStart - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Captain)
+
+		set Yuka focus to get world position from TownCentre to {2.326,-0.032,35.063}
+		set JapGuard1 focus to get world position from TownCentre to {2.326,-0.032,35.063}
+		set JapGuard2 focus to get world position from TownCentre to {2.326,-0.032,35.063}
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from TownCentre to {-48.850,59.999,76.797}
+		RelCamFoc=marker at get world position from TownCentre to {13.738,0.250,-7.998}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 67.000 time 4
+		set fade in time 2
+
+		wait 4 seconds
+
+		//yuka looking out
+		set camera lens 37.000
+		RelCamPos=marker at get world position from TownCentre to {3.826,11.320,12.707}
+		RelCamFoc=marker at get world position from TownCentre to {2.907,11.136,-15.765}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 2 seconds
+
+		move MrFenrik position to {FenrikMoves}
+		wait until {MrFenrik} at {FenrikMoves}
+		wait 0.1 seconds
+
+		//grope close-up
+		set camera lens 20.000
+		RelCamPos=marker at get world position from TownCentre to {3.207,11.121,12.469}
+		RelCamFoc=marker at get world position from TownCentre to {22.042,10.937,-8.902}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "There you are, Highness. Your father –"
+		play anim "A_P_FARMER_STOKE_SHEEP" on MrFenrik 
+
+		// AUDIO_TODO play sound constant 76 SOUND_BANK_TYPE_BW2_PJTEST
+		wait 2 seconds
+		// AUDIO_TODO play sound constant 82 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait 1 seconds
+
+		play anim "A_P_TURN_180" on Yuka 
+
+		//turn shocked
+		set camera lens 16.000
+		RelCamPos=marker at get world position from TownCentre to {3.395,11.370,11.479}
+		RelCamFoc=marker at get world position from TownCentre to {23.728,11.186,31.430}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until Yuka played
+		set Yuka focus to {MrFenrik}
+
+		say "Knows how to keep his duties as a High Priest separate from his personal life.  (beat) Unlike some."
+		// AUDIO_TODO play sound constant 116 SOUND_BANK_TYPE_BW2_PJTEST
+
+		//play anim "ANM_P_TALK2_FEMALE" on Yuka 
+
+		wait until read
+
+		//steps closer
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {3.442,11.325,12.555}
+		RelCamFoc=marker at get world position from TownCentre to {13.324,11.142,-14.161}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "Well, to each their own"
+		play anim "A_P_TALK2_MALE" on MrFenrik 
+
+		// AUDIO_TODO play sound constant 78 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		Messenger = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at {FenrikStart}
+		ALTITUDE of Messenger = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of FenrikStart - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Messenger)
+
+		set Messenger focus to {MrFenrik}
+
+		//messenger close-up - now the wide shot
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {2.056,11.300,8.738}
+		RelCamFoc=marker at get world position from TownCentre to {-3.546,11.116,-19.191}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "My Lord Fenrik!  The Greeks!"
+		play anim "A_P_TALK2_MALE" on Messenger 
+
+		// AUDIO_TODO play sound constant 103 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		//all in shot
+		set camera lens 34.000
+		RelCamPos=marker at get world position from TownCentre to {3.516,11.248,13.090}
+		RelCamFoc=marker at get world position from TownCentre to {3.349,11.344,6.589}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "The Greeks are all dead.  Go back to your post before I have you flogged."
+		play anim "A_P_TALK2_MALE" on MrFenrik 
+
+		// AUDIO_TODO play sound constant 75 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		//messenger close-up
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {2.056,11.300,8.738}
+		RelCamFoc=marker at get world position from TownCentre to {-3.546,11.116,-19.191}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "But my Lord, an army has landed."
+		play anim "A_P_TALK2_MALE" on Messenger 
+
+		// AUDIO_TODO play sound constant 102 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		//Fenrik responds (Yuka in background)
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {3.055,11.333,11.326}
+		RelCamFoc=marker at get world position from TownCentre to {28.788,11.149,23.543}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set MrFenrik focus to {Messenger}
+
+		say "That’s impossib--"
+		play anim "A_P_TALK2_MALE" on MrFenrik 
+
+		// AUDIO_TODO play sound constant 74 SOUND_BANK_TYPE_BW2_PJTEST
+
+		move Yuka position to get world position from TownCentre to {3.966,10.667,11.118}
+		wait until read
+		set MrFenrik focus to get target from {Yuka} to {MrFenrik} distance 1 angle 270
+		
+		set MrFenrik focus to {Yuka}
+
+		//Yuka close-up
+		RelCamPos=marker at get world position from TownCentre to {3.316,11.382,11.594}
+		RelCamFoc=marker at get world position from TownCentre to {27.310,11.198,-3.760}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		say "Where do you think you’re going?"
+		play anim "A_P_TURN_90_LEFT" on MrFenrik 
+		wait until MrFenrik played
+		wait until read
+		play anim "A_P_TURN_180" on Yuka 
+		wait until Yuka played
+		set Yuka focus to {MrFenrik}
+
+
+		say "I need to warn my father."
+		//play anim "ANM_P_TALK2_FEMALE" on Yuka 
+		// AUDIO_TODO play sound constant 115 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		//over yuka's shoulder
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {3.286,11.335,10.029}
+		RelCamFoc=marker at get world position from TownCentre to {13.566,9.785,36.550}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		play anim "A_P_TALK2_MALE" on MrFenrik 
+		say "No you don’t. This is my fight."
+		// AUDIO_TODO play sound constant 72 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		//Yuka close-up
+		RelCamPos=marker at get world position from TownCentre to {3.316,11.382,11.594}
+		RelCamFoc=marker at get world position from TownCentre to {27.310,11.198,-3.760}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "Are you out of your mind?  With Japanese and Aztec reinforcements, they won’t stand a chance."
+		//play anim "ANM_P_TALK2_FEMALE" on Yuka 
+		// AUDIO_TODO play sound constant 114 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		move MrFenrik position to get target from {MrFenrik} to {Yuka} distance 0.5 angle 180
+
+		//grab Yuka
+		RelCamPos=marker at get world position from TownCentre to {3.384,11.133,10.573}
+		RelCamFoc=marker at get world position from TownCentre to {21.379,16.389,32.021}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 2 seconds
+
+		norseguard1pos = marker at get world position from TownCentre to  {1.357,10.667,9.515}
+		norseguard2pos = marker at get world position from TownCentre to  {3.356,10.667,9.398}
+
+		norseguard1 = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at {norseguard1pos}
+		norseguard2 = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at {norseguard2pos}
+		ALTITUDE of norseguard1 = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of norseguard1pos - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of norseguard1)
+		ALTITUDE of norseguard2 = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of norseguard2pos - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of norseguard2)
+
+		set norseguard1 focus to {JapGuard2}
+		set norseguard2 focus to {JapGuard1}
+
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {3.537,11.394,11.130}
+		RelCamFoc=marker at get world position from TownCentre to {2.705,9.844,-17.301}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 3 seconds
+
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {2.158,11.361,11.033}
+		RelCamFoc=marker at get world position from TownCentre to {-15.033,9.811,-11.628}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		FellStart = marker at get world position from TownCentre to {1.729,10.667,8.800}
+		Fell = create SOLDIER PLATOON_INFO_NORSE_MELEE_1 at {FellStart}
+		ALTITUDE of Fell = (SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of FellStart - SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Fell)
+		set Fell focus to {norseguard1}
+
+		move JapGuard2 position to get target from {JapGuard2} to {norseguard1} distance 0.5 angle 180
+		wait 3 seconds
+		set JapGuard2 focus to {MrFenrik}
+		set MrFenrik focus to {norseguard1}
+		wait 1 second
+
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {3.195,11.371,11.073}
+		RelCamFoc=marker at get world position from TownCentre to {30.818,9.821,17.854}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 1 second
+
+		say "When the Greeks are dead, you can tell your father whatever you like.  Until then…"
+		play anim "A_P_TALK2_MALE" on MrFenrik 
+		// AUDIO_TODO play sound constant 80 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait 1 second
+		play anim "A_P_TURN_90_LEFT" on MrFenrik 
+		wait until MrFenrik played
+		set MrFenrik focus to {Yuka}
+		
+		wait until read
+		set MrFenrik focus to {Fell}
+		say "Brother! The princess is in your care."
+		set camera lens 24.000
+		RelCamPos=marker at get world position from TownCentre to {2.273,11.356,9.688}
+		RelCamFoc=marker at get world position from TownCentre to {-11.863,9.806,-14.994}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set Fell focus to get target from {MrFenrik} to {Fell} distance 1 angle 270
+		
+		//wait until read
+		wait 1 second
+		//set Fell focus to {MrFenrik}
+		play anim "A_P_TURN_90_RIGHT" on Fell 
+
+		//wait 1 seconds
+		wait until Fell played
+		set Fell focus to {MrFenrik}
+
+		
+
+		move Fell position to {Yuka}
+		wait 1 seconds
+		set camera lens 39.000
+		RelCamPos=marker at get world position from TownCentre to {3.000,11.323,11.347}
+		RelCamFoc=marker at get world position from TownCentre to {30.000,9.773,2.404}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until {Fell} at {Yuka}
+		move Yuka position to {FenrikStart}
+		wait 0.2 seconds
+		move Fell position  to {FenrikStart}
+
+		set camera lens 64.000
+		RelCamPos=marker at get world position from TownCentre to {3.000,11.748,12.632}
+		RelCamFoc=marker at get world position from TownCentre to {9.413,3.428,-13.845}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 4 seconds
+
+		set MrFenrik focus to {Captain}
+		set Captain focus to {MrFenrik}
+		wait 0.2 seconds
+
+		set camera lens 31.000
+		RelCamPos=marker at get world position from TownCentre to {3.669,11.106,10.269}
+		RelCamFoc=marker at get world position from TownCentre to {8.175,15.912,37.981}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		play anim "A_P_TALK2_MALE" on MrFenrik 
+		say "Call the men back from the raids."
+		// AUDIO_TODO play sound constant 68 SOUND_BANK_TYPE_BW2_PJTEST
+
+		wait until read
+
+		say "That will take some time."
+		play anim "A_P_TALK2_MALE" on Captain 
+		// AUDIO_TODO play sound constant 32 SOUND_BANK_TYPE_BW2_PJTEST
+
+		set camera lens 31.000
+		RelCamPos=marker at get world position from TownCentre to {4.247,11.345,7.349}
+		RelCamFoc=marker at get world position from TownCentre to {19.504,10.023,-16.670}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until read
+
+		set camera lens 31.000
+		RelCamPos=marker at get world position from TownCentre to {3.669,11.106,10.269}
+		RelCamFoc=marker at get world position from TownCentre to {8.175,15.912,37.981}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 2 seconds
+
+		set camera lens 31.000
+		say "Yes my Lord."
+		play anim "A_P_TALK2_MALE" on Captain 
+
+		RelCamPos=marker at get world position from TownCentre to {4.247,11.345,7.349}
+		RelCamFoc=marker at get world position from TownCentre to {19.504,10.023,-16.670}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait until read
+			wait until Captain played
+		move Captain position to {FenrikStart}
+
+		wait 2 seconds
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from TownCentre to {-48.850,59.999,76.797}
+		RelCamFoc=marker at get world position from TownCentre to {13.738,0.250,-7.998}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		eject good spirit
+		eject evil spirit
+
+		say "GA: Oh no! They're bringing the Norse fleets back!"
+		wait until read
+		say "EA: Pah! you heard what he said. 'It'll take some time' - Now lets get OUR army prepared!"
+		wait until read
+
+		send good spirit home
+		send evil spirit home
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		clear dialogue
+		set camera position to {1677.007,162.411,585.006}
+		set camera focus to {1746.365,91.789,682.690}
+		set fade in time 2
+		wait 2 seconds
+
+	end cinema
+
+end script Land3Arrival

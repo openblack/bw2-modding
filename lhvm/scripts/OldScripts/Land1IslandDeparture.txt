@@ -1,0 +1,20 @@
+//------------------------------------------------
+//  LAND 1 ISLAND DEPARTURE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land1IslandDeparture
+start
+
+begin dialogue
+	say "The L1 Island Departure Cut-Scene has not been implemented yet."
+	wait until read
+	say "It will ask you to check you have filled your boats for the trip..."
+	wait until read
+	say "and the click the scroll again to confirm departure."
+	wait until read
+	say "It will then show your fleet sailing off into the sunset."
+	wait until read
+end dialogue
+
+end script Land1IslandDeparture

@@ -1,0 +1,18 @@
+//-----------------------------------------------------------------
+// Land 7 Did You Know - Initial Placement by Phil 13th May 2005
+//-----------------------------------------------------------------
+begin script Land7DidYouKnow
+
+	Sign = 0
+
+start
+
+	//Creature DYKs
+	Sign = create dyk at {674.537, 200.974, 744.666} title "BW2T_INTERFACE_TOOLTIP_DYK_CREATURE_CREATURE_VERSUS_ARCHERS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_CREATURE_CREATURE_VERSUS_ARCHERS_DESCRIPTION"
+
+	//Miracles DYKs
+	Sign = create dyk at {662.849, 235.757, 1286.797} title "BW2T_INTERFACE_TOOLTIP_DYK_MIRACLES_EPICS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_MIRACLES_EPICS_DESCRIPTION"
+	Sign = create dyk at {677.067, 239.839, 1294.650} title "BW2T_INTERFACE_TOOLTIP_DYK_MIRACLES_EPICS_TITLE_10" description "BW2T_INTERFACE_TOOLTIP_DYK_MIRACLES_EPICS_DESCRIPTION_10"
+	//Sign = create dyk at {698.799, 241.989, 1280.742} title "BW2T_INTERFACE_TOOLTIP_DYK_MIRACLES_HEAL_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_MIRACLES_HEAL_DESCRIPTION"
+
+end script Land7DidYouKnow

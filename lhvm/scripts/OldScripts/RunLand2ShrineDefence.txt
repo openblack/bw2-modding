@@ -1,0 +1,14 @@
+//-----------------------------------------------------------------------------
+//	Run PaternitySuit script
+//-----------------------------------------------------------------------------
+run script RunLand2ShrineDefence
+
+begin script RunLand2ShrineDefence
+
+start
+	if L2GreekTown not exists
+		run background script Land2Globals
+	end if
+	run script Land2ShrineDefence
+
+end script RunLand2ShrineDefence

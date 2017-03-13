@@ -1,0 +1,8 @@
+run script RunLand11AztecCapitalScript
+
+begin script RunLand11AztecCapitalScript
+start
+
+	run script Land11AztecCapitalScript
+	
+end script RunLand11AztecCapitalScript

@@ -1,0 +1,410 @@
+define IAS_MAX_VILLAGER_CREATE_OFFSET = 5
+define IAS_FALSE = 0
+define IAS_TRUE = 1
+define IAS_VILLAGERS = 0
+define IAS_GOOD_LIGHT = 1
+define IAS_GOOD_MEDIUM = 2
+define IAS_GOOD_HEAVY = 3
+define IAS_GOOD_SHORT = 4
+define IAS_GOOD_LONG = 5
+define IAS_EVIL_LIGHT = 6
+define IAS_EVIL_MEDIUM = 7
+define IAS_EVIL_HEAVY = 8
+define IAS_EVIL_SHORT = 9
+define IAS_EVIL_LONG = 10
+
+// IntroArmyScripts
+// if Speed = -1, default speed is used.
+define script IAS_CreateGroup(*ReturnGroup,GroupType,NumMen,NumWomen,Speed,Location)
+define script IAS_SendGroupToPoint(Group,EndLoc,DeleteTime)
+define script IAS_SendGroupThroughBlock(Group,ChoiceLoc,BlockingObject,PreferedEndLoc,DeferedEndLoc,DeleteTime)
+define script IAS_GroupFollow(Group,FollowGroup,DeleteTime)
+define script IAS_DeleteAfterTime(Group,DeleteTime)
+
+//run script Land1FlyBy
+
+begin script Land1FlyBy
+
+MyWeatherPos=0
+MyLightningPos=0
+MyWeather=0
+
+start
+	
+	
+
+
+
+	//1. Intro battle.
+	
+	//2. God coming into existance.
+	
+	//3. Advisors and battle in background.
+	
+	//4. Lightning armies section.
+	
+	//5. Advisors leading up to city.
+	
+	//6. City fly through.
+	//run background script ControlOfEverything
+	//wait 4000000 seconds
+	begin cinema
+		set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK
+		MyWeatherPos = marker at {1806.700, 12.594, 1065.401}
+		MyLightningPos = marker at {1806.700, 12.594, 1065.401}		
+		MyWeather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_LARGE_CLOUD at {MyWeatherPos}		
+		set cloud for MyWeather above {MyWeatherPos}
+		set cloud generation 4
+		set MyWeather properties rainfall 1 snowfall 0 overcast 0.7
+
+		
+		set sky colour red 23 green 23 blue 23 time 1
+	
+		//Start - breach of the wall.
+		set camera position to {2030.641, 24.810, 1139.419}
+		set camera focus to {2029.695, 24.505, 1139.310} 
+		
+		//Looking left after the breach in the wall.
+		move camera position to {2011.640, 15.653, 1140.636} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {2011.335, 15.481, 1139.699} time 5 catmullrom bias 0.5 tension 0
+		
+		//Looking at the prison (?)
+		move camera position to {1998.364, 17.537, 1133.675} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1998.014, 17.028, 1132.888} time 5 catmullrom bias 0.5 tension 0
+	
+		//Look back towards city.
+		move camera position to {1983.987, 17.221, 1136.456} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1983.104, 16.971, 1136.059} time 5 catmullrom bias 0.5 tension 0
+		
+		//Looking at the square
+		move camera position to {1960.579, 30.352, 1125.920} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1959.735, 29.845, 1126.096} time 5 catmullrom bias 0.5 tension 0
+	
+		//zoomed in on square a bit	
+		move camera position to {1941.144, 18.097, 1142.647} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1940.271, 17.686, 1142.386} time 5 catmullrom bias 0.5 tension 0
+		
+		//zoom past tree down low
+		move camera position to {1926.247, 16.166, 1137.000} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1925.353, 15.814, 1136.725} time 5 catmullrom bias 0.5 tension 0
+		
+		//back higher showing junctions
+		move camera position to {1915.195, 22.385, 1133.949} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1914.841, 21.908, 1133.144} time 5 catmullrom bias 0.5 tension 0
+		
+		//end of circle of square ready to exit
+		move camera position to {1921.959, 19.594, 1104.717} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1921.087, 19.152, 1104.507} time 5 catmullrom bias 0.5 tension 0
+
+		//swinging further to left and moving on
+		move camera position to {1887.441, 30.431, 1064.192} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1886.664, 29.927, 1064.568} time 5 catmullrom bias 0.5 tension 0
+
+		//back to the right low looking at house
+		move camera position to {1864.722, 21.113, 1080.863} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1863.768, 20.866, 1081.036} time 5 catmullrom bias 0.5 tension 0
+
+		//second square view with 5 roads off
+		move camera position to {1821.388, 33.942, 1033.566} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1821.029, 33.611, 1034.438} time 5 catmullrom bias 0.5 tension 0
+
+		//backwards near gate
+		move camera position to {1797.987, 27.939, 998.693} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1797.798, 27.529, 999.585} time 5 catmullrom bias 0.5 tension 0
+
+		//next to gate
+		move camera position to {1837.743, 24.761, 1014.299} time 5 catmullrom bias 0.5 tension 0
+		move camera focus to {1837.145, 24.331, 1014.975} time 5 catmullrom bias 0.5 tension 0
+
+		wait 45 seconds
+		set lightning strike at {MyLightningPos} from MyWeather
+		wait 4000000 seconds
+	end cinema
+	
+	//7. Advisors after city.
+	
+	//8. Fields section.
+	
+	//9. Advisors before leaving.
+	
+	//10. Leaving cut scene.
+
+end script Land1FlyBy
+
+
+begin script IAS_CreateGroup(*ReturnGroup,GroupType,NumMen,NumWomen,Speed,Location)
+      Villager = 0
+      Counter = 0
+      FirstVillager = IAS_TRUE
+      PreReturnGroup = 0
+start
+      if (GroupType == 0)           // villagers
+            PreReturnGroup = create flock container 
+            while Counter < NumMen
+                  Counter++
+                  Villager = create VILLAGER VILLAGER_INFO_GREEK_FORESTER_MALE at {Location} + {number from -IAS_MAX_VILLAGER_CREATE_OFFSET to IAS_MAX_VILLAGER_CREATE_OFFSET, number from -IAS_MAX_VILLAGER_CREATE_OFFSET to IAS_MAX_VILLAGER_CREATE_OFFSET}
+                  if Speed > 0
+                        SPEED of Villager = Speed
+                  end if
+                  if FirstVillager == IAS_TRUE
+                        nominate Villager as leader for flock PreReturnGroup
+                  end if
+            end while
+            Counter = 0
+            while Counter < NumWomen
+                  Counter++
+                  Villager = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {Location} + {number from -IAS_MAX_VILLAGER_CREATE_OFFSET to IAS_MAX_VILLAGER_CREATE_OFFSET, number from -IAS_MAX_VILLAGER_CREATE_OFFSET to IAS_MAX_VILLAGER_CREATE_OFFSET}
+                  SPEED of Villager = Speed
+                  if FirstVillager == IAS_TRUE
+                        nominate Villager as leader for flock PreReturnGroup
+                  end if
+            end while
+      else
+            if (GroupType == 1)     // good light melee
+                  PreReturnGroup = create platoon PLATOON_INFO_GREEK_MELEE_1 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 0
+            elsif (GroupType == 2)  // good medium melee
+                  PreReturnGroup = create platoon PLATOON_INFO_GREEK_MELEE_3 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 0
+            elsif (GroupType == 3)  // good heavy melee
+                  PreReturnGroup = create platoon PLATOON_INFO_GREEK_MELEE_2 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 0
+            elsif (GroupType == 4)  // good short archers
+                  PreReturnGroup = create platoon PLATOON_INFO_GREEK_RANGED_1 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 0
+            elsif (GroupType == 5)  // good long archers
+                  PreReturnGroup = create platoon PLATOON_INFO_GREEK_RANGED_2 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 0
+            elsif (GroupType == 6)  // evil light melee
+                  PreReturnGroup = create platoon PLATOON_INFO_AZTEC_MELEE_1 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 1
+            elsif (GroupType == 7)  // evil medium melee
+                  PreReturnGroup = create platoon PLATOON_INFO_AZTEC_MELEE_3 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 1
+            elsif (GroupType == 8)  // evil heavy melee
+                  PreReturnGroup = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 1
+            elsif (GroupType == 9)  // evil short archers
+                  PreReturnGroup = create platoon PLATOON_INFO_AZTEC_RANGED_1 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 1
+            else                          // evil long archers
+                  PreReturnGroup = create platoon PLATOON_INFO_AZTEC_RANGED_2 at {Location} with NumMen men and NumWomen women
+                  set PreReturnGroup player 1
+            end if
+            if Speed > 0
+                  set platoon movement value FORMATION_MOVEMENT_STAT_AGENT_SPEED_MAX of PreReturnGroup to Speed
+                  set platoon movement value FORMATION_MOVEMENT_STAT_PLATOON_SPEED of PreReturnGroup to Speed
+            end if
+            set platoon PreReturnGroup formation to 2 wide by 2 deep with 1 spacing
+            
+      end if
+      ReturnGroup[0] = PreReturnGroup
+end script IAS_CreateGroup
+
+begin script IAS_SendGroupToPoint(Group,EndLoc,DeleteTime)
+start
+      run background script IAS_DeleteAfterTime(Group,DeleteTime)
+      if variable get Group type == variable SCRIPT_OBJECT_TYPE_PLATOON
+            add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {EndLoc} to Group action queue
+      else
+            move Group position to {EndLoc}
+      end if
+end script IAS_SendGroupToPoint
+
+begin script IAS_SendGroupThroughBlock(Group,ChoiceLoc,BlockingObject,PreferedEndLoc,DeferedEndLoc,DeleteTime)
+      IsArmy = IAS_FALSE
+start
+      run background script IAS_DeleteAfterTime(Group,DeleteTime)
+      if variable get Group type == variable SCRIPT_OBJECT_TYPE_PLATOON
+            IsArmy = IAS_TRUE
+
+      end if
+
+ 
+
+      if IsArmy == IAS_TRUE
+
+            add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {ChoiceLoc} to front of Group action queue
+
+      else
+
+            move Group position to {ChoiceLoc}
+
+      end if
+
+      wait until {Group} near {ChoiceLoc} radius 0.2 or Group not exists
+
+      if Group exists
+
+            if BlockingObject exists
+
+                  if {ChoiceLoc} near {DeferedEndLoc} radius 0.2
+
+                        wait until BlockingObject not exists or Group not exists
+
+                        if Group exists
+
+                              if IsArmy == IAS_TRUE
+
+                                    add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PreferedEndLoc} to front of Group action queue
+
+                              else
+
+                                    move Group position to {PreferedEndLoc}
+
+                              end if
+
+                        end if
+
+                  else
+
+                        if IsArmy == IAS_TRUE
+
+                              add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {DeferedEndLoc} to front of Group action queue
+
+                        else
+
+                              move Group position to {DeferedEndLoc}
+
+                        end if
+
+                  end if
+
+            else
+
+                  if IsArmy == IAS_TRUE
+
+                        add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PreferedEndLoc} to front of Group action queue
+
+                  else
+
+                        move Group position to {PreferedEndLoc}
+
+                  end if
+
+            end if
+
+      end if
+
+end script IAS_SendGroupThroughBlock
+
+ 
+
+begin script IAS_GroupFollow(Group,FollowGroup,DeleteTime)
+
+      Villager = 0
+
+start
+
+      run background script IAS_DeleteAfterTime(Group,DeleteTime)
+
+ 
+
+      if variable get Group type == variable SCRIPT_OBJECT_TYPE_PLATOON
+
+            if variable get FollowGroup type == variable SCRIPT_OBJECT_TYPE_PLATOON
+
+                  if get Group player == get FollowGroup player
+
+                   //     add action PLATOON_AGENDA_ACTION_MERGE_WITH_PLATOON using FollowGroup to front of Group action queue
+
+                        // what happens if FollowGroup ceases to exist?
+
+                  else
+
+                        // add action attack FollowGroup
+
+                        wait until Group not exists or FollowGroup not exists
+
+                        if Group exists
+
+                              add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Group} to front of Group action queue
+
+                        end if
+
+                  end if
+
+            else
+
+                  while Group exists and FollowGroup exists
+
+                        add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using FollowGroup to front of Group action queue
+
+                        wait until Group not exists or FollowGroup not exists or {Group} near {FollowGroup} radius 5
+
+                        if Group exists
+
+                              if FollowGroup exists
+
+                                    Villager = get first in FollowGroup
+
+                                    detach Villager from FollowGroup
+
+                                    if size of FollowGroup <= 0
+
+                                          delete FollowGroup
+
+                                    end if
+
+                                    move Villager position to {Villager}
+
+                                    // add action attack Villager
+
+                                    wait until HEALTH of Villager <= 0 or Group not exists
+
+                              else
+
+                                    add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Group} to front of Group action queue
+
+                              end if
+
+                        end if
+
+                  end while
+
+            end if
+
+      else
+
+            while Group exists
+
+                  move Group position to {FollowGroup}
+
+                  wait 2 seconds
+
+            end while
+
+      end if
+
+end script IAS_GroupFollow
+
+ 
+
+begin script IAS_DeleteAfterTime(Group,DeleteTime)
+
+      DeleteTimer = create timer for DeleteTime seconds
+
+start
+
+      wait until get DeleteTimer time remaining <= 0
+
+      delete Group
+
+end script IAS_DeleteAfterTime
+
+/////////////////////////////////////////////////////////////////
+
+//define script IAS_CreateGroup(*ReturnGroup,GroupType,NumMen,NumWomen,Speed,Location)
+//define script IAS_SendGroupToPoint(Group,EndLoc,DeleteTime)
+//define script IAS_SendGroupThroughBlock(Group,ChoiceLoc,BlockingObject,PreferedEndLoc,DeferedEndLoc,DeleteTime)
+//define script IAS_GroupFollow(Group,FollowGroup,DeleteTime)
+//define script IAS_DeleteAfterTime(Group,DeleteTime)
+
+begin script ControlOfEverything
+StartingArmy = 0
+start
+	run script IAS_CreateGroup(&StartingArmy, IAS_GOOD_HEAVY, 4, 0, -1 , marker at {2006.305, 12.563, 1148.972})
+	run script IAS_SendGroupToPoint(StartingArmy, marker at {2009.513, 12.563, 1129.035}, 5000)
+	wait 50000 seconds
+end script ControlOfEverything
+ 

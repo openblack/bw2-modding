@@ -1,0 +1,2136 @@
+//===============================================================================================
+// Land 1 Hand tutorial
+// Lenny
+//===============================================================================================
+// Mike UPDATE : Half the advisor speech has been moved into the main tutorial scripts
+// rather than being called in the Advisor Comments. This is due to multiple subtitle problems (in various languages)
+// where text would diseappear too quickly.
+//------------------------------------------------------------------------------------------------
+//	Constants
+//------------------------------------------------------------------------------------------------
+define HT_TRUE = 1
+define HT_FALSE = 0
+
+define HT_REMINDER_TIMER_DEFAULT				= 5
+
+//Distance markers
+define HT_DISTANCE_MARKER_STEP_NUM_LEFT			= 8
+define HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT	= 14
+
+define HT_DISTANCE_MARKER_STEP_NUM_FORWARD		= 8
+define HT_DISTANCE_MARKER_STEP_DISTANCE_FORWARD = 14
+
+//Distance checks
+define HT_DISTANCE_CHECK_MOVE_BACK				= 135
+define HT_DISTANCE_CHECK_MOVE_BACK_MAJOR		= 142
+
+define HT_DISTANCE_CHECK_MOVE_FORWARD			= 135
+define HT_DISTANCE_CHECK_MOVE_FORWARD_MAJOR		= 142
+
+define HT_DISTANCE_CHECK_MOVE_LEFT				= 138
+define HT_DISTANCE_CHECK_MOVE_LEFT_MAJOR		= 147
+
+define HT_DISTANCE_CHECK_MOVE_RIGHT				= 136
+define HT_DISTANCE_CHECK_MOVE_RIGHT_MAJOR		= 144
+
+//Rotation
+define CF_ROTATION_POINTS_REQUIRED				= 10
+define CF_ROTATION_BAD_CAMERA_HITS				= 15
+
+//Zoom
+define CF_ZOOM_OUT_REQUIRED						= 20
+define CF_ZOOM_IN_REQUIRED						= 15
+
+//Anim events
+define CF_ANIM_COMPLETED_SECTION				= 0
+define CF_ANIM_IDLE								= 1
+define CF_ANIM_DISTANCE							= 2
+define CF_ANIM_SIT								= 3
+
+//Advior comemnts
+define CF_ADVISORS_NONE							= 0
+define CF_ADVISORS_PAN_GONE_FORWARD				= 1
+define CF_ADVISORS_PAN_GONE_BEHIND				= 2
+define CF_ADVISORS_ROTATE_EXPLAIN				= 3
+define CF_ADVISORS_PITCH						= 4
+define CF_ADVISOR_PITCH_DOWN					= 5
+define CF_ADVISOR_ZOOM_EXPLAIN					= 6
+define CF_ADVISOR_ZOOM_WRONG_WAY_1				= 7
+define CF_ADVISOR_ZOOM_WRONG_WAY_2				= 8
+define CF_ADVISOR_VERY_BAD_GENERIC_BODGE		= 9
+define CF_ADVISOR_NOW_DRAG_BACK					= 10
+define CF_ADVISOR_NOW_DRAG_FORWARDS				= 11
+define CF_ADVISOR_NOW_DRAG_LEFT					= 12
+define CF_ADVISOR_NOW_YOU_TRY					= 13
+define CF_ADVISOR_NOW_GO_RIGHT					= 14
+define CF_ADVISOR_FOLLOW_ARROWS					= 15
+define CF_ADVISORS_START_ROTATE					= 16
+define CF_ADVISOR_DONT_GO_TOO_FAR_SIDEWAYS		= 17
+define CF_ADVISOR_DONT_GO_TOO_FAR_FORWARDSBACK	= 18
+define CF_ADVISOR_ROTATE_NOW_DRAG				= 19
+define CF_ADVISOR_ZOOM_GOOD_FEEDBACK			= 20
+define CF_ADVISOR_PITCH_DOWN_EXPLAIN			= 21
+define CF_ADVISOR_ROTATE_WRONG					= 22
+define CF_ADVISOR_PITCH_DRAG					= 23
+
+//------------------------------------------------------------------------------------------------
+//	Globals
+//------------------------------------------------------------------------------------------------
+global HT_CurrentCommentGroup	= CF_ADVISORS_NONE
+global HT_InBadBodge			= HT_FALSE
+global HT_ZoomDone				= HT_FALSE
+global HT_DialogueStage			= 0
+global HT_NastyDiallogueBodge	= 0
+
+global HT_EndSit				= HT_FALSE
+global HT_CreatureAnimInstances = 0
+global HT_EndDistanceEvent		= HT_FALSE
+global HT_Fidget				= HT_FALSE
+global SkippedTutorials			= 0
+//------------------------------------------------------------------------------------------------
+//	Script defines
+//------------------------------------------------------------------------------------------------
+define script HT_NoChoiceAnyMore
+define script HT_Panning_LeftRight
+define script HT_Panning_ForwardBackwards
+define script HT_Rotating
+define script HT_Pitching
+define script HT_Zooming
+
+//Hand demos
+define script HT_HandDemoPanLeftRight
+define script HT_HandDemoPanForwardBack
+define script HT_HandDemoRotate
+define script HT_HandDemoPitch
+define script HT_BackgroundAdvisors(ID)
+define script HT_CreatureAnimEvent(Event)
+define script HT_CreatureFidgeting
+//------------------------------------------------------------------------------------------------
+// Land 1 Movement Tutorial
+//------------------------------------------------------------------------------------------------
+begin script Land1Tutorial
+start
+	if not MyCreature exists
+		MyCreature = create DUMB_CREATURE CREATURE_TYPE_LAST at {1573.000, 111.402, 845.000}
+		set creature MyCreature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0.23 time 0		
+	end if
+
+	set player 0 creature to MyCreature
+
+	run script HT_NoChoiceAnyMore
+
+end script Land1Tutorial
+
+//------------------------------------------------------------------------------------------------
+// No Choice Any More
+//------------------------------------------------------------------------------------------------
+begin script HT_NoChoiceAnyMore
+	CreaturePos					= marker at {1573.000, 111.402, 845.000}
+	DoScrollPos					= marker at {1569.825, 111.468, 838.441}
+	DoScroll					= 0
+	DoNotScroll					= 0
+	DoNotScrollPos				= marker at {1582.449, 111.829, 838.692} //marker at {1569.473, 115.123, 841.258} //marker at {1574.147, 111.601, 842.575}
+	ScrollIconNot				= 0
+	CreatureStandByScrollPos	= marker at {1571.531, 111.467, 836.553}
+	RandAnim					= 0
+	ScrollIcon					= 0
+	CSMixer						= 0
+	DoScrollClicked				= 0
+	DoNotScrollClicked			= 0
+
+start
+
+	CSMixer = create mixer
+
+	//Disable the leash
+	disable leash on MyCreature
+
+	//Try to prevent snapping problems by using the psition where the creature is at, if he's close enough
+	if {MyCreature} near {CreaturePos} radius 8
+		CreaturePos = marker at {MyCreature}
+	end if
+
+	begin interactive camera
+
+		run background script HT_CreatureAnimEvent(CF_ANIM_SIT)
+
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.6
+
+		enable force tooltip draw
+		//move camera position to {1567.258, 117.022, 846.843} time 1
+		//move camera focus to {1663.059, 94.102, 829.595} time 1
+
+		eject good spirit
+		eject evil spirit
+
+		make evil spirit fly across 0.2 down 0.25
+		make good spirit fly across 0.8 down 0.2
+
+		say "BW2T_SCRIPT_01FINAL_HANDTUTORIAL_10"
+
+		//move MyCreature position to {CreaturePos}
+		//wait 0.1 seconds
+		//set MyCreature position to {CreaturePos}
+		//snap creature MyCreature focus to camera position
+		//set MyCreature focus to camera position
+		wait until read
+
+		DoScroll = create highlight BRONZE name "BW2T_SCRIPT_01FINAL_HANDTUTORIAL_MISC_10" remind "BW2T_SCRIPT_01FINAL_HANDTUTORIAL_MISC_20" at {DoScrollPos}
+		ALTITUDE of DoScroll = 1
+		
+
+		move camera position to {1565.221, 118.028, 846.293} time 2
+		move camera focus to {1651.158, 92.923, 801.750} time 2
+
+		ScrollIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on DoScroll
+		
+
+		wait 1.5 seconds
+		
+		say "BW2T_SCRIPT_01FINAL_HANDTUTORIAL_80"
+		wait 0.5 seconds
+		make good spirit point at {DoScrollPos}
+		wait until read
+		
+		
+		DoNotScroll = create highlight SILVER name "BW2T_INTERFACE_WRAPPER_FRONTEND_TEXT_30" remind "BW2T_INTERFACE_WRAPPER_FRONTEND_TEXT_30" at {DoNotScrollPos}
+		ALTITUDE of DoNotScroll = 1
+		ScrollIconNot = create world icon BINDABLE_ACTION_TYPE_ACTION on DoNotScroll
+
+		say "BW2T_SCRIPT_01FINAL_HANDTUTORIAL_MISC_40"
+		wait 0.5 seconds
+		make evil spirit point at {DoNotScrollPos}
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_HANDTUTORIAL_MISC_50"
+		wait until read
+
+		stop good spirit pointing
+		stop evil spirit pointing
+
+		wait DoScroll right clicked or DoNotScroll right clicked
+
+
+		make evil spirit fly across 0.2 down 0.25
+		make good spirit fly across 0.8 down 0.2
+
+
+
+		//wait until DoScroll right clicked
+
+		/*		
+		begin loop
+			
+			if SetSit == HT_FALSE
+				SetSit = HT_TRUE
+				play anim C_STATIC_START_SIT on MyCreature
+			end if
+
+			if creature MyCreature finished script action
+				play anim C_STATIC_SIT on MyCreature
+			end if
+
+		until DoScroll right clicked
+		end loop
+		*/
+
+		//play anim C_STATIC_END_SIT on MyCreature
+
+		stop music
+
+		remove world icon ScrollIcon
+		remove world icon ScrollIconNot
+		
+		if DoScroll right clicked
+			DoScrollClicked = 1
+		elsif DoNotScroll right clicked
+			DoNotScrollClicked = 1
+		end if
+
+		delete DoScroll
+		delete DoNotScroll
+		
+		disable force tooltip draw
+
+	end interactive camera
+
+	HT_EndSit = HT_TRUE
+	play anim C_STATIC_END_SIT on MyCreature
+
+	enable objective window
+
+	if DoScrollClicked == 1 
+	
+		
+
+		run script HT_Panning_LeftRight
+		run script HT_Panning_ForwardBackwards
+		if number of mouse buttons > 2
+			run script HT_Rotating
+			run script HT_Pitching
+			run script HT_Zooming
+		end if
+
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_HANDTUTORIAL
+
+	else
+		SkippedTutorials = 1
+	end if
+
+	set interaction SCRIPT_INTERFACE_LEVEL_NORMAL
+
+	//Enable the leash
+	enable leash on MyCreature
+
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+
+	L1_HandComplete = 1
+
+
+end script HT_NoChoiceAnyMore
+
+//------------------------------------------------------------------------------------------------
+// Left Right
+//------------------------------------------------------------------------------------------------
+begin script HT_Panning_LeftRight
+	FXPos[HT_DISTANCE_MARKER_STEP_NUM_LEFT]
+	MoveFX[HT_DISTANCE_MARKER_STEP_NUM_LEFT]
+	ArrowHit[HT_DISTANCE_MARKER_STEP_NUM_LEFT]
+
+	CapturePosRight		= marker at {1465.619, 131.453, 909.272}
+	StartPosRight		= marker at {1575.00, 0, 840.00}
+	CapturePosLeft		= marker at {1563.567, 127.080, 828.131}
+	StartPosLeft		= marker at {1475.00, 0, 920.00}
+	
+	MyLoop				= 0
+	MiniLoop			= 0
+	ReminderTimer		= create timer for 0 seconds
+	Height				= 0
+	FX					= 0
+	DownFlag			= HT_FALSE
+	DistanceCheck		= 0
+	//DistanceFlag		= HT_FALSE
+	Pitch				= 1
+
+	StorePos			= marker at {0, 0, 0} //Got
+	StoreFoc			= marker at {0, 0, 0} //Got
+start
+	set interaction SCRIPT_INTERFACE_LEVEL_JUST_MOVE_CONSTRAIN_FORWARDS
+	force MyCreature finish
+
+	enable script creature MyCreature run
+	//move MyCreature position to {StartPosRight}
+
+	begin fullscreen cinema		
+		enable objective window
+		enable objective list in widescreen
+
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_10"
+		make good spirit fly across 0.8 down 0.2
+		move camera position to {1552.400, 132.216, 836.934} time 4
+		move camera focus to {1603.889, 72.122, 898.073} time 4
+		wait 4 seconds
+
+		wait until read
+	//end cinema
+
+	//begin fullscreen cinema
+		enable hand icon draw
+		set bindable hand icon BINDABLE_ACTION_TYPE_MOVE
+		start hand demo "PanLandscapeLeftRight"
+		
+		wait 0.5 seconds
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_20"
+		wait until read
+
+		wait until hand demo played
+	end cinema
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT		
+		Height = (land height at {StartPosRight} - {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT, -(Height), -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}) + 2
+		FXPos[MyLoop] = marker at {StartPosRight} - {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT, -(Height), -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}
+		MyLoop++
+	end while
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT
+		//Arrow or dot?
+		if MyLoop == (HT_DISTANCE_MARKER_STEP_NUM_LEFT-1)
+			MoveFX[MyLoop] = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.4 at {FXPos[MyLoop]}  time -1			
+		else
+			MoveFX[MyLoop] = create visual effect "gp_s_arrow.ves" strength 0.1 scale 0.4 at {FXPos[MyLoop]} time -1
+			set MoveFX[MyLoop] focus to {FXPos[MyLoop+1]}
+		end if
+
+		set MoveFX[MyLoop] colour red 255 green 0 blue 0
+		MyLoop++
+	end while
+	
+	//Set new hand icon
+	set bindable hand icon BINDABLE_ACTION_TYPE_MOVE with arrow ARROW_TYPE_RIGHT
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_10"	
+
+	enable script creature MyCreature run
+
+	run background script HT_BackgroundAdvisors(CF_ADVISOR_NOW_YOU_TRY)
+
+	wait 1.5 seconds
+	move MyCreature position to {StartPosLeft}
+	
+	//Wait for the player to move left
+	begin loop
+
+		//===================== Ground Highlights
+		MyLoop = 0
+		force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT
+			if camera position near {FXPos[MyLoop]} radius (HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT*1.4)
+				MiniLoop = MyLoop
+
+				if ArrowHit[MyLoop] == HT_FALSE
+					ArrowHit[MyLoop] = HT_TRUE
+					play string sound "REWARD6" pitch Pitch
+					Pitch+= 0.4
+				end if
+
+				//Loop through the previous ones and colour them too
+				force while MiniLoop >= 0
+					set MoveFX[MiniLoop] colour red 0 green 255 blue 0
+					MiniLoop--
+				end while
+		
+			end if
+			MyLoop++
+		end while
+
+		//Mouse down comments
+		if bindable action BINDABLE_ACTION_TYPE_MOVE performed and DownFlag == HT_FALSE
+		//if mouse left button down and DownFlag == HT_FALSE
+			run background script HT_BackgroundAdvisors(CF_ADVISOR_NOW_DRAG_LEFT)
+			DownFlag = HT_TRUE
+		end if
+		
+		//Check the players distance and comment if they're stupid and are going the wrong way
+		DistanceCheck = get distance from camera position to {CapturePosRight}
+		if DistanceCheck > HT_DISTANCE_CHECK_MOVE_LEFT_MAJOR
+			//DistanceFlag = HT_FALSE
+			begin fullscreen cinema
+				move camera position to {1562.168, 130.905, 827.423} time 3
+				move camera focus to {1613.657, 70.813, 888.562} time 3
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_100"
+				wait 3 seconds
+				wait until read
+				send good spirit home
+			end cinema
+		end if
+
+	until ArrowHit[HT_DISTANCE_MARKER_STEP_NUM_LEFT-1] == HT_TRUE
+	end loop
+
+	HT_DialogueStage++
+
+	//No hand icons in cut scene
+	disable hand icon draw
+
+	//Objectives
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 value 1
+
+	///---------------- Setup for going back
+	StorePos = marker at {1469.347, 131.184, 905.867}
+	StoreFoc = marker at {1520.836, 71.092, 967.006}
+
+	begin fullscreen cinema
+
+		//move to a good starting pos
+		move camera position to {StorePos} time 3
+		move camera focus to {StoreFoc} time 3	
+
+		if {MyCreature} near {StartPosLeft} radius 5
+			run script HT_CreatureAnimEvent(CF_ANIM_COMPLETED_SECTION)
+		end if
+
+		//Wait until no more dialogu is beign read. wait until read isnt working properly here
+		wait until HT_NastyDiallogueBodge == 0
+		wait until read
+		
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_70"
+
+		//Delete old visuals while waiting for advisor speech
+		MyLoop = 0
+		while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT
+			set MoveFX[MyLoop] colour red 0 green 255 blue 0
+			stop visual effect MoveFX[MyLoop]
+			MyLoop++
+		end while
+
+		wait 1 seconds
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_20"
+
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_80"
+		wait until read
+	end cinema	
+
+	//hand icons
+	enable hand icon draw
+	set bindable hand icon BINDABLE_ACTION_TYPE_MOVE with arrow ARROW_TYPE_LEFT
+
+	move MyCreature position to {1582.483, 111.714, 832.463}
+
+	//Reset mosue down flag
+	DownFlag = HT_FALSE
+	
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT		
+		Height = (land height at {StartPosLeft} + {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT, Height, -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}) + 2
+		FXPos[MyLoop] = marker at {StartPosLeft} + {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT, Height, -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}
+		MyLoop++
+	end while
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT
+		//Arrow or dot?
+		if MyLoop == (HT_DISTANCE_MARKER_STEP_NUM_LEFT-1)
+			MoveFX[MyLoop] = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.4 at {FXPos[MyLoop]}  time -1			
+		else
+		MoveFX[MyLoop] = create visual effect "gp_s_arrow.ves" strength 0.1 scale 0.4 at {FXPos[MyLoop]} time -1
+		set MoveFX[MyLoop] focus to {FXPos[MyLoop+1]}
+		end if
+
+		//Reset arrow hit flag and arrow colour
+		ArrowHit[MyLoop] = HT_FALSE
+		set MoveFX[MyLoop] colour red 255 green 0 blue 0
+		MyLoop++
+	end while	
+	
+	//Wait for the player to move left	
+	begin loop
+		//===================== Ground Highlights
+		MyLoop = 0
+		force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT
+			if camera position near {FXPos[MyLoop]} radius (HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT*1.3)
+				MiniLoop = MyLoop
+
+				if ArrowHit[MyLoop] == HT_FALSE
+					ArrowHit[MyLoop] = HT_TRUE
+					play string sound "REWARD6" pitch Pitch
+					if Pitch > 1
+						Pitch-=0.4
+					end if
+				end if
+
+				//Loop through the previous ones and colour them too
+				force while MiniLoop >= 0
+					set MoveFX[MiniLoop] colour red 0 green 255 blue 0
+					MiniLoop--
+				end while
+
+			end if
+			MyLoop++
+		end while
+
+		//Mouse down comments
+		if bindable action BINDABLE_ACTION_TYPE_MOVE performed and DownFlag == HT_FALSE
+			run background script HT_BackgroundAdvisors(CF_ADVISOR_FOLLOW_ARROWS)
+			DownFlag = HT_TRUE
+		end if
+
+		//Check the players distance and comment if they're stupid and are going the wrong way
+		DistanceCheck = get distance from camera position to {CapturePosLeft}
+		if DistanceCheck > HT_DISTANCE_CHECK_MOVE_RIGHT_MAJOR
+			//DistanceFlag = HT_FALSE
+			begin fullscreen cinema
+				move camera position to {StorePos} time 3
+				move camera focus to {StoreFoc} time 3
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_100"
+				wait 3 seconds
+				wait until read
+				send good spirit home
+			end cinema
+		end if
+
+	until ArrowHit[HT_DISTANCE_MARKER_STEP_NUM_LEFT-1] == HT_TRUE
+	end loop
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_LEFT
+		set MoveFX[MyLoop] colour red 0 green 255 blue 0
+		stop visual effect MoveFX[MyLoop]
+		MyLoop++
+	end while
+
+	HT_DialogueStage++
+
+
+
+end script HT_Panning_LeftRight
+
+//------------------------------------------------------------------------------------------------
+// Forwards Backwards
+//------------------------------------------------------------------------------------------------
+begin script HT_Panning_ForwardBackwards
+	CapturePosForward		= marker at {1573.137, 131.973, 840.177}
+	MovePosForward			= marker at {1573.164, 133.112, 839.438}	
+
+	CapturePosBack			= marker at {1469.230, 134.686, 922.698}
+
+	StartPosForward			= marker at {1585.000, 0.00, 830.000}
+	StartPosBackward		= marker at {1488.000, 0.00, 908.000}
+
+	CreatureMoveForwardPos	= marker at {1582.483, 111.714, 832.463}
+	CreatureMoveBackPos		= marker at {1498.282, 116.800, 899.391}
+
+	MyLoop					= 0
+	MiniLoop				= 0
+	DownFlag				= HT_FALSE
+	DistanceCheck			= 0
+	//DistanceFlag			= HT_FALSE
+	Height					= 0
+	Pitch					= 1
+
+	StorePos				= marker at {0,0,0} //generated
+	StoreFoc				= marker at {0,0,0} //generated
+
+	StopperPos				= marker at {1586.905, 111.378, 831.555}
+	StopperDistance			= 0
+
+	MoveFX[HT_DISTANCE_MARKER_STEP_NUM_FORWARD]
+	FXPos[HT_DISTANCE_MARKER_STEP_NUM_FORWARD]
+	ArrowHit[HT_DISTANCE_MARKER_STEP_NUM_LEFT]
+start
+	
+
+	begin fullscreen cinema
+
+		
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+
+		set camera position to camera position
+		set camera focus to camera focus
+		run background script HT_CreatureAnimEvent(CF_ANIM_DISTANCE)
+		
+		disable hand icon draw
+
+		move camera position to {1564.338, 131.184, 825.742} time 2
+		move camera focus to {1615.827, 71.092, 886.881} time 2
+		wait until camera ready
+		wait 0.5 seconds
+		reset camera path
+		queue camera move with position {1564.338, 131.184, 825.742} focus {1615.827, 71.092, 886.881} time 0.0
+		queue camera move with position {1522.383, 131.317, 849.986} focus {1605.501, 91.412, 888.701} time 1.7
+		queue camera move with position {1470.698, 135.244, 921.507} focus {3451.948, -1660.384, -699.752} time 2.0
+		play camera path with easein 3 easeout 3 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+
+		wait until camera ready and read
+
+		//run background script HT_BackgroundAdvisors(CF_ADVISORS_PAN_GONE_FORWARD)
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_30"
+
+		run script HT_HandDemoPanForwardBack
+
+		move camera position to {1470.694, 135.244, 921.502} time 3
+		move camera focus to {1534.085, 77.819, 869.690} time 3
+		wait 3 seconds
+
+	end cinema
+
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD		
+		Height = (land height at {StartPosForward} - {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_FORWARD, -(Height), -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}) + 2
+		FXPos[MyLoop] = marker at {StartPosForward} - {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_FORWARD, -(Height), -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}
+		MyLoop++
+	end while
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+		//Arrow or dot?
+		if MyLoop == 0
+			MoveFX[MyLoop] = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.4 at {FXPos[MyLoop]}  time -1			
+		else
+		MoveFX[MyLoop] = create visual effect "gp_s_arrow.ves" strength 0.1 scale 0.4 at {FXPos[MyLoop]} time -1
+		set MoveFX[MyLoop] focus to {FXPos[MyLoop-1]}
+		end if
+
+		set MoveFX[MyLoop] colour red 255 green 0 blue 0
+		MyLoop++
+	end while
+
+	enable hand icon draw
+	set bindable hand icon BINDABLE_ACTION_TYPE_MOVE with arrow ARROW_TYPE_DOWN	
+
+	set interaction SCRIPT_INTERFACE_LEVEL_JUST_MOVE_CONSTRAIN_SIDEWAYS
+
+	//Wait for the player to forwards to the creature
+	begin loop
+		
+		//Mouse down comments
+		if bindable action BINDABLE_ACTION_TYPE_MOVE performed and DownFlag == HT_FALSE
+			run background script HT_BackgroundAdvisors(CF_ADVISOR_NOW_DRAG_BACK)
+			DownFlag = HT_TRUE
+		end if
+
+		//Check the players distance and comment if they're stupid and are going the wrong way
+		DistanceCheck = get distance from camera position to {CapturePosForward}
+		if DistanceCheck > HT_DISTANCE_CHECK_MOVE_FORWARD_MAJOR
+				begin fullscreen cinema
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_90"
+					wait until read
+					send good spirit home
+					move camera position to {1470.694, 135.244, 921.502} time 3
+					move camera focus to {1534.085, 77.819, 869.690} time 3
+					wait 3 seconds
+				end cinema
+			//else
+			//	run background script HT_BackgroundAdvisors(CF_ADVISOR_DONT_GO_TOO_FAR_FORWARDSBACK)			
+			//end if
+		end if
+
+		//===================== Ground Highlights
+		MyLoop = 0
+		force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+			if camera position near {FXPos[MyLoop]} radius (HT_DISTANCE_MARKER_STEP_DISTANCE_FORWARD*2)
+				MiniLoop = MyLoop
+
+				if ArrowHit[MyLoop] == HT_FALSE
+					ArrowHit[MyLoop] = HT_TRUE
+					play string sound "REWARD6" pitch Pitch
+					Pitch+=0.4
+				end if
+
+				//Loop through the previous ones and colour them too
+				force while MiniLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+					set MoveFX[MiniLoop] colour red 0 green 255 blue 0
+					MiniLoop++
+				end while
+
+			end if
+			MyLoop++
+		end while
+		// \\\\ Ground Highlights =====================
+
+	until ArrowHit[0] == HT_TRUE
+	end loop
+	
+	disable hand icon draw
+
+	//Objectives
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_40"
+
+	//Store details
+	StorePos = marker at {1564.315, 130.044, 849.515}
+	StoreFoc = marker at {1625.484, 67.648, 800.882}
+
+	begin fullscreen cinema
+
+		HT_EndDistanceEvent = HT_TRUE
+
+		move camera position to {1568.607, 130.044, 846.103} time 3
+		move camera focus to {1629.777, 67.646, 797.470} time 3
+		//run background script HT_CreatureApplaud
+
+		wait 1 seconds
+
+		//Move the creature back
+		wait until creature MyCreature finished script action
+		enable script creature MyCreature run
+		move MyCreature position to {CreatureMoveBackPos}
+
+		//Clear ground highlights
+		MyLoop = HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+		while MyLoop >= 0
+			set MoveFX[MyLoop] colour red 0 green 255 blue 0
+			stop visual effect MoveFX[MyLoop]
+			MyLoop--
+		end while	
+		
+		eject good spirit
+
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_50"		
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_60"
+				wait until read
+
+		send good spirit home
+		//run script HT_BackgroundAdvisors(CF_ADVISORS_PAN_GONE_BEHIND)
+		//wait until camera ready
+
+	end cinema
+
+	enable hand icon draw
+	set bindable hand icon BINDABLE_ACTION_TYPE_MOVE with arrow ARROW_TYPE_UP
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD		
+		Height = (land height at {StartPosBackward} + {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_FORWARD, Height, -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}) + 2
+		FXPos[MyLoop] = marker at {StartPosBackward} + {MyLoop * HT_DISTANCE_MARKER_STEP_DISTANCE_FORWARD, Height, -(MyLoop * ((HT_DISTANCE_MARKER_STEP_DISTANCE_LEFT/10)*8))}
+		MyLoop++
+	end while
+
+	MyLoop = 0
+	force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+		
+		//Arrow or dot?
+		if MyLoop == 0
+			MoveFX[MyLoop] = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.4 at {FXPos[MyLoop]}  time -1			
+		else
+			MoveFX[MyLoop] = create visual effect "gp_s_arrow.ves" strength 0.1 scale 0.4 at {FXPos[MyLoop]} time -1
+			set MoveFX[MyLoop] focus to {FXPos[MyLoop-1]}
+		end if
+		
+		ArrowHit[MyLoop] = HT_FALSE
+		set MoveFX[MyLoop] colour red 255 green 0 blue 0
+		MyLoop++
+	end while
+
+	//Reset down flag
+	DownFlag = HT_FALSE
+
+	//Wait for the player to move backwards
+	begin loop
+
+		//Check the players distance and comment if they're stupid and are going the wrong way
+		DistanceCheck = get distance from camera position to {CapturePosBack}
+		if DistanceCheck > HT_DISTANCE_CHECK_MOVE_FORWARD_MAJOR
+			//DistanceFlag = HT_FALSE
+			begin fullscreen cinema
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_90"
+				wait until read
+				send good spirit home
+				move camera position to {1568.607, 130.044, 846.103} time 3
+				move camera focus to {1629.777, 67.646, 797.470} time 3
+				wait 3 seconds
+			end cinema
+		end if
+
+		StopperDistance = get distance from camera position to {StopperPos}
+
+		//Mouse down comments
+		if bindable action BINDABLE_ACTION_TYPE_MOVE performed and DownFlag == HT_FALSE
+			//Removed dialog due to Spanish audio being incorrect, it cannot be re-recorded in time.
+			//run background script HT_BackgroundAdvisors(CF_ADVISOR_NOW_DRAG_FORWARDS)
+			DownFlag = HT_TRUE
+		end if
+
+		//===================== Ground Highlights
+		MyLoop = 0
+		force while MyLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+			if camera position near {FXPos[MyLoop]} radius (HT_DISTANCE_MARKER_STEP_DISTANCE_FORWARD/2)
+				MiniLoop = MyLoop
+
+				if ArrowHit[MyLoop] == HT_FALSE
+					ArrowHit[MyLoop] = HT_TRUE
+					play string sound "REWARD6" pitch Pitch
+					if Pitch > 1
+						Pitch-=0.4
+					end if
+				end if
+
+				//Loop through the previous ones and colour them too
+				force while MiniLoop < HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+					set MoveFX[MiniLoop] colour red 0 green 255 blue 0
+					MiniLoop++
+				end while
+
+			end if
+			MyLoop++
+		end while
+		// \\\\ Ground Highlights =====================
+
+	until ArrowHit[0] == HT_TRUE or StopperDistance > 140
+	end loop
+
+	//Clear ground highlights
+	MyLoop = HT_DISTANCE_MARKER_STEP_NUM_FORWARD
+	force while MyLoop >= 0
+		set MoveFX[MiniLoop] colour red 0 green 255 blue 0
+		stop visual effect MoveFX[MyLoop]
+		MyLoop--
+	end while
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_4 value 1
+
+end script HT_Panning_ForwardBackwards
+
+//------------------------------------------------------------------------------------------------
+// Rotating
+//------------------------------------------------------------------------------------------------
+begin script HT_Rotating
+	ArrowFX[14]
+	Pos[14]
+	CatchPos[14]
+	ArrowHit[14]
+	Loop			= 0
+	Rots			= 0
+	LastRots		= 0
+	WrongRots		= 0
+	LastHighlight	= 0
+	RotateFX		= 0
+	CentrePos		= marker at {1575.557, 112.65, 839.007}
+	CatchLoop		= 0
+	ArrowLoop		= 0
+	Pitch			= 1
+	LastCatch		= 0
+	Loop2			= 0
+
+	//Old vars
+	CreaturePos		= marker at {1585.424, 111.669, 826.999}
+	FX				= 0
+	MouseDownFlag	= HT_FALSE
+	CommentTimer	= create timer for 3 seconds
+start
+
+	disable hand icon draw
+
+	Pos[0]	= marker at {1562.844,113.525,844.159}
+	Pos[1]	= marker at {1562.594,113.554,838.873}
+	Pos[2]	= marker at {1564.222,113.559,832.755}
+	Pos[3]	= marker at {1568.922,113.570,829.374}
+	Pos[4]	= marker at {1574.477,113.555,827.568}
+	Pos[5]	= marker at {1580.017,113.563,828.925}
+	Pos[6]	= marker at {1583.728,113.523,832.506}
+	Pos[7]	= marker at {1586.446,113.523,836.747}
+	Pos[8]	= marker at {1585.582,113.500,842.617}
+	Pos[9]	= marker at {1583.691,113.462,848.297}
+	Pos[10]	= marker at {1579.921,113.478,851.149}
+	Pos[11]	= marker at {1573.714,113.478,852.242}
+	Pos[12]	= marker at {1569.007,113.507,850.120}
+	Pos[13]	= marker at {1565.723,113.540,847.860}
+
+	CatchPos[0] = marker at{1556.436, 128.424, 846.504}
+	CatchPos[1] = marker at {1555.406, 128.702, 840.089}
+	CatchPos[2] = marker at {1556.765, 128.560, 831.239}
+	CatchPos[3] = marker at {1562.028, 128.232, 822.695}
+	CatchPos[4] = marker at {1572.293, 128.269, 818.147}
+	CatchPos[5] = marker at {1581.966, 128.114, 818.967}
+	CatchPos[6] = marker at {1590.075, 128.076, 823.348}
+	CatchPos[7] = marker at {1595.939, 128.217, 832.744}
+	CatchPos[8] = marker at {1596.309, 128.318, 844.471}
+	CatchPos[9] = marker at {1590.868, 128.410, 854.248}
+	CatchPos[10] = marker at {1585.390, 128.539, 858.151}
+	CatchPos[11] = marker at {1573.460, 128.654, 860.661}
+	CatchPos[12] = marker at {1565.783, 128.755, 858.494}
+	CatchPos[13] = marker at {1562.869, 128.792, 854.815}
+
+	RotateFX = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.4 at {CentrePos} time -1	
+	set RotateFX colour red 255 green 0 blue 0
+
+	begin fullscreen cinema
+
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ASSIGN_JOB_COMPLETE_10"
+
+		move camera position to {1495.519, 130.044, 904.211} time 1.5
+		move camera focus to {1556.689, 67.646, 855.578} time 1.5
+		wait until camera ready
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_50"
+
+		move camera position to {1556.799, 128.972, 845.750} time 3
+		move camera focus to {1632.019, 68.269, 820.115} time 3
+		wait until camera ready and read
+
+		if not {MyCreature} near {CreaturePos} radius 5
+			force MyCreature finish
+			wait 0.5 seconds
+			set MyCreature position to {1546.250, 109.335, 860.063}
+			wait 0.2 seconds
+			enable script creature MyCreature run
+			move MyCreature position to {CreaturePos}
+			wait until creature MyCreature finished script action
+			set MyCreature focus to camera position	
+			wait 1 seconds
+		end if
+
+		run background script HT_CreatureAnimEvent(CF_ANIM_COMPLETED_SECTION)
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_10"
+		wait until read
+
+		//run background script HT_BackgroundAdvisors(CF_ADVISORS_ROTATE_EXPLAIN)
+
+		run script HT_HandDemoRotate
+
+		release MyCreature focus
+
+		move camera position to {1556.799, 128.972, 845.750} time 1.5
+		move camera focus to {1632.019, 68.268, 820.115} time 1.5
+		wait until camera ready
+		wait 0.5 seconds
+
+	end cinema
+
+	//hand icons
+	enable hand icon draw
+	set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_LEFT
+
+	//run background script HT_BackgroundAdvisors(CF_ADVISORS_START_ROTATE)
+
+	set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK	
+
+	Rots = get total of stat STATS_ACC_MOUSE_ROTATE_ACW_COUNT
+	LastRots = Rots	
+
+	WrongRots = get total of stat STATS_ACC_MOUSE_ROTATE_CW_COUNT
+
+	begin loop
+
+		if hand position near {CentrePos} radius 4 and bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+			
+			set interaction SCRIPT_INTERFACE_LEVEL_JUST_ROTATE
+
+			if bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+				set RotateFX colour red 0 green 255 blue 0
+
+				force while Loop < 14
+
+					ArrowFX[Loop] = create visual effect "gp_s_arrow.ves" strength 0.1 scale 0.5 at {Pos[Loop]} + {0, 0.5, 0} time -1
+					set ArrowFX[Loop] colour red 255 green 0 blue 0
+
+					if Loop != 13
+						set ArrowFX[Loop] focus to {Pos[Loop+1]} + {0, 0.5, 0}
+					else
+						set ArrowFX[Loop] focus to {Pos[0]} + {0, 0.5, 0}
+					end if
+					Loop++
+
+				end while
+
+				if MouseDownFlag == HT_FALSE
+					run background script HT_BackgroundAdvisors(CF_ADVISOR_ROTATE_NOW_DRAG)
+					set CommentTimer time to 8 seconds
+					MouseDownFlag = HT_TRUE
+				end if
+
+				//Stop the player moving the camera at all if they rotate the wrong way
+				if WrongRots < get total of stat STATS_ACC_MOUSE_ROTATE_CW_COUNT
+					set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK
+					wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+					WrongRots = get total of stat STATS_ACC_MOUSE_ROTATE_CW_COUNT
+					set interaction SCRIPT_INTERFACE_LEVEL_JUST_ROTATE
+
+					begin fullscreen cinema
+						set camera position to {1556.799, 128.972, 845.750}
+						set camera focus to {1632.019, 68.268, 820.115}
+					end cinema
+
+				end if
+
+
+				//Colour arrows
+				CatchLoop = 0
+				force while CatchLoop < 14
+					if camera position near {CatchPos[CatchLoop]} radius 5.5
+
+						//This bodge sickens me
+						if (CatchLoop+1) < LastCatch
+							CatchLoop = 13
+						end if
+
+						if ArrowHit[CatchLoop] == HT_FALSE
+							ArrowHit[CatchLoop] = HT_TRUE
+
+							LastCatch = CatchLoop
+
+							play string sound "REWARD6" pitch Pitch
+							Pitch+=0.2
+							set MyCreature focus to camera position
+
+							//Advisors comment on how clever the player is at being able to move.
+							if get CommentTimer time remaining == 0
+								run background script HT_BackgroundAdvisors(CF_ADVISOR_VERY_BAD_GENERIC_BODGE)
+								set CommentTimer time to 6 seconds
+							end if
+
+						end if
+
+						ArrowLoop = 0
+						force while ArrowLoop <= CatchLoop
+							set ArrowFX[ArrowLoop] colour red 0 green 255 blue 0
+							ArrowLoop++
+						end while
+
+					end if
+					CatchLoop++
+				end while
+
+			end if
+
+		else
+
+			if bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+				set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK	
+				begin fullscreen cinema	
+							set RotateFX colour red 255 green 0 blue 0
+							disable hand icon draw
+							move camera position to {1556.799, 128.972, 845.750} time 2
+							move camera focus to {1632.019, 68.268, 820.115} time 2
+							eject good spirit	
+							say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_TUT_110"
+							wait 2 second
+							make good spirit point at {CentrePos}
+							wait until read
+							send good spirit home
+							Loop2 = 0
+							// This is a really crude way of resetting the challenge if the camera gets stuck/moves too far away.
+							while Loop2 < 14
+								set ArrowFX[Loop2] colour red 255 green 0 blue 0
+								ArrowHit[Loop2] = HT_FALSE
+								ArrowLoop = 0
+								Pitch	= 1
+								LastCatch = 0
+								CatchLoop = 0
+								Loop2 ++
+								//Loop			= 0
+								Rots			= 0
+								LastRots		= 0
+								WrongRots		= 0
+								LastHighlight	= 0
+							end while
+							Loop2 = 0
+							enable hand icon draw
+							wait until camera ready
+							wait 0.5 seconds
+				end cinema
+
+				wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+				set interaction SCRIPT_INTERFACE_LEVEL_JUST_ROTATE
+			end if
+
+			set RotateFX colour red 255 green 0 blue 0
+			set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK	
+
+		end if
+
+	until ArrowHit[13] == HT_TRUE
+	end loop
+
+	release MyCreature focus
+	stop visual effect RotateFX
+
+	begin fullscreen cinema
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 value 1
+
+		move camera position to {1555.995, 129.609, 860.826} time 2
+		move camera focus to {1617.140, 82.843, 796.995} time 2
+
+		//Clear arrows
+		Loop = 0
+		while Loop < 14
+			stop visual effect ArrowFX[Loop]
+			ArrowHit[Loop] = HT_FALSE
+			Loop++
+		end while
+
+		wait until camera ready
+
+	end cinema
+
+end script HT_Rotating
+
+//------------------------------------------------------------------------------------------------
+// Pitching
+//------------------------------------------------------------------------------------------------
+begin script HT_Pitching
+	CreaturePos		= marker at {1575.081, 111.659, 836.769}
+	PitchFXPos		= marker at {1573.253, 112.50, 842.405}
+	PitchFX			= 0
+	startaltitude	= 0
+	resetpitch		= 0
+
+	DialogueFlag	= HT_FALSE
+
+	PitchSFXVal		= 1
+	Pitches			= 0
+	Pitches2			= 0
+	SoundTimer		= create timer for 0 seconds
+
+start
+		
+	set interaction SCRIPT_INTERFACE_LEVEL_JUST_PITCH
+
+	move MyCreature position to {CreaturePos}
+	PitchFX = create visual effect "gp_s_rayfxball.ves" strength 0.1 scale 0.4 at {PitchFXPos} time -1
+	set PitchFX colour red 255 green 0 blue 0
+
+	disable hand icon draw
+	//Camera and hand demo
+	begin fullscreen cinema
+
+		run background script HT_CreatureAnimEvent(CF_ANIM_COMPLETED_SECTION)
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_60"
+
+		//run background script HT_BackgroundAdvisors(CF_ADVISORS_PITCH)
+
+		move camera position to {1555.555, 122.992, 844.751} time 4
+		move camera focus to {1640.651, 70.478, 844.318} time 4
+		//wait 6 seconds
+
+		eject good spirit
+
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_10"
+				wait until read
+
+				run script HT_HandDemoPitch
+
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_40"
+				wait until read
+
+		send good spirit home
+
+		move camera position to {1550.547, 119.765, 857.607} time 2 
+		move camera focus to {1626.023, 85.717, 801.540} time 2
+		//wait 5 seconds
+
+		//Oooh this is bad
+		wait until read
+		wait 1 seconds
+		wait until read
+
+	end cinema
+
+	Pitches = get total of stat STATS_ACC_MOUSE_PITCH_UP_COUNT
+	Pitches2 = get total of stat STATS_ACC_MOUSE_PITCH_DOWN_COUNT
+	startaltitude = get camera altitude
+
+	enable hand icon draw
+	set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_PITCH_DOWN
+
+		run background script HT_CreatureFidgeting
+
+		//Move up
+		begin loop	
+
+			if bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed	
+
+					if hand position near {PitchFXPos} radius 5 and bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed	
+						set PitchFX colour red 0 green 255 blue 0
+
+						if DialogueFlag == HT_FALSE
+							DialogueFlag = HT_TRUE
+							wait until read
+							run background script HT_BackgroundAdvisors(CF_ADVISOR_PITCH_DRAG)
+						end if
+
+						begin loop
+
+							if get camera altitude < startaltitude - 2
+								set PitchFX colour red 255 green 0 blue 0
+								begin fullscreen cinema
+									eject good spirit
+										disable hand icon draw
+										move camera position to {1550.547, 120, 857.607} time 2
+										move camera focus to {1626.023, 85.717, 801.540} time 2
+										say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_90"
+										wait until read
+									send good spirit home
+									wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed	
+								end cinema
+								enable hand icon draw
+							end if
+
+							if Pitches < get total of stat STATS_ACC_MOUSE_PITCH_UP_COUNT and get SoundTimer time remaining == 0
+								play string sound "REWARD6" pitch PitchSFXVal
+								Pitches = get total of stat STATS_ACC_MOUSE_PITCH_UP_COUNT
+								PitchSFXVal+=0.2
+								set SoundTimer time to 0.6 seconds
+							end if
+
+						until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed and dialogue ready or not hand position near {PitchFXPos} radius 5
+						end loop
+
+						resetpitch = 0
+
+						set PitchFX colour red 255 green 0 blue 0
+
+					elsif not hand position near {PitchFXPos} radius 5 and bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+
+						set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK			
+						
+						//wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+						set interaction SCRIPT_INTERFACE_LEVEL_JUST_PITCH
+
+						begin fullscreen cinema
+				
+							disable hand icon draw
+							move camera position to {1550.547, 119.765, 857.607} time 2 
+							move camera focus to {1626.023, 85.717, 801.540} time 2
+							wait until read
+							eject good spirit
+								say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_TUT_110"
+								wait 2 seconds
+								make good spirit point at {PitchFXPos}
+								wait until read
+							send good spirit home	
+
+							wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed	
+							enable hand icon draw
+							
+						end cinema
+
+						//Reset
+						PitchSFXVal		= 1
+						Pitches			= 0
+						DialogueFlag = HT_FALSE
+
+					end if
+			end if
+
+		until not camera position near {1550.547, 119.765, 857.607} radius 15
+		end loop
+		
+		disable hand icon draw
+		
+		begin fullscreen cinema
+
+			move camera position to {1563.333, 137.240, 848.109} time 2
+			move camera focus to {1590.909, 43.316, 827.674} time 2
+
+			wait until read
+
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_60"
+
+			//reset visual effect colour
+			wait 0.5 seconds
+			set PitchFX colour red 255 green 0 blue 0
+
+			wait until read
+
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_70"
+			wait until read	
+			
+			send good spirit home
+
+			wait until camera ready
+
+			wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed	
+
+		end cinema
+
+		//Reset dialogue flag
+		DialogueFlag = HT_FALSE
+
+		enable hand icon draw
+		set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_PITCH_UP
+
+		Pitches = get total of stat STATS_ACC_MOUSE_PITCH_DOWN_COUNT
+		Pitches2 = get total of stat STATS_ACC_MOUSE_PITCH_UP_COUNT
+		startaltitude = get camera altitude
+		PitchSFXVal		= 3
+		//PitchSFXVal 
+
+		//Now move back down
+		begin loop
+			if bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+			if hand position near {PitchFXPos} radius 4 and bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+				set PitchFX colour red 0 green 255 blue 0
+
+				if DialogueFlag == HT_FALSE
+					DialogueFlag = HT_TRUE
+					run background script HT_BackgroundAdvisors(CF_ADVISOR_PITCH_DOWN_EXPLAIN)					
+				end if
+
+				begin loop
+
+					//if Pitches2 < get total of stat STATS_ACC_MOUSE_PITCH_DOWN_COUNT //and get SoundTimer time remaining == 0 
+					if get camera altitude > startaltitude + 2
+						begin fullscreen cinema
+							set PitchFX colour red 255 green 0 blue 0
+							eject good spirit
+								disable hand icon draw
+								move camera position to {1563.333, 137.240, 848.109} time 2
+								move camera focus to {1590.909, 43.316, 827.674} time 2
+								say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_90"
+								wait until read
+							send good spirit home
+							wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed	
+						end cinema
+						enable hand icon draw
+					end if
+
+					//SFX
+					if Pitches < get total of stat STATS_ACC_MOUSE_PITCH_DOWN_COUNT and get SoundTimer time remaining == 0
+							play string sound "REWARD6" pitch PitchSFXVal
+							if PitchSFXVal > 0.6
+								PitchSFXVal-=0.2
+							end if
+							Pitches = get total of stat STATS_ACC_MOUSE_PITCH_DOWN_COUNT
+							set SoundTimer time to 0.6 seconds
+					end if
+
+				until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed and dialogue ready or not hand position near {PitchFXPos} radius 5
+				end loop
+
+				set PitchFX colour red 255 green 0 blue 0
+			elsif not hand position near {PitchFXPos} radius 4 and bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+
+				set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK			
+				
+				//wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed
+				set interaction SCRIPT_INTERFACE_LEVEL_JUST_PITCH
+
+				begin fullscreen cinema
+
+					move camera position to {1563.333, 137.240, 848.109} time 2
+					move camera focus to {1590.909, 43.316, 827.674} time 2
+				
+					disable hand icon draw
+
+					eject good spirit
+
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_70"
+					wait 2 seconds
+					make good spirit point at {PitchFXPos}
+					wait until read
+
+					send good spirit home
+
+					wait until not bindable action BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE performed	
+
+					enable hand icon draw
+					
+					//Reset
+					PitchSFXVal		= 3
+					Pitches			= 0
+					DialogueFlag = HT_FALSE
+
+				end cinema
+
+			end if
+			end if
+			
+		until get camera altitude < 5
+		end loop
+
+		set interaction SCRIPT_INTERFACE_LEVEL_JUST_RIGHTCLICK	
+
+		//end dialogue
+		HT_Fidget = HT_FALSE
+		force MyCreature finish
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 value 1
+		stop visual effect PitchFX
+
+end script HT_Pitching
+
+//------------------------------------------------------------------------------------------------
+// Zooming
+//------------------------------------------------------------------------------------------------
+begin script HT_Zooming
+	ZoomBackCapturePos		= marker at {1496.785, 159.260, 845.051}
+	ZoomForwardCapturePos	= marker at {1562.012, 119.007, 844.719}
+	CreatureZoomPos		= marker at {1573.737, 111.529, 844.601}
+
+	ZoomerDistance			= 0
+	CommentTimer			= create timer for 0 seconds
+	CommentTimerWrong		= create timer for 0 seconds
+	StartZooms				= 0
+
+	LastZoomStatCount		= 0
+	LastZoomStatCount2		= 0
+	Pitch					= 1
+
+	SoundTimer				= create timer for 0 seconds
+	XCheck					= 0
+	XMarker					= marker at {0, 0, 0}
+
+	Rand					= 0
+
+start
+
+	disable hand icon draw
+	wait until creature MyCreature finished script action
+	move MyCreature position to {CreatureZoomPos}
+
+	begin fullscreen cinema
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_70"
+
+		move camera position to {1555.555, 122.992, 844.751} time 4
+		move camera focus to {1640.651, 70.478, 844.318} time 4
+		run background script HT_CreatureAnimEvent(CF_ANIM_COMPLETED_SECTION)
+		run script HT_BackgroundAdvisors(CF_ADVISOR_ZOOM_EXPLAIN)
+		//eject good spirit
+		//	say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_10"
+		//	wait until read
+		//	say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_20"
+		//	wait until read
+		//	say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_30"
+		//	wait until read
+		//send good spirit home
+	end cinema
+
+	StartZooms = get total of stat STATS_ACC_MOUSE_ZOOM_OUT_COUNT
+	LastZoomStatCount = StartZooms	
+	LastZoomStatCount2 = get total of stat STATS_ACC_MOUSE_ZOOM_IN_COUNT
+
+	enable hand icon draw
+	set bindable hand icon BINDABLE_ACTION_TYPE_ZOOM_OUT
+
+	set interaction SCRIPT_INTERFACE_LEVEL_JUST_ZOOM
+
+	ZoomerDistance = get distance from camera position to {MyCreature}
+	
+	//Zoom back
+	begin loop
+
+		XMarker = marker at camera position
+		XCheck = XPOS of XMarker
+
+		if XCheck > 1577
+			begin fullscreen cinema
+				move camera position to {1555.555, 122.992, 844.751} time 4
+				move camera focus to {1640.651, 70.478, 844.318} time 4
+				wait until read
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_40"
+				wait until read and camera ready
+				send good spirit home
+			end cinema
+		end if
+
+		//SFX
+		if LastZoomStatCount < get total of stat STATS_ACC_MOUSE_ZOOM_OUT_COUNT and get SoundTimer time remaining == 0
+			Pitch+=0.2
+			play string sound "REWARD6" pitch Pitch
+			set MyCreature focus to camera position
+			LastZoomStatCount = get total of stat STATS_ACC_MOUSE_ZOOM_OUT_COUNT
+			set SoundTimer time to 0.2 seconds
+		end if
+		//if LastZoomStatCount2 < get total of stat STATS_ACC_MOUSE_ZOOM_IN_COUNT and get SoundTimer time remaining == 0
+		//	Pitch-=0.2
+		//	play string sound "REWARD6" pitch Pitch
+		//	set MyCreature focus to camera position
+		//	LastZoomStatCount2 = get total of stat STATS_ACC_MOUSE_ZOOM_IN_COUNT
+		//	set SoundTimer time to 0.1 seconds
+		//end if
+
+		//StatIn = get total of stat STATS_ACC_MOUSE_ZOOM_IN_COUNT
+		//StatOut = get total of stat STATS_ACC_MOUSE_ZOOM_OUT_COUNT
+
+		if get distance from camera position to {MyCreature} > (ZoomerDistance + 0.5) and get CommentTimer time remaining == 0 and read
+			//run background script HT_BackgroundAdvisors(CF_ADVISOR_ZOOM_GOOD_FEEDBACK)
+			Rand = number from 1 to 5
+			begin known dialogue
+				//eject good spirit
+					if Rand == 1
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_100"
+					elsif Rand == 2
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_101"
+					elsif Rand == 3
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_102"
+					elsif Rand == 4
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_103"
+					elsif Rand == 5
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_104"
+					end if
+				//send good spirit home
+			end known dialogue
+			//Bit of a bodge with HT_ZoomDone but, you know..
+			wait until read or HT_ZoomDone == HT_TRUE
+			set CommentTimer time to 7 seconds
+		elsif get distance from camera position to {MyCreature} < (ZoomerDistance - 0.5) and get CommentTimerWrong time remaining == 0
+			//run background script HT_BackgroundAdvisors(CF_ADVISOR_ZOOM_WRONG_WAY_1)
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_40"
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_50"
+				wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimerWrong time to 5 seconds
+			set CommentTimer time to 8.5 seconds
+		end if
+
+		ZoomerDistance = get distance from camera position to {MyCreature}
+
+	until get distance from camera position to {MyCreature} > 150
+	end loop
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 value 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_HAND_80"
+
+	disable hand icon draw
+
+	begin fullscreen cinema
+		run background script HT_CreatureAnimEvent(CF_ANIM_IDLE)
+
+		move camera position to {1376.493, 233.495, 845.659} time 2
+		move camera focus to {1461.588, 180.979, 845.226} time 2
+
+		wait until read
+		eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_60"
+			wait until read and camera ready
+		send good spirit home
+	end cinema
+
+	Pitch = 3
+
+	enable hand icon draw
+
+	ZoomerDistance = get distance from camera position to {MyCreature}
+
+	set bindable hand icon BINDABLE_ACTION_TYPE_ZOOM_IN
+
+	StartZooms = get total of stat STATS_ACC_MOUSE_ZOOM_IN_COUNT
+	LastZoomStatCount = StartZooms
+	LastZoomStatCount2 = get total of stat STATS_ACC_MOUSE_ZOOM_OUT_COUNT
+
+	//Zoom forward
+	begin loop
+
+		//SFX
+		if LastZoomStatCount < get total of stat STATS_ACC_MOUSE_ZOOM_IN_COUNT and get SoundTimer time remaining == 0
+			Pitch-=0.2
+			play string sound "REWARD6" pitch Pitch
+			LastZoomStatCount = get total of stat STATS_ACC_MOUSE_ZOOM_IN_COUNT
+			set SoundTimer time to 0.2 seconds
+		end if
+		//if LastZoomStatCount2 < get total of stat STATS_ACC_MOUSE_ZOOM_OUT_COUNT and get SoundTimer time remaining == 0
+		//	Pitch+=0.2
+		//	play string sound "REWARD6" pitch Pitch
+		//	LastZoomStatCount2 = get total of stat STATS_ACC_MOUSE_ZOOM_OUT_COUNT
+		//	set SoundTimer time to 0.1 seconds
+		//end if
+		if get distance from camera position to {MyCreature} < (ZoomerDistance - 0.5) and get CommentTimer time remaining == 0 and read
+			//run background script HT_BackgroundAdvisors(CF_ADVISOR_ZOOM_GOOD_FEEDBACK)
+			Rand = number from 1 to 5
+			begin known dialogue
+				//eject good spirit
+					if Rand == 1
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_100"
+					elsif Rand == 2
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_101"
+					elsif Rand == 3
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_102"
+					elsif Rand == 4
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_103"
+					elsif Rand == 5
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_104"
+					end if
+				//send good spirit home
+			end known dialogue
+			CommentTimer = create timer for 7 seconds
+		elsif get distance from camera position to {MyCreature} > (ZoomerDistance + 0.5) and get CommentTimerWrong time remaining == 0
+			//run background script HT_BackgroundAdvisors(CF_ADVISOR_ZOOM_WRONG_WAY_2)
+			begin dialogue
+				eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_80"
+					wait until read
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_90"
+					wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimerWrong time to 12 seconds
+			set CommentTimer time to 8.5 seconds
+		end if
+
+		ZoomerDistance = get distance from camera position to {MyCreature}
+
+	until get distance from camera position to {MyCreature} <= 20
+	end loop		
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1
+
+	HT_ZoomDone = HT_TRUE
+
+	disable hand icon draw
+	begin fullscreen cinema
+
+		move camera position to {1555.555, 122.992, 844.751} time 3
+		move camera focus to {1640.651, 70.478, 844.318} time 3
+
+		run background script HT_CreatureAnimEvent(CF_ANIM_COMPLETED_SECTION)
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_DONE_10"
+		wait until read
+
+		eject evil spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_DONE_20"
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_DONE_30"
+		wait until read
+
+		disable objective list in widescreen
+		disable objective window	
+
+		send good spirit home
+		send evil spirit home
+
+	end cinema
+
+end script HT_Zooming
+
+//------------------------------------------------------------------------------------------------
+// Hand Demo Left Right
+//------------------------------------------------------------------------------------------------
+begin script HT_HandDemoPanLeftRight
+start
+
+	begin known cinema
+		enable hand icon draw
+		set bindable hand icon BINDABLE_ACTION_TYPE_MOVE
+
+		start hand demo "PanLandscapeLeftRight"
+		wait until hand demo played
+	end known cinema
+
+end script HT_HandDemoPanLeftRight
+
+//------------------------------------------------------------------------------------------------
+// Hand Demo Pan Forward Back
+//------------------------------------------------------------------------------------------------
+begin script HT_HandDemoPanForwardBack
+start
+
+	begin known cinema
+		enable hand icon draw
+		set bindable hand icon BINDABLE_ACTION_TYPE_MOVE
+
+		start hand demo "PanLandscapeForwardBack"
+
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_10"
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_20"
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_30"
+		wait until read
+		send good spirit home
+
+		//wait until hand demo played
+	end known cinema
+
+	disable hand icon draw
+
+end script HT_HandDemoPanForwardBack
+
+//------------------------------------------------------------------------------------------------
+// Hand Demo Rotate
+//------------------------------------------------------------------------------------------------
+begin script HT_HandDemoRotate
+start
+
+	begin known cinema
+		enable hand icon draw
+		set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_LEFT
+		start hand demo "RotateCamera"
+
+		eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_20"
+			wait until read
+		send good spirit home
+
+		wait until hand demo played
+	end known cinema
+
+end script HT_HandDemoRotate
+
+//------------------------------------------------------------------------------------------------
+// Hand Demo Pitch
+//------------------------------------------------------------------------------------------------
+begin script HT_HandDemoPitch
+start
+
+	begin known cinema
+		enable hand icon draw
+		set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_PITCH_UP
+
+		start hand demo "PitchCamera"
+
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_20"
+			wait until read
+
+		//wait until hand demo played
+	end known cinema
+
+	disable hand icon draw
+
+end script HT_HandDemoPitch
+
+//------------------------------------------------------------------------------------------------
+// Background advisors
+//------------------------------------------------------------------------------------------------
+begin script HT_BackgroundAdvisors(ID)
+	Rand		= 0
+start
+
+	HT_NastyDiallogueBodge++
+
+	wait until dialogue ready or camera ready
+
+		//wait until read
+
+		if ID == CF_ADVISORS_PAN_GONE_FORWARD
+			begin known dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_10"
+					wait until read
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_20"
+					wait until read
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_30"
+					wait until read
+					send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISORS_PAN_GONE_BEHIND
+			begin known dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_50"		
+					wait until read
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_60"
+					wait until read
+					send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISORS_ROTATE_EXPLAIN
+			begin known dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_20"
+					wait until read
+					send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISORS_START_ROTATE
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_40"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISORS_PITCH
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_10"
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_20"
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_40"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_ZOOM_EXPLAIN
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_10"
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_20"
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_30"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_ZOOM_WRONG_WAY_1
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_40"
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_50"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_ZOOM_WRONG_WAY_2
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_80"
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_90"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_VERY_BAD_GENERIC_BODGE
+			begin known dialogue
+				eject good spirit
+
+				Rand =  number from 1 to 2
+
+				if Rand == 1
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_50"
+				else
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_60"
+				end if
+				send good spirit home
+				wait until read
+			end known dialogue
+		elsif ID == CF_ADVISOR_NOW_DRAG_BACK
+			begin known dialogue
+				wait until read
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_70"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_NOW_DRAG_FORWARDS
+			// Removed due to spanish audio not being correct.
+			//wait until read
+			//eject good spirit
+			//say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_10"
+			//wait until read
+
+		elsif ID == CF_ADVISOR_NOW_DRAG_LEFT
+			begin known dialogue
+				wait until read
+
+				if HT_DialogueStage == 0
+					eject good spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_50"
+					wait until read
+					send good spirit home
+				end if
+			end known dialogue
+		elsif ID == CF_ADVISOR_NOW_YOU_TRY
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_30"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_FOLLOW_ARROWS
+			begin known dialogue
+				wait until read
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_90"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_DONT_GO_TOO_FAR_SIDEWAYS	
+			begin known dialogue
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_LEFTRIGHT_60"
+				wait until read
+			end known dialogue
+		elsif ID == CF_ADVISOR_DONT_GO_TOO_FAR_FORWARDSBACK
+			begin known dialogue
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PANNING_FORWARDBACK_80"
+				wait until read
+			end known dialogue
+		elsif ID == CF_ADVISOR_ROTATE_NOW_DRAG
+			begin known dialogue
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_40"
+				wait until read
+			end known dialogue
+		elsif ID == CF_ADVISOR_ZOOM_GOOD_FEEDBACK
+			begin known dialogue
+				Rand = number from 1 to 5
+
+				if Rand == 1
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_100"
+				elsif Rand == 2
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_101"
+				elsif Rand == 3
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_102"
+				elsif Rand == 4
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_103"
+				elsif Rand == 5
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ZOOMING_104"
+				end if
+
+				//Bit of a bodge with HT_ZoomDone but, you know..
+				wait until read or HT_ZoomDone == HT_TRUE
+
+			end known dialogue
+
+		elsif ID == CF_ADVISOR_PITCH_DOWN_EXPLAIN
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_80"
+				wait until read
+				send good spirit home
+			end known dialogue
+
+		elsif ID == CF_ADVISOR_ROTATE_WRONG
+			begin known dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROTATING_TUT_110"
+				wait until read
+				send good spirit home
+			end known dialogue
+		elsif ID == CF_ADVISOR_PITCH_DRAG
+			begin known dialogue
+				eject good spirit
+				wait until read
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_PITCHING_50"
+				wait until read
+				send good spirit home
+			end known dialogue
+		end if
+
+		//clear dialogue
+
+		//send good spirit home
+		//send evil spirit home
+
+	HT_NastyDiallogueBodge--
+
+//until ID != HT_CurrentCommentGroup and CanQuit == HT_TRUE
+end script HT_BackgroundAdvisors
+
+//------------------------------------------------------------------------------------------------
+// Creature Anim Event
+//------------------------------------------------------------------------------------------------
+begin script HT_CreatureAnimEvent(Event)
+	Rand = 0
+start
+
+	wait until HT_CreatureAnimInstances == 0
+	HT_CreatureAnimInstances++
+
+	wait until creature MyCreature finished script action or 5 seconds
+
+	set MyCreature focus to camera position
+	wait until creature MyCreature finished script action
+
+	if Event == CF_ANIM_COMPLETED_SECTION
+
+		//ANIMS FOR LION
+		if variable get MyCreature sub type == variable CREATURE_TYPE_LION or variable get MyCreature sub type == variable CREATURE_TYPE_TIGER
+
+			Rand = number from 1 to 5
+			if Rand == 1
+				play anim C_INDIVIDUAL_HAPPY on MyCreature
+			elsif Rand == 2
+				play anim C_INDIVIDUAL_HAPPY3 on MyCreature
+			elsif Rand == 3
+				play anim C_INDIVIDUAL_DONE_IT on MyCreature
+			elsif Rand == 4
+				play anim C_INDIVIDUAL_LIKEPLAYER on MyCreature
+			elsif Rand == 5
+				play anim C_CONCURRENT_NOD on MyCreature
+			end if
+
+		//ANIMS FOR COW
+		elsif variable get MyCreature sub type == variable CREATURE_TYPE_COW
+
+			Rand = number from 1 to 7
+			if Rand == 1
+				play anim C_INDIVIDUAL_LIKEPLAYER on MyCreature
+			elsif Rand == 2
+				play anim C_INDIVIDUAL_HAPPY2 on MyCreature
+			elsif Rand == 3
+				play anim C_INDIVIDUAL_HAPPY3 on MyCreature
+			elsif Rand == 4
+				play anim C_INDIVIDUAL_PULLING_FACES1 on MyCreature
+			elsif Rand == 5
+				play anim C_INDIVIDUAL_LIKEPLAYER on MyCreature
+			elsif Rand == 6
+				play anim C_INDIVIDUAL_LOVEPLAYER on MyCreature
+			elsif Rand == 7
+				play anim C_INDIVIDUAL_DONE_IT on MyCreature
+			end if
+
+		//ANIMS FOR WOLF
+		elsif variable get MyCreature sub type == variable CREATURE_TYPE_WOLF
+
+			Rand = number from 1 to 6
+			if Rand == 1
+				play anim C_INDIVIDUAL_DONE_IT on MyCreature
+			elsif Rand == 2
+				play anim C_INDIVIDUAL_FEEL_PLAYFUL on MyCreature
+			elsif Rand == 3
+				play anim C_INDIVIDUAL_HAPPY2 on MyCreature
+			elsif Rand == 4
+				play anim C_INDIVIDUAL_HAPPY3 on MyCreature
+			elsif Rand == 5
+				play anim C_INDIVIDUAL_HAPPY on MyCreature
+			elsif Rand == 6
+				play anim C_INDIVIDUAL_LIKEPLAYER on MyCreature
+			end if
+
+		//ANIMS FOR APE
+		else
+
+			Rand = number from 1 to 4
+			if Rand == 1
+				play anim C_INDIVIDUAL_DONE_IT on MyCreature
+			elsif Rand == 2
+				play anim C_INDIVIDUAL_HAPPY on MyCreature
+			elsif Rand == 3
+				play anim C_INDIVIDUAL_HAPPY2 on MyCreature
+			elsif Rand == 4
+				play anim C_INDIVIDUAL_LIKEPLAYER on MyCreature
+			end if
+
+		end if
+
+	elsif Event == CF_ANIM_IDLE
+
+		Rand = number from 1 to 5
+		if Rand == 1
+			play anim C_IDLE_FIDGET01 on MyCreature
+		elsif Rand == 2
+			play anim C_IDLE_FIDGET02 on MyCreature
+		elsif Rand == 3
+			play anim C_IDLE_FIDGET03 on MyCreature
+		elsif Rand == 4
+			play anim C_INDIVIDUAL_SCRATCH on MyCreature
+		elsif Rand == 5
+			play anim C_CONCURRENT_YAWN on MyCreature
+		end if
+
+	elsif Event == CF_ANIM_DISTANCE
+		wait until creature MyCreature finished script action
+		enable script creature MyCreature run
+		move MyCreature position to {1582.483, 111.714, 832.463}
+
+		wait until creature MyCreature finished script action or HT_EndDistanceEvent == HT_TRUE
+		
+		set MyCreature focus to camera position
+		wait until creature MyCreature finished script action 
+		
+		begin loop
+			play anim C_INDIVIDUAL_LOOK_AT_ME on MyCreature
+			wait until creature MyCreature finished script action
+			set MyCreature focus to camera position
+			wait 2 seconds
+		until HT_EndDistanceEvent == HT_TRUE
+		end loop
+
+	elsif Event == CF_ANIM_SIT
+		play anim C_STATIC_START_SIT on MyCreature
+		wait until creature MyCreature finished script action
+		begin loop
+			play anim C_STATIC_SIT on MyCreature loop -1
+			wait until creature MyCreature finished script action
+		until HT_EndSit == HT_TRUE
+		end loop
+
+	end if
+
+	wait until creature MyCreature finished script action
+
+	release MyCreature focus
+	HT_CreatureAnimInstances--
+
+end script HT_CreatureAnimEvent
+
+begin script HT_CreatureFidgeting
+start
+	HT_Fidget = HT_TRUE
+	begin loop 
+		wait until creature MyCreature finished script action
+		run script HT_CreatureAnimEvent(CF_ANIM_IDLE)
+		set MyCreature focus to camera position
+		wait 2 seconds
+	until HT_Fidget == HT_FALSE
+	end loop
+end script HT_CreatureFidgeting

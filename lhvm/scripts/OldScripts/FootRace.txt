@@ -1,0 +1,206 @@
+//-------------------------//
+//  Constants & Variables  //
+//-------------------------//
+define FRRaceBeingRun			= 0
+define FRRaceFinished			= 1
+global FRRaceStatus				= FRRaceFinished
+
+define FRNumberOfRunners		= 8
+define FRNumberOfRunnersPlusOne	= 9
+global FRRaceWinner				= FRNumberOfRunners
+global FRRunners[FRNumberOfRunners]
+global FRRunnerDestinations[FRNumberOfRunners]
+global FRRunnerPositions[FRNumberOfRunners]
+
+
+//----------------------//
+//  Script definitions  //
+//----------------------//
+define script FootRace
+define script FRCheckForWinner(RunnerNumber)
+define script FRDecayBlokesSpeed
+define script FRMakeBlokeRun
+define script FRShowIntro
+
+
+//------------------------------------------------------------------------------------//
+//  FootRace:  Handles the main game stuff - creating people, setting them going etc  //
+//------------------------------------------------------------------------------------//
+begin script FootRace
+  EndLineLeft		= marker at {988.560,7.984,1229.164}
+  EndLineRight		= marker at {1001.806,8.040,1247.688}
+  StartLineLeft		= 0
+  StartLineRight	= 0
+  TrackLength		= 100
+  Counter			= 0
+  Distance			= 0
+  Marker1[FRNumberOfRunners]
+  Marker2[FRNumberOfRunners]
+  Rays[FRNumberOfRunnersPlusOne]
+  
+  Scroll			= 0
+  ScrollPosition	= marker at {988.504,7.955,1243.746}
+start
+	StartLineLeft = marker at get target from {EndLineRight} to {EndLineLeft} distance TrackLength angle 270
+	StartLineRight = marker at get target from {EndLineLeft} to {EndLineRight} distance TrackLength angle 90
+	
+	Rays[0] = create special effect SPOT_VISUAL_MAGIC_BEAM on EndLineLeft time -1
+	add Rays[0] target on EndLineRight
+	add Rays[0] target on StartLineLeft
+	Rays[1] = create special effect SPOT_VISUAL_MAGIC_BEAM on StartLineRight time -1
+	add Rays[1] target on StartLineLeft
+	add Rays[1] target on EndLineRight	
+	
+	while Counter < FRNumberOfRunners
+		Distance = (((get distance from {StartLineLeft} to {StartLineRight}) / (FRNumberOfRunners + 1)) * (Counter + 1))
+		FRRunnerPositions[Counter] = marker at get target from {StartLineLeft} to {StartLineRight} distance Distance angle 180
+		FRRunnerDestinations[Counter] = marker at get target from {EndLineLeft} to {EndLineRight} distance Distance angle 180
+	
+		FRRunners[Counter] = create VILLAGER VILLAGER_INFO_SHAOLIN at {FRRunnerPositions[Counter]}
+		set FRRunners[Counter] focus to {FRRunnerDestinations[Counter]}
+
+		Distance = (((get distance from {StartLineLeft} to {StartLineRight}) / (FRNumberOfRunners)) * (Counter + 1))
+		Marker1[Counter] = marker at get target from {StartLineLeft} to {StartLineRight} distance Distance angle 180
+		Marker2[Counter] = marker at get target from {EndLineLeft} to {EndLineRight} distance Distance angle 180
+
+		Rays[Counter + 2] = create special effect SPOT_VISUAL_MAGIC_BEAM on Marker1[Counter] time -1
+		add Rays[Counter + 2] target on Marker2[Counter]
+
+		Counter ++
+	end while
+		
+	begin loop
+		FRRaceWinner = FRNumberOfRunners
+		Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ScrollPosition}
+		wait until Scroll right clicked
+		clear right clicked object
+		delete Scroll
+	
+		run script FRShowIntro
+		
+		SPEED of FRRunners[0] = 0.3
+		
+		wait 1 second
+
+		FRRaceStatus = FRRaceBeingRun
+		run background script FRMakeBlokeRun
+		run background script FRDecayBlokesSpeed
+		
+		Counter = 1
+		while Counter < FRNumberOfRunners
+			Distance = (number from 0 to 165) / 1000
+			
+			SPEED of FRRunners[Counter] = 0.6 + Distance
+			move FRRunners[Counter] position to {FRRunnerDestinations[Counter]}
+		
+			Counter ++
+		end while
+		
+		move FRRunners[0] position to {FRRunnerDestinations[0]}
+		
+		Counter = 0
+		while Counter < FRNumberOfRunners
+			run background script FRCheckForWinner(Counter)
+			
+			Counter ++
+		end while
+		
+		wait until (FRRaceWinner != FRNumberOfRunners)
+		FRRaceStatus = FRRaceFinished
+		
+		if (FRRaceWinner == 0)
+			begin dialogue
+				say "YOU WIN*"
+				wait until read
+			end dialogue
+		else
+			begin dialogue
+				say "Race won by runner $d" with number (FRRaceWinner + 1)
+				wait until read
+			end dialogue
+		end if
+		
+		Counter = 0
+		while Counter < FRNumberOfRunners
+			set FRRunners[Counter] position to {FRRunnerPositions[Counter]}
+			
+			Counter ++
+		end while
+	end loop
+end script FootRace
+
+
+//----------------------------------------------------------------------//
+//  FRCheckForWinner:  Checks to see if a player has reached the line,	//
+//					   and if he has it sets the Winner to his number	//
+//----------------------------------------------------------------------//
+begin script FRCheckForWinner(RunnerNumber)
+start
+	while FRRaceStatus != FRRaceFinished
+		if {FRRunners[RunnerNumber]} near {FRRunnerDestinations[RunnerNumber]} radius 1
+			FRRaceWinner = RunnerNumber
+		end if
+	end while		
+end script FRCheckForWinner
+
+
+//------------------------------------------------------------------------//
+//  FRDecayBlokesSpeed:	 Slows the bloke down a little every 0.2 seconds  //
+//------------------------------------------------------------------------//
+begin script FRDecayBlokesSpeed
+start
+	begin loop
+		wait 0.2 seconds
+		if (SPEED of FRRunners[0] > 0.04)
+			SPEED of FRRunners[0] -= 0.04
+			move FRRunners[0] position to {FRRunnerDestinations[0]}
+		end if
+		
+		until (FRRaceStatus != FRRaceBeingRun)
+	end loop
+end script FRDecayBlokesSpeed
+
+
+//-----------------------------------------------------------------------------------//
+//  FRMakeBlokeRun:	 Detects the pressing of the keys, and makes the bloke a little	 //
+//					 faster each time but only up to a maximum predefined speed		 //
+//-----------------------------------------------------------------------------------//
+begin script FRMakeBlokeRun
+start
+	begin loop
+		wait until not (key KB_N down)
+		wait until (key KB_M down)
+		if (SPEED of FRRunners[0] < 0.95)
+			SPEED of FRRunners[0] += 0.05
+			move FRRunners[0] position to {FRRunnerDestinations[0]}
+		end if
+		
+		wait until not (key KB_M down)
+		wait until (key KB_N down)
+		if (SPEED of FRRunners[0] < 0.95)
+			SPEED of FRRunners[0] += 0.05
+			move FRRunners[0] position to {FRRunnerDestinations[0]}
+		end if
+		
+		until (FRRaceStatus != FRRaceBeingRun)
+	end loop
+end script FRMakeBlokeRun
+
+
+//--------------------------------------------------------------//
+//  FRShowIntro:  Does exactly what it says - shows the intro!	//
+//--------------------------------------------------------------//
+begin script FRShowIntro
+start
+	begin cinema
+		move camera position to {1001.104,26.081,1234.688} time 1
+		move camera focus to {986.113,8.401,1245.163} time 1
+		wait until camera ready
+		
+		say "Use the M and N keys to make your guy run faster."
+		wait until read
+		say "He is running in the right-hand lane.  Good luck."
+		wait until read
+	end cinema
+	wait until widescreen transition complete
+end script FRShowIntro

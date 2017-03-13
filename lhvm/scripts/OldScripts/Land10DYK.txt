@@ -1,0 +1,7 @@
+//-----------------------------------------------------------------
+// Land 10 Did You Know
+//-----------------------------------------------------------------
+begin script Land10DidYouKnow
+	Sign = 0
+start
+end script Land10DidYouKnow

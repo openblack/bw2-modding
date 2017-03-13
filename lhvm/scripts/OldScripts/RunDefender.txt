@@ -1,0 +1,21 @@
+//-----------------------------------------------------------------------------
+run script RunDefender
+//-----------------------------------------------------------------------------
+begin script RunDefender
+
+CamPos = marker at {1417.104,5.435,1246.915}
+CamFoc = marker at {1411.342,3.435,1264.673}
+
+start
+
+	// Setup the camera position
+	begin cinema
+		set camera position to {CamPos}
+		set camera focus to {CamFoc}
+	end cinema
+
+	run script Defender
+	
+end script RunDefender
+
+//-----------------------------------------------------------------------------

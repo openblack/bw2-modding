@@ -1,0 +1,1112 @@
+/*
+By: Matthew Leonard
+Last Updated: 03 September 2004
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define VR_FALSE = 0
+define VR_TRUE = 1
+
+define VR_INITIAL_BOAT_DELAY = 0	//the delay the first boat takes before setting off
+define VR_BOAT_DELAY = 50			//the delay every other boat takes before setting off
+define VR_LONGBOAT_SPEED = 3.0		//speed of the longboat
+define VR_FIREGUY_SPEED = 1.8		//speed of the Norse guy lighting the pyres
+define VR_IDLE_RADIUS  = 10			//the radius an army must keep within to be idle
+define VR_IDLE_WAIT = 18			//wait before idle check
+define VR_PYRE_STORM_WAIT_MIN = 100	//MIN - how long does the script wait before a freak storm puts out this pyre?
+define VR_PYRE_STORM_WAIT_MAX = 150	//max wait time
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global LongboatsSunk = 0
+global LongboatsReturned = 0
+global LongboatActive = 0
+global FirstBoatDocking = 0
+global FirstBoatSunk = 0
+global VR_WatchPyres = VR_TRUE
+
+global VR_Armies = 0
+global VR_StartMarker[10]
+global VR_LBWaypoint[10]
+global VR_LBWaypoint2[10]
+global VR_LBWaypoint3[10]
+global VR_LBWaypoint4[10]
+global VR_LBWaypoint5[10]
+global VR_LBWaypoint6[10]
+
+global VR_DockWaypoint1 = 0
+global VR_DockWaypoint2_1 = 0	//Follow this if the lantern is on
+global VR_DockWaypoint2_2 = 0	//go here if the lantern is off
+global VR_DockWaypoint3 = 0
+global VR_DockWaypoint4_1 = 0
+global VR_DockWaypoint4_2 = 0
+global VR_DockWaypoint5_1 = 0
+global VR_DockWaypoint5_2 = 0
+
+global VR_ArmyGuardPos[10]
+
+global VR_Pyres[5]
+global VR_PyreFire[5]
+
+global VR_RaiderArmy[10]
+
+global VR_RaidOver = VR_FALSE
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script VR_SetupWaypoints
+define script VR_SetupPyres
+define script FireStarter
+define script TrackRaiderArmyToGreekGates
+
+define script DockBoat(Longboat)
+define script HandleLongboat(LongboatTotal)
+define script RemoveLongboat(MLongboat)
+define script HandleRockPyre(Pyre)
+define script VR_PyreFire(PyreID)
+define script VR_CheckIdle(Army)
+define script VR_Advisor(ID)
+define script FreakPyreStorm(Pyre)
+define script DebugWatchLongboatHealth(Longboat)
+
+//========================================================================================
+//	Land 3 Viking Raiders
+//========================================================================================
+begin script Land3VikingRaiders
+
+	LongboatTimer = create timer for 0 seconds
+	LongboatTotal = 0
+	TotalVikingBoats = 10
+	
+	FirstBoatArrival = 0
+
+start
+	
+	// -=-=-=-=-=-= T E M P O R A R Y =-=-=-=-=-=-
+	//run background script Land3Globals
+	//run background script Land3Norse
+	//run background script Land3Japanese
+	// -=-=-=-=-=-= /T E M P O R A R Y =-=-=-=-=-=-
+	
+	//Setup the global waypoints
+	run script VR_SetupWaypoints
+	run script VR_SetupPyres
+	
+	run background script FireStarter
+	
+	//Advise about the pyres
+	run background script VR_Advisor(3)
+	
+	// This script creates a fixed number of Viking Longboats around the edge of the map out at sea
+	// that sail to the Norse City and disembark. The player can sink them with well thrown projectiles
+
+	set LongboatTimer time to VR_INITIAL_BOAT_DELAY seconds
+
+	begin loop
+
+		if get LongboatTimer time remaining <= 0 /*and LongboatActive == 0 */and LongboatTotal < 10
+		
+			run background script HandleLongboat(LongboatTotal)
+			LongboatActive = 1
+			LongboatTotal++
+			
+			if LongboatsReturned == 4
+				run background script VR_Advisor(0)
+				
+			elsif LongboatsReturned == 6	
+				run background script VR_Advisor(1)
+				
+			elsif LongboatsReturned == 9
+				run background script VR_Advisor(2)
+				
+			end if
+			FirstBoatArrival++							
+			
+			//Reset the timer
+			set LongboatTimer time to VR_BOAT_DELAY seconds
+			
+		end if
+
+	until (LongboatsReturned + LongboatsSunk) >= TotalVikingBoats
+	end loop
+	
+	KCVikingsReturned = VR_TRUE
+	
+	run background script TrackRaiderArmyToGreekGates
+	VR_WatchPyres = VR_FALSE
+
+end script Land3VikingRaiders
+
+//========================================================================================
+//	Handle Longboat
+//========================================================================================
+begin script HandleLongboat (BoatNumber)
+	
+	Longboat = 0
+	
+	TransferPos = marker at {362.348, 1.250, 1176.932}
+	TakeOverPos = marker at {365.788, 1.533, 923.642}
+	
+start
+	
+	Longboat = create SHIP NORSE_SHIP at {VR_StartMarker[BoatNumber]}
+	add {VR_LBWaypoint[BoatNumber]} to Longboat waypoint schedule // optional en route waypoint
+
+	run background script DebugWatchLongboatHealth(Longboat)
+
+	if VR_LBWaypoint2[BoatNumber] != 0
+		add {VR_LBWaypoint2[BoatNumber]} to Longboat waypoint schedule // align for docking
+	end if
+
+	if VR_LBWaypoint3[BoatNumber] != 0
+		add {VR_LBWaypoint3[BoatNumber]} to Longboat waypoint schedule // optional en route waypoint
+	end if
+
+	if VR_LBWaypoint4[BoatNumber] != 0
+		add {VR_LBWaypoint4[BoatNumber]} to Longboat waypoint schedule // optional en route waypoint
+	end if
+
+	if VR_LBWaypoint5[BoatNumber] != 0
+		add {VR_LBWaypoint5[BoatNumber]} to Longboat waypoint schedule // optional en route waypoint
+	end if
+
+	if VR_LBWaypoint6[BoatNumber] != 0
+		add {VR_LBWaypoint6[BoatNumber]} to Longboat waypoint schedule // optional en route waypoint
+	end if
+
+	add {TransferPos} to Longboat waypoint schedule // dockpos
+	SPEED of Longboat = VR_LONGBOAT_SPEED
+	enable Longboat waypoint schedule
+	
+	wait until {Longboat} near {TakeOverPos} radius 60 or Longboat not exists or HEALTH of Longboat <= 0 or Longboat on fire	
+	
+	if Longboat on fire	
+		//Sink the longboat
+		SPEED of Longboat = 0.4
+		wait 3 seconds
+		delete Longboat with explode
+		LongboatsSunk++
+	else
+		if HEALTH of Longboat > 0
+			run script DockBoat(Longboat)	
+		else
+			//A longboat has been sunk	
+			LongboatsSunk++
+			run background script VR_Advisor(7)	
+		end if
+	end if	
+	
+	LongboatActive = 2	
+
+	wait 0.2 seconds	
+
+end script HandleLongboat
+
+//========================================================================================
+//	Remove Longboat
+//========================================================================================
+begin script RemoveLongboat (Longboat)
+	LBDeparturePos = marker at {317.165, 1.250, 1597.201}
+	LBFinalWaypoint = marker at {177.334, 1.250, 2471.040}
+start
+	wait 3 seconds
+	
+	add {LBDeparturePos} to Longboat waypoint schedule
+	add {LBFinalWaypoint} to Longboat waypoint schedule
+	
+	SPEED of Longboat = VR_LONGBOAT_SPEED
+	enable Longboat waypoint schedule
+	wait until Longboat not exists or HEALTH of Longboat <= 0 or Longboat at final destination
+	if Longboat exists
+		delete Longboat /// with fade
+	end if
+end script RemoveLongboat
+
+//========================================================================================
+//	Track Army To Gates
+//========================================================================================
+begin script TrackRaiderArmyToGreekGates
+	GreekGates = marker at {870.225, 48.585, 920.519}
+	PickUpPos = marker at {1252.717, 254.138, 1332.703}
+	GotRams = VR_FALSE
+	ArmyStage = 0
+	
+	ArmyLoop = 1
+start
+	
+	//First off merge the armies and attach to global	
+	VikingRaiderArmy = VR_RaiderArmy[0]
+	clear VikingRaiderArmy action queue
+	
+	while ArmyLoop < 10	
+		//Clear the action qeue
+		clear VR_RaiderArmy[ArmyLoop] action queue
+		
+		//Merge doesnt work..use follow for now.
+		add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using VikingRaiderArmy to front of VR_RaiderArmy[ArmyLoop] action queue				
+		//add action PLATOON_AGENDA_ACTION_SUPPORT using VikingRaiderArmy to front of VR_RaiderArmy[ArmyLoop] action queue
+		
+		ArmyLoop++		
+	end while
+	
+	while VikingRaiderArmy exists and VR_RaidOver == VR_FALSE
+		
+		//At the beginning, mvoe the VikingRaiderArmy to the pick up position
+		if ArmyStage == 0 
+			move VikingRaiderArmy position to {PickUpPos}
+			ArmyStage++
+		end if		
+		
+		//At the pickup position
+		if {VikingRaiderArmy} near {PickUpPos} radius 30 and ArmyStage == 1		
+			//Pickup the rams here		
+			GotRams = VR_TRUE
+			ArmyStage++
+			run background script VR_Advisor(8)
+		end if
+		
+		//The VikingRaiderArmy has the rams.. goto the greek gates
+		if GotRams == VR_TRUE and ArmyStage == 2
+			move VikingRaiderArmy position to {GreekGates}
+			ArmyStage++
+		end if
+		
+		if {VikingRaiderArmy} near {GreekGates} radius 30 and ArmyStage == 3
+			
+			run background script VR_Advisor(9)
+			
+			//Wait for the VikingRaiderArmy to accumulate a bit to make the attack more effective
+			wait 10 seconds			
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L3GreekTown to front of VikingRaiderArmy action queue
+			
+			VR_RaidOver = VR_TRUE
+						
+		end if
+				
+	end while
+	
+	VR_RaidOver = VR_TRUE
+	
+end script TrackRaiderArmyToGreekGates
+
+//========================================================================================
+//	Track Army To Gates
+//========================================================================================
+begin script VR_SetupWaypoints
+start
+	VR_StartMarker[0] = marker at {193.099, 1.250, 29.785}
+	VR_LBWaypoint[0] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint2[0] = 0
+	VR_LBWaypoint3[0] = 0
+	VR_LBWaypoint4[0] = 0
+	VR_LBWaypoint5[0] = 0
+	VR_LBWaypoint6[0] = 0
+
+	VR_StartMarker[1] = marker at {2399.090, 1.250, 241.936}
+	VR_LBWaypoint[1] = marker at {212.024, 1.250, 216.429}
+	VR_LBWaypoint2[1] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint3[1] = 0
+	VR_LBWaypoint4[1] = 0
+	VR_LBWaypoint5[1] = 0
+	VR_LBWaypoint6[1] = 0
+
+	VR_StartMarker[2] = marker at {1652.587, 1.250, 150.157}
+	VR_LBWaypoint[2] = marker at {212.024, 1.250, 216.429}
+	VR_LBWaypoint2[2] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint3[2] = 0
+	VR_LBWaypoint4[2] = 0
+	VR_LBWaypoint5[2] = 0
+	VR_LBWaypoint6[2] = 0
+	
+	VR_StartMarker[3] = marker at {2418.059, 1.250, 957.185}
+	VR_LBWaypoint[3] = marker at {1743.695, 1.250, 111.333}
+	VR_LBWaypoint2[3] = marker at {499.295, 1.250, 162.934}
+	VR_LBWaypoint3[3] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint4[3] = 0
+	VR_LBWaypoint5[3] = 0
+	VR_LBWaypoint6[3] = 0
+
+	VR_StartMarker[4] = marker at {325.989, 1.250, 153.021}
+	VR_LBWaypoint[4] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint2[4] = 0
+	VR_LBWaypoint3[4] = 0
+	VR_LBWaypoint4[4] = 0
+	VR_LBWaypoint5[4] = 0
+	VR_LBWaypoint6[4] = 0
+
+	VR_StartMarker[5] = marker at {2418.059, 1.250, 957.185}
+	VR_LBWaypoint[5] = marker at {1743.695, 1.250, 111.333}
+	VR_LBWaypoint2[5] = marker at {499.295, 1.250, 162.934}
+	VR_LBWaypoint3[5] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint4[5] = 0
+	VR_LBWaypoint5[5] = 0
+	VR_LBWaypoint6[5] = 0
+
+	VR_StartMarker[6] = marker at {2399.090, 1.250, 241.936}
+	VR_LBWaypoint[6] = marker at {212.024, 1.250, 216.429}
+	VR_LBWaypoint2[6] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint3[6] = 0
+	VR_LBWaypoint4[6] = 0
+	VR_LBWaypoint5[6] = 0
+	VR_LBWaypoint6[6] = 0
+
+	VR_StartMarker[7] = marker at {325.989, 1.250, 153.021}
+	VR_LBWaypoint[7] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint2[7] = 0
+	VR_LBWaypoint3[7] = 0
+	VR_LBWaypoint4[7] = 0
+	VR_LBWaypoint5[7] = 0
+	VR_LBWaypoint6[7] = 0
+
+	VR_StartMarker[8] = marker at {1652.587, 1.250, 150.157}
+	VR_LBWaypoint[8] = marker at {212.024, 1.250, 216.429}
+	VR_LBWaypoint2[8] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint3[8] = 0
+	VR_LBWaypoint4[8] = 0
+	VR_LBWaypoint5[8] = 0
+	VR_LBWaypoint6[8] = 0
+
+	VR_StartMarker[9] = marker at {325.989, 1.250, 153.021}
+	VR_LBWaypoint[9] = marker at {329.270, 1.250, 568.760}
+	VR_LBWaypoint2[9] = 0
+	VR_LBWaypoint3[9] = 0
+	VR_LBWaypoint4[9] = 0
+	VR_LBWaypoint5[9] = 0
+	VR_LBWaypoint6[9] = 0
+	
+	//Dock waypoints
+	VR_DockWaypoint1 = marker at {362.348, 1.250, 1176.932}
+	
+	VR_DockWaypoint2_1 = marker at {102.258, 1.250, 1317.662}
+	VR_DockWaypoint2_2 = marker at {578.492, 3.265, 1051.694}
+	
+	VR_DockWaypoint3 = marker at {534.086, 1.250, 1319.004}
+	
+	VR_DockWaypoint4_1 = marker at {141.795, 1.250, 1476.055}
+	VR_DockWaypoint4_2 = marker at {642.899, 1.250, 1361.228}
+	
+	VR_DockWaypoint5_1 = marker at {668.626, 17.223, 1462.413}
+	VR_DockWaypoint5_2 = marker at {576.968, 1.250, 1740.801}
+	
+	VR_ArmyGuardPos[0] = marker at {935.070, 105.833, 1385.376}
+	VR_ArmyGuardPos[1] = marker at {924.215, 97.687, 1433.067}
+	VR_ArmyGuardPos[2] = marker at {936.670, 99.149, 1407.836}
+	VR_ArmyGuardPos[3] = marker at {903.876, 106.907, 1367.313}
+	VR_ArmyGuardPos[4] = marker at {937.518, 105.660, 1356.424}
+	VR_ArmyGuardPos[5] = marker at {963.354, 106.396, 1395.446}
+	VR_ArmyGuardPos[6] = marker at {950.975, 105.470, 1437.615}
+	VR_ArmyGuardPos[7] = marker at {950.975, 105.470, 1437.615}
+	VR_ArmyGuardPos[8] = marker at {918.851, 105.430, 1333.776}
+	VR_ArmyGuardPos[9] = marker at {944.240, 104.656, 1321.829}
+	
+end script VR_SetupWaypoints
+
+//========================================================================================
+//	Setup Pyres
+//========================================================================================
+begin script VR_SetupPyres
+	PyreLoop = 5	//6 pyres including 0-5
+		
+	PyrePos_0 = marker at {464.976, 86.647, 1032.602}
+	PyrePos_1 = marker at {636.364, 103.794, 1228.170}
+	PyrePos_2 = marker at {700.398, 22.969, 1490.958}
+	
+	PyrePos_3 = marker at {244.351, 24.781, 982.452}
+	PyrePos_4 = marker at {409.210, 57.878, 1252.293}
+	
+start
+	
+	//These are the pyres by the Norse
+	VR_Pyres[0] = get ROCK_OBJECT at {PyrePos_0} radius 10
+	VR_Pyres[1] = get ROCK_OBJECT at {PyrePos_1} radius 10
+	VR_Pyres[2] = get ROCK_OBJECT at {PyrePos_2} radius 10
+	
+	//These are the pyres near the rocks
+	VR_Pyres[3] = get ROCK_OBJECT at {PyrePos_3} radius 10
+	VR_Pyres[4] = get ROCK_OBJECT at {PyrePos_4} radius 10
+	
+	while PyreLoop >= 0	
+		disable VR_Pyres[PyreLoop] pickup	
+		disable VR_Pyres[PyreLoop] hurt by fire
+		
+		run background script HandleRockPyre(PyreLoop)
+		
+		PyreLoop--
+			
+	end while
+	
+end script VR_SetupPyres
+
+//========================================================================================
+//	Handle Rock Pyre - the rock pyres are not meant to be lit, and there is no villager behaviour associated with them
+//========================================================================================
+begin script HandleRockPyre(PyreID)
+	Pyre = 0
+	PyreFire = VR_FALSE
+start	
+	
+	Pyre = VR_Pyres[PyreID]	
+	
+	while VR_WatchPyres == VR_TRUE
+		
+		//Pyre is on fire for first time
+		if Pyre on fire and PyreFire == VR_FALSE
+			VR_PyreFire[PyreID] = create visual effect "gp_s_fire_vil.ves" strength 3 scale 4 at extra position 0 of Pyre time -1
+			attach 3d sound "SCULLFIRE" to Pyre
+			disable Pyre on fire 0
+			PyreFire = VR_TRUE
+			
+			//When the rock pillars are lit.. they dont stay lit for long			
+			if PyreID == 3 or PyreID == 4
+				run background script FreakPyreStorm(Pyre)
+				run background script VR_Advisor(6)
+			end if
+			
+			//enable temperature script
+			run background script VR_PyreFire(PyreID)						
+			
+		//Pyre is not on fire anymore
+		elsif PyreFire == VR_TRUE and not Pyre on fire
+			stop visual effect VR_PyreFire[PyreID]
+			detach sound "SCULLFIRE" from Pyre
+			PyreFire = VR_FALSE
+			
+			//the ships will react to this
+			VR_PyreFire[PyreID] = 0
+			
+		end if
+				
+		//Pyre has been hit.. advisor comment
+		if HEALTH of Pyre <= 0.5
+			//advisor comment
+			
+		//Pyre has been destroyed
+		elsif HEALTH of Pyre <= 0.5
+			//advisor comment	
+			//ship waypoint will come towatds this pyre
+			
+		end if
+		
+	end while
+	
+end script HandleRockPyre
+
+//========================================================================================
+//	Pyre fire		this script maintains the fire so the air around it doesnt cool the fire down enoguh that it stops.
+//========================================================================================
+begin script VR_PyreFire(PyreID)	
+start
+	
+	//make sure we're fully on fire here
+	enable VR_Pyres[PyreID] on fire 1.0
+	
+	while VR_Pyres[PyreID] on fire
+		
+		if get VR_Pyres[PyreID] temperature  < 1
+			set VR_Pyres[PyreID] temperature ((get VR_Pyres[PyreID] temperature) + 0.1)
+		end if
+		
+	end while
+	
+end script VR_PyreFire
+
+//========================================================================================
+//	Dock Boat
+//========================================================================================
+begin script DockBoat(Longboat)
+	
+	CurrentCheck = 0
+	BoatDocked = VR_FALSE
+	GoingToCrash = VR_FALSE
+	
+	//the army create position	
+	NewVikingSquadPos = marker at {711.065, 23.469, 1413.863}	
+	
+	//Position checks
+	LBCheck1 = marker at {348.819, 1.701, 1060.556}
+	LBCheck2 = marker at {547.696, 1.250, 1226.077}
+	LBCheck3 = marker at {642.899, 1.250, 1361.228}
+	
+	CrashCheck1 = marker at {342.614, 2.058, 863.873}
+	CrashCheck2 = marker at {453.415, 1.250, 1346.229}	
+	
+	LBCrashWaypoint_1 = marker at {258.300, 17.884, 942.075}
+	LBCrashWaypoint_2 = marker at {414.304, 18.966, 1226.827}
+	LBCrashWaypoint_3 = marker at {409.944, 24.709, 1276.257}
+	
+	//Longboat exit waypoints
+	LBFinalWaypoint = marker at {177.334, 1.250, 2471.040}
+	
+start
+
+	//Monitor the boat as it sails
+	while not Longboat at final destination and Longboat exists and HEALTH of Longboat > 0
+		
+		//Only run these checks when the boat isnt on collision course with rocks
+		if GoingToCrash == VR_FALSE
+			//The boat has reached the dock	
+			if BoatDocked == VR_FALSE and {Longboat} near {VR_DockWaypoint5_1} radius 30
+				
+				//Stop the boat
+				SPEED of Longboat = 0.0
+				stop Longboat moving
+				disable Longboat waypoint schedule
+				
+				//Another longboat has made it
+				LongboatsReturned++
+				
+				//Lets create the army
+				if Longboat exists and HEALTH of Longboat > 0
+
+					VR_RaiderArmy[VR_Armies] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {NewVikingSquadPos} with 10 men and 0 women
+					PLAYER of VR_RaiderArmy[VR_Armies] = 1
+					attach VR_RaiderArmy[VR_Armies] to L3NorseTown
+					
+					//Now move to unique position
+					move VR_RaiderArmy[VR_Armies] position to {VR_ArmyGuardPos[VR_Armies]}
+					run background script VR_CheckIdle(VR_RaiderArmy[VR_Armies])
+					
+					VR_Armies++									
+					
+				end if
+							
+				wait 4 seconds
+				
+				//Stat the boat moving again
+				SPEED of Longboat = VR_LONGBOAT_SPEED			
+				BoatDocked = VR_TRUE
+				
+				clear Longboat waypoint schedule
+				
+			end if
+			
+			//Time to decide where we're going
+			if {Longboat} near {LBCheck1} radius 15	and CurrentCheck == 0		
+				//This pyre isnt on fire
+				if VR_PyreFire[0] == 0
+					add {VR_DockWaypoint2_1} to Longboat waypoint schedule
+					LongboatsReturned++
+					
+				//Move the longboat towards land
+				else
+					add {VR_DockWaypoint2_2} to Longboat waypoint schedule
+					add {VR_DockWaypoint3} to Longboat waypoint schedule
+					
+				end if
+				
+				//Dont want to come here again!
+				CurrentCheck++
+				
+			end if
+			
+			//Second check
+			if {Longboat} near {LBCheck2} radius 15 and CurrentCheck == 1
+						
+				//This pyre isnt on fire
+				if VR_PyreFire[1] == 0
+					add {VR_DockWaypoint4_1} to Longboat waypoint schedule
+					LongboatsReturned++
+				//Move the longboat towards land
+				else
+					add {VR_DockWaypoint4_2} to Longboat waypoint schedule					
+				end if		
+				
+				//Dont want to come here again!
+				CurrentCheck++
+								
+			end if
+			
+			//Third check
+			if {Longboat} near {LBCheck3} radius 15 and CurrentCheck == 2
+				
+				//Move the longboat away from the coast
+				if VR_PyreFire[2] == 0
+					add {VR_DockWaypoint5_2} to Longboat waypoint schedule
+					LongboatsReturned++
+				else
+					add {VR_DockWaypoint5_1} to Longboat waypoint schedule
+				end if
+				
+				CurrentCheck++
+
+			end if
+		end if
+		
+		//If the longboat is near this position and a lantern is on then it's going to crash
+		if {Longboat} near {CrashCheck1} radius 30 and not VR_PyreFire[3] == 0 //If it's not 0 then it points to a fire object
+			GoingToCrash = VR_TRUE
+			
+			disable Longboat waypoint schedule
+			clear Longboat waypoint schedule
+			
+			add {LBCrashWaypoint_1} to Longboat waypoint schedule
+			
+			enable Longboat waypoint schedule
+			SPEED of Longboat = VR_LONGBOAT_SPEED
+			
+		end if
+		
+		if {Longboat} near {CrashCheck2} radius 30 and not VR_PyreFire[4] == 0 //If it's not 0 then it points to a fire object
+			GoingToCrash = VR_TRUE					
+			add {LBCrashWaypoint_3} to Longboat waypoint schedule
+		end if
+		
+		if {Longboat} near {LBCheck1} radius 30 and not VR_PyreFire[4] == 0 //If it's not 0 then it points to a fire object
+			GoingToCrash = VR_TRUE		
+			
+			disable Longboat waypoint schedule
+			clear Longboat waypoint schedule	
+					
+			add {LBCrashWaypoint_2} to Longboat waypoint schedule
+			
+			enable Longboat waypoint schedule
+			SPEED of Longboat = VR_LONGBOAT_SPEED
+			
+		end if		
+		
+	end while
+	
+	clear Longboat waypoint schedule
+	
+	//If the boat is doomed
+	if GoingToCrash == VR_TRUE
+		
+		delete Longboat with explode
+		LongboatsSunk++
+		
+	//This boat isnt going to crash
+	else				
+		//Now we get rid of the longboat	
+		add {LBFinalWaypoint} to Longboat waypoint schedule
+		
+		SPEED of Longboat = VR_LONGBOAT_SPEED
+		enable Longboat waypoint schedule
+		wait until Longboat not exists or HEALTH of Longboat <= 0 or Longboat at final destination
+		if Longboat exists
+			delete Longboat with fade
+		end if
+	end if
+	
+end script DockBoat
+
+//========================================================================================
+//	Fire Starter
+//========================================================================================
+begin script FireStarter
+	FireGuy = 0
+	
+	StartRound = 0	//At the beginning Guy visits all three pyres to set them alight
+	
+	GuyStartPos = marker at {517.572, 87.562, 1010.298}
+	
+	LightPos_0 = marker at {494.392, 87.391, 1024.995}
+	LightPos_1 = marker at {657.566, 108.763, 1229.798}
+	LightPos_2 = marker at {718.196, 22.969, 1483.356}
+	
+start
+	
+	FireGuy = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {GuyStartPos}
+	SPEED of FireGuy = VR_FIREGUY_SPEED
+	
+	while KCVikingsReturned == VR_FALSE
+	
+		//This is the start of the script. Guy goes and visits all three pyres to set them off
+		if StartRound < 3
+			if StartRound == 0
+				move FireGuy position to {LightPos_0}
+				wait until {FireGuy} near {LightPos_0} radius 1
+				
+				set FireGuy focus to {LightPos_0}
+				wait 2 seconds
+				
+				enable VR_Pyres[0] on fire 1.0
+				StartRound++
+				
+			elsif StartRound == 1
+				move FireGuy position to {LightPos_1}
+				wait until {FireGuy} near {LightPos_1} radius 1
+				
+				set FireGuy focus to {LightPos_1}
+				wait 2 seconds
+				
+				enable VR_Pyres[1] on fire 1.0
+				StartRound++
+			
+			elsif StartRound == 2
+				move FireGuy position to {LightPos_2}
+				wait until {FireGuy} near {LightPos_2} radius 1
+				
+				set FireGuy focus to {LightPos_2}
+				wait 2 seconds
+				
+				enable VR_Pyres[2] on fire 1.0
+				StartRound++
+					
+			end if
+			
+		//Now we run the main stuff
+		else
+			
+			//The first pyre has been put out
+			if not VR_Pyres[0] on fire			
+				run background script VR_Advisor(4)
+				
+				move FireGuy position to {LightPos_0}
+				wait until {FireGuy} near {LightPos_0} radius 1
+				
+				set FireGuy focus to {LightPos_0}
+				wait 2 seconds
+				
+				enable VR_Pyres[0] on fire 1.0
+				run background script VR_Advisor(5)
+			end if
+			
+			//The second pyre has been put out
+			if not VR_Pyres[1] on fire
+				run background script VR_Advisor(4)
+			
+				move FireGuy position to {LightPos_1}
+				wait until {FireGuy} near {LightPos_1} radius 1
+				
+				set FireGuy focus to {LightPos_1}
+				wait 2 seconds
+				
+				enable VR_Pyres[1] on fire 1.0
+				run background script VR_Advisor(5)
+			end if
+			
+			//The third pyre has been put out
+			if not VR_Pyres[2] on fire
+				run background script VR_Advisor(4)
+				
+				move FireGuy position to {LightPos_2}
+				wait until {FireGuy} near {LightPos_2} radius 1
+				
+				set FireGuy focus to {LightPos_2}
+				wait 2 seconds
+				
+				enable VR_Pyres[2] on fire 1.0
+				run background script VR_Advisor(5)
+			end if					
+			
+		end if
+		
+		//Has the guy died?
+		if HEALTH of FireGuy <= 0 or FireGuy on fire
+			
+			//Lets clean up
+			FireGuy = 0
+			attach FireGuy to L3NorseTown
+			release FireGuy
+	
+			while FireGuy == 0 and KCVikingsReturned == VR_FALSE
+				FireGuy = get VILLAGER at {951.138, 105.757, 1405.556} radius 150
+			end while
+			
+			SPEED of FireGuy = VR_FIREGUY_SPEED
+			
+		end if
+			
+	end while		
+	
+	attach FireGuy to L3NorseTown
+	release FireGuy	
+	
+end script FireStarter
+
+//========================================================================================
+//	Check for Idle armies
+//========================================================================================
+begin script VR_CheckIdle(Army)
+	LastPosition = 0
+	InQueue = VR_FALSE
+start
+
+	while Army exists and VR_RaidOver == VR_FALSE
+	
+		LastPosition = marker at {Army}		
+		wait VR_IDLE_WAIT seconds
+		
+		//The platoon must now be idle
+		if {LastPosition} near {Army} radius VR_IDLE_RADIUS and InQueue == VR_FALSE
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {Army} to front of Army action queue		
+			InQueue = VR_TRUE
+		
+		elsif not {LastPosition} near {Army} radius VR_IDLE_RADIUS		
+			InQueue = VR_FALSE
+			
+		end if		
+		
+	end while
+	
+end script VR_CheckIdle
+
+//========================================================================================
+//	Viking advisor
+//========================================================================================
+begin script VR_Advisor(ID)
+	DistinguishedBefore = VR_FALSE
+	ReLitBefore = VR_FALSE
+	RockLitBefore = VR_FALSE	
+start
+	begin dialogue
+	
+		//Initial docking comment
+		if ID == 0
+		
+			eject good spirit
+			//"GS:Oooh... Fenrik's army is enormous I don't think our defences will hold!"
+			say "BW2T_SCRIPT_03C_07VIKRAID_ADVISORCHAT_10" ///by good spirit
+			/*wait until read*/ wait 6 seconds
+			
+			eject evil spirit
+			//"ES: Man, will you stop your whining? Let's just go slap him up!"
+			say "BW2T_SCRIPT_03C_07VIKRAID_ADVISORCHAT_20" ///by evil spirit
+			/*wait until read*/ wait 6 seconds	
+		
+		//Second docking comment
+		elsif ID == 1
+			
+			eject evil spirit
+			//"ES: Wow. They have got a lot of soldiers down by their docks."
+			say "BW2T_SCRIPT_03C_07VIKRAID_ADVISORCHAT_30" ///by evil spirit
+			/*wait until read*/ wait 6 seconds
+			
+			eject good spirit
+			//"GS: That's what I've been trying to say. He can't have many more though."
+			say "BW2T_SCRIPT_03C_07VIKRAID_ADVISORCHAT_40" ///by good spirit
+			/*wait until read*/ wait 6 seconds
+			
+			//"GS: We'd better get ready."
+			say "BW2T_SCRIPT_03C_07VIKRAID_ADVISORCHAT_50" ///by good spirit
+			/*wait until read*/ wait 6 seconds
+			
+			send good spirit home
+			//"ES: Oh yeah...Let's kick some butt."
+			say "BW2T_SCRIPT_03C_07VIKRAID_ADVISORCHAT_60" ///by evil spirit
+			/*wait until read*/ wait 6 seconds		
+		
+		//Third docking comment
+		elsif ID == 2
+				
+			eject good spirit
+			say "Another Longboat is approaching the Norse Capital."					
+			/*wait until read*/ wait 6 seconds
+			
+			say "They've amassed quite an army. I hope our defences will hold."					
+			/*wait until read*/ wait 6 seconds
+			send good spirit home
+		
+		//Talk about pyres
+		elsif ID == 3
+			
+			eject evil spirit
+			eject good spirit
+			
+			make evil spirit point at {VR_Pyres[0]}
+			
+			//EA: Look at those Pyres
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREHELP_10"
+			/*wait until read*/ wait 6 seconds
+			
+			stop evil spirit pointing
+			
+			//GA: The boats seem to be using the pyres as guides to the dock
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREHELP_20"
+			/*wait until read*/ wait 6 seconds
+			
+			//GA: Try putting the pyres put and the boats will move away from the island.
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREHELP_30"
+			/*wait until read*/ wait 6 seconds
+			
+			make evil spirit point at {VR_Pyres[4]}
+			
+			//EA: Or you could light the pyres by those rocks over there. They the boats will move towards them and crash. HA!
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREHELP_40"
+			/*wait until read*/ wait 6 seconds			
+			
+			send good spirit home
+			send evil spirit home
+			
+		//A pyre has been distinguished
+		elsif ID == 4 and DistinguishedBefore == VR_FALSE
+			
+			eject good spirit				
+			
+			//GA: Excellent. The boats will move away from the island now
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREOUT_10"
+			/*wait until read*/ wait 6 seconds
+			
+			eject evil spirit
+			
+			//EA: But won't they crash?
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREOUT_20"
+			/*wait until read*/ wait 6 seconds
+			
+			//GA: Certainly not. The boats are just following the light
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREOUT_30"
+			/*wait until read*/ wait 6 seconds
+			
+			//GA: If there is no light the they'll just move back out to sea
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYREOUT_40"
+			/*wait until read*/ wait 6 seconds
+			
+			send good spirit home
+			send evil spirit home
+			
+			//dont want this one again
+			DistinguishedBefore = VR_TRUE
+			
+		//Norse guy has re-lit a pyre
+		elsif ID == 5 and ReLitBefore == VR_FALSE
+			
+			eject good spirit	
+			
+			//GA: The Norse have re-lit one of the pyres
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYRERELIT_10"
+			/*wait until read*/ wait 6 seconds
+			
+			eject evil spirit
+			
+			//EA: Your attempts to divert the ships away from the island are in vein.
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYRERELIT_20"
+			/*wait until read*/ wait 6 seconds
+			
+			//EA: why dont you light the pyres on those rocks and watch the ships crash into them?
+			say "BW2T_SCRIPT_03C_07VIKRAID_PYRERELIT_30"
+			/*wait until read*/ wait 6 seconds
+			
+			send good spirit home
+			send evil spirit home
+			
+			ReLitBefore = VR_TRUE
+			
+		//Player has lit a pyre by the rocks
+		elsif ID == 6 and RockLitBefore == VR_FALSE
+			
+			eject evil spirit
+			
+			//EA: Way to go boss. Now sit back and watch the show.					
+			say "BW2T_SCRIPT_03C_07VIKRAID_ROCKPYRELIT_10"
+			/*wait until read*/ wait 6 seconds
+			
+			eject good spirit
+			
+			//GA: There's still time to put the pyres out before any ships crash into the rocks
+			say "BW2T_SCRIPT_03C_07VIKRAID_ROCKPYRELIT_20"
+			/*wait until read*/ wait 6 seconds		
+			
+			send good spirit home
+			send evil spirit home
+			
+			RockLitBefore = VR_TRUE
+			
+		//Player has sunk a boat
+		elsif ID == 7
+		
+			eject evil spirit
+			eject good spirit
+			
+			//EA: Ohhhh, that was really good.  BAM!  Down goes the ship no survivors.  Can't wait for the next batch.
+			say "BW2T_SCRIPT_03C_07VIKRAID_SHIPSUNK_10"
+			/*wait until read*/ wait 6 seconds	
+			
+			//GA: Do you have to be so so mean?
+			say "BW2T_SCRIPT_03C_07VIKRAID_SHIPSUNK_40"
+			/*wait until read*/ wait 6 seconds	
+			
+			//EA: Yes, obviously...
+			say "BW2T_SCRIPT_03C_07VIKRAID_SHIPSUNK_50"
+			/*wait until read*/ wait 6 seconds	
+			
+			send evil spirit home
+			send good spirit home
+			
+		//The army is on the move
+		elsif ID == 8
+			
+			eject good spirit	
+			eject evil spirit
+			
+			//GA: The army is on the move. We don't have long to prepare now
+			say "BW2T_SCRIPT_03C_07VIKRAID_ARMYMOVING_10"
+			/*wait until read*/ wait 6 seconds
+			
+			//EA: Attack them before they get chance to attack us.
+			say "BW2T_SCRIPT_03C_07VIKRAID_ARMYMOVING_20"
+			/*wait until read*/ wait 6 seconds
+			
+			send good spirit home
+			send evil spirit home
+			
+		//Army by gates
+		elsif ID == 9
+			
+			eject good spirit	
+			eject evil spirit
+			
+			//GA: The army is advancing, I hope we can hold them off
+			say "BW2T_SCRIPT_03C_07VIKRAID_ARMYATGATES_10"
+			/*wait until read*/ wait 6 seconds
+			
+			//EA: Kick their asses into next Wednesday boss!
+			say "BW2T_SCRIPT_03C_07VIKRAID_ARMYATGATES_20"
+			/*wait until read*/ wait 6 seconds
+			
+			send good spirit home
+			send evil spirit home
+			
+		end if
+		
+	end dialogue
+
+end script VR_Advisor
+
+//========================================================================================
+//	Freak Pyre Storm
+//========================================================================================
+begin script FreakPyreStorm(Pyre)
+	FreakStorm = 0
+start
+
+	///Thee pyre is alight but wait a bit before the storm starts
+	wait number from VR_PYRE_STORM_WAIT_MIN to VR_PYRE_STORM_WAIT_MAX seconds
+	
+	FreakStorm = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {Pyre}
+	set FreakStorm properties rainfall 1 snowfall 0 overcast 1
+	
+	wait 8 seconds
+	
+	//slow down the fire manually (rain isnt doing it)
+	while get Pyre temperature > 0
+		set Pyre temperature (get Pyre temperature) - 0.1
+	end while
+	
+	wait 10 seconds
+	delete FreakStorm
+	
+end script FreakPyreStorm
+
+//========================================================================================
+//	DEBUG WatchLongboat health
+//========================================================================================
+begin script DebugWatchLongboatHealth(Longboat)
+start
+	
+	while Longboat exists
+	
+		if hand position near {Longboat} radius 10
+			begin dialogue
+				
+				say "$p" with number HEALTH of Longboat
+				wait until not hand position near {Longboat} radius 20
+			end dialogue
+		end if
+		
+	end while
+	
+end script DebugWatchLongboatHealth

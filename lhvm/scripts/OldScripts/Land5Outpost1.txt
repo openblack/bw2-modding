@@ -1,0 +1,623 @@
+//------------------------------------------------
+//  LAND 5 JAPANESE OUTPOST 1 AI
+//------------------------------------------------
+
+define script Land5Outpost1TownManagement
+define script Land5Outpost1ArmyManagement
+define script JapPostBodgeOre
+
+// talk scripts
+define script L5Out_OutpostConvertedSpeak
+define script L5Out_PilgrimageAllSpeak
+define script L5Out_PilgrimageHalfSpeak
+define script L5Out_PilgrimageQuarterSpeak
+define script L5Out_PilgrimageEigthSpeak
+define script L5Out_PilgrimageMinorSpeak
+define script L5Out_Tribute1Speak
+define script L5Out_Tribute2Speak
+define script L5Out_Homage1Speak
+define script L5Out_Homage2Speak
+define script L5Out_GreekArmyBuildUp1Speak
+define script L5Out_GreekArmyBuildUp2Speak
+define script L5Out_FirstAttackDefeatSpeak
+define script L5Out_FirstAttackWonSpeak
+define script L5Out_ForestDefendSpeak
+
+begin script Land5Outpost1
+
+start
+
+run background script Land5Outpost1TownManagement
+run background script Land5Outpost1ArmyManagement
+run background script JapPostBodgeOre
+
+begin loop
+	//if PLAYER 1 owns the town
+	if PLAYER of L5JapanOutpost1 == 0
+		L5Outpost1Converted = 1
+	end if
+	until L5Outpost1Converted == 1
+end loop
+
+/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+run script L5Out_OutpostConvertedSpeak
+
+L5Outpost1Converted = 2
+
+// IF PLAYER CONVERTS L5JapanOutpost1 THEN TRIGGER THE L5JapanOutpost1 SUBMISSION CUT-SCENE
+// REMEMBER TO SET L5Outpost1Converted = 2 when script completed (used in L5Control to trigger L5IslandComplete cut-scene)
+
+end script Land5Outpost1
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script Land5Outpost1TownManagement
+
+InitialGreekAggression = 20
+AngeredGreekAggression = 80
+InitialGreekTolerance = 200
+AngerCounter = 0
+AngerTimer = create timer for 0 seconds
+AngerKickDelay = 180
+FeudValue = 0
+OutpostPopulation = 0
+
+OutpostImpressivePoints = 0
+InitialTimer = create timer for 0 seconds
+JapanesePilgrims = 0
+PilgrimSize = 0
+JapanImpressivenessThreshold = 0.3
+TributeComment = 0
+HomageComment = 0
+
+Pilgrim_Ctr = 0
+
+start
+set InitialTimer time to 300 seconds
+
+// Initial villager setup
+set town L5JapanOutpost1 desire for GATHER_FOOD to 0.80
+set town L5JapanOutpost1 desire for GROW_FOOD to 0.60
+set town L5JapanOutpost1 desire for GATHER_WOOD to 0.40
+set town L5JapanOutpost1 desire for GATHER_ORE to 0.40
+set town L5JapanOutpost1 desire for BREED to 0.40
+set town L5JapanOutpost1 desire for ATTACK to 0.10
+set town L5JapanOutpost1 desire for FUN to 0.50
+
+// Initial feud status
+//set town L5JapanOutpost1 interracial tolerance with town L5GreekTown to InitialGreekTolerance
+//set town L5JapanOutpost1 racial aggression with town L5GreekTown to InitialGreekAggression
+//set town L5JapanOutpost1 impressive threshold for town L5GreekTown to 1.0
+
+wait 20 seconds // give other scripts a chance to create existing units
+
+// Initial army setup
+set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.2
+set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.1
+
+begin loop
+	wait 3 seconds
+
+// Military Training
+	OutpostPopulation = size of L5JapanOutpost1
+	if OutpostPopulation < 50
+		set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0
+		set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0
+	elsif OutpostPopulation < 100
+		set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.2
+		set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0
+	else
+		set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.2
+		set town L5JapanOutpost1 platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.1
+	end if
+
+// Migrations
+	//OutpostImpressivePoints = get town L5JapanOutpost1 impressive value for town L5GreekTown
+	//if get InitialTimer time remaining <= 0 and Land5GreekImpressiveness >= Land5GreekImpressivenessMinimumOutpost
+
+	//	if Pilgrim_Ctr == 10 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimumOutpost + 2000)
+	//		if TownPilgrimageStatus[8] == 1 // Always Accept
+	//			// CONVERT THE TOWN PEACEFULLY
+	//			set player 0 town L5JapanOutpost1 capture reason LAST_CAPTURE_PASSIVE
+	//			run script L5Out_PilgrimageAllSpeak
+	//		elsif TownPilgrimageStatus[8] == 2 // always Decline
+	//		end if
+	//		reset town L5JapanOutpost1 impressive value for town L5GreekTown
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 9 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimumOutpost + 1500)
+	//		if TownPilgrimageStatus[8] == 1 // Always Accept
+	//			run script L5Out_PilgrimageHalfSpeak
+	//			PilgrimSize = size of L5JapanOutpost1
+	//			PilgrimSize = PilgrimSize/2
+	//			JapanesePilgrims = L5JapanOutpost1 pilgrimage PAY_PILGRIMAGE to town L5GreekTown with PilgrimSize pilgrims
+	//		elsif TownPilgrimageStatus[8] == 2 // always Decline
+	//		end if
+	//		reset town L5JapanOutpost1 impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 8 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimumOutpost + 1000)
+	//		if TownPilgrimageStatus[8] == 1 // Always Accept
+	//			run script L5Out_PilgrimageQuarterSpeak
+	//			PilgrimSize = size of L5JapanOutpost1
+	//			PilgrimSize = PilgrimSize/4
+	//			JapanesePilgrims = L5JapanOutpost1 pilgrimage PAY_PILGRIMAGE to town L5GreekTown with PilgrimSize pilgrims
+	//		elsif TownPilgrimageStatus[8] == 2 // always Decline
+	//		end if
+	//		reset town L5JapanOutpost1 impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 7 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimumOutpost + 700)
+	//		if TownPilgrimageStatus[8] == 1 // Always Accept
+	//			run script L5Out_PilgrimageEigthSpeak
+	//			PilgrimSize = size of L5JapanOutpost1
+	//			PilgrimSize = PilgrimSize/8
+	//			JapanesePilgrims = L5JapanOutpost1 pilgrimage PAY_PILGRIMAGE to town L5GreekTown with PilgrimSize pilgrims
+	//			run background script ManagePilgrims (JapanesePilgrims, 8)
+	//			Pilgrim_Ctr++
+	//		elsif TownPilgrimageStatus[8] == 2 // always Decline
+	//			Pilgrim_Ctr = 6
+	//			TownPilgrimageStatus[8] = 0
+	//			JapanImpressivenessThreshold += 0.2
+	//			if JapanImpressivenessThreshold > 1
+	//				JapanImpressivenessThreshold = 1
+	//			end if
+	//			set town L5JapanOutpost1 impressive threshold for town L5GreekTown to JapanImpressivenessThreshold
+	//			Land5GreekImpressivenessMinimumOutpost += 3000
+	//		end if
+	//		reset town L5JapanOutpost1 impressive value for town L5GreekTown
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr == 6 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimumOutpost + 400)
+	//		run script L5Out_PilgrimageMinorSpeak
+	//		JapanesePilgrims = L5JapanOutpost1 pilgrimage PAY_PILGRIMAGE to town L5GreekTown with 4 pilgrims
+	//		run background script ManagePilgrims (JapanesePilgrims, 8)
+	//		reset town L5JapanOutpost1 impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr >= 2 and Pilgrim_Ctr <= 5 and Land5GreekImpressiveness >= (Land5GreekImpressivenessMinimumOutpost + 200)
+	//		// Japanese pay tribute to Greeks
+	//		if TributeComment == 0
+	//			run script L5Out_Tribute1Speak
+	//			TributeComment = 1
+	//		else
+	//			run script L5Out_Tribute2Speak
+	//		end if
+	//		JapanesePilgrims = L5JapanOutpost1 pilgrimage PAY_TRIBUTE to town L5GreekTown with 4 pilgrims
+	//		reset town L5JapanOutpost1 impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+
+	//	if Pilgrim_Ctr < 2
+	//		if HomageComment == 0
+	//			run script L5Out_Homage1Speak
+	//			HomageComment = 1
+	//		else
+	//			run script L5Out_Homage2Speak
+	//		end if
+	//		JapanesePilgrims = L5JapanOutpost1 pilgrimage PAY_HOMAGE to town L5GreekTown with 4 pilgrims
+	//		reset town L5JapanOutpost1 impressive value for town L5GreekTown
+	//		Pilgrim_Ctr++
+	//		set InitialTimer time to 300 seconds
+	//	end if
+	//end if
+
+
+until L5Outpost1Converted == 1 or PLAYER of L5GreekTown != 0
+end loop
+
+end script Land5Outpost1TownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script Land5Outpost1ArmyManagement
+
+GreekFeudBreach	= 0
+IdlePlatoons	= 0
+IdleTroops = 0
+JapanArmyOne	= 0
+Count = 0
+
+L5_JapVillageGrunt1 = 0
+L5_JapVillageGrunt1Pos = marker at {527.740, 60.055, 1116.646} // in town
+L5_JapVillageGrunt2 = 0
+L5_JapVillageGrunt2Pos = marker at {572.991, 90.919, 1028.121} // on ledge above town
+L5_JapVillageArcher1 = 0
+L5_JapVillageArcher1Pos = marker at {595.521, 115.950, 1076.321} // on ledge by huts
+GruntMinePos = marker at {617.665, 123.718, 840.728}
+ArcherMinePos = marker at {595.624, 124.442, 841.641}
+MineAdvanceActive = 0
+CurrentGruntPos = 0
+CurrentArcherPos = 0
+BoredomTimer = create timer for 300 seconds
+FirstAttack = 0
+FirstAttackTimer = create timer for 0 seconds
+OutpostWallDef = 0
+
+start
+
+// create initial platoons
+L5_JapVillageGrunt1 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {L5_JapVillageGrunt1Pos} with 12 men and 0 women
+attach L5_JapVillageGrunt1 to L5JapanOutpost1
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L5_JapVillageGrunt1Pos} to front of L5_JapVillageGrunt1 action queue
+
+L5_JapVillageGrunt2 = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {L5_JapVillageGrunt2Pos} with 12 men and 0 women
+attach L5_JapVillageGrunt2 to L5JapanOutpost1
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L5_JapVillageGrunt2Pos} to front of L5_JapVillageGrunt2 action queue
+
+L5_JapVillageArcher1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L5_JapVillageArcher1Pos} with 12 men and 0 women
+attach L5_JapVillageArcher1 to L5JapanOutpost1
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L5_JapVillageArcher1Pos} to front of L5_JapVillageArcher1 action queue
+
+begin loop
+	wait 1 second
+
+	// Maintain GRUNT 1
+	if L5_JapVillageGrunt1 exists
+		if {L5_JapVillageGrunt1} not near {L5_JapVillageGrunt1Pos} radius 10 and FirstAttack == 0
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L5_JapVillageGrunt1Pos} to front of L5_JapVillageGrunt1 action queue
+		end if
+	else
+		wait until FirstAttack == 0 or FirstAttack == 3
+		IdlePlatoons = get idle platoons in town L5JapanOutpost1
+		if IdlePlatoons > 0
+			//make an army
+			L5_JapVillageGrunt1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanOutpost1} radius 200
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L5_JapVillageGrunt1Pos} to front of L5_JapVillageGrunt1 action queue
+		end if
+	end if
+
+	// Maintain GRUNT 2
+	if L5_JapVillageGrunt2 exists
+		if {L5_JapVillageGrunt2} not near {CurrentGruntPos} radius 10 and FirstAttack == 0
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {CurrentGruntPos} to front of L5_JapVillageGrunt2 action queue
+		end if
+	else
+		wait until FirstAttack == 0 or FirstAttack == 3
+		IdlePlatoons = get idle platoons in town L5JapanOutpost1
+		if IdlePlatoons > 0
+			//make an army
+			L5_JapVillageGrunt2 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanOutpost1} radius 200
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {CurrentGruntPos} to front of L5_JapVillageGrunt2 action queue
+		end if
+	end if
+
+	// Maintain ARCHER 1
+	if L5_JapVillageArcher1 exists
+		if {L5_JapVillageArcher1} not near {CurrentArcherPos} radius 10 and FirstAttack == 0
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {CurrentArcherPos} to front of L5_JapVillageArcher1 action queue
+		end if
+	else
+		wait until FirstAttack == 0 or FirstAttack == 3
+		IdlePlatoons = get idle platoons in town L5JapanOutpost1
+		if IdlePlatoons > 0
+			//make an army
+			L5_JapVillageArcher1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L5JapanOutpost1} radius 200
+			add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {CurrentArcherPos} to front of L5_JapVillageArcher1 action queue
+		end if
+	end if
+
+	// ATTACK TRIGGERS
+	if FirstAttack == 0 and get army size in town L5GreekTown > 13
+		FirstAttack = 1
+		set FirstAttackTimer time to 120 seconds
+		run script L5Out_GreekArmyBuildUp1Speak
+	elsif FirstAttack == 1 and get FirstAttackTimer time remaining <= 0 and L5_JapVillageArcher1 exists and L5_JapVillageGrunt1 exists and get army size in town L5GreekTown > 23
+		FirstAttack = 2
+		/// THIS ATTACK SHOULD ONLY RAID AND BURN RESOURCES OR A BUILDING THEN RETREAT
+		add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of L5_JapVillageArcher1 action queue
+		add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L5GreekTown to front of L5_JapVillageGrunt1 action queue
+		run script L5Out_GreekArmyBuildUp2Speak
+	elsif FirstAttack == 2
+		wait until (L5_JapVillageArcher1 not exists and L5_JapVillageGrunt1 not exists) or PLAYER of L5GreekTown == 1
+		if L5_JapVillageArcher1 not exists and L5_JapVillageGrunt1 not exists
+			run script L5Out_FirstAttackDefeatSpeak
+			FirstAttack = 3
+		elsif PLAYER of L5GreekTown == 1
+			run script L5Out_FirstAttackWonSpeak
+			FirstAttack = 3
+		end if
+	end if
+
+	/*
+	if town L5JapanOutpost1 feud threshold with town L5GreekTown passed and MineAdvanceActive == 0
+		MineAdvanceActive = 1
+		CurrentGruntPos = GruntMinePos
+		CurrentArcherPos = ArcherMinePos
+		reset town L5JapanOutpost1 feud value for town L5GreekTown
+		run script L5Out_ForestDefendSpeak
+		if get BoredomTimer time remaining > 300 /// Greater than? Is that intended?
+			set BoredomTimer time to 300 seconds
+		end if
+	end if
+	*/
+
+	if (PLAYER of L5_PaddyField1 == 0 or PLAYER of L5_PaddyField2 == 0) and OutpostWallDef == 0
+		// Set wall defenders
+		set town L5JapanOutpost1 army type ARMY_UNIT_TYPE_MELEE_1 platoon ratio on wall to 0.25
+		OutpostWallDef = 1
+	elsif PLAYER of L5_PaddyField1 != 0 and PLAYER of L5_PaddyField2 != 0 and OutpostWallDef == 1
+		/// Remove wall defenders
+		set town L5JapanOutpost1 army type ARMY_UNIT_TYPE_MELEE_1 platoon ratio on wall to 0
+		OutpostWallDef = 0
+	end if
+
+until L5Outpost1Converted == 1 or PLAYER of L5GreekTown != 0
+end loop
+
+end script Land5Outpost1ArmyManagement
+
+//-----------------------------------------------------------------------------------
+
+begin script JapPostBodgeOre /// !
+
+JapBodgeOrePit = get STORE at {588.256, 61.063, 1143.171} radius 50 /// !
+OreAmount = 0
+FoodAmount = 0
+
+start
+	begin loop
+		OreAmount = get resource RESOURCE_TYPE_ORE in JapBodgeOrePit
+		FoodAmount = get resource RESOURCE_TYPE_FOOD in JapBodgeOrePit
+
+		if OreAmount < 10000
+			add resource RESOURCE_TYPE_ORE 10000 to JapBodgeOrePit /// !
+		end if
+
+		if FoodAmount < 10000
+			add resource RESOURCE_TYPE_FOOD 10000 to JapBodgeOrePit /// !
+		end if
+
+		wait 10 seconds
+		until L5Outpost1Converted == 1
+	end loop
+
+end script JapPostBodgeOre
+
+//------------------------------------------
+// L5Out_OutpostConvertedSpeak
+//------------------------------------------
+begin help script L5Out_OutpostConvertedSpeak
+start
+	begin dialogue
+		//submission cut scene should be here
+		//say "HIROKU - What have you done? Noone does this to me."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_630"
+		wait until read
+		//say "HIROKU - We are beyond diplomacy now. You have brought war to your people."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_640"
+		wait until read
+	end dialogue
+end script L5Out_OutpostConvertedSpeak
+
+//------------------------------------------
+// L5Out_PilgrimageAllSpeak
+//------------------------------------------
+begin help script L5Out_PilgrimageAllSpeak
+start
+	begin dialogue
+		//say "This is a disaster! We've lost the outpost to the Greeks."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_10"
+		wait until read
+		//say "They will pay for..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_20"
+		wait until read
+	end dialogue
+end script L5Out_PilgrimageAllSpeak
+
+//------------------------------------------
+// L5Out_PilgrimageHalfSpeak
+//------------------------------------------
+begin help script L5Out_PilgrimageHalfSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST 1/2 MIGRATION TRIGGERED"
+		//say "How can this be? Half the outpost is leaving."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_30"
+		wait until read
+		//say "My people are becoming traitors."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_40"
+		wait until read
+	end dialogue
+end script L5Out_PilgrimageHalfSpeak
+
+//------------------------------------------
+// L5Out_PilgrimageQuarterSpeak
+//------------------------------------------
+begin help script L5Out_PilgrimageQuarterSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST 1/4 MIGRATION TRIGGERED"
+		//say "What is going on? Where are my people going?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_50"
+		wait until read
+		//say "I cannot allow this to happen!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_60"
+		wait until read
+	end dialogue
+end script L5Out_PilgrimageQuarterSpeak
+
+//------------------------------------------
+// L5Out_PilgrimageEigthSpeak
+//------------------------------------------
+begin help script L5Out_PilgrimageEigthSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST 1/8 MIGRATION TRIGGERED"
+		//say "Some people wish to leave the Outpost?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_70"
+		wait until read
+		//say "Huh. Let them. We don't need..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_80"
+		wait until read
+	end dialogue
+end script L5Out_PilgrimageEigthSpeak
+
+//------------------------------------------
+// L5Out_PilgrimageMinorSpeak
+//------------------------------------------
+begin help script L5Out_PilgrimageMinorSpeak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST MINOR MIGRATION TRIGGERED"
+		//say "There are Japanese who wish to defect from our Outpost."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_90"
+		wait until read
+		//say "Let's see how far they get..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_100"
+		wait until read
+	end dialogue
+end script L5Out_PilgrimageMinorSpeak
+
+//------------------------------------------
+// L5Out_Tribute1Speak
+//------------------------------------------
+begin help script L5Out_Tribute1Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST TRIBUTE TRIGGERED"
+		//say "So my followers at the outpost are leaving gifts for the Greeks"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_110"
+		wait until read
+		//say "But they are my resources. I must punish those responisible"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_120"
+		wait until read
+	end dialogue
+end script L5Out_Tribute1Speak
+
+//------------------------------------------
+// L5Out_Tribute2Speak
+//------------------------------------------
+begin help script L5Out_Tribute2Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST TRIBUTE TRIGGERED"
+		//say "What? My people are still happy to steal from me?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_130"
+		wait until read
+		//say "And what's worse, they're givign the stolen resources to the Greek interlopers"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_140"
+		wait until read
+	end dialogue
+end script L5Out_Tribute2Speak
+
+//------------------------------------------
+// L5Out_Homage1Speak
+//------------------------------------------
+begin help script L5Out_Homage1Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST HOMAGE TRIGGERED"
+		//say "What are my Outpost inhabitants behaving so oddly?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_150"
+		wait until read
+		//say "They seem to be infatuated by the Greeks."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_160"
+		wait until read
+	end dialogue
+end script L5Out_Homage1Speak
+
+//------------------------------------------
+// L5Out_Homage2Speak
+//------------------------------------------
+begin help script L5Out_Homage2Speak
+start
+	begin dialogue
+		//say "DEVTEXT - TEST INFO - OUTPOST HOMAGE TRIGGERED"
+		//say "So the outpost dwellers are still interested in the Greeks."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_170"
+		wait until read
+		//say "I will have to keep a close eye on them."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MIGRATIONOUTPOST_180"
+		wait until read
+	end dialogue
+end script L5Out_Homage2Speak
+
+//------------------------------------------
+// L5Out_GreekArmyBuildUp1Speak
+//------------------------------------------
+begin help script L5Out_GreekArmyBuildUp1Speak
+start
+	begin dialogue
+		//say "HIROKU - Typical Greek Warmongering! I see your troop build-up!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_650"
+		wait until read
+		//say "HIROKU - Such agression cannot go unchecked!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_660"
+		wait until read
+	end dialogue
+end script L5Out_GreekArmyBuildUp1Speak
+
+//------------------------------------------
+// L5Out_GreekArmyBuildUp2Speak
+//------------------------------------------
+begin help script L5Out_GreekArmyBuildUp2Speak
+start
+	begin dialogue
+		//say "HIROKU - I have warned you. Your expanding armies threaten my people."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_670"
+		wait until read
+		//say "HIROKU - My Samurai will teach you a powerful lesson, though."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_680"
+		wait until read
+	end dialogue
+end script L5Out_GreekArmyBuildUp2Speak
+
+//------------------------------------------
+// L5Out_FirstAttackDefeatSpeak
+//------------------------------------------
+begin help script L5Out_FirstAttackDefeatSpeak
+start
+	begin dialogue
+		//say "HIROKU - What? My strongest warriors defeated? How is this possible?"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_690"
+		wait until read
+		//say "HIROKU - Nobody bests my Samurai without paying for it! Be warned."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_700"
+		wait until read
+	end dialogue
+end script L5Out_FirstAttackDefeatSpeak
+
+//------------------------------------------
+// L5Out_FirstAttackWonSpeak
+//------------------------------------------
+begin help script L5Out_FirstAttackWonSpeak
+start
+	begin dialogue
+		//say "HIROKU - For you suffer defeat with honour is the hardest task."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_710"
+		wait until read
+		//say "DIMITRIOS - Our Town has fallen to the Japanese! All is lost!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_720"
+		wait until read
+	end dialogue
+end script L5Out_FirstAttackWonSpeak
+
+//------------------------------------------
+// L5Out_ForestDefendSpeak
+//------------------------------------------
+begin help script L5Out_ForestDefendSpeak
+start
+	begin dialogue
+		//say "DIMITRIOS - Troops are moving from the nearby Japanese Village to guard the forest around the mine."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_730"
+		wait until read
+		//say "DIMITRIOS - This might escalate into serious combat at a moments notice."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_MAINHIROKU_740"
+		wait until read
+	end dialogue
+end script L5Out_ForestDefendSpeak

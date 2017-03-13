@@ -1,0 +1,441 @@
+//=================================================================================================
+//
+// Paternity Quest
+//
+// Description:		Gods in ancient times were notable for one thing: getting mortals up the duff.
+//					In this challenge, an angry father accuses the player of getting his daughter
+//					pregnant, and demands reparations. The player must prove to the angry father
+//					that they are not the guilty puppy. The daughter is, in fact, in love with a 
+//					young woodcutter and meets him for secret trysts in a nearby forest. If the player
+//					can manouevre the father into a position to witness these trysts then the player
+//					is off the hook. Phew!
+//
+// Author:			Tid Cooney
+//
+// Date Started:	13th March 2003
+//
+// Things Needed:	The map will need some kind of abode for the father and daughter, preferably with
+//					an open yard for the resources to be safely dropped into.
+//					Animations for the woodcutter proposing, girl thinking and refusing, father going mad
+//
+//=================================================================================================
+
+define PQ_TRUE = 1
+define PQ_FALSE = 0
+
+define script ClickForQuest
+define script ClickAgain
+define script SetupActors
+define script BoyAndGirl
+define script CheckForDad
+define script Busted
+define script MoveDad
+define script GiveResources
+define script PaternityQuest
+
+global PQ_GotQuest			= PQ_FALSE
+global PQ_QuestFinished		= PQ_FALSE
+global PQ_GirlWithBoy		= PQ_FALSE
+global PQ_DadIsNear			= PQ_FALSE
+
+global PQ_Girl				= 0
+global PQ_Boy				= 0
+global PQ_Dad				= 0
+global PQ_Highlight			= 0
+
+global PQ_Wood				= 0
+global PQ_WoodAmount		= 0
+
+global PQ_Food				= 0
+global PQ_FoodAmount		= 0
+
+global PQ_GirlPos			= 0
+global PQ_BoyPos			= 0
+global PQ_DadPos			= 0
+global PQ_TrystPos			= 0
+global PQ_TrystPos2			= 0
+global PQ_ResourcePos		= 0
+
+global PQ_EnoughFood		= 0
+global PQ_EnoughWood		= 0
+
+global PQ_WoodTalk1			= 0
+global PQ_WoodTalk2			= 0
+global PQ_WoodTalk3			= 0
+global PQ_WoodTalk4			= 0
+
+global PQ_FoodTalk1			= 0
+global PQ_FoodTalk2			= 0
+global PQ_FoodTalk3			= 0
+global PQ_FoodTalk4			= 0
+
+global PQ_MoveDadPos[4]
+
+//run script RunScript	// this will be removed when the control script is implemented
+
+//=============================================================================================
+begin script PaternityQuest
+
+start
+	
+PQ_DadPos = marker at {1013.725,3.350,1308.880}
+PQ_GirlPos = marker at {1011.225,3.350,1308.880}
+PQ_BoyPos = marker at {1000.508,3.606,1348.357}
+PQ_TrystPos = marker at {999.942,3.592,1366.395}
+PQ_TrystPos2 = marker at {998.942,3.592,1366.395}
+PQ_ResourcePos = marker at {1010.359,3.350,1305.133}
+
+run script SetupActors
+run script ClickForQuest
+
+end script PaternityQuest
+//=============================================================================================
+
+//=============================================================================================
+begin script ClickForQuest
+
+HighlightPos = 0
+CameraPos = 0
+
+start
+	HighlightPos = marker at {1013.725,3.350,1308.880}
+	PQ_Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of PQ_Highlight = 5
+	
+	wait until PQ_Highlight right clicked
+	if PQ_GotQuest == PQ_FALSE
+		clear right clicked object
+		PQ_GotQuest = PQ_TRUE
+		
+		begin cinema
+			CameraPos = marker at {1012.232,4.910,1306.799}
+			move camera position to {CameraPos} time 2
+			move camera focus to {1012.591,3.418,1311.098} time 2
+			
+			set PQ_Dad focus to {CameraPos}
+			
+		//	PQ_Dad play ANM_P_ATTRACT_YOUR_ATTENTION loop -1
+		//	PQ_Girl play ANM_P_LOOK_AT_HAND	loop -1
+					
+			say "So, you're the dirty rat that got my daughter up the duff?"
+			wait until read
+			
+	/*		say "I don't know. Gods, eh? Think they own the world."
+			wait until read
+			say "See a maiden, take a maiden. Like picking apples from a tree for you lot."
+			wait until read
+			say "You have a nibble, then throw it away. Well, not this one, sonny."
+			wait until read
+			say "My little girl is with child and she says that you're the father."
+			wait until read*/
+			say "But dad!"
+			wait until read
+			say "Quiet, you!"
+			wait until read
+			say "So you better make like a father!"
+			
+		//	PQ_Dad play ANM_P_SHAKE_FIST_FEMALE loop -1
+		//	PQ_Girl play ANM_P_STAND_DESPAIR_1 loop -1
+			
+			wait until read
+			say "We want maintenace, sonny. We want money, we want food, we want riches."
+			wait until read
+			say "We want 'em all, and we want 'em now."
+			wait until read
+		
+		eject good spirit
+			say "Oh my! This girl thinks we're the father of her child"
+			wait until read
+		send good spirit home
+		
+		eject evil spirit
+			say "Way to go, boss! Ya dirty dog"
+			wait until read
+			say "This kinda thing happened all the time in the old days. Glad to see you're keeping the old ways up"
+			wait until read
+		send evil spirit home
+		
+		end cinema
+	end if
+	
+	run background script ClickAgain
+	run script BoyAndGirl
+
+end script ClickForQuest
+//=============================================================================================
+
+//=============================================================================================
+begin script ClickAgain
+
+start
+
+while PQ_QuestFinished != 1
+	wait until PQ_Highlight right clicked
+
+	begin dialogue
+		say "Try and disprove the girl's paternity claim"
+		wait until read	
+	end dialogue
+	
+	clear right clicked object
+end while
+
+end script ClickAgain
+//=============================================================================================
+
+//=============================================================================================
+begin script SetupActors
+
+start
+	
+PQ_Dad = create VILLAGER VILLAGER_INFO_GREEK_FARMER_MALE at {PQ_DadPos}
+PQ_Girl = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {PQ_GirlPos}
+PQ_Boy = create VILLAGER VILLAGER_INFO_GREEK_FORESTER_MALE  at {PQ_BoyPos}
+
+set PQ_Girl focus to {PQ_Dad}
+
+end script SetupActors
+//=============================================================================================
+
+//=============================================================================================
+begin script BoyAndGirl
+
+start
+	move PQ_Girl position to {PQ_TrystPos}
+	move PQ_Boy position to {PQ_TrystPos2}
+	
+	run background script MoveDad
+	run background script GiveResources
+	
+	wait until {PQ_Girl} near {PQ_Boy} radius 3
+	
+	set PQ_Girl focus to {PQ_Boy}
+	set PQ_Boy focus to {PQ_Girl}
+	
+	// they should hug here or play some animation that makes it obvious they are lovers - maybe
+	// have the boy down on one knee like he's proposing
+	
+	PQ_GirlWithBoy = 1
+	
+	if PQ_GirlWithBoy != PQ_FALSE
+		run background script CheckForDad
+	end if
+	
+	wait 3 seconds
+	
+	PQ_GirlWithBoy = PQ_FALSE
+	
+	move PQ_Girl position to {PQ_GirlPos}
+	move PQ_Boy position to {PQ_BoyPos}
+
+end script BoyAndGirl
+//=============================================================================================
+
+//=============================================================================================
+begin script CheckForDad
+
+start
+while PQ_QuestFinished == PQ_FALSE
+	
+	if {PQ_Dad} near {PQ_Boy} radius 10
+
+		PQ_QuestFinished = PQ_TRUE
+		PQ_GirlWithBoy = PQ_FALSE
+		
+		run script Busted
+
+	end if
+	
+	wait 30 seconds
+	
+	PQ_GirlWithBoy = PQ_FALSE
+	
+	if {PQ_Girl} near {PQ_GirlPos} radius 2
+		wait 2 seconds
+		
+		run script BoyAndGirl
+	end if
+	
+end while	
+
+end script CheckForDad
+//=============================================================================================
+
+//=============================================================================================
+begin script Busted
+
+start
+
+if PQ_EnoughWood != 1
+	begin dialogue
+		say "You little harlot!"
+		wait until read
+		say "We could have fleeced that sucker for everything!"
+		wait until read
+	end dialogue
+end if
+
+if PQ_EnoughWood == 1
+	begin dialogue
+		say "He paid up!"
+		wait until read
+	end dialogue
+end if
+	
+	PQ_QuestFinished = 1
+	
+	release PQ_Girl
+	release PQ_Boy
+	release PQ_Dad	
+	
+	delete PQ_Highlight
+
+end script Busted
+//=============================================================================================
+
+//=============================================================================================
+begin script MoveDad
+
+Ctr = 0
+
+start
+	PQ_MoveDadPos[0] = marker at {1008.909,3.283,1309.915}
+	PQ_MoveDadPos[1] = marker at {1014.243,3.247,1303.104}
+	PQ_MoveDadPos[2] = marker at {1008.508,3.685,1299.990}
+	PQ_MoveDadPos[3] = marker at {1003.942,3.307,1306.738}
+	
+	while PQ_QuestFinished != PQ_TRUE
+		if Ctr < 4
+			move PQ_Dad position to {PQ_MoveDadPos[Ctr]}
+			wait until {PQ_Dad} near {PQ_MoveDadPos[Ctr]} radius 2
+			Ctr++
+		end if
+		
+		if Ctr == 4
+			Ctr = 0
+		end if
+	end while
+
+end script MoveDad
+//==============================================================================================
+
+//==============================================================================================
+begin script GiveResources
+
+start
+
+while PQ_QuestFinished !=1
+	
+	PQ_Wood = get STORE WOODSTORE at {PQ_ResourcePos} radius 30
+	PQ_WoodAmount = get resource WOOD in PQ_Wood
+	
+	disable PQ_Wood pickup
+	
+	PQ_Food = get STORE FOODSTORE at {PQ_ResourcePos} radius 30
+	PQ_FoodAmount = get resource FOOD in PQ_Food
+	
+	disable PQ_Food pickup
+	
+	if PQ_WoodAmount != 0 and PQ_WoodAmount <= 300
+		if PQ_WoodTalk1 == 0
+			PQ_WoodTalk1 = 1
+			begin dialogue
+				say "Gonna need more wood than that, son"
+				wait until read
+			end dialogue
+		end if
+	end if
+	
+	if PQ_WoodAmount > 300 and PQ_WoodAmount <= 600
+		if PQ_WoodTalk2 == 0
+			PQ_WoodTalk2 = 1
+			begin dialogue
+				say "Think of the little one"
+				wait until read
+			end dialogue
+		end if
+	end if
+	
+	if PQ_WoodAmount > 600 and PQ_WoodAmount <= 999
+		if PQ_WoodTalk3 == 0
+			PQ_WoodTalk3 = 1
+			begin dialogue
+				say "Nearly got enough to make a nice nursery"
+				wait until read
+			end dialogue
+		end if
+	end if
+	
+	if PQ_WoodAmount > 999
+		if PQ_WoodTalk4 == 0
+		
+			PQ_EnoughWood = 1
+			PQ_WoodTalk4 = 1
+			
+			begin dialogue
+				say "That'll do for the wood . . . for now"
+				wait until read
+			end dialogue
+			
+		end if
+	end if
+	
+	if PQ_FoodAmount != 0 and PQ_FoodAmount <= 300
+		if PQ_FoodTalk1 == 0
+		
+			PQ_FoodTalk1 = 1
+			
+			begin dialogue
+				say "This is a start, but we need more grub"
+				wait until read
+			end dialogue
+			
+		end if
+	end if
+	
+	if PQ_FoodAmount > 300 and PQ_FoodAmount <= 600
+		if PQ_FoodTalk2 == 0
+			PQ_FoodTalk2 = 1
+			
+			begin dialogue
+				say "You've no idea how much these little mites eat"
+				wait until read
+			end dialogue
+
+		end if
+	end if
+	
+	if PQ_FoodAmount > 600 and PQ_FoodAmount <= 999
+		if PQ_FoodTalk3 == 0
+			PQ_FoodTalk3 = 1
+			
+			begin dialogue
+				say "You want your kid growing up with rickets"
+				wait until read
+			end dialogue
+
+		end if
+	end if
+
+	if PQ_FoodAmount > 999
+		if PQ_FoodTalk4 == 0
+		
+			PQ_EnoughFood = 1
+			PQ_FoodTalk4 = 1
+			
+			begin dialogue
+				say "Grand stuff. We got enough food to last us til, well, we come for you next"
+				wait until read
+			end dialogue
+			
+		end if
+	end if
+	
+	if PQ_FoodAmount > 999 and PQ_WoodAmount > 999
+		PQ_QuestFinished = 1
+		run script Busted
+	end if
+end while
+
+end script GiveResources
+//==============================================================================================

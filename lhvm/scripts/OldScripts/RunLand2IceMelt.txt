@@ -1,0 +1,9 @@
+run script RunLand2IceMelt
+
+begin script RunLand2IceMelt
+
+start
+	
+	run script Land2IceMelt
+
+end script RunLand2IceMelt

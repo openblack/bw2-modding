@@ -1,0 +1,110 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Land 2 - Creature Series
+// ~~~~~~~~~~~~~~~~~~~~~~~~
+//
+
+// ADDITIONAL TEXT
+//say "Ooh look - some wild animals in the forest. Our foresters will be too frightened to go in there!"
+//say "I wonder if you could scare them away with your creature."
+
+
+//Wild Animals (Land 2)
+//Forests and other areas of a land could be “infested” by a pack of animals (Bears/Wolves etc)
+//The creature can be used to kill or scare away the smaller wild creatures.
+//
+//Script needs to react to creature intervention
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CS_FALSE			= 0
+define CS_TRUE			= 1
+define CS_AMOUNT_OF_WILD_ANIMALS_IN_FLOCK = 15
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land2CreatureSeries
+
+	CS_Animal[14]
+	CS_SomeThing			= CS_FALSE
+	CS_Viewed_Before		= CS_FALSE
+	CS_Animal_Flock			= 0
+	CS_Forest_Centre		= 0
+	CS_Counter_A			= 0
+	CS_Flock_Spawn_Position = 0
+	CS_Flock_Leader			= 0
+
+start
+
+	CS_Flock_Spawn_Position = marker at {1043.281, 170.143, 1514.958}
+	CS_Forest_Centre = marker at {1094.086, 158.466, 1538.274}
+
+	/*
+	//...Old flock method...
+	CS_Animal_Flock = flock at {CS_Flock_Spawn_Position}
+	set CS_Animal_Flock properties inner 5 outer 15
+
+	//... Create all Animals, place them into a flock
+	while CS_Counter_A < 14
+		CS_Animal[CS_Counter_A] = create VILLAGER VILLAGER_INFO_AZTEC_SHEPHERD_MALE at {CS_Flock_Spawn_Position}
+		move CS_Animal[CS_Counter_A] position to {CS_Forest_Centre} + {number from -5 to 5, number from 1 to 7}
+		attach CS_Animal[CS_Counter_A] to CS_Animal_Flock
+		CS_Counter_A++
+	end while
+	*/
+	
+	CS_Flock_Leader = create VILLAGER VILLAGER_INFO_GREEK_SHEPHERD_MALE at {CS_Flock_Spawn_Position} + {5, 5}
+	CS_Animal_Flock = create flock container
+	nominate CS_Flock_Leader as leader for flock CS_Animal_Flock
+
+	while CS_Counter_A < CS_AMOUNT_OF_WILD_ANIMALS_IN_FLOCK
+        CS_Animal[CS_Counter_A] = create ANIMAL BOVINE at {CS_Flock_Spawn_Position} + {number from -5 to 5, number from -5 to 5}
+		add CS_Animal[CS_Counter_A] to flock CS_Animal_Flock
+		CS_Counter_A++
+	end while
+
+	begin loop
+		if camera position near {CS_Flock_Leader} radius 40 //{CS_Animal_Flock} viewed and 
+			if CS_Viewed_Before == CS_FALSE
+				begin dialogue
+					eject good spirit
+					//SAY
+					say "Ooh look - some wild animals in the forest. Our foresters will be too frightened to go in there!"
+					//say "BW2T_SCRIPT_02C_05CS_10" by good spirit
+					wait until read
+					clear dialogue
+					//SAY
+					say "I wonder if you could scare them away with your creature."
+					//say "BW2T_SCRIPT_02C_05CS_20" by good spirit
+					wait until read
+					clear dialogue
+				end dialogue
+				CS_Viewed_Before = CS_TRUE
+			end if
+		end if
+
+		//if player brings creature close to flock
+		//make flock run away to a different area. Or is this in code? Should be...
+
+		wait 1 second
+		until CS_Animal_Flock not exists
+	end loop
+
+	wait until CS_Animal_Flock not exists
+
+end script Land2CreatureSeries
+//=============================
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================

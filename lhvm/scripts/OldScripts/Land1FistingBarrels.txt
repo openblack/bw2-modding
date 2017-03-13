@@ -1,0 +1,734 @@
+//===============================================================
+// Land 1 fisting Barrels
+// Matt.L
+//===============================================================
+
+//---------------------------------------------------------------
+// Constants
+//---------------------------------------------------------------
+define FB_FALSE = 0
+define FB_TRUE = 1
+
+//Challenge defines
+define FB_MAX_BARRELS = 10
+
+//Debug defines
+define FB_DEBUG_NO_FISTING = FB_FALSE
+
+//Collector defines
+define FB_NUM_COLLECTORS = 6
+
+//define party actions
+define FB_PARTY_ACTION_DANCE = 0
+define FB_PARTY_ACTION_GET_A_BEER = 1
+define FB_PARTY_ACTION_DRINK_BEER = 2
+define FB_PARTY_ACTION_LIGHT_BONFIRE = 3
+define FB_PARTY_ACTION_SLEEP = 4
+
+define FB_NUM_DANCES = 5
+define FB_BEERS_PER_BARREL = 3
+
+//Talk defines
+define FB_PARTY_TALK_MIN = 15
+define FB_PARTY_TALK_MAX = 30
+
+//---------------------------------------------------------------
+// Globals
+//---------------------------------------------------------------
+global FB_Barrels[FB_MAX_BARRELS]
+global FB_CurrentBarrel
+global FB_CurrentCollectBarrel = 0
+
+//Stacked/ party barrels stuff
+global FB_StackedBarrels[FB_MAX_BARRELS]
+global FB_CurrentStackedBarrel = 0
+
+// --- Party globals --- 
+
+//Bonfire stuff
+global FB_Party_BonfireOn[2]
+global FB_Party_BonfireVillagerRelease[2]
+global FB_BonfirePos[2]
+global FB_BonfireLightPos[2]
+
+//Drinking stuff
+global FB_CurrentDrinkingBarrel = FB_MAX_BARRELS
+global FB_BeersLeft[FB_MAX_BARRELS]
+global FB_BeerLocked = FB_FALSE
+
+//Talking stuff
+global FB_TalkPositions[FB_NUM_COLLECTORS]
+global FB_TalkGates[FB_NUM_COLLECTORS]
+
+//---------------------------------------------------------------
+// Script defines
+//---------------------------------------------------------------
+define script FB_Intro
+define script FB_GiveBarrels
+define script FB_Collector(Position)
+define script FB_StackBarrel
+define script FB_RollBarrel(Barrel, ToPos, StartSpeed)
+define script FB_Complete(BarrelBro)
+
+//Party scripts
+define script FB_SetupParty
+define script FB_PartyVillager(Me)
+define script FB_PartyBonfireControl(Position)
+
+//---------------------------------------------------------------
+// Land 1 fisting Barrels
+//---------------------------------------------------------------
+begin script Land1FistingBarrels
+	Scroll = 0
+	ScrollPos = marker at {1161.022,222.734,1513.916}
+	BarrelMakeCheat = 0
+	ReminderTimer = create timer for 0 seconds
+start
+
+	//Scroll stuff
+	Scroll = create highlight SILVER name "Beer Barrels" remind "Reminder temp" at {ScrollPos}
+	begin loop
+		if get distance from camera position to {Scroll} < 30 and {Scroll} viewed and get ReminderTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+				make good spirit point to Scroll
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_BEERBARRELS_130"
+				wait until read
+				set ReminderTimer time to 120 seconds
+			end dialogue
+		end if
+	until Scroll right clicked
+	end loop
+
+	delete Scroll
+	run script FB_Intro
+	/*
+	while BarrelMakeCheat < 10
+		run script FB_StackBarrel
+		BarrelMakeCheat++
+	end while
+	*/
+
+	run background script FB_Collector(marker at {1007.381,79.467,1511.199})
+	run background script FB_Collector(marker at {989.795,90.978,1572.503})
+	run background script FB_Collector(marker at {1004.159,84.679,1547.068})
+	run background script FB_Collector(marker at {1020.262,77.001,1489.201})
+	run background script FB_Collector(marker at {1006.042,77.200,1504.114})
+	
+	run background script FB_SetupParty	
+
+	run script FB_GiveBarrels
+end script Land1FistingBarrels
+
+//---------------------------------------------------------------
+// Fisting Barrels intro cut scene
+//---------------------------------------------------------------
+begin script FB_Intro
+	Bro = 0
+	BroPos = marker at {1164.096, 218.124, 1510.663}
+start
+
+	begin cinema
+		set fade red 255 green 255 blue 255 time 1
+		wait 1 seconds
+
+		set camera position to {1163.247, 221.340, 1515.301}
+		set camera focus to {1187.258, 178.372, 1428.253}
+
+		Bro = create VILLAGER AZTEC_FARMER at {BroPos}
+		set Bro focus to {1161.183, 218.209, 1511.756}
+
+		set fade in time 1
+		wait 1 seconds		
+
+		move camera position to {1160.037, 220.765, 1512.026} time 8
+		move camera focus to {1234.073, 180.889, 1457.901} time 8
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_BEERBARRELS_10"
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_BEERBARRELS_20"
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_BEERBARRELS_30"
+		wait until read
+
+		set fade red 255 green 255 blue 255 time 1
+		wait 1 seconds
+		delete Bro
+
+		set camera position to {1173.756, 230.009, 1512.111}
+		set camera focus to {1113.539, 160.849, 1551.991}
+		set fade in time 1
+	end cinema
+
+end script FB_Intro
+
+//---------------------------------------------------------------
+// Give Barrels
+//---------------------------------------------------------------
+begin script FB_GiveBarrels
+	BarrelCreate = marker at {1163.520,218.089,1520.864}
+	BarrelStack[FB_MAX_BARRELS]
+	BarelStackCreate = marker at {1168.591,218.304,1516.749}
+	BarrelLoop = 0
+	BarrelPos[FB_MAX_BARRELS]
+
+	BarrelBro = 0
+	BroPos = marker at {1172.478, 218.556, 1513.351} // ....and then generated
+start
+
+	//Create the barrel brother
+	BarrelBro = create VILLAGER INDIGENOUS_FARMER at {BroPos} 
+	disable BarrelBro reactable
+
+	begin loop		
+
+		//Create the barrels
+		BarrelLoop = 0
+		force while BarrelLoop < FB_MAX_BARRELS
+			BarrelPos[BarrelLoop] = marker at {BarelStackCreate} - {-(BarrelLoop/2), 0, (BarrelLoop/3.4)}
+			BarrelStack[BarrelLoop] = create OBJECT NORSE_BARREL_02 at {BarrelPos[BarrelLoop]}
+			PITCH of BarrelStack[BarrelLoop] = 90
+			ANGLE of BarrelStack[BarrelLoop] = 150
+			ALTITUDE of BarrelStack[BarrelLoop] = 0.4
+			disable BarrelStack[BarrelLoop] moveable
+			disable BarrelStack[BarrelLoop] pickup
+			BarrelLoop++
+		end while
+
+		BroPos = marker at get world position from BarrelStack[(FB_MAX_BARRELS-1)] to {0.733,0.105,0.181}
+		move BarrelBro position to {BroPos}
+		wait until {BarrelBro} at {BroPos}
+
+		//Pushing barrels etc
+		begin loop
+			BarrelLoop = FB_CurrentBarrel
+			while BarrelLoop < FB_MAX_BARRELS
+				if BarrelLoop == FB_CurrentBarrel
+					enable BarrelStack[BarrelLoop] moveable
+					enable BarrelStack[BarrelLoop] pickup
+					run background script FB_RollBarrel(BarrelStack[BarrelLoop], marker at {BarrelCreate}, 8)				
+					wait 1 seconds
+				else
+					set BarrelStack[BarrelLoop] position to {BarrelPos[(BarrelLoop - FB_CurrentBarrel)]}
+					PITCH of BarrelStack[BarrelLoop] = 90
+					ANGLE of BarrelStack[BarrelLoop] = 150
+					ALTITUDE of BarrelStack[BarrelLoop] = 0.4				
+					wait 0.3 seconds
+				end if
+				BarrelLoop++
+			end while
+
+			//Move bro
+			if BarrelStack[(FB_MAX_BARRELS-1)] exists
+				BroPos = marker at get world position from BarrelStack[(FB_MAX_BARRELS-1)] to {0.733,0.105,0.181}
+				move BarrelBro position to {BroPos}
+			else
+				run script FB_PartyVillager(BarrelBro)
+			end if
+
+			wait until {BarrelStack[FB_CurrentBarrel]} not near {BarrelCreate} radius 10
+			FB_Barrels[FB_CurrentBarrel] = BarrelStack[FB_CurrentBarrel]  //For collector dudes
+
+			play anim "a_p_push_object" on BarrelBro
+			wait 1 seconds
+
+			FB_CurrentBarrel++
+		until FB_CurrentBarrel == FB_MAX_BARRELS
+		end loop
+
+		run script FB_Complete(BarrelBro)
+		wait 3 seconds
+		run script FB_PartyVillager(BarrelBro)
+	end loop
+
+end script FB_GiveBarrels
+
+//---------------------------------------------------------------
+// Roll Barrel
+//---------------------------------------------------------------
+begin script FB_RollBarrel(Barrel, ToPos, StartSpeed)
+start
+	
+	set Barrel velocity heading {ToPos} speed 8
+	wait until {Barrel} near {ToPos} radius 2
+
+	//Do debug stuff - This rolls the barrel down the hill automatically so you don't have too
+	if FB_DEBUG_NO_FISTING == FB_TRUE
+		set Barrel velocity heading {ToPos} + {0.000,1.000,0.000} speed 4
+	else
+		if not Barrel is HELD
+			set Barrel velocity heading {ToPos} speed 0	
+		end if
+	end if
+
+end script FB_RollBarrel
+
+//---------------------------------------------------------------
+// Collector
+//---------------------------------------------------------------
+begin script FB_Collector(Position)
+	Me = 0
+	CollectBarrel = 0
+	DropOffPos = marker at {957.111,68.607,1417.701}
+	PartyPos = marker at {961.663,69.605,1424.918}	
+start
+
+	//Me = create VILLAGER INDIGENOUS_FARMER at {Position}
+
+	//To head straight to the party
+	Me = create VILLAGER INDIGENOUS_FARMER at {972.398,70.913,1423.512}
+
+	begin loop
+		FB_CurrentCollectBarrel = 0
+		CollectBarrel = 0
+		move Me position to {Position}
+
+		while FB_CurrentCollectBarrel != FB_MAX_BARRELS
+
+			CollectBarrel = FB_Barrels[FB_CurrentCollectBarrel]		
+
+			if CollectBarrel exists
+				disable Me reactable
+				FB_CurrentCollectBarrel++
+				wait 1.5 seconds
+
+				//Move guy towards the barrel
+				begin loop
+					move Me position to {CollectBarrel}
+					SPEED of Me = 0.4
+					wait 2 seconds
+				until {Me} near {CollectBarrel} radius 1 and not CollectBarrel is MOVING
+				end loop
+
+				reset Me anim speed
+
+				//Pickup the barrel
+				play anim "a_p_pick_up_bag" on Me
+				wait 1.5 seconds
+				delete CollectBarrel
+				set Me carrying CARRIED_OBJECT_BARREL
+				wait until Me played
+
+				wait 1 seconds
+				SPEED of Me = 0.2
+				
+				move Me position to {DropOffPos}
+				wait 1 seconds
+				override Me anim "a_p_carrying_pot"
+				wait until {Me} at {DropOffPos}
+
+				//Reset the guys walk anim			
+				cancel Me anim override
+
+				run script FB_StackBarrel
+
+				set Me carrying CARRIED_OBJECT_NONE
+
+				move Me position to {Position}
+				enable Me reactable
+
+			end if
+
+		end while
+
+		move Me position to {PartyPos}
+		run script FB_PartyVillager(Me)
+
+	end loop
+
+end script FB_Collector
+
+//---------------------------------------------------------------
+// Stack Barrel
+//---------------------------------------------------------------
+begin script FB_StackBarrel
+	StackStart = marker at {957.111,68.607,1417.701}
+	StackPos = 0
+	StackAlt = 0
+	StackPitch = 0
+	StackRot = 0
+start
+
+	if FB_CurrentStackedBarrel == 0
+		StackPos = marker at {StackStart}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 1
+		StackPos = marker at {StackStart} + {0.000,0.000,1.000}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 2
+		StackPos = marker at {StackStart} - {0.000,0.000,1.000}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 3
+		StackPos = marker at {StackStart} + {1.000,0.000,2.000}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 4
+		StackPos = marker at {StackStart} + {1.000,0.000,1.000}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 5
+		StackPos = marker at {StackStart} + {1.000,0.000,0.000}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 6
+		StackPos = marker at {StackStart} + {1, 0, -1}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 7
+		StackPos = marker at {StackStart} + {1, 0, -2}
+		StackAlt = 0
+		StackRot = number from 0 to 360
+	elsif FB_CurrentStackedBarrel == 8
+		StackPos = marker at {StackStart} + {1.500,0.000,2.500}
+		StackAlt = 0.4
+		StackPitch = 90
+		StackRot = 120
+	elsif FB_CurrentStackedBarrel == 9
+		StackPos = marker at {StackStart} - {1.500,0.000,2.500}
+		StackAlt = 0.4
+		StackPitch = 90
+		StackRot = 50	
+	end if
+
+	//Set beers left
+	FB_BeersLeft[FB_CurrentStackedBarrel] = FB_BEERS_PER_BARREL
+
+	//Now create the barrel
+	FB_StackedBarrels[FB_CurrentStackedBarrel] = create OBJECT NORSE_BARREL_02 at {StackPos}
+	ALTITUDE of FB_StackedBarrels[FB_CurrentStackedBarrel] = StackAlt
+	PITCH of FB_StackedBarrels[FB_CurrentStackedBarrel] = StackPitch
+	ANGLE of FB_StackedBarrels[FB_CurrentStackedBarrel] = StackRot
+	FB_CurrentStackedBarrel++
+
+end script FB_StackBarrel
+
+//---------------------------------------------------------------
+// Setup Party
+//---------------------------------------------------------------
+begin script FB_SetupParty
+	Bonfires[2]
+start
+
+	//Dont go out of bounds on barrel find array
+	FB_CurrentDrinkingBarrel--
+
+	FB_BonfirePos[0] = marker at {964.617,69.148,1410.167}
+	FB_BonfirePos[1] = marker at {968.762,69.544,1405.756}
+	FB_BonfireLightPos[0] = marker at {969.938,69.687,1405.372}
+	FB_BonfireLightPos[1] = marker at {963.723,69.104,1411.311}
+
+	//Setup bonfire 1
+	Bonfires[0] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {FB_BonfirePos[0]}
+	override mesh for Bonfires[0] with "..\features\m_generic_bonfire"
+	ANGLE of Bonfires[0] = 100
+	SCALE of Bonfires[0] = 2.5
+
+	//Setup bonfire 2
+	Bonfires[1] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {FB_BonfirePos[1]}
+	override mesh for Bonfires[1] with "..\features\m_generic_bonfire"
+	ANGLE of Bonfires[1] = 100
+	SCALE of Bonfires[1] = 2.5
+
+	//Setup talk positions
+	FB_TalkPositions[0] = marker at {965.357,69.465,1413.480}
+	FB_TalkPositions[1] = marker at {971.312,72.263,1413.281}
+	FB_TalkPositions[2] = marker at {970.834,69.944,1408.089}
+	FB_TalkPositions[3] = marker at {968.525,69.817,1413.825}
+	FB_TalkPositions[4] = marker at {972.163,70.068,1406.131}
+	FB_TalkPositions[5] = marker at {973.070,72.440,1410.969}
+
+	//Don't end so stuff clears up properly
+	wait until 0 != 0
+end script FB_SetupParty
+
+//---------------------------------------------------------------
+// Party Villager
+//---------------------------------------------------------------
+begin script FB_PartyVillager(Me)
+	Action = 0
+	BonfireGate = 0
+	Gate = 0
+	Dances = 0
+	ActionTimer = create timer for 0 seconds
+	RandomAnim = 0
+	TalkFocus = marker at {961.453,68.144,1403.584}
+	PartyPos = marker at {957.111,68.607,1417.701}
+start	
+
+	if not {Me} near {PartyPos} radius 30
+		move Me position to {PartyPos}
+		wait until {Me} at {PartyPos}
+	end if
+
+	begin loop
+
+		//If it is night time then choose from these actions
+		if get game time > 18.00 or get game time < 5.00
+			//Only light bonfires if one is out
+			if FB_Party_BonfireOn[1] == FB_FALSE
+				Action = FB_PARTY_ACTION_LIGHT_BONFIRE
+			else
+				if not Action == FB_PARTY_ACTION_DRINK_BEER
+					Action = number from FB_PARTY_ACTION_DANCE to FB_PARTY_ACTION_GET_A_BEER
+					//Make sure I can get a beer, if not then do a little dance
+					if Action == FB_PARTY_ACTION_GET_A_BEER and FB_BeerLocked == FB_TRUE
+						 Action = FB_PARTY_ACTION_DANCE
+					 end if
+				end if
+			end if
+
+		//If it is daytime then choose from these actions
+		else
+			Action = FB_PARTY_ACTION_SLEEP
+		end if
+
+		if Action == FB_PARTY_ACTION_GET_A_BEER and not FB_StackedBarrels[FB_CurrentDrinkingBarrel] exists
+			Action = FB_PARTY_ACTION_DANCE
+		end if
+
+		if Action == FB_PARTY_ACTION_DANCE
+
+			Dances = 0
+			Gate = 0
+			while FB_TalkGates[Gate] == FB_TRUE
+			Gate++
+			end while
+
+			FB_TalkGates[Gate] = FB_TRUE
+
+			move Me position to {FB_TalkPositions[Gate]}
+			wait until {Me} at {FB_TalkPositions[Gate]}
+
+			move villager Me focus to {TalkFocus}
+
+			while Dances < FB_NUM_DANCES
+				RandomAnim = number from 1 to 8
+
+				if RandomAnim == 1
+					play anim "a_p_dance_celebrate01" on Me
+				elsif RandomAnim == 2
+					play anim "a_p_dance_celebrate02" on Me
+				elsif RandomAnim == 3
+					play anim "a_p_dance_celebrate03" on Me
+				elsif RandomAnim == 4
+					play anim "a_p_dance_celebrate04" on Me
+				elsif RandomAnim == 5
+					play anim "a_p_dance_celebrate05" on Me
+				elsif RandomAnim == 6
+					play anim "a_p_dance_celebrate06" on Me
+				elsif RandomAnim == 7
+					play anim "a_p_dance_celebrate07" on Me
+				elsif RandomAnim == 8
+					play anim "a_p_dance_celebrate08" on Me
+				end if
+				wait until Me played
+				Dances++
+			end while
+
+			FB_TalkGates[Gate] = FB_FALSE
+
+		elsif Action == FB_PARTY_ACTION_LIGHT_BONFIRE
+
+			//Find a bonfire to light
+			if FB_Party_BonfireOn[0] == FB_FALSE
+				BonfireGate = 0
+			elsif FB_Party_BonfireOn[1] == FB_FALSE
+				BonfireGate = 1
+			else
+				say "Error: I shouldnt be here"
+				wait 3 seconds
+			end if
+			FB_Party_BonfireOn[BonfireGate] = FB_TRUE
+
+			move Me position to {FB_BonfireLightPos[BonfireGate]}
+			wait until {Me} at {FB_BonfireLightPos[BonfireGate]}
+			
+			move villager Me focus to {FB_BonfirePos[BonfireGate]}			
+			
+			//Script controls visuals
+			run background script FB_PartyBonfireControl(FB_BonfirePos[BonfireGate])
+			play anim "a_p_lighting_campfire" on Me
+			wait until Me played
+
+			//Poke the fire a bit
+			set Me carrying CARRIED_OBJECT_CROOK
+
+			play anim "a_p_prod_campfire" on Me loop 2
+			wait until Me played
+
+			set Me carrying CARRIED_OBJECT_NONE								
+			
+		elsif Action == FB_PARTY_ACTION_GET_A_BEER
+			
+			FB_BeerLocked = FB_TRUE
+
+			//Move to this barrel
+			move Me position to {FB_StackedBarrels[FB_CurrentDrinkingBarrel]}
+			wait until {Me} near {FB_StackedBarrels[FB_CurrentDrinkingBarrel]} radius 1.5
+
+			//Get a beer
+			FB_BeersLeft[FB_CurrentDrinkingBarrel]--
+
+			Action = FB_PARTY_ACTION_DRINK_BEER
+
+			//Decrement the barrel now
+			if FB_BeersLeft[FB_CurrentDrinkingBarrel] == 0
+				if FB_StackedBarrels[FB_CurrentDrinkingBarrel] exists
+					delete FB_StackedBarrels[FB_CurrentDrinkingBarrel]
+				end if
+				FB_CurrentDrinkingBarrel--
+			end if			
+
+			FB_BeerLocked = FB_FALSE
+		elsif Action == FB_PARTY_ACTION_DRINK_BEER
+
+			set Me carrying CARRIED_OBJECT_BEERMUG
+			
+			Gate = 0
+			while FB_TalkGates[Gate] == FB_TRUE
+				Gate++
+			end while
+
+			FB_TalkGates[Gate] = FB_TRUE
+
+			move Me position to {FB_TalkPositions[Gate]}
+			wait until {Me} at {FB_TalkPositions[Gate]}
+
+			move villager Me focus to {TalkFocus}
+
+			ActionTimer = create timer for number from FB_PARTY_TALK_MIN to FB_PARTY_TALK_MAX seconds
+
+			while get ActionTimer time remaining > 0
+				play anim "a_p_talking_drinking" on Me
+				wait until Me played			
+			end while
+
+			set Me carrying CARRIED_OBJECT_NONE
+
+			FB_TalkGates[Gate] = FB_FALSE
+			//MUST set this to stop the villager drinking constantly and becoming like Paul
+			Action = FB_PARTY_ACTION_DANCE
+
+		elsif Action == FB_PARTY_ACTION_SLEEP
+
+			Gate = 0
+			while FB_TalkGates[Gate] == FB_TRUE
+				Gate++
+			end while
+
+			FB_TalkGates[Gate] = FB_TRUE
+
+			move Me position to {FB_TalkPositions[Gate]}
+			wait until {Me} at {FB_TalkPositions[Gate]}
+
+			play anim "a_p_sleep_into" on Me
+			wait until Me played			
+
+			play anim "a_p_sleeping" on Me loop -1
+
+			//Wait until it's time to parteee!
+			wait until get game time > 18.00
+
+			play anim "a_p_sleep_outof" on Me
+			wait until Me played
+
+			FB_TalkGates[Gate] = FB_FALSE
+		end if
+
+	until FB_CurrentDrinkingBarrel == 0
+	end loop
+
+	//Cry
+	RandomAnim = number from 1 to 3
+	if RandomAnim == 1
+		play anim "a_p_crying" on Me loop 3
+	elsif RandomAnim == 2
+		play anim "a_p_child_crying_1" on Me loop 3
+	elsif RandomAnim == 3
+		play anim "a_p_child_crying_2" on Me loop 3			
+	end if
+
+	wait until Me played
+
+end script FB_PartyVillager
+
+//---------------------------------------------------------------
+// Party Bonfire Control
+//---------------------------------------------------------------
+begin script FB_PartyBonfireControl(Position)
+	FireFX = 0
+	SmokeFX = 0
+	Scale = 2
+start
+	
+	wait 2 seconds
+	SmokeFX = create visual effect "Gp_s_smoke_chimney.ves" strength 2 scale 1 at {Position} + {0.000,0.000,0.000} time 10
+	
+	wait 4 seconds
+	FireFX = create visual effect "gp_s_fire_vil.ves" strength 0.5 scale 0.5 at {Position} time 7
+
+	wait 6 seconds
+	FireFX = create visual effect "gp_s_fire_vil.ves" strength 2 scale 2 at {Position} time -1	
+	SmokeFX = create visual effect "Gp_s_smoke_chimney.ves" strength 2 scale 2 at {Position} + {0.000,3.000,0.000} time - 1
+
+	wait until get game time > 8.00 and get game time < 18.00
+
+	begin loop
+		Scale-=0.01
+		//fade the vis effects out
+		SCALE of FireFX = Scale
+		SCALE of SmokeFX = Scale
+		wait 0.2 seconds
+	until Scale <= 0.4
+	end loop
+
+	//Now stop them entirley
+	stop visual effect FireFX
+	stop visual effect SmokeFX
+
+	//The bonfires are off
+	FB_Party_BonfireOn[0] = FB_FALSE
+	FB_Party_BonfireOn[1] = FB_FALSE
+
+end script FB_PartyBonfireControl
+
+//---------------------------------------------------------------
+// Complete cut scene
+//---------------------------------------------------------------
+begin script FB_Complete(BarrelBro)
+	Scroll = 0
+	ScrollPos = marker at {1168.950, 218.388, 1517.019}
+	StandPos = marker at {1160.737, 217.904, 1518.078}
+start
+	Scroll = create highlight SILVER name "Beer Barrels" remind "Reminder temp" at {ScrollPos}
+	wait until Scroll right clicked
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		set BarrelBro position to {StandPos}
+
+		set camera position to {1152.783, 222.232, 1523.111}
+		set camera focus to {1230.908, 191.579, 1468.741}
+
+		set fade in time 1
+		play anim "a_p_clap1_loop" on BarrelBro loop 3
+		move villager BarrelBro focus to camera position
+
+		move camera position to {1155.821, 221.898, 1523.022} time 8
+		move camera focus to {1212.474, 187.386, 1448.193} time 8
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_BEERBARRELS_140"
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_BEERBARRELS_150"
+		wait until read
+	end cinema
+
+end script FB_Complete

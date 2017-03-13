@@ -1,0 +1,1066 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SM_FALSE = 0
+define SM_TRUE = 1
+define SM_REAPIR_TIME = 900
+define SM_LEAVE_WAIT  = 5
+
+//// ______TELEPORT_______
+define TP_CHARGE_WAIT = 4
+//// ______TELEPORT_______/
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SM_MessengerShip = 0
+global SM_Motec = 0
+global SM_Retreat = SM_FALSE		//Motec will retreat back to his boat
+global SM_BoatRepaired = SM_FALSE	//Motec can board the boat
+global SM_BoatLeave = SM_FALSE		//The Boat is going to leave in SM_LEAVE_WAIT seconds
+global SM_IsNightTime = SM_FALSE
+
+global SM_Fighting = SM_FALSE
+
+//Platoon globals
+global SM_MeleeGuard1 = 0
+global SM_MeleeGuard2 = 0
+global SM_SniperGuard1 = 0
+
+global SM_BoardedArmies = 0
+
+//// ______TELEPORT_______
+global TeleportPos[4]
+global MovePos[4]
+global GateLock[4]
+//// ______TELEPORT_______/
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script SM_MotecControl
+define script SM_RepairBoat
+define script SM_ArmyControl
+define script SM_NightTime
+
+define script SM_Dialogue(ID)
+
+//// ______TELEPORT_______
+define script Teleportals
+define script BuildGates
+
+define script WatchGate(GateID, NewGateID)
+//// ______TELEPORT_______/
+
+//-----------------------------------------------------------------------------
+//	Land 5 Shoot Messenger
+//-----------------------------------------------------------------------------
+begin script Land5ShootMessenger
+	ExitPoints[5]
+	RepairPoints[3]	
+	FinalExit = marker at {1850.029, 29.539, 658.396}
+start
+/*
+	//// ______TELEPORT_______
+	run script Teleportals
+	run script BuildGates
+	//// ______TELEPORT_______/
+
+	ExitPoints[0] = marker at {1353.145, 45.200, 1662.102}
+	ExitPoints[1] = marker at {1415.513, 45.200, 1635.192}
+	ExitPoints[2] = marker at {1371.660, 45.200, 1514.509}
+	ExitPoints[3] = marker at {1383.919, 45.200, 732.403}
+	ExitPoints[4] = marker at {1609.776, 45.200, 42.9978}
+
+	RepairPoints[0] = marker at {1308.782837,45.200001,1067.175171}
+	RepairPoints[1] = marker at {1577.603638,45.200001,1072.243164}
+	RepairPoints[2] = marker at {1621.071045,43.059700,1157.348022}
+
+	//TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP TEMP 
+//	SM_MessengerShip = create SHIP JAPANESE_SHIP at {RepairPoints[2]}
+
+	SM_MessengerShip = create SHIP JAPANESE_SHIP at {ExitPoints[0]}
+	override mesh for SM_MessengerShip with "m_aztecship"
+	add {ExitPoints[1]} to SM_MessengerShip waypoint schedule
+	add {ExitPoints[2]} to SM_MessengerShip waypoint schedule
+	add {ExitPoints[3]} to SM_MessengerShip waypoint schedule
+	add {ExitPoints[4]} to SM_MessengerShip waypoint schedule
+
+	SPEED of SM_MessengerShip = 1.0
+	enable SM_MessengerShip waypoint schedule
+
+	wait until HEALTH of SM_MessengerShip < 1 or SM_MessengerShip at final destination
+
+	if HEALTH of SM_MessengerShip < 1
+
+		//the ship MUST make it to the repair pos
+		HEALTH of SM_MessengerShip = 1.0
+		enable SM_MessengerShip indestructible
+
+		stop SM_MessengerShip moving
+		disable SM_MessengerShip waypoint schedule
+		clear SM_MessengerShip waypoint schedule		
+
+		add {RepairPoints[0]} to SM_MessengerShip waypoint schedule
+		add {RepairPoints[1]} to SM_MessengerShip waypoint schedule
+		add {RepairPoints[2]} to SM_MessengerShip waypoint schedule
+
+		SPEED of SM_MessengerShip = 1.0
+		enable SM_MessengerShip waypoint schedule
+
+	end if
+
+	wait until SM_MessengerShip at final destination
+
+	run background script SM_RepairBoat
+	run background script SM_MotecControl
+	run background script SM_ArmyControl
+	run background script SM_NightTime
+	
+	run background script SM_Dialogue(0)
+
+	//If there is fighting them don't wait long.. if there' isnt thenm wait longer
+	if SM_Fighting == SM_TRUE
+		SM_BoatLeave = SM_LEAVE_WAIT
+	else
+		SM_BoatLeave = SM_LEAVE_WAIT*7
+	end if
+
+	wait until SM_BoardedArmies == 3 or SM_BoatLeave seconds 
+
+	//Clear the ships current waypoints and set it moving
+	clear SM_MessengerShip waypoint schedule
+
+	add {FinalExit} to SM_MessengerShip waypoint schedule
+
+	SPEED of SM_MessengerShip = 1.0
+	enable SM_MessengerShip waypoint schedule
+	*/
+end script Land5ShootMessenger
+
+//-----------------------------------------------------------------------------
+//	Army Contorl
+//-----------------------------------------------------------------------------
+begin script SM_ArmyControl	
+	MovePlatoon = 0
+
+	SM_MeleeGuard1CreatePos = marker at {1632.558838,54.007500,1199.771851}
+	SM_MeleeGuard1MovePos_1 = marker at {1611.526001,63.421200,1233.932007}
+	SM_MeleeGuard1MovePos_2 = marker at {1578.550049,59.167500,1229.541016}
+
+	//This platoon follows the SM_Motec dude
+	SM_MeleeGuard2CreatePos = marker at {1612.813965,47.684101,1180.813965}
+
+	MeleeGuard3CreatePos = marker at {1612.813965,47.684101,1180.813965}
+	MeleeGuard3MovePos = marker at {1636.114014,71.393097,1246.577881}
+
+	SM_SniperGuard1CreatePos = marker at {1602.833984,51.700043,1180.504272}
+	SM_SniperGuard1MovePos = marker at {1524.800049,79.435600,1280.550049}
+
+	SniperGuard2CreatePos = marker at {1602.833984,51.700043,1180.504272}
+	SniperGuard2MovePos = marker at {1548.420166,73.121201,1271.242798}
+
+	BoatLoadingPos = marker at {1597.833, 48.985, 1175.166}	
+	BoardingArmy = 0
+start
+	//Create the guard armies
+	wait 2 seconds
+
+	SM_MeleeGuard1 = create platoon PLATOON_INFO_AZTEC_MELEE_2 at {SM_MeleeGuard1CreatePos} with 15 men and 0 women
+	PLAYER of SM_MeleeGuard1 = 2	
+	disable platoon SM_MeleeGuard1 camp
+
+	//SM_Motec Protection platoon
+	SM_MeleeGuard2 = create platoon PLATOON_INFO_AZTEC_MELEE_3 at {SM_MeleeGuard2CreatePos} with 10 men and 0 women
+	PLAYER of SM_MeleeGuard2 = 2
+	add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using SM_Motec to front of SM_MeleeGuard2 action queue	
+	disable platoon SM_MeleeGuard2 camp
+//	set army SM_MeleeGuard2 formation to FORMATION_TYPE_SPACED_SQUARE
+
+	SM_SniperGuard1 = create platoon PLATOON_INFO_AZTEC_RANGED_2 at {SM_SniperGuard1CreatePos} with 20 men and 0 women
+	PLAYER of SM_SniperGuard1 = 2
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {SM_SniperGuard1MovePos} to front of SM_SniperGuard1 action queue	
+	disable platoon SM_SniperGuard1 camp
+	//set army SM_SniperGuard1 formation to FORMATION_TYPE_WEDGE
+
+	//Send the melee army on patrol
+	begin loop
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {SM_MeleeGuard1MovePos_1} to front of SM_MeleeGuard1 action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {SM_MeleeGuard1MovePos_2} to SM_MeleeGuard1 action queue
+		wait until get platoon of player 2 nearest {SM_MeleeGuard1MovePos_2} radius 1 exists
+		wait 15 seconds
+	until platoon SM_SniperGuard1 ranged fighting or platoon SM_MeleeGuard1 melee fighting or platoon SM_MeleeGuard2 melee fighting or platoon SM_SniperGuard1 under fire or platoon SM_MeleeGuard1 under fire or platoon SM_MeleeGuard2 under fire or SM_Retreat == SM_TRUE
+	end loop
+	
+	//Fighting
+	if SM_Retreat == SM_FALSE
+		SM_Fighting = SM_TRUE	
+	end if
+
+	SM_Retreat = SM_TRUE
+
+	wait until SM_BoatRepaired == SM_TRUE
+
+	clear SM_MeleeGuard1 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {BoatLoadingPos} to front of SM_MeleeGuard1 action queue		
+
+	clear SM_SniperGuard1 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {BoatLoadingPos} to front of SM_SniperGuard1 action queue		
+
+	wait until not SM_Motec exists
+
+	clear SM_MeleeGuard2 action queue
+	add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {BoatLoadingPos} to front of SM_MeleeGuard2 action queue		
+
+	//Try and get the other two armies
+	begin loop
+		BoardingArmy = get platoon of player 2 nearest {BoatLoadingPos} radius 35
+
+		if BoardingArmy exists
+			delete BoardingArmy
+			SM_BoardedArmies++
+		end if
+
+	until SM_BoardedArmies == 3 or SM_MessengerShip is MOVING
+	end loop
+
+	wait 500000 seconds
+
+end script SM_ArmyControl
+
+//-----------------------------------------------------------------------------
+//	Repair Boat
+//-----------------------------------------------------------------------------
+begin script SM_RepairBoat
+	RepairShip = 0
+	DamageFX[3]
+	DamageFXPos[3]
+	DamageScale = 0
+	Slave[5]
+	SlavePos_1[5]
+	SlavePos_2[5]
+	SlavePos_3[5]
+	SlaveLoop = 0
+	RandomAction = 0
+	RepairStageWait = 0
+	RepairTimer = create timer for 0 seconds
+	RandomDecider = 0
+	WatchPos = marker at {1620.010, 58.863, 1222.540}
+start
+	//Move the old ships altitude down
+	ALTITUDE of SM_MessengerShip = -50	
+
+	//Create the static ship
+	RepairShip = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {SM_MessengerShip}
+	override mesh for RepairShip with "m_aztecship"
+	ALTITUDE of RepairShip = 3
+	ANGLE of RepairShip = 90
+	
+	//Setup the slave positions
+	SlavePos_1[0] = marker at get world position from RepairShip to {2.99, 0, 1.99}
+	SlavePos_1[1] = marker at get world position from RepairShip to {7.79, 0, 2.50}
+	SlavePos_1[2] = marker at get world position from RepairShip to {-8  , 0, -4}
+	SlavePos_1[3] = marker at get world position from RepairShip to {3.99, 0, 13.99}
+	SlavePos_1[4] = marker at get world position from RepairShip to {-4  , 0, 7}
+
+	//Using alternative mesh?
+	Slave[0] = create VILLAGER AZTEC_FISHERMAN at {SlavePos_1[0]}
+	Slave[1] = create VILLAGER AZTEC_FISHERMAN at {SlavePos_1[1]}
+	Slave[2] = create VILLAGER AZTEC_FISHERMAN at {SlavePos_1[2]}
+	Slave[3] = create VILLAGER AZTEC_FISHERMAN at {SlavePos_1[3]}
+	Slave[4] = create VILLAGER AZTEC_FISHERMAN at {SlavePos_1[4]}
+
+	//Loop through the villagers and make sure they are using the correct mesh
+	begin loop
+		if villager Slave[SlaveLoop] using alternative mesh
+			disable Slave[SlaveLoop] alternative mesh
+		end if
+		SlaveLoop++
+	until SlaveLoop == 5
+	end loop
+
+	ALTITUDE of Slave[0] = 9.02
+	set Slave[0] carrying CARRIED_OBJECT_HAMMER
+	play anim "a_p_hammering" on Slave[0] loop -1
+	ANGLE of Slave[0] = number from 1 to 360
+
+	ALTITUDE of Slave[1] = 10.12
+	set Slave[1] carrying CARRIED_OBJECT_SAW	
+	play anim "a_p_saw_wood" on Slave[1] loop -1
+	ANGLE of Slave[1] = number from 1 to 360
+
+	set Slave[2] carrying CARRIED_OBJECT_MALLET_HEAVY
+	play anim "a_p_sledgehammer" on Slave[2] loop -1
+	ALTITUDE of Slave[2] = 4.91
+	ANGLE of Slave[2] = number from 1 to 360
+
+	set Slave[3] carrying CARRIED_OBJECT_HAMMER
+	play anim "a_p_hammering" on Slave[3] loop -1
+	ALTITUDE of Slave[3] = 10.19
+	ANGLE of Slave[3] = number from 1 to 360
+
+	set Slave[4] carrying CARRIED_OBJECT_MALLET_HEAVY
+	play anim "a_p_sledgehammer" on Slave[4] loop -1
+	ALTITUDE of Slave[4] = 7.1
+	ANGLE of Slave[4] = number from 1 to 360
+
+
+	DamageFXPos[0] = marker at {1637.203979,40.293999,1153.187988}
+	DamageFXPos[1] = marker at {1608.046997,41.728401,1154.433716}
+	DamageFXPos[2] = marker at {1623.106934,42.761002,1157.553833}
+
+	DamageFX[0] = create visual effect "gp_s_gen_smoke.ves" strength 2 scale 1 at {DamageFXPos[0]} time -1
+	DamageFX[1] = create visual effect "gp_s_gen_smoke.ves" strength 2 scale 1 at {DamageFXPos[1]} time -1
+	DamageFX[2] = create visual effect "gp_s_gen_smoke.ves" strength 2 scale 1 at {DamageFXPos[2]} time -1
+
+	//There are 20 stages for the visual effects size and scale
+	RepairStageWait = SM_REAPIR_TIME/200
+	RepairTimer = create timer for SM_REAPIR_TIME seconds
+	DamageScale = 2
+
+	begin loop
+		wait RepairStageWait seconds
+		DamageScale -= 2/SM_REAPIR_TIME
+
+		//Set scales
+		SCALE of DamageFX[0] = DamageScale
+		SCALE of DamageFX[1] = DamageScale
+		SCALE of DamageFX[2] = DamageScale
+
+		//It's nightitme so the slaves shall sleep and be merry
+		if SM_IsNightTime == SM_TRUE
+
+			SlaveLoop = 0
+			begin loop
+				set Slave[SlaveLoop] carrying CARRIED_OBJECT_NONE
+
+				play anim "a_p_sleeping_rough_into" on Slave[SlaveLoop]
+				wait until Slave[SlaveLoop] played
+
+				play anim "a_p_sleeping_rough_loop" on Slave[SlaveLoop] loop -1
+
+				SlaveLoop++
+			until SlaveLoop == 5
+			end loop
+
+			wait until SM_IsNightTime == SM_FALSE
+
+		//It's daytime.. change tools or something
+		else
+			SlaveLoop = 0
+			begin loop
+				RandomDecider = number from 1 to 3
+
+				if RandomDecider == 1
+
+					//Get up
+					set Slave[SlaveLoop] carrying CARRIED_OBJECT_NONE
+					
+					play anim "a_p_stand_despair_1" on Slave[SlaveLoop]
+					wait until Slave[SlaveLoop] played
+
+					RandomAction = number from 1 to 3
+					if RandomAction == 1
+						set Slave[SlaveLoop] carrying CARRIED_OBJECT_SAW
+						play anim "a_p_saw_wood" on Slave[SlaveLoop] loop -1
+					elsif RandomAction == 2
+						set Slave[SlaveLoop] carrying CARRIED_OBJECT_HAMMER
+						play anim "a_p_hammering" on Slave[SlaveLoop] loop -1
+					elsif RandomAction == 3
+						set Slave[SlaveLoop] carrying CARRIED_OBJECT_MALLET_HEAVY
+						play anim "a_p_sledgehammer" on Slave[SlaveLoop] loop -1
+					end if
+				end if
+
+				SlaveLoop++
+			until SlaveLoop == 5
+			end loop
+
+			//Do this randomly as it looks crap when all of them chnage tools at once
+		end if
+
+	until get RepairTimer time remaining == 0
+	end loop
+
+	delete DamageFX[0]
+	delete DamageFX[1]
+	delete DamageFX[2]
+
+	SM_Retreat = SM_TRUE
+	SM_BoatRepaired = SM_TRUE
+
+	//Set all slaves to focus to the Motec and beckon him
+	begin loop
+		set Slave[SlaveLoop] carrying CARRIED_OBJECT_NONE
+		set Slave[SlaveLoop] focus to {WatchPos}
+		play anim "a_p_beckon" on Slave[SlaveLoop] loop -1
+		SlaveLoop++
+	until SlaveLoop == 6
+	end loop
+
+	wait until SM_BoatLeave == SM_TRUE
+
+	SlaveLoop = 0
+
+	//Celete the slavers
+	begin loop
+		delete Slave[SlaveLoop] with fade
+		SlaveLoop++
+	until SlaveLoop == 6
+	end loop
+
+	ALTITUDE of SM_MessengerShip += 50
+	delete RepairShip
+
+end script SM_RepairBoat
+
+//-----------------------------------------------------------------------------
+//	Land 5 Shoot Messenger
+//-----------------------------------------------------------------------------)	//1 = going to tent   2 = running away
+begin script SM_MotecControl
+	MotecWaypoints[4]
+	WaypointLoop = 0
+
+	MotecTent = 0
+	MotecBench = 0
+	MotecBonfire = 0
+
+	BonfireFX = 0
+	SteamFX = 0
+
+	TentPos = marker at		{1566.00, 55.00, 1213.19}
+	BenchPos = marker at	{1566.00, 55.00, 1219.19}
+	BonfirePos = marker at  {1567.61, 55.00, 1217.00}
+
+	//Servant markers
+	ProddingPos = marker at {1568, 54.692, 1215.5}
+	SleepingPos = marker at {1568.972, 54.895, 1218.092}
+
+	MotecPos = marker at {1615.899902,47.099998,1170.599976}
+	Servant = 0
+	ServantRandom = 0
+	LastServantAction = -1
+	FoodPot = 0
+	Crook = 0
+
+start
+	SM_Motec = create VILLAGER VILLAGER_INFO_AZTEC_LEADER_MALE at {MotecPos}	
+
+	if not villager SM_Motec using alternative mesh
+		enable SM_Motec alternative mesh
+	end if
+
+	Servant = create VILLAGER VILLAGER_INFO_AZTEC_HOUSEWIFE_FEMALE at {MotecPos} - {0.000000,0.000000,0.999908}
+	//set Servant to follow SM_Motec at distance 0
+	enable Servant alternative mesh
+
+	//Setup the motecs waypoints
+	MotecWaypoints[0] = marker at {1617.890869,60.889091,1220.054810}
+	MotecWaypoints[1] = marker at {1611.592529,61.795666,1230.010376}
+	MotecWaypoints[2] = marker at {1575.544189,59.471485,1228.758667}
+	MotecWaypoints[3] = marker at {1568.396606,55.419716,1217.789429}
+
+	//Build a tent for the SM_Motec
+	MotecTent = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {TentPos}
+	override mesh for MotecTent with "m_aztectent"
+	ANGLE of MotecTent = 190
+
+	//The Motecs bonfire
+	MotecBonfire = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {BonfirePos}
+	override mesh for MotecBonfire with "..\features\m_generic_bonfire"
+	ANGLE of MotecBonfire = 100
+	
+	//The Motecs bench
+	MotecBench = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {BenchPos}
+	override mesh for MotecBench with "m_aztec_tf_bench01_n"
+	//override mesh for MotecBench with "m_genericblanket"	
+	ANGLE of MotecBench = 220
+
+	//minor objects
+	// m_aztecbowc
+	// m_aztecclubb
+	// m_aztecaxea
+	// m_aztecshieldb
+	// m_aztecshieldc
+	// m_genericspade.bwm
+
+	//Go to the tent
+	SPEED of SM_Motec = 0.25
+	SPEED of Servant = 0.23
+
+	begin loop
+		move SM_Motec position to {MotecWaypoints[WaypointLoop]}
+		move Servant position to {MotecWaypoints[WaypointLoop]}
+		wait until {SM_Motec} at {MotecWaypoints[WaypointLoop]}		
+		WaypointLoop++
+	until WaypointLoop == 4
+	end loop
+
+	//Motec has arrived
+	move SM_Motec position to {MotecBench}
+	wait until {SM_Motec} near {MotecBench} radius 0.5
+
+	play anim "a_p_male_siton_bench_into" on SM_Motec
+	wait until SM_Motec played
+
+	play anim "a_p_male_siton_bench" on SM_Motec loop -1
+	ANGLE of SM_Motec = ANGLE of MotecBench - 90
+
+	SPEED of Servant = 0.15
+
+	begin loop
+
+		//Get a servant action which isnt the last one performed
+		begin loop
+			//Increase the probability of choosing a night action at ngiht time
+			if SM_IsNightTime == SM_TRUE
+				ServantRandom = 4
+			else
+				ServantRandom = number from 1 to 4
+			end if
+		until ServantRandom != LastServantAction
+		end loop
+		LastServantAction = ServantRandom
+
+		//Prod the campfire
+		if ServantRandom == 1
+			move Servant position to {ProddingPos}
+			wait until {Servant} at {ProddingPos}
+
+			if not BonfireFX exists
+				BonfireFX = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {MotecBonfire} time -1
+			end if
+
+			set Servant focus to {MotecBonfire}
+			set Servant carrying CARRIED_OBJECT_CROOK
+			play anim "a_p_prod_campfire" on Servant loop 2
+			wait until Servant played
+		
+			set Servant carrying CARRIED_OBJECT_NONE
+
+		//Go into the house
+		elsif ServantRandom == 2
+			move Servant position to extra position 0 of MotecTent
+			wait until {Servant} at extra position 0 of MotecTent
+
+			//Servant goes inside the tent
+			move Servant to limbo
+			wait 5 seconds
+
+			release Servant from limbo
+			set Servant position to extra position 1 of MotecTent
+			
+		//Go into the house, return with pot and put it on fire. Then after a short while take pot back in to house.
+		elsif ServantRandom == 3
+
+			//--- Put out the fire ---
+			if BonfireFX exists
+				move Servant position to {ProddingPos}
+				wait until {Servant} at {ProddingPos}			
+
+				set Servant focus to {MotecBonfire}
+				set Servant carrying CARRIED_OBJECT_BUCKET
+				play anim "a_p_throw_water" on Servant loop 1
+				wait until Servant played
+				delete BonfireFX
+			end if
+
+			//--- Move to tent ---
+			move Servant position to extra position 1 of MotecTent
+			wait until {Servant} at extra position 1 of MotecTent
+
+			//Servant goes inside the tent
+			move Servant to limbo
+			wait 5 seconds
+
+			release Servant from limbo
+			set Servant position to extra position 0 of MotecTent				
+			set Servant carrying CARRIED_OBJECT_POT
+			
+			//--- Carry pot to fire ---			
+			move Servant position to {ProddingPos}
+			override Servant anim "a_p_carrying_pot"
+			wait until {Servant} at {ProddingPos}
+			
+			//Move closer
+			move Servant position to {MotecBonfire}
+			override Servant anim "a_p_carrying_pot"
+			wait until {Servant} near {MotecBonfire} radius 1
+
+			//--- Place pot on fire and light it ---
+			play anim "a_p_put_down_bag" on Servant loop 1			
+			wait until Servant played
+
+			FoodPot = create OBJECT GREEK_URN_03 at {MotecBonfire}
+			ALTITUDE of FoodPot = 1
+			BonfireFX = create visual effect "gp_s_fire_vil.ves" strength 0.3 scale 0.3 at {MotecBonfire} time -1
+			SteamFX = create visual effect "gp_s_steam.ves" strength 0.8 scale 0.3 at {FoodPot} - {0, 1, 0} time -1
+
+			set Servant carrying CARRIED_OBJECT_CROOK
+			set Servant focus to {FoodPot}
+
+			//Stir the pot a bit
+			play anim "a_p_stir_pot01" on Servant loop 5
+			wait until Servant played
+			
+			//-- Have a little rest
+
+			//Put down the crook
+			play anim "a_p_pick_up_bag" on Servant loop 1			
+			wait until Servant played			
+			set Servant carrying CARRIED_OBJECT_NONE
+			wait 2 seconds
+
+			//Create crook on floor
+			Crook = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {MotecBonfire} + {0.7, 0, 0.5}
+			override mesh for Crook with "m_genericfishingrod"
+
+			//Rest
+			play anim "a_p_wipe_sweat" on Servant loop 1
+			wait until Servant played
+
+			wait 3 seconds
+
+			//Pick up crook
+			play anim "a_p_pick_up_bag" on Servant loop 1			
+			wait until Servant played			
+			set Servant carrying CARRIED_OBJECT_CROOK
+			delete Crook
+
+			wait 0.3 seconds
+
+			play anim "a_p_stir_pot01" on Servant loop 5
+			wait until Servant played
+
+			play anim "a_p_pick_up_bag" on Servant loop 1			
+			wait until Servant played
+
+			set Servant carrying CARRIED_OBJECT_POT
+			delete FoodPot
+			delete SteamFX
+
+			//--- Move to tent ---
+			move Servant position to extra position 1 of MotecTent
+			wait until {Servant} at extra position 1 of MotecTent
+
+			//Servant goes inside the tent
+			set Servant carrying CARRIED_OBJECT_NONE
+			move Servant to limbo
+			wait 5 seconds
+
+			release Servant from limbo
+			set Servant position to extra position 0 of MotecTent							
+
+		//Motec goes inside to sleep and slave sleeps on the floor
+		elsif ServantRandom == 4
+			
+			//Only do this lot if it's approaching night time
+			if SM_IsNightTime == SM_TRUE
+				//--- Do sleeping stuff
+				//Get him up
+				play anim "a_p_male_siton_bench_outof" on SM_Motec loop 1
+				wait until SM_Motec played
+			
+				//Move the Motec to the tent
+				move SM_Motec position to extra position 0 of MotecTent
+				move Servant position to {ProddingPos}
+
+				wait until {SM_Motec} at extra position 0 of MotecTent		
+				move SM_Motec to limbo			
+				
+				//-- Servant light fire if there is none
+				move Servant position to {ProddingPos}
+				wait until {Servant} at {ProddingPos}
+
+				if not BonfireFX exists
+					BonfireFX = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {MotecBonfire} time -1
+				end if
+
+				//-- Servant sleep
+				move Servant position to {SleepingPos}
+				wait until {Servant} at {SleepingPos}
+
+				play anim "a_p_sleeping_rough_into" on Servant
+				wait until Servant played
+
+				play anim "a_p_sleeping_rough_loop" on Servant loop -1
+
+				wait 5 seconds
+				wait until SM_IsNightTime == SM_FALSE
+
+				//-- Get up and prod the fire
+				play anim "a_p_sleeping_rough_outof" on Servant
+				wait until Servant played			
+
+				move Servant position to {ProddingPos}
+				wait until {Servant} at {ProddingPos}
+
+				set Servant focus to {MotecBonfire}
+				set Servant carrying CARRIED_OBJECT_CROOK
+				play anim "a_p_prod_campfire" on Servant loop 2
+				wait until Servant played
+			
+				set Servant carrying CARRIED_OBJECT_NONE
+
+				//-- Sit down by the fire
+				play anim "a_p_sitting_down3_into" on Servant
+				wait until Servant played
+
+				play anim "a_p_sitting_down3_sitting" on Servant loop -1
+
+				//Poke the fire a bit more
+				wait until get game time > 8.30
+
+				play anim "a_p_sitting_down3_outof" on Servant
+				wait until Servant played
+
+				set Servant focus to {MotecBonfire}
+				set Servant carrying CARRIED_OBJECT_CROOK
+				play anim "a_p_prod_campfire" on Servant loop 2
+				wait until Servant played
+			
+				set Servant carrying CARRIED_OBJECT_NONE
+
+				play anim "a_p_sitting_down3_into" on Servant
+				wait until Servant played
+
+				play anim "a_p_sitting_down3_sitting" on Servant loop -1
+
+				//-- Wait for the lazy arse Motec to decide to get up
+				wait until get game time > 10.00
+
+				release SM_Motec from limbo
+				move SM_Motec position to {MotecBench}
+
+				wait 1 seconds
+				play anim "a_p_sitting_down3_outof" on Servant
+				wait until Servant played
+
+				wait until {SM_Motec} near {MotecBench} radius 0.5
+
+				play anim "a_p_male_siton_bench_into" on SM_Motec loop 1
+				wait until SM_Motec played
+
+				play anim "a_p_male_siton_bench" on SM_Motec loop -1
+				ANGLE of SM_Motec = ANGLE of MotecBench - 90
+			end if
+
+		end if
+
+	until SM_Retreat == SM_TRUE
+	end loop
+
+	//Comment on the retreat
+	if SM_BoatRepaired == SM_FALSE		
+		run background script SM_Dialogue(3)
+	else
+		run background script SM_Dialogue(2)
+	end if
+
+	// -- Retreat ----
+	WaypointLoop = 3
+	SPEED of SM_Motec = 0.5
+	SPEED of Servant = 0.42	//the servant is slower
+
+	begin loop
+		move SM_Motec position to {MotecWaypoints[WaypointLoop]}
+		move Servant position to {MotecWaypoints[WaypointLoop]}
+		wait until {SM_Motec} at {MotecWaypoints[WaypointLoop]}
+		WaypointLoop--
+	until WaypointLoop == -1
+	end loop
+
+	move SM_Motec position to {MotecPos}
+	move Servant position to {MotecPos} + {2, 0, 1}
+	wait until {SM_Motec} at {MotecPos}
+
+	begin loop
+		if SM_BoatRepaired == SM_FALSE
+			play anim "a_p_dimilives_shouting_out_commands" on SM_Motec loop 1
+		else
+			delete SM_Motec
+			delete Servant
+		end if
+
+		wait until SM_Motec played
+		
+		if get platoon of player 0 nearest {SM_Motec} radius 30 exists and not SM_MeleeGuard1 exists and not SM_MeleeGuard2 exists and not SM_SniperGuard1 exists
+			begin cinema
+				say "You captured the Motec"
+				wait until read
+
+				say "Capture him by putting him in your prison or leave him here to be executed by your troops"
+				wait until read
+			end cinema
+			delete SM_Motec
+		end if
+
+	until not SM_Motec exists
+	end loop
+
+	SM_BoatLeave = SM_TRUE
+
+	wait 5000000 seconds
+
+end script SM_MotecControl
+
+//-----------------------------------------------------------------------------
+//	Dialogue
+//-----------------------------------------------------------------------------
+begin help script SM_Dialogue(ID)
+	FirstTeleportComment = SM_FALSE
+start
+	
+	//Only do this dialogue if no other stuff is being said
+	if dialogue ready
+
+		begin dialogue
+			//Small island intruduction comment
+			if ID == 0
+				eject good spirit
+				say "The Motecs boat is being repaired."
+				wait until read
+
+				eject evil spirit
+				say "Right Boss, lets get over there and trash this guy"
+				wait until read
+
+				say "Whilst I usually object to using force we really should capture this man"
+				wait until read
+
+				say "Who said anything about capture? We should go for the kill"
+				wait until read
+
+				say "We can use the teleportals to get there, just move an army inside the ring to send them across"
+				wait until read
+
+			//Comment when the player send a platoon through the teleport
+			elsif ID == 1 and FirstTeleportComment == SM_FALSE
+				FirstTeleportComment = SM_TRUE
+
+				eject evil spirit
+				say "We'll need plenty of troops Boss"
+				wait until read
+
+				say "The Motec is protected by the best, his troops can really kick some arse"
+				wait until read			
+
+			//The Motec is leaving
+			elsif ID == 2
+				
+				eject good spirit
+				say "The Motecs boat is repaired, he's leaving"
+				wait until read
+
+				eject evil spirit
+				say "Quick, kill him before he gets away!"
+				wait until read
+
+			//Motec retreat
+			elsif ID == 3
+				eject evil spirit
+				make evil spirit point at {SM_Motec}
+				say "The coward Motec is running away"
+
+			end if
+		end dialogue
+
+	end if
+
+end script SM_Dialogue
+
+//-----------------------------------------------------------------------------
+//	Night Time
+//-----------------------------------------------------------------------------
+begin script SM_NightTime
+start
+	begin loop
+		if get game time > 20.00
+			SM_IsNightTime = SM_TRUE
+		elsif get game time < 6.00
+			SM_IsNightTime = SM_TRUE
+		else
+			SM_IsNightTime = SM_FALSE
+		end if
+	end loop
+end script SM_NightTime
+
+
+
+
+
+
+//-------------------------------------------------------------------------------------------
+// Teleportals
+//-------------------------------------------------------------------------------------------
+begin script Teleportals
+
+start
+
+	//The actual teleports
+	TeleportPos[0] = marker at {1014.772, 78.133, 756.767}
+	TeleportPos[1] = marker at {1629.082, 66.711, 1400.838}
+	
+	//The positions the platoons move to after they have teleported (to stop them continuosley teleporting)
+	MovePos[0] = marker at {1000.238, 79.290, 728.379}
+	MovePos[1] = marker at {1666.192, 77.231, 1375.619}
+
+	run background script WatchGate(0, 1)
+	run background script WatchGate(1, 2)
+
+end script Teleportals
+
+//-------------------------------------------------------------------------------------------
+// Builds Gates
+//-------------------------------------------------------------------------------------------
+begin script BuildGates
+	Monolith = 0
+start
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1006.47,759.35}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1016.80,764.98}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1025.16,757.99}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1022.88,747.48}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1013.39,744.26}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1004.97,749.90}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1218.50,1557.47}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1228.22,1551.20}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1235.69,1567.84}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1237.80,1558.13}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1222.64,1569.57}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {490.82,1477.07}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {498.90,1488.43}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {498.41,1466.78}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {510.96,1470.80}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {511.44,1484.50}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1637.87,1401.28}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1630.24,1409.46}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1618.37,1404.22}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1619.63,1392.71}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1632.85,1390.96}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1337.18,2023.19}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1347.72,2015.39}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1342.54,1994.08}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1329.21,1994.18}
+	
+
+	Monolith = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {1322.89,2016.71}
+
+
+end script BuildGates
+
+//-------------------------------------------------------------------------------------------
+// Watch Gate
+//-------------------------------------------------------------------------------------------
+//begin script WatchGate(ThisGate, MoveGate, MoveOutOfPos)
+begin script WatchGate(GateID, NewGateID)
+	TeleportFX = 0
+	TeleportFXColour = 0
+	TeleportTimer = create timer for 0 seconds
+	Platoon = 0
+	ThisGate = 0
+	MoveGate = 0
+	MoveOutOfPos = 0
+start
+
+	//Setup some local marker stuff
+	ThisGate = marker at {TeleportPos[GateID]}
+	MoveGate = marker at {TeleportPos[NewGateID]}
+	MoveOutOfPos = marker at {MovePos[NewGateID]}
+
+	begin loop
+		//Check for Gate 0
+		Platoon = get platoon of player 0 nearest {ThisGate} radius 10 excluding scripted
+		if Platoon exists and get distance from {Platoon} to {ThisGate} < 10 and GateLock[GateID] == 0
+			GateLock[NewGateID] = 1
+			clear Platoon action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {ThisGate} to front of Platoon action queue
+			
+			wait until {Platoon} near {ThisGate} radius 5
+
+			TeleportTimer = create timer for TP_CHARGE_WAIT seconds
+			TeleportFX = create visual effect "gp_s_rayfx.ves" strength 1 scale 0.5 at {ThisGate} + {0, 10, 0} time 8
+			TeleportFXColour = 50
+
+			begin loop			
+				set TeleportFX colour red 0 green 0 blue TeleportFXColour
+				if TeleportFXColour < 255
+					TeleportFXColour+=20
+				else
+					set TeleportFX colour red 255 green 255 blue 255
+				end if
+				wait 0.2 seconds
+			until get TeleportTimer time remaining == 0
+			end loop
+
+			TeleportFXColour = 0
+			
+			if {Platoon} near {ThisGate} radius 5
+				clear Platoon action queue				
+				set Platoon position to {MoveGate}
+				clear Platoon action queue
+				
+				///Shoot the Messenger advisor comment
+				run script SM_Dialogue(1)
+
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MoveOutOfPos} to front of Platoon action queue
+				
+				wait 10 seconds
+				release Platoon
+				Platoon = 0
+				GateLock[NewGateID] = 0
+			end if
+			
+		end if
+
+		//wait 0 seconds
+	end loop
+
+end script WatchGate

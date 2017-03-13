@@ -1,0 +1,125 @@
+//==============================================================
+// Land 2 GY_Graveyard
+// Matt.L
+//==============================================================
+
+//--------------------------------------------------------------
+// Script Defines
+//--------------------------------------------------------------
+define script Land2GraveyardSoldiers
+
+//--------------------------------------------------------------
+// Global
+//--------------------------------------------------------------
+global GY_Graveyard = 0
+global GY_GotoJail = 0
+
+//--------------------------------------------------------------
+// Second Action
+//--------------------------------------------------------------
+begin script Land2Graveyard
+	Man = 0
+	CreatePos = 0
+	LiftPos = 0
+	DoorPos = 0
+	WallBackPos = 0
+	HeadPos = marker at {1037.191,150.935,1762.973}
+	ManFocus = marker at {1044.045, 125.912, 1757.766}
+	DoorBarPos = marker at {1043.264,125.953,1776.292}
+	MoveToDoorBarPos = marker at {1041.887, 125.928, 1776.364}
+	ClingBarsPos = marker at {1045.434,125.944,1776.772}
+start
+
+	GY_Graveyard = get HOUSE at {1043.729,125.947,1768.872} radius 20
+
+	CreatePos = marker at get world position from GY_Graveyard to {5.5, -0.006, -7.0}
+	LiftPos = marker at get world position from GY_Graveyard to {1, -0.006, -7.0}	
+	WallBackPos = marker at get world position from GY_Graveyard to {-0.530, -0.005, 9.144}
+	DoorPos = marker at get world position from GY_Graveyard to {-0.485, -0.009, 0.473}
+
+	Man = create VILLAGER GREEK_FARMER at {CreatePos}
+	ALTITUDE of Man = 2.27
+
+	move Man position to {LiftPos}
+	SPEED of Man = 0.4
+	wait until {Man} near {LiftPos} radius 1
+
+	set Man velocity heading {HeadPos} speed 5
+
+	wait 2 seconds
+	ALTITUDE of Man = 0
+
+	wait 2 seconds
+	run background script Land2GraveyardSoldiers
+
+	move Man position to {WallBackPos}
+	wait until {Man} at {WallBackPos}
+	move villager Man focus to {ManFocus}
+
+	wait until Man is HELD or 3 seconds
+
+	if Man is HELD
+		GY_GotoJail = 2	//delete army guys
+	else
+		GY_GotoJail = 1
+
+		move Man position to {MoveToDoorBarPos}
+		wait until {Man} at {MoveToDoorBarPos}	
+
+		move Man position to {DoorBarPos}
+		wait until {Man} at {DoorBarPos}	
+
+		move Man position to {ClingBarsPos}
+		wait until {Man} at {ClingBarsPos}
+		
+		play anim "a_p_prometh_grab_bars" on Man loop 10	
+	end if
+
+	wait 500000 seconds
+end script Land2Graveyard
+
+//--------------------------------------------------------------
+// Land 2 GY_Graveyard Soldiers
+//--------------------------------------------------------------
+begin script Land2GraveyardSoldiers
+	Soldiers[2]
+	CreatePos = 0
+	MovePos = 0
+	DoorBarPos = marker at {1043.264,125.953,1776.292}
+	MovePosJail_1 = marker at {1044.228, 125.938, 1777.241}
+	MovePosJail_2 = marker at {1044.489, 125.939, 1775.973}
+start
+
+	CreatePos = marker at get world position from GY_Graveyard to {-0.602, 0.002, -10.056}
+	MovePos = marker at get world position from GY_Graveyard to {-0.567, -0.010, 6.404}
+
+	Soldiers[0] = create VILLAGER AZTEC_FISHERMAN at {CreatePos}
+	Soldiers[1] = create VILLAGER AZTEC_FISHERMAN at {CreatePos} + {0, 0, 1}
+
+	move Soldiers[0] position to {MovePos} + {0.5, 0, 0}
+	SPEED of Soldiers[0] = 0.3
+	move Soldiers[1] position to {MovePos} + {-0.5, 0, 0}
+	SPEED of Soldiers[1] = 0.3
+
+	wait until GY_GotoJail != 0
+	wait 1 seconds
+
+	if GY_GotoJail == 1
+		move Soldiers[0] position to {DoorBarPos}
+		move Soldiers[1] position to {DoorBarPos}
+		wait until {Soldiers[0]} at {DoorBarPos}
+		wait until {Soldiers[1]} at {DoorBarPos}
+
+		move Soldiers[0] position to {MovePosJail_1}
+		move Soldiers[1] position to {MovePosJail_2}
+		wait until {Soldiers[0]} at {MovePosJail_1}
+		wait until {Soldiers[1]} at {MovePosJail_2}
+
+		wait 20 seconds
+	end if
+
+	wait 5 seconds
+	delete Soldiers[0]
+	delete Soldiers[1]
+
+end script Land2GraveyardSoldiers

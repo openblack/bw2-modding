@@ -1,0 +1,6 @@
+run script RunLand6ManWhoCameToDinner
+
+begin script RunLand6ManWhoCameToDinner
+start
+	run script Land6TheManWhoCameToDinner
+end script RunLand6ManWhoCameToDinner

@@ -1,0 +1,16 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 11
+//===========================================================
+
+// -Globals-
+Land11Volcano.txt
+GlobalCreatureAI.txt
+Land11Globals.txt
+Land11Outro.txt
+Land11AztecCapitalScript.txt
+Land11Creature.txt
+
+Land11Objectives.txt
+Land11DYK.txt
+
+Land11Control.txt

@@ -1,0 +1,358 @@
+//-----------------------------------------------------------
+
+define False = 0
+define True = 1
+
+global ScriptFinished = False
+
+//-----------------------------------------------------------
+
+define script CreateAllVillagers
+define script CreateAndLookAfterVillager(StartPos, TownToAttach)
+define script MakeCreatureSleep
+define script BenchCarryingDude
+
+
+//-----------------------------------------------------------
+
+begin script Land3Intro
+InitialVillager = 0
+TeleportFX = 0
+MyFade = 0
+ScrollPos = marker at {1087.623, 363.589, 1645.257}
+Field = 0
+StoragePit = 0
+TeleportEffect = 0
+start
+	disable leash on MyCreature
+	// Get the field
+	Field = get FIELD_OBJECT at {1087.233, 363.609, 1645.364} radius 100
+	StoragePit = get building ABODE_NUMBER_STORAGE_PIT in L3GreekTown min built 1.0
+
+	//disable influence
+	TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {945.869, 377.445, 1639.584} time -1
+
+	begin cinema
+		// Reset the players objectives so none get carried over from the previous land
+		reset all objectives for player 0
+
+		//disable influence
+	
+		// Put the creature to sleep - TODO: Need to add effect over the pen
+		run background script MakeCreatureSleep				// Sorry Paul a background script :)
+	
+		set fade red 0 green 0 blue 0 time 0
+		set game time 06.00
+		wait 2 seconds
+		start music "cut_scene_sad_100_01"
+
+		reset camera path 
+
+		queue camera move with position {1333.965, 946.120, -344.734} focus {1342.754, 907.619, -252.864} time 0.0
+		queue camera move with position {1587.473, 532.960, 629.556} focus {1570.261, 499.775, 722.305} time 2.0
+		queue camera move with position {1451.125, 456.848, 1339.217} focus {1392.702, 434.882, 1417.354} time 2.0
+		queue camera move with position {1234.424, 446.242, 1719.834} focus {1136.975, 424.803, 1713.267} time 2.0
+		queue camera move with position {1040.848, 430.376, 1803.604} focus {996.305, 402.772, 1718.435} time 2.0
+		//queue camera move with position {955.969, 388.055, 1660.532} focus {939.447, 359.805, 1566.038} time 2.0
+		queue camera move with position {949.188, 391.146, 1664.477} focus {1003.882, 349.480, 1591.870} time 4.0
+
+/*
+		queue camera move with position {2235.647, 437.151, -298.984} focus {2179.471, 417.196, -218.704} time 0.0
+		queue camera move with position {2092.575, 387.439, -72.920} focus {2031.613, 372.098, 4.847} time 1.0
+		queue camera move with position {1450.451, 321.891, 348.810} focus {1370.653, 302.378, 405.832} time 1.0
+		queue camera move with position {669.085, 250.351, 837.352} focus {583.294, 231.416, 885.112} time 2.0
+*/
+/*		queue camera move with position {342.158, 241.499, 988.005} focus {324.537, 248.095, 1086.216} time 1.0
+		queue camera move with position {387.494, 295.042, 1274.547} focus {454.410, 309.275, 1347.484} time 2.0
+		queue camera move with position {665.269, 437.096, 1677.922} focus {763.060, 419.283, 1688.884} time 2.0
+	*/	
+		queue camera move with position {939.924, 383.618, 1641.490} focus {1025.087, 344.269, 1676.122} time 2.0
+/*
+		play camera path with easein 0 easeout 8 method SCRIPT_CAMERAPATH_SMOOTHEST
+		set fade in time 2
+		wait 10.8 seconds
+		reset camera path 
+*/
+
+		queue camera move with position {942.646, 386.188, 1642.457} focus {1020.222, 349.961, 1694.130} time 10.0
+		queue camera move with position {988.275, 419.544, 1717.770} focus {1044.751, 373.010, 1649.618} time 8.0
+		queue camera move with position {1121.310, 472.608, 1765.017} focus {1108.200, 417.557, 1682.570} time 8.0
+		queue camera move with position {1227.479, 548.768, 1769.368} focus {1176.783, 488.557, 1707.686} time 18.0
+		queue camera move with position {1118.233, 398.917, 1640.898} focus {1051.802, 325.843, 1625.163} time 1.5
+		
+		run background script LandStart
+		play camera path with easein 0 easeout 2 method SCRIPT_CAMERAPATH_SMOOTHEST
+		set fade in time 2
+
+		wait 1 seconds
+		//set camera roll -2.000 time 0.5
+
+		wait 4 seconds
+		run background script CreateAllVillagers
+		//set camera roll 2.000 time 1
+
+
+		wait 6 seconds
+		//set camera roll 0.000 time 3
+
+		if persistent data "SPESHUL_BENCH" == 1
+			run background script BenchCarryingDude
+		end if
+
+		//make good spirit fly across 0.8 down 0.15
+
+		eject good spirit
+		eject evil spirit
+
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_INTRO_G_10_20
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_INTRO_E_10_20
+		wait until read
+/*
+
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_INTRO_10"
+		//GOOD_ADVISOR	Look. Here are the people we saved! They’re exiting the Portal! Wonderful!
+		wait until read
+
+		eject evil spirit
+
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_INTRO_20"
+		//	EVIL_ADVISOR	Yeah. These guys made it but think of how many got toasted. Anyway, where are we?
+		wait until read
+*/
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_NEW_INTRO_10"
+		//	GOOD_ADVISOR	This looks like an old Greek settlement. We can re-establish ourselves here.
+		wait until read
+
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_NEW_INTRO_30"
+		//	GOOD_ADVISOR	It looks so peaceful here. With no Aztecs. It's the perfect place to build up and get more followers.
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_NEW_INTRO_40"
+		//	GOOD_ADVISOR	There is already a Town Centre, a Storehouse and a field, which we can use.
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_NEW_INTRO_50"
+		//	GOOD_ADVISOR	The green ring you see is the extent of your influence.
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_NEW_INTRO_60"
+		//	GOOD_ADVISOR	You can only do things within this ring.
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_NEW_INTRO_70"
+		//	EVIL_ADVISOR	You can extend the Green Influence Ring by placing more buildings and having more people.
+		wait until read
+		/*
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_INTRO_70"
+		//	GOOD_ADVISOR	When you're ready to learn how to feed your people, click on the Gold Scroll over the field, Leader.
+		wait until read
+*/
+
+		/*
+		set camera position to {1069.152, 366.602, 1567.611}
+		set camera focus to {980.101, 364.527, 1522.152}
+		set camera lens 50
+		wait 1 seconds
+		
+		move camera position to {1071.949, 366.667, 1569.039} time 12
+		move camera focus to {982.899, 364.592, 1523.580} time 12
+		set fade in time 2
+		wait 5 seconds
+		
+		
+		InitialVillager = create VILLAGER GREEK_FARMER at {1059.888, 364.660, 1562.947}
+		
+		set InitialVillager alpha 0.0
+		HEALTH of InitialVillager = 0.2
+		set InitialVillager focus to {1076.809, 368.505, 1571.520}
+		play anim "a_p_scared_stiff_2" on InitialVillager loop 1 disable stand
+		wait 0.4 seconds
+		
+		TeleportFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on InitialVillager time 4 
+		set TeleportFX colour red 0 green 0 blue 255
+		while MyFade < 1
+			set InitialVillager alpha MyFade
+			MyFade+=0.1
+		end while
+		set InitialVillager alpha 1.0
+		wait until InitialVillager played
+		
+		play anim "a_p_scared_stiff_2_outof" on InitialVillager loop 1 disable stand
+		wait until InitialVillager played
+		play anim "a_p_scared_stiff_into" on InitialVillager loop 1 disable stand
+		wait until InitialVillager played
+		play anim "a_p_scared_stiff" on InitialVillager loop 1 disable stand
+		wait until InitialVillager played
+		play anim "a_p_scared_stiff_outof" on InitialVillager loop 1 disable stand
+		wait until InitialVillager played
+		
+		move InitialVillager position to {1086.176, 363.593, 1576.485}
+		
+		wait 2 seconds
+			*/
+		//enable influence
+/*
+		set camera position to {1106.043, 430.598, 1545.028}
+		set camera focus to {1047.401, 352.839, 1567.721}
+		set camera lens 26
+		wait 1 seconds
+*/		
+
+
+// END OF OLD STUFF
+
+		// Create and show the scroll over the field that kicks off the L3Tutorials script
+		enable highlight draw
+		L3TutorialsScroll = create highlight GOLD name "BW2T_SCRIPT_03FINAL_ADVISORS_INTRO_MISC_10" remind "BW2T_SCRIPT_03FINAL_ADVISORS_INTRO_MISC_20" at {ScrollPos}
+		wait until camera ready
+		// GA: When you're ready to learn how to feed your people, click on the Gold Scroll over the field, Leader.
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_INTRO_70"
+		wait 1 seconds
+		make good spirit point at {L3TutorialsScroll} + {0,5,0}
+		wait 2 seconds
+		stop good spirit pointing
+
+		wait until read
+
+	end cinema
+	stop music
+	//release InitialVillager
+	stop visual effect TeleportEffect
+	ScriptFinished=True
+	
+end script Land3Intro
+
+//-----------------------------------------------------------
+
+begin script CreateAllVillagers
+NumberOfPeopleSaved = 34
+SavedCounter = 0
+TownToAttach = get TOWN at {1089.576, 363.598, 1615.925} radius 50
+start
+	while SavedCounter < NumberOfPeopleSaved
+		run background script CreateAndLookAfterVillager(marker at {945.869, 377.945, 1639.584} + {number from -5 to 5, 0, number from -5 to 5}, TownToAttach)
+		SavedCounter++
+		wait 0.7 seconds
+	end while 
+end script CreateAllVillagers
+
+//-----------------------------------------------------------
+
+begin script CreateAndLookAfterVillager(StartPos, TownToAttach)
+Villager = 0
+TeleportFX = 0
+MyFade = 0
+RandomNumber = 0
+Type = 0
+PeopleTeleporterEffect = 0
+start
+	Type = number from 0 to 1
+	if Type == 0	
+		Villager = create VILLAGER GREEK_FARMER at {StartPos}
+	else
+		Villager = create VILLAGER GREEK_HOUSEWIFE at {StartPos}
+	end if
+	attach Villager to L3GreekTown
+
+	/*
+	set Villager alpha 0.0
+	RandomNumber = number from 1 to 5
+	HEALTH of Villager = RandomNumber / 10
+	set Villager focus to {1076.809, 368.505, 1571.520}
+	
+	RandomNumber = number from 0 to 2
+	if RandomNumber == 0
+		play anim "a_p_scared_1" on Villager loop 1
+	elsif RandomNumber == 1
+		play anim "a_p_scared_stiff_2" on Villager loop 1
+	else
+		play anim "a_p_landed" on Villager loop 1
+	end if 
+	
+	wait 0.4 seconds
+	
+	TeleportFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on Villager time 4 
+	set TeleportFX colour red 0 green 0 blue 255
+	while MyFade < 1
+		set Villager alpha MyFade
+		MyFade+=0.05
+	end while
+	set Villager alpha 1.0
+	wait until Villager played
+	*/
+	move Villager position to {1033.081, 363.589, 1657.301}
+	wait 0.2 seconds
+	if Type == 0	
+		override Villager anim "a_p_walk_male_stunned1"
+	else
+		override Villager anim "a_p_walk_crying"
+		
+	end if
+	wait 2 seconds
+	
+	PeopleTeleporterEffect = create visual effect "gp_s_teleporter_people.ves" strength 1 scale 1 at {Villager} time 15 target {945.869, 377.445, 1639.584}
+	
+	wait until ScriptFinished == True
+	release Villager
+end script CreateAndLookAfterVillager
+
+
+begin script MakeCreatureSleep
+
+L3CreaturePenPos = marker at {909.597, 396.646, 1798.993}
+
+start
+
+//	// Put the players creature to sleep in the pen here - Steve
+//	MyCreature = create CREATURE CREATURE_TYPE_LION at {L3CreaturePenPos}
+//	set player 0 creature to MyCreature
+//	SCALE of MyCreature = 0.3
+	
+	//Now force the creature to sleep
+	if MyCreature exists
+		begin loop
+			begin loop
+				set creature MyCreature energy to 0	// <- and he doesn't wake up because 
+				if not variable get MyCreature current action == variable CREATURE_SLEEP
+					force MyCreature CREATURE_SLEEP MyCreature
+				end if
+				until creature MyCreature finished script action
+			end loop
+			until L3TimeForCreatureToWake == 1
+		end loop
+	end if
+
+end script MakeCreatureSleep
+
+
+//-----------------------------------------------------------
+
+begin script BenchCarryingDude
+
+MainMiner=0
+
+MotecBench=0
+
+DeleteMeTimer=0
+
+start
+
+MotecBench = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {947.050, 375.565, 1640.170}
+	override mesh for MotecBench with "m_greek_tf_bench01_n"
+
+	MainMiner = create VILLAGER GREEK_FARMER at {MotecBench}+{-0.6,0,0}
+
+	wait 1 seconds
+	//override MainMiner anim "a_p_carrying_pot"
+	SPEED of MainMiner = 0.1
+	move MainMiner position to {1012.116, 363.666, 1660.661}
+	wait 0.2 seconds
+	override MainMiner anim "a_p_carrying_pot"
+	wait 0.2 seconds
+
+	DeleteMeTimer = create timer for 10 seconds
+
+	while 0 == 0 and get DeleteMeTimer time remaining > 0
+		set MotecBench position to get target from {1012.116, 363.666, 1660.661}+{-5,0,0} to {MotecBench} distance 0.1 angle 180 //+{0,0,0.1}
+		ANGLE of MotecBench = 100
+		ALTITUDE of MotecBench = 1.0
+	end while
+
+end script BenchCarryingDude
+

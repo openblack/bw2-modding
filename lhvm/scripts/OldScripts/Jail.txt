@@ -1,0 +1,106 @@
+//-----------------------------------------------------------------------------
+// Jailer script
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+
+global PrisonerCount[NumberOfLands]	
+
+//-----------------------------------------------------------------------------
+//	Scripts
+//-----------------------------------------------------------------------------
+
+//Looks after the potential prisoners and tests wether they are in prison.
+begin script LookAfterCriminal(Criminal, Land, Jail)
+start
+	while (not ({Criminal} near {Jail} radius 10))
+		
+	end while
+	PrisonerCount[Land]++
+	
+	//Set jail counter to show the addition of a prisoner.
+	
+end script LookAfterCriminal
+
+//-----------------------------------------------------------------------------
+
+begin script Jail(Criminal1, Criminal2, Criminal3, Land, JailPosition)
+Jail = 0
+start
+	//Create jail at correct position
+	//Jail = create jail building at JailPosition
+
+	run background script LookAfterCriminal(Criminal1, Land, Jail)
+	run background script LookAfterCriminal(Criminal2, Land, Jail)
+	run background script LookAfterCriminal(Criminal3, Land, Jail)
+	
+	while (PrisonerCount[Land] < 3)
+	end while
+end script Jail
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandOne
+start
+	//run script Jail(Bloke1, Bloke2, Bloke3, 1, JailPosition)
+	//Do cinema and reward...
+end script JailLandOne
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandTwo
+start
+end script JailLandTwo
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandThree
+start
+end script JailLandThree
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandFour
+start
+end script JailLandFour
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandFive
+start
+end script JailLandFive
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandSix
+start
+end script JailLandSix
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandSeven
+start
+end script JailLandSeven
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandEight
+start
+end script JailLandEight
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandNine
+start
+end script JailLandNine
+
+//-----------------------------------------------------------------------------
+
+begin script JailLandTen
+start
+end script JailLandTen
+
+//-----------------------------------------------------------------------------
+

@@ -1,0 +1,12 @@
+run script RunLand4TownTutorials
+
+begin script RunLand4TownTutorials
+
+
+start
+
+
+run script Land4TownTutorials
+
+
+end script RunLand4TownTutorials

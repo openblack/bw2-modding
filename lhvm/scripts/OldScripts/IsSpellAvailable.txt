@@ -1,0 +1,14 @@
+global MyTown
+
+begin script IsSpellAvailable
+TownPos = marker at {560.818,61.466,657.563}
+start
+	MyTown = get town with id 1
+	if spell SPELL_WOOD for player 1
+		begin dialogue
+			say "wood available"
+			wait until read
+		end dialogue
+	end if
+	wait 100 seconds
+end script IsSpellAvailable

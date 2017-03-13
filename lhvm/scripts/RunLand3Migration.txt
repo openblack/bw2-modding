@@ -1,0 +1,6 @@
+run script RunLand3Migration
+
+begin script RunLand3Migration
+start
+	run script Land3Migration
+end script RunLand3Migration

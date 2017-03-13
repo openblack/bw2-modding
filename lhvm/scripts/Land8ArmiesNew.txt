@@ -1,0 +1,1933 @@
+define L8_ARMIES_BREAKOFF_SCOUT = 0
+define L8_ARMIES_BREAKOFF_RAID = 1
+define L8_ARMIES_BREAKOFF_SIEGE = 2
+
+//threat enum
+define L8_TOWNTHREAT_NEUTRAL			= 0
+define L8_TOWNTHREAT_JAPANESEOWNED		= 1
+define L8_TOWNTHREAT_THREATEND			= 2
+define L8_TOWNTHREAT_PLAYEROWNED		= 3
+
+//attack state enum
+define L8_ATTACKSTATE_NONE				= 0
+define L8_ATTACKSTATE_ALLSETTLEMENTS	= 1
+define L8_ATTACKSTATE_FULL				= 2
+
+global L8_TestMode = L8_FALSE
+
+global L8_Armies_MainRaidGroup = 0
+global L8_Armies_MainRaidGroupCampPos = 0
+global L8_Armies_MainRaidGroupRoute = 0
+global L8_Armies_ScoutRaidGroupRoute1 = 0
+global L8_Armies_ScoutRaidGroupRoute2 = 0
+global L8_Armies_PlayerAttackAllowed = L8_FALSE
+global L8_Armies_PlayerSiegeAllowed = L8_FALSE
+global L8_Armies_PlayerSiegeActive = L8_FALSE
+global L8_Armies_FirstSiege = L8_FALSE
+global L8_Armies_NewSiege = L8_FALSE // set to true at the beging of any siege
+global L8_Armies_RaidCatapult = 0
+global L8_Armies_NumReplenishesAllowed = 4
+
+global L8_Armies_MainRaidGroupSize = 80
+global L8_Armies_ScoutRaidGroupSize = 20
+
+global L8_Armies_CurrentNumScoutGroups = 0
+
+global L8_Armies_NewArmyBro_Archers[6]
+global L8_Armies_NewArmyBro_Archers_EnRouteNum[6]
+global L8_Armies_NewArmyBro_Melee[3]
+global L8_Armies_NewArmyBro_Melee_EnRouteNum[3]
+global L8_Armies_NewArmyBro_Catapults[6]
+
+global L8_Armies_ImpressiveToken_Archers[4]
+global L8_Armies_ImpressiveToken_Melee
+
+// threat states:
+// L8_TOWNTHREAT_NEUTRAL
+// L8_TOWNTHREAT_JAPANESEOWNED
+// L8_TOWNTHREAT_THREATEND
+// L8_TOWNTHREAT_PLAYEROWNED
+global L8_Armies_NewArmyBro_ImpressiveCityState = L8_TOWNTHREAT_JAPANESEOWNED
+global L8_Armies_NewArmyBro_WarCityState = L8_TOWNTHREAT_JAPANESEOWNED
+global L8_Armies_NewArmyBro_SettlementState[4]
+
+// attack states:
+global L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_NONE
+global L8_Armies_NewArmyBro_FirstSettlementPlayerTakes = L8_TOWNTHREAT_NEUTRAL
+
+global L8_Armies_NewArmyBro_SettlementTC[4]
+global L8_Armies_NewArmyBro_ImpressiveCityTC
+global L8_Armies_NewArmyBro_WarCityTC
+global L8_Armies_NewArmyBro_PlayerCityTC
+
+global L8_Armies_NewArmyBro_SettlementCenter[4]
+global L8_Armies_NewArmyBro_SettlementBounds[4]
+global L8_Armies_NewArmyBro_SettlementRadius[4]
+
+global L8_Armies_NewArmyBro_HighCenter
+global L8_Armies_NewArmyBro_HighBounds
+global L8_Armies_NewArmyBro_HighRadius
+
+global L8_Armies_NewArmyBro_WarCityCenter
+global L8_Armies_NewArmyBro_WarCityBounds
+global L8_Armies_NewArmyBro_WarCityRadius
+
+define script L8_Armies_RaidGroupInit
+define script L8_Armies_MainRaidGroupHandleCampPos
+define script L8_Armies_MainRaidGroupHandleBreakOff
+define script L8_Armies_WaitToStartAttackBehaviour
+define script L8_Armies_WaitToStartSiege
+define script L8_Armies_BreakOffSubGroup(BreakoffReason)
+define script L8_Armies_MergePlatoonToMainRaidGroup(SubPlatoon)
+define script L8_Armies_DeterminePlayerSiegeState
+define script L8_Armies_PlayerSiege
+
+define script L8_Armies_ArmyBroNew_Main
+define script L8_Armies_ArmyBroNew_RecruitArcher
+define script L8_Armies_ArmyBroNew_RecruitMelee
+define script L8_Armies_ArmyBroNew_BuildCatapult
+
+define script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(Platoon,Action,Object)
+define script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(Platoon,Action,Pos)
+define script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(Catapult,Action,Object)
+define script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(Catapult,Action,Pos)
+
+define script L8_Armies_ArmyBroNew_Archer_MergeSafe(SubPlatoon,MainPlatoonIndex)
+define script L8_Armies_ArmyBroNew_Melee_MergeSafe(SubPlatoon,MainPlatoonIndex)
+
+define script L8_Armies_ArmyBroNew_HandleDefence
+define script L8_Armies_ArmyBroNew_HandleGroup1
+define script L8_Armies_ArmyBroNew_HandleGroup2
+
+define script L8_Armies_ArmyBroNew_Archer_DecreaseEnRoutNumOnRemoval(ArcherPlatoon,ArcherIndex,Size)
+define script L8_Armies_ArmyBroNew_Melee_DecreaseEnRoutNumOnRemoval(MeleePlatoon,MeleeIndex,Size)
+
+define script L8_Armies_ArmyBroNew_SettlementState
+define script L8_Armies_ArmyBroNew_HandleImpressiveCityState
+define script L8_Armies_ArmyBroNew_HandleWarCityState
+
+define script L8_Armies_ArmyBroNew_HandleArmyOwnership
+
+define script L8_Armies_ArmyBroNew_HandleImpressiveCityDefence
+define script L8_Armies_ArmyBroNew_HandleGates
+
+define script L8_CB_FireWonder
+define script L8_Handle_Lightning
+
+begin script L8_Armies_RaidGroupInit
+	CurrentSize = 10
+	BranchPlatoonIndex = -1
+	BestDistance = 100000
+	TestDistance = 0
+	BranchPlatoonIndexCount = 0
+	NewPlatoon = 0
+start
+	L8_Armies_MainRaidGroupCampPos = marker at {1629.110,174.455,999.496}
+
+	L8_Armies_ScoutRaidGroupRoute1 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {L8_Armies_MainRaidGroupCampPos}
+	add {1771.460,224.807,929.099} to waypoint list L8_Armies_ScoutRaidGroupRoute1
+	add {1715.282,202.332,962.819} to waypoint list L8_Armies_ScoutRaidGroupRoute1
+	add {1702.453,214.431,886.972} to waypoint list L8_Armies_ScoutRaidGroupRoute1
+	add {1779.180,198.623,1008.425} to waypoint list L8_Armies_ScoutRaidGroupRoute1
+	add {1735.697,216.296,916.910} to waypoint list L8_Armies_ScoutRaidGroupRoute1
+	add {1770.935,208.414,969.211} to waypoint list L8_Armies_ScoutRaidGroupRoute1
+
+	L8_Armies_ScoutRaidGroupRoute2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {L8_Armies_MainRaidGroupCampPos}
+	add {1952.478,246.489,1128.436} to waypoint list L8_Armies_ScoutRaidGroupRoute2
+	add {1889.112,224.711,1101.058} to waypoint list L8_Armies_ScoutRaidGroupRoute2
+	add {1966.577,238.588,1074.323} to waypoint list L8_Armies_ScoutRaidGroupRoute2
+	add {1818.590,207.825,1071.826} to waypoint list L8_Armies_ScoutRaidGroupRoute2
+	add {1869.611,224.253,1060.600} to waypoint list L8_Armies_ScoutRaidGroupRoute2
+	add {1907.077,232.490,1040.677} to waypoint list L8_Armies_ScoutRaidGroupRoute2
+
+	L8_Armies_MainRaidGroup = create platoon GLOBAL_VALUE_LAND_8_ENEMY_MELEE_LEVEL_EXPLICIT at {L8_Armies_MainRaidGroupCampPos} with L8_Armies_MainRaidGroupSize men and 0 women
+	PLAYER of L8_Armies_MainRaidGroup = 1
+	attach L8_Armies_MainRaidGroup to L8_JapaneseWarCapital
+	disable platoon L8_Armies_MainRaidGroup respond to player army
+	disable platoon L8_Armies_MainRaidGroup respond to local platoon attack
+
+	run background script L8_Armies_MainRaidGroupHandleBreakOff
+	run background script L8_Armies_MainRaidGroupHandleCampPos
+	run background script L8_Armies_WaitToStartAttackBehaviour
+	run background script L8_Armies_WaitToStartSiege
+	run background script L8_Armies_DeterminePlayerSiegeState
+	run background script L8_Armies_PlayerSiege
+	run background script L8_Armies_ArmyBroNew_HandleArmyOwnership
+
+	begin loop
+		if L8_Armies_MainRaidGroup exists
+			CurrentSize = get number of villagers in platoon L8_Armies_MainRaidGroup + (L8_Armies_CurrentNumScoutGroups * L8_Armies_ScoutRaidGroupSize)
+		else
+			CurrentSize = 0
+		end if
+		if CurrentSize < L8_Armies_MainRaidGroupSize and L8_Armies_NumReplenishesAllowed > 0
+			BranchPlatoonIndex = -1
+			BestDistance = 100000
+			BranchPlatoonIndexCount = 0
+			while BranchPlatoonIndexCount < 3
+				if L8_Armies_NewArmyBro_Melee[BranchPlatoonIndexCount] exists
+					if get number of villagers in platoon L8_Armies_NewArmyBro_Melee[BranchPlatoonIndexCount] >= 40
+						TestDistance = get distance from {L8_Armies_NewArmyBro_Melee[BranchPlatoonIndexCount]} to {L8_Armies_MainRaidGroupCampPos}
+						if TestDistance < BestDistance
+							BestDistance = TestDistance
+							BranchPlatoonIndex = BranchPlatoonIndexCount
+						end if
+					end if
+				end if
+				BranchPlatoonIndexCount++
+			end while
+			if BranchPlatoonIndex >= 0
+				// make sure it is still good
+				if L8_Armies_NewArmyBro_Melee[BranchPlatoonIndex] exists
+					if get number of villagers in platoon L8_Armies_NewArmyBro_Melee[BranchPlatoonIndex] >= 40
+						NewPlatoon = split 20 soldiers from platoon L8_Armies_NewArmyBro_Melee[BranchPlatoonIndex]
+						disable platoon NewPlatoon respond to player army
+						L8_Armies_CurrentNumScoutGroups++
+						run background script L8_Armies_MergePlatoonToMainRaidGroup(NewPlatoon)
+						L8_Armies_NumReplenishesAllowed -= 1
+					end if
+				end if
+			end if
+		end if
+		if L8_Armies_PlayerSiegeAllowed == L8_TRUE and L8_Armies_RaidCatapult not exists and L8_Armies_MainRaidGroup exists
+			BranchPlatoonIndex = -1
+			BestDistance = 100000
+			BranchPlatoonIndexCount = 0
+			while BranchPlatoonIndexCount < 6
+				if L8_Armies_NewArmyBro_Catapults[BranchPlatoonIndexCount] exists
+					TestDistance = get distance from {L8_Armies_NewArmyBro_Catapults[BranchPlatoonIndexCount]} to {L8_Armies_MainRaidGroupCampPos}
+					if TestDistance < BestDistance
+						BestDistance = TestDistance
+						BranchPlatoonIndex = BranchPlatoonIndexCount
+					end if
+				end if
+				BranchPlatoonIndexCount++
+			end while
+			if BranchPlatoonIndex >= 0
+				// make sure it is still good
+				if L8_Armies_NewArmyBro_Catapults[BranchPlatoonIndex] exists
+					L8_Armies_RaidCatapult = L8_Armies_NewArmyBro_Catapults[BranchPlatoonIndex]
+					L8_Armies_NewArmyBro_Catapults[BranchPlatoonIndex] = 0
+				end if
+			end if
+		end if
+		wait 40 seconds
+	end loop
+end script L8_Armies_RaidGroupInit
+
+begin script L8_Armies_MainRaidGroupHandleCampPos
+	PossibleCampPos[2]
+	LastSiegeActiveState = L8_FALSE
+start
+	PossibleCampPos[0] = marker at {1629.110,174.455,999.496}
+	PossibleCampPos[1] = marker at {1740.005,194.745,1012.425}
+
+	begin loop
+		wait until LastSiegeActiveState != L8_Armies_PlayerSiegeActive
+
+		if L8_Armies_PlayerSiegeActive == L8_FALSE
+			L8_Armies_MainRaidGroupCampPos = marker at {PossibleCampPos[0]}
+		else
+			L8_Armies_MainRaidGroupCampPos = marker at {PossibleCampPos[1]}
+		end if
+
+		if L8_Armies_MainRaidGroup exists
+			clear L8_Armies_MainRaidGroup action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {L8_Armies_MainRaidGroupCampPos} to L8_Armies_MainRaidGroup action queue
+		end if
+
+		LastSiegeActiveState = L8_Armies_PlayerSiegeActive
+	end loop
+end script L8_Armies_MainRaidGroupHandleCampPos
+
+begin script L8_Armies_WaitToStartAttackBehaviour
+start
+	wait until L8_StartEnemyActions == L8_TRUE
+	while L8_Armies_PlayerAttackAllowed == L8_FALSE
+		wait 5 seconds
+		if get number of built ABODE_NUMBER_ALTAR in L8_GreekTown >= 1 or get number of built ABODE_NUMBER_MELEE_ARMOURY in L8_GreekTown >= 1 or get number of built ABODE_NUMBER_RANGED_ARMOURY in L8_GreekTown >= 1 or get number of built ABODE_NUMBER_WORKSHOP in L8_GreekTown >= 1 or size of L8_GreekTown >= 200 or L8_Armies_PlayerSiegeAllowed == L8_TRUE
+			L8_Armies_PlayerAttackAllowed = L8_TRUE
+			if L8_Armies_NumReplenishesAllowed < 4
+				L8_Armies_NumReplenishesAllowed = 4
+			end if
+		end if
+	end while
+end script L8_Armies_WaitToStartAttackBehaviour
+
+begin script L8_Armies_WaitToStartSiege
+	Wonder = 0
+start
+	wait until L8_StartEnemyActions == L8_TRUE
+	while L8_Armies_PlayerSiegeAllowed == L8_FALSE
+		wait 5 seconds
+		if get army size in town L8_GreekTown >= 1 or get player 0 mana >= 1
+			L8_Armies_PlayerSiegeAllowed = L8_TRUE
+		else
+			Wonder = get WONDER in L8_GreekTown
+			if Wonder exists
+				L8_Armies_PlayerSiegeAllowed = L8_TRUE
+			end if
+		end if
+	end while
+end script L8_Armies_WaitToStartSiege
+
+begin script L8_Armies_MainRaidGroupHandleBreakOff
+	WaitForBreakOff = 0
+	MaxCyclesTillAttack = 3
+	CurrentCyclesTillAttack = 0
+start
+	wait until L8_StartEnemyActions == L8_TRUE
+	begin loop
+		WaitForBreakOff = number from 60 to 180
+		wait WaitForBreakOff seconds
+		if L8_Armies_MainRaidGroup exists
+			if not platoon L8_Armies_MainRaidGroup fighting
+				if get number of villagers in platoon L8_Armies_MainRaidGroup >= 2*L8_Armies_ScoutRaidGroupSize
+					if L8_Armies_PlayerAttackAllowed == L8_TRUE
+						if CurrentCyclesTillAttack > 0
+							run background script L8_Armies_BreakOffSubGroup(L8_ARMIES_BREAKOFF_SCOUT)
+							CurrentCyclesTillAttack--
+						else
+							run background script L8_Armies_BreakOffSubGroup(L8_ARMIES_BREAKOFF_RAID)
+							CurrentCyclesTillAttack = MaxCyclesTillAttack
+						end if
+					else
+						run background script L8_Armies_BreakOffSubGroup(L8_ARMIES_BREAKOFF_SCOUT)
+					end if
+				end if
+			end if
+		end if
+	end loop
+end script L8_Armies_MainRaidGroupHandleBreakOff
+
+begin script L8_Armies_BreakOffSubGroup(BreakoffReason)
+	ScoutGroup = 0
+	WaitForRecombine = 0
+	HouseToAttack = 0
+start
+	L8_Armies_CurrentNumScoutGroups++
+	ScoutGroup = split L8_Armies_ScoutRaidGroupSize soldiers from platoon L8_Armies_MainRaidGroup
+	disable platoon ScoutGroup respond to player army
+	if BreakoffReason == L8_ARMIES_BREAKOFF_SIEGE
+		if L8_Armies_RaidCatapult exists
+			clear ScoutGroup action queue
+			add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L8_Armies_RaidCatapult to ScoutGroup action queue
+			wait until ScoutGroup not exists or L8_Armies_RaidCatapult not exists or L8_Armies_PlayerSiegeActive == L8_FALSE
+		end if
+	end if
+	if BreakoffReason == L8_ARMIES_BREAKOFF_RAID or BreakoffReason == L8_ARMIES_BREAKOFF_SIEGE
+		if ScoutGroup exists and L8_Armies_PlayerSiegeActive == L8_FALSE
+			// get a house in the player's town
+			HouseToAttack = get random home in town L8_GreekTown
+			if HouseToAttack exists
+				if ScoutGroup can navigate to object HouseToAttack
+					run background script L8_SendAttackDialogue(140)
+					clear ScoutGroup action queue
+					add action PLATOON_AGENDA_ACTION_ATTACK using HouseToAttack to ScoutGroup action queue
+					WaitForRecombine = L8_TRUE
+					while ScoutGroup exists and WaitForRecombine == L8_TRUE
+						if get size of ScoutGroup action queue == 0
+							WaitForRecombine = L8_FALSE
+						end if
+					end while
+				else
+					BreakoffReason = L8_ARMIES_BREAKOFF_SCOUT
+				end if
+			else
+				BreakoffReason = L8_ARMIES_BREAKOFF_SCOUT
+			end if
+		else
+			BreakoffReason = L8_ARMIES_BREAKOFF_SCOUT
+		end if
+	end if
+	// not an else, since we may have changed our minds about what this platoon is doing
+	if BreakoffReason == L8_ARMIES_BREAKOFF_SCOUT and ScoutGroup exists
+		if number from 1 to 2 == 1
+			clear ScoutGroup action queue
+			move ScoutGroup along L8_Armies_ScoutRaidGroupRoute1 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		else
+			clear ScoutGroup action queue
+			move ScoutGroup along L8_Armies_ScoutRaidGroupRoute2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		end if
+		WaitForRecombine = number from 60 to 180
+		wait WaitForRecombine seconds
+	end if
+	if ScoutGroup exists
+		run background script L8_Armies_MergePlatoonToMainRaidGroup(ScoutGroup)
+	else
+		L8_Armies_CurrentNumScoutGroups--		
+	end if
+end script L8_Armies_BreakOffSubGroup
+
+begin script L8_Armies_MergePlatoonToMainRaidGroup(SubPlatoon)
+start
+	if SubPlatoon exists
+		clear SubPlatoon action queue
+		while SubPlatoon exists and L8_Armies_MainRaidGroup exists
+			if get size of SubPlatoon action queue == 0
+				merge platoon SubPlatoon into platoon L8_Armies_MainRaidGroup
+			end if
+		end while
+		if SubPlatoon exists and L8_Armies_MainRaidGroup not exists
+			L8_Armies_MainRaidGroup = SubPlatoon
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {L8_Armies_MainRaidGroupCampPos} to L8_Armies_MainRaidGroup action queue
+			disable platoon L8_Armies_MainRaidGroup respond to local platoon attack
+		end if
+	end if
+	L8_Armies_CurrentNumScoutGroups--
+end script L8_Armies_MergePlatoonToMainRaidGroup
+
+begin script L8_Armies_DeterminePlayerSiegeState
+	TestVillager = 0
+start
+	wait until L8_Armies_PlayerSiegeAllowed == L8_TRUE
+	begin loop
+		TestVillager = get VILLAGER at {L8_Armies_NewArmyBro_PlayerCityTC} radius 50
+		if TestVillager exists
+			if TestVillager can navigate to {L8_Armies_MainRaidGroupCampPos}
+				L8_Armies_PlayerSiegeActive = L8_FALSE
+			else
+				if L8_Armies_PlayerSiegeActive == L8_FALSE
+					L8_Armies_NewSiege = L8_TRUE
+				end if
+				L8_Armies_PlayerSiegeActive = L8_TRUE
+				if L8_Armies_FirstSiege == L8_FALSE
+					L8_Armies_FirstSiege = L8_TRUE
+					if L8_Armies_NumReplenishesAllowed < 8
+						L8_Armies_NumReplenishesAllowed = 8
+					end if
+				end if
+			end if
+			release TestVillager
+		end if
+		wait 3 seconds
+	end loop
+end script L8_Armies_DeterminePlayerSiegeState
+
+begin script L8_Armies_PlayerSiege
+	CatapultSiegeLoc[9]
+	Count = 0
+	FinishedLoop = L8_FALSE
+start
+	CatapultSiegeLoc[0] = marker at {1845.618,250.685,884.736}
+	CatapultSiegeLoc[1] = marker at {1832.441,249.310,899.400}
+	CatapultSiegeLoc[2] = marker at {1809.884,244.634,910.522}
+	CatapultSiegeLoc[3] = marker at {1782.186,234.679,918.844}
+	CatapultSiegeLoc[4] = marker at {1759.899,221.557,924.866}
+	CatapultSiegeLoc[5] = marker at {1736.322,211.147,937.911}
+	CatapultSiegeLoc[6] = marker at {1700.160,198.456,954.356}
+	CatapultSiegeLoc[7] = marker at {1670.416,185.709,974.508}
+	CatapultSiegeLoc[8] = marker at {1643.893,178.853,991.514}
+
+	wait until L8_Armies_PlayerSiegeAllowed == L8_TRUE
+	begin loop
+		if L8_Armies_RaidCatapult exists
+			if L8_Armies_PlayerSiegeActive == L8_FALSE
+				run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_RaidCatapult,variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,L8_Armies_MainRaidGroupCampPos)
+			else
+				Count = 0
+				FinishedLoop = L8_FALSE
+				while FinishedLoop == L8_FALSE
+					if L8_Armies_RaidCatapult can navigate to {CatapultSiegeLoc[Count]}
+						FinishedLoop = L8_TRUE
+					else
+						Count++
+						if Count >= 9
+							FinishedLoop = L8_TRUE
+						end if
+					end if
+				end while
+				if Count < 9
+					run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_RaidCatapult,variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,CatapultSiegeLoc[Count])
+					if L8_Armies_NewSiege == L8_TRUE and get number of villagers in platoon L8_Armies_MainRaidGroup >= 2*L8_Armies_ScoutRaidGroupSize
+						L8_Armies_NewSiege = L8_FALSE
+						run background script L8_Armies_BreakOffSubGroup(L8_ARMIES_BREAKOFF_SIEGE)
+					end if
+				else
+					run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_RaidCatapult,variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,L8_Armies_MainRaidGroupCampPos)
+				end if
+			end if
+		end if
+		wait 20 seconds
+	end loop
+end script L8_Armies_PlayerSiege
+
+begin script L8_Armies_ArmyBroNew_Archer_MergeSafe(SubPlatoon,MainPlatoonIndex)
+start
+	clear SubPlatoon action queue
+	while SubPlatoon exists and L8_Armies_NewArmyBro_Archers[MainPlatoonIndex] exists
+		if get size of SubPlatoon action queue == 0
+			merge platoon SubPlatoon into platoon L8_Armies_NewArmyBro_Archers[MainPlatoonIndex]
+		end if
+	end while
+	if SubPlatoon exists and L8_Armies_NewArmyBro_Archers[MainPlatoonIndex] not exists
+		L8_Armies_NewArmyBro_Archers[MainPlatoonIndex] = SubPlatoon
+	end if
+end script L8_Armies_ArmyBroNew_Archer_MergeSafe
+
+begin script L8_Armies_ArmyBroNew_Melee_MergeSafe(SubPlatoon,MainPlatoonIndex)
+start
+	clear SubPlatoon action queue
+	while SubPlatoon exists and L8_Armies_NewArmyBro_Melee[MainPlatoonIndex] exists
+		if get size of SubPlatoon action queue == 0
+			merge platoon SubPlatoon into platoon L8_Armies_NewArmyBro_Melee[MainPlatoonIndex]
+		end if
+	end while
+	if SubPlatoon exists and L8_Armies_NewArmyBro_Melee[MainPlatoonIndex] not exists
+		L8_Armies_NewArmyBro_Melee[MainPlatoonIndex] = SubPlatoon
+	end if
+end script L8_Armies_ArmyBroNew_Melee_MergeSafe
+
+begin script L8_Armies_ArmyBroNew_Main
+	Count = 0
+	RecruitWait = 300 // should be in global balance
+	CreatureCreationPoint = marker at {1281.312,279.603,1843.110}
+	ArmyCreationPoint = marker at {870.372,221.893,943.350}
+	TokenCreationPoint = marker at {1292.536,281.324,1849.075}
+start
+	L8_Armies_NewArmyBro_WarCityCenter = marker at {680.380,235.996,828.144}//--War City High Defence - Center
+	L8_Armies_NewArmyBro_WarCityBounds = marker at {760.219,199.919,1048.352}//--War City High Defence - Bounds
+	L8_Armies_NewArmyBro_WarCityRadius = get distance from {L8_Armies_NewArmyBro_WarCityCenter} to {L8_Armies_NewArmyBro_WarCityBounds}
+
+	L8_Armies_NewArmyBro_HighCenter = marker at {1211.633,282.562,1898.265}			//--Peace City High Defence - Center
+	L8_Armies_NewArmyBro_HighBounds = marker at {1355.289,226.359,1726.588}			//--Peace City High Defence - Bounds
+	L8_Armies_NewArmyBro_HighRadius = get distance from {L8_Armies_NewArmyBro_HighCenter} to {L8_Armies_NewArmyBro_HighBounds}
+
+	L8_Armies_NewArmyBro_SettlementCenter[0] = marker at {1595.010,151.980,1479.135}
+	L8_Armies_NewArmyBro_SettlementBounds[0] = marker at {1541.343,163.371,1530.022}
+	L8_Armies_NewArmyBro_SettlementRadius[0] = get distance from {L8_Armies_NewArmyBro_SettlementCenter[0]} to {L8_Armies_NewArmyBro_SettlementBounds[0]}
+
+	L8_Armies_NewArmyBro_SettlementCenter[1] = marker at {1209.173,201.632,703.384}
+	L8_Armies_NewArmyBro_SettlementBounds[1] = marker at {1288.485,198.593,722.846}
+	L8_Armies_NewArmyBro_SettlementRadius[1] = get distance from {L8_Armies_NewArmyBro_SettlementCenter[1]} to {L8_Armies_NewArmyBro_SettlementBounds[1]}
+
+	L8_Armies_NewArmyBro_SettlementCenter[2] = marker at {798.683,154.131,1372.422}
+	L8_Armies_NewArmyBro_SettlementBounds[2] = marker at {750.910,156.949,1293.776}
+	L8_Armies_NewArmyBro_SettlementRadius[2] = get distance from {L8_Armies_NewArmyBro_SettlementCenter[2]} to {L8_Armies_NewArmyBro_SettlementBounds[2]}
+
+	L8_Armies_NewArmyBro_SettlementCenter[3] = marker at {1291.062,111.125,1067.740}
+	L8_Armies_NewArmyBro_SettlementBounds[3] = marker at {1503.114,149.136,1055.914}
+	L8_Armies_NewArmyBro_SettlementRadius[3] = get distance from {L8_Armies_NewArmyBro_SettlementCenter[3]} to {L8_Armies_NewArmyBro_SettlementBounds[3]}
+
+	// Find settlement TC's
+	Count = 0
+	while Count < 4
+		L8_Armies_NewArmyBro_SettlementTC[Count] = get HOUSE TOWN_CENTRE in L8_MinorSettlement[Count]
+		Count++
+	end while
+
+	L8_Armies_NewArmyBro_WarCityTC = get HOUSE TOWN_CENTRE in L8_JapaneseWarCapital
+	L8_Armies_NewArmyBro_PlayerCityTC = get HOUSE TOWN_CENTRE in L8_GreekTown
+  	L8_Armies_NewArmyBro_ImpressiveCityTC = get HOUSE TOWN_CENTRE in L8_JapaneseCityCapital
+
+	/*
+	// set up starting archers
+	Count = 0
+	while Count < 4
+		L8_Armies_NewArmyBro_Archers[Count] = create platoon GLOBAL_VALUE_LAND_8_ENEMY_RANGED_LEVEL_EXPLICIT at {L8_Armies_NewArmyBro_WarCityCenter} with 25 men and 0 women
+		PLAYER of L8_Armies_NewArmyBro_Archers[Count] = 1
+		attach L8_Armies_NewArmyBro_Archers[Count] to L8_JapaneseWarCapital
+		Count++
+	end while
+	*/
+
+	// create creature
+	run script GCAI_InitCreature(CreatureCreationPoint,variable CREATURE_TYPE_TIGER,0.8,0.0,1)
+	
+	// give the creature knowledge
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_HEAL available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_WATER available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_LIGHTNING available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_3 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_2 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_2 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+
+	// get ready to fire wonder
+	run background script L8_CB_FireWonder
+
+	//if L8_TestMode == L8_TRUE
+		Count = 0
+		while Count < 4
+			L8_Armies_NewArmyBro_Archers[Count] = create platoon GLOBAL_VALUE_LAND_8_ENEMY_RANGED_LEVEL_EXPLICIT at {ArmyCreationPoint} with 20 men and 0 women
+			PLAYER of L8_Armies_NewArmyBro_Archers[Count] = 1
+			attach L8_Armies_NewArmyBro_Archers[Count] to L8_JapaneseWarCapital
+			Count++
+		end while
+
+		Count = 4
+		while Count < 6
+			L8_Armies_NewArmyBro_Archers[Count] = create platoon GLOBAL_VALUE_LAND_8_ENEMY_RANGED_LEVEL_EXPLICIT at {ArmyCreationPoint} with 80 men and 0 women
+			PLAYER of L8_Armies_NewArmyBro_Archers[Count] = 1
+			attach L8_Armies_NewArmyBro_Archers[Count] to L8_JapaneseWarCapital
+			Count++
+		end while
+
+		Count = 0
+		while Count < 3
+			L8_Armies_NewArmyBro_Melee[Count] = create platoon GLOBAL_VALUE_LAND_8_ENEMY_MELEE_LEVEL_EXPLICIT at {ArmyCreationPoint} with 80 men and 0 women
+			PLAYER of L8_Armies_NewArmyBro_Melee[Count] = 1
+			attach L8_Armies_NewArmyBro_Melee[Count] to L8_JapaneseWarCapital
+			Count++
+		end while
+
+		Count = 0
+		while Count < 6
+			L8_Armies_NewArmyBro_Catapults[Count] = create siege weapon GLOBAL_VALUE_LAND_8_ENEMY_CATAPULT_LEVEL belonging to L8_JapaneseWarCapital at {ArmyCreationPoint}
+			PLAYER of L8_Armies_NewArmyBro_Catapults[Count] = 1
+			Count++
+		end while
+
+		Count = 0
+		while Count < 4
+			L8_Armies_ImpressiveToken_Archers[Count] = create platoon GLOBAL_VALUE_LAND_8_ENEMY_RANGED_LEVEL_EXPLICIT at {TokenCreationPoint} with 20 men and 0 women
+			PLAYER of L8_Armies_ImpressiveToken_Archers[Count] = 1
+			attach L8_Armies_ImpressiveToken_Archers[Count] to L8_JapaneseCityCapital
+			Count++
+		end while
+
+		L8_Armies_ImpressiveToken_Melee = create platoon GLOBAL_VALUE_LAND_8_ENEMY_MELEE_LEVEL_EXPLICIT at {TokenCreationPoint} with 40 men and 0 women
+		PLAYER of L8_Armies_ImpressiveToken_Melee = 1
+		attach L8_Armies_ImpressiveToken_Melee to L8_JapaneseCityCapital
+	//end if
+
+	// start raids
+	run background script L8_Armies_RaidGroupInit
+
+	// keep track of states
+	run background script L8_Armies_ArmyBroNew_HandleImpressiveCityState
+	run background script L8_Armies_ArmyBroNew_HandleWarCityState	
+	run background script L8_Armies_ArmyBroNew_SettlementState
+
+	// start handlings
+	run background script L8_Armies_ArmyBroNew_HandleGates
+	run background script L8_Armies_ArmyBroNew_HandleDefence
+	run background script L8_Armies_ArmyBroNew_HandleGroup1
+	run background script L8_Armies_ArmyBroNew_HandleGroup2
+	run background script L8_Armies_ArmyBroNew_HandleImpressiveCityDefence
+
+	// recruit loop
+	while PLAYER of L8_JapaneseWarCapital == 1 and variable get town L8_JapaneseWarCapital status != variable TOWN_STATUS_MIGRATION_STARTED
+		if adult size of L8_JapaneseWarCapital - get number of soldiers in town L8_JapaneseWarCapital >= 15
+			run background script L8_Armies_ArmyBroNew_RecruitArcher
+			run background script L8_Armies_ArmyBroNew_RecruitMelee
+			if number from 1 to 3 == 1
+				run background script L8_Armies_ArmyBroNew_BuildCatapult
+			end if
+		end if
+
+		//RecruitWait += 10
+		wait RecruitWait seconds
+	end while
+end script L8_Armies_ArmyBroNew_Main
+
+begin script L8_Armies_ArmyBroNew_RecruitArcher
+	PlatoonNum = -1
+	Count = 0
+	NewPlatoon = 0
+start
+	// add a check to make sure the town isn't under attack, and if it is, do something clever!
+
+	Count = 0
+	while Count < 4 and PlatoonNum < 0
+		if L8_Armies_NewArmyBro_Archers[Count] exists
+			if get number of villagers in platoon L8_Armies_NewArmyBro_Archers[Count] + L8_Armies_NewArmyBro_Archers_EnRouteNum[Count] < 20
+				PlatoonNum = Count
+			end if
+		else
+			PlatoonNum = Count
+		end if
+		Count++
+	end while
+
+	if PlatoonNum < 0
+		Count = 4
+		while Count < 6 and PlatoonNum < 0
+			if L8_Armies_NewArmyBro_Archers[Count] exists
+				if get number of villagers in platoon L8_Armies_NewArmyBro_Archers[Count] + L8_Armies_NewArmyBro_Archers_EnRouteNum[Count] < 40
+					PlatoonNum = Count
+				end if
+			else
+				PlatoonNum = Count
+			end if
+			Count++
+		end while
+	end if
+
+	if PlatoonNum < 0
+		Count = 4
+		while Count < 6 and PlatoonNum < 0
+			if L8_Armies_NewArmyBro_Archers[Count] exists
+				if get number of villagers in platoon L8_Armies_NewArmyBro_Archers[Count] + L8_Armies_NewArmyBro_Archers_EnRouteNum[Count] < 80
+					PlatoonNum = Count
+				end if
+			else
+				PlatoonNum = Count
+			end if
+			Count++
+		end while
+	end if
+
+	if PlatoonNum >= 0
+		if can town L8_JapaneseWarCapital recruit GLOBAL_VALUE_LAND_8_ENEMY_RANGED_LEVEL platoon of size 20
+			if L8_Armies_NewArmyBro_Archers[PlatoonNum] exists
+				NewPlatoon = recruit GLOBAL_VALUE_LAND_8_ENEMY_RANGED_LEVEL town L8_JapaneseWarCapital platoon of size 20
+				L8_Armies_NewArmyBro_Archers_EnRouteNum[PlatoonNum] += 20
+				run background script L8_Armies_ArmyBroNew_Archer_MergeSafe(NewPlatoon,PlatoonNum)
+				run background script L8_Armies_ArmyBroNew_Archer_DecreaseEnRoutNumOnRemoval(NewPlatoon,PlatoonNum,20)
+			else
+				L8_Armies_NewArmyBro_Archers[PlatoonNum] = recruit GLOBAL_VALUE_LAND_8_ENEMY_RANGED_LEVEL town L8_JapaneseWarCapital platoon of size 20
+			end if
+		end if
+	end if
+end script L8_Armies_ArmyBroNew_RecruitArcher
+
+begin script L8_Armies_ArmyBroNew_Archer_DecreaseEnRoutNumOnRemoval(ArcherPlatoon,ArcherIndex,Size)
+start
+	while ArcherPlatoon exists
+		if ArcherPlatoon == L8_Armies_NewArmyBro_Archers[ArcherIndex]
+			ArcherPlatoon = 0
+		end if
+	end while
+	L8_Armies_NewArmyBro_Archers_EnRouteNum[ArcherIndex] -= Size
+end script L8_Armies_ArmyBroNew_Archer_DecreaseEnRoutNumOnRemoval
+
+begin script L8_Armies_ArmyBroNew_RecruitMelee
+	PlatoonNum = -1
+	Count = 0
+	NewPlatoon = 0
+start
+	Count = 0
+	if L8_Armies_NewArmyBro_Melee[Count] exists
+		if get number of villagers in platoon L8_Armies_NewArmyBro_Melee[Count] + L8_Armies_NewArmyBro_Melee_EnRouteNum[Count] < 80
+			PlatoonNum = Count
+		end if
+	else
+		PlatoonNum = Count
+	end if
+
+	if PlatoonNum < 0
+		Count = 1
+		while Count < 3 and PlatoonNum < 0
+			if L8_Armies_NewArmyBro_Melee[Count] exists
+				if get number of villagers in platoon L8_Armies_NewArmyBro_Melee[Count] + L8_Armies_NewArmyBro_Melee_EnRouteNum[Count] < 40
+					PlatoonNum = Count
+				end if
+			else
+				PlatoonNum = Count
+			end if
+			Count++
+		end while
+	end if
+
+	if PlatoonNum < 0
+		Count = 1
+		while Count < 3 and PlatoonNum < 0
+			if L8_Armies_NewArmyBro_Melee[Count] exists
+				if get number of villagers in platoon L8_Armies_NewArmyBro_Melee[Count] + L8_Armies_NewArmyBro_Melee_EnRouteNum[Count] < 80
+					PlatoonNum = Count
+				end if
+			else
+				PlatoonNum = Count
+			end if
+			Count++
+		end while
+	end if
+
+	if PlatoonNum >= 0
+		if can town L8_JapaneseWarCapital recruit GLOBAL_VALUE_LAND_8_ENEMY_MELEE_LEVEL platoon of size 20
+			if L8_Armies_NewArmyBro_Melee[PlatoonNum] exists
+				NewPlatoon = recruit GLOBAL_VALUE_LAND_8_ENEMY_MELEE_LEVEL town L8_JapaneseWarCapital platoon of size 20
+				L8_Armies_NewArmyBro_Melee_EnRouteNum[PlatoonNum] += 20
+				run background script L8_Armies_ArmyBroNew_Melee_MergeSafe(NewPlatoon,PlatoonNum)
+				run background script L8_Armies_ArmyBroNew_Melee_DecreaseEnRoutNumOnRemoval(NewPlatoon,PlatoonNum,20)
+			elsif PlatoonNum == 0 
+				L8_Armies_NewArmyBro_Melee[0] = recruit GLOBAL_VALUE_LAND_8_ENEMY_MELEE_LEVEL town L8_JapaneseWarCapital platoon of size 20
+			elsif get number of villagers in platoon L8_Armies_NewArmyBro_Melee[0] >= 60 // fail safe
+				L8_Armies_NewArmyBro_Melee[PlatoonNum] = split 40 soldiers from platoon L8_Armies_NewArmyBro_Melee[0]
+				if L8_Armies_NewArmyBro_Melee[PlatoonNum] exists // sanity check
+					NewPlatoon = recruit GLOBAL_VALUE_LAND_8_ENEMY_MELEE_LEVEL town L8_JapaneseWarCapital platoon of size 20
+					L8_Armies_NewArmyBro_Melee_EnRouteNum[0] += 20
+					run background script L8_Armies_ArmyBroNew_Melee_MergeSafe(NewPlatoon,0)
+					run background script L8_Armies_ArmyBroNew_Melee_DecreaseEnRoutNumOnRemoval(NewPlatoon,0,20)
+				end if
+			end if
+		end if
+	end if
+end script L8_Armies_ArmyBroNew_RecruitMelee
+
+begin script L8_Armies_ArmyBroNew_Melee_DecreaseEnRoutNumOnRemoval(MeleePlatoon,MeleeIndex,Size)
+start
+	while MeleePlatoon exists
+		if MeleePlatoon == L8_Armies_NewArmyBro_Melee[MeleeIndex]
+			MeleePlatoon = 0
+		end if
+	end while
+	L8_Armies_NewArmyBro_Melee_EnRouteNum[MeleeIndex] -= Size
+end script L8_Armies_ArmyBroNew_Melee_DecreaseEnRoutNumOnRemoval
+
+begin script L8_Armies_ArmyBroNew_BuildCatapult
+	Count = 0
+	CatapultNum = -1
+start
+	while Count < 6 and CatapultNum < 0
+		if L8_Armies_NewArmyBro_Catapults[Count] not exists
+			CatapultNum = Count
+		end if
+		Count++
+	end while
+
+	if CatapultNum >= 0
+		L8_Armies_NewArmyBro_Catapults[CatapultNum] = recruit GLOBAL_VALUE_LAND_8_ENEMY_CATAPULT_LEVEL town L8_JapaneseWarCapital siege weapon
+	end if
+end script L8_Armies_ArmyBroNew_BuildCatapult
+
+begin script L8_Armies_ArmyBroNew_HandleDefence
+	CatapultDefence1 = marker at {904.095,217.811,752.782}
+	CatapultDefence2 = marker at {726.281,202.779,1070.116}
+
+	Count = 0
+start
+	begin loop
+		// if the army brother is being attacked
+		if L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_JAPANESEOWNED and L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_NEUTRAL
+			if L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_THREATEND
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[0],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_WarCityTC)
+			else
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[0],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_WarCityTC)
+			end if
+			Count = 0
+			while Count < 4
+				if L8_Armies_NewArmyBro_Archers[Count] is on wall
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Archers[Count],variable PLATOON_AGENDA_ACTION_GET_OFF_WALL,L8_Armies_NewArmyBro_WarCityTC)
+				else
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Archers[Count],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_WarCityTC)
+				end if
+				Count++
+			end while
+			run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[0],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_WarCityTC)
+			run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[1],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_WarCityTC)
+		elsif L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_NEUTRAL
+			Count = 0
+			while Count < 4
+				if L8_Armies_NewArmyBro_Archers[Count] is on wall
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Archers[Count],variable PLATOON_AGENDA_ACTION_GET_OFF_WALL,L8_Armies_MainRaidGroupCampPos)
+				elsif L8_Armies_PlayerSiegeActive == L8_FALSE
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Archers[Count],variable PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN,L8_GreekTown)
+				else
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Archers[Count],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,L8_Armies_MainRaidGroupCampPos)
+				end if
+				Count++
+			end while
+			if L8_Armies_PlayerSiegeActive == L8_FALSE
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[0],variable PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN,L8_GreekTown)
+			else
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[0],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,L8_Armies_MainRaidGroupCampPos)
+			end if
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[0],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,L8_Armies_MainRaidGroupCampPos)
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[1],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,L8_Armies_MainRaidGroupCampPos)
+		else
+			Count = 0
+			while Count < 4
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Archers[Count],variable PLATOON_AGENDA_ACTION_GET_ON_WALL,L8_EvilWall[Count])
+				Count++
+			end while
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[0],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,CatapultDefence1)
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[1],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,CatapultDefence2)
+		end if
+		wait 5 seconds
+	end loop
+end script L8_Armies_ArmyBroNew_HandleDefence
+
+begin script L8_Armies_ArmyBroNew_HandleGroup1
+	Group1Archers = 4
+	Group1Melee = 1
+	State1PatrolPos[5]
+	CurrentPos = 0
+	PlayerPlatoon = 0
+	CatapultsDefend = L8_FALSE
+	MergeSecondGroup = L8_TRUE
+	CatapultsFollow = L8_TRUE
+	AutoAttack = L8_TRUE
+	MeleePlatoon2 = 0
+	ArcherPlatoon2 = 0
+	Wonder = 0
+
+	CatapultDefence1 = marker at {927.956,226.434,697.739}
+	CatapultDefence2 = marker at {699.982,206.008,1105.515}
+	PlayerWallSiege = marker at {1441.314,191.840,1629.469}
+	WarWallSiege = marker at {994.169,189.264,1650.715}
+	CenterTownSiege = marker at {1345.994,121.796,949.789}
+	CenterTownWall = 0
+
+	ImpressiveWallToAttackPos[3]
+	ImpressiveWallToAttack[3]
+
+	Count = 0
+	ActionFound = L8_FALSE
+	CreatureAction = 1
+
+	SplitGroupSize = 0
+
+	WarTownSiege1 = marker at {955.040,211.057,748.424}
+start
+	State1PatrolPos[0] = marker at {1486.006,149.163,1141.508}
+	State1PatrolPos[1] = marker at {1357.567,115.164,1227.640}
+	State1PatrolPos[2] = marker at {1539.913,163.560,1012.805}
+	State1PatrolPos[3] = marker at {1436.798,142.119,916.577}
+	State1PatrolPos[4] = marker at {1270.264,136.215,904.180}
+
+	ImpressiveWallToAttackPos[0] = marker at {1058.553, 205.066, 1626.022}
+	ImpressiveWallToAttackPos[1] = marker at {975.190, 197.587, 1734.012}
+	ImpressiveWallToAttackPos[2] = marker at {1447.476, 223.583, 1716.065}
+
+	Count = 0
+	while Count < 3
+		ImpressiveWallToAttack[Count] = get wall segment nearest {ImpressiveWallToAttackPos[Count]} radius 15
+		Count++
+	end while
+
+	CenterTownWall = get wall segment nearest {1340.813,119.936,968.388} radius 15
+
+	begin loop
+		// assume
+		MergeSecondGroup = L8_TRUE
+		CatapultsDefend = L8_TRUE
+		CatapultsFollow = L8_TRUE
+		AutoAttack = L8_TRUE
+		// if the main melee group has been defeated, then we are no longer so agreesive
+		if L8_Armies_NewArmyBro_Melee[Group1Melee] not exists and L8_Armies_NewArmyBro_AttackState == L8_ATTACKSTATE_FULL
+			L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_ALLSETTLEMENTS
+		end if
+		// if the army brother is being attacked
+		if L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_JAPANESEOWNED and L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_NEUTRAL
+			L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_FULL
+			CatapultsDefend = L8_FALSE
+			if L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_THREATEND
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_WarCityTC)
+				run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_WarCityTC,100,variable CR_SOLDIER)
+			elsif L8_Armies_NewArmyBro_Melee[Group1Melee] can navigate to object L8_Armies_NewArmyBro_WarCityTC
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_WarCityTC)
+				run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_WarCityTC,100,variable CR_SOLDIER)
+			else
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,WarTownSiege1)
+				if L8_Armies_PlayerSiegeActive == L8_FALSE
+					run script GCAI_SetTask_PerformRole(L8_GreekTown,100,variable CR_SOLDIER)
+				else
+					run script GCAI_SetTask_PerformRole(L8_Armies_MainRaidGroupCampPos,100,variable CR_SOLDIER)
+				end if
+			end if
+		// if the city brother has been taken
+		elsif L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_PLAYEROWNED
+			// go to a full attack
+			L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_FULL
+			// only attack if the main army exists
+			if L8_Armies_NewArmyBro_Melee[Group1Melee] exists
+				CatapultsDefend = L8_FALSE
+				CatapultsFollow = L8_FALSE
+				MergeSecondGroup = L8_FALSE
+				AutoAttack = L8_FALSE
+				// if we are close to the city center
+				if get distance from {L8_Armies_NewArmyBro_Melee[Group1Melee]} to {L8_Armies_NewArmyBro_ImpressiveCityTC} < 100
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_ImpressiveCityTC)
+					Wonder = get WONDER in L8_JapaneseCityCapital
+					if Wonder exists
+						run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(MeleePlatoon2,variable PLATOON_AGENDA_ACTION_ATTACK,Wonder)
+						run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[2],variable SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING,Wonder)
+						run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[3],variable SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING,Wonder)
+					else
+						CatapultsFollow = L8_TRUE
+					end if
+					run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_HighCenter,100,variable CR_SOLDIER)
+				else
+					// if we can get through the walls
+					if L8_Armies_NewArmyBro_Melee[Group1Melee] can navigate to {L8_Armies_NewArmyBro_HighCenter}
+						MergeSecondGroup = L8_TRUE
+						CatapultsFollow = L8_TRUE
+						run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_ImpressiveCityTC)
+						run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_HighCenter,100,variable CR_SOLDIER)
+					// if we are stuck behind the walls
+					else
+						run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,WarWallSiege)
+						run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[2],variable SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING,ImpressiveWallToAttackPos[0])
+						if MeleePlatoon2 exists
+							run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(MeleePlatoon2,variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,PlayerWallSiege)
+							run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[3],variable SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING,ImpressiveWallToAttackPos[2])
+						else
+							run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[3],variable SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING,ImpressiveWallToAttackPos[1])
+						end if
+						run script GCAI_SetTask_PerformRole(L8_GreekTown,100,variable CR_SOLDIER)
+					end if
+				end if
+			end if
+		// if the city brother is being attacked
+		elsif L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_THREATEND
+			CatapultsDefend = L8_FALSE
+			// go to a full attack
+			L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_FULL
+			if L8_Armies_NewArmyBro_Melee[Group1Melee] exists
+				PlayerPlatoon = get platoon of player 0 nearest {L8_JapaneseCityCapital} radius 300
+				if PlayerPlatoon not exists
+					PlayerPlatoon = get siege weapon of player 0 nearest {L8_JapaneseCityCapital} radius 300
+				end if
+				if PlayerPlatoon exists
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK,PlayerPlatoon)
+				elsif get distance from {L8_JapaneseCityCapital} to {MyCreature} <= 300 and HEALTH of MyCreature > 0
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK,MyCreature)
+				else
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_ImpressiveCityTC)
+				end if
+				if L8_Armies_PlayerSiegeActive == L8_FALSE
+					run script GCAI_SetTask_PerformRole(L8_GreekTown,100,variable CR_SOLDIER)
+				else
+					run script GCAI_SetTask_PerformRole(L8_Armies_MainRaidGroupCampPos,100,variable CR_SOLDIER)
+				end if
+			end if
+		// if we want to take the player city
+		elsif L8_Armies_NewArmyBro_AttackState == L8_ATTACKSTATE_FULL
+			CatapultsDefend = L8_FALSE
+			// should check if we can get to the players city...
+			if L8_Armies_PlayerSiegeActive == L8_FALSE
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN,L8_GreekTown)
+				run script GCAI_SetTask_PerformRole(L8_GreekTown,100,variable CR_SOLDIER)
+			else
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,L8_Armies_MainRaidGroupCampPos)
+				run script GCAI_SetTask_PerformRole(L8_Armies_MainRaidGroupCampPos,100,variable CR_SOLDIER)
+			end if
+		// if we are defending the central town
+		elsif L8_Armies_NewArmyBro_SettlementState[3] == L8_TOWNTHREAT_PLAYEROWNED or L8_Armies_NewArmyBro_SettlementState[3] == L8_TOWNTHREAT_THREATEND
+			if L8_Armies_NewArmyBro_Melee[Group1Melee] exists
+				CatapultsDefend = L8_FALSE
+				PlayerPlatoon = get platoon of player 0 nearest {L8_MinorSettlement[3]} radius 300
+				if PlayerPlatoon not exists
+					PlayerPlatoon = get siege weapon of player 0 nearest {L8_MinorSettlement[3]} radius 300
+				end if
+				if PlayerPlatoon exists
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK,PlayerPlatoon)
+					run script GCAI_SetTask_PerformRole(PlayerPlatoon,50,variable CR_SOLDIER)
+				elsif get distance from {L8_MinorSettlement[3]} to {MyCreature} <= 300 and HEALTH of MyCreature > 0
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK,MyCreature)
+					run script GCAI_SetTask_PerformRole(MyCreature,50,variable CR_SOLDIER)
+				else
+					if L8_Armies_NewArmyBro_Melee[Group1Melee] can navigate to {L8_Armies_NewArmyBro_SettlementCenter[3]}
+						if PLAYER of L8_MinorSettlement[3] == 1
+							run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_SettlementTC[3])
+						else
+							run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_SettlementTC[3])
+						end if
+						run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_SettlementCenter[3],100,variable CR_SOLDIER)
+					else
+						AutoAttack = L8_FALSE
+						run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,CenterTownSiege)
+						run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[2],variable SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING,CenterTownWall)
+						run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[3],variable SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING,CenterTownWall)
+						if GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+							run script GCAI_SetInteruption_SmashWall(CenterTownSiege,CenterTownWall,GCAI_TRUE)
+						end if
+					end if
+				end if
+			end if
+		// if we are actively protecting towns
+		elsif L8_Armies_NewArmyBro_AttackState != L8_ATTACKSTATE_NONE
+			CatapultsDefend = L8_FALSE
+			Count = 2
+			ActionFound = L8_FALSE
+			while Count >= 0 and ActionFound == L8_FALSE
+				if L8_Armies_NewArmyBro_SettlementState[Count] == L8_TOWNTHREAT_PLAYEROWNED
+					ActionFound = L8_TRUE
+					AutoAttack = L8_FALSE
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_SettlementTC[Count])
+				end if
+				Count--
+			end while
+			Count = 2
+			while Count >= 0 and ActionFound == L8_FALSE
+				if L8_Armies_NewArmyBro_SettlementState[Count] == L8_TOWNTHREAT_THREATEND
+					ActionFound = L8_TRUE
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_SettlementTC[Count])
+				end if
+				Count--
+			end while
+			if ActionFound == L8_FALSE and not get current L8_Armies_NewArmyBro_Melee[Group1Melee] action == variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER
+				Count = 2
+				while Count >= 0 and ActionFound == L8_FALSE
+					if L8_Armies_NewArmyBro_SettlementState[Count] == L8_TOWNTHREAT_NEUTRAL
+						ActionFound = L8_TRUE
+						run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_SettlementTC[Count])
+					end if
+					Count--
+				end while
+				if ActionFound == L8_FALSE
+					CatapultsDefend = L8_TRUE
+					if number from 1 to 12 == 1
+						CurrentPos = (number from 1 to 5) - 1
+					end if
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,State1PatrolPos[CurrentPos])
+				end if
+			end if
+			if PLAYER of L8_MinorSettlement[3] != 1 and not L8_Armies_NewArmyBro_Melee[Group1Melee] can navigate to {L8_Armies_NewArmyBro_SettlementCenter[3]}
+				if GCAI_CurrentInterupt == GCAI_INTERUPT_NONE
+					run script GCAI_SetInteruption_SmashWall(CenterTownSiege,CenterTownWall,GCAI_TRUE)
+				end if
+			else
+				if number from 1 to 12 == 1
+					CreatureAction = number from 1 to 2
+				end if
+				if CreatureAction == 1
+					run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_HighCenter,300,variable CR_GATHERER)
+				else
+					run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_HighCenter,300,variable CR_BUILDER)
+				end if
+			end if
+		// otherwise
+		else
+			if number from 1 to 12 == 1
+				CurrentPos = (number from 1 to 5) - 1
+			end if
+			run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group1Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,State1PatrolPos[CurrentPos])
+			if number from 1 to 12 == 1
+				CreatureAction = number from 1 to 2
+			end if
+			if CreatureAction == 1
+				run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_HighCenter,300,variable CR_GATHERER)
+			else
+				run script GCAI_SetTask_PerformRole(L8_Armies_NewArmyBro_HighCenter,300,variable CR_BUILDER)
+			end if
+		end if
+
+		// archers always follow
+		if L8_Armies_NewArmyBro_Melee[Group1Melee] exists and L8_Armies_NewArmyBro_Archers[Group1Archers] exists
+			run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Archers[Group1Archers],variable PLATOON_AGENDA_ACTION_LINK_TO_ARMY_MEMBER,L8_Armies_NewArmyBro_Melee[Group1Melee])
+		end if
+		if MeleePlatoon2 exists and ArcherPlatoon2 exists
+			run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(ArcherPlatoon2,variable PLATOON_AGENDA_ACTION_LINK_TO_ARMY_MEMBER,MeleePlatoon2)
+		end if
+		if L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_JAPANESEOWNED or L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_NEUTRAL and CatapultsDefend == L8_TRUE
+			CatapultsDefend = L8_TRUE
+			CatapultsFollow = L8_TRUE
+		end if
+		if CatapultsDefend == L8_TRUE
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[2],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,CatapultDefence1)
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[3],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,CatapultDefence2)
+		elsif CatapultsFollow == L8_TRUE
+			if L8_Armies_NewArmyBro_Melee[Group1Melee] exists
+				run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[2],variable SIEGEWEAPON_AGENDA_ACTION_FOLLOW_OBJECT,L8_Armies_NewArmyBro_Melee[Group1Melee])
+				run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[3],variable SIEGEWEAPON_AGENDA_ACTION_FOLLOW_OBJECT,L8_Armies_NewArmyBro_Melee[Group1Melee])
+			end if
+		end if
+		if MergeSecondGroup == L8_TRUE or (MeleePlatoon2 not exists and ArcherPlatoon2 exists)
+			if MeleePlatoon2 exists
+				run background script L8_Armies_ArmyBroNew_Melee_MergeSafe(MeleePlatoon2,Group1Melee)
+				MeleePlatoon2 = 0
+			end if
+			if ArcherPlatoon2 exists
+				run background script L8_Armies_ArmyBroNew_Archer_MergeSafe(ArcherPlatoon2,Group1Archers)
+				ArcherPlatoon2 = 0
+			end if
+		elsif MergeSecondGroup == L8_FALSE
+			if MeleePlatoon2 not exists
+				SplitGroupSize = (get number of villagers in platoon L8_Armies_NewArmyBro_Melee[Group1Melee])/2
+				if SplitGroupSize >= 20
+					MeleePlatoon2 = split SplitGroupSize soldiers from platoon L8_Armies_NewArmyBro_Melee[Group1Melee]
+					L8_Armies_NewArmyBro_Melee_EnRouteNum[Group1Melee] += SplitGroupSize
+					run background script L8_Armies_ArmyBroNew_Melee_DecreaseEnRoutNumOnRemoval(MeleePlatoon2,Group1Melee,SplitGroupSize)
+				end if
+			end if
+			if ArcherPlatoon2 not exists and MeleePlatoon2 exists
+				SplitGroupSize = (get number of villagers in platoon L8_Armies_NewArmyBro_Archers[Group1Archers])/2
+				if SplitGroupSize >= 20
+					ArcherPlatoon2 = split SplitGroupSize soldiers from platoon L8_Armies_NewArmyBro_Archers[Group1Archers]
+					L8_Armies_NewArmyBro_Archers_EnRouteNum[Group1Archers] += SplitGroupSize
+					run background script L8_Armies_ArmyBroNew_Archer_DecreaseEnRoutNumOnRemoval(ArcherPlatoon2,Group1Archers,SplitGroupSize)
+				end if
+			end if
+		end if
+		if AutoAttack == L8_TRUE
+			if L8_Armies_NewArmyBro_Melee[Group1Melee] exists
+				enable platoon L8_Armies_NewArmyBro_Melee[Group1Melee] respond to player army
+				enable platoon L8_Armies_NewArmyBro_Melee[Group1Melee] respond to local platoon attack
+			end if
+			if L8_Armies_NewArmyBro_Archers[Group1Archers] exists
+				enable platoon L8_Armies_NewArmyBro_Archers[Group1Archers] respond to player army
+				enable platoon L8_Armies_NewArmyBro_Archers[Group1Archers] respond to local platoon attack
+			end if
+			if MeleePlatoon2 exists
+				enable platoon MeleePlatoon2 respond to player army
+				enable platoon MeleePlatoon2 respond to local platoon attack
+			end if
+			if ArcherPlatoon2 exists
+				enable platoon ArcherPlatoon2 respond to player army
+				enable platoon ArcherPlatoon2 respond to local platoon attack
+			end if
+		else
+			if L8_Armies_NewArmyBro_Melee[Group1Melee] exists
+				disable platoon L8_Armies_NewArmyBro_Melee[Group1Melee] respond to player army
+				disable platoon L8_Armies_NewArmyBro_Melee[Group1Melee] respond to local platoon attack
+			end if
+			if L8_Armies_NewArmyBro_Archers[Group1Archers] exists
+				disable platoon L8_Armies_NewArmyBro_Archers[Group1Archers] respond to player army
+				disable platoon L8_Armies_NewArmyBro_Archers[Group1Archers] respond to local platoon attack
+			end if
+			if MeleePlatoon2 exists
+				disable platoon MeleePlatoon2 respond to player army
+				disable platoon MeleePlatoon2 respond to local platoon attack
+			end if
+			if ArcherPlatoon2 exists
+				disable platoon ArcherPlatoon2 respond to player army
+				disable platoon ArcherPlatoon2 respond to local platoon attack
+			end if
+		end if
+
+		wait 5 seconds
+	end loop
+end script L8_Armies_ArmyBroNew_HandleGroup1
+
+begin script L8_Armies_ArmyBroNew_HandleGroup2
+	Group2Archers = 5
+	Group2Melee = 2
+	State1PatrolPos[3]
+	CurrentPos = 0
+	ArchersAutoFollow = L8_TRUE
+	CatapultsDefend = L8_TRUE
+	CatapultsFollow = L8_TRUE
+	AutoAttack = L8_TRUE
+	CatapultDefence1 = marker at {768.446,204.310,1050.306}
+	CatapultDefence2 = marker at {929.554,217.438,810.929}
+
+	CenterTownSiege = marker at {1294.707,108.277,1186.663}
+
+	WarTownSiege2 = marker at {751.142,199.377,1097.915}
+
+	CenterTownArchers[2]
+	CenterTownArcherWall[2]
+	CenterTownArcherWallPos[2]
+
+	Count = 0
+start
+	State1PatrolPos[0] = marker at {1032.569,132.413,993.029}
+	State1PatrolPos[1] = marker at {836.168,161.089,1143.419}
+	State1PatrolPos[2] = marker at {1013.292,197.146,789.856}
+
+	CenterTownArcherWallPos[0] = marker at {1409.372,136.539,1098.823}
+	CenterTownArcherWallPos[1] = marker at {1436.353,135.107,988.967}
+
+	Count = 0
+	while Count < 2
+		CenterTownArcherWall[Count] = get wall segment nearest {CenterTownArcherWallPos[Count]} radius 15
+		Count++
+	end while
+
+	begin loop
+		ArchersAutoFollow = L8_TRUE
+		CatapultsDefend = L8_TRUE
+		CatapultsFollow = L8_TRUE
+		AutoAttack = L8_TRUE
+		// if the army brother is being attacked
+		if L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_JAPANESEOWNED and L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_NEUTRAL
+			CatapultsDefend = L8_FALSE
+			if L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_THREATEND
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_WarCityTC)
+			elsif L8_Armies_NewArmyBro_Melee[Group2Melee] can navigate to object L8_Armies_NewArmyBro_WarCityTC
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_WarCityTC)
+			else
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,WarTownSiege2)
+			end if
+		elsif L8_Armies_NewArmyBro_AttackState == L8_ATTACKSTATE_FULL or L8_Armies_NewArmyBro_AttackState == L8_ATTACKSTATE_ALLSETTLEMENTS
+			CatapultsDefend = L8_FALSE
+			if L8_Armies_NewArmyBro_Melee[Group2Melee] exists
+				if L8_Armies_NewArmyBro_AttackState == L8_ATTACKSTATE_FULL and (L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_PLAYEROWNED or L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_THREATEND)
+					// should check if we can get to the players city...
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_ATTACK_ENEMY_TOWN,L8_GreekTown)
+				elsif PLAYER of L8_MinorSettlement[3] != 1
+					AutoAttack = L8_FALSE
+					if L8_Armies_NewArmyBro_Melee[Group2Melee] can navigate to {L8_Armies_NewArmyBro_SettlementCenter[3]}
+						run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_SettlementTC[3])
+					else
+						run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,CenterTownSiege)
+					end if
+				else
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_SettlementTC[3])
+					Count = 0
+					while Count < 2
+						if CenterTownArchers[Count] not exists
+							if get number of villagers in platoon L8_Armies_NewArmyBro_Archers[Group2Archers] >= 40
+								CenterTownArchers[Count] = split 20 soldiers from platoon L8_Armies_NewArmyBro_Archers[Group2Archers]
+								run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(CenterTownArchers[Count],variable PLATOON_AGENDA_ACTION_GET_ON_WALL,CenterTownArcherWall[Count])
+							end if
+						end if
+						Count++
+					end while
+				end if
+			end if
+		else
+			if number from 1 to 12 == 1
+				CurrentPos = (number from 1 to 3) - 1
+			end if
+			run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_NewArmyBro_Melee[Group2Melee],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,State1PatrolPos[CurrentPos])
+		end if
+
+		if ArchersAutoFollow == L8_TRUE
+			if L8_Armies_NewArmyBro_Melee[Group2Melee] exists // don't move archers unless we have support
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_NewArmyBro_Archers[Group2Archers],variable PLATOON_AGENDA_ACTION_LINK_TO_ARMY_MEMBER,L8_Armies_NewArmyBro_Melee[Group2Melee])
+			end if
+		end if
+		if L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_JAPANESEOWNED or L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_NEUTRAL and CatapultsDefend == L8_TRUE
+			CatapultsDefend = L8_TRUE
+			CatapultsFollow = L8_TRUE
+		end if
+		if CatapultsDefend == L8_TRUE
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[4],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,CatapultDefence1)
+			run script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(L8_Armies_NewArmyBro_Catapults[5],variable SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS,CatapultDefence2)
+		elsif CatapultsFollow == L8_TRUE
+			if L8_Armies_NewArmyBro_Melee[Group2Melee] exists
+				run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[4],variable SIEGEWEAPON_AGENDA_ACTION_FOLLOW_OBJECT,L8_Armies_NewArmyBro_Melee[Group2Melee])
+				run script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(L8_Armies_NewArmyBro_Catapults[5],variable SIEGEWEAPON_AGENDA_ACTION_FOLLOW_OBJECT,L8_Armies_NewArmyBro_Melee[Group2Melee])
+			end if
+		end if
+		if AutoAttack == L8_TRUE
+			if L8_Armies_NewArmyBro_Melee[Group2Melee] exists
+				enable platoon L8_Armies_NewArmyBro_Melee[Group2Melee] respond to player army
+				enable platoon L8_Armies_NewArmyBro_Melee[Group2Melee] respond to local platoon attack
+			end if
+			if L8_Armies_NewArmyBro_Archers[Group2Archers] exists
+				enable platoon L8_Armies_NewArmyBro_Archers[Group2Archers] respond to player army
+				enable platoon L8_Armies_NewArmyBro_Archers[Group2Archers] respond to local platoon attack
+			end if
+		else
+			if L8_Armies_NewArmyBro_Melee[Group2Melee] exists
+				disable platoon L8_Armies_NewArmyBro_Melee[Group2Melee] respond to player army
+				disable platoon L8_Armies_NewArmyBro_Melee[Group2Melee] respond to local platoon attack
+			end if
+			if L8_Armies_NewArmyBro_Archers[Group2Archers] exists
+				disable platoon L8_Armies_NewArmyBro_Archers[Group2Archers] respond to player army
+				disable platoon L8_Armies_NewArmyBro_Archers[Group2Archers] respond to local platoon attack
+			end if
+		end if
+
+		wait 5 seconds
+	end loop
+end script L8_Armies_ArmyBroNew_HandleGroup2
+
+begin script L8_Armies_ArmyBroNew_SettlementState
+	Status = 0
+	PlayerPlatoon = 0
+	FirstSettlementPlayerTakes = 0
+
+	Count = 0
+start
+	begin loop
+		Count = 0
+		while Count < 4
+			if PLAYER of L8_MinorSettlement[Count] == 0
+				L8_Armies_NewArmyBro_SettlementState[Count] = L8_TOWNTHREAT_PLAYEROWNED
+			else
+				PlayerPlatoon = get platoon of player 0 nearest {L8_Armies_NewArmyBro_SettlementCenter[Count]} radius L8_Armies_NewArmyBro_SettlementRadius[Count]
+				if PlayerPlatoon not exists
+					PlayerPlatoon = get siege weapon of player 0 nearest {L8_Armies_NewArmyBro_SettlementCenter[Count]} radius L8_Armies_NewArmyBro_SettlementRadius[Count]
+				end if
+				if PlayerPlatoon exists or (get distance from {L8_Armies_NewArmyBro_SettlementCenter[Count]} to {MyCreature} <= L8_Armies_NewArmyBro_SettlementRadius[Count] and HEALTH of MyCreature > 0)
+					L8_Armies_NewArmyBro_SettlementState[Count] = L8_TOWNTHREAT_THREATEND
+					if L8_Armies_NewArmyBro_AttackState != L8_ATTACKSTATE_FULL
+						L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_ALLSETTLEMENTS
+						L8_Armies_PlayerSiegeAllowed = L8_TRUE
+					end if
+				elsif PLAYER of L8_MinorSettlement[Count] == 1
+					L8_Armies_NewArmyBro_SettlementState[Count] = L8_TOWNTHREAT_JAPANESEOWNED
+				else
+					L8_Armies_NewArmyBro_SettlementState[Count] = L8_TOWNTHREAT_NEUTRAL
+				end if
+			end if
+			if variable get town L8_MinorSettlement[Count] status == variable TOWN_STATUS_MIGRATION_STARTED and PLAYER of get town L8_MinorSettlement[Count] is migrating to == 0
+				if L8_Armies_NewArmyBro_AttackState != L8_ATTACKSTATE_FULL
+					L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_ALLSETTLEMENTS
+					L8_Armies_PlayerSiegeAllowed = L8_TRUE
+				end if
+			end if
+		Count++
+		end while
+		// may as well put this here
+		if L8_PlayerUniqueSettlementsTaken >= 4
+			L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_FULL
+		end if
+		if L8_Armies_NewArmyBro_AttackState == L8_ATTACKSTATE_FULL
+			L8_Armies_PlayerSiegeAllowed = L8_TRUE
+		end if
+		wait 5 seconds
+	end loop
+end script L8_Armies_ArmyBroNew_SettlementState
+
+begin script L8_Armies_ArmyBroNew_HandleImpressiveCityState
+	PlayerPlatoon = 0
+start
+	begin loop
+		if PLAYER of L8_JapaneseCityCapital == 0
+			L8_Armies_NewArmyBro_ImpressiveCityState = L8_TOWNTHREAT_PLAYEROWNED
+			if L8_Armies_NumReplenishesAllowed < 4
+				L8_Armies_NumReplenishesAllowed = 4
+			end if
+		else
+			PlayerPlatoon = get platoon of player 0 nearest {L8_Armies_NewArmyBro_HighCenter} radius L8_Armies_NewArmyBro_HighRadius
+			if PlayerPlatoon not exists
+				PlayerPlatoon = get siege weapon of player 0 nearest {L8_Armies_NewArmyBro_HighCenter} radius L8_Armies_NewArmyBro_HighRadius
+			end if
+			if PlayerPlatoon exists or (get distance from {L8_Armies_NewArmyBro_HighCenter} to {MyCreature} <= L8_Armies_NewArmyBro_HighRadius and HEALTH of MyCreature > 0)
+				L8_Armies_NewArmyBro_ImpressiveCityState = L8_TOWNTHREAT_THREATEND
+				if L8_Armies_NumReplenishesAllowed < 2
+					L8_Armies_NumReplenishesAllowed = 2
+				end if
+			elsif PLAYER of L8_JapaneseCityCapital == 1
+				L8_Armies_NewArmyBro_ImpressiveCityState = L8_TOWNTHREAT_JAPANESEOWNED
+			else // not actually the player, but neutral, but the behaviour should be the same (since the only way this can happen is if the player takes via impressiveness.
+				L8_Armies_NewArmyBro_ImpressiveCityState = L8_TOWNTHREAT_PLAYEROWNED
+			end if
+		end if
+		if L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_PLAYEROWNED
+			if L8_Armies_NumReplenishesAllowed < 4
+				L8_Armies_NumReplenishesAllowed = 4
+			end if
+		end if
+	end loop
+end script L8_Armies_ArmyBroNew_HandleImpressiveCityState
+
+begin script L8_Armies_ArmyBroNew_HandleImpressiveCityDefence
+	PlayerWallCenter = marker at {1369.108,217.616,1673.732}	//--Peace City PlayerWall Defence - Center
+	PlayerWallBounds = marker at {1469.354,168.738,1585.986}	//--Peace City PlayerWall Defence - Bounds
+	PlayerWallRadius = 0
+	WarWallCenter = marker at {1086.152,222.721,1719.355}		//--Peace City WarWall Defence - Center
+	WarWallBounds = marker at {935.458,183.951,1752.636}		//--Peace City WarWall Defence - Bounds
+	WarWallRadius = 0
+
+	PlayerPlatoon[2]
+	BranchPlatoonIndex[2]
+	BranchedPlatoon[2]
+	BranchedPlatoonIndex = 0
+
+	BestDistance = 0
+	TestDistance = 0
+	BranchPlatoonIndexCount = 0
+
+	Count = 0
+	TokenCreationPoint = marker at {1292.536,281.324,1849.075}
+start
+	PlayerWallRadius = get distance from {PlayerWallCenter} to {PlayerWallBounds}
+	WarWallRadius = get distance from {WarWallCenter} to {WarWallBounds}
+
+	begin loop
+		BranchedPlatoonIndex = 0
+		while BranchedPlatoonIndex < 2
+			if BranchedPlatoonIndex == 0
+				PlayerPlatoon[BranchedPlatoonIndex] = get platoon of player 0 nearest {PlayerWallCenter} radius PlayerWallRadius
+				if PlayerPlatoon[BranchedPlatoonIndex] not exists
+					PlayerPlatoon[BranchedPlatoonIndex] = get siege weapon of player 0 nearest {PlayerWallCenter} radius PlayerWallRadius
+				end if
+				if PlayerPlatoon[BranchedPlatoonIndex] not exists
+					PlayerPlatoon[BranchedPlatoonIndex] = get platoon of player 0 nearest {WarWallCenter} radius WarWallRadius
+				end if
+				if PlayerPlatoon[BranchedPlatoonIndex] not exists
+					PlayerPlatoon[BranchedPlatoonIndex] = get siege weapon of player 0 nearest {WarWallCenter} radius WarWallRadius
+				end if
+			else
+				PlayerPlatoon[BranchedPlatoonIndex] = get platoon of player 0 nearest {WarWallCenter} radius WarWallRadius
+				if PlayerPlatoon[BranchedPlatoonIndex] not exists
+					PlayerPlatoon[BranchedPlatoonIndex] = get siege weapon of player 0 nearest {WarWallCenter} radius WarWallRadius
+				end if
+				if PlayerPlatoon[BranchedPlatoonIndex] not exists
+					PlayerPlatoon[BranchedPlatoonIndex] = get platoon of player 0 nearest {PlayerWallCenter} radius PlayerWallRadius
+				end if
+				if PlayerPlatoon[BranchedPlatoonIndex] not exists
+					PlayerPlatoon[BranchedPlatoonIndex] = get siege weapon of player 0 nearest {PlayerWallCenter} radius PlayerWallRadius
+				end if
+			end if
+			if PlayerPlatoon[BranchedPlatoonIndex] exists
+				if BranchedPlatoon[BranchedPlatoonIndex] not exists
+					BranchPlatoonIndex[BranchedPlatoonIndex] = -1
+					BestDistance = 100000
+					BranchPlatoonIndexCount = 0
+					while BranchPlatoonIndexCount < 3
+						if L8_Armies_NewArmyBro_Melee[BranchPlatoonIndexCount] exists
+							if get number of villagers in platoon L8_Armies_NewArmyBro_Melee[BranchPlatoonIndexCount] >= 40
+								TestDistance = get distance from {L8_Armies_NewArmyBro_Melee[BranchPlatoonIndexCount]} to {PlayerWallCenter}
+								if TestDistance < BestDistance
+									BestDistance = TestDistance
+									BranchPlatoonIndex[BranchedPlatoonIndex] = BranchPlatoonIndexCount
+								end if
+							end if
+						end if
+						BranchPlatoonIndexCount++
+					end while
+					if BranchPlatoonIndex[BranchedPlatoonIndex] >= 0
+						// make sure it is still good
+						if L8_Armies_NewArmyBro_Melee[BranchPlatoonIndex[BranchedPlatoonIndex]] exists
+							if get number of villagers in platoon L8_Armies_NewArmyBro_Melee[BranchPlatoonIndex[BranchedPlatoonIndex]] >= 40
+								BranchedPlatoon[BranchedPlatoonIndex] = split 20 soldiers from platoon L8_Armies_NewArmyBro_Melee[BranchPlatoonIndex[BranchedPlatoonIndex]]
+								L8_Armies_NewArmyBro_Melee_EnRouteNum[BranchPlatoonIndex[BranchedPlatoonIndex]] += 20
+								run background script L8_Armies_ArmyBroNew_Melee_DecreaseEnRoutNumOnRemoval(BranchedPlatoon[BranchedPlatoonIndex],BranchPlatoonIndex[BranchedPlatoonIndex],20)
+							end if
+						end if
+					end if
+				end if
+				if BranchedPlatoon[BranchedPlatoonIndex] exists and PlayerPlatoon[BranchedPlatoonIndex] exists
+					run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(BranchedPlatoon[BranchedPlatoonIndex],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,PlayerPlatoon[BranchedPlatoonIndex])
+				end if
+			elsif BranchedPlatoon[BranchedPlatoonIndex] exists
+				run background script L8_Armies_ArmyBroNew_Archer_MergeSafe(BranchedPlatoon[BranchedPlatoonIndex],BranchPlatoonIndex[BranchedPlatoonIndex])
+				BranchedPlatoon[BranchedPlatoonIndex] = 0
+			end if
+			BranchedPlatoonIndex++
+		end while
+		Count = 0
+		while Count < 4
+			if L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_JAPANESEOWNED
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_ImpressiveToken_Archers[Count],variable PLATOON_AGENDA_ACTION_GET_ON_WALL,L8_GoodWall[Count])
+			elsif L8_Armies_ImpressiveToken_Archers[Count] is on wall
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_ImpressiveToken_Archers[Count],variable PLATOON_AGENDA_ACTION_GET_OFF_WALL,TokenCreationPoint)
+			else
+				run script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(L8_Armies_ImpressiveToken_Archers[Count],variable PLATOON_AGENDA_ACTION_MOVE_TO_POS,TokenCreationPoint)
+			end if
+			Count++
+		end while
+		if L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_PLAYEROWNED
+			run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_ImpressiveToken_Melee,variable PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER,L8_Armies_NewArmyBro_ImpressiveCityTC)
+		elsif L8_Armies_NewArmyBro_ImpressiveCityState != L8_TOWNTHREAT_JAPANESEOWNED
+			run script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(L8_Armies_ImpressiveToken_Melee,variable PLATOON_AGENDA_ACTION_MOVE_TO_OBJECT,L8_Armies_NewArmyBro_ImpressiveCityTC)
+		end if
+		wait 10 seconds
+	end loop
+
+end script L8_Armies_ArmyBroNew_HandleImpressiveCityDefence
+
+begin script L8_Armies_ArmyBroNew_HandleWarCityState
+	PlayerPlatoon = 0
+start
+	begin loop
+		if PLAYER of L8_JapaneseWarCapital == 0
+			L8_Armies_NewArmyBro_WarCityState = L8_TOWNTHREAT_PLAYEROWNED
+		else
+			PlayerPlatoon = get platoon of player 0 nearest {L8_Armies_NewArmyBro_WarCityCenter} radius L8_Armies_NewArmyBro_WarCityRadius
+			if PlayerPlatoon not exists
+				PlayerPlatoon = get siege weapon of player 0 nearest {L8_Armies_NewArmyBro_WarCityCenter} radius L8_Armies_NewArmyBro_WarCityRadius
+			end if
+			if PlayerPlatoon exists or (get distance from {L8_Armies_NewArmyBro_WarCityCenter} to {MyCreature} <= L8_Armies_NewArmyBro_WarCityRadius and HEALTH of MyCreature > 0)
+				L8_Armies_NewArmyBro_WarCityState = L8_TOWNTHREAT_THREATEND
+				if L8_Armies_NumReplenishesAllowed < 2
+					L8_Armies_NumReplenishesAllowed = 2
+				end if
+			elsif PLAYER of L8_JapaneseWarCapital == 1
+				L8_Armies_NewArmyBro_WarCityState = L8_TOWNTHREAT_JAPANESEOWNED
+			else
+				if L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_NEUTRAL
+					L8_Armies_NewArmyBro_AttackState = L8_ATTACKSTATE_FULL
+					L8_Armies_NewArmyBro_WarCityState = L8_TOWNTHREAT_NEUTRAL
+				end if
+			end if
+		end if
+	end loop
+end script L8_Armies_ArmyBroNew_HandleWarCityState
+
+begin script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe(Platoon,Action,Object)
+start
+	if Platoon exists
+		if not platoon Platoon current action is constant Action using Object
+			clear Platoon action queue
+			add action constant Action using Object to Platoon action queue
+		end if
+	end if
+end script L8_Armies_ArmyBroNew_SetPlatoonActionObjectSafe
+
+begin script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe(Platoon,Action,Pos)
+start
+	if Platoon exists
+		if not platoon Platoon current action is constant Action using {Pos}
+			clear Platoon action queue
+			add action constant Action using {Pos} to Platoon action queue
+		end if
+	end if
+end script L8_Armies_ArmyBroNew_SetPlatoonActionPosSafe
+
+begin script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe(Catapult,Action,Object)
+start
+	if Catapult exists
+		if Action == variable SIEGEWEAPON_AGENDA_ACTION_FOLLOW_OBJECT and get distance from {Catapult} to {Object} <= 50 and siege weapon Catapult current action is constant Action using Object
+			clear siege weapon Catapult action queue
+		else
+			if not siege weapon Catapult current action is constant Action using Object
+				if get distance from {Catapult} to {Object} > 50
+					clear siege weapon Catapult action queue
+					add action constant Action using Object to siege weapon Catapult action queue
+				end if
+			end if
+		end if
+	end if
+end script L8_Armies_ArmyBroNew_SetCatapultActionObjectSafe
+
+begin script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe(Catapult,Action,Pos)
+start
+	if Catapult exists
+		if not siege weapon Catapult current action is constant Action using {Pos}
+			if get distance from {Catapult} to {Pos} > 50
+				clear siege weapon Catapult action queue
+				add action constant Action using {Pos} to siege weapon Catapult action queue
+			end if
+		end if
+	end if
+end script L8_Armies_ArmyBroNew_SetCatapultActionPosSafe
+
+begin script L8_Armies_ArmyBroNew_HandleArmyOwnership
+	Status = 0
+start
+	begin loop
+		if PLAYER of L8_JapaneseCityCapital == 1 and PLAYER of L8_JapaneseWarCapital == 1
+			Status = variable get town L8_JapaneseCityCapital status
+			if Status == variable TOWN_STATUS_BEING_CAPTURED or Status == variable TOWN_STATUS_CAPTURED
+				set all platoon of town L8_JapaneseCityCapital to town L8_JapaneseWarCapital
+			else
+				set all platoon of town L8_JapaneseWarCapital to town L8_JapaneseCityCapital
+			end if
+		end if
+		wait 3 seconds
+	end loop
+end script L8_Armies_ArmyBroNew_HandleArmyOwnership
+
+begin script L8_Armies_ArmyBroNew_HandleGates
+	PlayerPlatoon = 0
+	GoodGatesAreOpen = L8_TRUE
+	EvilGatesAreOpen = L8_TRUE
+start
+	wait until L8_IntroPlayed == L8_TRUE
+
+	set gate L8_GoodGateHouse[0] open
+	set gate L8_GoodGateHouse[1] open
+	set gate L8_EvilGateHouse[0] open
+	set gate L8_EvilGateHouse[1] open
+
+	begin loop
+		if L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_PLAYEROWNED and L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_NEUTRAL
+			if EvilGatesAreOpen == L8_TRUE
+				if L8_Armies_NewArmyBro_WarCityState != L8_TOWNTHREAT_THREATEND
+					PlayerPlatoon = get platoon of player 0 nearest {L8_EvilGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_EvilGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get platoon of player 0 nearest {L8_EvilGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_EvilGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					end if
+					if PlayerPlatoon exists or ((get distance from {L8_EvilGateHouse[0]} to {MyCreature} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE_FOR_CREATURE or get distance from {L8_EvilGateHouse[1]} to {MyCreature} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE_FOR_CREATURE) and HEALTH of MyCreature > 0)
+						EvilGatesAreOpen = L8_FALSE
+						set gate L8_EvilGateHouse[0] close
+						set gate L8_EvilGateHouse[1] close
+					else
+						set gate L8_EvilGateHouse[0] open
+						set gate L8_EvilGateHouse[1] open
+					end if
+				else
+					set gate L8_EvilGateHouse[0] open
+					set gate L8_EvilGateHouse[1] open
+				end if
+			else
+				if L8_Armies_NewArmyBro_WarCityState == L8_TOWNTHREAT_THREATEND
+					EvilGatesAreOpen = L8_TRUE
+					set gate L8_EvilGateHouse[0] open
+					set gate L8_EvilGateHouse[1] open
+				else
+					PlayerPlatoon = get platoon of player 0 nearest {L8_EvilGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_EvilGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get platoon of player 0 nearest {L8_EvilGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_EvilGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					end if
+					if PlayerPlatoon not exists and ((get distance from {L8_EvilGateHouse[0]} to {MyCreature} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE_FOR_CREATURE and get distance from {L8_EvilGateHouse[1]} to {MyCreature} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE_FOR_CREATURE) or HEALTH of MyCreature == 0)
+						EvilGatesAreOpen = L8_TRUE
+						set gate L8_EvilGateHouse[0] open
+						set gate L8_EvilGateHouse[1] open
+					else
+						set gate L8_EvilGateHouse[0] close
+						set gate L8_EvilGateHouse[1] close
+					end if
+				end if
+			end if
+		end if
+
+		if L8_Armies_NewArmyBro_ImpressiveCityState != L8_TOWNTHREAT_PLAYEROWNED
+			if GoodGatesAreOpen == L8_TRUE
+				if L8_Armies_NewArmyBro_ImpressiveCityState != L8_TOWNTHREAT_THREATEND
+					PlayerPlatoon = get platoon of player 0 nearest {L8_GoodGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_GoodGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get platoon of player 0 nearest {L8_GoodGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_GoodGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+					end if
+					if PlayerPlatoon exists or ((get distance from {L8_GoodGateHouse[0]} to {MyCreature} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE_FOR_CREATURE or get distance from {L8_GoodGateHouse[1]} to {MyCreature} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE_FOR_CREATURE) and HEALTH of MyCreature > 0)
+						GoodGatesAreOpen = L8_FALSE
+						set gate L8_GoodGateHouse[0] close
+						set gate L8_GoodGateHouse[1] close
+					else
+						set gate L8_GoodGateHouse[0] open
+						set gate L8_GoodGateHouse[1] open
+					end if
+				else
+					set gate L8_GoodGateHouse[0] open
+					set gate L8_GoodGateHouse[1] open
+				end if
+			else
+				if L8_Armies_NewArmyBro_ImpressiveCityState == L8_TOWNTHREAT_THREATEND
+					GoodGatesAreOpen = L8_TRUE
+					set gate L8_GoodGateHouse[0] open
+					set gate L8_GoodGateHouse[1] open
+				else
+					PlayerPlatoon = get platoon of player 0 nearest {L8_GoodGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_GoodGateHouse[0]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get platoon of player 0 nearest {L8_GoodGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					end if
+					if PlayerPlatoon not exists
+						PlayerPlatoon = get siege weapon of player 0 nearest {L8_GoodGateHouse[1]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+					end if
+					if PlayerPlatoon not exists and ((get distance from {L8_GoodGateHouse[0]} to {MyCreature} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE_FOR_CREATURE and get distance from {L8_GoodGateHouse[1]} to {MyCreature} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE_FOR_CREATURE) or HEALTH of MyCreature == 0)
+						GoodGatesAreOpen = L8_TRUE
+						set gate L8_GoodGateHouse[0] open
+						set gate L8_GoodGateHouse[1] open
+					else
+						set gate L8_GoodGateHouse[0] close
+						set gate L8_GoodGateHouse[1] close
+					end if
+				end if
+			end if
+		end if
+
+		wait 5 seconds
+	end loop
+end script L8_Armies_ArmyBroNew_HandleGates
+
+begin script L8_CB_FireWonder
+	Earthquake			= 0
+	StartPos			= 0
+	WarningSpeechCount	= 1
+
+	Settlement1Targets[8]
+	Settlement2Targets[8]
+	CloseTargets[8]
+	FurtherTargets[8]
+	FirstTarget = 0
+	CurrentTarget = 0
+	RunOutOfChoices = L8_FALSE
+
+	FiredOnce = L8_FALSE
+
+	BeamPlace = 0
+	Beam = 0
+	Beam2 = 0
+	EarthquakeWarning	= 0
+	EarthquakeTimer = 0
+start
+	Settlement1Targets[0]				= marker at {1528.843,155.194,1448.576}
+	Settlement1Targets[1]				= marker at {1633.121,144.748,1374.698}
+	Settlement1Targets[2]				= marker at {1682.641,145.086,1400.238}
+	Settlement1Targets[3]				= marker at {1666.727,135.591,1479.144}
+	Settlement1Targets[4]				= marker at {1621.390,151.691,1546.260}
+	Settlement1Targets[5]				= marker at {1562.290,163.793,1562.251}
+	Settlement1Targets[6]				= marker at {1513.240,164.802,1516.770}
+	Settlement1Targets[7]				= marker at {1590.542,146.749,1402.247}
+	Settlement2Targets[0]				= marker at {1254.569,194.805,751.910}
+	Settlement2Targets[1]				= marker at {1311.002,196.394,696.198}
+	Settlement2Targets[2]				= marker at {1122.346,200.112,717.962}
+	Settlement2Targets[3]				= marker at {1117.408,198.265,671.626}
+	Settlement2Targets[4]				= marker at {1207.147,196.039,737.296}
+	Settlement2Targets[5]				= marker at {1301.318,191.028,773.712}
+	Settlement2Targets[6]				= marker at {1256.545,197.923,669.412}
+	Settlement2Targets[7]				= marker at {1382.503,193.948,721.313}
+	FurtherTargets[0]			= marker at {1648.440,228.262,752.801}
+	FurtherTargets[1]			= marker at {1911.830,231.197,1072.961}
+	FurtherTargets[2]			= marker at {1967.940,247.627,1148.261}
+	FurtherTargets[3]			= marker at {1985.314,242.663,1074.486}
+	FurtherTargets[4]			= marker at {1623.864,219.206,818.962}
+
+	run background script L8_Handle_Lightning
+
+	EarthquakeTimer = create timer for 0 seconds
+	wait until L8_Wonder != 0
+
+	begin loop
+		wait until HEALTH of L8_Wonder >= 1.0 and CHARGE of L8_Wonder >= 1.0 and PLAYER of L8_JapaneseCityCapital == 1 and get game time >= 7 and get game time <= 17
+
+		invoke L8_Wonder EPIC_WONDER_STAGE_1
+		attach 3d sound "SCRIPT2_EEPIC_SYNTH3" to L8_Wonder
+
+		set EarthquakeTimer time to 30 seconds
+		wait until get EarthquakeTimer time remaining <= 0 or HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+
+		if HEALTH of L8_Wonder >= 1.0 and PLAYER of L8_JapaneseCityCapital == 1
+			invoke L8_Wonder EPIC_WONDER_STAGE_2
+			attach 3d sound "SCRIPT2_EEPIC_BEAMOFLIGHTLOOP7" to L8_Wonder
+			enable predefined sky "EARTHQUAKE" time 20
+			L8_Earthquake_Lightning_Weather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {L8_Wonder}
+			set cloud alignment to -1 at {L8_Wonder} radius 40
+
+			set EarthquakeTimer time to 30 seconds
+			wait until get EarthquakeTimer time remaining <= 0 or HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+
+			if HEALTH of L8_Wonder >= 1.0 and PLAYER of L8_JapaneseCityCapital == 1
+				invoke L8_Wonder EPIC_WONDER_STAGE_3
+				attach 3d sound "SCRIPT2_EEPIC_HURRICANELIGHTNING6" to L8_Wonder
+				L8_Earthquake_Lightning_On = L8_TRUE
+
+				set EarthquakeTimer time to 30 seconds
+				wait until get EarthquakeTimer time remaining <= 0 or HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+
+				if HEALTH of L8_Wonder >= 1.0 and PLAYER of L8_JapaneseCityCapital == 1
+					StartPos = 0
+					if number from 1 to 2 == 1 and L8_Armies_NewArmyBro_SettlementState[0] == L8_TOWNTHREAT_PLAYEROWNED
+						RunOutOfChoices = L8_FALSE
+						FirstTarget = (number from 1 to 8) - 1
+						CurrentTarget = FirstTarget
+						while StartPos not exists and RunOutOfChoices == L8_FALSE
+							if get player 0 influence at {Settlement1Targets[CurrentTarget]} < 1
+								StartPos = marker at {Settlement1Targets[CurrentTarget]}
+							end if
+							CurrentTarget += 1
+							if CurrentTarget >= 8
+								CurrentTarget = 0
+							end if
+							if CurrentTarget == FirstTarget
+								RunOutOfChoices = L8_TRUE
+							end if
+						end while
+					end if
+					if number from 1 to 2 == 1 and L8_Armies_NewArmyBro_SettlementState[1] == L8_TOWNTHREAT_PLAYEROWNED and StartPos not exists
+						RunOutOfChoices = L8_FALSE
+						FirstTarget = (number from 1 to 8) - 1
+						CurrentTarget = FirstTarget
+						while StartPos not exists and RunOutOfChoices == L8_FALSE
+							if get player 0 influence at {Settlement2Targets[CurrentTarget]} < 1
+								StartPos = marker at {Settlement2Targets[CurrentTarget]}
+							end if
+							CurrentTarget += 1
+							if CurrentTarget >= 8
+								CurrentTarget = 0
+							end if
+							if CurrentTarget == FirstTarget
+								RunOutOfChoices = L8_TRUE
+							end if
+						end while
+					end if
+					if StartPos not exists
+						RunOutOfChoices = L8_FALSE
+						FirstTarget = (number from 1 to 5) - 1
+						CurrentTarget = FirstTarget
+						while StartPos not exists and RunOutOfChoices == L8_FALSE
+							if get player 0 influence at {FurtherTargets[CurrentTarget]} < 1
+								StartPos = marker at {FurtherTargets[CurrentTarget]}
+							end if
+							CurrentTarget += 1
+							if CurrentTarget >= 5
+								CurrentTarget = 0
+							end if
+							if CurrentTarget == FirstTarget
+								RunOutOfChoices = L8_TRUE
+							end if
+						end while
+					end if
+					if StartPos exists and HEALTH of L8_Wonder >= 1.0 and PLAYER of L8_JapaneseCityCapital == 1
+						EarthquakeWarning = create visual effect VISUAL_EFFECT_EPIC_TARGET_WARNING at {StartPos} time 30 target {StartPos}
+
+						// say dialogue warning of earthquake
+						begin dialogue
+							if WarningSpeechCount == 1
+								//say "Shake the ground. Bring them to their knees!"
+								say "BW2T_SCRIPT_06FINAL_EPIC_EARTHQUAKE_READY"
+							elsif WarningSpeechCount == 2
+								//say "Ha! I cannot wait to see the earth shake under their trespassing feet."
+								say "BW2T_SCRIPT_06FINAL_EPIC_EARTHQUAKE_READY_2"
+							elsif WarningSpeechCount == 3
+								//say "Get the Earthquake ready. We shall destroy them that way!"
+								say "BW2T_SCRIPT_07FINAL_EPIC_EARTHQUAKE_READY"
+							else //if WarningSpeechCount == 4
+								//say "Ready the Earthquake!"
+								say "BW2T_SCRIPT_07FINAL_EPIC_EARTHQUAKE_READY_2"
+							end if
+							wait until read
+
+							WarningSpeechCount++
+							if WarningSpeechCount > 4
+								WarningSpeechCount = 1
+							end if
+						end dialogue
+
+						set EarthquakeTimer time to 30 seconds
+						wait until get EarthquakeTimer time remaining <= 0 or HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+
+						if HEALTH of L8_Wonder >= 1.0 and PLAYER of L8_JapaneseCityCapital == 1
+							Earthquake = create earthquake start {StartPos} end {StartPos} player 1
+							BeamPlace = marker at get world position from L8_Wonder to {-0.680, 81.780, 0.719}
+							Beam = create visual effect VISUAL_EFFECT_EARTHQUAKE_BEAM at {BeamPlace}
+							Beam2 = create visual effect "ev_s_beam.ves" strength 0.3 scale 1.0 at {BeamPlace}
+							invoke Earthquake EPIC_PULSE_UP
+							attach 3d sound "SCRIPT2_EEPIC_HURRICANELIGHTNING1" to L8_Wonder
+
+							wait 2 seconds
+
+							detach sound "SCRIPT2_EEPIC_HURRICANELIGHTNING1" from L8_Wonder
+							detach sound "SCRIPT2_EEPIC_HURRICANELIGHTNING6" from L8_Wonder
+							detach sound "SCRIPT2_EEPIC_BEAMOFLIGHTLOOP7" from L8_Wonder
+							detach sound "SCRIPT2_EEPIC_SYNTH3" from L8_Wonder
+
+							invoke L8_Wonder EPIC_WONDER_STAGE_LAST
+
+							CHARGE of L8_Wonder = 0
+							run script Land8Earthquake(L8_Wonder, Earthquake)
+							L8_Earthquake_Lightning_On = L8_FALSE
+							release L8_Earthquake_Lightning_Weather
+						end if
+						if HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+							stop visual effect EarthquakeWarning
+						end if
+					elsif HEALTH of L8_Wonder >= 1.0 and PLAYER of L8_JapaneseCityCapital == 1
+						detach sound "SCRIPT2_EEPIC_HURRICANELIGHTNING6" from L8_Wonder
+						detach sound "SCRIPT2_EEPIC_BEAMOFLIGHTLOOP7" from L8_Wonder
+						detach sound "SCRIPT2_EEPIC_SYNTH3" from L8_Wonder
+
+						invoke L8_Wonder EPIC_WONDER_STAGE_LAST
+					end if
+				end if
+				if HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+					detach sound "SCRIPT2_EEPIC_HURRICANELIGHTNING6" from L8_Wonder
+					L8_Earthquake_Lightning_On = L8_FALSE
+				end if
+			end if
+			if HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+				detach sound "SCRIPT2_EEPIC_BEAMOFLIGHTLOOP7" from L8_Wonder
+				enable predefined sky "DEFAULT" time 3
+				release L8_Earthquake_Lightning_Weather
+			end if
+		end if
+		if HEALTH of L8_Wonder < 1.0 or PLAYER of L8_JapaneseCityCapital != 1
+			invoke L8_Wonder EPIC_WONDER_STAGE_LAST
+			detach sound "SCRIPT2_EEPIC_SYNTH3" from L8_Wonder
+		end if
+	end loop
+
+end script L8_CB_FireWonder
+
+begin script L8_Handle_Lightning
+	LightningDelay = 0
+start
+	begin loop
+		wait until L8_Earthquake_Lightning_On == L8_TRUE
+		while L8_Earthquake_Lightning_On == L8_TRUE
+			set lightning strike at {L8_Wonder} + {number from -5 to 5, number from -5 to 5} from L8_Earthquake_Lightning_Weather scale 1
+			LightningDelay = number from 2 to 10
+			wait LightningDelay seconds
+		end while
+	end loop
+end script L8_Handle_Lightning

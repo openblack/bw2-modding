@@ -1,0 +1,35 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 9 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land9Control
+
+	
+start
+	set player 0 ENEMY to player 1
+	set player 1 ENEMY to player 0
+
+	run background script Land9Globals
+	run background script Land9Assassins
+	run background script Land9ConverterRelic
+	run background script Land9CreatureUpgrade
+	run background script Land9SlaveRevolt
+	run background script Land9Sandstorms
+	run background script Land9SlaveGrabbers
+	run background script Land9Ghost
+	run background script Land9Wanted
+
+	run background script Land9Egypt
+	run background script L9ECAI
+
+	run script Land9Arrival
+	
+	begin loop
+		if L9EgyptConverted == 2
+			///run script Land9IslandComplete
+			run background script Land9IslandDeparture
+			L9EgyptConverted++
+		end if
+
+	end loop
+		
+end script Land9Control

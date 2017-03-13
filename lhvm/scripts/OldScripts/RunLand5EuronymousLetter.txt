@@ -1,0 +1,10 @@
+//------------------------------------------------------------------------------------------------------------------------
+run script RunLand5EuronymousLetter
+//------------------------------------------------------------------------------------------------------------------------
+begin script RunLand5EuronymousLetter
+
+start
+
+	run script Land5EuronymousLetter
+	
+end script RunLand5EuronymousLetter

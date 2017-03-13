@@ -1,0 +1,165 @@
+//==============================================================================
+// Generic Control script. run this on any land and enemy towns will spark to life with platoons and desirs
+// By. Matt.L
+//==============================================================================
+
+//-------------------------------------------------
+// Cosntants
+//-------------------------------------------------
+
+//Town type constants
+define TYPE_MINORSETTLMENT = 0
+define TYPE_TOWN = 1
+define TYPE_CITY = 2
+
+//Town size cosntants
+define SIZE_MINORSETTLMENT = 30	//less than this value triggers
+define SIZE_TOWN = 100			//less than this triggers a town, above riggers a city
+
+//Attack tirggers (The number of units the player needs before the settlments attack)
+define ATTACK_TRIGGER_MINORSETTLMENT = 70
+define ATTACK_TRIGGER_TOWN = 35
+define ATTACK_TRIGGER_CITY = 60
+
+define WAIT_TIME = 120		//The time between computer attacks (per town)
+
+//-------------------------------------------------
+// Globals
+//-------------------------------------------------
+global G_PlayerTown = 0
+
+//-------------------------------------------------
+// Script Defines
+//-------------------------------------------------
+define script GenericControl(TownSize, Town)
+
+//-------------------------------------------------
+// Land1XControl
+//-------------------------------------------------
+begin script GenericLandControl
+	Town = 0
+	TownID = 0
+	TownType = 0
+start
+	//Get the players town
+	G_PlayerTown = get town with id 0
+
+	TownID = 1	//Already got players town
+	begin loop
+		Town = get town with id TownID
+
+		if Town exists and not PLAYER of Town == 0
+
+			//Decide town size stuff
+			if size of Town < SIZE_MINORSETTLMENT
+				TownType = TYPE_MINORSETTLMENT
+			elsif size of Town < SIZE_TOWN
+				TownType = TYPE_TOWN
+			else
+				TownType = TYPE_CITY
+			end if
+
+			run background script GenericControl(TownType, TownID)
+		end if
+
+		TownID++
+	until Town not exists
+	end loop
+
+	wait 50000000000000 seconds
+end script GenericLandControl
+
+//-------------------------------------------------
+// Generic Control
+//-------------------------------------------------
+begin script GenericControl(TownSize, Town)
+	ThisTown = 0
+	PlayerUnits = 0
+	AttackPlatoon = 0
+	PlayerPlatoon = 0
+	RequiredUnits = 0
+start	
+
+	//Get the town
+	ThisTown = get town with id Town
+
+	if ThisTown exists
+		
+		//Stuff for a town
+		if TownSize == TYPE_MINORSETTLMENT
+			set town ThisTown desire for GATHER_FOOD to 0.80
+			set town ThisTown desire for GROW_FOOD to 0.60
+			set town ThisTown desire for GATHER_WOOD to 0.40
+			set town ThisTown desire for GATHER_ORE to 0.10
+			set town ThisTown desire for BREED to 0.30
+			set town ThisTown desire for ATTACK to 0.10
+			set town ThisTown desire for FUN to 0.20
+
+			//enable ThisTown town manager
+			set town ThisTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.1
+			RequiredUnits = ATTACK_TRIGGER_MINORSETTLMENT
+
+		elsif TownSize == TYPE_TOWN
+			set town ThisTown desire for GATHER_FOOD to 0.80
+			set town ThisTown desire for GROW_FOOD to 0.60
+			set town ThisTown desire for GATHER_WOOD to 0.40
+			set town ThisTown desire for GATHER_ORE to 0.50
+			set town ThisTown desire for BREED to 0.60
+			set town ThisTown desire for ATTACK to 0.50
+			set town ThisTown desire for FUN to 0.50
+
+			//enable ThisTown town manager
+			set town ThisTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.4
+			RequiredUnits = ATTACK_TRIGGER_TOWN
+
+		elsif TownSize == TYPE_CITY
+			set town ThisTown desire for GATHER_FOOD to 0.80
+			set town ThisTown desire for GROW_FOOD to 0.60
+			set town ThisTown desire for GATHER_WOOD to 0.40
+			set town ThisTown desire for GATHER_ORE to 0.70
+			set town ThisTown desire for BREED to 0.70
+			set town ThisTown desire for ATTACK to 0.60
+			set town ThisTown desire for FUN to 0.70
+
+			//enable ThisTown town manager
+			set town ThisTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.6
+			RequiredUnits = ATTACK_TRIGGER_CITY
+
+		end if
+
+		//Wait until the player shows signs of being aggressive
+		begin loop		
+			PlayerUnits = (get army unit type ARMY_UNIT_TYPE_MELEE_1 number in town G_PlayerTown) + (get army unit type ARMY_UNIT_TYPE_RANGED_1 number in town G_PlayerTown)
+		until PlayerUnits >= RequiredUnits
+		end loop
+
+		//Handle attacks
+		begin loop
+			//Get an attack platoon
+			begin loop
+				AttackPlatoon = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town ThisTown
+			until AttackPlatoon exists
+			end loop
+
+			//Get a player platoon
+			begin loop
+				PlayerPlatoon = get platoon of type ARMY_UNIT_TYPE_MELEE_1 of town G_PlayerTown
+			until AttackPlatoon exists
+			end loop			
+
+			//Might have got stuck in the lops above so just check that both platoons still exist
+			if AttackPlatoon exists and PlayerPlatoon exists
+				add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using PlayerPlatoon to front of AttackPlatoon action queue
+			end if
+
+			wait WAIT_TIME seconds
+
+		until PLAYER of ThisTown == 0
+		end loop	
+
+	else
+		say "Requested town does not exist"
+		wait 10 seconds
+	end if
+
+end script GenericControl

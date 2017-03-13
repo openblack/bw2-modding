@@ -1,0 +1,596 @@
+//================================================================
+// Land 1 Pickup Tutorial
+// Matt.L
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+define SC_FALSE = 0
+define SC_TRUE = 1
+
+//Advisor defines
+define SC_ADVISOR_NONE						= 0
+define SC_ADVISOR_PICKED_UP					= 1
+define SC_ADVISOR_STONE_MOVED_OUT			= 2
+define SC_ADVISOR_STONE_PUT_BACK			= 3
+//define SC_ADVISOR_COMPLETED = 4
+define SC_ADVISOR_VILLAGER_ATTACKED			= 5
+define SC_ADVISOR_THROWN_STONE				= 6
+define SC_ADVISOR_VILLAGER_ATTACKED_IDLE	= 7
+define SC_ADVISOR_INTRO						= 8
+define SC_ADVISOR_POINT_OUT					= 9
+
+//Villager moods
+define SC_VILLAGER_MOOD_NONE = 0
+define SC_VILLAGER_MOOD_HAPPY = 1
+define SC_VILLAGER_MOOD_ANGRY = 2
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global SC_CurrentID					= 0
+global SC_StonesInCircle			= 5
+global SC_Circle					= 0
+
+//Villager Globals
+global SC_Villager_WatchPosition[5]
+global SC_Villager_WatchPositionGate[5]
+
+global SC_Villager_AllowedToWatch	= 0
+global SC_Villager_Watching			= 0
+global SC_Villager_Mood				= SC_VILLAGER_MOOD_NONE
+
+//Advisor globals
+global SC_Advisor_PickedUpFlag		= SC_FALSE
+global SC_Advisor_VillagerAttacked	= SC_FALSE
+global SC_Advisor_ThrownStone		= SC_FALSE
+global SC_Advisor_Current			= SC_ADVISOR_NONE
+
+global SC_Complete					= SC_FALSE
+global SC_Start						= SC_FALSE
+
+global AdvisorCanTalk				= SC_TRUE
+
+global ParentSet					= 0 //Quick fix
+global DoneComment					= 0
+global PickupChallengeComplete		= 0
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+define script SC_WatchRock(Position, Type)
+define script SC_Advisorz(ID)
+define script SC_VillagerControl
+define script SC_Villager(Position)
+define script SC_UpdateObjectives
+
+//-----------------------------------------------------------------
+// Land 1 Pickup tutorial
+//-----------------------------------------------------------------
+begin script Land1PickupTutorial
+	ScrollPos		= marker at {968.579, 75.190, 1508.856}
+	Scroll			= 0
+	ReminderTimer	= create timer for 0 seconds
+	RockVid			= 0
+	AreaFX			= 0
+start
+	
+	enable tribute visual
+	Scroll = create highlight BRONZE name "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_MISC_10" remind "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_MISC_20" at {ScrollPos}	
+
+	run background script SC_WatchRock(marker at {967.283, 76.832, 1521.778}, variable NORSE_ROCK_SMALL)
+	run background script SC_WatchRock(marker at {956.505, 75.228, 1511.069}, variable NORSE_ROCK_MEDIUM)
+	run background script SC_WatchRock(marker at {970.893, 73.624, 1498.169}, variable NORSE_ROCK_LARGE)
+	run background script SC_WatchRock(marker at {962.031, 76.482, 1519.812}, variable NORSE_ROCK_MEDIUM)
+	run background script SC_WatchRock(marker at {957.888, 73.889, 1503.022}, variable NORSE_ROCK_SMALL)
+
+	SC_Circle = marker at {965.095, 75.018, 1508.798}
+
+	//Villager positions - Where the villagers clap on the edge of the circle
+	SC_Villager_WatchPosition[0] = marker at {971.573,74.430,1479.108}
+	SC_Villager_WatchPosition[1] = marker at {965.468,74.328,1479.466}
+	SC_Villager_WatchPosition[2] = marker at {977.604,74.652,1481.631}
+	SC_Villager_WatchPosition[3] = marker at {948.240,74.165,1484.247}
+	SC_Villager_WatchPosition[4] = marker at {957.186,74.181,1480.522}
+
+	//Objectives
+	if SkippedTutorials == 0
+		reset all objectives for player 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_80"
+	end if
+	//set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_WOOD icon TRIBUTE_OBJECTIVE_ICON_OBJECTIVE_L3_WOODSTORAGEPIT
+
+	//run background script SC_Advisorz(SC_ADVISOR_POINT_OUT)
+
+	run background script SC_VillagerControl
+
+	//Wait to start
+	begin loop
+		if get distance from camera position to {Scroll} < 40 and {Scroll} viewed and get ReminderTimer time remaining == 0
+			begin dialogue
+				eject evil spirit
+				make evil spirit point to Scroll
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_110"
+				wait until read
+				set ReminderTimer time to 120 seconds
+			end dialogue
+		end if
+
+		if hand position near {Scroll} radius 4
+			enable hand icon draw			
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+			wait until not hand position near {Scroll} radius 4 or Scroll right clicked
+			disable hand icon draw
+		end if
+
+		//if TutScroll == 1 and Scroll exists
+		//	delete Scroll
+		//elsif Scroll not exists and L1_InAScroll != 1 and InRockMan == 0 and TutScroll == 0
+		//	Scroll = create highlight BRONZE name "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_MISC_10" remind "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_MISC_20" at {ScrollPos}	
+		//end if
+
+
+	until Scroll right clicked
+	end loop
+
+	TutScroll = 1
+	delete Scroll
+
+	if SkippedTutorials == 0
+		reset all objectives for player 0
+	end if
+
+
+	SC_Start = SC_TRUE
+
+	begin fullscreen cinema	
+		
+
+		disable hand icon draw
+
+		store camera details
+		set fade red 0 green 0 blue 0 time 1				
+		wait 1 seconds
+
+		move game time 13.30 time 3
+
+		AreaFX = create visual effect VISUAL_EFFECT_AREA_TARGET at {SC_Circle} time -1
+		SCALE of AreaFX = 5.5
+		ALTITUDE of AreaFX = -2
+		set AreaFX colour red 255 green 0 blue 0
+
+		if SkippedTutorials == 0
+			reset all objectives for player 0
+		end if
+
+		start music "farming_communtiy_land2"
+		set camera position to {990.342, 113.394, 1473.539}
+		set camera focus to {950.272, 45.125, 1534.648}
+		move camera position to {964.983, 98.322, 1469.952} time 10
+		move camera focus to {959.587, 38.391, 1549.823} time 10
+		set fade in time 2
+		wait 1 second
+
+		//eject good spirit
+		//say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_10"
+		//wait until read
+		RockVid = create video window with left 0.05 top 0.2 width 0.3 height 0.225 with border
+		play video "Land1 Pick Up Rock"
+
+		eject evil spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_20"
+		wait until read
+
+		wait 1 seconds
+
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_30"
+		wait until read
+		
+		wait until not video is playing
+
+		wait until camera ready
+		stop music with fadetime 2
+		send good spirit home
+		send evil spirit home
+
+	end cinema
+
+	
+	//run script SC_Advisorz(SC_ADVISOR_INTRO)	
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 0 force open
+	run script SC_UpdateObjectives
+	enable objective window
+
+	begin loop
+		if SC_StonesInCircle <= 4
+			//set AreaFX colour red 255 green 200 blue 89
+			set AreaFX colour red 255 green 0 blue 0
+		else
+			set AreaFX colour red 255 green 0 blue 0
+		end if
+	until SC_StonesInCircle == 0
+	end loop
+
+ 	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_PICKUP
+
+	disable hand icon draw	
+
+	begin fullscreen cinema
+
+		enable highlight draw
+
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_100"
+		wait until read
+		send good spirit home
+		L1_ShowDiscipleTutorialScroll = 1
+
+	if SkippedTutorials == 0
+		move camera position to {900.586, 85.212, 1457.344} time 5
+		move camera focus to {861.853, 36.987, 1535.920} time 5
+		wait until camera ready		
+	end if
+		disable highlight draw
+	end cinema
+
+	stop visual effect AreaFX
+
+	L1_PickupTutorialComplete = 1
+
+	TutScroll = 0
+
+	//if SkippedTutorials == 1
+	//	reset all objectives for player 0
+	//	set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 amount 1 force open
+	//	set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_LEAVE_10"
+	//end if
+
+	wait 2 seconds
+	if SkippedTutorials == 1
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_1
+	end if
+
+end script Land1PickupTutorial
+
+//-----------------------------------------------------------------
+// Land 1 Watch Rock
+//-----------------------------------------------------------------
+begin script SC_WatchRock(Position, Type)
+	Stone		= 0
+	MyID		= 0
+	InCircle	= SC_TRUE
+	MyWorldIcon	= 0
+	Rand		= 0
+start
+
+	MyID = SC_CurrentID
+	SC_CurrentID++
+
+	Stone = create ROCK_OBJECT constant Type at {Position}
+
+	disable Stone pickup
+	disable Stone moveable
+	enable Stone indestructible
+
+	wait until SC_Start == SC_TRUE
+
+	enable Stone pickup
+	enable Stone moveable
+	enable Stone indestructible
+
+	begin loop
+		
+		if {Stone} near {SC_Circle} radius 27.5
+			if InCircle == SC_FALSE
+				SC_StonesInCircle++
+				run script SC_UpdateObjectives
+			end if
+			InCircle = SC_TRUE
+		else
+			if InCircle == SC_TRUE
+				SC_StonesInCircle--
+				SC_Villager_AllowedToWatch=5 //Allow more villagers to come and watch
+				run script SC_UpdateObjectives
+			end if
+			InCircle = SC_FALSE
+		end if		
+
+
+		if get object hand is over == Stone and SC_Start == SC_TRUE
+			//MyWorldIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Stone
+			enable hand icon draw
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+			wait until not get object hand is over == Stone
+			//remove world icon MyWorldIcon
+			disable hand icon draw
+		end if
+	
+
+		if Stone is HELD
+			//run background script SC_Advisorz(SC_ADVISOR_PICKED_UP)
+			if SC_Advisor_PickedUpFlag == SC_FALSE
+				begin dialogue
+					SC_Advisor_PickedUpFlag = SC_TRUE
+					eject evil spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_40"
+					wait until read// or SC_Advisor_Current != ID
+					send evil spirit home
+				end dialogue
+			end if
+			
+			wait until not Stone is HELD
+
+			wait 1 seconds
+		
+			//Player has thrown the stone??
+			if SPEED of Stone > 10 and Stone is FLYING
+				if AdvisorCanTalk == SC_TRUE
+					run background script SC_Advisorz(SC_ADVISOR_THROWN_STONE)
+				end if
+			else
+
+				//In the circle
+				if {Stone} near {SC_Circle} radius 27.5//15
+					if AdvisorCanTalk == SC_TRUE
+						run background script SC_Advisorz(SC_ADVISOR_STONE_PUT_BACK)
+					end if
+				//Out of the circle				
+				else
+					//If it was in the circle before
+					if InCircle == SC_TRUE and not SC_Advisor_Current == SC_ADVISOR_VILLAGER_ATTACKED_IDLE
+						if AdvisorCanTalk == SC_TRUE
+							run background script SC_Advisorz(SC_ADVISOR_STONE_MOVED_OUT)
+						end if
+					end if
+				end if
+
+			end if
+		end if		
+
+	until SC_StonesInCircle == 0
+	end loop
+
+	remove world icon MyWorldIcon
+end script SC_WatchRock
+
+//-----------------------------------------------------------------
+// Advisors
+//-----------------------------------------------------------------
+begin script SC_Advisorz(ID)	
+	Rand	= 0
+	Set		= 0
+start
+
+	SC_Advisor_Current = ID
+	Set = 1
+
+	begin dialogue
+
+		if ID == SC_ADVISOR_STONE_MOVED_OUT and AdvisorCanTalk == SC_TRUE
+			eject evil spirit
+			AdvisorCanTalk = SC_FALSE
+			if DoneComment == 0
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_60"
+				wait until read
+			elsif DoneComment == 1
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_61"
+				wait until read
+			elsif DoneComment == 2
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_62"
+				wait until read
+			elsif DoneComment == 3
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_63"
+				wait until read
+			elsif DoneComment == 4
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_64"
+				wait until read
+			end if
+
+			DoneComment++
+			//wait until read// or SC_Advisor_Current == SC_ADVISOR_VILLAGER_ATTACKED_IDLE
+
+		elsif ID == SC_ADVISOR_STONE_PUT_BACK
+			AdvisorCanTalk = SC_FALSE
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_50"
+			wait until read
+
+		elsif ID == SC_ADVISOR_VILLAGER_ATTACKED and SC_Advisor_VillagerAttacked == SC_FALSE
+			AdvisorCanTalk = SC_FALSE
+			SC_Advisor_VillagerAttacked = SC_TRUE
+			eject evil spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_70"
+			wait until read
+
+		elsif ID == SC_ADVISOR_THROWN_STONE and SC_Advisor_ThrownStone == SC_FALSE
+			AdvisorCanTalk = SC_FALSE
+			SC_Advisor_ThrownStone = SC_TRUE
+			eject good spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_80"
+			wait until read
+
+		elsif ID == SC_ADVISOR_VILLAGER_ATTACKED_IDLE and SC_Advisor_VillagerAttacked == SC_FALSE
+			AdvisorCanTalk = SC_FALSE
+			SC_Advisor_VillagerAttacked = SC_TRUE
+			eject evil spirit
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_90"
+			wait until read
+
+		elsif ID == SC_ADVISOR_INTRO			
+
+
+		elsif ID == SC_ADVISOR_POINT_OUT
+			
+			
+		end if
+		
+		send good spirit home
+		send evil spirit home
+
+		wait 2 seconds
+
+		AdvisorCanTalk = SC_TRUE
+	
+	end dialogue
+
+	SC_Advisor_Current = 0
+
+until SC_Advisor_Current != ID and Set == 1
+end script SC_Advisorz
+
+//-----------------------------------------------------------------
+// Villager Control
+//-----------------------------------------------------------------
+begin script SC_VillagerControl
+start
+	run background script SC_Villager(marker at {972.932,73.884,1463.333})
+	run background script SC_Villager(marker at {1003.299,77.121,1483.986})
+	run background script SC_Villager(marker at {987.631,74.290,1466.431})
+	run background script SC_Villager(marker at {955.582,73.796,1471.620})
+	run background script SC_Villager(marker at {980.133,72.742,1464.402})
+end script SC_VillagerControl
+
+//-----------------------------------------------------------------
+// Villager
+//-----------------------------------------------------------------
+begin script SC_Villager(Position)
+	Gate		= 0
+	Villager	= 0
+	MyMood		= SC_VILLAGER_MOOD_NONE
+	MoodTimer	= create timer for 0 seconds
+	RandomAnim	= 0
+	FocusPos	= marker at {962.490, 74.070, 1503.281}
+start
+
+	Villager = create VILLAGER INDIGENOUS_FISHERMAN at {Position}
+	move villager Villager focus to {FocusPos}
+
+	//Loop for idle behaviour
+	begin loop
+		//idle stuff
+		if {Villager} near {Position} radius 2
+			play anim "a_p_sitting_down1_sitting" on Villager loop -1
+			wait until Villager played or HEALTH of Villager < 1
+		end if
+
+		if HEALTH of Villager < 1 or Villager is FLYING
+			//run background script SC_Advisorz(SC_ADVISOR_VILLAGER_ATTACKED_IDLE)
+			if SC_Advisor_VillagerAttacked == SC_FALSE
+				begin dialogue
+					AdvisorCanTalk = SC_FALSE
+					SC_Advisor_VillagerAttacked = SC_TRUE
+					eject evil spirit
+					say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_90"
+					wait until read
+					send evil spirit home
+					AdvisorCanTalk = SC_TRUE
+				end dialogue
+			end if
+			SC_Villager_Mood = SC_VILLAGER_MOOD_ANGRY
+		end if
+
+		//Can I change my mood to good and move to the circle?
+		if SC_Villager_AllowedToWatch != SC_Villager_Watching
+			SC_Villager_Watching++
+			MyMood = SC_VILLAGER_MOOD_HAPPY
+		end if
+	until MyMood != SC_VILLAGER_MOOD_NONE
+	end loop
+
+	//Find a free watch position
+	Gate = 0
+	while SC_Villager_WatchPositionGate[Gate] == SC_TRUE		
+		Gate++
+	end while
+
+	SC_Villager_WatchPositionGate[Gate] = SC_TRUE
+
+	//Move to that position
+	move Villager position to {SC_Villager_WatchPosition[Gate]} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+	SPEED of Villager = 0.4
+	wait until {Villager} at {SC_Villager_WatchPosition[Gate]}
+
+	move villager Villager focus to {SC_Circle}
+
+	begin loop
+		//Decide what anim todo based on mood
+		if MyMood == SC_VILLAGER_MOOD_HAPPY
+
+			if Villager played
+				RandomAnim = number from 1 to 5
+
+				if RandomAnim == 1
+					play anim "a_p_dance_celebrate05" on Villager
+				elsif RandomAnim == 2
+					play anim "a_p_clap1_loop" on Villager
+				elsif RandomAnim == 3
+					play anim "a_p_clap3_loop" on Villager
+				elsif RandomAnim == 4
+					play anim "a_p_crowd_won_2" on Villager
+				elsif RandomAnim == 5
+					play anim "a_p_dance_celebrate08" on Villager
+				end if
+			end if
+
+			if HEALTH of Villager < 1 or Villager is FLYING
+				//run background script SC_Advisorz(SC_ADVISOR_VILLAGER_ATTACKED_IDLE)
+				if SC_Advisor_VillagerAttacked == SC_FALSE
+					begin dialogue
+						AdvisorCanTalk = SC_FALSE
+						SC_Advisor_VillagerAttacked = SC_TRUE
+						eject evil spirit
+						say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_90"
+						wait until read
+						send evil spirit home
+						AdvisorCanTalk = SC_TRUE
+					end dialogue
+				end if
+				HEALTH of Villager = 0
+			end if
+
+		elsif MyMood == SC_VILLAGER_MOOD_ANGRY
+			play anim "a_p_shake_fist_woman" on Villager
+		end if
+
+	until L1_PickupTutorialComplete == 1 and not {Villager} viewed and get distance from {Villager} to camera position > 70 or HEALTH of Villager <= 0
+	end loop
+
+end script SC_Villager
+
+//-----------------------------------------------------------------
+// Update Objectes
+//-----------------------------------------------------------------
+begin script SC_UpdateObjectives
+
+start
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_70"
+	
+	if SC_StonesInCircle == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_60"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 0 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+	elsif SC_StonesInCircle == 1
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_50"
+		//set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 4
+	elsif SC_StonesInCircle == 2
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_40"
+		//set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 3
+	elsif SC_StonesInCircle == 3
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_30"
+		//set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 2
+	elsif SC_StonesInCircle == 4
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_20"
+		//set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 1
+	elsif SC_StonesInCircle == 5
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_PICKUP_10"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 1 force open
+		if ParentSet == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 parent objective TRIBUTE_OBJECTIVE_LAND_1
+			ParentSet++
+		end if
+	end if
+end script SC_UpdateObjectives

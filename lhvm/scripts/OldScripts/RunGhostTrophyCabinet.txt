@@ -1,0 +1,11 @@
+run script RunGhostTrophyCabinet
+
+//-----------------------------------------------------------------------------
+
+begin script RunGhostTrophyCabinet
+
+start
+	run script GhostTrophyCabinet	
+end script RunGhostTrophyCabinet
+
+//-----------------------------------------------------------------------------

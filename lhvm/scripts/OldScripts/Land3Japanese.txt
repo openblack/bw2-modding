@@ -1,0 +1,620 @@
+//------------------------------------------------
+//  LAND 3 JAPANESE TOWN AI
+//------------------------------------------------
+
+define script L3JapanTownManagement
+define script L3JapanArmyManagement
+define script TrackJapArmyToGreekGates (Army)
+
+define script BodgeOre /// !
+
+begin script Land3Japanese
+ 
+//PlaceholderScroll = 0
+//PlaceholderScrollPos = marker at {1028.285,187.613,843.891}
+
+ThankfulDude1=0
+TakenByForce=0
+
+start
+
+run background script BodgeOre
+
+run background script L3JapanTownManagement
+run background script L3JapanArmyManagement
+
+
+	begin loop
+		if PLAYER of L3JapanTown == 0
+			L3JapaneseConverted = 1
+		end if
+	until L3JapaneseConverted == 1
+	end loop
+
+// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+TakenByForce = get town L3JapanTown method of last conversion
+if TakenByForce == variable LAST_CAPTURE_AGGRESSIVE
+//TakenByForce= get platoon of player 0 nearest {947.543, 129.938, 823.097} radius 200 ///TID
+//if TakenByForce exists ///TID
+
+	begin cinema
+
+		start music "big_battle_01"
+
+			set camera position to {1092.606, 200.233, 847.635}
+			set camera focus to {1091.728, 199.762, 847.718}
+			move camera position to {1095.880, 177.344, 778.410} time 10
+			move camera focus to {1095.025, 177.013, 778.811} time 10
+
+			eject good spirit
+			eject evil spirit
+
+			say "GA: It appears these people are quite scared of you now we've taken over their town"
+			say "GA: It appears these people are quite scared of you now we've taken over their town"
+			wait until read
+			say "EA: Yeah! Way to go god! Good old fashioned belief through fear!"
+			wait until read
+
+			send good spirit home
+			send evil spirit home
+			stop music
+
+	end cinema
+else
+	begin cinema
+
+	start music "cut_scene_happy_02"
+
+			set camera position to {1092.606, 200.233, 847.635}
+			set camera focus to {1091.728, 199.762, 847.718}
+			move camera position to {1095.880, 177.344, 778.410} time 10
+			move camera focus to {1095.025, 177.013, 778.811} time 10
+
+			eject good spirit
+			eject evil spirit
+
+			say "GA: Excellent! We've converted the Japanese through impressiveness"
+			say "GA: Excellent! We've converted the Japanese through impressiveness"
+			wait until read
+			say "EA: Bah! Woulda been quicker to send our army in!"
+			wait until read
+
+			send good spirit home
+			send evil spirit home
+			stop music
+	end cinema
+
+end if
+
+	L3JapaneseConverted = 2
+
+//	delete PlaceholderScroll
+
+
+end script Land3Japanese
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script L3JapanTownManagement
+
+ InitialJapaneseReligiousTolerance = 0.6
+ InitialJapaneseAggression = 0.20
+ AngeredJapaneseAggression = 0.50
+ InitialGreekTolerance = 0.6
+ NewGreekTolerance = 0
+ InitialNorseTolerance = 0.4
+ NewNorseTolerance = 0
+ ToleranceDecayRate = 0.02
+ AngerCounter = 0
+ AngerTimer = create timer for 0 seconds
+ AngerKickDelay = 180
+ FeudValue = 0
+ Pilgrim_Ctr = 0
+ JapaneseImpressivePoints = 0
+ InitialTimer = create timer for 0 seconds
+ JapanesePilgrims = 0
+ PilgrimSize = 0
+ JapanImpressivenessThreshold = 0.3
+
+ GDCPlayerCathedral = 0
+ GDCMigration = 0
+ E3BodgeUniversity = 0
+ E3BodgeMigration = 0
+
+start
+	set InitialTimer time to 180 seconds
+
+	// Initial army setup
+	set town L3JapanTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.125
+	set town L3JapanTown army type ARMY_UNIT_TYPE_MELEE_1 platoon ratio on wall to 0
+	set town L3JapanTown platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.375
+	set town L3JapanTown army type ARMY_UNIT_TYPE_RANGED_1 platoon ratio on wall to 0.5
+
+	// Initial villager setup
+	set town L3JapanTown desire for GATHER_FOOD to 0.90
+	set town L3JapanTown desire for GROW_FOOD to 0.20
+	set town L3JapanTown desire for GATHER_WOOD to 0.60
+	set town L3JapanTown desire for GATHER_ORE to 0.50
+	set town L3JapanTown desire for BREED to 0.40
+	set town L3JapanTown desire for ATTACK to 0.10
+	set town L3JapanTown desire for DEFENCE to 0.60
+	set town L3JapanTown desire for FUN to 0.10
+
+	// Initial feud status
+	set town L3JapanTown interracial tolerance with town L3GreekTown to InitialGreekTolerance
+	set town L3JapanTown interracial tolerance with town L3NorseTown to InitialNorseTolerance // they hate the norse 3 times more than you
+	set town L3JapanTown racial aggression with town L3GreekTown to InitialJapaneseAggression
+	set town L3JapanTown racial aggression with town L3NorseTown to InitialJapaneseAggression
+	set town L3JapanTown religious tolerance with town L3GreekTown to InitialJapaneseReligiousTolerance
+	set town L3JapanTown religious tolerance with town L3NorseTown to InitialJapaneseReligiousTolerance
+
+	set town L3JapanTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3GreekTown to 0
+	set town L3JapanTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3NorseTown to 0
+	///set town L3JapanTown FEUD_TYPE_B feud stat for town L3GreekTown to 0
+	///set town L3JapanTown FEUD_TYPE_B feud stat for town L3NorseTown to 0
+
+	set town L3JapanTown impressive threshold for town L3GreekTown to JapanImpressivenessThreshold
+	set town L3JapanTown impressive threshold for town L3NorseTown to 1.0
+
+	begin loop
+		// reactionary changes to town variables
+
+		// if Japanese Know Yuka is dead
+		if  L3YukaHeadDeliveredToJapanese == 1 or MD_FainToJaps == 1
+			set town L3JapanTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.1875
+			set town L3JapanTown army type ARMY_UNIT_TYPE_MELEE_1 platoon ratio on wall to 0
+			set town L3JapanTown platoon type ARMY_UNIT_TYPE_RANGED_1 at ratio 0.5125
+			set town L3JapanTown army type ARMY_UNIT_TYPE_RANGED_1 platoon ratio on wall to 0.4 // decreased a bit to allow more archers to be available for attacks
+			set town L3JapanTown racial aggression with town L3GreekTown to AngeredJapaneseAggression
+			set town L3JapanTown racial aggression with town L3NorseTown to AngeredJapaneseAggression
+
+			NewGreekTolerance = InitialGreekTolerance/2
+			set town L3JapanTown interracial tolerance with town L3GreekTown to NewGreekTolerance
+			NewNorseTolerance = InitialNorseTolerance/2
+			set town L3JapanTown interracial tolerance with town L3NorseTown to NewNorseTolerance
+/*
+			FeudValue = get town L3JapanTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3GreekTown
+			FeudValue += 20
+			set town L3JapanTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3GreekTown to FeudValue
+
+			FeudValue = get town L3JapanTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3NorseTown
+			FeudValue += 50
+			set town L3JapanTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3NorseTown to FeudValue
+*/
+			set town L3JapanTown desire for GATHER_FOOD to 0.90
+			set town L3JapanTown desire for GROW_FOOD to 0.20
+			set town L3JapanTown desire for GATHER_WOOD to 0.60
+			set town L3JapanTown desire for GATHER_ORE to 0.50
+			set town L3JapanTown desire for BREED to 0.40
+			set town L3JapanTown desire for ATTACK to 0.40
+			set town L3JapanTown desire for DEFENCE to 0.40
+			set town L3JapanTown desire for FUN to 0.10
+
+			JapanImpressivenessThreshold += 0.2
+			set town L3JapanTown impressive threshold for town L3GreekTown to JapanImpressivenessThreshold
+
+			if MD_FainToJaps == 1
+				MD_FainToJaps = 2
+			else
+				L3YukaHeadDeliveredToJapanese = 2
+			end if
+		end if
+
+		// if Yuka's head is delivered to the Norse and Fain fails to get to the Japanese they become more and more aggressive over time as they have not heard from her
+		if MD_FainFails == 1
+			if AngerCounter < 10 and get AngerTimer time remaining <= 0
+				NewNorseTolerance = InitialNorseTolerance-(AngerCounter*ToleranceDecayRate)
+				set town L3JapanTown interracial tolerance with town L3NorseTown to NewNorseTolerance
+				NewGreekTolerance = InitialGreekTolerance-(AngerCounter*ToleranceDecayRate)
+				set town L3JapanTown interracial tolerance with town L3GreekTown to NewGreekTolerance
+				AngerCounter++
+				set AngerTimer time to AngerKickDelay seconds
+			elsif AngerCounter >= 10
+				set town L3JapanTown desire for GATHER_FOOD to 0.90
+				set town L3JapanTown desire for GROW_FOOD to 0.20
+				set town L3JapanTown desire for GATHER_WOOD to 0.60
+				set town L3JapanTown desire for GATHER_ORE to 0.50
+				set town L3JapanTown desire for BREED to 0.40
+				set town L3JapanTown desire for ATTACK to 0.40
+				set town L3JapanTown desire for DEFENCE to 0.40
+				set town L3JapanTown desire for FUN to 0.10
+				MD_FainFails = 2
+			end if
+		end if
+
+	JapaneseImpressivePoints = get town L3JapanTown impressive value for town L3GreekTown
+	if town L3JapanTown impressive threshold with town L3GreekTown passed and get InitialTimer time remaining <= 0 and Land3GreekImpressiveness >= Land3GreekImpressivenessMinimum
+
+		if Pilgrim_Ctr == 10
+			if TownPilgrimageStatus[3] == 1 // Always Accept
+				// CONVERT THE TOWN PEACEFULLY
+				set player 0 town L3JapanTown capture reason LAST_CAPTURE_PASSIVE
+			elsif TownPilgrimageStatus[3] == 2 // always Decline
+			end if
+			reset town L3JapanTown impressive value for town L3GreekTown
+		end if
+
+		if Pilgrim_Ctr == 9
+			if TownPilgrimageStatus[3] == 1 // Always Accept
+				PilgrimSize = size of L3JapanTown
+				PilgrimSize = PilgrimSize/2
+				JapanesePilgrims = L3JapanTown pilgrimage PAY_PILGRIMAGE to town L3GreekTown with PilgrimSize pilgrims
+			elsif TownPilgrimageStatus[3] == 2 // always Decline
+			end if
+			reset town L3JapanTown impressive value for town L3GreekTown
+		end if
+
+		if Pilgrim_Ctr == 8
+			if TownPilgrimageStatus[3] == 1 // Always Accept
+				PilgrimSize = size of L3JapanTown
+				PilgrimSize = PilgrimSize/4
+				JapanesePilgrims = L3JapanTown pilgrimage PAY_PILGRIMAGE to town L3GreekTown with PilgrimSize pilgrims
+			elsif TownPilgrimageStatus[3] == 2 // always Decline
+			end if
+			reset town L3JapanTown impressive value for town L3GreekTown
+		end if
+
+		if Pilgrim_Ctr == 7
+			if TownPilgrimageStatus[3] == 1 // Always Accept
+				PilgrimSize = size of L3JapanTown
+				PilgrimSize = PilgrimSize/8
+				JapanesePilgrims = L3JapanTown pilgrimage PAY_PILGRIMAGE to town L3GreekTown with PilgrimSize pilgrims
+				run background script ManagePilgrims (JapanesePilgrims, 3)
+			elsif TownPilgrimageStatus[3] == 2 // always Decline
+				Pilgrim_Ctr = 6
+				TownPilgrimageStatus[3] = 0
+				JapanImpressivenessThreshold += 0.2
+				if JapanImpressivenessThreshold > 1
+					JapanImpressivenessThreshold = 1
+				end if
+				set town L3JapanTown impressive threshold for town L3GreekTown to JapanImpressivenessThreshold
+				Land3GreekImpressivenessMinimum += 6000
+			end if
+			reset town L3JapanTown impressive value for town L3GreekTown
+		end if
+
+		if Pilgrim_Ctr == 6 and Land3GreekImpressiveness >= (Land3GreekImpressivenessMinimum + 4000)
+			JapanesePilgrims = L3JapanTown pilgrimage PAY_PILGRIMAGE to town L3GreekTown with 4 pilgrims
+			run background script ManagePilgrims (JapanesePilgrims, 3)
+			reset town L3JapanTown impressive value for town L3GreekTown
+			Pilgrim_Ctr++
+		end if
+
+		if Pilgrim_Ctr >= 2 and Pilgrim_Ctr <= 5 and Land3GreekImpressiveness >= (Land3GreekImpressivenessMinimum + 2000)
+			// Japanese pay tribute to Greeks
+			JapanesePilgrims = L3JapanTown pilgrimage PAY_TRIBUTE to town L3GreekTown with 4 pilgrims
+			reset town L3JapanTown impressive value for town L3GreekTown
+			Pilgrim_Ctr++
+			set InitialTimer time to 300 seconds
+		end if
+
+		if Pilgrim_Ctr < 2
+			//say "Japanese pay homage to Greeks"
+			//wait until read
+			JapanesePilgrims = L3JapanTown pilgrimage PAY_HOMAGE to town L3GreekTown with 4 pilgrims
+			reset town L3JapanTown impressive value for town L3GreekTown
+			Pilgrim_Ctr++
+			set InitialTimer time to 300 seconds
+		end if
+	end if
+
+	until L3JapaneseConverted == 1
+	end loop
+
+
+end script L3JapanTownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script L3JapanArmyManagement
+
+ AttackTimer = create timer for 0 seconds
+ JapanIdle = 0
+ JapanArmyOne = 0
+ JapanArmyTwo = 0
+ L3_JapAssault = 0
+ L3_SamuraiLemmingsPos = marker at {1122.682, 160.855, 940.926}
+ L3_SamuraiLemmingsRetreatPos = marker at {1042.401, 135.304, 898.404}
+ L3_LemmingSupport1 = 0
+ L3_LemmingSupport1Pos = marker at {1045.659, 155.054, 952.575} // hidden in forest outside gates (left)
+ L3_LemmingSupport2 = 0
+ L3_LemmingSupport2Pos = marker at {1110.883, 166.631, 900.213} // up on ledge to right as you look out of Japanese town
+ L3_PlateauArchers = 0
+ PlateauPos = marker at {1212.156, 222.078, 1128.289}
+ InJapTownPos = marker at {928.268, 129.938, 813.874}
+ IdleTroops = 0
+ Count = 0
+ LynchNorseStragglers = 0
+ JapAssaultWaypoint = marker at {1245.809, 161.418, 917.166}
+
+ SamuraiTimer = create timer for 0 seconds
+ Support1Timer = create timer for 0 seconds
+ Support2Timer = create timer for 0 seconds
+ PlateauTimer = create timer for 0 seconds
+ KillLemmingBehaviour = 0
+ KillPlateauEvent = 0
+ FirstReaction = 0
+ MMSTimer = create timer for 180 seconds ///600 seconds
+ JapaneseBoredomFlag = 0
+ JapaneseBoredomTime = 900 // set to 15mins because the Norse are the main Aggressors. This gets changed to 600s when the Norse are conquered.
+ BoredomAttackTimer = create timer for JapaneseBoredomTime seconds
+
+ MSPlayer = 0
+  
+start
+	// create initial patrol platoons (only)
+	L3_SamuraiLemmings = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {L3_SamuraiLemmingsPos} with 12 men and 0 women
+	attach L3_SamuraiLemmings to L3JapanTown
+	L3_LemmingSupport1 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L3_LemmingSupport1Pos} with 12 men and 0 women
+	attach L3_LemmingSupport1 to L3JapanTown
+	L3_LemmingSupport2 = create platoon PLATOON_INFO_JAPANESE_RANGED_1 at {L3_LemmingSupport2Pos} with 12 men and 0 women
+	attach L3_LemmingSupport2 to L3JapanTown
+
+	begin loop
+
+		wait 2 seconds
+
+		if PLAYER of L3NorseTown == 0 and JapaneseBoredomFlag == 0
+			JapaneseBoredomTime = 900
+			JapaneseBoredomFlag = 1
+		elsif PLAYER of L3NorseTown == 1 and JapaneseBoredomFlag == 1
+			JapaneseBoredomTime = 600
+			JapaneseBoredomFlag = 0
+		end if
+
+		// one-off attack on L3NorseAssault2 when L3_InitialAssault == 1
+		if L3_InitialAssault == 1 and LynchNorseStragglers == 0
+			JapanIdle = get idle platoons in town L3JapanTown
+			if JapanIdle > 1
+				// send an army to assault Norse town
+				L3_JapAssault = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+				IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+				//attach IdleTroops to L3_JapAssault
+				add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using L3_JapAssault to front of IdleTroops action queue
+
+				//set platoon L3_JapAssault to attack L3_NorseAssault2 via JapAssaultWaypoint
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {JapAssaultWaypoint} to L3_JapAssault action queue
+				add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using L3_NorseAssault2 to L3_JapAssault action queue
+				reset town L3JapanTown feud value for town L3NorseTown
+				LynchNorseStragglers = 1
+				set BoredomAttackTimer time to JapaneseBoredomTime seconds
+			end if
+		end if
+
+		// Keep track of the L3_SamuraiLemmings platoon
+		if get SamuraiTimer time remaining <= 0 and KillLemmingBehaviour == 0
+			set SamuraiTimer time to 3 seconds
+			if L3_SamuraiLemmings not exists
+				L3_SamuraiLemmings = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300 /// NEED WARRIOR ONLY
+			end if
+
+			if {L3_SamuraiLemmings} not near {L3_SamuraiLemmingsPos} radius 20 and L3_ChasingLemmings == 0
+				L3_LemmingsReady = 0
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L3_SamuraiLemmingsPos} to front of L3_SamuraiLemmings action queue
+			elsif {L3_SamuraiLemmings} near {L3_SamuraiLemmingsPos} radius 20 and L3_ChasingLemmings == 0
+				L3_LemmingsReady = 1
+			elsif L3_ChasingLemmings == 1 and {L3_SamuraiLemmings} not near {L3_SamuraiLemmingsRetreatPos} radius 5
+				if {L3_AfterLemmings} near {L3_SamuraiLemmings} radius 50
+					add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L3_SamuraiLemmingsRetreatPos} to front of L3_SamuraiLemmings action queue
+				end if
+			end if
+		end if
+
+		// Keep track the first of two archer support platoons for the L3_SamuraiLemmings platoon
+		if get Support1Timer time remaining <= 0 and KillLemmingBehaviour == 0
+			set Support1Timer time to 3 seconds
+			if L3_LemmingSupport1 not exists
+				L3_LemmingSupport1 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300 /// NEED ARCHER ONLY
+			end if
+
+			if L3_LemmingSupport1 exists
+				if {L3_LemmingSupport1} not near {L3_LemmingSupport1Pos} radius 20
+					//move L3_LemmingSupport1 position to {L3_LemmingSupport1Pos}
+					add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L3_LemmingSupport1Pos} to L3_LemmingSupport1 action queue /// support?
+				end if
+			end if
+
+		end if
+
+		// Keep track the other archer support platoon for the L3_SamuraiLemmings platoon
+		if get Support2Timer time remaining <= 0 and KillLemmingBehaviour == 0
+			set Support2Timer time to 3 seconds
+			if L3_LemmingSupport2 not exists
+				L3_LemmingSupport2 = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300 /// NEED ARCHER ONLY
+			end if
+
+			if L3_LemmingSupport2 exists
+				if {L3_LemmingSupport2} not near {L3_LemmingSupport2Pos} radius 20
+					//move L3_LemmingSupport2 position to {L3_LemmingSupport2Pos}
+					add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {L3_LemmingSupport2Pos} to L3_LemmingSupport2 action queue /// support?
+				end if
+			end if
+		end if
+
+		// occassionally send Japanese Archer Platoons to the Minor Settlement on the plateau above the ramp
+		if get PlateauTimer time remaining <= 0 and KillPlateauEvent == 0
+			set PlateauTimer time to 300 seconds
+			if L3_PlateauArchers not exists
+				L3_PlateauArchers = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300 /// NEED ARCHER ONLY
+			end if
+
+			if L3_PlateauArchers exists
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PlateauPos} to L3_PlateauArchers action queue
+			end if
+		elsif KillPlateauEvent == 1
+			if L3_PlateauArchers exists
+				if {L3_PlateauArchers} near {PlateauPos} radius 20
+					move L3_PlateauArchers position to {InJapTownPos}
+				end if
+			end if
+		end if
+
+		// Normal or YukasHeadHandedIn behaviour, feud triggered assault
+		if L3YukaHeadDeliveredToJapanese == 2 or MD_FainToJaps == 2 or MD_FainFails == 3 // Japanese go on a warpath. Assaulting the Norse and raiding the greeks
+			if FirstReaction == 0 or town L3JapanTown feud threshold with town L3GreekTown passed
+				// check if there's enough platoons idle to create a respectable army
+				JapanIdle = get idle platoons in town L3JapanTown
+				if JapanIdle > 5
+					// send an army to assault Norse town
+					JapanArmyOne = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+					Count = 0
+					while Count < 2
+						IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+						//attach IdleTroops to JapanArmyOne
+						add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using JapanArmyOne to front of IdleTroops action queue
+						Count++
+					end while
+					set platoon JapanArmyOne take over town L3NorseTown
+					reset town L3JapanTown feud value for town L3NorseTown
+
+					// send an army to raid Greek suburbs
+					JapanArmyTwo = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+					Count = 0
+					while Count < 2
+						IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+						//attach IdleTroops to JapanArmyTwo
+						add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using JapanArmyTwo to front of IdleTroops action queue
+						Count++
+					end while
+					run background script TrackJapArmyToGreekGates (JapanArmyTwo)
+					set BoredomAttackTimer time to JapaneseBoredomTime seconds
+					reset town L3JapanTown feud value for town L3GreekTown
+					
+					FirstReaction = 1
+				end if
+			end if
+		elsif town L3JapanTown feud threshold with town L3GreekTown passed
+			// check if there are enough platoons idle to mount a small raid
+			JapanIdle = get idle platoons in town L3JapanTown
+			if JapanIdle > 1
+				// send an army to raid Greek town
+				JapanArmyTwo = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+				Count = 0
+				while Count < 1
+					IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+					//attach IdleTroops to JapanArmyTwo
+					add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using JapanArmyTwo to front of IdleTroops action queue
+					Count++
+				end while
+				run background script TrackJapArmyToGreekGates (JapanArmyTwo)
+				set BoredomAttackTimer time to JapaneseBoredomTime seconds
+				reset town L3JapanTown feud value for town L3GreekTown
+			end if
+		end if
+		
+ 		if get MMSTimer time remaining <= 0
+			 // Storming the Mine Minor Settlement if player of L3NorseTown == 0
+			MSPlayer = PLAYER of L3MineSettlement
+ 			if PLAYER of L3MineSettlement == 0
+ 				// attack settlement in force and try to claim it
+ 				IdleTroops = get idle platoons in town L3JapanTown
+ 				if JapanIdle > 4
+					L3_JapanMSAttackLP = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+ 					if L3_JapanMSAttackLP exists
+ 						Count = 0
+ 						while Count < 4
+							IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+ 							if IdleTroops exists
+ 								//attach IdleTroops to L3_JapanMSAttackLP
+								add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using L3_JapanMSAttackLP to front of IdleTroops action queue
+ 							end if
+ 							Count++
+ 						end while
+ 					end if
+ 					set platoon L3_JapanMSAttackLP take over town L3MineSettlement
+					set BoredomAttackTimer time to JapaneseBoredomTime seconds
+ 					set MMSTimer time to 180 seconds ///600 seconds
+				end if
+ 			elsif PLAYER of L3MineSettlement == 1
+ 				// attacking the Mine Minor Settlement if Norse occupy it but not in force only claim it if you happen to win
+ 				IdleTroops = get idle platoons in town L3JapanTown
+ 				if JapanIdle > 2
+					L3_JapanMSAttackLP = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+ 					if L3_JapanMSAttackLP exists
+ 						Count = 0
+ 						while Count < 2
+ 							IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+ 							if IdleTroops exists
+ 								//attach IdleTroops to L3_JapanMSAttackLP
+								add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using L3_JapanMSAttackLP to front of IdleTroops action queue
+ 							end if
+ 							Count++
+ 						end while
+ 					end if
+ 					set platoon L3_JapanMSAttackLP take over town L3MineSettlement
+					set BoredomAttackTimer time to JapaneseBoredomTime seconds
+ 					// set global to tell Land3Norse.txt that you are doing this and occassionally the Norse will send a few platoons from the town around behind the Japanese attack on the MinSet cutting off their retreat
+ 					L3_JapanMSAssault = 1
+ 				end if
+ 				set MMSTimer time to 180 seconds ///600 seconds
+ 			else
+ 				set MMSTimer time to 60 seconds
+ 			end if
+ 		end if
+
+		if get BoredomAttackTimer time remaining <= 0
+			// Boredom Attack - send an army to raid Greek suburbs
+			JapanArmyTwo = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+			Count = 0
+			while Count < 2
+				IdleTroops = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L3JapanTown} radius 300
+				//attach IdleTroops to JapanArmyTwo
+				add action PLATOON_AGENDA_ACTION_FOLLOW_PLATOON using JapanArmyTwo to front of IdleTroops action queue
+				Count++
+			end while
+			run background script TrackJapArmyToGreekGates (JapanArmyTwo)
+			set BoredomAttackTimer time to JapaneseBoredomTime seconds
+			reset town L3JapanTown feud value for town L3GreekTown
+		end if
+
+	until L3JapaneseConverted == 1
+	end loop
+
+
+end script L3JapanArmyManagement
+
+
+//----------------------------------------------------
+// TRACK ARMY TO GATES
+//----------------------------------------------------
+begin script TrackJapArmyToGreekGates (Army)
+
+ GreekGates = marker at {1641.008,94.478,665.976}
+ ArmyRetreating = 0
+
+start
+	begin loop
+		wait 5 seconds
+		if {Army} not near {GreekGates} radius 50
+			move Army position to {GreekGates}
+		else
+			set platoon Army take over town L3GreekTown
+		end if
+	until ArmyRetreating == 1
+	end loop
+end script TrackJapArmyToGreekGates
+
+//-----------------------------------
+/// BODGE ORE SCRIPT !
+//-----------------------------------
+begin script BodgeOre /// !
+
+ BodgeOrePit = get STORE at {1023.395, 130.188, 852.512} radius 50 /// !
+ OreAmount = 0
+
+start
+	begin loop
+		OreAmount = get resource RESOURCE_TYPE_ORE in BodgeOrePit
+		if OreAmount < 10000
+			add resource RESOURCE_TYPE_ORE 10000 to BodgeOrePit /// !
+		end if
+		wait 10 seconds
+	until L3JapaneseConverted == 1
+	end loop
+
+end script BodgeOre /// !

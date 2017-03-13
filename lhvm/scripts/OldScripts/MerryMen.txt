@@ -1,0 +1,1447 @@
+global MerryCamp = 0
+global Merrymen[5]
+global MerryCloseVillager = 0
+global Merrylocations[20]
+global NonexistantTarget = 0
+global NextToMerryGuard = 0
+global MerryGuard = 0
+global WallGate = 0
+global OtherSideofMerryGuard = 0
+global MerryAllStop = 0
+global GlBlindTimer = 0
+global HighTown = 0
+global LowTown = 0
+global CampfirePos = 0
+global GoingToHighTown = 0
+global MerryHeldObject = 0
+global MerrymenHeld = 0
+global MerrymenInCampHeld = 0
+global MerryGuardInHand = 0
+global AllMerrymen[10]
+global MerrymenInMerryCamp[5]
+global NumberofAllMerrymen = 0
+global NumberofMerrymen = 0
+global LowestMerrymen = 0
+global LowestMerryMenDead = 0
+global NumberOfMerrylocations = 0
+global MerryStoragePit[3]
+global TownToGoTo = 0
+global EnteringHighTown = 0
+global LeavingHighTown = 0
+global InHighTown = 0
+global PickupPoint = 0
+global MerryStart[10]
+global MerryGuardStart = 0
+global DropOffPoint = 0
+global HappyVillagers[10]
+global MenToCreate = 0
+global RobinHoodIsDead = 0
+global DoneStuff = 0
+
+define script ChatIfNeeded
+define script Movement(whichmerrymen)
+define script DefineMerrylocations
+define script IsMerrymanInHand
+define script ManInHand(DudeInHand)
+define script WhichRichPoor
+define script Diversion
+define script DroppedInJail(CurrentlyHeld)
+define script CheckForFoodInCamp
+define script AllSitTogether(whichmerrymen)
+define script CampManInHand(DudeInHand)
+define script CheckifMerrymenDead
+define script IsMerryMenLowestMerrymenDead
+define script RobinFiringArrows
+define script HappilyReceived
+define script HowManyMerryMenExist
+define script CheckIfNearVillager
+define script TakeMeHome(whichallmerryman)
+
+define MMfalse = 0
+define MMtrue = 1
+define Japan = 0
+define Norse = 1
+define Greek = 2
+define HowMuchFoodStolen = 100
+define HowLongDelayOnRobinsLessons = 100
+
+global SomeoneNearby = MMfalse
+global MerrymenHappy = MMfalse
+
+//run script MerryMen
+
+begin script MerryMen
+
+	CreateMerrymen = 1
+	Campfire = 0
+	currentcheck = 0
+	counter = 0
+	Random = 0
+	WhereToGo = 0
+	RandomNumberArray[5]
+	whichMerrymenInMerryCamp = 0
+	ExitLoop = 0
+	localMenToCreate = 0
+	SpawnPoint = 0
+	Sancturary = 0
+	
+start
+	
+	CampfirePos = marker at {509.169,41.719,569.570}
+	Campfire = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {CampfirePos}
+		
+	MerryStart[0] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 36+number from -7 to 7
+	MerryStart[1] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 72+number from -7 to 7
+	MerryStart[2] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 108+number from -7 to 7
+	MerryStart[3] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 144+number from -7 to 7
+	MerryStart[4] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 180+number from -7 to 7
+	MerryStart[5] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 216+number from -7 to 7
+	MerryStart[6] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 252+number from -7 to 7
+	MerryStart[7] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 288+number from -7 to 7
+	MerryStart[8] = marker at get target from {NonexistantTarget} to {Campfire} distance 3+number from -0.8 to 0.8 angle 324+number from -7 to 7
+	MerryStart[9] = marker at get target from {NonexistantTarget} to {Campfire} distance 10+number from -0.8 to 0.8 angle 0+number from -7 to 7
+	
+	AllMerrymen[0] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[0]}
+	AllMerrymen[1] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[1]}
+	AllMerrymen[2] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[2]}
+	AllMerrymen[3] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[3]}
+	AllMerrymen[4] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[4]}
+	AllMerrymen[5] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[5]}
+	AllMerrymen[6] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[6]}
+	AllMerrymen[7] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[7]}
+	AllMerrymen[8] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[8]}
+	AllMerrymen[9] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {MerryStart[9]}
+	// This takes five random dudes from the ten merrymen (AllMerrymen), apart from Robin
+	
+	begin loop
+		
+
+			Random = number from 0 to 8
+				begin loop
+					if Random == RandomNumberArray[counter]
+						Random = number from 0 to 8
+						counter = 0
+					else
+						counter++
+						if counter == 5
+							Merrymen[currentcheck] = AllMerrymen[Random]
+							RandomNumberArray[currentcheck] = Random
+							currentcheck++
+							counter = 0
+						end if					
+					end if
+				
+					until currentcheck == 5
+				end loop
+				
+			currentcheck = 0
+			counter = 0
+			
+			//This put the remaining five dudes into their own array (MerrymeninMerryCamp)
+			
+			begin loop
+				if AllMerrymen[currentcheck] != Merrymen[counter]
+					counter++
+					
+					if counter == 5
+						MerrymenInMerryCamp[whichMerrymenInMerryCamp] = AllMerrymen[currentcheck]
+						whichMerrymenInMerryCamp++
+						currentcheck++
+						counter = 0
+					end if
+				else
+					currentcheck++
+					counter = 0
+				end if
+				
+				until whichMerrymenInMerryCamp == 5
+					
+			end loop
+
+			whichMerrymenInMerryCamp = 0
+			currentcheck = 0
+			counter = 0
+			
+			//bags appear as axes currently
+
+			set Merrymen[1] carrying CARRIED_OBJECT_BAG
+			set Merrymen[2] carrying CARRIED_OBJECT_BAG
+			set Merrymen[3] carrying CARRIED_OBJECT_BAG	
+			set Merrymen[4] carrying CARRIED_OBJECT_BAG
+			
+			//temporary speedup for ease of scripting
+			
+			SPEED of Merrymen[0] = 1.0
+			SPEED of Merrymen[1] = 1.0
+			SPEED of Merrymen[2] = 1.0
+			SPEED of Merrymen[3] = 1.0
+			SPEED of Merrymen[4] = 1.0
+		
+		//run background script HowManyMerryMenExist
+		run background script IsMerrymanInHand
+		//run background script IsMerryMenLowestMerrymenDead
+
+		WhereToGo = marker at get target from {AllMerrymen[9]} to {Campfire} distance 7 angle 0
+		
+			run script WhichRichPoor
+			wait 0.3 seconds
+		
+			run script DefineMerrylocations
+			wait 0.3 seconds
+			
+			set AllMerrymen[9] focus to {CampfirePos}
+			play anim "M_P_TALK2_MALE" on AllMerrymen[9] loop 1
+			begin loop
+				set AllMerrymen[counter] focus to {AllMerrymen[9]}
+				counter++ 
+				until counter == 9
+			end loop
+			wait until AllMerrymen[9] played
+			counter = 0
+			
+			move AllMerrymen[9] position to {WhereToGo}
+		
+		run background script CheckifMerrymenDead
+		run background script Diversion
+		
+		counter = 1
+		begin loop
+			run background script Movement(counter)
+			wait 1 second
+			counter++
+			until counter == NumberofMerrymen
+		end loop
+		
+		counter = 0
+		
+		begin loop
+			run background script AllSitTogether(counter)
+			wait 0.3 seconds
+			counter++
+			until counter == 5
+		end loop
+			
+		wait 20 seconds
+		
+		wait until {Merrymen[NumberofMerrymen-1]} near {CampfirePos} radius 3.3
+	
+		counter = 1
+
+		begin loop
+			set Merrymen[counter] focus to {CampfirePos}
+			counter++
+			until counter == NumberofMerrymen +1
+		end loop
+
+		counter = 0
+
+		begin loop
+			play anim "M_P_SITTING_DOWN1_OUT_OF" on MerrymenInMerryCamp[counter] loop 1
+			counter++
+			until counter == NumberofAllMerrymen-NumberofMerrymen
+		end loop
+
+		counter = 0
+
+		stop script "ChatIfNeeded"
+
+		wait until DoneStuff == MMtrue
+		
+		counter = 1
+		begin loop
+			stop script "Movement(whichmerrymen)"
+			counter++
+			until counter == NumberofMerrymen+1
+		end loop
+
+		counter = 0
+
+		localMenToCreate = MenToCreate
+
+		begin loop
+			if AllMerrymen[counter] not exists
+				AllMerrymen[counter] = create VILLAGER VILLAGER_DISCIPLE_ARCHER at {SpawnPoint}
+				run background script TakeMeHome(counter)
+				MenToCreate--
+			end if
+			
+			until MenToCreate == 0 or counter == 10
+		end loop
+		
+		//stop script "DefineMerrylocations"
+		stop script "IsMerrymanInHand"
+		stop script "ManInHand(DudeInHand)"
+		//stop script "WhichRichPoor"
+		stop script "Diversion"
+		//stop script "DroppedInJail(CurrentlyHeld)"
+		stop script "CheckForFoodInCamp"
+		stop script "AllSitTogether(whichmerrymen)"
+		//stop script "CampManInHand(DudeInHand)"
+		stop script "CheckifMerrymenDead"
+		//stop script "IsMerryMenLowestMerrymenDead"
+		stop script "RobinFiringArrows"
+
+		NextToMerryGuard = 0
+		MerryGuard = 0
+		WallGate = 0
+		OtherSideofMerryGuard = 0
+		MerryAllStop = 0
+		GlBlindTimer = 0
+		HighTown = 0
+		LowTown = 0
+		GoingToHighTown = 0
+		MerryHeldObject = 0
+		MerrymenHeld = 0
+		MerrymenInCampHeld = 0
+		MerryGuardInHand = 0
+		EnteringHighTown = 0
+		LeavingHighTown = 0
+		InHighTown = 0
+		PickupPoint = 0
+		NumberOfMerrylocations = 0
+		counter = 0
+
+		until MerrymenHappy == MMtrue or RobinHoodIsDead == MMtrue
+	
+	end loop
+
+	counter = 0
+
+	if MerrymenHappy == MMtrue
+		//Do attatchment to your town stuff
+
+	elsif RobinHoodIsDead == MMtrue
+		stop script "AllSitTogether(whichmerrymen)"
+		stop script "RobinFiringArrows"
+
+		/////////////////////////////////////////////////////////////////////////
+		//Make the guys round the camp get scared and run off to the norse
+		begin loop
+			play anim "M_P_TALK1_MALE" on MerrymenInMerryCamp[counter] loop 1
+			wait until MerrymenInMerryCamp[counter] played
+			move MerrymenInMerryCamp[counter] position to {Sancturary}
+
+		counter++
+		until counter == NumberofAllMerrymen-NumberofMerrymen
+		end loop
+		wait until {Merrymen[NumberofMerrymen-1]} near {CampfirePos} radius 3.3
+		
+		/////////////////////////////////////////////////////////////////////////
+		//Make the other merrymen do the same on their return
+		begin loop
+			play anim "M_P_TALK1_MALE" on Merrymen[counter] loop 1
+			wait until Merrymen[counter] played
+			move Merrymen[counter] position to {Sancturary}
+
+		counter++
+		until counter == NumberofMerrymen
+		end loop
+
+		
+		//do attatchment to norse town and deletion stuff
+
+	end if
+
+end script MerryMen
+
+//------------------------------------------------------------------
+// This runs if there is a villager near the MerryMen
+
+begin script ChatIfNeeded
+	counter = 0
+	LocalMerrymen = 0
+	MoveOnTimer = create timer for 0 seconds
+	Talkingdude = 0
+	
+start
+	GlBlindTimer = create timer for 0 seconds
+	
+	begin loop
+		wait until SomeoneNearby == MMtrue
+		set MoveOnTimer time to 8 seconds
+		
+		begin loop
+			if Merrymen[counter] exists
+				move Merrymen[counter] position to {Merrymen[counter]}
+			end if
+			counter++
+			until counter ==5
+		end loop
+		
+		counter = LowestMerrymen
+		
+		wait 0.3 seconds
+		
+		/*
+		play anim "M_P_TURN_180" on Merrymen[2] loop 1
+		play anim "M_P_TURN_180" on Merrymen[4] loop 1
+		wait until Merrymen[2] played
+		wait until Merrymen[4] played
+		*/
+		//--Need a move focus function
+		
+		if NumberofMerrymen == 5
+			set Merrymen[2] focus to {Merrymen[1]}
+			play anim "M_P_TALK1_MALE" on Merrymen[2] loop 15
+			set Merrymen[1] focus to {Merrymen[2]}
+			play anim "M_P_CONFUSED_MALE5" on Merrymen[1] loop 15
+			set Merrymen[4] focus to {Merrymen[3]}
+			play anim "M_P_TALK1_MALE" on Merrymen[4] loop 15
+			set Merrymen[3] focus to {Merrymen[4]}
+			play anim "M_P_CONFUSED_MALE5" on Merrymen[3] loop 15
+		elsif NumberofMerrymen == 4
+			begin loop
+				if Merrymen[counter] exists and Talkingdude == 0
+					Talkingdude = Merrymen[counter]
+				elsif Merrymen[counter] exists and Talkingdude != 0
+					set Talkingdude focus to {Merrymen[counter]}
+					set Merrymen[counter] focus to {Talkingdude}
+					Talkingdude play anim "M_P_TALK1_MALE" loop 15
+				end if
+				
+				until counter == NumberofMerrymen
+			end loop
+			
+		elsif NumberofMerrymen == 3
+			begin loop
+				if Merrymen[counter] exists and Talkingdude == 0
+					Talkingdude = Merrymen[counter]
+				elsif Merrymen[counter] exists and Talkingdude != 0
+					set Talkingdude focus to {Merrymen[counter]}
+					set Merrymen[counter] focus to {Talkingdude}
+					Talkingdude play anim "M_P_TALK1_MALE" loop 15
+					
+				end if
+				until counter == NumberofMerrymen
+			end loop
+
+		elsif NumberofMerrymen == 2
+			begin loop
+				if Merrymen[counter] exists
+					play anim "M_P_WAITING_IMPATEINTLY" on Merrymen[counter] loop 1
+				end if
+				counter++
+				until counter == NumberofMerrymen
+			end loop
+   	
+		end if
+		
+		wait until SomeoneNearby == MMfalse or get MoveOnTimer time remaining <= 0
+		if SomeoneNearby != MMfalse
+			SomeoneNearby = MMfalse
+			set GlBlindTimer time to 10 seconds
+		end if
+		
+		until InHighTown == MMfalse
+	end loop
+end script ChatIfNeeded
+
+//------------------------------------------------------------------
+//This Moves each Merryman to each location in the Merrylocations array
+begin script Movement(whichmerrymen)
+	counter = 0
+	LocationsWithOffset[20]
+	Sitdown = 0
+
+start
+	
+	begin loop
+		
+		//temp 'fix' to avoid using ypos cos it's busted
+		//LocationsWithOffset[counter] = marker at {XPOS of Merrylocations[counter]+number from -1 to 1, SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Merrylocations[counter], ZPOS of Merrylocations[counter]+number from -1 to 1}
+		LocationsWithOffset[counter] = Merrylocations[counter]
+		move Merrymen[whichmerrymen] position to {LocationsWithOffset[counter]}
+
+		wait until {Merrymen[whichmerrymen]} near {LocationsWithOffset[counter]} radius 0.2 or SomeoneNearby == MMtrue or MerrymenHeld == MMtrue or NumberofMerrymen == 0
+		
+		if SomeoneNearby == MMtrue
+			wait until SomeoneNearby == MMfalse
+			counter --
+		elsif MerrymenHeld == MMtrue
+			wait until MerrymenHeld == MMfalse
+			counter --
+		elsif counter == 0
+			GoingToHighTown = MMtrue
+			
+		elsif counter == EnteringHighTown-1
+			wait until {Merrymen[LowestMerrymen]} near {OtherSideofMerryGuard} radius 0.2
+			
+		elsif counter == PickupPoint
+			play anim "M_P_FARMER_HARVESTING" on Merrymen[whichmerrymen] loop 1
+			wait until Merrymen[whichmerrymen] played
+			remove resource RESOURCE_TYPE_FOOD HowMuchFoodStolen from MerryStoragePit[HighTown]
+		elsif counter == DropOffPoint
+			play anim "M_P_PUT_DOWN_BAG" on Merrymen[whichmerrymen] loop 1
+			wait until Merrymen[whichmerrymen] played
+			add resource RESOURCE_TYPE_FOOD HowMuchFoodStolen to MerryStoragePit[LowTown]			
+		elsif counter == EnteringHighTown
+			//Arrived ++
+			InHighTown = MMtrue
+			run background script ChatIfNeeded
+			run background script CheckIfNearVillager
+			
+		elsif counter == LeavingHighTown
+			InHighTown = MMfalse
+			wait 0.3 seconds
+			SomeoneNearby = MMfalse
+		
+		end if
+		counter++
+		until counter == NumberOfMerrylocations or Merrymen[whichmerrymen] not exists or whichmerrymen == LowestMerrymen or NumberofMerrymen == 2
+	end loop
+
+	if NumberofMerrymen == 2
+		SPEED of Merrymen[whichmerrymen] = 1.0
+	end if
+		Sitdown = marker at get target from {Merrymen[whichmerrymen]} to {CampfirePos} distance 3 angle 360/whichmerrymen
+
+		move Merrymen[whichmerrymen] position to {Sitdown}
+		wait until {Merrymen[whichmerrymen]} near {Sitdown} radius 0.2
+		DoneStuff = MMtrue
+	
+end script Movement
+
+//------------------------------------------------------------------
+//This checks if there is a villager near the Merrymen
+begin script CheckIfNearVillager
+	counter = 1
+	CheckEachDude = 0
+start
+	wait 7 seconds
+	
+	begin loop
+		wait 3 seconds
+		MerryCloseVillager = get VILLAGER at {Merrymen[counter]} radius 2 excluding scripted 
+			
+		if (MerryCloseVillager exists or MerryAllStop == 1) and get GlBlindTimer time remaining <= 0
+			MerryAllStop = 1
+			//CheckEachDude++
+			MerryCloseVillager = 0
+			SomeoneNearby = MMtrue
+			wait 0.1 seconds
+			MerryAllStop = 0
+		else
+			SomeoneNearby = MMfalse
+		end if
+				
+		counter++
+		if counter == 5
+			counter = 1
+		end if
+		
+		until InHighTown == MMfalse
+	end loop
+end script CheckIfNearVillager
+//------------------------------------------------------------------------
+//These are the actions of Merrymen[LowestMerrymen] when he breaks away from the others and diverts the guards attention
+
+begin script Diversion
+	
+counter = 0
+
+start
+	//set Guard focus to {1366.849,29.726,1470.228}
+	
+			begin loop
+			
+				begin loop
+					move Merrymen[LowestMerrymen] position to {Merrylocations[counter]}
+					wait until {Merrymen[LowestMerrymen]} near {Merrylocations[counter]} radius 0.2 or MerrymenHeld == MMtrue
+					if MerrymenHeld == MMtrue
+						wait until MerrymenHeld == MMfalse
+						counter--
+					end if
+					counter++
+					until counter == 3
+				end loop
+				
+				set MerryGuard focus to {Merrymen[LowestMerrymen]}
+				play anim "M_P_TALK1_MALE" on Merrymen[LowestMerrymen] loop 1
+				wait until Merrymen[LowestMerrymen] played
+					
+				//This anim is busted
+				//Merrymen[LowestMerrymen] play anim "M_P_TALKING_AND_POINTING" loop 1
+				//wait until Merrymen[LowestMerrymen] played
+					
+				OtherSideofMerryGuard = marker at get target from {Merrymen[LowestMerrymen]} to {WallGate} distance 2.4 angle 350
+				wait 1 second
+				move Merrymen[LowestMerrymen] position to {OtherSideofMerryGuard}
+				wait until {Merrymen[LowestMerrymen]} near {OtherSideofMerryGuard}
+				//SPEED of Merrymen[LowestMerrymen] *= 0.8
+				until LowestMerryMenDead == MMtrue or {Merrymen[LowestMerrymen]} near {OtherSideofMerryGuard}
+				
+			end loop
+			
+			if LowestMerryMenDead == MMtrue
+				run background script Diversion
+				LowestMerryMenDead = MMfalse
+			else
+				begin loop
+					set MerryGuard focus to {Merrymen[LowestMerrymen]}
+					until {Merrymen[LowestMerrymen]} near {OtherSideofMerryGuard} radius 0.2
+				end loop
+				
+				play anim "M_P_PUZZLED" on Merrymen[LowestMerrymen] loop 1
+				wait until Merrymen[LowestMerrymen] played
+				play anim "M_P_TURN_180" on Merrymen[LowestMerrymen] loop 1
+				wait until Merrymen[LowestMerrymen] played
+				set Merrymen[LowestMerrymen] focus to {MerryGuard}
+				wait 2 seconds
+				play anim "M_P_TALK1_MALE" on Merrymen[LowestMerrymen] loop 100
+				wait 15 seconds
+				wait until {Merrymen[NumberofMerrymen-1]} near {Merrylocations[LeavingHighTown+1]} radius 2
+				move Merrymen[LowestMerrymen] position to {MerryStart[6]}
+				wait until {Merrymen[LowestMerrymen]} near {MerryStart[6]} radius 2
+				move MerryGuard position to {MerryGuardStart}
+				set Merrymen[LowestMerrymen] focus to {CampfirePos}
+				wait until {MerryGuard} near {MerryGuardStart} radius 0.2
+				delete MerryGuard
+				play anim "M_P_SITTING_DOWN1_INTO" on Merrymen[LowestMerrymen] loop 1
+				wait until Merrymen[LowestMerrymen] played
+				play anim "M_P_SITTING_DOWN1_SITTING" on Merrymen[LowestMerrymen] loop 100
+			
+			end if
+		
+end script Diversion
+
+//--------------------------------------------------------------------------------
+// This assess which town is 'rich' and 'poor'
+
+begin script WhichRichPoor
+
+//should these be global?
+NorseStoragePitPos = 0
+GreekStoragePitPos = 0
+JapanStoragePitPos = 0
+
+NorseFood = 0
+GreekFood = 0
+JapanFood = 0
+test = 0
+
+start
+
+JapanStoragePitPos = marker at {879.013,37.763,287.875}
+NorseStoragePitPos = marker at {391.138,78.046,409.960}
+GreekStoragePitPos = marker at {816.326,38.458,943.899}
+	
+	//get store near for finding resource pit
+	MerryStoragePit[1] = get STORE at {NorseStoragePitPos} radius 7	
+	MerryStoragePit[2] = get STORE at {GreekStoragePitPos} radius 5
+	MerryStoragePit[0] = get STORE at {JapanStoragePitPos} radius 7
+
+	NorseFood = get resource RESOURCE_TYPE_FOOD in MerryStoragePit[1]
+	GreekFood = get resource RESOURCE_TYPE_FOOD in MerryStoragePit[2]
+	JapanFood = get resource RESOURCE_TYPE_FOOD in MerryStoragePit[0]
+	
+	if (JapanFood > NorseFood) and (NorseFood > GreekFood)
+		HighTown = Japan
+		LowTown = Greek
+	end if
+	
+	if (JapanFood > GreekFood) and (GreekFood > NorseFood)
+		HighTown = Japan
+		LowTown = Norse
+	end if
+	
+	if (NorseFood > GreekFood) and (GreekFood > JapanFood)
+		HighTown = Norse
+		LowTown = Japan
+	end if		
+	
+	if (NorseFood > JapanFood) and (JapanFood > GreekFood)
+		HighTown = Norse
+		LowTown = Greek
+	end if
+		
+	if (GreekFood > NorseFood) and (NorseFood > JapanFood)
+		HighTown = Greek
+		LowTown = Japan
+	end if
+	
+	if (GreekFood > JapanFood) and (JapanFood > NorseFood)
+		HighTown = Greek
+		LowTown = Norse
+	end if
+
+end script WhichRichPoor
+//--------------------------------------------------------------------------------------------
+//Sets up the marker for the route to Hightown and then Lowtown
+begin script DefineMerrylocations
+
+start
+
+	if HighTown == 0
+
+		WallGate = marker at {649.701,35.109,506.932}
+		MerryGuard = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {WallGate}
+
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {639.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at get target from {Merrylocations[1]} to {WallGate} distance 2 angle 180
+		EnteringHighTown = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {642.747,35.261,506.406}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {645.247,35.261,506.406}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {647.747,35.261,506.406}
+		PickupPoint = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {650.247,35.261,506.406}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {652.747,35.261,506.406}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at get target from {Merrylocations[1]} to {WallGate} distance 2 angle 180
+		LeavingHighTown = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+
+	elsif HighTown == 1
+
+	WallGate = marker at {450.208,59.851,470.172}
+		MerryGuard = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {WallGate}
+
+		Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {495.298,39.273,509.693}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at get target from {Merrylocations[1]} to {WallGate} distance 2 angle 180
+		EnteringHighTown = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {475.058,53.452,456.821}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {477.558,53.452,456.821}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {480.058,53.452,456.821}
+		PickupPoint = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {482.558,53.452,456.821}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {485.058,53.452,456.821}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at get target from {Merrylocations[1]} to {WallGate} distance 2 angle 180
+		LeavingHighTown = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+		NumberOfMerrylocations++
+
+
+elsif HighTown == 2
+
+	WallGate = marker at {634.401,35.841,722.188}
+		MerryGuard = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {WallGate}
+
+		Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {596.161,35.666,658.646}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at get target from {Merrylocations[1]} to {WallGate} distance 2 angle 180
+		EnteringHighTown = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {600.710,35.861,695.362}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {603.210,35.861,695.362}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {605.710,35.861,695.362}
+		PickupPoint = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {608.210,35.861,695.362}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {610.710,35.861,695.362}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at get target from {Merrylocations[1]} to {WallGate} distance 2 angle 180
+		LeavingHighTown = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+		NumberOfMerrylocations++
+end if
+
+	if LowTown == 0
+
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		DropOffPoint = NumberOfMerrylocations
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+		Merrylocations[NumberOfMerrylocations] = marker at {634.807,35.409,509.855}
+		NumberOfMerrylocations++
+
+	elsif LowTown == 1
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	DropOffPoint = NumberOfMerrylocations
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {492.798,39.273,509.693}
+	NumberOfMerrylocations++
+
+	elsif LowTown == 2
+
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	DropOffPoint = NumberOfMerrylocations
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	NumberOfMerrylocations++
+	Merrylocations[NumberOfMerrylocations] = marker at {593.661,35.666,658.646}
+	NumberOfMerrylocations++
+	end if
+
+		run background script CheckForFoodInCamp
+
+	
+end script DefineMerrylocations
+//------------------------------------------------------------------------------------
+//Checks what is in the hand to see if it a Merryman
+
+begin script IsMerrymanInHand
+
+counter = 0
+CurrentlyHeld = 0
+WhichShouldBeScared = 0
+Jail = get HOUSE at {1129.736,4.337,1346.564}
+MerrymenAngle = 0
+AdjacentToMerrymenFace = 0
+MerrymenFace = 0
+
+start
+
+	begin loop
+		MerryHeldObject = get object held
+		if MerryHeldObject == Merrymen[counter] and CurrentlyHeld != Merrymen[counter]
+			CurrentlyHeld = Merrymen[counter]
+			//new lines here:
+			MerrymenHeld = MMtrue
+			MerrymenInCampHeld = MMfalse
+			run script ManInHand(counter)
+			begin loop
+				if Merrymen[WhichShouldBeScared] != CurrentlyHeld //Merrymen[counter]
+					play anim "M_P_SCARED_STIFF" on Merrymen[WhichShouldBeScared] loop 100
+				end if
+				WhichShouldBeScared++
+				until WhichShouldBeScared == NumberofMerrymen+1
+			end loop
+			WhichShouldBeScared = 0
+			
+		elsif MerryHeldObject == MerrymenInMerryCamp[counter] and CurrentlyHeld != MerrymenInMerryCamp[counter]
+			CurrentlyHeld = MerrymenInMerryCamp[counter]
+			MerrymenInCampHeld = MMtrue
+			MerrymenHeld = MMfalse
+			
+			run script CampManInHand(counter)
+			begin loop
+				if MerrymenInMerryCamp[WhichShouldBeScared] != CurrentlyHeld //MerrymenInMerryCamp[counter]
+					play anim "M_P_SITTING_DOWN2_OUT_OF" on MerrymenInMerryCamp[WhichShouldBeScared] loop 1
+					wait until Merrymen[WhichShouldBeScared] played
+					play anim "M_P_SCARED_STIFF" on MerrymenInMerryCamp[WhichShouldBeScared] loop 100
+				end if
+				WhichShouldBeScared++
+				until WhichShouldBeScared == NumberofMerrymen+1
+			end loop
+			WhichShouldBeScared = 0			
+			
+		elsif MerryHeldObject == MerryGuard and MerryGuard exists and CurrentlyHeld != MerryGuard
+			move Merrymen[0] position to {Merrymen[0]}
+			move Merrymen[1] position to {Merrymen[1]}
+			move Merrymen[2] position to {Merrymen[2]}
+			move Merrymen[3] position to {Merrymen[3]}
+			move Merrymen[4] position to {Merrymen[4]}
+			CurrentlyHeld = MerryGuard
+			MerrymenInCampHeld = MMfalse
+			MerrymenHeld = MMfalse
+			MerryGuardInHand = MMtrue
+			
+			MerrymenAngle = ANGLE of Merrymen[LowestMerrymen]
+			AdjacentToMerrymenFace = marker at {XPOS of Merrymen[LowestMerrymen]-10, SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Merrymen[LowestMerrymen], ZPOS of Merrymen[LowestMerrymen]}
+	
+			MerrymenFace = marker at get target from {AdjacentToMerrymenFace} to {Merrymen[LowestMerrymen]} distance 3 angle MerrymenAngle
+			wait 3 seconds
+			//store camera details
+			begin cinema
+				set camera position to {MerryGuard}+{2.500,0.000,2.500}
+				set camera focus to {MerryGuard}
+				//set Merrymen[LowestMerrymen] focus to {MerrymenFace}
+				//Merrymen[LowestMerrymen] play anim "M_P_TALK1_MALE" loop 1
+				
+				say "Noooooooo! I'm supposed to be guarding the gate looking out for those pesky merrymen!"
+				wait 5 seconds
+			end cinema
+			//restore camera details
+		elsif MerryHeldObject == 0
+			MerrymenInCampHeld = MMfalse
+			MerrymenHeld = MMfalse
+			CurrentlyHeld = 0
+		end if
+		
+		/*
+		if MerryHeldObject == 0 and {CurrentlyHeld} near {Jail} radius 5
+			run script DroppedInJail(CurrentlyHeld)
+		end if
+		*/
+		
+		counter++
+		if counter == 5
+			counter = 0
+		end if
+		until HighTown == 5
+	end loop
+	
+end script IsMerrymanInHand
+
+//--------------------------------------------------------------------------------------------
+//starts a cinema reacting when a merryman away from the camp is picked up
+
+begin script ManInHand(DudeInHand)
+
+counter = 0
+MerrymenFace = 0
+AdjacentToMerrymenFace = 0
+MerrymenWhoSpeaks = 0
+MerrymenAngle = 0
+
+start
+
+	begin loop
+		if counter != DudeInHand
+			move Merrymen[counter] position to {Merrymen[counter]}
+			if Merrymen[counter] exists
+				MerrymenWhoSpeaks = Merrymen[counter]
+			end if
+		end if
+		counter++
+		until counter == NumberofMerrymen
+	end loop
+	
+	//AdjacentToMerrymenFace = marker at {XPOS of Merrymen[DudeInHand], SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of MerrymenWhoSpeaks, ZPOS of Merrymen[DudeInHand]}
+	
+	wait 1 seconds
+	store camera details
+	begin cinema
+		
+		set camera lens 16.000
+		
+		set MerrymenWhoSpeaks focus to {Merrymen[DudeInHand]}
+		wait 0.1 seconds
+		MerrymenAngle = ANGLE of MerrymenWhoSpeaks
+		AdjacentToMerrymenFace = marker at {XPOS of MerrymenWhoSpeaks-10, SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of MerrymenWhoSpeaks, ZPOS of MerrymenWhoSpeaks}
+	
+		MerrymenFace = marker at get target from {AdjacentToMerrymenFace} to {MerrymenWhoSpeaks} distance 3 angle MerrymenAngle
+		
+		
+		set camera position to {MerrymenFace}
+	/*	set camera position to {XPOS of MerrymenFace, SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of MerrymenWhoSpeaks, ZPOS of MerrymenFace}
+		//SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of camera position = SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of {MerrymenWhoSpeaks}
+		//set Merrymen[1] focus to camera position
+		
+	*/	
+		set camera focus to {MerrymenWhoSpeaks} +{0.000,0.700,0.000} //This value will be based on the height of the actual actors
+		
+		MerrymenWhoSpeaks play anim "M_P_TALK1_MALE" loop 1
+		
+		//can I alter height?
+		if DudeInHand == 0
+			say "Please don't kill him! We're the Merry Men and we redistribute wealth!"
+		
+		elsif DudeInHand == 1
+			say "Please put him down or our boss will be very upset!"
+		
+		elsif DudeInHand == 2
+			say "Don't take him. We have good work to do!"
+		
+		elsif DudeInHand == 3
+			say "Don't hurt him. We've got orders to carry out"
+		
+		end if
+		
+		
+		wait 5 seconds
+		
+	end cinema
+	restore camera details
+
+end script ManInHand
+//------------------------------------------------------------------------------------
+//Starts a cinema reacting when a man from the camp is picked up
+begin script CampManInHand(DudeInHand)
+
+WhoSpeaks = 0
+counter = 0
+
+start
+
+	begin loop
+		if counter != DudeInHand
+			if MerrymenInMerryCamp[counter] exists
+				MerrymenInMerryCamp[WhoSpeaks] = MerrymenInMerryCamp[counter]
+			end if
+		end if
+		counter++
+		until counter == NumberofMerrymen
+
+	end loop
+	
+	store camera details
+	begin cinema
+		set camera lens 16.000
+		set camera position to {CampfirePos}
+		set camera focus to {MerrymenInMerryCamp[WhoSpeaks]} +{0.000,0.700,0.000}
+		MerrymenInMerryCamp[WhoSpeaks] play anim "M_P_TALK1_MALE" loop 1
+		if DudeInHand == 4
+			say "Don't hurt Robin! He's our leader!"
+		else
+			say "Do not harm us! We are doing good work being communists or something"
+		end if
+		wait 5 seconds
+	end cinema
+	restore camera details
+		
+		
+
+end script CampManInHand
+//---------------------------------------------------------------------------------------
+//Not used atm. Should be able to use Paul's Wanted series for the jail bit
+
+begin script DroppedInJail(CurrentlyHeld)
+
+JailerStart = marker at {1128.759,4.272,1346.454}
+JailerEnd = marker at {1126.226,4.027,1347.339}
+Jailer = 0
+//Merrymenjail = 0
+//Guardjail = 0
+
+start
+
+	begin cinema
+		set camera lens 48.000
+		set camera position to {1118.124,8.432,1344.339}
+		set camera focus to {1128.995,4.450,1347.841}
+		wait until CurrentlyHeld is not FLYING
+		//Need to change this so it deals with ANY merryman
+		if CurrentlyHeld == AllMerrymen[9]
+			
+			delete CurrentlyHeld
+			Jailer = create VILLAGER VILLAGER_INFO_GREEK_FORESTER_MALE at {JailerStart}
+			move Jailer position to {JailerEnd}
+
+			wait until {Jailer} near {JailerEnd} radius 0.1
+			
+			set camera lens 31.000
+			set camera position to {1125.625,5.152,1347.045}
+			set camera focus to {1136.756,0.627,1348.422}
+			wait until {Jailer} at {JailerEnd}
+			set Jailer focus to {1114.648,2.684,1348.734}
+			Jailer play anim "M_P_TALK1_MALE" loop 1
+			say "You've brought me Robin Hood. Cool! But I could still do with getting the rest of the merrymen off the streets"
+			wait 5 seconds
+			clear dialogue
+			
+		elsif CurrentlyHeld == AllMerrymen[0]
+			
+			delete CurrentlyHeld
+			Jailer = create VILLAGER VILLAGER_INFO_GREEK_FORESTER_MALE at {JailerStart}
+			move Jailer position to {JailerEnd}
+
+			wait until {Jailer} near {JailerEnd} radius 0.1
+			
+			set camera lens 31.000
+			set camera position to {1125.625,5.152,1347.045}
+			set camera focus to {1136.756,0.627,1348.422}
+			wait until {Jailer} at {JailerEnd}
+			set Jailer focus to {1114.648,2.684,1348.734}
+			Jailer play anim "M_P_TALK1_MALE" loop 1
+			say "Ooh it's a Merryman. Cheers dude!"
+			wait 5 seconds
+			clear dialogue
+			
+		elsif CurrentlyHeld == MerryGuard
+			delete CurrentlyHeld
+			Jailer = create VILLAGER VILLAGER_INFO_GREEK_FORESTER_MALE at {JailerStart}
+			move Jailer position to {JailerEnd}
+
+			wait until {Jailer} near {JailerEnd} radius 0.1
+			
+			set camera lens 31.000
+			set camera position to {1125.625,5.152,1347.045}
+			set camera focus to {1136.756,0.627,1348.422}
+			wait until {Jailer} at {JailerEnd}
+			set Jailer focus to {1114.648,2.684,1348.734}
+			Jailer play anim "M_P_TALK1_MALE" loop 1
+			say "Who the hell's this?! My jail is crowded enough dude!"
+			wait 5 seconds
+			clear dialogue
+			move Jailer position to {JailerStart}
+		end if
+			
+	end cinema
+
+end script DroppedInJail
+//---------------------------------------------------------------
+//Checks to see if you have placed any food near the camp
+begin script CheckForFoodInCamp
+
+CameraPos = 0
+HowMuchFoodInCamp = 0
+counter = 0
+CampStore = 0
+CurrentAmount = 0
+
+
+start
+
+	begin loop
+
+		begin loop
+			CampStore = get STORE at {CampfirePos} radius 6
+			HowMuchFoodInCamp = get resource RESOURCE_TYPE_FOOD in CampStore
+
+			until HowMuchFoodInCamp > CurrentAmount
+
+		end loop
+
+		CurrentAmount = HowMuchFoodInCamp
+
+		CameraPos = marker at get target from {CampfirePos} to {AllMerrymen[9]} distance 3 angle 0
+		wait 5 seconds
+		begin cinema
+			set camera lens 12.000
+			set AllMerrymen[9] focus to {CameraPos}
+			
+			counter = 0
+
+			set camera position to {CameraPos}
+			
+			play anim "M_P_TALK1_MALE" on AllMerrymen[9] loop 1
+			set camera focus to {AllMerrymen[9]} +{0.000,0.700,0.000}
+			if HowMuchFoodInCamp < 500
+				say "er... thanks dude. That'll *really* help the needy."
+			else
+				say "You've brought us food to help with our crusade. Now we will come and help you with our kickass archer skills!!"
+				MerrymenHappy = MMtrue
+			end if
+			wait 4 seconds
+		end cinema
+
+		until NumberofAllMerrymen == 11
+		// this line will need changing
+	end loop
+	
+end script CheckForFoodInCamp
+//---------------------------------------------------------------------------------
+//Makes all of the merrymen at the camp sit down and listen to Robin Hood
+begin script AllSitTogether(whichmerrymen)
+
+
+
+start
+	
+
+	set MerrymenInMerryCamp[whichmerrymen] focus to {CampfirePos}
+	play anim "M_P_SITTING_DOWN1_INTO" on MerrymenInMerryCamp[whichmerrymen] loop 1
+	wait until MerrymenInMerryCamp[whichmerrymen] played
+	play anim "M_P_SITTING_DOWN1_SITTING" on MerrymenInMerryCamp[whichmerrymen] loop 100
+	//wait until MerrymenInMerryCamp[whichmerrymen] played
+	wait 10 seconds
+	play anim "M_P_TALK1_MALE" on AllMerrymen[9] loop 4
+	wait until AllMerrymen[9] played
+
+
+	
+	if whichmerrymen == 0
+		run background script RobinFiringArrows
+	end if
+
+
+
+	
+end script AllSitTogether
+//---------------------------------------------------------------------------------------
+//Checks how many Merrymen and AllMerrymen exist
+begin script HowManyMerryMenExist
+
+counter = 0
+localNumberofAllMerrymen = 0
+localNumberofMerrymen = 0
+
+start
+
+	begin loop
+		begin loop
+			if AllMerrymen[counter] exists
+				localNumberofAllMerrymen++
+			end if
+			counter++
+			until counter == 10
+		end loop
+		
+		NumberofAllMerrymen = localNumberofAllMerrymen
+		localNumberofAllMerrymen = 0
+		counter = 0
+		
+		begin loop
+			if Merrymen[counter] exists
+				localNumberofMerrymen++
+			end if
+			counter++
+			until counter == 5
+		end loop
+		
+		NumberofMerrymen = localNumberofMerrymen
+		localNumberofMerrymen = 0
+		counter = 0
+		until NumberofAllMerrymen == 11
+		//dunno what to actually put for this line
+	end loop
+
+
+end script HowManyMerryMenExist
+//----------------------------------------------------------------------------
+//Checks AllMerrymen and if any are dead it releases them
+//It *should* now also do the job of both HowManyMerryMenExist and IsMerryMenLowestMerrymenDead
+begin script CheckifMerrymenDead
+
+counter = 0
+localNumberofAllMerrymen = 0
+localNumberofMerrymen = 0
+
+start
+
+//wait 20 seconds
+	begin loop
+	
+		if HEALTH of Merrymen[counter] <= 0
+			release Merrymen[counter]
+			MenToCreate++
+			if counter == LowestMerrymen
+				LowestMerryMenDead = MMtrue
+				LowestMerrymen++
+			end if
+		else
+			localNumberofAllMerrymen++
+		end if
+
+		if HEALTH of MerrymenInMerryCamp[counter] <= 0
+			if counter != 4
+				release MerrymenInMerryCamp[counter]
+			else
+				RobinHoodIsDead = MMtrue
+			end if
+		else
+			localNumberofAllMerrymen++
+			localNumberofMerrymen++
+		end if
+
+		counter++
+		if counter == 5
+			NumberofAllMerrymen = localNumberofAllMerrymen
+			NumberofMerrymen = localNumberofMerrymen
+			localNumberofAllMerrymen = 0
+			localNumberofMerrymen = 0
+			counter = 0
+		end if
+		
+		//TEMP!!!
+		until NumberofAllMerrymen == 11
+	
+	end loop
+
+end script CheckifMerrymenDead
+//--------------------------------------------------------------------------------
+//Checks if the lowest man in the Merrymen array is dead
+begin script IsMerryMenLowestMerrymenDead
+
+start
+
+	begin loop
+		if Merrymen[LowestMerrymen] not exists
+			LowestMerryMenDead = MMtrue
+			wait 5 seconds
+			LowestMerrymen++
+		end if
+	end loop
+
+end script IsMerryMenLowestMerrymenDead
+//-----------------------------------------------------------------------------------
+//Robin shows his merrymen how to shoot arrows as good as him. Just something for them to do around the campfire now and then
+begin script RobinFiringArrows
+
+Robinstanding = 0
+counter = 0
+Merrymenstanding = 0
+Wherefiring = 0
+
+start
+
+	Robinstanding = marker at {494.012,40.473,564.982}
+	Wherefiring = marker at {483.102,38.624,553.466}
+
+	wait HowLongDelayOnRobinsLessons seconds
+	begin loop
+		play anim "M_P_SITTING_DOWN2_OUT_OF" on MerrymenInMerryCamp[counter] loop 1
+		wait until MerrymenInMerryCamp[counter] played
+		counter++
+		until counter == 4
+	end loop
+	counter = 0
+	
+	move AllMerrymen[9] position to {Robinstanding}
+	begin loop
+		Merrymenstanding = marker at get target from {CampfirePos} to {Robinstanding} distance 3+counter angle 40
+		move MerrymenInMerryCamp[counter] position to {Merrymenstanding}
+		counter++
+		until counter == 4
+	end loop
+	counter = 0
+	wait 3 seconds
+	wait until {AllMerrymen[9]} near {Robinstanding}
+	set AllMerrymen[9] focus to {Wherefiring}
+	play anim "M_P_BOW&ARROW_5" on AllMerrymen[9] loop 3
+	wait until AllMerrymen[9] played
+	begin loop
+		set MerrymenInMerryCamp[counter] focus to {AllMerrymen[9]}
+		play anim "M_P_CROWD_IMPRESSED_1" on MerrymenInMerryCamp[counter] loop 1
+		counter++
+		until counter == 4
+	end loop
+	counter = 0
+	set AllMerrymen[9] focus to {MerrymenInMerryCamp[0]}
+	play anim "M_P_TALK1_MALE" on AllMerrymen[9] loop 1
+	wait until AllMerrymen[9] played
+	set AllMerrymen[9] focus to {Wherefiring}
+	begin loop
+		set MerrymenInMerryCamp[counter] focus to {Wherefiring}
+		counter++
+		until counter == 4
+	end loop
+	counter = 0
+	play anim "M_P_BOW&ARROW_5" on AllMerrymen[9] loop 3
+	wait until AllMerrymen[9] played
+	begin loop
+		set MerrymenInMerryCamp[counter] focus to {AllMerrymen[9]}
+		play anim "M_P_CROWD_IMPRESSED_1" on MerrymenInMerryCamp[counter] loop 1
+		counter++
+		until counter == 4
+	end loop
+	counter = 0
+	set AllMerrymen[9] focus to {MerrymenInMerryCamp[0]}
+	play anim "M_P_TALK1_MALE" on AllMerrymen[9] loop 2
+	wait until AllMerrymen[9] played
+	begin loop
+	move MerrymenInMerryCamp[counter] position to {MerryStart[counter]}
+		counter++
+		until counter == 5
+	end loop
+
+	counter = 0
+
+	wait until {MerrymenInMerryCamp[4]} near {MerryStart[4]}
+
+	begin loop
+		run background script AllSitTogether(counter)
+		wait 0.3 seconds
+		counter++
+		until counter == 5
+	end loop
+
+
+end script RobinFiringArrows
+//------------------------------------------------------------------------
+// Reaction in LowTown to the food you drop off
+begin script HappilyReceived
+
+counter = 0
+GetVillagerTimer = create timer for 0 seconds
+NumberofHappyVillagers = 0
+VillagersStand = 0
+
+start
+
+VillagersStand = marker at get target from {HappyVillagers[0]} to {DropOffPoint} distance 3 angle 180
+
+set GetVillagerTimer time to 6 seconds
+
+begin loop
+	HappyVillagers[counter] = get VILLAGER at {DropOffPoint} radius 15 excluding scripted
+	if HappyVillagers[counter] exists
+		counter++
+	end if
+	until counter == 11 or get GetVillagerTimer time remaining <= 0
+end loop
+
+if counter == 11
+	NumberofHappyVillagers = 10
+else
+	NumberofHappyVillagers = counter
+end if
+
+counter =0
+
+if HappyVillagers[0] exists
+	begin loop
+		move HappyVillagers[counter] position to {VillagersStand}
+		
+		until counter == NumberofHappyVillagers+1
+	end loop
+
+	begin loop
+		wait until {HappyVillagers[counter]} near {VillagersStand} radius 0.2
+		play anim "M_P_CROWD_IMPRESSED_1" on HappyVillagers[counter] loop 1
+		wait until HappyVillagers[counter] played
+		release HappyVillagers[counter]
+		until counter == NumberofHappyVillagers+1
+	end loop
+end if
+
+
+end script HappilyReceived
+
+//-----------------------------------------------------------------------
+begin script TakeMeHome(whichallmerryman)
+
+DelayForEachNewRecruit = 0
+
+start
+
+DelayForEachNewRecruit = 60
+
+wait DelayForEachNewRecruit seconds
+move AllMerrymen[whichallmerryman] position to {MerryStart[whichallmerryman]}
+
+wait until {AllMerrymen[whichallmerryman]} near {MerryStart[whichallmerryman]} radius 0.2
+
+
+
+end script TakeMeHome
+//------------------------------------------------------------------------

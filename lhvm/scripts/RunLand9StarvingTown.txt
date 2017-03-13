@@ -1,0 +1,6 @@
+run script RunLand9StarvingTown
+
+begin script RunLand9StarvingTown
+start
+	run script Land9StarvingTown
+end script RunLand9StarvingTown

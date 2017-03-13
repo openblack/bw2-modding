@@ -1,0 +1,422 @@
+define script L5_Intro_Meteor(MeteorNumber)
+
+begin script Land5Intro
+
+
+Abuser = 0
+
+Fighters[2]
+
+FightPlatoon=0
+
+LGeffecttt=0
+
+FakeShield=0
+
+Centralzz = marker at {769.729, 158.387, 1294.619}
+count = 0
+RandomAnimGenerator=0
+
+Peoplez[10]
+
+ffight[2]
+
+Legion=0
+effecttt=0
+
+Reactor[10]
+
+astart = marker at {842.781, 160.416, 1430.910}
+
+start
+
+set game time 10.00
+
+Legion = get FEATURE at {2089.178, 270.698, 1497.012} radius 5
+attach atmos "ghost_legion" to Legion// range 30
+set Legion atmos group 5 time 1.5 seconds
+
+begin cinema
+
+	start music "creaturefightbuildup_01"
+	//start music "creaturefightmain_01"
+
+	set fade red 0 green 0 blue 0 time 0
+
+
+	set camera position to {423.703, 586.121, -29.140}
+	set camera focus to {485.602, 557.789, 44.111}
+	move camera position to {286.207, 494.673, 87.949} time 8 easein 2 easeout 0
+	move camera focus to {352.955, 465.965, 156.656} time 8 easein 2 easeout 0
+	set fade in time 2
+	wait 2 seconds
+	say "The Norse homeland. A hellish place where ice, rocks and fire collide."
+
+	
+
+	//evil army peeps
+	Peoplez[0] = create VILLAGER NORSE_FORESTER at get target from {0,0,0} to {Centralzz} distance 5 angle 0
+	Peoplez[1] = create VILLAGER NORSE_SHEPHERD at get target from {0,0,0} to {Centralzz} distance 5 angle 36
+	Peoplez[2] = create VILLAGER NORSE_TRADER at get target from {0,0,0} to {Centralzz} distance 5 angle 72
+	Peoplez[3] = create VILLAGER NORSE_FISHERMAN at get target from {0,0,0} to {Centralzz} distance 5 angle 108
+	Peoplez[4] = create VILLAGER NORSE_FARMER at get target from {0,0,0} to {Centralzz} distance 5 angle 146
+	Peoplez[5] = create VILLAGER NORSE_FORESTER at get target from {0,0,0} to {Centralzz} distance 5 angle 182
+	Peoplez[6] = create VILLAGER NORSE_SHEPHERD at get target from {0,0,0} to {Centralzz} distance 5 angle 218
+	Peoplez[7] = create VILLAGER NORSE_FISHERMAN at get target from {0,0,0} to {Centralzz} distance 5 angle 256
+	Peoplez[8] = create VILLAGER NORSE_FARMER at get target from {0,0,0} to {Centralzz} distance 5 angle 292
+	Peoplez[9] = create VILLAGER NORSE_TRADER at get target from {0,0,0} to {Centralzz} distance 5 angle 328
+	set Peoplez[0] focus to {Centralzz}
+	set Peoplez[1] focus to {Centralzz}
+	set Peoplez[2] focus to {Centralzz}
+	set Peoplez[3] focus to {Centralzz}
+	set Peoplez[4] focus to {Centralzz}
+	set Peoplez[5] focus to {Centralzz}
+	set Peoplez[6] focus to {Centralzz}
+	set Peoplez[7] focus to {Centralzz}
+	set Peoplez[8] focus to {Centralzz}
+	set Peoplez[9] focus to {Centralzz}
+
+	while count <10
+	RandomAnimGenerator = number from 0 to 2
+	if RandomAnimGenerator == 0
+		play anim "a_p_picketing_stand_violent1" on Peoplez[count] loop -1
+
+	elsif RandomAnimGenerator == 1
+
+		play anim "a_p_picketing_stand_violent2" on Peoplez[count] loop -1
+		
+	elsif RandomAnimGenerator == 2
+		play anim "a_p_picketing_stand_violent3" on Peoplez[count] loop -1
+		
+
+	end if
+
+
+
+	count++
+	end while
+
+	ffight[0] = create VILLAGER SANURA at {770.485, 158.431, 1294.086}
+	ffight[1] = create VILLAGER SANURA at {770.490, 158.398, 1294.674}
+
+
+	set ffight[0] focus to {ffight[1]}
+	set ffight[1] focus to {ffight[0]}
+
+	wait until camera ready
+
+	say "Little grows here apart from the hatred in the hearts of the Norsemen."
+
+	
+
+	play anim "a_p_fight01_a" on ffight[0] loop -1
+	play anim "a_p_fight01_b" on ffight[1] loop -1
+
+	set camera position to {780.470, 164.591, 1301.364}
+	set camera focus to {698.891, 118.531, 1266.391}
+	play string sound "SCRIPT23_SMALLCROWD"
+
+	move camera position to {777.865, 163.675, 1299.542} time 5 easein 0 easeout 0
+	move camera focus to {707.247, 111.114, 1252.094} time 5 easein 0 easeout 0
+	wait 4.8 seconds
+	/*
+	say "And the frozen heaps of the dead."
+	wait until read*/
+	/*
+	say "Legends and ancient terrors stalk this land:"
+	wait until read
+	*/
+	///////////////////////////////////////////////////////////////////////////
+	
+	effecttt = get player 0 creature
+
+	set effecttt position to {876.980, 159.428, 1424.753}
+	snap creature effecttt focus to {890.763, 161.257, 1432.551}
+
+	play anim C_FIGHT_THREAT3 on effecttt
+	wait 0.2 seconds
+	stop sound "SCRIPT23_SMALLCROWD"
+	say "a Creature crazed by the fire from the sky."
+	set camera position to {894.657, 164.764, 1438.256}
+	set camera focus to {810.002, 157.269, 1385.558}
+
+	move camera position to {882.631, 161.931, 1427.886} time 7 easein 0 easeout 2
+	wait 3 seconds
+	move camera focus to {804.036, 158.255, 1366.168} time 4 easein 2 easeout 2
+	wait 3.5 seconds
+	wait until read
+	///////////////////////////////////////////////////////////////////////////
+
+	say "Souls of the slain hang in limbo, waiting for vengeance."
+
+	set camera position to {2111.648, 279.299, 1489.672}
+	set camera focus to {2020.681, 247.027, 1515.808}
+	play string sound "SCRIPT23_ARMYOFOLD"
+	LGeffecttt = create visual effect "sc_s_glfog.ves" strength 0.3 scale 2.0 at {Legion} time 5
+
+	move camera position to {2110.589, 279.257, 1486.441} time 5
+	move camera focus to {2021.721, 245.019, 1516.971} time 5
+	wait 5 seconds
+
+	/*
+	say "And yet this the land the Norse call home."
+	wait until read
+
+	say "In this terrible place they will make their stand and fight to the death."
+	wait until read
+	*/
+	stop sound "SCRIPT23_ARMYOFOLD"
+
+	set camera position to {837.188, 163.100, 1437.731}
+	set camera focus to {913.794, 131.436, 1381.799}
+	set camera lens 67.000 time 0.5
+
+	Abuser = create VILLAGER FELL at {astart}
+	set Abuser focus to {842.151, 156.696, 1438.150}
+	ALTITUDE of Abuser = SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of astart
+	play string sound "SCRIPT23_JAPANENESETOWNBELL"
+	play anim "a_p_blow_raspberry" on Abuser loop -1
+
+	//move camera position to {839.044, 162.392, 1436.630} time 3 easein 0 easeout 0
+	//move camera focus to {914.111, 130.914, 1378.548} time 3 easein 0 easeout 0
+
+	wait 1 seconds
+	set anim speed of Abuser to 0.1
+
+	say "As the meteors strike, the war-horns blow."
+	//wait 1 seconds
+	wait 0.3 seconds 
+		
+
+	Reactor[0] = create VILLAGER NORSE_FORESTER at {846.468, 165.345, 1477.261}
+	Reactor[1] = create VILLAGER NORSE_FORESTER at {845.008, 165.345, 1481.699}
+	Reactor[2] = create VILLAGER NORSE_FORESTER at {856.910, 165.345, 1476.960}
+	Reactor[3] = create VILLAGER NORSE_FORESTER at {842.351, 165.345, 1479.470}
+	Reactor[4] = create VILLAGER NORSE_FORESTER at {852.451, 165.345, 1482.278}
+	Reactor[5] = create VILLAGER NORSE_FORESTER at {859.784, 165.345, 1481.634}
+	Reactor[6] = create VILLAGER NORSE_FORESTER at {851.464, 165.345, 1478.054}
+
+	set Reactor[0] focus to get target from {astart} to {Reactor[0]} distance 1 angle 0
+	set Reactor[1] focus to get target from {astart} to {Reactor[1]} distance 1 angle 0
+	set Reactor[2] focus to get target from {astart} to {Reactor[2]} distance 1 angle 0
+	set Reactor[3] focus to get target from {astart} to {Reactor[3]} distance 1 angle 0
+	set Reactor[4] focus to get target from {astart} to {Reactor[4]} distance 1 angle 0
+	set Reactor[5] focus to get target from {astart} to {Reactor[5]} distance 1 angle 0
+	set Reactor[6] focus to get target from {astart} to {Reactor[6]} distance 1 angle 0
+
+	play anim "a_l5intro_villager_turn_02" on Reactor[0]
+	play anim "a_l5intro_villager_turn_02" on Reactor[3]
+	wait 0.1 seconds
+	play anim "a_l5intro_villager_turn_02" on Reactor[5]
+	play anim "a_l5intro_villager_turn_02" on Reactor[1]
+	wait 0.2 seconds
+	play anim "a_l5intro_villager_turn_02" on Reactor[6]
+	wait 0.1 seconds
+	play anim "a_l5intro_villager_turn_02" on Reactor[2]
+
+	play anim "a_l5intro_villager_turn_02" on Reactor[4]
+	wait 0.2 seconds 
+	set camera lens 70.000
+	set camera position to {847.330, 167.590, 1473.841}
+	set camera focus to {925.864, 164.543, 1535.670}
+	move camera position to {847.330, 167.590, 1473.841} time 0.5
+	move camera focus to {923.630, 162.201, 1538.257} time 0.5
+	wait 0.3 seconds 
+	set anim speed of Reactor[5] to 0.1
+	set anim speed of Reactor[1] to 0.1
+	
+	wait 0.2 seconds
+
+	set anim speed of Reactor[2] to 0.1
+	set anim speed of Reactor[6] to 0.1
+	set anim speed of Reactor[4] to 0.1
+
+	wait 1.5 seconds
+
+	play string sound "SCRIPT23_JAPANENESETOWNBELL"
+	run background script L5_Intro_Meteor(0)
+	wait 0.2 seconds
+	set camera position to {829.747, 249.399, 1197.074}
+	set camera focus to {879.411, 281.883, 1116.593}
+	move camera position to {829.747, 249.399, 1197.074} time 3 easein 1 easeout 2
+	move camera focus to {807.286, 209.714, 1286.075} time 3 easein 1 easeout 2
+
+	wait 0.5 seconds
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(2)
+	wait 0.5 seconds
+	wait 0.5 seconds
+	shake camera strength 8.0
+	run background script L5_Intro_Meteor(3)
+	wait 0.5 seconds
+	shake camera strength 0.0
+	set camera position to {676.715, 174.658, 1294.929}
+	set camera focus to {769.049, 212.627, 1289.204}
+
+	move camera position to {676.715, 174.658, 1294.929} time 0.5 easein 0 easeout 0
+	move camera focus to {761.639, 189.009, 1345.734} time 0.5 easein 0 easeout 0
+	wait 0.5 seconds
+	shake camera strength 8.0
+	wait 0.5 seconds
+	shake camera strength 0.0
+
+	set camera position to {733.169, 180.791, 1292.523}
+	set camera focus to {755.886, 139.769, 1380.854}
+	set camera lens 67.000 time 0.5
+
+	wait 0.5 seconds
+	shake camera strength 8.0
+	run background script L5_Intro_Meteor(4)
+	wait 0.5 seconds
+	shake camera strength 0.0
+	run background script L5_Intro_Meteor(1)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(0)
+
+	set camera position to {750.068, 238.123, 1159.874}
+	set camera focus to {770.686, 207.701, 1252.879}
+
+	move camera position to {750.068, 238.123, 1159.874} time 0.5 easein 0 easeout 0
+	move camera focus to {761.994, 204.932, 1253.453} time 0.5 easein 0 easeout 0
+	wait 0.5 seconds
+	move camera position to {750.068, 238.123, 1159.874} time 0.2 easein 0 easeout 0
+	move camera focus to {765.644, 210.138, 1254.613} time 0.2 easein 0 easeout 0
+
+	shake camera strength 6.0
+	run background script L5_Intro_Meteor(6)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(5)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(8)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(7)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(8)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(6)
+	wait 0.5 seconds
+
+	set fade red 0 green 0 blue 0 time 5
+
+
+
+	/*
+	set camera position to {729.113, 167.782, 1244.763}
+	set camera focus to {685.241, 126.382, 1324.524}
+
+	move camera position to {727.430, 165.647, 1242.760} time 5
+	move camera focus to {695.209, 140.245, 1333.959} time 5
+	*/
+	say "The Norse get ready for the onslaught."
+	run background script L5_Intro_Meteor(1)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(0)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(2)
+	wait until read
+	run background script L5_Intro_Meteor(3)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(4)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(2)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(1)
+	wait 0.5 seconds
+	run background script L5_Intro_Meteor(0)
+	shake camera strength 0.0
+
+
+	//wait 100 seconds
+
+	/*
+	Abuser = create VILLAGER NORSE_HOUSEWIFE at {728.949, 156.697, 1309.747}
+	play anim "a_p_shake_fist_woman" on Abuser loop -1
+
+
+
+	Fighters[0] = create CHILD NORSE_FARMER at {725.989, 155.770, 1311.617}
+	Fighters[1] = create CHILD NORSE_FARMER at {725.510, 155.785, 1310.521}
+
+	move Fighters[0] position to {727.583, 156.697, 1310.909}
+	override Fighters[0] anim "a_p_child_skip"
+	move Fighters[1] position to {727.264, 156.697, 1309.611}
+	override Fighters[1] anim "a_p_child_skip"
+	set Abuser focus to {Fighters[0]}
+	wait 2 seconds
+
+	set Fighters[0] focus to {Abuser}
+	set Fighters[1] focus to {Abuser}
+
+	play anim "a_p_child_crying_1" on Fighters[0]
+	play anim "a_p_child_crying_2" on Fighters[1]
+	wait 100 seconds
+	*/
+	/*
+	set camera position to {744.705, 294.667, 1169.209}
+	set camera focus to {777.182, 239.540, 1246.065}
+	run background script Land5Meteors
+			//start pwave camera shake strength 8.0
+
+	move camera position to {744.705, 294.667, 1169.209} time 0.5
+	move camera focus to {765.646, 231.718, 1244.039} time 0.5
+	*/
+end cinema
+
+end script Land5Intro
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+begin script L5_Intro_Meteor(MeteorNumber)
+	FireTrail = 0
+	ImpactBlast = 0
+	Meteor = 0
+	L5_Intro_SpawnArea[10]
+	L5_Intro_TargetArea[10]
+start
+
+	L5_Intro_SpawnArea[0] = marker at {935.089, 367.712, 1016.944}
+	L5_Intro_TargetArea[0] = marker at {761.431, 155.846, 1345.410}
+	
+	L5_Intro_SpawnArea[1] = marker at {901.090, 379.041, 1053.071}
+	L5_Intro_TargetArea[1] = marker at {722.471, 155.847, 1382.825}
+	
+	L5_Intro_SpawnArea[2] = marker at {902.275, 383.028, 1005.635}
+	L5_Intro_TargetArea[2] = marker at {789.764, 156.413, 1389.638}
+	
+	L5_Intro_SpawnArea[3] = marker at {948.765, 359.447, 991.614}
+	L5_Intro_TargetArea[3] = marker at {716.824, 155.839, 1375.365}
+	
+	L5_Intro_SpawnArea[4] = marker at {895.917, 419.239, 967.227}
+	L5_Intro_TargetArea[4] = marker at {845.168, 154.933, 1369.535}
+
+	L5_Intro_SpawnArea[5] = marker at {855.689, 165.333, 1477.390}
+	L5_Intro_TargetArea[5] = marker at {722.471, 155.847, 1382.825}
+	
+	L5_Intro_SpawnArea[6] = marker at {855.689, 165.333, 1477.390}
+	L5_Intro_TargetArea[6] = marker at {789.764, 156.413, 1389.638}
+	
+	L5_Intro_SpawnArea[7] = marker at {855.689, 165.333, 1477.390}
+	L5_Intro_TargetArea[7] = marker at {716.824, 155.839, 1375.365}
+	
+	L5_Intro_SpawnArea[8] = marker at {855.689, 165.333, 1477.390}
+	L5_Intro_TargetArea[8] = marker at {845.168, 154.933, 1369.535}
+
+	L5_Intro_SpawnArea[9] = marker at {1446.277, 455.145, 1296.815}
+	L5_Intro_TargetArea[9] = marker at {691.412, 159.273, 1386.921}
+
+	Meteor = create OBJECT MOBILE_STATIC_INFO_ROCK at {L5_Intro_SpawnArea[MeteorNumber]}	
+	//ALTITUDE of Meteor = 800
+
+	ALTITUDE of Meteor = SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of L5_Intro_SpawnArea[MeteorNumber]
+	set Meteor velocity heading {L5_Intro_TargetArea[MeteorNumber]} speed 280
+
+	FireTrail = create visual effect "ev_s_rocktrail.ves" strength 1 scale 1 on Meteor time -1
+
+	wait until not Meteor is FLYING or ALTITUDE of Meteor <= 2
+	play sound "SCRIPT23_EXPLOSION2" at {Meteor}
+	ImpactBlast = create visual effect "gp_s_expbarrel.ves" strength 1 scale 10 at {Meteor} time 1
+	ImpactBlast = create visual effect "eeq_s_explosion.ves" strength 1 scale 1 at {Meteor} time 1
+	//set physics at position {Meteor} with strength {20,30,20} radius 20 random 1
+	delete Meteor
+	
+end script L5_Intro_Meteor

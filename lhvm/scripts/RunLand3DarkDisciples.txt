@@ -1,0 +1,6 @@
+run script RunLand3DarkDisciples
+
+begin script RunLand3DarkDisciples
+start
+	run script Land3DarkDisciples
+end script RunLand3DarkDisciples

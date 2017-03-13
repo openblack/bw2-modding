@@ -1,0 +1,21 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 2 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land2Control
+start
+	set fade red 0 green 0 blue 0 time 0
+
+//----Fix for skipping lands----//
+	enable tribute visual
+	enable floaty icons
+
+	// Reset the players objectives so none get carried over from the previous land
+	reset all objectives for player 0
+	
+	run script Land2Globals
+	disable creature icon visible
+	disable town L2GreekTown desire speech
+
+	run script Land2Intro
+
+end script Land2Control

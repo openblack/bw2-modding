@@ -1,0 +1,457 @@
+//===========================================================================
+// File: Land2MafiaChallenge
+// Author: Tid + Kalev + maybe some other people like PJ
+// Date: 4/03/03
+// Description:	Fain wants you to make him be impresive by luring the Norse
+//				Creature in to the town while he proclaims that he is in
+//				control of it.
+// Notes:		Variables in this script are preceded by CMC
+//===========================================================================
+
+/**********************************************
+*** Full Description
+***********************************************
+Fain is somewhere on the land, with a scroll above him.
+If fain is hurt, the scroll disapears and he runs away and the challenge
+	ends.
+If the scroll is cliked on, fain explains that he needs the Norse creature
+	to come to him while he's doing his pulpit. The player has no way to 
+	refuse.
+Fain will go over to his pulpit.
+If he's hurt, he runs away and the challenge ends.
+When fain arrives, he will start proclaiming his greatness.
+As he does this, an audience begins to gather around him.
+If fain is hurt while doing this, he and his audience run away and the
+	challenge ends
+If his audience is hurt, they run away for a little while, then come back.
+	Fain will continue talking.
+If the greek creature comes, his audience will laugh at him and fain will
+	run back to his start position. His audience will disperse.
+If the norse creature comes, his audience will celebrate and continue to
+	watch fain as he goes on and on about his greatness. The success
+	cut-scene happens, the player gets his reward, everyone disperses, and
+	the challenge ends.
+If fain finishes his speach but nothing happens, he will claim that he needs
+	'more practice' and run off back to his start position. His audience
+	will disperse.
+If fain has gone back to his start possition, a scroll will apear above his
+	head. This will then loop back to the begining.
+If fain decides to go back to his start position a second time, he instead
+	runs away and the challenge ends.
+**********************************************/
+// In addition, pseudo code can be found at the bottom
+
+// ToDo
+// recoment in increaseCrowd call once we have villagers in the land
+// and text system calls
+
+// Defines
+define L2MC_FALSE		= 0
+define L2MC_TRUE		= 1
+define L2MC_LOW_HEALTH	= 0.5
+define L2MC_CROWD_INCREASE_TIME = 5 // the number of seconds between adding members to the crowd
+define L2MC_CROWD_SIZE	= 11
+define L2MC_VILLAGER_SEARCH_DIST_INCREMENT = 100
+
+// Globals
+global L2MC_GLOBAL_SPEACH_FINISHED = L2MC_FALSE
+global L2MC_GLOBAL_NORSE_CREATURE_NEAR = L2MC_FALSE
+global L2MC_GLOBAL_CROWD[L2MC_CROWD_SIZE]
+global L2MC_GLOBAL_CROWD_POSITIONS[L2MC_CROWD_SIZE]
+
+// Scripts
+define script L2MC_FainHurt(Fain)
+define script L2MC_IncreaseCrowd(PreachLoc)
+define script L2MC_HandleSpeech(Fain)
+define script L2MC_DefineCrowdPostions
+
+// Cutscenes
+define script L2MC_IntroCutscene(CMC_ACFain)
+define script L2MC_SuccessCutscene
+
+begin script Land2MafiaChallenge
+	// locations
+	FainPulpitLoc = marker at {1493.016, 35.374, 1246.301}//marker at {1488.317, 35.267, 1248.521}
+
+	// things
+	GreekCreature = 0
+	Fain = 0
+	Scroll = 0
+	Blueprint = 0
+
+	// variables
+	SpeakTime = 0
+start
+	// define villager start locactions
+	run script L2MC_DefineCrowdPostions
+
+	// wait for some amount of time (and make sure FainPulpitLoc isn't visible)
+
+	// create fain at his start loc
+	Fain = create VILLAGER FAIN at {FainPulpitLoc}
+	set Fain focus to {L2MC_GLOBAL_CROWD_POSITIONS[1]}
+
+	run background script L2MC_HandleSpeech(Fain)
+
+	// create a scroll above fain's head
+	Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {FainPulpitLoc}
+	ALTITUDE of Scroll = 3
+
+	//wait until the scroll is clicked or fain is hurt
+	wait until Scroll right clicked or L2MC_GLOBAL_SPEACH_FINISHED == L2MC_TRUE or L2MC_GLOBAL_NORSE_CREATURE_NEAR == L2MC_TRUE
+
+	delete Scroll
+
+	if L2MC_GLOBAL_SPEACH_FINISHED == L2MC_FALSE and L2MC_GLOBAL_NORSE_CREATURE_NEAR == L2MC_FALSE
+		run script L2MC_IntroCutscene(Fain)
+		wait until L2MC_GLOBAL_NORSE_CREATURE_NEAR == L2MC_TRUE or L2MC_GLOBAL_SPEACH_FINISHED == L2MC_TRUE
+	end if
+			
+	if L2MC_GLOBAL_SPEACH_FINISHED == L2MC_FALSE
+		// create a scroll above in the audience
+		Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {L2MC_GLOBAL_CROWD_POSITIONS[0]}
+		ALTITUDE of Scroll = 3
+
+		//wait until the scroll is clicked or fain is hurt
+		wait until Scroll right clicked or L2MC_GLOBAL_SPEACH_FINISHED == L2MC_TRUE
+		delete Scroll
+		
+		if L2MC_GLOBAL_SPEACH_FINISHED == L2MC_FALSE
+			run script L2MC_SuccessCutscene
+
+			L2MC_GLOBAL_SPEACH_FINISHED = L2MC_TRUE
+
+			//give reward
+			Blueprint = create blueprint RESEARCH_ITEM_ABODE_NUMBER_LUMBERMILL at {FainPulpitLoc}
+			wait until Blueprint right clicked
+
+			//send fain home (he's not actually hurt, but it should react the same way)
+			run script L2MC_FainHurt(Fain)
+		end if
+	end if
+end script Land2MafiaChallenge
+
+begin script L2MC_FainHurt(Fain)
+	House = 0
+start
+	L2MC_GLOBAL_SPEACH_FINISHED = L2MC_TRUE
+
+	// get a house in the town
+	House = get HOUSE in L2NorseTown
+
+	move Fain position to {House}
+	wait until {Fain} near {House} radius 5 or Fain not exists
+	delete Fain
+end script L2MC_FainHurt
+
+begin script L2MC_HandleSpeech(Fain)
+	SpeakTime = 0
+	RandSpeach = 0
+	GreekCreature = 0
+start
+	//get the Greek creature
+	GreekCreature = get player 0 creature
+
+	run background script L2MC_IncreaseCrowd(Fain)
+	while L2MC_GLOBAL_SPEACH_FINISHED == L2MC_FALSE
+		wait 1 second
+		if SpeakTime % 15 == 0
+			if L2MC_GLOBAL_NORSE_CREATURE_NEAR == L2MC_FALSE
+				RandSpeach = number from 1 to 10
+			else
+				RandSpeach = number from 1 to 5
+			end if
+			if RandSpeach == 1
+				say "Hear ye! Hear ye!"
+			elsif RandSpeach == 2
+				say "To me, my people!"
+			elsif RandSpeach == 3
+				say "I am Fell, son of Fain, and I command the Beast!"
+			elsif RandSpeach == 4
+				say "You will bow before me!"
+			elsif RandSpeach == 5
+				say "Fear me! For I am fearsome!"
+			elsif RandSpeach == 6
+				say "Now! I present you with the Beast!"
+			elsif RandSpeach == 7
+				say "Behold!"
+			elsif RandSpeach == 8
+				say "Any moment now!"
+			elsif RandSpeach == 9
+				say "Witness this momentous event!"
+			else
+				say "I will soon be proven!"
+			end if
+			wait until read
+
+			//if fain is hurt
+			if HEALTH of Fain <= L2MC_LOW_HEALTH
+				run script L2MC_FainHurt(Fain)
+
+			//if greek creature comes
+			elsif {GreekCreature} near {Fain} radius 20
+				// play some 'oohs' and 'ahhs'
+				// should be a sound
+				say "ooh... ahhh..."
+				wait until read
+
+			elsif {L2_NorseKong} near {Fain} radius 40
+				L2MC_GLOBAL_NORSE_CREATURE_NEAR = L2MC_TRUE
+
+			end if
+			SpeakTime++
+		end if
+	end while
+end script L2MC_HandleSpeech
+
+begin script L2MC_IncreaseCrowd(PreachLoc)
+	CurrentMember = 0
+	VillagerSearchDist = L2MC_VILLAGER_SEARCH_DIST_INCREMENT
+start
+	while L2MC_GLOBAL_SPEACH_FINISHED != L2MC_TRUE
+		wait L2MC_CROWD_INCREASE_TIME seconds
+
+		//looking at current member
+		//if they don't exist
+		if L2MC_GLOBAL_CROWD[CurrentMember] not exists
+
+			//find the closest villager
+			//and add them to the crowd
+			VillagerSearchDist = L2MC_VILLAGER_SEARCH_DIST_INCREMENT
+			while L2MC_GLOBAL_CROWD[CurrentMember] not exists
+				L2MC_GLOBAL_CROWD[CurrentMember] = get VILLAGER at {PreachLoc} radius VillagerSearchDist excluding scripted
+				VillagerSearchDist += L2MC_VILLAGER_SEARCH_DIST_INCREMENT
+				wait 0.2 seconds
+			end while
+
+			//SCALE of L2MC_GLOBAL_CROWD[CurrentMember] = 3
+
+			//make them reactable
+			enable L2MC_GLOBAL_CROWD[CurrentMember] reactable
+
+			//bring them to the right possition
+			move L2MC_GLOBAL_CROWD[CurrentMember] position to {L2MC_GLOBAL_CROWD_POSITIONS[CurrentMember]}
+			wait until {L2MC_GLOBAL_CROWD[CurrentMember]} near {L2MC_GLOBAL_CROWD_POSITIONS[CurrentMember]} radius 1 or L2MC_GLOBAL_CROWD[CurrentMember] not exists or HEALTH of L2MC_GLOBAL_CROWD[CurrentMember] == 0 or L2MC_GLOBAL_SPEACH_FINISHED == L2MC_TRUE
+			
+			//focus them on fain
+			set L2MC_GLOBAL_CROWD[CurrentMember] focus to {PreachLoc}
+
+		end if
+		CurrentMember++
+		if CurrentMember >= L2MC_CROWD_SIZE
+			CurrentMember = 0
+		end if
+	end while
+
+	//for each member of the crowd
+	CurrentMember = 0
+	while CurrentMember <= L2MC_CROWD_SIZE
+		release L2MC_GLOBAL_CROWD[CurrentMember]
+		L2MC_GLOBAL_CROWD[CurrentMember] = 0
+	end while
+end script L2MC_IncreaseCrowd
+
+begin script L2MC_DefineCrowdPostions
+start
+	// define positions
+	L2MC_GLOBAL_CROWD_POSITIONS[0]	= marker at {1484.714, 26.930, 1225.870}
+	L2MC_GLOBAL_CROWD_POSITIONS[1]	= marker at {1485.526, 29.453, 1223.432}
+	L2MC_GLOBAL_CROWD_POSITIONS[2]	= marker at {1487.897, 30.302, 1222.306}
+	L2MC_GLOBAL_CROWD_POSITIONS[3]	= marker at {1489.413, 29.889, 1222.053}
+	L2MC_GLOBAL_CROWD_POSITIONS[4]	= marker at {1485.335, 29.780, 1221.788}
+	L2MC_GLOBAL_CROWD_POSITIONS[5]	= marker at {1486.775, 30.418, 1221.078}
+	L2MC_GLOBAL_CROWD_POSITIONS[6]	= marker at {1488.331, 30.337, 1220.850}
+	L2MC_GLOBAL_CROWD_POSITIONS[7]	= marker at {1483.420, 29.825, 1221.246}
+	L2MC_GLOBAL_CROWD_POSITIONS[8]	= marker at {1485.062, 29.848, 1220.318}
+	L2MC_GLOBAL_CROWD_POSITIONS[9]	= marker at {1486.672, 29.796, 1219.718}
+	L2MC_GLOBAL_CROWD_POSITIONS[10]	= marker at {1488.457, 30.078, 1219.773}
+end script L2MC_DefineCrowdPostions
+
+begin script L2MC_IntroCutscene(CMC_ACFain)
+
+RelCamPos=0
+RelCamFoc=0
+
+RelativeObject=0
+RelativeObjectPos=marker at {1109.695,111.907,736.235}
+
+CrowdPos[10]
+CrowdDude[10]
+DaCrowdStartPos=0
+counter=0
+
+start
+
+RelativeObject = get HOUSE at {RelativeObjectPos}
+DaCrowdStartPos = marker at {1188.353, 101.174, 705.752}
+set CMC_ACFain focus to {DaCrowdStartPos}
+wait 0.3 seconds
+
+begin cinema
+
+start music "cut_scene_mystery_02"
+	//establish
+	set camera position to {1476.121, 34.952, 1216.135}
+	set camera focus to {1476.847, 34.817, 1216.809}
+	wait 3 seconds
+
+	//CU Fain
+	set camera lens 32.000
+	set camera position to {1491.486, 36.717, 1245.577}
+	set camera focus to {1492.427, 36.708, 1245.914}
+
+	say "BW2T_SCRIPT_02C_02MAFIASON_INTRO_10"
+	play anim "a_p_beckon" on CMC_ACFain 
+	wait until read
+	wait until CMC_ACFain played
+	play anim "A_P_TURN_180" on CMC_ACFain 
+	wait 0.3 seconds
+	//facing away to god
+
+	set camera lens 37.000
+	RelCamPos = marker at get world position from CMC_ACFain to {1.036,0.329,0.290}
+	RelCamFoc = marker at get world position from CMC_ACFain to {-2.622,2.194,-1.820}
+	set camera position to {1492.853, 36.557, 1248.547}
+	set camera focus to {1493.125, 36.637, 1247.588}
+	wait until CMC_ACFain played
+	set CMC_ACFain focus to get target from {DaCrowdStartPos} to {CMC_ACFain} distance 1 angle 0
+	play anim "a_p_paternity_talking_to_god_calmly" on CMC_ACFain loop 2
+	say "BW2T_SCRIPT_02C_02MAFIASON_INTRO_20"
+	wait until read
+
+	say "BW2T_SCRIPT_02C_02MAFIASON_INTRO_30"
+	wait until read
+
+	say "BW2T_SCRIPT_02C_02MAFIASON_INTRO_40"
+	wait until read
+
+	say "BW2T_SCRIPT_02C_02MAFIASON_INTRO_50"
+	wait until read
+
+	RelCamPos = marker at get world position from CMC_ACFain to {0.233,0.356,0.844}
+	RelCamFoc = marker at get world position from CMC_ACFain to {-1.727,1.988,-2.981}
+	play anim "A_P_TURN_180" on CMC_ACFain 
+
+	//Fain turns back towards the crowd
+	set camera lens 70.000
+	
+	set camera position to {1492.365, 36.352, 1245.407}
+	set camera focus to {1493.037, 36.443, 1246.142}
+	wait until CMC_ACFain played
+	say "BW2T_SCRIPT_02C_02MAFIASON_INTRO_60"
+	set CMC_ACFain focus to {DaCrowdStartPos}
+	play anim "a_p_mafiacreature_preaching_to_the_people" on CMC_ACFain
+	wait until read
+	stop music
+
+end cinema
+
+end script L2MC_IntroCutscene
+//====================================================================
+begin script L2MC_SuccessCutscene
+
+RelCamPos=0
+RelCamFoc=0
+
+RelativeObject=0
+RelativeObjectPos=marker at {1109.695,111.907,736.235}
+
+KingKong=0
+counter=0
+
+start
+/*
+RelativeObject = get HOUSE at {RelativeObjectPos}
+
+set CMC_ACFain focus to {CMC_CreaturesHere}
+while counter <10
+	set CMC_Villager[counter] focus to {CMC_CreaturesHere}
+	counter++
+end while
+counter=0
+
+begin cinema
+
+start music "cut_scene_mystery_02"
+
+	set camera lens 37.000
+	set camera position to {1172.630, 112.503, 711.966}
+	set camera focus to {1172.529, 112.251, 711.004}
+	set camera lens 35.000 time 3
+	wait 3 seconds
+
+	set camera lens 37.000
+	set camera position to {1101.534, 184.794, 808.104}
+	set camera focus to {1100.901, 185.081, 808.823}
+	set camera lens 35.000 time 3
+	wait 3 seconds
+
+	set camera position to {1172.630, 112.503, 711.966}
+	set camera focus to {1172.529, 112.251, 711.004}
+	set camera lens 33.000 time 3
+	wait 3 seconds
+
+	SCALE of KingKong = 0.3
+
+	set camera lens 35.000
+	set camera position to {1101.534, 184.794, 808.104}
+	set camera focus to {1100.901, 185.081, 808.823}
+	set camera lens 33.000 time 3
+	wait 3 seconds
+	KingKong = get player 1 creature
+	set KingKong position to {CMC_CreaturesHere}
+	set KingKong focus to {CMC_ACFain}
+
+	play anim C_MOVE_WALK on KingKong
+
+	wait 1 seconds
+	set camera position to {1080.592, 192.699, 834.374}
+	set camera focus to {1079.950, 192.884, 835.117}
+	wait 0.3 seconds
+	set camera position to {1074.291, 194.348, 842.473}
+	set camera focus to {1073.654, 194.507, 843.227}
+	wait 0.3 seconds
+	set camera position to {1072.048, 194.724, 845.192}
+	set camera focus to {1071.418, 194.933, 845.940}
+
+	wait 1 seconds
+	//Crowd
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[0]
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[1]
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[2]
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[3]
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[4]
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[5]
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[6]
+	play anim "a_p_crowd_impressed_1" on CMC_Villager[7]
+
+	wait 2.5 seconds
+	play anim "a_p_celebration2_a" on CMC_Villager[8]
+	play string sound "CROWDMAFIA1"
+
+	set camera position to {1189.411, 106.152, 711.821}
+	set camera focus to {1189.354, 105.556, 711.020}
+	wait 3 seconds
+	//CU Fain
+	set camera position to {1172.630, 112.503, 711.966}
+	set camera focus to {1172.529, 112.251, 711.004}
+
+	play anim "a_p_paternity_talking_to_god_calmly" on CMC_ACFain loop 2
+
+	say "BW2T_SCRIPT_02C_02MAFIASON_SUCCESS_10"
+	wait until read
+	say "BW2T_SCRIPT_02C_02MAFIASON_SUCCESS_20"
+	wait until read
+	set camera lens 50.000
+	set camera position to {1175.744, 111.919, 712.382}
+	set camera focus to {1174.772, 112.082, 712.217}
+	say "BW2T_SCRIPT_02C_02MAFIASON_SUCCESS_30"
+	wait until read
+	say "BW2T_SCRIPT_02C_02MAFIASON_SUCCESS_40"
+	wait until read
+
+	stop music
+
+end cinema
+*/
+end script L2MC_SuccessCutscene

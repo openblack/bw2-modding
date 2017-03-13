@@ -1,0 +1,166 @@
+//------------------------------------------------
+//  LAND 3 HAUNTING SECRET CHALLENGE
+//------------------------------------------------
+
+//Defines
+define GL_TRUE = 1
+define GL_FALSE = 0
+
+define script AreTorchesOnFire
+define script CheckSequence
+define script GetTime
+define script TidyUpGhosts
+
+//Globals
+global Torch[5]
+global TorchOnFire[5]
+global Gravestone[5]
+global CorrectSequence = 0
+global Timer = 300
+global Ctr = 0
+global TorchCtr = 0
+
+global QuestComplete = 0
+global GhostLegion = 0
+
+global Day = GL_FALSE
+global Night = GL_FALSE
+global GL_Time = 0
+
+global MyHighlight = 0
+
+begin script L3Ghost
+
+start
+
+Torch[0] = get TREE at {386.415,54.333,622.395}
+Torch[1] = get TREE at {416.538,54.549,607.281}
+Torch[2] = get TREE at {405.702,54.840,640.097}
+Torch[3] = get TREE at {397.984,55.371,600.109}
+Torch[4] = get TREE at {422.023,54.805,627.971}
+
+Gravestone[0] = create OBJECT ROCK at {381.415,54.333,622.395}
+Gravestone[1] = create OBJECT ROCK at {411.538,54.549,607.281}
+Gravestone[2] = create OBJECT ROCK at {400.702,54.840,640.097}
+Gravestone[3] = create OBJECT ROCK at {392.984,55.371,600.109}
+Gravestone[4] = create OBJECT ROCK at {417.023,54.805,627.971}
+
+
+while QuestComplete == 0
+
+run background script AreTorchesOnFire
+run background script CheckSequence
+run background script GetTime
+run background script TidyUpGhosts
+
+//if Night == GL_TRUE
+//	run script AreTorchesOnFire
+//end if
+
+if Day == GL_TRUE
+	if QuestComplete != 1
+		run script TidyUpGhosts
+	end if
+end if
+
+/*wait 5 seconds
+enable Torch[0] on fire 1
+wait 5 seconds
+enable Torch[1] on fire 1
+wait 5 seconds
+enable Torch[2] on fire 1
+wait 5 seconds
+enable Torch[3] on fire 1
+wait 5 seconds
+enable Torch[4] on fire 1*/
+
+end while
+
+end script L3Ghost
+
+//===========================================================================
+begin script AreTorchesOnFire
+
+start
+
+if Night == GL_TRUE
+	while QuestComplete != 1
+		if Torch[Ctr] on fire
+			TorchOnFire[Ctr] = 1
+		end if
+		Ctr++
+		if Ctr == 5
+			Ctr = 0
+		end if
+	end while
+end if
+
+end script AreTorchesOnFire
+
+//===========================================================================
+begin script CheckSequence
+
+PlatoonPos = marker at {408.530,52.029,620.391}
+
+start
+
+while QuestComplete != 1
+	if Night == GL_FALSE
+		if TorchOnFire[TorchCtr] == 1 and TorchOnFire[TorchCtr+1] == 0
+			CorrectSequence++
+			TorchCtr++
+		end if
+
+		if TorchOnFire[4] == 1 and CorrectSequence == 4
+			CorrectSequence = 5
+			TorchCtr = 5
+		end if
+
+		if TorchOnFire[TorchCtr] == 1 and TorchOnFire[TorchCtr+1] == 1
+			CorrectSequence = 0
+		end if
+
+		if CorrectSequence == 5
+			GhostLegion = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_WEDGE at {PlatoonPos} facing {Torch[0]} with 12 villagers
+			QuestComplete = 1
+		end if
+	end if
+end while
+
+end script CheckSequence
+
+//=========================================================================
+
+begin script GetTime
+
+start
+
+while QuestComplete != 1
+	GL_Time = get game time
+
+	if GL_Time < 5.99 or GL_Time > 18.01
+		Day = GL_FALSE
+		Night = GL_TRUE
+	end if
+
+	if GL_Time < 18.00 and GL_Time > 6.00
+		Day = GL_TRUE
+		Night = GL_FALSE
+	end if
+end while
+
+end script GetTime
+
+//=========================================================================
+
+begin script TidyUpGhosts
+
+start
+
+if Day == GL_TRUE
+	if QuestComplete != 1
+		delete GhostLegion
+	end if
+end if
+
+end script TidyUpGhosts

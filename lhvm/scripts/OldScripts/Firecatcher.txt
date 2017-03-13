@@ -1,0 +1,368 @@
+//------------------------------------------------------------------------------------------------------------------------
+// FIRE CATCHER EVENT.
+//------------------------------------------------------------------------------------------------------------------------
+
+global PCHutDestroyed
+global CPHutDestroyed
+global GameOver
+global PCHut[6]
+global PCHutPos[6]
+global CPHutPos[6]
+global TotalBalls
+global ShieldFound
+  
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script Firestarter
+
+ Fireball = 0
+ Random = 0
+ LaunchPos = marker at {976.383,22.370,1325.359}
+ GetRandom = 0
+ FireInf = 0
+
+start
+	begin loop
+		wait 3 seconds // Difficulty setting - reducing wait increases fireball rate
+		GetRandom = 0
+		while GetRandom == 0
+			Random = number from 0 to 5
+			if PCHut[Random] exists
+				GetRandom = 1
+			end if
+		end while
+		GetRandom = 0
+		GetRandom = marker at {PCHutPos[Random]}+{number from -30 to 10, number from -30 to 10}
+		Fireball = cast SPELL_FIREBALL_LEVEL_1 spell at {GetRandom} from {LaunchPos} radius 3.0 time 30 curl 0
+		TotalBalls++
+		FireInf = create influence on Fireball radius 5
+		//set Fireball target {PCHutPos[Random]} time 4
+	until GameOver == 1
+	end loop
+end script Firestarter
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script CheckHut (Hut, PlayerNumber)
+
+HutFlag = 0
+FindShield = 0
+Count = 0
+
+start
+	while GameOver == 0 and HutFlag == 0
+		if Hut on fire
+			if PlayerNumber == 1
+				CPHutDestroyed++
+			else
+				PCHutDestroyed++
+			end if
+			enable Hut on fire 1
+			wait 2 seconds
+			delete Hut with explosion
+			HutFlag = 1
+		end if
+		// shield detection
+		if Count > 20
+			Count = 0
+			FindShield = get spell MAGIC_TYPE_SHIELD at {Hut} radius 5
+			if FindShield exists and ShieldFound == 0
+				ShieldFound = 1
+				begin dialogue
+					make evil spirit cling across 0.2 down 1.0
+					say "Sneaky move with the shield, Boss!"
+					wait until read
+					make good spirit cling across 0.7 down 1.0
+					say "Oh my! Surely that must be cheating!"
+					wait until read
+					say "I didn't hear any rules forbidding it did you?"
+					wait until read
+				end dialogue
+			end if
+		else
+			Count++		
+		end if
+	end while
+
+	if GameOver == 1
+		delete Hut with fade
+	end if
+
+end script CheckHut
+
+//------------------------------------------------------------------------------------------------------------------------
+
+
+begin script Firecatcher
+
+ CPHut[6]
+ Influence[6]
+ Count = 0
+ Winner = 0
+ FireCatcherComplete = 0
+ Highlight = 0
+ HighlightPos = marker at {957.273,7.227,1252.130}
+ SubType = 0
+ HeldOk = 0
+ KillIt = 0
+ FireballHeld = 0
+ PCScoreboardPos = marker at {968.394,7.035,1257.085}
+ CPScoreboardPos = marker at {961.967,7.370,1245.705}
+ PCScoreboard = 0
+ CPScoreboard = 0
+ LastPCHutDestroyed = 0
+ LastCPHutDestroyed = 0
+ 
+ //PCHutStart = marker at {921.451,7.749,1267.113}
+ //CPHutStart = marker at {969.342,7.705,1335.790}
+ //PCHutStart = marker at {920.574,7.035,1261.155}
+ PCHutStart = marker at {915.024,6.869,1267.501}
+ CPHutStart = marker at {955.008,7.705,1334.648}
+ FirstTimer = 0
+ Blob = 0
+ Spangle = 0
+
+start
+	ShieldFound = 0
+/*	
+	PCHutPos[0] = marker at {0.000,0.000,0.000}
+	PCHutPos[1] = marker at {0.000,0.000,0.000} 
+	PCHutPos[2] = marker at {0.000,0.000,0.000} 
+	PCHutPos[3] = marker at {0.000,0.000,0.000}
+	PCHutPos[4] = marker at {0.000,0.000,0.000}
+	PCHutPos[5] = marker at {0.000,0.000,0.000}
+
+	CPHutPos[0] = marker at {0.000,0.000,0.000}
+	CPHutPos[1] = marker at {0.000,0.000,0.000}
+	CPHutPos[2] = marker at {0.000,0.000,0.000}
+	CPHutPos[3] = marker at {0.000,0.000,0.000}
+	CPHutPos[4] = marker at {0.000,0.000,0.000}
+	CPHutPos[5] = marker at {0.000,0.000,0.000}
+*/
+	while Count < 6
+		PCHutPos[Count] = marker at get target from {PCHutStart} to {PCHutStart}+{10,0} distance (Count*15) angle 330
+		Count++
+	end while
+	Count = 0
+	while Count < 6
+		CPHutPos[Count] = marker at get target from {CPHutStart} to {CPHutStart}+{10,0} distance (Count*15) angle 330
+		Count++
+	end while
+	Count = 0	
+
+	//create indestructible huts
+	while Count < 6
+		PCHut[Count] = create HOUSE ABODE_INFO_EGYPTIAN_SHACK_Y at {PCHutPos[Count]}
+		enable PCHut[Count] indestructible
+		disable PCHut[Count] hurt by fire
+		disable PCHut[Count] set on fire
+		Count++
+	end while
+	Count = 0
+	while Count < 6
+		CPHut[Count] = create HOUSE ABODE_INFO_JAPANESE_SHACK_Y at {CPHutPos[Count]}
+		enable CPHut[Count] indestructible
+		disable CPHut[Count] hurt by fire
+		disable CPHut[Count] set on fire		
+		Count++
+	end while
+	Count = 0
+
+	// wait until 3rd Throwing Minigame passed
+	wait until TriggerFirecatcherActive == 1
+	
+	begin loop
+		Highlight = create highlight CHALLENGE_DOLPHIN_SHOOT HIGHLIGHT_CHALLENGE at {HighlightPos}
+		ALTITUDE of Highlight = 15
+		
+		if FirstTimer != 0
+			//create indestructible huts
+			while Count < 6
+				PCHut[Count] = create HOUSE ABODE_INFO_EGYPTIAN_SHACK_Y at {PCHutPos[Count]}
+				enable PCHut[Count] indestructible
+				disable PCHut[Count] hurt by fire
+				disable PCHut[Count] set on fire
+				Count++
+			end while
+			Count = 0
+			while Count < 6
+				CPHut[Count] = create HOUSE ABODE_INFO_JAPANESE_SHACK_Y at {CPHutPos[Count]}
+				enable CPHut[Count] indestructible
+				disable CPHut[Count] hurt by fire
+				disable CPHut[Count] set on fire		
+				Count++
+			end while
+			Count = 0
+		end if
+		FirstTimer = 1
+		
+		wait until Highlight right clicked
+		clear right clicked object
+		delete Highlight
+
+		begin cinema
+			move camera position to {923.029,24.183,1232.739} time 3
+			move camera focus to {945.748,8.241,1273.984} time 3
+			say "Defend your buildings and destroy the enemies."
+		
+			//delete indestructible huts
+			while Count < 6
+				Spangle = create special effect SPOT_VISUAL_COMMAND_SUCCEED at {PCHut[Count]} time 1
+				delete PCHut[Count]
+				Count++
+			end while
+			Count = 0
+			while Count < 6
+				Spangle = create special effect SPOT_VISUAL_COMMAND_SUCCEED at {CPHut[Count]} time 1
+				delete CPHut[Count]
+				Count++
+			end while
+			Count = 0
+
+			
+			TotalBalls = 0
+
+			while Count < 6
+				PCHut[Count] = create HOUSE ABODE_INFO_EGYPTIAN_SHACK_Y at {PCHutPos[Count]}
+				Count++
+			end while
+			Count = 0
+
+			while Count < 6
+				CPHut[Count] = create HOUSE ABODE_INFO_JAPANESE_SHACK_Y at {CPHutPos[Count]}
+				Count++
+			end while
+			Count = 0
+
+			wait until read
+			wait until camera ready
+		end cinema
+
+		PCHutDestroyed = 0
+		CPHutDestroyed = 0
+		GameOver = 0
+
+		while Count < 6
+			Influence[Count] = create influence at {PCHutPos[Count]} radius 40
+			Count++
+		end while
+		Count = 0
+
+		run background script Firestarter
+		while Count < 6
+			run background script CheckHut (PCHut[Count], 2) // parsing 2 tells it it belongs to player
+			Count++
+		end while
+		Count = 0
+		while Count < 6
+			run background script CheckHut (CPHut[Count], 1) // parsing 1 tells it it belongs to CP
+			Count++
+		end while
+		Count = 0
+
+		// create scoreboards
+		PCScoreboard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {PCScoreboardPos}
+		enable PCScoreboard indestructible
+		set PCScoreboard score 0
+
+		CPScoreboard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {CPScoreboardPos}
+		enable CPScoreboard indestructible
+		set CPScoreboard score 0
+
+		StopMiracleInHandTutorials = 1  // disable the miracle tutoring so it doesn't keep telling you about fireball
+		Winner = 0
+		while Winner == 0
+			// update scoreboards
+			if CPHutDestroyed > LastCPHutDestroyed
+				set PCScoreboard score CPHutDestroyed
+			end if
+			LastCPHutDestroyed = CPHutDestroyed
+
+			if PCHutDestroyed > LastPCHutDestroyed
+				set CPScoreboard score PCHutDestroyed
+			end if
+			LastPCHutDestroyed = PCHutDestroyed
+
+			if PCHutDestroyed >= 6
+				Winner = 1 // cp wins
+			elsif CPHutDestroyed >= 6
+				Winner = 2 // the player wins
+			end if
+
+			// Cheat detection
+			KillIt = 0
+			FireballHeld = get object held
+			if FireballHeld exists
+				SubType = variable get FireballHeld sub type
+				if SubType == variable MAGIC_TYPE_FIREBALL
+					KillIt = 1
+				elsif SubType == variable MAGIC_TYPE_FIREBALL_PU_ONE
+					KillIt = 1
+				elsif SubType == variable MAGIC_TYPE_FIREBALL_PU_TWO
+					KillIt = 1
+				end if
+				if KillIt == 1
+					while Count < 6 and HeldOk == 0
+						if {FireballHeld} near {PCHutPos[Count]} radius 40
+							HeldOk = 1
+						end if
+						Count++
+					end while
+					if Count >= 6 and HeldOk == 0
+						delete FireballHeld
+					end if
+					HeldOk = 0
+					Count = 0
+				end if
+			end if
+		end while
+
+		wait 1 second
+		GameOver = 1
+		set PCScoreboard score CPHutDestroyed
+		set CPScoreboard score PCHutDestroyed
+
+		while Count < 6
+			delete Influence[Count]
+			Count++
+		end while
+		Count = 0
+
+		wait 3 seconds // waits for last hut to blow up
+		begin cinema
+			StopMiracleInHandTutorials = 0 // reenable the miracle tutoring		
+			move camera position to {939.449,21.737,1263.113} time 3
+			move camera focus to {971.541,7.334,1248.564} time 3
+			wait until camera ready
+			if Winner == 1
+				say "YOU LOSE"
+				wait until read
+				say "Number of Shots fired: $d" with number TotalBalls
+				wait until read
+			elsif Winner == 2
+				say "YOU WIN"
+				wait until read
+				say "Number of Shots fired: $d" with number TotalBalls
+				wait until read				
+				FireCatcherComplete = 1
+				run background script Godgolf
+			end if
+			wait 2 seconds
+			move camera position to {HighlightPos}+{7.500,10.000,7.500} time 3
+			move camera focus to {HighlightPos}+{0.000,7.500,0.000} time 3
+			wait until camera ready
+		end cinema
+
+
+		// delete scoreboards
+		delete PCScoreboard
+		delete CPScoreboard
+
+	until FireCatcherComplete == 2
+	end loop
+
+end script Firecatcher
+
+//------------------------------------------------------------------------------------------------------------------------
+// END OF FIRE CATCHER EVENT.
+//------------------------------------------------------------------------------------------------------------------------

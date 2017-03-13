@@ -1,0 +1,6 @@
+run script RunLand3BuildTabTutorial
+
+begin script RunLand3BuildTabTutorial
+start
+	run script Land3BuildTabTutorial
+end script RunLand3BuildTabTutorial

@@ -1,0 +1,438 @@
+/*
+====================================================================================
+Land 1 :: CREATURE TASK SCRIPT
+By: Matthew Leonard
+====================================================================================
+
+A Norse teenager is stranded on a small island close to the Greek village.
+
+The intro cut scene shows two groups of greeks arguing. The first group wants to return her to the Norse
+(and the girls farther) as a sign of peace. The second group want to burn the girl on a bonfire they have cosntructed.
+
+There are four resolutions to this script
+
+Resolutuion 1 - Player returns girl to the norse village    [Done.. needs cut scene]
+Resolutuion 2 - Player kills the girl themselves			[Done]
+Resolutuion 3 - Player puts girl on bonfire					[Done.. needs cut scene adding]
+Resolutuion 4 - Player puts the girl somewhere else			[ ]
+
+=== Known Issues ===
+
+Throw the girl in the sea and the challeneg is completed with Res 4 instead of Res 2
+
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CT_FALSE = 0
+define CT_TRUE = 1
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CT_Done = CT_FALSE
+global CT_Girl = 0
+global Bandits[10]	
+global CT_Greek_Town = 0
+global CT_Norse_Town = 0
+global CT_Bonfire = 0
+global CT_Started = CT_FALSE
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script CreatureTaskAdvisor(AdvisorID)
+define script CreatureTaskWatchBandit(BanditID, Position)
+
+define script CreatureTaskGirlScared
+define script CreatureTaskBonfire
+define script CreatureTaskMoveGirl
+define script CreatureTaskPointOut
+
+//========================================================================================
+//	Land1CreatureTask
+//========================================================================================
+begin script Land1CreatureTask		
+	CT_Scroll = 0	
+	CT_Girl_Pos	= marker at {1323.443, 8.234, 1014.385}
+start
+
+	CT_Greek_Town = get TOWN at {1120.890, 10.969, 876.056} radius 100
+	CT_Norse_Town = get TOWN at {1084.095, 34.279, 1327.602} radius 100	
+
+	CT_Girl = create VILLAGER VILLAGER_INFO_NORSE_HOUSEWIFE_FEMALE at {CT_Girl_Pos}
+	disable CT_Girl alternative mesh
+	
+	CT_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {CT_Girl_Pos} 
+	ALTITUDE of CT_Scroll = 10		
+	
+	//Point out
+	run background script CreatureTaskPointOut
+	
+	wait until CT_Scroll right clicked or not {CT_Girl} near {CT_Girl_Pos} radius 30
+	
+	CT_Started = CT_TRUE
+	
+	//Girl is still on the island so run the challenge scripts
+	if {CT_Girl} near {CT_Girl_Pos} radius 30
+		
+		/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+		Run intro cinematic
+		-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+		
+		run background script CreatureTaskGirlScared
+		run background script CreatureTaskAdvisor(0)
+		run background script CreatureTaskBonfire
+		run background script CreatureTaskMoveGirl
+	
+	//girl has been moved off the island.. script cannot be run now
+	else
+		//Release doesnt work when the girl is held so we need to wait
+		wait until not CT_Girl is HELD
+	
+		attach CT_Girl to CT_Norse_Town
+		release CT_Girl
+		
+	end if
+	
+end script Land1CreatureTask
+
+
+//========================================================================================
+//	CreatureTaskBonfire
+//========================================================================================
+begin script CreatureTaskBonfire
+	BonfirePos = marker at {1191.271, 11.511, 993.774}
+	
+	//Bandit positions
+	BanditPosition_0 = marker at {1185.691, 11.926, 994.282}
+	BanditPosition_1 = marker at {1189.617, 12.200, 988.185}
+	BanditPosition_2 = marker at {1196.456, 11.242, 991.931}
+	BanditPosition_3 = marker at {1189.421, 11.204, 999.523}
+	BanditPosition_4 = marker at {1194.944, 10.724, 999.574}
+	BanditPosition_5 = marker at {1193.630, 10.067, 1006.255}
+	BanditPosition_6 = marker at {1187.171, 10.928, 1003.108}
+	BanditPosition_7 = marker at {1193.712, 10.481, 1002.567}
+	BanditPosition_8 = marker at {1192.720, 10.285, 1004.505}
+	BanditPosition_9 = marker at {1194.644, 10.326, 1003.303}
+start
+	CT_Bonfire = create OBJECT BONFIRE at {BonfirePos}
+	SCALE of CT_Bonfire = 3.0
+	enable CT_Bonfire indestructible
+	
+	//First five bandits face the bonfire in a circle
+	run background script CreatureTaskWatchBandit(0, marker at {BanditPosition_0})
+	run background script CreatureTaskWatchBandit(1, marker at {BanditPosition_1})
+	run background script CreatureTaskWatchBandit(2, marker at {BanditPosition_2})
+	run background script CreatureTaskWatchBandit(3, marker at {BanditPosition_3})
+	run background script CreatureTaskWatchBandit(4, marker at {BanditPosition_4})
+	
+	run background script CreatureTaskWatchBandit(5, marker at {BanditPosition_5})
+	run background script CreatureTaskWatchBandit(6, marker at {BanditPosition_6})
+	run background script CreatureTaskWatchBandit(7, marker at {BanditPosition_7})
+	run background script CreatureTaskWatchBandit(8, marker at {BanditPosition_8})
+	run background script CreatureTaskWatchBandit(9, marker at {BanditPosition_9})
+	
+	while CT_Done == CT_FALSE
+		if {CT_Girl} near {CT_Bonfire} radius 5 and CT_Girl is not HELD
+			
+			begin cinema
+			
+				enable CT_Girl on fire 1.0			
+				play anim "a_p_panic_woman" on CT_Girl loop -1 disable stand
+				
+				//Wait until nearly dead and go to dying animation
+				wait until HEALTH of CT_Girl < 0.35		
+				play anim "a_p_dying" on CT_Girl loop 1 disable stand
+				
+				//Wait until she's properly dead
+				wait until HEALTH of CT_Girl <= 0.03
+				CT_Done = CT_TRUE
+			
+			end cinema
+			
+		end if
+	end while
+	
+	set CT_Girl player 1
+	attach CT_Girl to CT_Norse_Town
+	release CT_Girl
+			
+end script CreatureTaskBonfire
+
+
+//========================================================================================
+//	CreatureTaskAdvisor
+//========================================================================================
+begin script CreatureTaskAdvisor(AdvisorID)
+start
+
+	begin dialogue
+	
+		if AdvisorID == 0
+			
+			eject good spirit
+			make good spirit fly across 0.5 down 0.2
+			eject evil spirit
+			make evil spirit fly across 0.2 down 0.8
+			
+			make good spirit point at {CT_Girl}
+			
+			//Help the poor girl. Take her back to the Norse town. It will be a sign of friendship
+			say "BW2T_SCRIPT_01NEW_CREATURETASK_START_10"
+			wait until read
+			
+			stop good spirit pointing
+				
+			//Friednship? Who wants friedship? I say we burn her, drown her or kill her in some other gruesome way. haha!	
+			say "BW2T_SCRIPT_01NEW_CREATURETASK_START_20"
+			wait until read
+			stop evil spirit pointing
+		
+		elsif AdvisorID == 1
+			
+			eject good spirit
+			make good spirit fly across 0.5 down 0.2
+			eject evil spirit
+			make evil spirit fly across 0.2 down 0.8
+			
+			make good spirit point at {CT_Girl}
+			
+			say "BW2T_SCRIPT_01NEW_CREATURETASK_GIRLDEAD_10"
+			wait until read
+			stop good spirit pointing
+					
+			say "BW2T_SCRIPT_01NEW_CREATURETASK_GIRLDEAD_20"
+			wait until read
+			stop evil spirit pointing
+						
+		end if
+	
+	end dialogue
+	
+end script CreatureTaskAdvisor
+
+//========================================================================================
+//	CreatureTaskGirlScared
+//========================================================================================
+begin script CreatureTaskGirlScared
+	MovePos = 0
+	StartPos = 0
+start
+	
+	StartPos = marker at {CT_Girl}
+	
+	while CT_Done == CT_FALSE
+	
+		MovePos = marker at {StartPos} + {number from -6 to 6, 0, number from -6 to 6}
+		move CT_Girl position to {MovePos}
+		
+		wait until {CT_Girl} near {MovePos} radius 1
+		
+		play anim "a_p_scared_stiff" on CT_Girl loop 1 disable stand
+		wait until CT_Girl played
+		
+	end while
+	
+end script CreatureTaskGirlScared
+
+//========================================================================================
+//	CreatureTaskWatchBandit
+//========================================================================================
+begin script CreatureTaskWatchBandit(BanditID, Position)	
+	CT_BanditLost = CT_FALSE
+	CT_Burning = CT_FALSE
+	Bandit = 0
+	RandomNumber = 0
+start
+	Bandit = Bandits[BanditID]
+	
+	//Always male
+	if BanditID <= 5
+		Bandit = create VILLAGER GREEK_TRADER at {Position} 
+	//Male or female.. with higher female probability
+	else
+		RandomNumber = number from 1 to 3
+		
+		if RandomNumber == 1
+			Bandit = create VILLAGER GREEK_TRADER at {Position} 
+		else
+			Bandit = create VILLAGER GREEK_HOUSEWIFE at {Position} 
+		end if
+		
+	end if
+	
+	while CT_Done == CT_FALSE and CT_BanditLost == CT_FALSE
+		
+		//--------- Bandit is held by player or creature or dying
+		if Bandit is HELD or HEALTH of Bandit <= 0
+					
+			wait until not Bandit is HELD
+			
+			//Release and assign to greek town.. make sure they arent carrying anything
+			set Bandit carrying CARRIED_OBJECT_NONE
+			set Bandit player 0
+			attach Bandit to CT_Greek_Town
+			release Bandit
+			CT_BanditLost = CT_TRUE
+			
+		end if		
+		
+		//--------- Girl is near.. HUUUUUGE CHEER!!! yay!!
+		if {Bandit} near {CT_Girl} radius 50 and CT_Girl is HELD			
+			play anim "a_p_dance_celebrate01" on Bandit loop 1 disable stand
+			wait until Bandit played
+			
+			//if girl has moved away play stand anim
+			if not {Bandit} near {CT_Girl} radius 50
+				play anim "a_p_stand" on Bandit loop 1 disable stand
+			end if
+		end if
+		
+		//--------- Girl is on the bonfire
+		if {CT_Girl} near {CT_Bonfire} radius 5 and not CT_Girl is HELD and CT_Burning == CT_FALSE
+		
+			//First 5 bandits move in to prevent her leaving
+			if BanditID < 5
+				
+				//Dont eneter this group of ifs again
+				CT_Burning = CT_TRUE
+				
+				//Move towards fire and draw sword/ spear
+				move Bandit position to {CT_Bonfire}
+				set Bandit carrying CARRIED_OBJECT_GREEK_SMALL_SWORD
+				
+				wait until {Bandit} near {CT_Bonfire} radius 5
+				stop Bandit moving
+				
+				//Get some random animations going on
+				RandomNumber = number from 1 to 3
+		
+				if RandomNumber == 1
+					play anim "a_p_meleecombat_antagonise_enemy1" on Bandit loop 1 disable stand	
+				elsif RandomNumber == 2
+					play anim "a_p_meleecombat_antagonise_enemy2" on Bandit loop 1 disable stand
+				elsif RandomNumber == 3
+					play anim "a_p_meleecombat_antagonise_enemy4" on Bandit loop 1 disable stand
+				end if
+				
+			//The rest dance and be happy etc
+			else
+				
+				set Bandit focus to {CT_Girl}
+				play anim "a_p_picketing_stand_violent1" on Bandit loop 1 disable stand	
+			
+			end if
+		
+		//--------- Girl is dying elsewhere
+		elsif CT_Girl on fire or HEALTH of CT_Girl < 0.6
+			
+			//girl is dead
+			if HEALTH of CT_Girl <= 0
+				//short cheer
+				
+				CT_Done = CT_TRUE
+			end if
+			
+		end if
+		
+	end while
+	
+	//Release and assign to greek town.. make sure they arent carrying anything
+	set Bandit carrying CARRIED_OBJECT_NONE
+	set Bandit player 0
+	attach Bandit to CT_Greek_Town
+	release Bandit
+	
+end script CreatureTaskWatchBandit
+
+//========================================================================================
+//	Put Girl Somewhere
+//========================================================================================
+begin script CreatureTaskMoveGirl
+	CT_Island = 0
+	TestHeight = 0
+start
+	
+	//Get Girl start position
+	CT_Island = marker at {CT_Girl}
+	
+	while CT_Done == CT_FALSE
+		
+		//Make sure the girl isnt near any of the other triggers
+		
+		if not CT_Girl is HELD
+			//Island
+			if not {CT_Girl} near {CT_Island} radius 30
+				//Norse Town
+				if not {CT_Girl} near {CT_Norse_Town} radius 100
+
+					//Bonfire
+					if not {CT_Girl} near {CT_Bonfire} radius 40
+						
+						begin cinema
+							say "Girl has been moved somewhere other than triggers"
+							wait 5 seconds
+						end cinema
+						CT_Done = CT_TRUE
+						
+					end if
+				
+				else
+					
+					begin cinema
+						say "In Norse Town"
+						wait 5 seconds
+					end cinema
+					CT_Done = CT_TRUE
+					
+				end if
+			end if		
+		end if
+		
+	end while
+	
+end script CreatureTaskMoveGirl
+
+//========================================================================================
+//	Creature Task Point out
+//========================================================================================
+begin script CreatureTaskPointOut
+	ChallengePos = marker at {1323.443, 8.234, 1014.385}
+start
+	
+	wait camera position near {ChallengePos} radius 45 or number from 60 to 120 seconds
+	
+	//If the player hasnt already started playing then the advisors shall point out the scroll when the player gets near
+	while CT_Started == CT_FALSE		
+				
+		if camera position near {ChallengePos} radius 300
+			
+			begin dialogue
+			
+				eject good spirit
+				say "BW2T_SCRIPT_01NEW_CREATURETASK_POINTOUT_10"
+				wait until read				
+				make good spirit point at {ChallengePos}
+				
+				stop good spirit pointing
+				say "BW2T_SCRIPT_01NEW_CREATURETASK_POINTOUT_20"
+				wait until read
+				
+				eject evil spirit				
+				say "BW2T_SCRIPT_01NEW_CREATURETASK_POINTOUT_30"
+				wait until read
+				
+				send good spirit home
+				send evil spirit home
+				
+			end dialogue
+						
+			wait number from 60 to 120 seconds
+			
+		end if
+		
+	end while
+	
+end script CreatureTaskPointOut

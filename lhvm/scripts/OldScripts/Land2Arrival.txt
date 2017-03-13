@@ -1,0 +1,209 @@
+//------------------------------------------------
+//  LAND 2 ARRIVAL CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land2Arrival
+
+MrDim = 0
+MrDimStart = 0
+MrMsg = 0
+MrMsgStart = 0
+MrMsgEnd = 0
+TheBigBuildingThing = 0
+TheBigBuildingThingPos = marker at {1067.146,83.531,1844.645} //marker at {500.065,91.907,2103.740}
+ChainedGal=0
+RelCamPos=0
+RelCamFoc=0
+JustAnotherHouseForMeAndYouInParadise = 0
+DudePos[3]
+Dude[3]
+Creaturefocus=0
+MinorBuilding=0
+
+start
+
+TheBigBuildingThing = get HOUSE at {TheBigBuildingThingPos}
+JustAnotherHouseForMeAndYouInParadise = get HOUSE at {1108.992,82.081,1822.484}//{533.390,91.625,2135.730}
+MinorBuilding = get HOUSE at {796.915,88.545,1043.280}
+
+DudePos[0] = marker at get world position from JustAnotherHouseForMeAndYouInParadise to {0.052,0.442,2.007}
+DudePos[1] = marker at get world position from JustAnotherHouseForMeAndYouInParadise to {1.706,0.000,2.352}
+DudePos[2] = marker at get world position from JustAnotherHouseForMeAndYouInParadise to {-0.333,0.000,0.241}//altit
+Dude[0] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {DudePos[0]}
+Dude[1] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {DudePos[1]}
+Dude[2] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {DudePos[2]}
+ALTITUDE of Dude[2] = 3.5
+
+Creaturefocus = marker at get world position from TheBigBuildingThing to {-37.596,17.335,69.605}
+
+set Dude[0] focus to get target from {Creaturefocus} to {Dude[0]} distance 1 angle 0
+set Dude[1] focus to get target from {Creaturefocus} to {Dude[1]} distance 1 angle 0
+set Dude[2] focus to get target from {Creaturefocus} to {Dude[2]} distance 1 angle 0
+
+MrDimStart = marker at get world position from TheBigBuildingThing to {-17.782,0.000,29.036}	
+
+MrDim = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {MrDimStart}
+MrMsgStart = marker at get world position from TheBigBuildingThing to {-13.698,0.813,40.944}
+
+MrMsg = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {MrMsgStart}
+
+
+MrMsgEnd = marker at get target from {MrMsg} to {MrDim} distance 1.3 angle 180 
+
+
+SPEED of MrMsg = 0.6
+
+//wait 10 seconds
+
+
+begin cinema
+
+store camera details
+
+set MrDim focus to get world position from TheBigBuildingThing to {5.606,0.000,-11.679}
+
+RelCamPos=marker at get world position from TheBigBuildingThing to {-17.743,0.496,29.765}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-15.875,0.950,25.771}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+wait 4 seconds
+
+set MrDim focus to get target from {MrMsg} to {MrDim} distance 1 angle 0
+
+play anim "A_P_TURN_90_LEFT" on MrDim 
+//set MrDim focus to get target from {MrMsg} to {MrDim} distance 1 angle 90
+
+play anim "A_P_TURN_90_LEFT" on Dude[0] 
+play anim "A_P_TURN_90_LEFT" on Dude[1] 
+play anim "A_P_TURN_90_LEFT" on Dude[2] 
+
+set camera lens 42.000
+RelCamPos=marker at get world position from TheBigBuildingThing to {-17.197,0.592,28.777}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-21.233,0.780,30.601}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait 1 seconds
+
+set camera lens 48.000
+RelCamPos=marker at get world position from JustAnotherHouseForMeAndYouInParadise to {-0.230,2.635,0.861}
+RelCamFoc=marker at get world position from JustAnotherHouseForMeAndYouInParadise to {-1.634,1.252,-3.109}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+set camera lens 43.000 time 0.5
+wait 1.5 seconds
+
+set camera lens 42.000
+RelCamPos=marker at get world position from TheBigBuildingThing to {-17.197,0.592,28.777}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-21.233,0.780,30.601}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+move MrMsg position to {MrMsgEnd}
+
+wait 2 seconds
+set MrDim focus to get target from {MrMsg} to {MrDim} distance 1 angle 90
+
+play anim "A_P_TURN_90_LEFT"on MrDim 
+//set MrDim focus to {MrMsg}
+
+say "Dimitrios!"
+wait 1 second
+//set camera position follow MrMsg offset {0.063,0.719,1.393}
+//set camera focus follow MrMsg offset {0.016,0.221,-2.376}
+
+set camera lens 34.000
+RelCamPos=marker at get world position from TheBigBuildingThing to {-17.913,0.720,28.824}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-16.652,0.359,32.394}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+RelCamPos=marker at get world position from TheBigBuildingThing to {-17.913,0.720,28.824}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-16.718,-0.538,32.208}
+move camera position to {RelCamPos} time 1.5
+move camera focus to {RelCamFoc} time 1.5
+
+
+
+//wait 2 seconds
+say "We found her lying outside of town."
+wait 2 seconds
+
+/*set camera lens 61.000
+RelCamPos=marker at get world position from TheBigBuildingThing to {-16.670,0.703,27.858}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-17.596,0.626,32.194}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+wait until MrDim played*/
+set MrDim focus to {MrMsg}
+wait 2 seconds
+
+set camera lens 21.000
+RelCamPos=marker at get world position from TheBigBuildingThing to {-17.387,0.723,29.686}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-20.011,0.645,26.112}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+say "what happened?"
+wait until read
+wait 2 seconds
+
+ChainedGal = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {742.294,287.396,1154.818}
+set ChainedGal focus to {646.556,268.475,368.986}
+
+//wait 15 seconds
+set camera lens 70.000
+
+set camera position to {742.461,287.696,1152.846}
+set camera focus to {629.633,305.745,1937.171}
+
+wait 5 seconds
+
+set camera lens 32.000
+set camera position to {743.242,288.117,1154.254}
+set camera focus to {-4.679,242.784,1412.670}
+
+wait 2 seconds
+
+set camera lens 63.000
+set camera position to {745.976,288.861,1151.355}
+set camera focus to {-11.976,249.859,1379.842}
+wait 4 seconds
+
+set camera lens 21.000
+RelCamPos=marker at get world position from TheBigBuildingThing to {-16.945,0.657,29.685}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-20.844,0.792,27.577}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+say "Are there any others?"
+wait until read
+
+RelCamPos=marker at get world position from TheBigBuildingThing to {-17.452,0.639,28.183}
+RelCamFoc=marker at get world position from TheBigBuildingThing to {-18.431,0.774,32.505}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+say "We think so.  But we can’t get past the Creature to find out."
+wait until read
+
+RelCamPos=marker at get world position from MinorBuilding to {2.222,9.587,15.716}
+RelCamFoc=marker at get world position from MinorBuilding to {10.861,-4.504,-3.700}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+RelCamPos=marker at get world position from MinorBuilding to {-9.929,12.571,15.241}
+RelCamFoc=marker at get world position from MinorBuilding to {-2.522,-0.484,-5.372}
+move camera position to {RelCamPos} time 3
+move camera focus to {RelCamFoc} time 3
+wait 2 seconds
+
+RelCamPos=marker at get world position from MinorBuilding to {-27.361,19.447,27.393}
+RelCamFoc=marker at get world position from MinorBuilding to {-13.585,33.601,11.267}
+move camera position to {RelCamPos} time 15
+move camera focus to {RelCamFoc} time 15
+set camera lens 58.000 time 15
+wait 15 seconds
+restore camera details
+
+
+end cinema
+
+end script Land2Arrival

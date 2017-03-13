@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Lava Flow script
+//-----------------------------------------------------------------------------
+run script RunLand6LavaFlow
+
+begin script RunLand6LavaFlow
+
+start
+
+	run script Land6LavaFlow
+
+end script RunLand6LavaFlow

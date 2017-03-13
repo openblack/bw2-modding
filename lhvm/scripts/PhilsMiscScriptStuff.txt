@@ -1,0 +1,2611 @@
+
+//================================================================================================
+//================================================================================================
+//================================================================================================
+/*
+
+This contains the following:
+
+1. Ghost template script.
+2. Morbid Bastards script - v1.
+3. Herding - old attempt at a ghost script idea.
+4. Dehydration - old attempt at a ghost script idea.
+5. Invisible Stealer script stuff.
+6. Fire and Get test
+7. Old Female Archers script
+
+*/
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+
+
+
+
+//----------------- START OF TEMPLATE -------------------
+
+///////////////////////////////////////////////////////////////////////////////////
+// Land 7 - Ghost script
+// ~~~~~~~~~~~~~~~~~~~~~
+//
+//
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define G7_FALSE			= 0
+define G7_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global G7_SomeThing		= G7_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script G7_Create_Characters
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land7Ghost
+
+start
+
+	run script G7_Create_Characters
+
+	wait 100 seconds
+
+	begin dialogue
+		say "Well done! Land 7 Ghost Script complete..."
+		wait until read
+		clear dialogue
+	end dialogue
+	
+	wait 10 seconds
+
+end script Land7Ghost
+//=============================
+
+
+
+//-----------------------------------------------------------------------------
+//	G7_Create_Characters
+//-----------------------------------------------------------------------------
+begin script G7_Create_Characters
+
+start
+
+end script G7_Create_Characters
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+/*
+	begin dialogue
+		eject good spirit
+		say "."
+		wait until read
+		clear dialogue
+	end dialogue
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/
+
+
+
+//----------------- END OF TEMPLATE -------------------
+
+
+
+
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+//	Morbid Bastards Script
+//	~~~~~~~~~~~~~~~~~~~~~~
+//
+//Four or five people stand around a group of gravestones at night. 
+//When you are closeby at night; you see someone die in front of them; to whom they then give a mark to.
+//Intro to explain what's going on - scroll.
+//Perhaps the Characters that do the marking start off with a smaller number; and then grow as you see the examples.
+//Huh? Wha? Chopsuooky wookee. Yes indeedy.
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define MB_FALSE			= 0
+define MB_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global MB_Score_Obtained		= MB_FALSE
+global MB_Challenge_Complete	= MB_FALSE
+global MB_Required_Score		= 0
+global MB_Current_Score			= 0
+global MB_Score_Counter			= 0
+global MB_Creation_Start_Point	= 0
+global MB_Centre_Character		= 0
+global MB_Left_Character		= 0
+global MB_Right_Character		= 0
+global MB_Left_End_Character	= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script MB_Create_Characters
+define script MB_Calculate_Scores
+define script MB_Show_Deaths
+define script MB_Handle_Characters
+define script MB_Display_Scores
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land7Ghost
+
+start
+
+	run script MB_Create_Characters
+
+	//Help the player by showing deaths and helping... cutscene now?
+	run script MB_Show_Deaths
+
+	run background script MB_Handle_Characters
+	run background script MB_Calculate_Scores
+
+	wait until MB_Challenge_Complete == MB_TRUE
+
+	begin dialogue
+		say "Well done! Challenge complete..."
+		wait until read
+		clear dialogue
+	end dialogue
+	
+	wait 100 seconds
+
+end script Land7Ghost
+//=============================
+
+
+//-----------------------------------------------------------------------------
+//	MB_Create_Characters
+//-----------------------------------------------------------------------------
+begin script MB_Create_Characters
+
+start
+
+	MB_Creation_Start_Point = marker at {1281.628,72.216,1197.863}
+
+	//Create Characters around the main point.
+	MB_Centre_Character = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {MB_Creation_Start_Point}
+
+	// USE OFFSETS !!!
+	MB_Left_Character = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {MB_Creation_Start_Point} + {0.000,0.000,-2.500}
+	MB_Right_Character = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {MB_Creation_Start_Point} + {0.000,0.000,2.500}
+	MB_Left_End_Character = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {MB_Creation_Start_Point} + {0.000,0.000,-5.000}
+
+end script MB_Create_Characters
+
+
+
+//-----------------------------------------------------------------------------
+//	MB_Calculate_Scores
+//-----------------------------------------------------------------------------
+begin script MB_Calculate_Scores
+
+start
+
+	begin loop
+		if MB_Current_Score > MB_Required_Score
+			MB_Score_Obtained = MB_TRUE
+		end if
+		until MB_Score_Obtained == MB_TRUE
+	end loop
+
+end script MB_Calculate_Scores
+
+
+//-----------------------------------------------------------------------------
+//	MB_Show_Deaths
+//-----------------------------------------------------------------------------
+begin script MB_Show_Deaths
+
+start
+
+	//Show a few people dieing if the player brings the camera close in...
+	//Check that the player or creature isn't holding anyone.
+
+	
+end script MB_Show_Deaths
+
+
+//-----------------------------------------------------------------------------
+//	MB_Handle_Characters
+//-----------------------------------------------------------------------------
+begin script MB_Handle_Characters
+
+start
+
+	//Wait ntil viewed and in range
+	wait until MB_Centre_Character viewed and camera position near {MB_Centre_Character} radius 50
+
+	begin loop
+		//Do some funny stuff like watching the deaths until a CurrentScore exists
+		say "Camera near enough to show the first guy dieing..."
+		wait until read
+		
+		wait until MB_Current_Score exists
+	end loop
+
+	run script MB_Display_Scores
+
+end script MB_Handle_Characters
+
+
+//-----------------------------------------------------------------------------
+//	MB_Display_Scores
+//-----------------------------------------------------------------------------
+begin script MB_Display_Scores
+
+start
+
+	//Get the Characters to display the scores; preferably with scoreboard-style boards...
+
+end script MB_Display_Scores
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+//	Ghost series - Land 5 - Herding
+//	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+//New Plan! Version 2456436.2 Herding...
+//Use the ghost stone to repel ghosts back to their graves...
+//Requirements	- people should be afraid of ghosts.
+//				- ghost effect required. Alpha?
+//				- we require some sort of reward for the player that does all ghost challenges...
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define G5_FALSE			= 0
+define G5_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global G5_Waypoints[4]			//... Waypoint array
+global G5_Ghost_Back_In_Grave	= G5_FALSE
+global G5_Ghost_Stone			= 0
+global G5_Ghost					= 0
+global G5_Grave					= 0
+global G5_Ghost_Stone_Pos		= 0
+global G5_Ghost_Spawn_Pos		= 0
+global G5_Grave_Pos				= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script G5_Create_Items
+define script G5_Make_Ghost_Runaway
+define script G5_Detect_If_Near_Grave
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land5Ghost
+
+start
+
+	run script G5_Create_Items
+
+	run background script G5_Make_Ghost_Runaway
+	run background script G5_Detect_If_Near_Grave
+
+	wait until G5_Ghost_Back_In_Grave == G5_TRUE
+
+	say "Script complete. Well done!"
+
+	wait 1000 seconds
+
+end script Land5Ghost
+//=============================
+
+
+//-----------------------------------------------------------------------------
+//	G5_Create_Items
+//-----------------------------------------------------------------------------
+begin script G5_Create_Items
+
+start
+
+	G5_Ghost_Stone_Pos	= marker at {1402.665,64.817,601.978}
+	G5_Ghost_Spawn_Pos	= marker at {1490.749,76.928,603.123}
+	G5_Grave_Pos		= marker at {1257.323,58.974,702.429}
+
+	//Create the ghost stone
+	G5_Ghost_Stone = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {G5_Ghost_Stone_Pos}
+
+	//Create the grave
+	G5_Grave = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {G5_Grave_Pos}
+
+	//Create the ghost
+	G5_Ghost = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {G5_Ghost_Spawn_Pos}
+
+	//Scale the ghost up a bit so he's easy to find and follow for now...
+	SCALE of G5_Ghost = 4
+
+	//Speed him up - he's way too slow...
+	SPEED of G5_Ghost = 2
+
+	//Set the ghost stone on fire so we know which it is...
+	set G5_Ghost_Stone temperature 1000
+
+end script G5_Create_Items
+
+
+//-----------------------------------------------------------------------------
+//	G5_Make_Ghost_Runaway
+//-----------------------------------------------------------------------------
+begin script G5_Make_Ghost_Runaway
+
+	G5_New_Point = 0
+	G5_Previous_Stone_Pos = 0
+	G5_New_Stone_Pos = 0
+	G5_First_Time_Through = G5_TRUE
+
+start
+
+	begin loop
+		//Get the current stone pos. Then later check to see i
+		//G5_New_Stone_Pos = marker at {G5_Ghost_Stone}
+		//if G5_First_Time_Through == G5_FALSE
+			//sort it so it checks to see if you need to move the ghost in a different direction or not.
+		//end if
+
+		G5_First_Time_Through = G5_FALSE
+
+		if {G5_Ghost_Stone} near {G5_Ghost} radius 40
+			G5_New_Point = marker at get target from {G5_Ghost_Stone} to {G5_Ghost} distance 20 angle 0
+			move G5_Ghost position to {G5_New_Point} radius 5
+			//G5_Previous_Stone_Pos = marker at {G5_Ghost_Stone}
+		end if
+		wait 0.2 seconds
+	end loop
+
+end script G5_Make_Ghost_Runaway
+
+
+//-----------------------------------------------------------------------------
+//	G5_Detect_If_Near_Grave
+//-----------------------------------------------------------------------------
+begin script G5_Detect_If_Near_Grave
+
+	G5_Near_Grave = G5_FALSE
+
+start
+
+	//Check to see if the ghost is near the grave.
+	begin loop
+		if {G5_Ghost} near {G5_Grave} radius 30
+			//If near the grave; stop the run away script.
+			stop script "G5_Make_Ghost_Runaway"
+			move G5_Ghost position to {G5_Grave} radius 2
+            say "The ghost is now back in his grave where he belongs!"
+			wait until read
+			G5_Near_Grave = G5_TRUE
+		end if
+		wait 0.3 second
+		until G5_Near_Grave == G5_TRUE
+	end loop
+
+	//Get back into the grave.
+	G5_Ghost_Back_In_Grave = G5_TRUE
+
+end script G5_Detect_If_Near_Grave
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+
+
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+//Land 9 - Dehydration (old ghost script idea)
+/*
+The player must make sure that lost villagers in a desert get to an oasis. 
+They died because they kept seeing the odd tree in the distance and lumbering towards it; hoping to find an oasis,
+but having no luck.
+The player needs to place trees closer to them than incorrect trees and then they’ll start to lumber towards those; 
+therefore guiding them towards a real oasis.
+When they get close you can pluck the tree away and plant it again on the right route to the real oasis. Assuming this
+is outside of your influence you will need to get your creature to plant trees so that they’ll follow your route; 
+as well as pluck out trees that aren’t useful to the route.  (Water/Ice spells may help them last longer; but the 
+solution should be possible without using these.) Spells should probably affect it as it’s likely the player will try that.
+*/
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define GD_FALSE			= 0
+define GD_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global GD_Waypoints[4]				//... Waypoint array
+global GD_Initial_Scroll_Used		= GD_FALSE
+global GD_Got_To_Tree_1				= GD_FALSE
+global GD_Got_To_Tree_2				= GD_FALSE
+global GD_Got_To_Tree_3				= GD_FALSE
+global GD_Time_Over					= GD_FALSE
+global GD_Ghosts_Saved				= GD_FALSE
+global GD_Players_Town				= 0
+global GD_Ghost_A					= 0
+global GD_Ghost_B					= 0
+global GD_Oasis_Pos					= 0
+global GD_Tree_1					= 0
+global GD_Tree_2					= 0
+global GD_Tree_3					= 0
+global GD_Time_Left					= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script GD_Create_Oasis
+define script GD_Create_Trees
+define script GD_Create_Ghosts
+define script GD_Move_Ghost_A
+define script GD_Move_Ghost_B
+define script GD_Clean_Up_Items
+define script GD_Time_Until_Death
+define script GD_Check_If_Saved
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=======================
+begin script Land9Ghost
+
+start
+
+	run script GD_Create_Oasis
+	run script GD_Create_Trees
+	run script GD_Create_Ghosts
+
+	run background script GD_Time_Until_Death
+	run background script GD_Move_Ghost_A
+	run background script GD_Move_Ghost_B
+	run background script GD_Check_If_Saved
+
+	wait until GD_Time_Over == GD_TRUE or GD_Ghosts_Saved == GD_TRUE
+
+	stop script "GD_Time_Until_Death"
+	stop script "GD_Move_Ghost_A"
+	stop script "GD_Move_Ghost_B"
+
+	begin dialogue
+		eject good spirit
+		if GD_Time_Over == GD_TRUE
+        	say "Time over! The ghosts died of deydration"
+		else
+			say "You managed to save the ghosts! Well done!"
+		end if
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+	run script GD_Clean_Up_Items
+	
+end script Land9Ghost
+//=======================
+
+
+//-----------------------------------------------------------------------------
+//	GD_Create_Oasis
+//-----------------------------------------------------------------------------
+begin script GD_Create_Oasis
+
+	GD_Oasis_Tree_1 = 0
+	GD_Oasis_Tree_2 = 0
+
+
+start
+
+	GD_Oasis_Pos = marker at {1234.705,34.414,1107.417}
+
+	GD_Oasis_Tree_1 = create TREE TREE_INFO_SPRUCE at {GD_Oasis_Pos} + {0.000,0.000,5.000}
+	GD_Oasis_Tree_2 = create TREE TREE_INFO_SPRUCE at {GD_Oasis_Pos} + {5.000,0.000,0.000}
+
+end script GD_Create_Oasis
+
+
+//-----------------------------------------------------------------------------
+//	GD_Create_Trees
+//-----------------------------------------------------------------------------
+begin script GD_Create_Trees
+
+	GD_Tree_Pos_1 = 0
+	GD_Tree_Pos_2 = 0
+	GD_Tree_Pos_3 = 0
+
+start
+
+	GD_Tree_Pos_1 = marker at {1235.851,28.583,1309.609}
+	GD_Tree_Pos_2 = marker at {1170.266,31.185,1322.347}
+	GD_Tree_Pos_3 = marker at {1186.730,29.921,1209.487}
+
+	GD_Tree_1 = create TREE TREE_INFO_SPRUCE at {GD_Tree_Pos_1}
+	GD_Tree_2 = create TREE TREE_INFO_SPRUCE at {GD_Tree_Pos_2}
+	GD_Tree_3 = create TREE TREE_INFO_SPRUCE at {GD_Tree_Pos_3}
+
+	//Small_Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {Rock_Pos}
+	//Medium_Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {Rock_Pos}
+	//Large_Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {Rock_Pos}
+	//Tree = create TREE TREE_INFO_SPRUCE at {Tree_Pos}
+
+end script GD_Create_Trees
+
+
+//-----------------------------------------------------------------------------
+//	GD_Create_Ghosts
+//-----------------------------------------------------------------------------
+begin script GD_Create_Ghosts
+
+	GD_Ghost_A_Spawn_Pos = 0
+	GD_Ghost_B_Spawn_Pos = 0
+
+start
+
+	GD_Ghost_A_Spawn_Pos = marker at {1195.923,30.407,1282.794}
+	GD_Ghost_B_Spawn_Pos = marker at {1191.888,30.602,1282.208}
+
+	GD_Ghost_A = create VILLAGER VILLAGER_INFO_AZTEC_SHEPHERD_MALE at {GD_Ghost_A_Spawn_Pos}
+	GD_Ghost_B = create VILLAGER VILLAGER_INFO_AZTEC_SHEPHERD_MALE at {GD_Ghost_B_Spawn_Pos}
+
+end script GD_Create_Ghosts
+
+
+//-----------------------------------------------------------------------------
+//	GD_Move_Ghost_A
+//-----------------------------------------------------------------------------
+begin script GD_Move_Ghost_A
+
+	GD_Pointed_1 = GD_FALSE
+	GD_Pointed_2 = GD_FALSE
+	Nearest_Tree = 0
+
+start
+
+	// Currently faked - all going to Tree number 1... should be the nearest
+	//get distance from camera position to [Mother]
+	// GET THE NEAREST TREE !!!
+	//Nearest_Tree = 
+	//Walk towards the nearest tree
+
+	move GD_Ghost_A position to {GD_Tree_1} radius 4
+
+	while not GD_Got_To_Tree_1 == GD_TRUE
+		if {GD_Ghost_A} near {GD_Tree_1} radius 10
+			GD_Got_To_Tree_1 = GD_TRUE
+		end if
+		/*
+		if {GD_Ghost_A} near {GD_Tree_1} radius 100 and not GD_Pointed_1 == GD_TRUE
+			GD_Ghost_A play anim "M_P_INTO_POINTING"
+			wait until GD_Ghost_A played
+			GD_Ghost_A play anim "M_P_OUT_OF_POINTING"
+			wait until GD_Ghost_A played
+			GD_Pointed_1 = GD_TRUE
+			move GD_Ghost_A position to {GD_Tree_1} radius 4
+		end if
+		*/
+		if GD_Tree_1 is HELD
+			move GD_Ghost_A position to {GD_Ghost_A}
+			begin dialogue
+				eject good spirit
+				say "Tree 1 is held"
+				wait 1 second
+				send good spirit home
+			end dialogue
+			wait until GD_Tree_1 is not HELD
+			move GD_Ghost_A position to {GD_Tree_1} radius 4
+		end if
+	end while
+
+	/*
+	// Cry / Mourn / Something - showing that they didn't find an oasis
+	GD_Ghost_A play anim "M_P_INTO_MOURNING"
+	GD_Ghost_B play anim "M_P_INTO_MOURNING"
+	wait until GD_Ghost_A played
+	wait until GD_Ghost_B played
+	GD_Ghost_A play anim "M_P_MOURNING"
+	GD_Ghost_B play anim "M_P_MOURNING"
+	wait until GD_Ghost_A played
+	wait until GD_Ghost_B played
+	GD_Ghost_A play anim "M_P_OUT_OF_MOURNING"
+	GD_Ghost_B play anim "M_P_OUT_OF_MOURNING"
+
+	wait 2 seconds
+	*/
+/*
+	// Point at the next tree
+	GD_Ghost_A play anim "M_P_INTO_POINTING"
+	wait until GD_Ghost_A played
+	GD_Ghost_A play anim "M_P_OUT_OF_POINTING"
+	wait until GD_Ghost_A played
+*/
+
+end script GD_Move_Ghost_A
+
+
+
+//-----------------------------------------------------------------------------
+//	GD_Move_Ghost_B
+//-----------------------------------------------------------------------------
+begin script GD_Move_Ghost_B
+
+	GD_Pointed_1 = GD_FALSE
+	GD_Pointed_2 = GD_FALSE
+	Nearest_Tree = 0
+
+start
+
+	// Currently faked - all going to Tree number 1... should be the nearest
+	//Nearest_Tree = 
+	//Walk towards the nearest tree
+
+	move GD_Ghost_B position to {GD_Tree_1} radius 4
+
+	while not GD_Got_To_Tree_1 == GD_TRUE
+		if {GD_Ghost_B} near {GD_Tree_1} radius 10
+			GD_Got_To_Tree_1 = GD_TRUE
+		end if
+		/*
+		if {GD_Ghost_B} near {GD_Tree_1} radius 50 and not GD_Pointed_2 == GD_TRUE
+			GD_Ghost_B play anim "M_P_INTO_POINTING"
+			wait until GD_Ghost_B played
+			GD_Ghost_B play anim "M_P_OUT_OF_POINTING"
+			wait until GD_Ghost_B played
+			GD_Pointed_2 = GD_TRUE
+			move GD_Ghost_B position to {GD_Tree_1} radius 4
+		end if
+		*/
+		if GD_Tree_1 is HELD
+			move GD_Ghost_B position to {GD_Ghost_B}
+			wait until GD_Tree_1 is not HELD
+			move GD_Ghost_B position to {GD_Tree_1} radius 4
+		end if
+	end while
+
+end script GD_Move_Ghost_B
+
+
+
+//-----------------------------------------------------------------------------
+//	GD_Clean_Up_Items
+//-----------------------------------------------------------------------------
+begin script GD_Clean_Up_Items
+
+start
+
+	//Delete the ghosts
+	if GD_Ghost_A exists
+		delete GD_Ghost_A with fade
+	end if
+	if GD_Ghost_B exists
+		delete GD_Ghost_B with fade
+	end if
+
+	//Remove any trees the player moved?
+end script GD_Clean_Up_Items
+
+
+//-----------------------------------------------------------------------------
+//	GD_Time_Until_Death
+//-----------------------------------------------------------------------------
+begin script GD_Time_Until_Death
+
+	GD_Timer = 0
+
+start
+
+	//Set the timer to say 3 minutes
+	GD_Time_Left = 240//180
+
+	//Timer countdown
+	GD_Timer = create timer for GD_Time_Left seconds
+	//ReminderTimer	= create timer for 0 seconds
+
+	while get GD_Timer time remaining > 0
+		if get GD_Timer time remaining == 60
+			begin dialogue
+				eject good spirit
+				say "One minute remaining"
+				wait until read
+				clear dialogue
+				send good spirit home
+			end dialogue
+			set GD_Timer time to 59 seconds
+		end if
+	end while
+
+	//Got to 0; Time for the ghosts to die.
+	GD_Time_Over = GD_TRUE
+	
+end script GD_Time_Until_Death
+
+
+//-----------------------------------------------------------------------------
+//	GD_Check_If_Saved
+//-----------------------------------------------------------------------------
+begin script GD_Check_If_Saved
+
+	Ghost_A_Saved = GD_FALSE
+	Ghost_B_Saved = GD_FALSE
+
+start
+
+	begin loop
+		if {GD_Ghost_A} near {GD_Oasis_Pos} radius 40
+			Ghost_A_Saved = GD_TRUE
+			move GD_Ghost_A position to {GD_Ghost_A}
+		end if
+		if {GD_Ghost_B} near {GD_Oasis_Pos} radius 40
+			Ghost_B_Saved = GD_TRUE
+			move GD_Ghost_B position to {GD_Ghost_B}
+		end if
+		if Ghost_A_Saved == GD_TRUE and Ghost_B_Saved == GD_TRUE
+			GD_Ghosts_Saved = GD_TRUE
+		end if
+		//if {GD_Ghost_A} near {GD_Oasis_Tree_1} radius 20 and {GD_Ghost_B} near {GD_Oasis_Tree_1} radius 20
+		//	GD_Ghosts_Saved = GD_TRUE
+		//end if
+		wait 1 second
+		until GD_Ghosts_Saved == GD_TRUE
+	end loop
+
+end script GD_Check_If_Saved
+
+//====================================================================================================
+//====================================== End Of Script =================================================
+//====================================================================================================
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Invisible_Stealer - Land 5
+//	~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define INV_FALSE				= 0
+define INV_TRUE					= 1
+define INV_WAYPOINT_RADIUS		= 20
+
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global INV_Villager_Waypoints_To_Town[4]		//... Villager's travel to town waypoint array
+global INV_Witch_Waypoints[2]					//... Witch's escape route waypoint array
+global INV_Villager_Dest[6]
+global INV_Initial_Scroll_Used					= INV_FALSE
+global INV_Witch_In_Jail						= INV_FALSE
+global INV_Villager_In_Jail						= INV_FALSE
+global INV_Witch_Dead							= INV_FALSE
+global INV_Villager_Dead						= INV_FALSE
+global INV_Advisor_Called						= INV_FALSE
+global INV_Villager_Picked_Up					= INV_FALSE
+global INV_Witch_Picked_Up						= INV_FALSE
+global INV_Villager_Called_Upon					= INV_FALSE
+global INV_Witch_Given_Food						= INV_FALSE
+global INV_Legging_It							= INV_FALSE
+global INV_Players_Town							= 0
+global INV_Witch								= 0
+global INV_Villager								= 0
+global INV_Witch_Home_Position					= 0
+global INV_Witch_Home_Building					= 0
+global INV_Temp_Jail							= 0
+global INV_Guard_A								= 0
+global INV_Guard_B								= 0
+global INV_Player_Storage_Pit					= 0
+global INV_Scroll								= 0
+global INV_Reminder_Scroll						= 0
+global INV_Reward_Scroll						= 0
+global INV_Position_Just_Outside_Witch_House	= 0
+global INV_Position_Outside_Her_House			= 0
+global INV_Position_Just_Outside_Storage_Pit	= 0
+global INV_Position_Inside_Storage_Pit			= 0
+global INV_Position_In_Jail						= 0
+global INV_Counter_A							= 0
+global INV_Counter_B							= 0
+global INV_Villager_Counter						= 0
+global INV_Witch_House							= 0
+
+
+//-----------------------------------------------------------------------------
+// Script defines
+//-----------------------------------------------------------------------------
+
+define script INV_Create_Homes_For_Both
+define script INV_Create_Villager
+define script INV_Create_Guards
+define script INV_Initialise_Scrolls
+define script INV_Cutscene_Guards_Explain_Problem
+define script INV_Advisors_Point_Out_Guards_Spotted_Something
+define script INV_Villager_Steals_Food
+define script INV_Create_Witch_Hiding_In_Home
+define script INV_Detect_Villager_Killed
+define script INV_Detect_Witch_Killed
+define script INV_Detect_Witch_Placed_In_Jail
+define script INV_Cutscene_Guards_Rewards_Player
+define script INV_Fake_The_Thefts
+define script INV_Reminder_Scroll_Info
+define script INV_Advisor_Warns_Food_Level_Is_Dropping
+define script INV_Has_Either_Been_Picked_Up
+define script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+define script INV_Create_Reward_Scroll
+define script INV_Witch_Does_Her_Stuff
+define script INV_Detect_Food_Dropped_For_Witch
+define script INV_DeathWitch
+
+
+//========================================================================================
+//	MAIN script
+//========================================================================================
+
+//==========================
+begin script Land5InvisibleStealer
+
+start
+
+	INV_Players_Town						= get town with id 0
+	INV_Position_In_Jail					= marker at {1402.183,5.047,581.558}
+	INV_Position_Just_Outside_Witch_House	= marker at {1491.200,10.190,490.332}
+	INV_Position_Outside_Her_House			= marker at {1493.998,10.187,489.707}
+	INV_Position_Just_Outside_Storage_Pit	= marker at {1426.551,8.715,655.825}
+	INV_Position_Inside_Storage_Pit			= marker at {1407.698,9.656,656.742}
+	INV_Villager_Waypoints_To_Town[0]		= marker at {1477.655,18.294,525.579}
+	INV_Villager_Waypoints_To_Town[1]		= marker at {1451.694,13.476,561.091}
+	INV_Villager_Waypoints_To_Town[2]		= marker at {1472.738,7.347,626.203}
+	INV_Villager_Waypoints_To_Town[3]		= marker at {1438.877,9.278,659.466}
+	INV_Witch_Waypoints[0]					= marker at {1581.540,10.512,587.789}
+	INV_Witch_Waypoints[1]					= marker at {1700.552,5.740,551.398}
+	INV_Witch_House							= marker at {1498.721,10.189,489.638}
+
+
+
+	run script INV_Create_Homes_For_Both
+	run script INV_Create_Guards
+	run background script INV_Fake_The_Thefts
+
+	run background script INV_Initialise_Scrolls
+
+	wait until INV_Scroll exists
+	
+	wait until INV_Scroll right clicked	
+	//... Wait until scroll clicked
+	stop script "INV_Fake_The_Thefts"
+
+	wait until INV_Scroll right clicked
+	delete INV_Scroll
+	INV_Initial_Scroll_Used = INV_TRUE
+
+	run script INV_Cutscene_Guards_Explain_Problem
+	run background script INV_Reminder_Scroll_Info
+	run script INV_Create_Villager
+	run script INV_Create_Witch_Hiding_In_Home
+
+	run background script INV_Detect_Villager_Killed
+	run background script INV_Detect_Witch_Killed
+	run background script INV_Detect_Witch_Placed_In_Jail
+	run background script INV_Has_Either_Been_Picked_Up
+	run background script INV_Advisors_Point_Out_Guards_Spotted_Something
+	run background script INV_Villager_Steals_Food
+	run background script INV_Witch_Does_Her_Stuff
+	run background script INV_Detect_Food_Dropped_For_Witch
+
+	wait until ((INV_Witch_Dead == INV_TRUE) or (INV_Witch_In_Jail == INV_TRUE) or (INV_Witch_Given_Food == INV_TRUE))
+
+	stop script "INV_Detect_Villager_Killed"
+	stop script "INV_Detect_Witch_Killed"
+	stop script "INV_Detect_Food_Dropped_For_Witch"
+	stop script "INV_Reminder_Scroll_Info"
+    stop script "INV_Villager_Steals_Food"
+	//stop script "INV_Witch_Does_Her_Stuff" This is stopped elsewhere...
+
+	if INV_Witch_Given_Food == INV_TRUE
+		run script INV_DeathWitch
+	else
+		run script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+		run script INV_Create_Reward_Scroll
+		run script INV_Cutscene_Guards_Rewards_Player
+	end if
+
+	wait 1000 seconds
+
+end script Land5InvisibleStealer
+//==========================
+
+
+/-----------------------------------------------------------------------------
+//	INV_Create_Homes_For_Both
+//-----------------------------------------------------------------------------
+begin script INV_Create_Homes_For_Both
+
+start
+
+	//... Create the home for the witch.
+	INV_Witch_Home_Position = marker at {1497.036,10.105,488.833}
+	INV_Witch_Home_Building = create with angle 135 and scale 1.0 HOUSE ABODE_INFO_GREEK_SHACK_X at {INV_Witch_Home_Position}
+
+   	INV_Temp_Jail = create with angle 135 and scale 1.0 HOUSE ABODE_INFO_GREEK_SHACK_X at {INV_Position_In_Jail}
+
+
+end script INV_Create_Homes_For_Both
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Villager
+//-----------------------------------------------------------------------------
+begin script INV_Create_Villager
+
+	INV_Villager_Spawn_Position	= 0
+	//INV_InvisSpell				= 0
+
+start
+
+	//... Create the villager character.
+	INV_Villager_Spawn_Position = marker at {1491.600,10.543,491.919}
+	INV_Villager = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Villager_Spawn_Position}
+	//INV_Villager = create VILLAGER VILLAGER_INFO_SAILOR_ACCORDIAN at {INV_Villager_Spawn_Position}
+	
+	// TEMP SPEED BOOST	
+	SPEED of INV_Villager = 1.10
+		
+	//... Make him invisible.   time -1 = forever
+	//INV_InvisSpell = cast MAGIC_TYPE_CREATURE_SPELL_INVISIBLE spell on INV_Villager from [INV_Villager] radius 0 time -1 curl 0
+
+	//... add some small dust effects to show where he's walking.
+
+
+end script INV_Create_Villager
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Guards
+//-----------------------------------------------------------------------------
+begin script INV_Create_Guards
+
+	INV_Guard_A_Spawn_Position = 0
+	INV_Guard_B_Spawn_Position = 0
+
+start
+
+	//... Create the guard's spawn positions.
+	INV_Guard_A_Spawn_Position = marker at {1417.074,9.656,654.689}
+	INV_Guard_B_Spawn_Position = marker at {1417.047,9.656,659.371}
+
+	//... Create the guards by the Storage Pit entrance.
+	INV_Guard_A = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Guard_A_Spawn_Position}
+	INV_Guard_B = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Guard_B_Spawn_Position}
+
+	//... looking puzzled animations?
+
+end script INV_Create_Guards
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Initialise_Scrolls
+//-----------------------------------------------------------------------------
+begin script INV_Initialise_Scrolls
+
+INV_Scroll_Position			= 0
+		
+start
+
+	wait until INV_Counter_A >= 3
+
+	//... Create scroll creation position above the two guards by the player's storage pit.
+	INV_Scroll_Position = marker at {1418.552,3.170,656.731}//marker at {1042.576,3.015,1329.986}
+
+	begin dialogue
+		eject good spirit
+		say "A scroll has appeared by the storage pit."
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+
+	//------------
+	begin loop
+
+		if INV_Initial_Scroll_Used == INV_FALSE	//...If not started this event/challenge
+			if INV_Scroll not exists
+				INV_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Scroll_Position}
+			end if
+		else									//... Already used the main scroll, so create a reminder.
+			if INV_Reminder_Scroll not exists
+				INV_Reminder_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Scroll_Position}
+			end if		
+		end if
+		
+		wait 0.6 seconds
+
+		//... Once villager and witch caught, or both dead; stop all scrolls
+		until INV_Witch_Dead == INV_TRUE or INV_Witch_In_Jail == INV_TRUE
+
+	end loop
+	//------------
+
+
+	if INV_Scroll exists
+		delete INV_Scroll
+	end if
+	if INV_Reminder_Scroll exists
+		delete INV_Reminder_Scroll
+	end if
+	
+
+end script INV_Initialise_Scrolls
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Cutscene_Guards_Explain_Problem
+//-----------------------------------------------------------------------------
+begin script INV_Cutscene_Guards_Explain_Problem
+
+EnDimitriosis=0
+Guard1 = 0
+Guard2 = 0
+Guard1Pos = 0
+Guard2Pos = 0
+JapTownCentrage = 0
+DimPos = 0
+Guard1Target = 0
+Guard2Target = 0
+RelCamPos = 0
+RelCamFoc = 0
+
+start
+
+JapTownCentrage = get HOUSE at {1382.760,8.313,616.360}
+
+DimPos = marker at get world position from JapTownCentrage to {-13.365,0.000,-13.224}
+Guard1Pos = marker at get world position from JapTownCentrage to {-8.696,0.000,-9.936}
+Guard2Pos = marker at get world position from JapTownCentrage to {-9.400,0.000,-9.163}
+
+EnDimitriosis = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {DimPos}
+
+ALTITUDE of EnDimitriosis = 6.1
+
+Guard1Target = marker at get world position from JapTownCentrage to {-12.292,0.000,-11.925}
+Guard2Target = marker at get world position from JapTownCentrage to {-11.682,0.000,-10.925}
+
+begin cinema
+
+set camera lens 29.000
+
+RelCamPos=marker at get world position from JapTownCentrage to {-14.527,3.730,-13.597}
+RelCamFoc=marker at get world position from JapTownCentrage to {-5.801,2.920,-9.410}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait 3 seconds
+
+RelCamPos=marker at get world position from JapTownCentrage to {-12.782,3.704,-12.716}
+RelCamFoc=marker at get world position from JapTownCentrage to {-21.052,3.475,-17.806}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+Guard1 = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {Guard1Pos}
+Guard2 = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at {Guard2Pos}
+ALTITUDE of Guard1 = 6.1
+ALTITUDE of Guard2 = 6.1
+wait 1 seconds
+
+move Guard1 position to {Guard1Target}
+move Guard2 position to {Guard2Target}
+
+wait 1 seconds
+
+RelCamPos=marker at get world position from JapTownCentrage to {-14.527,3.730,-13.597}
+RelCamFoc=marker at get world position from JapTownCentrage to {-5.961,2.920,-9.092}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait until {Guard1} at {Guard1Target}
+wait until {Guard2} at {Guard2Target}
+
+set Guard1 focus to {EnDimitriosis}
+set Guard2 focus to {EnDimitriosis}
+
+RelCamPos=marker at get world position from JapTownCentrage to {-13.415,3.755,-12.618}
+RelCamFoc=marker at get world position from JapTownCentrage to {-11.561,2.944,-22.118}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+say "Hey Dimster!"
+
+set EnDimitriosis focus to {Guard1}
+
+wait 1 seconds
+
+ALTITUDE of EnDimitriosis = 6.1
+ALTITUDE of Guard1 = 6.1
+ALTITUDE of Guard2 = 6.1
+
+wait 1 seconds
+
+RelCamPos=marker at get world position from JapTownCentrage to {-13.961,3.757,-12.818}
+RelCamFoc=marker at get world position from JapTownCentrage to {-5.381,2.946,-8.340}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+say "Our food keeps disappearing, and it's a bit wack"
+Guard1 play anim "A_P_TALK2_MALE"
+wait until read
+
+RelCamPos=marker at get world position from JapTownCentrage to {-13.356,3.670,-12.094}
+RelCamFoc=marker at get world position from JapTownCentrage to {-12.944,3.092,-21.781}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+say "Okay men. I'll look into the matter, or maybe god should since he's actually the player"
+EnDimitriosis play anim "A_P_TALK2_MALE"
+wait until read
+
+RelCamPos=marker at get world position from JapTownCentrage to {-14.527,3.730,-13.597}
+RelCamFoc=marker at get world position from JapTownCentrage to {-5.801,2.920,-9.410}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+set EnDimitriosis focus to get world position from JapTownCentrage to {-21.133,3.207,-13.000}
+
+say "hmm......"
+
+move Guard1 position to {Guard1Pos}
+move Guard2 position to {Guard2Pos}
+
+wait until read
+clear dialogue
+
+end cinema
+
+	/*begin cinema
+		set camera position to {1422.840,14.984,655.797}
+		set camera focus to {1416.406,9.963,656.409}
+		say "Lord, can you help us solve this mystery?"
+		wait until read
+		clear dialogue
+		say "Food keeps disappearing from the storage pit! If our captain finds out we're mincemeat!"
+		wait until read
+		clear dialogue
+		say "Someone must be stealing it from under our noses! But we have never seen anyone take any out."
+		wait until read
+		clear dialogue
+		say "I'd swear someone was humming whilst it happens though. But you're right; there's never anyone there."
+		wait until read
+		clear dialogue
+		say "If we hear it again we'll call on you."
+		wait until read
+		clear dialogue
+	end cinema*/
+	
+	//... Set having used the initial scroll to True.
+	INV_Initial_Scroll_Used = INV_TRUE
+
+end script INV_Cutscene_Guards_Explain_Problem
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Advisors_Point_Out_Guards_Spotted_Something
+//-----------------------------------------------------------------------------
+begin script INV_Advisors_Point_Out_Guards_Spotted_Something
+
+	INV_Counter_C		= 0
+
+start
+
+	//------------
+	begin loop
+
+		wait until INV_Advisor_Called == INV_TRUE
+
+		begin dialogue
+			eject evil spirit
+			if INV_Counter_C == 0
+		 		say "Those guards say they can hear that humming again. The food is being stolen right now!"
+			elsif INV_Counter_C == 1
+				say "The guards think some of our food is being stolen again! Can you see anyone at the storage pit?"
+			elsif INV_Counter_C == 2
+				say "Food is being stolen! I think I can see someone kicking up some dust! Are they invisible???"
+			elsif INV_Counter_C > 2
+				say "Follow that dust being kicked up by the storage pit. It's gotta be the thief stealing our food!"
+			end	if
+			wait until read
+			clear dialogue
+			send evil spirit home
+		end dialogue
+
+		INV_Advisor_Called = INV_FALSE
+
+		INV_Counter_C++
+
+	end loop
+	//------------
+
+end script INV_Advisors_Point_Out_Guards_Spotted_Something
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Witch_Hiding_In_Home
+//-----------------------------------------------------------------------------
+begin script INV_Create_Witch_Hiding_In_Home
+
+	INV_Witch_Spawn_Position = 0
+
+start
+
+	//... Create the witch character.
+	INV_Witch_Spawn_Position = marker at {1498.721,10.189,489.638}//marker at {1095.743,4.267,1422.225}
+	INV_Witch = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {INV_Witch_Spawn_Position}
+
+	// TEMP SPEED BOOST	
+	SPEED of INV_Witch = 1.10
+
+end script INV_Create_Witch_Hiding_In_Home
+
+
+//-----------------------------------------------------------------------------
+//	INV_Villager_Steals_Food
+//-----------------------------------------------------------------------------
+begin script INV_Villager_Steals_Food
+
+	INV_InvisSpell		= 0
+	INV_Counter_D		= 0
+
+start
+
+	//------------
+	while INV_Villager_Counter == 0
+
+		//... Start the villager humming his tune.
+		//attach music MUSIC_TYPE_SCRIPT_MISSIONARIES_BACKGROUND to INV_Villager
+		
+
+		//... Move the villager to a position just outside of the witch's house.
+		move INV_Villager position to {INV_Position_Just_Outside_Witch_House}
+		wait until {INV_Villager} near {INV_Position_Just_Outside_Witch_House} radius 3
+
+
+		if INV_Counter_D == 0
+		//INV_InvisSpell = cast MAGIC_TYPE_CREATURE_SPELL_INVISIBLE spell on INV_Villager from {INV_Villager} radius 0 time -1 curl 0
+		end if
+
+		INV_Counter_D++
+
+
+		//... Move the villager between waypoints all the way to the storage pit.
+		//... Waypoint 0
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[0]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[0]} radius 3
+		//... Waypoint 1
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[1]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[1]} radius 3
+		//... Waypoint 2
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[2]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[2]} radius 3
+		//... Waypoint 3
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[3]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[3]} radius 3
+
+		//... Move the villager to a position just outside the storage pit.
+		move INV_Villager position to {INV_Position_Just_Outside_Storage_Pit}
+		wait until {INV_Villager} near {INV_Position_Just_Outside_Storage_Pit} radius 3
+
+		//... Advisor gives you a hint.
+		INV_Advisor_Called = INV_TRUE
+
+		//... get him right into the ol' storage pit
+		move INV_Villager position to {INV_Position_Inside_Storage_Pit}
+		wait until {INV_Villager} near {INV_Position_Inside_Storage_Pit} radius 3
+
+		wait 2 seconds
+
+		//... The villager grabs some food from the storage pit.
+		remove resource RESOURCE_TYPE_FOOD 20 from INV_Player_Storage_Pit
+
+		begin dialogue
+			//temp
+			say "Food stolen by invisible villager"
+			wait until read
+			clear dialogue
+		end dialogue
+
+		//wait 2 seconds
+
+		//... Move the villager to a position just outside the storage pit.
+		move INV_Villager position to {INV_Position_Just_Outside_Storage_Pit}
+		wait until {INV_Villager} near {INV_Position_Just_Outside_Storage_Pit} radius 3
+
+		//... Move the villager between waypoints all the way back to the witch's house.
+		//... Waypoint 3
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[3]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[3]} radius 3
+		//... Waypoint 2
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[2]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[2]} radius 3
+		//... Waypoint 1
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[1]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[1]} radius 3
+		//... Waypoint 0
+		move INV_Villager position to {INV_Villager_Waypoints_To_Town[0]}
+		wait until {INV_Villager} near {INV_Villager_Waypoints_To_Town[0]} radius 3
+
+		//... Move the villager to a position just outside of the witch's house.
+		move INV_Villager position to {INV_Position_Just_Outside_Witch_House}
+		wait until {INV_Villager} near {INV_Position_Just_Outside_Witch_House} radius 3
+
+
+		//... Stop the villager humming his tune.
+		//detach music from INV_Villager
+
+		if INV_Villager_Counter == 0
+			move INV_Witch position to {INV_Position_Outside_Her_House}
+			wait until {INV_Witch} near {INV_Position_Outside_Her_House} radius 3
+		end if
+
+		begin dialogue
+			say "Witch says: Great - you've brought me some food. I'll make you visible again. Zapppp!"
+			wait until read
+			clear dialogue
+
+			//...................................
+			//.. BANDIT becomes visible again
+			//...................................
+
+			wait 5 seconds
+
+			//...................................
+			//.. BANDIT becomes invisible again
+			//...................................
+
+			if INV_Villager_Counter == 0
+				say "Witch says: Right; I want more food. Zappp! Go and get me more food Villager."
+				wait until read
+				clear dialogue
+				move INV_Witch position to {INV_Witch_House}
+				//wait until {INV_Witch} near {INV_Witch_House} radius 3
+			end if
+		end dialogue
+
+	end while
+	//------------
+
+end script INV_Villager_Steals_Food
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Witch_Does_Her_Stuff
+//-----------------------------------------------------------------------------
+begin script INV_Witch_Does_Her_Stuff
+
+		INV_InvisSpell2 = 0
+
+start
+
+	//------------
+	begin loop
+
+		//... Villager and house been found as player has managed to pick up the villager.
+		wait until INV_Villager_Counter > 0 and INV_Witch_Home_Building viewed and camera position near {INV_Witch_Home_Building} radius 60
+
+		INV_Legging_It = INV_TRUE
+		
+		begin dialogue
+			say "Witch says: Argh, that Devil has found us out! I'm outta here..."
+			wait until read
+			clear dialogue
+		end dialogue
+
+		move INV_Witch position to {INV_Position_Just_Outside_Witch_House}
+		wait until {INV_Witch} near {INV_Position_Just_Outside_Witch_House} radius 3
+
+		//xx
+		//INV_InvisSpell2 = cast MAGIC_TYPE_CREATURE_SPELL_INVISIBLE spell on INV_Witch from {INV_Witch} radius 0 time -1 curl 0
+
+		//... start slight kicking up dust anim on the witch?
+
+		//...move the witch between the waypoints.
+		move INV_Witch position to {INV_Witch_Waypoints[0]}
+		wait until {INV_Witch} near {INV_Witch_Waypoints[0]} radius 4
+		
+		move INV_Witch position to {INV_Witch_Waypoints[1]}
+		wait until {INV_Witch} near {INV_Witch_Waypoints[1]} radius 4
+
+		wait 30 seconds
+
+		//... wait until the witch isn't onscreen (still invisible) and her house isn't onscreen either
+		wait until INV_Witch not viewed and INV_Witch_Home_Building not viewed
+
+		move INV_Witch position to {INV_Witch_Waypoints[0]}
+		wait until {INV_Witch} near {INV_Witch_Waypoints[0]} radius 4
+
+		//...................................
+		//.. WITCH becomes visible again
+		//...................................
+
+		move INV_Witch position to {INV_Witch_Home_Position}
+		wait until {INV_Witch} near {INV_Witch_Home_Position} radius 4
+
+		wait until INV_Villager_Counter == 0
+
+	end loop
+	//------------
+
+end script INV_Witch_Does_Her_Stuff
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Villager_Killed
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Villager_Killed
+
+	INV_Counter_E = 0
+
+start
+
+	while INV_Counter_E == 0
+		if HEALTH of INV_Villager <= 0
+			INV_Villager_Dead = INV_TRUE
+			INV_Counter_E = 1
+		end if
+		wait 0.4 seconds
+	end while
+
+	begin dialogue
+		//temp
+		say "Villager is dead."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script INV_Detect_Villager_Killed
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Witch_Killed
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Witch_Killed
+
+	INV_Counter_F = 0
+
+start
+
+	while INV_Counter_F == 0
+		if HEALTH of INV_Witch <= 0
+			INV_Witch_Dead = INV_TRUE
+			INV_Counter_F = 1
+		end if
+		wait 0.4 seconds
+	end while
+
+	begin dialogue
+		//temp
+		say "Witch is dead."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script INV_Detect_Witch_Killed
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Witch_Placed_In_Jail
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Witch_Placed_In_Jail
+
+start
+
+	//... Detect whether the Witch has been placed in the jail.
+	
+	wait until {INV_Witch} near {INV_Position_In_Jail} radius 30 and INV_Witch is not HELD
+	INV_Witch_In_Jail = INV_TRUE
+
+	stop script "INV_Witch_Does_Her_Stuff"
+
+	move INV_Witch position to {INV_Position_In_Jail}
+	
+	begin dialogue
+		//temp
+		say "Witch is now in jail."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait until {INV_Witch} near {INV_Position_In_Jail} radius 3
+
+end script INV_Detect_Witch_Placed_In_Jail
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Cutscene_Guards_Rewards_Player
+//-----------------------------------------------------------------------------
+begin script INV_Cutscene_Guards_Rewards_Player
+
+start
+
+	wait until INV_Reward_Scroll right clicked
+	delete INV_Reward_Scroll
+
+	begin cinema
+		set camera position to {1421.891,12.163,661.109}
+		set camera focus to {1413.721,9.770,654.880}
+		if INV_Witch_Given_Food == INV_TRUE
+			say "That witch was behind the whole thing! Well; at least you stopped her stealing our food."
+			wait until read
+			clear dialogue
+			say "That villager wasn't a villager at all then! He'll be happy now the witch is off his back!"
+		elsif INV_Witch_In_Jail == INV_TRUE
+			say "Thanks for catching that witch! She was a real menace!"
+		elsif INV_Witch_Dead == INV_TRUE
+			say "Well you certainly got rid of that witch! Thanks."
+		end if
+		wait until read
+		clear dialogue
+
+		if INV_Villager_Dead == INV_TRUE
+			say "And you certainly gave that Villager a good lesson; now he's dead he won't steal again!"
+		elsif INV_Villager_In_Jail == INV_TRUE			
+			say "And you caught the villager, well done!"
+		end if
+		wait until read
+		clear dialogue
+	end cinema
+
+end script INV_Cutscene_Guards_Rewards_Player
+
+
+//-----------------------------------------------------------------------------
+//	INV_Fake_The_Thefts
+//-----------------------------------------------------------------------------
+begin script INV_Fake_The_Thefts
+
+	INV_Player_Storage_Pit_Position = marker at {1405.050,9.650,656.650}
+
+start
+
+	INV_Player_Storage_Pit = get STORE at {INV_Player_Storage_Pit_Position} radius 20
+
+	//------------
+	begin loop
+
+		//... crucial time to wait between each fake theft
+		//... should be about every 2 minutes?
+		//xx
+		wait 30 seconds	
+
+		run script INV_Advisor_Warns_Food_Level_Is_Dropping
+
+		//... Pretend they are removing the food from the storage pit.
+		remove resource RESOURCE_TYPE_FOOD 10 from INV_Player_Storage_Pit
+
+		INV_Counter_A++
+
+		// do this faking of thefts until the scroll is clicked by the storage pit
+		until INV_Scroll right clicked
+	end loop
+	//------------
+
+end script INV_Fake_The_Thefts
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Reminder_Scroll_Info
+//-----------------------------------------------------------------------------
+begin script INV_Reminder_Scroll_Info
+
+start
+
+	wait until INV_Initial_Scroll_Used == INV_TRUE
+
+	//------------
+	begin loop
+
+		wait until INV_Reminder_Scroll right clicked
+		delete INV_Reminder_Scroll
+
+		begin dialogue
+			say "Solve the problem of the food going missing from our storage pit."
+			wait until read
+			clear dialogue
+		end dialogue
+
+		wait 1.5 seconds
+
+	end loop
+	//------------
+
+end script INV_Reminder_Scroll_Info
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Advisor_Warns_Food_Level_Is_Dropping
+//-----------------------------------------------------------------------------
+begin script INV_Advisor_Warns_Food_Level_Is_Dropping
+
+start
+
+	begin dialogue
+		eject evil spirit
+		if INV_Counter_B == 0
+    		say "Hey Boss! Our food supply level just dropped a little."
+		elsif INV_Counter_B == 1
+			say "Our food level just dropped again boss! What's going on??"
+		elsif INV_Counter_B > 1
+			say "What the heck is happening! We've just lost some more food!"
+		end if
+		wait until read
+		clear dialogue
+		send evil spirit home
+	end dialogue
+
+	INV_Counter_B++
+
+end script INV_Advisor_Warns_Food_Level_Is_Dropping
+
+
+//-----------------------------------------------------------------------------
+//	INV_Has_Either_Been_Picked_Up
+//-----------------------------------------------------------------------------
+begin script INV_Has_Either_Been_Picked_Up
+
+	INV_Witch_Counter		= 0
+
+start
+
+	//---------------
+	begin loop
+
+		if INV_Villager is HELD
+			INV_Villager_Picked_Up = INV_TRUE
+			INV_Villager_Counter++
+			begin dialogue
+				if INV_Villager_Counter == 0
+					say "Please put me down. I'm have to take food to the witch."
+				elsif INV_Villager_Counter == 1
+					say "Noooo! I must deliver food to the witch; put me down!"
+				elsif INV_Villager_Counter == 2
+					say "Stop picking me up, I HAVE to take her food or she'll turn me into something nasty."
+				elsif INV_Villager_Counter == 3
+					say "Desist!"
+				elsif INV_Villager_Counter > 3
+					say "Arghhh!"
+					wait until INV_Villager is not HELD
+				end if
+				wait 2 seconds
+				clear dialogue
+			end dialogue
+		elsif INV_Witch is HELD
+			INV_Witch_Picked_Up = INV_TRUE
+			INV_Witch_Counter++
+				begin dialogue
+			if INV_Witch_Counter == 0
+				say "Put me down Devil!"
+			elsif INV_Witch_Counter == 1
+				say "Let me be, Devil, or I'll cast a spell on you!"
+			elsif INV_Witch_Counter == 2
+				say "Oi you, stop it!"
+			elsif INV_Witch_Counter == 3
+				say "Right that's it, I'm going to turn you into a toad!"
+			elsif INV_Witch_Counter > 3
+				say "Put me down Devil!"
+			end if
+			wait 2 seconds
+			//wait until read
+			clear dialogue
+		end dialogue
+		else
+			INV_Villager_Picked_Up = INV_FALSE
+			INV_Witch_Picked_Up = INV_FALSE
+		end if
+
+		wait 0.1 seconds
+
+	end loop
+	//---------------
+
+end script INV_Has_Either_Been_Picked_Up
+
+
+//-----------------------------------------------------------------------------
+//	INV_Create_Reward_Scroll
+//-----------------------------------------------------------------------------
+begin script INV_Create_Reward_Scroll
+
+	INV_Reward_Scroll_Position = marker at {1448.587,8.688,655.940}
+
+start
+
+	if INV_Reminder_Scroll exists
+		delete INV_Reminder_Scroll
+	end if
+
+	INV_Reward_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {INV_Reward_Scroll_Position}
+	
+	
+end script INV_Create_Reward_Scroll
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+//-----------------------------------------------------------------------------
+begin script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+
+start
+
+	begin dialogue
+		eject good spirit
+		wait until read
+		clear dialogue
+		say "I think those two guards outside the storage pit want to talk to you now."
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+end script INV_Advisor_Points_Out_Guards_Want_To_Reward_You
+
+
+
+//-----------------------------------------------------------------------------
+//	INV_Detect_Food_Dropped_For_Witch
+//-----------------------------------------------------------------------------
+begin script INV_Detect_Food_Dropped_For_Witch
+
+	INV_FoodResourcePos = 0
+	INV_Food			= 0
+	INV_FoodAmount		= 0
+	INV_SaidThis[3]
+
+start
+
+	INV_FoodResourcePos = marker at {1494.655,10.134,488.816}
+
+	while INV_Witch_Given_Food != INV_TRUE
+		
+		INV_Food = get STORE FOODSTORE at {INV_FoodResourcePos} radius 100
+		INV_FoodAmount = get resource FOOD in INV_Food
+		
+		disable INV_Food pickup
+		
+		if INV_FoodAmount != 0 and INV_FoodAmount <= 300
+			if INV_SaidThis[0] == 0
+				INV_SaidThis[0] = 1
+				begin dialogue
+					say "Yes that's food; but not nearly enough! How long would that paltry amount last?"
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if INV_FoodAmount > 300 and INV_FoodAmount <= 500
+			if INV_SaidThis[1] == 0
+				INV_SaidThis[0] = 1
+				INV_SaidThis[1] = 1
+				begin dialogue
+					say "Well; that's more like it. But I want a bit more than that."
+					wait until read
+				end dialogue
+			end if
+		end if
+
+		if INV_FoodAmount > 500
+			if INV_SaidThis[2] == 0
+				INV_SaidThis[0] = 1
+				INV_SaidThis[1] = 1
+				INV_SaidThis[2] = 1
+				begin dialogue
+					say "Well that'll do me. I won't get anyone to steal your food anymore."
+					wait until read
+					clear dialogue
+					say "In fact; here's my invisibility spell."
+					wait until read
+					clear dialogue
+					//
+					//xx
+					// GIVE PLAYER INVISIBILITY SPELL !!!!
+					//
+				end dialogue
+				INV_Witch_Given_Food = INV_TRUE
+			end if
+		end if
+
+	end while
+
+end script INV_Detect_Food_Dropped_For_Witch
+
+
+//-----------------------------------------------------------------------------
+//	INV_DeathWitch
+//-----------------------------------------------------------------------------
+
+begin script INV_DeathWitch
+
+RelCamPos=0
+RelCamFoc=0
+SheSeemsToHaveAnInvisibleHouseYeah = 0
+WitchBitch=0
+StartPos=0
+EndPos=0
+InvisibleMan=0
+
+start
+
+SheSeemsToHaveAnInvisibleHouseYeah = get HOUSE at {1499.413,18.286,513.479}
+
+begin cinema
+
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-6.095,3.312,2.642}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-1.923,0.002,-0.826}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+StartPos = marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {0.066,0.004,0.209}
+EndPos = marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-2.918,0.014,0.116}
+WitchBitch = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {StartPos}
+move WitchBitch position to {EndPos}
+wait until {WitchBitch} at {EndPos}
+
+//do spell
+
+set WitchBitch focus to get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-2.994,0.042,1.941}
+WitchBitch play anim "A_P_LOOKING_FOR_SOMETHING"
+wait until WitchBitch played
+
+set camera lens 31.000
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-3.345,0.615,0.581}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {0.863,2.078,-3.950}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait 5 seconds
+
+//dude comes
+
+WitchBitch play anim "A_P_TURN_180"
+
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-3.221,0.764,-0.482}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {0.944,0.702,4.316}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait until WitchBitch played
+set WitchBitch focus to get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-2.766,-0.072,-2.754}
+
+
+//kill
+
+WitchBitch play anim "A_P_CRAWL_INJURED_INTO"
+wait 0.5 seconds
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-3.432,0.766,-0.401}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {1.567,-1.882,2.492}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-3.432,0.766,-0.401}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {1.036,-3.747,-0.607}
+move camera position to {RelCamPos} time 0.5
+move camera focus to {RelCamFoc} time 0.5
+wait until WitchBitch played
+WitchBitch play anim "A_P_CRAWL_INJURED"
+wait until WitchBitch played
+///can't find alternative a_p anim
+WitchBitch play anim "M_P_DEAD1" loop -1
+//wait until WitchBitch played
+set camera lens 40.000
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-3.561,0.041,0.574}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {0.191,1.738,-4.266}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait 3 seconds
+InvisibleMan = create VILLAGER VILLAGER_INFO_JAPANESE_TRADER_MALE at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-2.988,-0.006,-0.611}
+set InvisibleMan focus to {WitchBitch}
+wait 3 seconds
+
+set InvisibleMan focus to get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-4.977,0.021,0.429}
+
+InvisibleMan play anim "A_P_INTO_MOURNING"
+
+set camera lens 40.000
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-5.310,1.865,0.954}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-0.475,-0.921,-2.088}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait until InvisibleMan played
+InvisibleMan play anim "A_P_MOURNING" loop 4
+say "Thank God! Finally I am free"
+wait until read
+say "This WITCH made me go out and kill time and time again to feed her evil powers"
+wait until read
+say "I had to do her bidding or she would curse my family"
+set camera lens 27.000
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-3.214,0.968,0.076}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-2.043,-1.113,-5.813}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+
+wait until InvisibleMan played
+InvisibleMan play anim "A_P_OUT_OF_MOURNING"
+
+set camera lens 40.000
+RelCamPos=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-5.310,1.865,0.954}
+RelCamFoc=marker at get world position from SheSeemsToHaveAnInvisibleHouseYeah to {-0.475,-0.921,-2.088}
+set camera position to {RelCamPos}
+set camera focus to {RelCamFoc}
+wait until read
+say "Since you have helped me I will give you this invisibility blueprint"
+
+wait until read
+
+say "EA: Cool! The old gal got what she deserved in the end!"
+wait until read
+say "GA: yes..er.. quite. I suppose at least it puts an end to the murders."
+wait until read
+
+end cinema
+
+release InvisibleMan
+release WitchBitch
+
+end script INV_DeathWitch
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+
+
+
+//--------------------------------------------
+// FIRE and GET test
+
+/*
+	PersonPos = marker at {1402.183,5.047,581.558}
+	Person = create VILLAGER VILLAGER_INFO_AZTEC_SHEPHERD_MALE at {PersonPos}
+	SCALE of Person = 5
+
+	wait 10 seconds
+
+	begin dialogue
+		eject good spirit
+		say "Health: $d" with number HEALTH of Person
+		wait until read
+		clear dialogue
+	end dialogue
+
+	//set Person temperature 100
+	
+	wait 5 seconds
+
+	begin dialogue
+		say "Health: $d" with number HEALTH of Person
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait 5 seconds
+
+	begin dialogue
+		say "Health: $d" with number HEALTH of Person
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait 10 seconds
+
+	begin dialogue
+		say "30 seconds up - trying to get the character again."
+		wait until read
+		clear dialogue
+		say "Health: $d" with number HEALTH of Person
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait 3 seconds
+
+	if Person exists
+		begin dialogue
+			say "Person found! Hmm; interesting."
+			wait until read
+			clear dialogue
+		end dialogue
+	else
+		begin dialogue
+			say "No person found - what I expected..."
+			wait until read
+			clear dialogue
+			send good spirit home
+		end dialogue
+	end if
+
+	wait 100 seconds
+	// FIRE and GET test
+	//--------------------------------------------
+*/
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+//7. Female Archers
+
+
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+
+
+
+/*
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FA_Waypoints[4]				//... Waypoint array
+global FA_Attacking_Waypoints[4]	//... Waypoint array
+global FA_Archers_Converted			= FA_FALSE
+global FA_Initial_Scroll_Used		= FA_FALSE
+global FA_Cutscene_Complete			= FA_FALSE
+global FA_All_Aztecs_Dead			= FA_FALSE
+global FA_All_Egyptians_Dead		= FA_FALSE
+global FA_All_Archers_Dead			= FA_FALSE
+global FA_Players_Town				= 0
+global FA_Archer_Squad				= 0
+global FA_Archer_Squad_2			= 0
+global FA_Archer_Squad_3			= 0
+global FA_Defensive_Pos_A			= 0
+global FA_Defensive_Pos_B			= 0
+global FA_Camp_Pos					= 0
+global FA_Aztec_Spawn_Pos			= 0
+global FA_Egyptian_Spawn_Pos		= 0
+global FA_Scroll					= 0
+global FA_AztecPlatoon				= 0
+global FA_EgyptianPlatoon			= 0
+global FA_P1						= 0
+global FA_P2						= 0
+global FA_P3						= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FA_Create_Female_Archer_Camp
+define script FA_Create_Female_Archers
+define script FA_Defend_Territory
+define script FA_Create_Scroll
+define script FA_Intro_Cutscene
+define script FA_Raiding_Party
+define script FA_Aztec_Attack
+define script FA_Egyptian_Attack
+define script FA_Give_Player_Tech_2_Archers
+define script FA_Wait_For_Female_Leader
+define script FA_Number_Of_Archers
+define script FA_New_Leader_Cutscene
+define script FA_Wiped_Out_Cutscene
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land6FemaleArchers
+
+start
+
+	FA_Players_Town				= get TOWN at {1041.887,88.335,1151.101} radius 100//get TOWN at {1428.577,61.469,1255.795} radius 100
+	FA_Camp_Pos					= marker at {1416.903,157.640,1512.990}//marker at {1547.649,97.761,1015.013}
+	FA_Defensive_Pos_A			= marker at {1389.344,155.895,1492.427}//marker at {1534.634,81.326,1080.438}
+	FA_Defensive_Pos_B			= marker at {1305.150,147.566,1442.899}//marker at {1551.567,92.757,1040.240}
+	FA_Attacking_Waypoints[0]	= marker at {1531.941,113.381,1606.332}//marker at {1513.733,63.130,1113.824}
+	FA_Attacking_Waypoints[1]	= marker at {1377.046,67.579,1598.094}//marker at {1559.024,72.451,1093.635}
+	FA_Attacking_Waypoints[2]	= marker at {1239.889,77.495,1474.842}//marker at {1538.323,89.112,1041.267}
+	FA_Attacking_Waypoints[3]	= marker at {1402.236,155.762,1482.941}//marker at {1548.568,96.666,1019.721}
+	FA_Aztec_Spawn_Pos			= marker at {1815.074,168.295,1784.265}//marker at {1231.437,55.719,814.815}
+    FA_Egyptian_Spawn_Pos		= marker at {2093.104,183.016,1784.041}//marker at {1364.588,71.730,1864.224}
+
+	run script FA_Create_Female_Archer_Camp
+	run script FA_Create_Female_Archers
+
+	run background script FA_Create_Scroll
+	run background script FA_Intro_Cutscene
+	run background script FA_Raiding_Party
+	run background script FA_Aztec_Attack
+	//run background script FA_Egyptian_Attack //********** NO TOWN TO RUN THIS FROM ************
+	run background script FA_Wait_For_Female_Leader
+	run background script FA_Number_Of_Archers
+	run background script FA_Wiped_Out_Cutscene
+	run script FA_Defend_Territory
+
+	wait until FA_Archers_Converted == FA_TRUE or FA_All_Archers_Dead == FA_TRUE
+
+	if FA_Archers_Converted == FA_TRUE
+		begin dialogue
+			eject good spirit
+			say "The female archers will now join your army. Command them as you would a normal platoon."
+			wait until read
+			clear dialogue
+		end dialogue
+		// Run the New leader cutscene
+		run script FA_New_Leader_Cutscene
+		// Give the player the blueprint for level 2 archers.
+		run script FA_Give_Player_Tech_2_Archers
+	elsif FA_All_Archers_Dead == FA_TRUE
+		begin dialogue
+			eject good spirit
+			say "The female archers are all dead."
+			wait until read
+			clear dialogue
+		end dialogue		
+	end if
+
+	say "Archer script over"
+	wait 10 seconds
+
+end script Land6FemaleArchers
+//===========================
+
+*/
+
+
+/*
+//-----------------------------------------------------------------------------
+//	FA_Create_Female_Archer_Camp
+//-----------------------------------------------------------------------------
+begin script FA_Create_Female_Archer_Camp
+
+	FA_Centre_Building = 0
+
+start
+
+	FA_Centre_Building = create HOUSE ABODE_INFO_NORSE_HUT at {FA_Camp_Pos}
+	// Do we need more buildings?
+	// Or at least some campfires etc? Fields?
+
+end script FA_Create_Female_Archer_Camp
+
+
+//-----------------------------------------------------------------------------
+//	FA_Create_Female_Archers
+//-----------------------------------------------------------------------------
+begin script FA_Create_Female_Archers
+
+	FA_Num_Archers	= 0
+
+start
+
+	FA_Num_Archers = 24
+
+	//... Create the main platoon of female archers
+	//TRIBE_TYPE_AZTEC
+	FA_Archer_Squad = create platoon PLATOON_INFO_NORSE_RANGED_1 at {FA_Camp_Pos} with FA_Num_Archers men and 0 women
+	set FA_Archer_Squad player 4
+
+	FA_Num_Archers = 16
+
+	// Defensive Position A
+	// AZTECS !!!!
+	FA_Archer_Squad_2 = create platoon PLATOON_INFO_NORSE_RANGED_1 at {FA_Defensive_Pos_A} with FA_Num_Archers men and 0 women
+	set FA_Archer_Squad_2 player 4
+
+	// Defensive Position B
+	// AZTECS !!!!
+	FA_Archer_Squad_3 = create platoon PLATOON_INFO_NORSE_RANGED_1 at {FA_Defensive_Pos_B} with FA_Num_Archers men and 0 women
+	set FA_Archer_Squad_3 player 4
+
+end script FA_Create_Female_Archers
+
+*/
+
+/*
+
+//-----------------------------------------------------------------------------
+//	FA_Defend_Territory
+//-----------------------------------------------------------------------------
+begin script FA_Defend_Territory
+
+start
+
+//Possible:
+//Have each FA assigned a main defensive position and a retreat position.
+//If dies then spawn another within the building, then go to the main position if not attacked on the way.
+//Else go to the fallback position and try again later?
+
+//Could use this routine to rather check how many archers are at each post;
+//then if not enough then check for enemy troops; if none nearby; spawn more from the hut and move them to the position.
+
+end script FA_Defend_Territory
+
+*/
+
+
+/*
+
+//-----------------------------------------------------------------------------
+//	FA_Create_Scroll
+//-----------------------------------------------------------------------------
+begin script FA_Create_Scroll
+
+	FA_Scroll_Position	= 0
+	FA_Reminder_Scroll	= 0
+
+start
+
+	//... Create scroll creation position just above the FA's building.
+	FA_Scroll_Position = marker at {1440.702,157.125,1515.997}//marker at {1547.649,97.761,1015.013}
+
+	//... Initial scroll for the cutscene
+	begin loop
+		if FA_Scroll not exists
+			FA_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Scroll_Position}
+		end if
+		wait 1.6 seconds
+		until FA_Initial_Scroll_Used == FA_TRUE
+	end loop
+
+	delete FA_Scroll
+	wait until FA_Cutscene_Complete == FA_TRUE
+
+	//... Already used the main scroll, so create a reminder.
+	begin loop
+		if FA_Reminder_Scroll not exists
+			FA_Reminder_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Scroll_Position}
+		end if		
+		wait 1.6 seconds
+		until FA_Archers_Converted == FA_TRUE
+	end loop	
+
+	// Check neither scroll still exists - delete if so...
+	if FA_Scroll exists
+		delete FA_Scroll
+	end if
+	if FA_Reminder_Scroll exists
+		delete FA_Reminder_Scroll
+	end if
+	
+end script FA_Create_Scroll
+
+
+//-----------------------------------------------------------------------------
+//	FA_Raiding_Party
+//-----------------------------------------------------------------------------
+begin script FA_Raiding_Party
+
+start
+
+	// Create a small group of archers from the building.
+	// Send the group to raid or protect some women farming villagers.
+	// Do they need to do this?
+	// Might be best for them to remain up on the hill...
+
+end script FA_Raiding_Party
+
+
+//-----------------------------------------------------------------------------
+//	FA_Aztec_Attack
+//-----------------------------------------------------------------------------
+begin script FA_Aztec_Attack
+
+	FA_MoveCounter		= 0
+
+start
+
+	FA_P1 = get FA_Archer_Squad player
+
+	// Create a platoon of Aztec troops
+	FA_AztecPlatoon = create platoon PLATOON_INFO_NORSE_MELEE_1 at {FA_Aztec_Spawn_Pos} with 8 men and 0 women
+	set FA_AztecPlatoon player 5
+	FA_P2 = get FA_AztecPlatoon player
+
+	set player FA_P2 ENEMY to player FA_P1
+
+	// Send the platoon to the Female Archers and try to get up the hill.
+	begin loop
+		move FA_AztecPlatoon position to {FA_Attacking_Waypoints[FA_MoveCounter]}
+		wait until {FA_AztecPlatoon} near {FA_Attacking_Waypoints[FA_MoveCounter]} radius 5.0
+		FA_MoveCounter++
+		until FA_MoveCounter == 4
+	end loop
+
+	wait until FA_All_Aztecs_Dead == FA_TRUE
+
+end script FA_Aztec_Attack
+
+
+//-----------------------------------------------------------------------------
+//	FA_Egyptian_Attack
+//-----------------------------------------------------------------------------
+begin script FA_Egyptian_Attack
+
+	FA_MoveCounter2			= 0
+
+start
+
+	// Create a platoon of Egyptian troops
+	FA_EgyptianPlatoon = create platoon PLATOON_INFO_EGYPTIAN_MELEE_1 at {FA_Egyptian_Spawn_Pos} with 8 men and 0 women
+	set FA_EgyptianPlatoon player 5
+	FA_P3 = get FA_EgyptianPlatoon player
+	set player FA_P3 ENEMY to player FA_P1
+
+	// Send the platoon to the Female Archers and try to get up the hill.
+	begin loop
+		move FA_EgyptianPlatoon position to {FA_Attacking_Waypoints[FA_MoveCounter2]}
+		wait until {FA_EgyptianPlatoon} near {FA_Attacking_Waypoints[FA_MoveCounter2]} radius 5.0
+		FA_MoveCounter2++
+		until FA_MoveCounter2 == 4
+	end loop
+
+	wait until FA_All_Egyptians_Dead == FA_TRUE
+
+end script FA_Egyptian_Attack
+
+
+//-----------------------------------------------------------------------------
+//	FA_Give_Player_Tech_2_Archers
+//-----------------------------------------------------------------------------
+begin script FA_Give_Player_Tech_2_Archers
+
+start
+
+	// Give the player tech level 2 archers. Or is it level 1 (from 0)
+	begin dialogue
+		say "Player gets the tech level 2 archer blueprint."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script FA_Give_Player_Tech_2_Archers
+
+
+//-----------------------------------------------------------------------------
+//	FA_Wait_For_Female_Leader
+//-----------------------------------------------------------------------------
+begin script FA_Wait_For_Female_Leader
+
+	FA_Female_Hero_Squad	= 0
+	FA_FH_Spawn_Pos			= 0
+	FA_Temp_Scroll_Pos		= 0
+	FA_Temp_Scroll			= 0
+
+start
+
+	// TEMP - Part of this is temporary; creating a female hero so the player can test it out...
+
+	FA_FH_Spawn_Pos = marker at {871.680,69.241,1259.338}
+	FA_Temp_Scroll_Pos = marker at {871.680,69.241,1259.338} + {0.000,15.000,0.000}
+
+	//create a fake female hero for now so the player can move her over there and test it.
+	//FA_Female_Hero_Squad = create VILLAGER GREEK_HOUSEWIFE at {FA_FH_Spawn_Pos} //{FA_Players_Town} + {50.000,0.000,25.000}
+	//SCALE of FA_Female_Hero = 5
+	FA_Female_Hero_Squad = create platoon PLATOON_INFO_GREEK_RANGED_1 at {FA_FH_Spawn_Pos} with 9 men and 0 women
+	set FA_Female_Hero_Squad player 0
+
+	FA_Temp_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Temp_Scroll_Pos}
+	wait until FA_Temp_Scroll right clicked
+	clear right clicked object
+
+	begin dialogue
+		//temp
+		say "This is one of your squads; led by a female hero. Move them to the female archer camp to persuade them to join."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	delete FA_Temp_Scroll
+
+	//wait until FA_Temp_Scroll right clicked
+    //move FA_Female_Hero_Squad position to {FA_Archer_Squad} radius 40
+	//say "Female Hero squad moving out..."
+
+	//wait until a female leader character is within range and without male troops with her.
+	wait until {FA_Female_Hero_Squad} near {FA_Archer_Squad} radius 60 or {FA_Female_Hero_Squad} near {FA_Archer_Squad_2} radius 60 or {FA_Female_Hero_Squad} near {FA_Archer_Squad_3} radius 60
+	FA_Archers_Converted = FA_TRUE
+
+	set FA_Archer_Squad player 0
+	set FA_Archer_Squad_2 player 0
+	set FA_Archer_Squad_3 player 0
+	
+	wait 30 seconds
+
+end script FA_Wait_For_Female_Leader
+
+
+//-----------------------------------------------------------------------------
+//	FA_Number_Of_Archers
+//-----------------------------------------------------------------------------
+begin script FA_Number_Of_Archers
+
+	FA_PlatoonSize_1 = 0
+	FA_PlatoonSize_2 = 0
+	FA_PlatoonSize_3 = 0
+
+start
+
+	begin loop
+		//Calculate how many archers are still alive. Cannot just check if platoons exists...
+		//if FA_Archer_Squad not exists and FA_Archer_Squad_2 not exists and FA_Archer_Squad_3 not exists
+		FA_PlatoonSize_1 = get soldiers of tribe TRIBE_TYPE_NORSE nearest {FA_Archer_Squad} radius 50
+		FA_PlatoonSize_2 = get soldiers of tribe TRIBE_TYPE_NORSE nearest {FA_Archer_Squad_2} radius 50
+		FA_PlatoonSize_3 = get soldiers of tribe TRIBE_TYPE_NORSE nearest {FA_Archer_Squad_3} radius 50
+		if FA_PlatoonSize_1 <= 0 and FA_PlatoonSize_2 <= 0 and FA_PlatoonSize_3 <= 0
+			FA_All_Archers_Dead = FA_TRUE
+		end if
+		wait 3 seconds
+		until FA_All_Archers_Dead == FA_TRUE
+	end loop
+
+end script FA_Number_Of_Archers
+
+*/
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+//================================================================================================
+
+
+
+
+
+
+
+
+
+

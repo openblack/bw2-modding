@@ -1,0 +1,8 @@
+run script RunLand8MonkTemple
+
+begin script RunLand8MonkTemple
+start
+
+	run script Land8MonkTemple
+
+end script RunLand8MonkTemple

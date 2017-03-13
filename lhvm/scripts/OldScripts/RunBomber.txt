@@ -1,0 +1,21 @@
+//-----------------------------------------------------------------------------
+run script RunBomber
+//-----------------------------------------------------------------------------
+begin script RunBomber
+
+ CamPos = marker at {832.768,17.306,1585.364}
+ CamFoc = marker at {843.021,2.347,1510.960}
+
+start
+
+	// Setup the camera position
+	begin cinema
+		set camera position to {CamPos}
+		set camera focus to {CamFoc}
+	end cinema
+
+	run script Bomber
+	
+end script RunBomber
+
+//-----------------------------------------------------------------------------

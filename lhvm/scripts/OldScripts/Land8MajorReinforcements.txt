@@ -1,0 +1,12 @@
+//Land8MajorReinforcements.txt
+begin script Land8MajorReinforcements
+My_Platoon = 0
+start
+	begin loop
+	
+		say "more people arrived!"
+		My_Platoon = create platoon PLATOON_INFO_GREEK_MELEE_1 at {1804.611,26.449,931.216} with 20 men and 0 women
+		//create peopel
+		wait 60 seconds
+	end loop
+end script Land8MajorReinforcements

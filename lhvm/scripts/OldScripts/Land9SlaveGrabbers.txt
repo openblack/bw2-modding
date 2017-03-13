@@ -1,0 +1,374 @@
+//Land9Event2.txt
+
+/*
+Slave Armies:
+The opponents on this map are always looking for new slaves to add them to their slave armies.
+The opponents try to steal your villagers and convert them into slaves! During the middle of the night small squads 
+of troops will grab anyone outside of your walls. (Villagers only, not troops). They will then hurry them back to 
+their base and convert them into slaves to send out and fight you later on.
+The player will be able to stop this from happening by confronting the villager stealers if within range of a 
+“smash & grab”.
+
+Need to find foresters.
+Move unit to them. Once in range; change their race?
+
+Have a scroll appear when the people are first grabbed.
+This will bring out the advisors who tell the player that some of your people have been grabbed; and are being taken back
+to be turned into slaves.
+
+*/
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SA_FALSE			= 0
+define SA_TRUE			= 1
+define SA_PLAYER_OWNED	= 0
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SA_Initial_Scroll_Used		= SA_FALSE
+global SA_In_Danger					= SA_FALSE
+global SA_Time_To_Tell				= SA_FALSE
+global SA_Moving_Off				= SA_FALSE
+global SA_Players_Town				= 0
+global SA_Grab_Pos_A				= 0
+global SA_Grab_Pos_B				= 0
+global SA_Poised_Pos_A				= 0
+global SA_Poised_Pos_B				= 0
+global SA_Platoon_A					= 0
+global SA_Platoon_B					= 0
+global SA_Platoon_C					= 0
+global SA_Platoon_A_Spawn_Pos		= 0
+global SA_Walk_Pos					= 0
+global SA_Hill_Pos					= 0
+global SA_Woodsman					= 0
+global SA_Total_Nicked				= 0
+global SA_PlayerCreature			= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SA_Create_Slave_Grabbers
+define script SA_Move_Grabbers
+define script SA_Are_Grabbers_In_Danger
+define script SA_Grab_Victims
+define script SA_Advisors_Tell_Of_Missing_Persons
+define script SA_Rescued
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=======================
+begin script Land9SlaveGrabbers
+
+start
+
+	SA_Players_Town		= get TOWN at {1744.493,26.924,776.366} radius 100
+	SA_Walk_Pos			= marker at {1959.128,57.879,1210.146}//marker at {1838.462,28.531,1252.891}
+	SA_Poised_Pos_A		= marker at {1588.943,31.982,695.833} //marker at {1617.191,48.236,862.016}
+	SA_Poised_Pos_B		= marker at {1571.401,35.963,803.398}
+	SA_Grab_Pos_A		= marker at {1612.579,29.698,771.200}
+	SA_Grab_Pos_B		= marker at {1594.599,29.049,712.964}
+	SA_Hill_Pos			= marker at {1622.467,47.277,847.448}
+
+
+	// TEMP
+	/*
+	wait 3 seconds
+	begin loop
+		SA_PlayerCreature = get player 1 creature
+		//if SA_PlayerCreature exists
+		if {SA_PlayerCreature} near {SA_Players_Town} radius 2000
+			say "Player's creature too close - leg it!"
+		end if
+		wait 1 second
+	end loop
+	*/
+	/*
+	begin loop
+		SA_Woodsman = 0
+		SA_Woodsman = get GREEK_FORESTER at {SA_Players_Town} radius 1000
+		if SA_Woodsman exists and PLAYER of SA_Woodsman == SA_PLAYER_OWNED
+			say "A Player's villager has been found nearby - going to grab him..."
+			wait 1 second
+		else
+			say "Haven't found any foresters."
+		end if
+	end loop
+	wait 1000 seconds
+	*/
+
+	run script SA_Create_Slave_Grabbers
+
+	run background script SA_Move_Grabbers
+	run background script SA_Are_Grabbers_In_Danger
+	run background script SA_Grab_Victims
+	run background script SA_Advisors_Tell_Of_Missing_Persons
+	run background script SA_Rescued
+
+	wait until SA_Total_Nicked >= 20
+
+	wait 1000 seconds
+
+end script Land9SlaveGrabbers
+//=======================
+
+
+
+//-----------------------------------------------------------------------------
+//	SA_Create_Slave_Grabbers
+//-----------------------------------------------------------------------------
+begin script SA_Create_Slave_Grabbers
+
+start
+
+	SA_Platoon_A_Spawn_Pos = marker at {928.627,31.636,1937.155}
+
+	SA_Platoon_A = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_RABBLE at {SA_Platoon_A_Spawn_Pos} facing {SA_Walk_Pos} with 30 villagers
+	set SA_Platoon_A player 5
+	set player 0 ENEMY to player 5
+
+end script SA_Create_Slave_Grabbers
+
+
+//-----------------------------------------------------------------------------
+//	SA_Move_Grabbers
+//-----------------------------------------------------------------------------
+begin script SA_Move_Grabbers
+
+start
+
+	//Send full platoon to first position (across the desert)
+	move SA_Platoon_A position to {SA_Walk_Pos}
+	say "Started platoon walking" //TEMP
+	wait until {SA_Platoon_A} near {SA_Walk_Pos} radius 5.0
+
+	say "Enemy slave grabbers have crossed the desert and are approaching your forests..."
+
+	move SA_Platoon_A position to {SA_Poised_Pos_A}
+	wait until {SA_Platoon_A} near {SA_Poised_Pos_A} radius 5.0
+
+	say "Slave grabbers are poised in the hills near you forests getting ready to pounce."
+
+	//Then split up the platoon into three. P1 is for the newly acquired slaves.
+	//P2 and P3 are there to grab people.
+	enable platoon SA_Platoon_A split
+	SA_Platoon_B = split platoon from platoon SA_Platoon_A
+	wait 2 seconds
+
+	enable platoon SA_Platoon_B split
+	SA_Platoon_C = split platoon from platoon SA_Platoon_B
+	wait 2 seconds
+
+	say "Platoon should now be split into three."
+
+	//Move all platoons to their poised positions - B+C to poised positions, A in the hills nearby.
+    move SA_Platoon_B position to {SA_Poised_Pos_A}
+	move SA_Platoon_C position to {SA_Poised_Pos_B}
+    move SA_Platoon_A position to {SA_Hill_Pos}
+	
+	wait until {SA_Platoon_B} near {SA_Poised_Pos_A} radius 5.0
+	wait until {SA_Platoon_C} near {SA_Poised_Pos_B} radius 5.0
+	say "Platoon B and C are now in position. Poised to grab your villagers..."
+
+	wait until {SA_Platoon_A} near {SA_Hill_Pos} radius 4.0
+	say "Platoon A are now in position too - do you believe that?"
+
+	wait 10 seconds
+
+	//Time to grab some people!
+	move SA_Platoon_B position to {SA_Grab_Pos_A}
+	move SA_Platoon_C position to {SA_Grab_Pos_B}
+
+	say "Moving B + C to grab positions."
+	
+	wait until {SA_Platoon_B} near {SA_Grab_Pos_A} radius 5.0
+	wait until {SA_Platoon_C} near {SA_Grab_Pos_B} radius 5.0
+
+	say "Both B and C have moved to grabbing position."
+
+	//Wait until enough slaves grabbed or soldiers approaching
+	wait until SA_Total_Nicked >= 5
+
+	say "Nicked = 5 or more"
+
+	move SA_Platoon_B position to {SA_Hill_Pos}
+	move SA_Platoon_C position to {SA_Hill_Pos}
+	wait until {SA_Platoon_B} near {SA_Hill_Pos} radius 4.0
+	wait until {SA_Platoon_C} near {SA_Hill_Pos} radius 4.0
+
+	say "Both B & C to the hill - about to leave with platoon A"
+
+	//enable platoon SA_Platoon_A merge
+	//enable platoon SA_Platoon_B merge
+	//enable platoon SA_Platoon_C merge
+	//merge platoon SA_Platoon_B into platoon SA_Platoon_A
+	//wait 10 seconds
+	//merge platoon SA_Platoon_C into platoon SA_Platoon_A
+
+	//Move back to base
+	move SA_Platoon_A position to {SA_Walk_Pos}
+	move SA_Platoon_B position to {SA_Walk_Pos}
+	move SA_Platoon_C position to {SA_Walk_Pos}
+	wait until {SA_Platoon_A} near {SA_Walk_Pos} radius 5.0
+	wait until {SA_Platoon_B} near {SA_Walk_Pos} radius 5.0
+	wait until {SA_Platoon_C} near {SA_Walk_Pos} radius 5.0
+
+end script SA_Move_Grabbers
+
+
+//-----------------------------------------------------------------------------
+//	SA_Are_Grabbers_In_Danger
+//-----------------------------------------------------------------------------
+begin script SA_Are_Grabbers_In_Danger
+
+	SA_Counter = 0
+	SA_Dead_Soldier_Counter = 0
+	SA_GreekArmy = 0
+	SA_GreekArmySize = 0
+
+start
+	
+	begin loop
+		//Check if the player's creature is near.
+		SA_PlayerCreature = get player 1 creature
+		//if SA_PlayerCreature exists
+		if {SA_PlayerCreature} near {SA_Platoon_A} radius 50
+			say "Player's creature too close - leg it!"
+		end if
+		//Check if any of the player's troops are approaching the platoons.
+		SA_GreekArmy = get platoon of player 1 nearest {SA_Platoon_A} radius 40
+		SA_GreekArmySize = get number of villagers in platoon SA_GreekArmy
+		if SA_GreekArmySize > 0 and SA_GreekArmySize < 10
+			say "Greek troops nearby - but we can take them. Charge!"
+		elsif SA_GreekArmySize >= 10
+			say "Greek troops nearby - time to move off"
+		end if
+		//If either are the case - back off to a retreat position and then see what happens.
+		//Need to react somehow? Stop the other script?
+	end loop
+
+end script SA_Are_Grabbers_In_Danger
+
+
+//-----------------------------------------------------------------------------
+//	SA_Grab_Victims
+//-----------------------------------------------------------------------------
+begin script SA_Grab_Victims
+
+	SA_Woodsman_Current_Pos	= 0
+	NewGuy					= 0
+
+start
+
+	begin loop
+		SA_Woodsman = 0
+		SA_Woodsman_Current_Pos	= 0
+		SA_Woodsman = get GREEK_FORESTER at {SA_Platoon_B} radius 60
+		
+		if SA_Woodsman exists and PLAYER of SA_Woodsman == SA_PLAYER_OWNED
+			say "A Player's villager has been found nearby - going to grab him..."
+			//See if there are any woodsmen in the forest - check radius from the points obtained.
+			if not SA_Moving_Off == SA_TRUE
+				//Move mini platoon over
+				move SA_Platoon_B position to {SA_Woodsman} radius 5
+				
+				//Get his current pos; then delete him and replace with someone on your side... dodgy or what.
+				SA_Woodsman_Current_Pos = marker at {SA_Woodsman}
+				delete SA_Woodsman
+				//NewGuy = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {SA_Woodsman_Current_Pos}
+		        NewGuy = create SOLDIER SOLDIER_INFO_NORSE_MELEE_1 at {SA_Woodsman_Current_Pos}
+				//SoldierInfoEnum.h
+
+				//Move both over to platoon A.
+				move SA_Platoon_B position to {SA_Woodsman_Current_Pos} radius 5.0
+
+				//Get woodsperson to follow? Add to platoon?  //GRAB 'EM
+				//add villager MyVillager to platoon MyPlatoon
+				add villager NewGuy to platoon SA_Platoon_B
+
+				wait 8 seconds
+				say " CLEAR TEXT "
+				wait 2 seconds
+				SA_Total_Nicked++
+			end if
+			wait 3 seconds
+		end if
+
+		//Take nearest mini platoon, B or C, over to them; and then force them to walk back to platoon A.
+		until SA_Total_Nicked >= 5  //Repeat until got enough.
+	end loop
+
+	SA_Time_To_Tell = SA_TRUE
+
+	//Go back to the enemy town; release as slaves.
+	//say "Slave Grabbers have got enough and are going home."
+	move SA_Platoon_A position to {SA_Platoon_A_Spawn_Pos}
+	wait until {SA_Platoon_A} near {SA_Platoon_A_Spawn_Pos} radius 5.0
+	say "Slave Grabbers have made it home."
+
+end script SA_Grab_Victims
+
+
+//-----------------------------------------------------------------------------
+//	SA_Advisors_Tell_Of_Missing_Persons
+//-----------------------------------------------------------------------------
+begin script SA_Advisors_Tell_Of_Missing_Persons
+
+start
+
+	wait until SA_Time_To_Tell == SA_TRUE
+
+	begin dialogue
+		eject evil spirit
+		say "Oi! Some cheeky goits have grabbed some of our villagers and are going to make them into slaves!"
+		wait until read
+		clear dialogue
+		say "Best be on the look out in case they try it again."
+		wait until read
+		clear dialogue
+		send evil spirit home
+	end dialogue
+
+end script SA_Advisors_Tell_Of_Missing_Persons
+
+
+
+//-----------------------------------------------------------------------------
+//	SA_Rescued
+//-----------------------------------------------------------------------------
+begin script SA_Rescued
+
+start
+
+	/*
+	wait until SA_Moving_Off == SA_TRUE and Grabbed some villagers
+	*/
+
+end script SA_Rescued
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+/*
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

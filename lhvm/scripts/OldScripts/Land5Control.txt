@@ -1,0 +1,22 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 5 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land5Control
+start
+
+	begin cinema
+		set camera position to {1487.171, 340.295, 464.669}
+		set camera focus to {1450.171, 284.457, 538.918}
+	end cinema
+
+	run script Land5Globals
+	run background script SetupBuildingsLand4Onwards
+	run background script Land5NorseCapitalScript
+	//run background script Land5LavaFields
+	//run background script Land5UndeadLegion
+	run background script Land5SulphurPool
+	run background script Land5ThrowBloke
+	run background script TownEventWindowCleaner(L5GreekTown)
+	run background script Land5Meteors
+	
+end script Land5Control

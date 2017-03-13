@@ -1,0 +1,511 @@
+//=================================================================
+// Land 3 Starving villagers
+// Matt.L 
+//=================================================================
+
+//-----------------------------------------------------------------
+// Cosntants
+//-----------------------------------------------------------------
+define FV_FALSE = 0
+define FV_TRUE = 1
+define FV_FOOD_AMOUNT = 500
+define FV_WOOD_AMOUNT = 800
+
+//Advisor defines
+define FV_ADVISOR_NONE = 0
+define FV_ADVISOR_INTRO = 1
+define FV_ADVISOR_HAND_OVER_FIELD = 2
+define FV_ADVISOR_PICKED_UP_FOOD = 3
+define FV_ADVISOR_FOOD_IN_STORE = 4
+define FV_ADVISOR_NOT_ENOUGH = 5
+define FV_ADVISOR_TREE_IN_HAND = 6
+define FV_ADVISOR_NOT_ENOUGH_WOOD = 7
+define FV_ADVISOR_COMPLETED = 8
+define FV_ADVISOR_ALREADY_DONE_FOOD_TASK = 9
+define FV_ADVISOR_ALREADY_DONE_WOOD_TASK = 10
+define FV_REMINDER_NEED_FOOD = 11
+define FV_REMINDER_NEED_WOOD = 12
+define FV_REMINDER_FOOD_RUNNING_LOW = 13
+define FV_REMINDER_VILLAGER_DIED = 14
+define FV_ADVISOR_MISSED_STORAGEPIT_FOOD = 15
+define FV_ADVISOR_MISSED_STORAGEPIT_WOOD = 16
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+
+//Advisor comment globals
+global FV_Advisor_Hand_Field_Flag = FV_FALSE
+global FV_Advisor_Tree_In_Hand_Flag = FV_FALSE
+
+global FV_CurrentAdvisorComment = FV_ADVISOR_NONE
+global FV_VillagerRelease = FV_FALSE
+
+
+//-----------------------------------------------------------------
+// Scripts defines
+//-----------------------------------------------------------------
+define script FV_Advisors(ID)
+define script FV_Reminder(ID)
+define script FV_Intro
+define script FV_AlertPlayerOfLowFoodOrDyingVillagers(StoragePit)
+
+
+//-----------------------------------------------------------------
+// Feed villagers
+//-----------------------------------------------------------------
+begin script Land3StarvingVillagers
+
+	Stage = 0
+	Object = 0
+	Type = 0
+	StoragePit = 0
+	ResourceFood = 0
+	ResourceWood = 0
+	ExampleVideo = 0
+	ScrollPos = marker at {1087.623, 363.589, 1645.257}
+	Scroll = 0
+	FoodAdded = 0
+	WoodAdded = 0
+	FieldPos = marker at {1054.605, 223.568, 1669.766}
+	Delay = 30
+	ReminderTimer = create timer for Delay seconds
+	CheckForEnoughWood = FV_FALSE
+	AlreadyMentionedGotFood = FV_FALSE
+	ToldToPutInPit = FV_FALSE
+	RanVillagerHealthCheck = FV_FALSE
+	
+start
+
+	// Create the scroll
+	Scroll = create highlight GOLD name "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_MISC_10" remind "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_MISC_20" at {ScrollPos}
+
+	//Get the town and sotrage pit
+	if not L3GreekTown exists
+		run script Land3Globals
+	end if
+	
+	// Disable the town jobs of the players home town
+	disable town L3GreekTown job VILLAGER_JOB_FORESTER
+	disable town L3GreekTown job VILLAGER_JOB_FARMER
+	disable town L3GreekTown job VILLAGER_JOB_MINER
+
+	//Ill villagers
+	if L3RunningIllVillagers == 0
+		run background script Land3IllVillagers
+	end if
+
+	StoragePit = get building ABODE_NUMBER_STORAGE_PIT in L3GreekTown min built 1
+	
+	begin loop		
+		//Checking for food
+		if Stage == 0
+			// Check to see if the scroll is clicked on or if it is no longer needed then delete it
+			if Scroll exists
+				// Show the RMB icon if the hand is over the scroll
+				if hand position near {Scroll} radius 3
+					enable hand icon draw
+					set hand icon HAND_ICON_RMB
+				else
+					disable hand icon draw
+				end if
+				
+				if Scroll right clicked
+					delete Scroll
+					disable hand icon draw
+					run script FV_Intro
+					
+					// Play the video
+					ExampleVideo = create video window with left 0.1 top 0.1 width 0.3 height 0.225
+					set ExampleVideo clipping window left 0 top 0 width 1 height 1
+					play video "Land3 Pick Up Grain"		
+					wait until not video is playing
+				end if
+				
+				// Test to see if the task has been completed
+				ResourceFood = get resource RESOURCE_TYPE_FOOD in StoragePit
+					
+				if ResourceFood >= FV_FOOD_AMOUNT
+					// The player has already done the food task so get rid of the scroll and say well done
+					delete Scroll
+					run script FV_Advisors(FV_ADVISOR_ALREADY_DONE_FOOD_TASK)
+					set ReminderTimer time to Delay seconds
+					Stage++
+				end if
+				
+				set ReminderTimer time to Delay seconds
+			else				
+				if hand position near {FieldPos} radius 7
+					run background script FV_Advisors(FV_ADVISOR_HAND_OVER_FIELD)
+					set ReminderTimer time to Delay seconds
+				end if
+
+				Object = get object held
+				if Object exists
+					Type = variable get Object sub type
+					if Type == variable POT_INFO_HAND_FOOD
+						while Object is HELD
+							ResourceFood = get resource RESOURCE_TYPE_FOOD in Object
+							
+							// We've got enough in the hand so tell the player to drop it into the yard
+							if ResourceFood >= FV_FOOD_AMOUNT and ToldToPutInPit == FV_FALSE
+								run background script FV_Advisors(FV_ADVISOR_PICKED_UP_FOOD)
+								set ReminderTimer time to Delay seconds
+								ToldToPutInPit = FV_TRUE
+							end if
+						end while
+
+						FoodAdded = get total of stat STATS_EVT_FOOD_ADDED_TO_STORE
+						FoodAdded += 1
+						
+						//Check if food in the pit now
+						wait until not Object is FLYING and not Object is HELD
+						wait 1 seconds
+						if get total of stat STATS_EVT_FOOD_ADDED_TO_STORE >= FoodAdded
+							ResourceFood = get resource RESOURCE_TYPE_FOOD in StoragePit
+
+							if ResourceFood <= FV_FOOD_AMOUNT
+								run background script FV_Advisors(FV_ADVISOR_NOT_ENOUGH)
+							else
+								AlreadyMentionedGotFood = FV_TRUE
+								run script FV_Advisors(FV_ADVISOR_FOOD_IN_STORE)								
+								Stage++
+							end if
+						else
+							run background script FV_Advisors(FV_ADVISOR_MISSED_STORAGEPIT_FOOD)
+						end if
+						
+						set ReminderTimer time to Delay seconds
+					end if
+				end if
+			end if
+
+		elsif Stage == 1
+			if RanVillagerHealthCheck == FV_FALSE
+				run background script FV_AlertPlayerOfLowFoodOrDyingVillagers(StoragePit)
+				L3FedTheVillagers = FV_TRUE
+				RanVillagerHealthCheck = FV_TRUE
+			end if
+		
+			// Do the check to see if the player has already done the objective
+			if CheckForEnoughWood == FV_FALSE
+				CheckForEnoughWood = FV_TRUE
+				ResourceWood = get resource RESOURCE_TYPE_WOOD in StoragePit
+				
+				if ResourceWood >= FV_WOOD_AMOUNT
+					// The player has already done the task
+					run script FV_Advisors(FV_ADVISOR_ALREADY_DONE_WOOD_TASK)
+					set ReminderTimer time to Delay seconds
+					Stage++
+				else
+					// We haven't done the wood task early so tell the player to do it now
+					// But only tell the player if they haven't already been told at the end of the food task
+					if AlreadyMentionedGotFood == FV_FALSE
+						run script FV_Advisors(FV_ADVISOR_FOOD_IN_STORE)					
+						set ReminderTimer time to Delay seconds
+					end if
+					
+					
+					// Play the video regardless
+					ExampleVideo = create video window with left 0.1 top 0.1 width 0.3 height 0.225
+					set ExampleVideo clipping window left 0 top 0 width 1 height 1
+					play video "Land3 Drop Tree in Storage Pit"		
+					wait until not video is playing
+				end if
+			else
+				Object = get object held
+				if Object exists
+					Type = variable get Object type
+
+					//Don't know the enum for this
+					if Type == 22					
+						run background script FV_Advisors(FV_ADVISOR_TREE_IN_HAND)
+						set ReminderTimer time to Delay seconds					
+						
+						WoodAdded = get total of stat STATS_EVT_WOOD_ADDED_TO_STORE
+						WoodAdded += 1
+
+						//Food should be in the pit now
+						wait until not Object is FLYING and not Object is HELD
+						wait 1 seconds
+						if get total of stat STATS_EVT_WOOD_ADDED_TO_STORE >= WoodAdded
+							ResourceWood = get resource RESOURCE_TYPE_WOOD in StoragePit
+
+							if ResourceWood < FV_WOOD_AMOUNT
+								run background script FV_Advisors(FV_ADVISOR_NOT_ENOUGH_WOOD)
+							else
+								Stage++
+							end if
+							set ReminderTimer time to Delay seconds		
+						else
+							run background script FV_Advisors(FV_ADVISOR_MISSED_STORAGEPIT_WOOD)
+						end if			
+					end if
+				end if
+			end if
+		end if
+		
+		// Remind the player what they need to do
+		if get ReminderTimer time remaining <= 0
+			if Stage == 0
+				run background script FV_Reminder(FV_REMINDER_NEED_FOOD)
+			else
+				run background script FV_Reminder(FV_REMINDER_NEED_WOOD)
+			end if
+				
+			set ReminderTimer time to Delay seconds
+		end if
+
+	until Stage == 2
+	end loop
+	
+end script Land3StarvingVillagers
+
+//-----------------------------------------------------------------
+// Advisors
+//-----------------------------------------------------------------
+begin script FV_Advisors(ID)
+
+	Quitter		= FV_FALSE
+	
+start
+
+	FV_CurrentAdvisorComment = ID
+
+	begin loop
+		begin dialogue
+			if ID == FV_ADVISOR_HAND_OVER_FIELD and FV_Advisor_Hand_Field_Flag == FV_FALSE
+				FV_Advisor_Hand_Field_Flag = FV_TRUE
+				eject good spirit
+				// GA: Now right click and hold to pick up the grain.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_HANDOVERFIELD_10"
+				wait until read
+
+			elsif ID == FV_ADVISOR_PICKED_UP_FOOD
+				eject good spirit
+				// GA: Now put the food in the Storehouse.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_PICKEDUPFOOD_10"
+				wait until read
+
+			elsif ID == FV_ADVISOR_FOOD_IN_STORE
+				eject good spirit
+				// GA: Ah, we now have enough food.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_GOTENOUGHFOOD_10"
+				wait until read
+
+				eject evil spirit
+				// EA: We need wood if our villagers are to build and our town expand.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_GOTENOUGHFOOD_20"
+				wait until read
+
+				// EA: Grab and pull a tree out of the ground and throw it into the Storehouse.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_GOTENOUGHFOOD_30"
+				wait until read
+
+			elsif ID == FV_ADVISOR_NOT_ENOUGH
+				eject evil spirit
+				// EA: There ain't enough food in there, Boss!
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_NOTENOUGHFOOD_10"
+				wait until read
+
+			elsif ID == FV_ADVISOR_TREE_IN_HAND and FV_Advisor_Tree_In_Hand_Flag == FV_FALSE
+				FV_Advisor_Tree_In_Hand_Flag = FV_TRUE
+				eject evil spirit
+				// EA: Now put it in the Storehouse.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_TREEINHAND_10"
+				wait until read
+
+			elsif ID == FV_ADVISOR_NOT_ENOUGH_WOOD
+				eject evil spirit
+				// EA: There isn’t enough wood. Drop in another tree.
+				say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_NOTENOUGHWOOD_10"
+				wait until read
+
+			elsif ID == FV_ADVISOR_ALREADY_DONE_FOOD_TASK
+				eject good spirit
+				//say "Excellent work leader you've already given the villagers enough food for now."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_846"
+				wait until read
+				
+			elsif ID == FV_ADVISOR_ALREADY_DONE_WOOD_TASK
+				eject good spirit
+				//say "The storage yard is well stocked with wood leader. Well done."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_836"
+				wait until read
+			
+			elsif ID == FV_ADVISOR_MISSED_STORAGEPIT_FOOD
+				eject good spirit
+				//say "Drop the food in the storage pit leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_835"
+				wait until read
+				
+			elsif ID == FV_ADVISOR_MISSED_STORAGEPIT_WOOD
+				eject good spirit
+				//say "Drop the wood in the storage pit leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_825"
+				wait until read
+			end if
+
+			send good spirit home
+			send evil spirit home
+		end dialogue
+		Quitter = FV_TRUE
+
+	until ID != FV_CurrentAdvisorComment or Quitter == FV_TRUE
+	end loop
+
+end script FV_Advisors
+
+//--------------------------------------------------------------------------
+// Remind the player what they are supposed to be doing
+//--------------------------------------------------------------------------
+begin script FV_Reminder(ID)
+
+	Timer		= create timer for 15 seconds
+
+start
+
+	wait until dialogue ready or get Timer time remaining <= 0
+	
+	// Only remind the player if we haven't waited for too long
+	if get Timer time remaining > 0
+		begin dialogue
+			eject good spirit
+			
+			if ID == FV_REMINDER_NEED_FOOD
+				//say "You need to put food in the storage pit leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_815"
+			elsif ID == FV_REMINDER_NEED_WOOD
+				//say "You need to put trees into the storage pit leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_814"
+			elsif ID == FV_REMINDER_FOOD_RUNNING_LOW
+				//say "Leader the food in the Storage Yard is getting low, put some more in."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_813"
+			elsif ID == FV_REMINDER_VILLAGER_DIED
+				//say "Leader! A villager has died through starvation. Put some food in the Storage Yard."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_812"
+			end if
+						
+			wait until read
+			send good spirit home
+		end dialogue
+	end if
+
+end script FV_Reminder
+
+//-----------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------
+begin script FV_Intro
+
+	HungryPos[4]
+	hungryman[3]
+
+start
+				
+	begin cinema	
+		HungryPos[0] = marker at {1096.509, 363.595, 1605.583}
+		HungryPos[1] = marker at {1100.931, 363.595, 1613.604}
+		HungryPos[2] = marker at {1098.410, 363.591, 1626.845}
+		HungryPos[3] = marker at {1085.792, 363.591, 1629.693}
+
+		hungryman[0] = create VILLAGER GREEK_FORESTER at {HungryPos[0]}
+		hungryman[1] = create VILLAGER GREEK_FORESTER at {HungryPos[1]}
+		hungryman[2] = create VILLAGER GREEK_FORESTER at {HungryPos[2]}
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {1108.758, 372.899, 1626.094}
+		set camera focus to {1032.219, 325.371, 1582.698}
+		SPEED of hungryman[0] = 0.05
+		SPEED of hungryman[1] = 0.05
+		SPEED of hungryman[2] = 0.05
+		move hungryman[0] position to {HungryPos[1]}
+		move hungryman[1] position to {HungryPos[2]}
+		move hungryman[2] position to {HungryPos[3]}
+		wait 0.2 seconds
+		override hungryman[0] anim "a_revolt_hungry_1" 
+		override hungryman[1] anim "a_revolt_hungry_1" 
+		override hungryman[2] anim "a_revolt_hungry_1"
+
+		move camera position to {1108.758, 372.899, 1626.094} time 5
+		move camera focus to {1023.369, 326.406, 1649.494} time 5
+
+		set fade in time 1
+
+		eject good spirit
+		// GA: Your villagers are starving! We must get them some food.
+		say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_INTRO_10"
+		wait until read
+
+		// GA: Move your hand over this field then right click and hold to pick up the grain.
+		say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_INTRO_20"
+		wait until read
+
+		move camera position to {1103.701, 373.379, 1641.996} time 4
+		move camera focus to {1018.313, 326.888, 1665.397} time 4
+		// GA: When you’ve got enough food in your hand drop or throw it into the Storehouse.
+		say "BW2T_SCRIPT_03FINAL_STARVINGVILLAGERS_INTRO_30"
+		wait until read
+		
+		// We need to delete these actors
+		delete hungryman[0]
+		delete hungryman[1]
+		delete hungryman[2]
+	end cinema
+	
+end script FV_Intro
+
+
+//-----------------------------------------------------------------
+// Keep track of the amount of food in the storage pit
+//-----------------------------------------------------------------
+begin script FV_AlertPlayerOfLowFoodOrDyingVillagers(StoragePit)
+
+	DELAY					= 45					// Offset against the normal reminders which are set to 30
+	Villager[20]
+	SomeoneDied				= FV_FALSE
+	FoodInPit				= 0
+	Ctr						= 0
+	Reminder				= create timer for DELAY seconds
+
+start
+	
+	// Make sure we only get the villagers once they've been released,
+	// this is done in the main loop of the ill villagers script
+	wait until L3OkToCheckForHealthOfVillagers == FV_TRUE
+	
+	// Get the villagers
+	while Ctr < 20
+		Villager[Ctr] = get VILLAGER at {L3GreekTown} radius 100 excluding scripted
+		Ctr++
+	end while
+
+	// Do the checks
+	begin loop
+		FoodInPit = get resource RESOURCE_TYPE_FOOD in StoragePit
+		
+		// Check for low food in the storage pit
+		if FoodInPit < 200
+			if get Reminder time remaining <= 0
+				run script FV_Reminder(FV_REMINDER_FOOD_RUNNING_LOW)
+			end if
+			set Reminder time to DELAY seconds
+		end if
+		
+		// Check for a villager dying
+		if SomeoneDied == FV_FALSE
+			Ctr = 0
+			while Ctr < 20			
+				if Villager[Ctr] not exists or HEALTH of Villager[Ctr] <= 0
+					run script FV_Reminder(FV_REMINDER_VILLAGER_DIED)
+					SomeoneDied = FV_TRUE
+					set Reminder time to DELAY seconds
+				end if
+				Ctr++
+			end while
+		end if
+	
+	until L3VillagersCanFeedThemselves == FV_TRUE
+	end loop
+
+end script FV_AlertPlayerOfLowFoodOrDyingVillagers

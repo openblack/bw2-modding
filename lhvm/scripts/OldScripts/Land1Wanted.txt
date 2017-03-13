@@ -1,0 +1,26 @@
+//------------------------------------------------
+//  LAND 1 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land1Wanted
+
+ L1Actor1Pos = marker at {944.830,75.359,1320.557} // on peninsula near Marauders
+ L1Actor1 = create VILLAGER MALE at {L1Actor1Pos}
+ PosterPos1 = marker at {1327.621,57.676,1513.506}
+ L1Actor2Pos = marker at {1286.019,172.105,1195.813} // on main mountain above mine
+ L1Actor2 = create VILLAGER MALE at {L1Actor2Pos}
+ PosterPos2 = marker at {1324.738,57.495,1515.396}
+ L1Actor3Pos = marker at {1611.313,66.197,1498.892} // woods near west coast mine
+ L1Actor3 = create VILLAGER MALE at {L1Actor3Pos}
+ PosterPos3 = marker at {1323.165,57.454,1516.876}
+ JailLocation = marker at {1326.995,57.773,1518.067}
+  
+start
+	
+	run background script GlobalWanted (0, L1Actor1, L1Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (1, L1Actor2, L1Actor2Pos, JailLocation, PosterPos2)
+
+	run background script GlobalWanted (2, L1Actor3, L1Actor3Pos, JailLocation, PosterPos3)
+
+end script Land1Wanted

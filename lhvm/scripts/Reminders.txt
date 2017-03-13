@@ -1,0 +1,50 @@
+
+// StandardReminder scrtipt called by the game
+
+begin interruptible script StandardReminder(AdvisorSpeak) 
+
+start
+	begin dialogue
+		if good spirit speaks AdvisorSpeak
+			eject good spirit
+		elsif evil spirit speaks AdvisorSpeak
+			eject evil spirit
+		end if		
+		
+		//say single line "We need to do reminder text from ID function!"
+		say database id AdvisorSpeak 
+		wait until read
+		
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script StandardReminder
+
+begin interruptible script StandardBanter(AdvisorGroupID) 
+	Counter = 0
+start
+	begin dialogue
+		if good spirit speaks in AdvisorGroupID
+			eject good spirit
+		end if
+		
+		if evil spirit speaks in AdvisorGroupID
+			eject evil spirit
+		end if
+		
+		begin loop
+			say line Counter from group AdvisorGroupID
+			wait until read
+
+			Counter ++
+			until Counter == get number of lines in AdvisorGroupID
+		end loop
+		
+		send good spirit home
+		send evil spirit home
+		
+	end dialogue
+
+end script StandardBanter
+

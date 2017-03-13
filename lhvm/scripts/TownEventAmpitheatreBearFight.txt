@@ -1,0 +1,66 @@
+//---------------------------------------------------------------
+// Ampitheatre Bear Fight
+//---------------------------------------------------------------
+begin script AmpitheatreBearFight(Theatre)
+	Bear		= 0
+	Man			= 0
+	Stop = 0
+
+	//_A = man   _B = bear
+	StartPos_A	= marker at {0, 0, 0}
+	StartPos_B	= marker at {0, 0, 0}
+	StartFoc_A	= marker at {0, 0, 0}
+	StartFoc_B	= marker at {0, 0, 0}
+
+	CreatePos_A	= marker at {0, 0, 0}
+	CreatePos_B	= marker at {0, 0, 0}
+	EndPos_A	= marker at {0, 0, 0}
+start
+
+	CreatePos_A = marker at get world position from Theatre to {4.374, -0.003, 1.411}
+	CreatePos_B = marker at get world position from Theatre to {5.108, -0.002, -3.674}
+	EndPos_A	= marker at get world position from Theatre to {5.108, -0.002, -3.674}
+	StartPos_A	= marker at extra position "BWS_EP_BEARFIGHT_MAN" from Theatre
+	StartPos_B	= marker at extra position "BWS_EP_BEARFIGHT_BEAR" from Theatre
+	StartFoc_A	= marker at extra position "BWS_EP_BEARFIGHT_MAN_FOCUS" from Theatre
+	StartFoc_B	= marker at extra position "BWS_EP_BEARFIGHT_BEAR_FOCUS" from Theatre
+
+	begin loop
+
+		Man = create SOLDIER PLATOON_INFO_GREEK_MELEE_3 at {CreatePos_A}		
+		disable Man pickup
+
+		Bear = create ANIMAL BEAR at {StartPos_B}
+		disable Bear pickup
+
+		move Man position to {StartPos_A}
+		move Bear position to {StartPos_B}
+		
+		SPEED of Man = 0.4
+		wait until {Man} at {StartPos_A}
+		wait until {Bear} at {StartPos_B}
+
+		reset Man speed
+
+		set Bear focus to {StartFoc_B}
+		set Man focus to {StartFoc_A}
+
+		play anim "a_p_bear_pairedfight_death_A" on Man
+		play anim "a_p_bear_pairedfight_death_B" on Bear
+
+		wait until Man played
+
+		move Man position to {EndPos_A}
+		wait 3 seconds
+		delete Bear with fade
+		
+		wait until {Man} at {EndPos_A}
+		delete Man
+
+	until Stop == 1
+	end loop
+	
+	delete Man
+	delete Bear
+
+end script AmpitheatreBearFight

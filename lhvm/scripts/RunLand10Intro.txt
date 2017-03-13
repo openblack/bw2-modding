@@ -1,0 +1,6 @@
+run script RunLand10Intro
+
+begin script RunLand10Intro
+start
+	run script Land10Intro
+end script RunLand10Intro

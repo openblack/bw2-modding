@@ -1,0 +1,6 @@
+run script RunLand10CreatureAI
+
+begin script RunLand10CreatureAI
+start
+	run script Land10CreatureAI
+end script RunLand10CreatureAI

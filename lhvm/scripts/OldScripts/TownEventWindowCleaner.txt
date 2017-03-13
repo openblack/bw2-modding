@@ -1,0 +1,207 @@
+//================================================================
+// Sulphur Pool
+// Matt.L
+//================================================================
+
+//------------------------------------------------------------
+// Cosntants
+//------------------------------------------------------------
+define TE_MAX_CLEANERS = 25
+
+define TE_HOUSE_C = 0
+define TE_BARRACKS = 1
+define TE_LUMBERMILL = 2
+define TE_PRISON = 3
+define TE_UNIVERSITY = 4
+define TE_HOUSE_E = 5
+define TE_HOUSE_INVALID = 99
+
+define TE_CLEANER_THRESHOLD = 5
+
+//------------------------------------------------------------
+// Globals
+//------------------------------------------------------------
+global TE_ThisTown = 0
+global TE_Cleaning = 0
+global TE_RemoveCleaner = TE_HOUSE_INVALID
+
+//------------------------------------------------------------
+// Script defines
+//------------------------------------------------------------
+define script TE_CleanHouse(House, Type)
+
+//------------------------------------------------------------
+// Town Event Window Cleaner
+//------------------------------------------------------------
+begin script TownEventWindowCleaner(Town)
+	ThisHouse = 0
+	SearchType = 0
+	NumCleaners = 0
+	HighTrigger = TE_CLEANER_THRESHOLD
+	LowTrigger = 0
+start
+
+	begin loop
+
+		wait until size of Town > HighTrigger or size of Town < LowTrigger
+
+		if size of Town > HighTrigger
+			HighTrigger += TE_CLEANER_THRESHOLD
+			LowTrigger += TE_CLEANER_THRESHOLD
+			NumCleaners++
+		elsif size of Town < LowTrigger
+			LowTrigger -= TE_CLEANER_THRESHOLD
+			HighTrigger -= TE_CLEANER_THRESHOLD
+			NumCleaners--
+		end if
+		
+		//----------------------------- Add another cleaner
+		if TE_Cleaning < NumCleaners			
+			if Town exists
+				TE_ThisTown = Town
+				ThisHouse = 0
+				while not ThisHouse exists
+					//Abode
+					if SearchType == TE_HOUSE_C
+						ThisHouse = get HOUSE ABODE_INFO_GREEK_HOUSE_C in Town excluding scripted
+					elsif SearchType == TE_BARRACKS
+						ThisHouse = get HOUSE ABODE_INFO_GREEK_MELEE_ARMOURY in Town excluding scripted
+					elsif SearchType == TE_LUMBERMILL
+						ThisHouse = get HOUSE ABODE_INFO_GREEK_LUMBERMILL in Town excluding scripted
+					elsif SearchType == TE_PRISON
+						ThisHouse = get HOUSE ABODE_INFO_GREEK_PRISON in Town excluding scripted
+					elsif SearchType == TE_UNIVERSITY
+						ThisHouse = get HOUSE ABODE_INFO_GREEK_UNIVERSITY in Town excluding scripted
+					elsif SearchType == TE_HOUSE_E
+						ThisHouse = get HOUSE ABODE_INFO_GREEK_HOUSE_E in Town excluding scripted
+					end if			
+				
+					if ThisHouse exists
+						TE_Cleaning++
+						run background script TE_CleanHouse(ThisHouse, SearchType)
+						if SearchType != TE_HOUSE_E
+							SearchType++
+						end if
+					end if
+				end while
+			end if
+		elsif TE_Cleaning > NumCleaners
+			SearchType--
+			TE_RemoveCleaner = SearchType
+		end if
+		
+		//wait 1 seconds
+	end loop
+
+end script TownEventWindowCleaner
+
+//------------------------------------------------------------
+// Clean House
+//------------------------------------------------------------
+begin script TE_CleanHouse(House, Type)
+	LadderPos = marker at {0, 0, 0} //rel
+	ManPos = marker at {0, 0, 0} //rel pos
+
+	Ladder = 0
+	LadderAngle = 0
+	Cleaner = 0
+	RandomAnim = 1
+	FlyPos = 0
+	RandHouse = 0
+start
+
+	wait until /*not House viewed and */BUILT of House == 1.0
+
+	//Positions
+	if Type == TE_HOUSE_C
+		LadderPos = marker at get world position from House to {7.086, -0.842, -1.644}
+		LadderAngle = ANGLE of House - 90
+		FlyPos = marker at get world position from House to {9.803, -1.331, -1.779}
+	elsif Type == TE_BARRACKS
+		LadderPos = marker at get world position from House to {6.625, 0.003, -1.210}
+		LadderAngle = ANGLE of House - 90
+		FlyPos = marker at get world position from House to {8.926, -0.005, -1.387}
+	elsif Type == TE_LUMBERMILL
+		LadderPos = marker at get world position from House to {-6.071, 0.002, -3.325}
+		LadderAngle = ANGLE of House + 90
+		FlyPos = marker at get world position from House to {-11.004, 0.001, -4.162}
+	elsif Type == TE_PRISON
+		LadderPos = marker at get world position from House to {0.042, -0.003, 11.200}
+		LadderAngle = ANGLE of House
+		FlyPos = marker at get world position from House to {0.426, 0.052, 15.581}
+	elsif Type == TE_UNIVERSITY
+		LadderPos = marker at get world position from House to {6.770, -0.002, 7.618}
+		LadderAngle = ANGLE of House
+		FlyPos = marker at get world position from House to {7.363, -0.002, 11.434}
+	elsif Type == TE_HOUSE_E
+		LadderPos = marker at get world position from House to {-2.707, 0.000, -3.700}
+		LadderAngle = ANGLE of House
+		FlyPos = marker at get world position from House to {-1.185, 0.005, 1.768}
+	end if	
+
+	Ladder = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {LadderPos}
+	override mesh for Ladder with "..\features\m_greek_tf_ladder_n"
+	ANGLE of Ladder = LadderAngle
+	PITCH of Ladder = 8.0
+	ALTITUDE of Ladder = -0.5
+
+	ManPos = marker at get world position from Ladder to {0, 0, -0.65}
+	Cleaner = create VILLAGER GREEK_TRADER at {ManPos}
+	ALTITUDE of Cleaner = 2.35
+	ANGLE of Cleaner = ANGLE of Ladder + 90
+	disable Cleaner reactable	
+
+	begin loop
+
+		if RandomAnim > 1
+			RandomAnim = 1
+		else
+			RandomAnim = number from 1 to 3
+		end if
+
+		if RandomAnim == 1
+			set Cleaner carrying CARRIED_OBJECT_HAMMER
+			play anim "a_p_sculptor" on Cleaner
+		elsif RandomAnim == 2
+			play anim "a_p_huff" on Cleaner
+		elsif RandomAnim == 3
+			play anim "a_p_stretching" on Cleaner
+		end if
+
+		wait until Cleaner played
+		set Cleaner carrying CARRIED_OBJECT_NONE
+
+	until not {Ladder} at {LadderPos} or not {Cleaner} at {ManPos} or not House exists or TE_RemoveCleaner == Type
+	end loop
+
+	if TE_RemoveCleaner == Type
+		delete Ladder
+		delete Cleaner
+		TE_RemoveCleaner = TE_HOUSE_INVALID
+	else
+		//Check to see what happened
+		if not {Ladder} at {LadderPos}
+			set Cleaner velocity heading {FlyPos} + {0, 10, 0} speed 7
+		end if
+
+		if not Ladder is HELD
+			set Ladder velocity heading {FlyPos} + {0, 10, 0} speed 15
+		end if
+
+		wait until not Cleaner is FLYING and not Cleaner is MOVING and not Ladder is MOVING and not Ladder is MOVING
+
+		//Bugger off to some random house
+		RandHouse = get HOUSE ABODE_INFO_GREEK_HOUSE_A in TE_ThisTown
+		
+		if RandHouse exists
+			move Cleaner position to extra position 0 of RandHouse using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+			wait 1 seconds
+			wait until variable get Cleaner navigation state != variable NAV_STATE_NAVIGATING
+			delete Cleaner
+		else
+			HEALTH of Cleaner = 0
+		end if
+	end if
+
+	release Cleaner
+end script TE_CleanHouse

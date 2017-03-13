@@ -1,0 +1,10 @@
+//------------------------------------------------------------------------------------------------------------------------
+run script RunLandStressControl
+//------------------------------------------------------------------------------------------------------------------------
+begin script RunLandStressControl
+
+start
+
+	run script LandStressControl
+	
+end script RunLandStressControl

@@ -1,0 +1,56 @@
+//*************************************************************
+//
+//	Land5Objectives
+//
+//*************************************************************
+
+begin script Land5Objectives
+
+Objective1 = 0 // get to 40 villagers
+Objective2 = 0 // get to 100 villagers
+Objective3 = 0 // get to 200 villagers
+Objective4 = 0 // get to 1000 food in the pit
+Objective5 = 0
+Objective6 = 0
+TownFoodTotal = 0
+
+start
+
+begin loop
+	TownFoodTotal = get town L5GreekTown RESOURCE_TYPE_FOOD total
+
+	if Objective1 == 0 and adult size of L5GreekTown > 40
+		Objective1 = 1
+		play string sound "tributeSTING"
+		say "Well done! You have developed a village"
+		wait until read
+		increment tribute by 1
+	end if
+
+	if Objective2 == 0 and adult size of L5GreekTown > 100
+		Objective2 = 1
+		play string sound "tributeSTING"
+		say "Well done! Your village has developed to a town"
+		wait until read
+		increment tribute by 5
+	end if
+
+	if Objective3 == 0 and adult size of L5GreekTown > 200
+		Objective3 = 1
+		play string sound "tributeSTING"
+		say "Well done! Your town has developed to a city"
+		wait until read
+		increment tribute by 10
+	end if
+
+	if Objective4 == 0 and TownFoodTotal > 1000
+		Objective4 = 1
+		play string sound "tributeSTING"
+		say "Well done! You have harvested over 1000 food"
+		wait until read
+		increment tribute by 5
+	end if
+	until L5Complete == 1
+end loop
+
+end script Land5Objectives

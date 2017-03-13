@@ -1,0 +1,6 @@
+run script RunLand2AztecWall
+
+begin script RunLand2AztecWall
+start
+	run script Land2AztecWall
+end script RunLand2AztecWall

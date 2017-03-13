@@ -1,0 +1,6 @@
+run script RunLand5BlackAnnis
+
+begin script RunLand5BlackAnnis
+start
+	run script Land5BlackAnnis
+end script RunLand5BlackAnnis

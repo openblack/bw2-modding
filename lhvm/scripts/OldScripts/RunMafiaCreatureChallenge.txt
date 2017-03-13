@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run MafiaCreatureChallenge script
+//-----------------------------------------------------------------------------
+run script RunMafiaCreatureChallenge
+
+begin script RunMafiaCreatureChallenge
+
+start
+
+run script Land2MafiaChallenge
+
+end script RunMafiaCreatureChallenge

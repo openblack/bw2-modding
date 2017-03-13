@@ -1,0 +1,1010 @@
+///////////////////////////////////////////////////////////////////////////////
+//	ORDER OF THE BITING HAND
+//	~~~~~~~~~~~~~~~~~~~~~~~~
+//	Description:
+//	The monks had made a treaty with the Aztecs and they were being fed by them.
+//	Once the player has taken over the Aztec town they will be told by the monks
+//	that they want the player to fulfil the Aztecs treaty terms. This means the monks
+//	need to be fed by the player otherwise they will attack.
+//	Also the amount of food demanded by the monks increases depending on the amount of
+//	elder monks that get killed.
+//
+//	Rewards:			None
+//
+//	Start date:			18-09-03			By:	Steve
+//	Update date:		21-10-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+//	NEEDED:
+//	* Need to be able to get the size of an army / platoon - size of Platoon doesn't work
+//	* Need a way to delete anrmy / platoon physically. The delete command doesn't do this
+//	* Need a way to create food at a position so the Aztecs can feed the monks
+//	* Need the advisors to work
+//	* Armies need to navigate around obstacles to get to their targets i.e. around water
+//	* Need to get the monks to assist the player when attacking the Greeks if the elders are ok
+//	* Need to be able to disband an army and have them wander around. Demob doesn't work apparently.
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define BH_TRUE									= 1
+define BH_FALSE									= 0
+define BH_FEEDING_PARTY_SIZE					= 5
+define BH_AMOUNT_OF_MONKS						= 10
+define BH_AMOUNT_FOOD_MONK_EATS_PER_MEAL		= 100
+define BH_AZTEC_FEEDING_PARTY_DISPATCH_TIME		= 10.00
+define BH_CLOSE_TO_FEEDING_TIME					= 8.00
+define BH_FEEDING_TIME							= 12.00
+define BH_AMOUNT_OF_FOOD_MONKS_EAT_PER_FEEDING	= 1000
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global BH_Monk[BH_AMOUNT_OF_MONKS]
+global BH_PlayerTakenAztecTown		= BH_FALSE
+global BH_MonksAttacking			= BH_FALSE
+global BH_OkToWarnAboutGivingFood	= BH_FALSE
+global BH_Monastery					= 0
+global BH_TimeOfDay					= 0
+global BH_Foodpile					= 0
+global BH_FoodpilePos				= 0
+global BH_AmountInFoodpile			= 0
+global BH_AztecFoodDeliverPerPerson	= 200
+
+// <TEMP>
+global BH_MonasteryBuilding	= 0
+// </TEMP>
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script BH_HandleFeedingOfMonksByAztecs
+define script BH_CreateAztecFeedingParty(*FedMonks)
+define script BH_CheckForPlayerTakingAztecTown
+define script BH_MonkDemands
+define script BH_HandleMonkActions
+define script BH_SetupMonksEating
+define script BH_FeedMonk(MonkID, Seat)
+define script BH_TrackTimeOfDay
+define script BH_UpdateAmountInFoodPile
+define script BH_AlertPlayerOfPendingAttack
+define script BH_MakeMonksAttackTown(Town)
+define script BH_CheckForHelpFromMonksAttackingGreeks
+define script BH_CreateMonks
+define script BH_GetMonks(Pos, Radius)
+define script BH_DeleteMonks
+define script BH_MonksNowYourFriends
+
+
+// <TEMP>
+define script BH_AdvanceTime
+// </TEMP>
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land5BitingHand
+start
+
+	// Setup the global variables
+	BH_Monastery = marker at {1688.421,47.637,1471.942}
+	BH_FoodpilePos = marker at {1688.389,48.178,1457.090}
+	BH_Foodpile = create STORE FOOD at {BH_FoodpilePos}
+
+// <TEMP>
+BH_MonasteryBuilding = create HOUSE ABODE_INFO_GREEK_CATHEDRAL at {BH_Monastery}
+run background script BH_AdvanceTime
+// </TEMP>
+
+	// Update the current time and make the Aztecs look after the monks
+	// Also make the monks attack the Aztecs if they miss a feeding (should only happen with player interference)
+	run background script BH_TrackTimeOfDay
+	run background script BH_UpdateAmountInFoodPile
+	run background script BH_HandleFeedingOfMonksByAztecs
+	run background script BH_HandleMonkActions
+
+	// Make sure the Aztec town has been taken over before getting demands from the monks
+	run background script BH_CheckForPlayerTakingAztecTown
+
+	// Don't go any further until the player has taken over the Aztec town
+	wait until BH_PlayerTakenAztecTown == BH_TRUE
+	run background script BH_CheckForHelpFromMonksAttackingGreeks
+	
+	// Kick off the demands from the monks (intro)
+	run script BH_MonkDemands
+	run background script BH_AlertPlayerOfPendingAttack
+
+end script Land5BitingHand
+
+
+//-----------------------------------------------------------------------------
+//	Make sure the Aztecs send out a party to feed the monks
+//-----------------------------------------------------------------------------
+begin script BH_HandleFeedingOfMonksByAztecs
+
+	FedMonksThisDay[1]
+	MonksFedAndContent	= 0
+
+start
+
+	while BH_PlayerTakenAztecTown == BH_FALSE
+		// Flag that the monks need to be fed
+		MonksFedAndContent = BH_FALSE
+
+		// If it's time for the feeding party to leave; send them
+		if BH_TimeOfDay >= BH_AZTEC_FEEDING_PARTY_DISPATCH_TIME and BH_TimeOfDay < BH_FEEDING_TIME
+			run script BH_CreateAztecFeedingParty(&FedMonksThisDay[0])
+
+			// Have we fed the monks today?
+			if FedMonksThisDay[0] == BH_TRUE
+				// Flag that the monks have been fed
+				MonksFedAndContent = BH_TRUE
+
+				// Make sure the day clocks over to the next day before we feed them again
+				wait until BH_TimeOfDay > 0.00 and BH_TimeOfDay < 1.00
+			end if
+		elsif BH_TimeOfDay > BH_FEEDING_TIME
+			// Wait for the next day to clock over
+			wait until BH_TimeOfDay > 0.00 and BH_TimeOfDay < 1.00
+		end if
+	end while
+
+end script BH_HandleFeedingOfMonksByAztecs
+
+
+//-----------------------------------------------------------------------------
+//	Create the feeding party and send them to feed the monks
+//-----------------------------------------------------------------------------
+begin script BH_CreateAztecFeedingParty(*FedMonks)
+
+	FeedingParty[BH_FEEDING_PARTY_SIZE]
+	FeedingPartyPos[BH_FEEDING_PARTY_SIZE]
+	FeedingPartyFlock		= 0
+	FeedingPartyFlockPos	= marker at {1692.880,51.625,1337.375}
+	FeedingPartyKilled		= BH_FALSE
+	FeedingPartyArrived		= BH_FALSE
+	AmountOfPartyDead		= 0
+	Counter					= 0
+
+start
+
+	// Create the feeding party
+	FeedingPartyFlock = flock at {FeedingPartyFlockPos}
+	set FeedingPartyFlock properties inner 5 outer 5
+
+	FeedingPartyPos[0] = marker at {FeedingPartyFlockPos} + {0.000,0.000,0.000}
+	FeedingPartyPos[1] = marker at {FeedingPartyFlockPos} + {1.000,0.000,1.000}
+	FeedingPartyPos[2] = marker at {FeedingPartyFlockPos} + {-1.000,0.000,-1.000}
+	FeedingPartyPos[3] = marker at {FeedingPartyFlockPos} + {2.000,0.000,2.000}
+	FeedingPartyPos[4] = marker at {FeedingPartyFlockPos} + {-2.000,0.000,-2.000}
+
+	while Counter < BH_FEEDING_PARTY_SIZE
+		FeedingParty[Counter] = create VILLAGER VILLAGER_INFO_AZTEC_TRADER_MALE at {FeedingPartyPos[Counter]}
+		attach FeedingParty[Counter] to FeedingPartyFlock
+		state FeedingParty[Counter] LIVING_MOVE_IN_FLOCK
+		Counter++
+	end while
+
+
+	// Move the party to the monks
+	//SPEED of FeedingPartyFlock = 1
+	move FeedingPartyFlock position to {BH_FoodpilePos}
+	while FeedingPartyArrived == BH_FALSE and FeedingPartyKilled == BH_FALSE
+		// Check to see if the party has arrived at the monastery
+		if {FeedingPartyFlock} near {BH_FoodpilePos} radius 10
+			FeedingPartyArrived = BH_TRUE
+		end if
+
+		// Check to see if the feeding party flock or it's members have been killed
+		if FeedingPartyKilled == BH_FALSE and FeedingPartyArrived == BH_FALSE
+			if not FeedingPartyFlock exists or size of FeedingPartyFlock <= 0
+				FeedingPartyKilled = BH_TRUE
+			end if
+		end if
+	end while
+
+
+	// Feed the monks
+	if FeedingPartyArrived == BH_TRUE and FeedingPartyKilled == BH_FALSE
+		// Put the food into the monks food pile
+		add resource RESOURCE_TYPE_FOOD BH_AztecFoodDeliverPerPerson * size of FeedingPartyFlock to BH_Foodpile
+		FedMonks[0] = BH_TRUE
+
+		// Send the party back home
+		move FeedingPartyFlock position to {FeedingPartyFlockPos}
+		wait until {FeedingPartyFlock} near {FeedingPartyFlockPos} radius 5 or not FeedingPartyFlock exists or size of FeedingPartyFlock <= 0
+		wait until not FeedingPartyFlockPos viewed
+		Counter = 0
+		while Counter < BH_FEEDING_PARTY_SIZE
+			if FeedingParty[Counter] exists
+				delete FeedingParty[Counter] with fade
+			end if
+			Counter++
+		end while
+		delete FeedingPartyFlock with fade
+	else
+		// For some reason the monks haven't been fed
+		FedMonks[0] = BH_FALSE
+	end if
+
+end script BH_CreateAztecFeedingParty
+
+
+//-----------------------------------------------------------------------------
+//	Flag when the player takes over the Aztec town
+//-----------------------------------------------------------------------------
+begin script BH_CheckForPlayerTakingAztecTown
+
+	TheAztecTown	= get TOWN at {1704.328,51.625,1352.307} radius 100
+
+start
+
+	while BH_PlayerTakenAztecTown == BH_FALSE
+		if PLAYER of TheAztecTown == BH_TRUE
+			BH_PlayerTakenAztecTown = BH_TRUE
+		end if
+	end while
+
+end script BH_CheckForPlayerTakingAztecTown
+
+
+//-----------------------------------------------------------------------------
+//	The monks tell the player they want to be fed or else
+//-----------------------------------------------------------------------------
+begin script BH_MonkDemands
+
+	HeadMonk		= 0
+	MonkScroll		= 0
+	MonkDemandPos	= marker at {1679.644,39.840,1522.910}
+	MonkScrollPos	= marker at {BH_Monastery}
+	ReminderTimer	= create timer for 30 seconds
+	RelCamPos		= 0
+	RelCamFoc		= 0
+
+
+start
+
+	// Create the scroll and make the advisors point it out to the player
+	MonkScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {MonkScrollPos}
+
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {MonkScroll}						
+				say "GA: Leader there seems to be something of interest over here."
+				wait until read
+				stop good spirit pointing
+				send good spirit home
+			end dialogue
+			set ReminderTimer time to 30 seconds
+		end if
+	until MonkScroll right clicked
+	end loop
+	delete MonkScroll
+
+	// Get the little speech from the head monk
+	begin cinema
+
+		MonkDemandPos = marker at get world position from BH_MonasteryBuilding to {0.250,0.526,14.266}
+		//move camera position to {MonkDemandPos} + {-1.500,1.500,-1.500} time 3
+		//move camera focus to {MonkDemandPos} + {0.000,1.000,0.000} time 3
+
+		// Create the monk and move him out of the monastery
+		HeadMonk = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {BH_Monastery}
+		set HeadMonk position to {1688.527,47.972,1465.618}
+
+		RelCamPos=marker at get world position from BH_MonasteryBuilding to {-12.301,8.009,27.504}
+		RelCamFoc=marker at get world position from BH_MonasteryBuilding to {17.486,7.131,-8.669}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		move HeadMonk position to {MonkDemandPos}
+		wait until {HeadMonk} near {MonkDemandPos} radius 0.5
+
+
+		set camera lens 15.000
+		RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.144,0.928,14.934}
+		RelCamFoc=marker at get world position from BH_MonasteryBuilding to {7.987,19.147,-27.529}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait until {HeadMonk} at {MonkDemandPos}// radius 1
+
+
+
+		//set HeadMonk focus to camera position
+
+		say "I see you've defeated the Aztecs."
+		wait until read
+		say "Very... 'impressive'."
+		wait until read
+		set camera lens 64.000
+		RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.665,1.021,14.267}
+		RelCamFoc=marker at get world position from BH_MonasteryBuilding to {-17.375,28.833,47.397}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "We had a deal with the Aztecs where they would give us food for 'protection'"
+		RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.665,1.021,14.267}
+		RelCamFoc=marker at get world position from BH_MonasteryBuilding to {-27.308,30.173,38.021}
+		move camera position to {RelCamPos} time 3
+		move camera focus to {RelCamFoc} time 3
+		wait until camera ready
+		RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.665,1.021,14.267}
+		RelCamFoc=marker at get world position from BH_MonasteryBuilding to {-17.375,28.833,47.397}
+		move camera position to {RelCamPos} time 3
+		move camera focus to {RelCamFoc} time 3
+		wait until read
+		set camera lens 15.000
+		RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.144,0.928,14.934}
+		RelCamFoc=marker at get world position from BH_MonasteryBuilding to {7.987,19.147,-27.529}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "You would be wise to do the same"
+		wait until read
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from BH_MonasteryBuilding to {-12.301,8.009,27.504}
+		RelCamFoc=marker at get world position from BH_MonasteryBuilding to {17.486,7.131,-8.669}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		move HeadMonk position to {BH_Monastery}
+
+		eject good spirit
+		eject evil spirit
+		say "GA: Well he seems a jolly funny fellow. Let's feed him and his monks."
+		wait until read
+		say "EA: Goody you're a pratt. Let's get the food and ram it where the sun don't shine :)"
+		wait until read
+		send good spirit home
+		send evil spirit home
+
+		wait until {HeadMonk} near {BH_Monastery} radius 1
+		delete HeadMonk
+	end cinema
+
+	// Make the gratuity payable from the next day
+	wait until BH_TimeOfDay > 0.00 and BH_TimeOfDay < 1.00
+	BH_OkToWarnAboutGivingFood = BH_TRUE
+
+end script BH_MonkDemands
+
+
+//-----------------------------------------------------------------------------
+//	Make the monks do their stuff - whatever it is
+//-----------------------------------------------------------------------------
+begin script BH_HandleMonkActions
+	
+	SMarker				= marker at {BH_Monastery}
+	AztecTown			= get TOWN at {1704.328,51.625,1352.307} radius 100
+	TargetTown			= 0
+	Seat				= 0
+	Angle				= 0
+	Counter				= 0
+	CurrentTime			= 0
+	TimeToFeedOrPunish	= BH_FALSE
+	PlayersTownIsTarget	= BH_FALSE
+
+start
+
+	// The first target for the monks are the Aztecs
+	TargetTown = AztecTown
+
+	// Make sure the monks don't start punishing the Aztecs until the next day
+	// This is because the Aztecs only bring food in the morning and we don't want to punish them unfairly
+	wait until BH_TimeOfDay > 0.00 and BH_TimeOfDay < 1.00 or BH_PlayerTakenAztecTown == BH_TRUE
+
+	begin loop
+		// Has the player taken over the Aztecs yet?
+		if PlayersTownIsTarget == BH_FALSE
+			if BH_PlayerTakenAztecTown == BH_TRUE
+				// Make sure the monks don't attack the player too early
+				wait until BH_OkToWarnAboutGivingFood == BH_TRUE
+				PlayersTownIsTarget = BH_TRUE
+			end if
+		end if
+
+		// Is is time to feed?
+		if BH_TimeOfDay >= BH_FEEDING_TIME and BH_TimeOfDay <= BH_FEEDING_TIME + 0.1
+			CurrentTime = BH_TimeOfDay
+			wait until BH_TimeOfDay >= CurrentTime + 0.2		// Make sure we only get one outcome per feeding time 
+			TimeToFeedOrPunish = BH_TRUE
+		else
+			TimeToFeedOrPunish = BH_FALSE
+		end if
+
+		// Get the monks ready for feeding or fighting
+		if TimeToFeedOrPunish == BH_TRUE
+			say "Creating monks as it's feeding time."
+			wait until read
+			// Bring the monks out of the monastery
+			run script BH_CreateMonks
+
+			// Check to see if there is enough food to go around, if there is eat it otherwise, spaz out :)
+			if BH_AmountInFoodpile >= BH_AMOUNT_OF_FOOD_MONKS_EAT_PER_FEEDING
+				say "The monks have food to eat."
+				wait until read
+				// Make the monks eat
+				run script BH_SetupMonksEating
+			else
+				say "There is no food to eat for the monks. ATTACK..."
+				wait until read
+				// Make the monks attack the offending town
+				run script BH_MakeMonksAttackTown(TargetTown)
+			end if
+		end if
+	end loop
+
+end script BH_HandleMonkActions
+
+
+//-----------------------------------------------------------------------------
+//	Get the monks to eat
+//-----------------------------------------------------------------------------
+begin script BH_SetupMonksEating
+
+	SMarker				= 0
+	Seat				= 0
+	Angle				= 0
+	Counter				= 0
+	MonksNotEatingCount	= 0
+	MonksStillEating	= BH_TRUE
+
+start
+
+	// Get the seating positions for the monks and make then eat
+	while Counter < BH_AMOUNT_OF_MONKS
+		Seat = marker at get target from {SMarker} to {BH_FoodpilePos} distance 5 angle Angle
+		Angle += (360 / BH_AMOUNT_OF_MONKS)
+		run background script BH_FeedMonk(Counter, Seat)
+		Counter++
+	end while
+
+	// Check to see if all the monks have eaten
+	// They are deleted after eating so if there are any that still exist then there are monks eating
+	while MonksStillEating == BH_TRUE
+		// Reset the counters
+		Counter = 0
+		MonksNotEatingCount = 0
+
+		// Check to see how many monks are still eating depending on whether they are alive or not
+		while Counter < BH_AMOUNT_OF_MONKS
+			if not BH_Monk[Counter] exists or HEALTH of BH_Monk[Counter] <= 0
+				MonksNotEatingCount++
+			end if
+			Counter++
+		end while
+
+		// Have all the monks finished?
+		if MonksNotEatingCount == BH_AMOUNT_OF_MONKS
+			MonksStillEating = BH_FALSE
+		end if
+	end while
+
+end script BH_SetupMonksEating
+
+
+//-----------------------------------------------------------------------------
+//	Make each monk eat his food
+//-----------------------------------------------------------------------------
+begin script BH_FeedMonk(MonkID, Seat)
+start
+
+	// Move the monk to his seat and make him eat
+	move BH_Monk[MonkID] position to {Seat}
+	wait until {BH_Monk[MonkID]} near {Seat} radius 1 or not BH_Monk[MonkID] exists or HEALTH of BH_Monk[MonkID] <= 0
+
+	if BH_Monk[MonkID] exists and HEALTH of BH_Monk[MonkID] > 0
+		// Make the monk sit down and eat
+		set BH_Monk[MonkID] focus to {BH_FoodpilePos}
+		// Play sitting anim
+		play anim "a_p_sitting_down2_sitting_into" on BH_Monk[MonkID] 
+		wait until BH_Monk[MonkID] played
+
+		// Make him stay sitting for a while (should be using a sitting down eating anim)
+		play anim "a_p_sitting_down2_sitting" on BH_Monk[MonkID] loop 3
+
+		// Reduce amount of food eaten from food pile
+		remove resource RESOURCE_TYPE_FOOD BH_AMOUNT_FOOD_MONK_EATS_PER_MEAL from BH_Foodpile
+		wait until BH_Monk[MonkID] played
+
+		// Play getting up anim
+		play anim "a_p_sitting_down2_sitting_outof" on BH_Monk[MonkID] 
+		wait until BH_Monk[MonkID] played
+
+		// Send the monk back into the monastery, then get rid of him
+		move BH_Monk[MonkID] position to {BH_Monastery}
+		wait until {BH_Monk[MonkID]} near {BH_Monastery} radius 1 or not BH_Monk[MonkID] exists or HEALTH of BH_Monk[MonkID] <= 0
+		delete BH_Monk[MonkID]
+	end if
+	
+end script BH_FeedMonk
+
+
+//-----------------------------------------------------------------------------
+//	Get the current time of day
+//-----------------------------------------------------------------------------
+begin script BH_TrackTimeOfDay
+start
+
+	begin loop
+		// Store the game time
+		BH_TimeOfDay = get game time
+	end loop
+
+end script BH_TrackTimeOfDay
+
+
+//-----------------------------------------------------------------------------
+//	Keep track of the amount of food in the pile
+//-----------------------------------------------------------------------------
+begin script BH_UpdateAmountInFoodPile
+start
+
+	begin loop
+		BH_AmountInFoodpile = get resource RESOURCE_TYPE_FOOD in BH_Foodpile
+	end loop
+
+end script BH_UpdateAmountInFoodPile
+
+
+//-----------------------------------------------------------------------------
+//	Advisors warn the player that the feeding time is approaching or that monks are attacking
+//-----------------------------------------------------------------------------
+begin script BH_AlertPlayerOfPendingAttack
+
+	WeAreInTheWarningTimeZone		= BH_FALSE
+	GiveWarning						= BH_FALSE
+	WarningLevel					= 1
+	TimeLeftTillAttack				= 0
+	WarningTimer					= create timer for 0 seconds
+
+start
+
+	// Make sure the day has reset after clicking on the scroll to get the demands from the head monk
+	wait until BH_OkToWarnAboutGivingFood == BH_TRUE
+
+	// Keep checking for getting close to feeding time or alert the player to an impending attack
+	begin loop
+		// Warn the player about an imminent attack
+		if BH_MonksAttacking == BH_TRUE
+			begin dialogue
+//				eject good spirit
+				say "Oh no Leader. Those monks are on the way to teach us a lesson. We should have fed them."
+				wait until read
+//				eject evil spirit
+				say "EA: Cool boss. Don't worry goodie, we're gonna have some fun now."
+				wait until read
+//				send good spirit home
+//				send evil spirit home
+			end dialogue
+
+			// Only get one reminder per attack
+			wait until BH_MonksAttacking == BH_FALSE
+		end if
+
+
+		// Warn the player about approaching feeding time
+		if BH_TimeOfDay >= BH_CLOSE_TO_FEEDING_TIME and BH_TimeOfDay < BH_FEEDING_TIME
+			WeAreInTheWarningTimeZone = BH_TRUE
+		else
+			WeAreInTheWarningTimeZone = BH_FALSE
+		end if
+
+
+		if WeAreInTheWarningTimeZone == BH_TRUE and BH_MonksAttacking == BH_FALSE
+			if BH_AmountInFoodpile < BH_AMOUNT_OF_FOOD_MONKS_EAT_PER_FEEDING
+				TimeLeftTillAttack = BH_FEEDING_TIME - BH_TimeOfDay
+
+				// What level of warning should we give?
+				if TimeLeftTillAttack > 3 and TimeLeftTillAttack < 4 and WarningLevel == 1
+					set WarningTimer time to 0 seconds
+					GiveWarning = BH_TRUE
+				elsif TimeLeftTillAttack > 2 and TimeLeftTillAttack < 3 and WarningLevel == 2
+					set WarningTimer time to 0 seconds
+					GiveWarning = BH_TRUE
+				elsif TimeLeftTillAttack > 1 and TimeLeftTillAttack < 2 and WarningLevel == 3
+					set WarningTimer time to 0 seconds
+					GiveWarning = BH_TRUE
+				elsif TimeLeftTillAttack < 1
+					GiveWarning = BH_TRUE
+				end if
+
+				// Shall we give the player a warning?
+				if GiveWarning == BH_TRUE
+					if get WarningTimer time remaining <= 0
+						// We have not got enough food so warn the player
+						begin dialogue
+//							eject good spirit
+							say "GA: Leader, the monks feeding time is approaching and they don't have enough food. We'd better feed them."
+							wait until read
+//							eject evil spirit
+							say "EA: You're the boss here Boss. Let them starve, that'll teach them a lesson they'll never forget."
+							wait until read
+//							send good spirit home
+//							send evil spirit home
+						end dialogue
+
+						// Reset the timer and set the various flags
+						set WarningTimer time to 30 seconds
+						GiveWarning = BH_FALSE
+						WarningLevel++
+					end if
+				end if
+			end if
+		end if
+	end loop
+
+end script BH_AlertPlayerOfPendingAttack
+
+
+//-----------------------------------------------------------------------------
+//	Make the monks attack the specified town
+//-----------------------------------------------------------------------------
+begin script BH_MakeMonksAttackTown(Town)
+
+//	Monk[BH_AMOUNT_OF_MONKS]
+//	MonkTarget[BH_AMOUNT_OF_MONKS]
+
+//	Counter				= 0
+//	MonkFlock			= 0
+//	PunishmentFinished	= BH_FALSE
+//	TownSize			= size of Town
+
+	MonkArmy			= 0
+	StoragePit			= 0
+	MonkArmyPos			= 0
+
+start
+
+	BH_MonksAttacking = BH_TRUE
+
+	// Create the monks at the monastery as an army
+	MonkArmy = create platoon PLATOON_INFO_JAPANESE_MELEE_GRUNT at {BH_Monastery} with BH_AMOUNT_OF_MONKS men and 0 women
+	HEALTH of MonkArmy = 1
+	enable MonkArmy indestructible
+	disable MonkArmy set on fire
+
+	// Make the monks an enemy of the player or the Aztecs
+	set MonkArmy player 6
+	if BH_PlayerTakenAztecTown == BH_TRUE
+		// Make the monks an enemy of the player
+		set player 0 ENEMY to player 6
+	else
+		// Make the monks an enemy of the Aztecs
+		set player 1 ENEMY to player 6
+	end if
+
+	// Set the Aztec town as an enemy of the monks then move them to the town
+//	set MonkArmy punishment level to 0.1			// Set to 10%
+	SPEED of MonkArmy = 0.5
+	move MonkArmy position to {Town}
+//	wait for not MonkArmy exists or HEALTH of MonkArmy <= 0 or MonkArmy punishment level reached
+	wait until {MonkArmy} near {Town} radius 20// or size of MonkArmy <= 0
+
+say "Monks made destination. Should be twatting enemy here..."
+wait until read
+
+	// Send the monks home
+//	if size of MonkArmy > 0
+		wait 10 seconds								// TEMP: Give them a little time to attack the peeps
+		
+		// Make the monks take some food then go back to the monastery
+		StoragePit = get STORE at {Town} radius 200
+		if StoragePit exists
+			SPEED of MonkArmy = 0.5
+			move MonkArmy position to {StoragePit}
+			wait until {MonkArmy} near {StoragePit} radius 2// or size of MonkArmy <= 0
+			remove resource RESOURCE_TYPE_FOOD BH_AMOUNT_OF_FOOD_MONKS_EAT_PER_FEEDING from StoragePit
+say "Got food from storage pit"
+wait until read
+		end if
+
+		// Move to the monastery
+		SPEED of MonkArmy = 0.5
+		move MonkArmy position to {BH_FoodpilePos}
+
+say "Sending monks home to eat"
+wait until read
+
+		// Make sure the army has made it back to the monastery
+		wait until {MonkArmy} near {BH_FoodpilePos} radius 2// or size of MonkArmy <= 0
+
+		// Make the monks pile their food up and eat
+		MonkArmyPos = marker at {MonkArmy}
+		delete MonkArmy
+		run script BH_GetMonks(MonkArmyPos, 100)
+
+say "Monks arrived home, going to make then eat now."
+wait until read
+
+		// Make the monks eat
+		run script BH_SetupMonksEating
+//	end if
+
+say "Monks have finished eating and are back in monastery"
+wait until read
+
+	BH_MonksAttacking = BH_FALSE
+
+/*
+	// Create the monks at the monastery
+	MonkFlock = flock at {BH_Monastery}
+	set MonkFlock properties inner 5 outer 5
+
+	while Counter < BH_AMOUNT_OF_MONKS
+		Monk[Counter] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {BH_Monastery}
+		attach Monk[Counter] to MonkFlock
+		SPEED of Monk[Counter] = 0.5
+		state Monk[Counter] LIVING_MOVE_IN_FLOCK
+		enable Monk[Counter] indestructible
+		disable Monk[Counter] set on fire
+		Counter++
+	end while
+
+	// Move the monks to the town
+	move MonkFlock position to {Town}
+	wait until {MonkFlock} near {Town} radius 50 or not MonkFlock exists or size of MonkFlock <= 0
+
+	// Get the individual monks to find a target and attack it
+	if MonkFlock exists and size of MonkFlock > 0
+		while PunishmentFinished == BH_FALSE
+			// Get a target for the monks
+			Counter = 0
+			while Counter < BH_AMOUNT_OF_MONKS
+				// NOTE: Need a new function to get the nearest villager to the monk so he doesn't run miles to attack one
+				MonkTarget[Counter] = get VILLAGER at {Monk[Counter]} radius 100 excluding scripted
+				Counter++
+			end while
+
+			// Attack the target
+			Counter = 0
+			while Counter < BH_AMOUNT_OF_MONKS
+				// Make the monk attack the target
+				// Wait until the target is dead
+				Counter++
+			end while
+
+			// Have we punished them enough?
+
+		end while
+	end if
+*/
+
+end script BH_MakeMonksAttackTown
+
+
+//-----------------------------------------------------------------------------
+//	See if the player should get help from the monks when attacking the Greeks
+//-----------------------------------------------------------------------------
+begin script BH_CheckForHelpFromMonksAttackingGreeks
+
+	GreekTown		= get TOWN at {1464.743,6.121,1851.974} radius 100
+	Counter			= 0
+
+start
+
+	// Wait until the player is attacking the greeks then find out whether the monks should help or not
+
+
+	if MonkEldersDeadCount < 3
+		// There are enough elders still alive so get the monks to help
+		run script BH_CreateMonks
+	end if
+
+
+end script BH_CheckForHelpFromMonksAttackingGreeks
+
+
+//-----------------------------------------------------------------------------
+//	Create the monks and set up their flags
+//-----------------------------------------------------------------------------
+begin script BH_CreateMonks
+
+	Counter		= 0
+
+start
+
+	while Counter < BH_AMOUNT_OF_MONKS
+		BH_Monk[Counter] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {BH_Monastery}
+		HEALTH of BH_Monk[Counter] = 1
+		enable BH_Monk[Counter] indestructible
+		disable BH_Monk[Counter] pickup
+		disable BH_Monk[Counter] set on fire
+		Counter++
+	end while
+
+end script BH_CreateMonks
+
+
+//-----------------------------------------------------------------------------
+//	Get any monk type people within the radius
+//-----------------------------------------------------------------------------
+begin script BH_GetMonks(Pos, Radius)
+
+	Counter		= 0
+
+start
+
+	while Counter < BH_AMOUNT_OF_MONKS
+		BH_Monk[Counter] = get VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Pos} radius Radius excluding scripted
+		move BH_Monk[Counter] position to {BH_Monk[Counter]}
+		HEALTH of BH_Monk[Counter] = 1
+		enable BH_Monk[Counter] indestructible
+		disable BH_Monk[Counter] pickup
+		disable BH_Monk[Counter] set on fire
+		Counter++
+	end while
+
+end script BH_GetMonks
+
+
+//-----------------------------------------------------------------------------
+//	Delete the monks
+//-----------------------------------------------------------------------------
+begin script BH_DeleteMonks
+
+	Counter		= 0
+
+start
+
+	while Counter < BH_AMOUNT_OF_MONKS
+		if BH_Monk[Counter] exists
+			delete BH_Monk[Counter] with fade
+		end if
+		Counter++
+	end while
+
+end script BH_DeleteMonks
+
+//----------------------------------------------------------------------------
+begin script BH_MonksNowYourFriends
+
+1stRowMid = 0
+2ndRowMid = 0
+3rdRowMid = 0
+
+1stRow1Pos = 0
+1stRow2Pos = 0
+1stRow3Pos = 0
+1stRow4Pos = 0
+
+2ndRow1 = 0
+2ndRow2 = 0
+
+3rdRow1Pos = 0
+3rdRow2Pos = 0
+3rdRow3Pos = 0
+3rdRow4Pos = 0
+
+HeadMonk = 0
+MonkDemandPos = 0
+OtherMonks[12]
+Startheredudez=0
+
+RelCamPos=0
+RelCamFoc=0
+
+start
+
+begin cinema
+
+	RelCamPos=marker at get world position from BH_MonasteryBuilding to {-12.301,8.009,27.504}
+	RelCamFoc=marker at get world position from BH_MonasteryBuilding to {17.486,7.131,-8.669}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	Startheredudez = marker at {1688.282,47.992,1464.754}
+
+	HeadMonk = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	MonkDemandPos = marker at get world position from BH_MonasteryBuilding to {0.187,0.544,15.015}
+	OtherMonks[0] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[1] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[2] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[3] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[4] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[5] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[6] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[7] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[8] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[9] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+	OtherMonks[10] = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {Startheredudez}
+
+	move HeadMonk position to {MonkDemandPos}
+
+	wait until {HeadMonk} near {MonkDemandPos}
+	set camera lens 54.000
+	RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.185,1.661,15.645}
+	RelCamFoc=marker at get world position from BH_MonasteryBuilding to {0.076,-1.314,10.413}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	say "We appreciate the food you have been giving us"
+
+	1stRowMid = marker at get target from {Startheredudez} to {HeadMonk} distance 1 angle 180
+	2ndRowMid = marker at get target from {Startheredudez} to {HeadMonk} distance 2 angle 180
+	3rdRowMid = marker at get target from {Startheredudez} to {HeadMonk} distance 3 angle 180
+
+
+	1stRow1Pos = marker at get target from {HeadMonk} to {1stRowMid} distance 1.5 angle 90
+	1stRow2Pos = marker at get target from {HeadMonk} to {1stRowMid} distance 0.5 angle 90
+	1stRow3Pos = marker at get target from {HeadMonk} to {1stRowMid} distance 0.5 angle 270
+	1stRow4Pos = marker at get target from {HeadMonk} to {1stRowMid} distance 1.5 angle 270
+
+	2ndRow1 = marker at get target from {HeadMonk} to {2ndRowMid} distance 1 angle 90
+	2ndRow2 = marker at get target from {HeadMonk} to {2ndRowMid} distance 1 angle 270
+
+	3rdRow1Pos = marker at get target from {HeadMonk} to {3rdRowMid} distance 1.5 angle 90
+	3rdRow2Pos = marker at get target from {HeadMonk} to {3rdRowMid} distance 0.5 angle 90
+	3rdRow3Pos = marker at get target from {HeadMonk} to {3rdRowMid} distance 0.5 angle 270
+	3rdRow4Pos = marker at get target from {HeadMonk} to {3rdRowMid} distance 1.5 angle 270
+
+	move OtherMonks[0] position to {1stRow1Pos}
+	wait 1 second
+	move OtherMonks[1] position to {1stRow2Pos}
+	wait 1 second
+
+	move OtherMonks[2] position to {1stRow3Pos}
+	wait 1 second
+	say "We also appreciate you helping our elders"
+
+	move OtherMonks[3] position to {1stRow4Pos}
+	wait 1 second
+	move OtherMonks[4] position to {2ndRow1}
+	wait 1 second
+	RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.984,1.258,14.934}
+	RelCamFoc=marker at get world position from BH_MonasteryBuilding to {-1.824,-0.237,9.823}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	move OtherMonks[5] position to {2ndRowMid}
+	wait 1 second
+	say "So we will join you and help you kick Euronymous's ass"
+
+	move OtherMonks[6] position to {2ndRow2}
+	wait 1 second
+	move OtherMonks[7] position to {3rdRow1Pos}
+	wait 1 second
+	RelCamPos=marker at get world position from BH_MonasteryBuilding to {0.185,1.661,15.645}
+	RelCamFoc=marker at get world position from BH_MonasteryBuilding to {0.076,-1.314,10.413}
+	set camera position to {RelCamPos}
+	set camera focus to {RelCamFoc}
+	move OtherMonks[8] position to {3rdRow2Pos}
+	wait 1 second
+	move OtherMonks[9] position to {3rdRow3Pos}
+	wait 1 second
+	move OtherMonks[10] position to {3rdRow4Pos}
+
+	wait 100 seconds
+
+end cinema
+
+end script BH_MonksNowYourFriends
+
+
+//----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------
+
+
+
+
+// <TEMP>
+begin script BH_AdvanceTime
+start
+
+	begin loop
+		if BH_MonasteryBuilding right clicked
+			clear right clicked object
+			// Add an hour to the game time
+			BH_TimeOfDay += 0.5
+			set game time BH_TimeOfDay
+			wait 0.1 second
+		end if
+	end loop
+
+end script BH_AdvanceTime
+// </TEMP>

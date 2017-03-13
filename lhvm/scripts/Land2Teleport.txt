@@ -1,0 +1,144 @@
+//==============================================================
+// Land 2 Telport
+// Matt.L
+//==============================================================
+
+//-------------------------------------------------------------------------
+// Constants
+//-------------------------------------------------------------------------
+define LT_MAX_VILLAGERS = 20
+define LT_RADIUS = 5
+
+//-------------------------------------------------------------------------
+// Script Defines
+//-------------------------------------------------------------------------
+//Defunct
+//define script LT_Villager(Position, Object)
+//define script LT_AddNonFunctionalGroup(Start, End, Amount)
+
+//New
+define script LT_TeleportDude(Me, Pos)
+
+//-------------------------------------------------------------------------
+// Land 2 Teleport
+//-------------------------------------------------------------------------
+begin script Land2Teleport
+start
+	//run background script LT_AddNonFunctionalGroup(marker at {1202.082, 80.967, 524.350}, marker at {1137.196, 83.965, 555.240}, 10)
+end script Land2Teleport
+
+////-------------------------------------------------------------------------
+//// Villager Control
+////-------------------------------------------------------------------------
+//begin script LT_Villager(Position, Object)
+//	Me = 0
+//	TeleportPos = marker at {680.902, 43.460, 437.648}
+//	MyFade = 1
+//	TeleportFX = 0
+//	Type = 0
+//	MySpeed = 0
+//start
+//
+//	if Object == -1
+//		Type = number from 0 to 1
+//
+//		if Type == 0
+//			Me = create VILLAGER GREEK_FARMER at {Position}
+//			MySpeed = 0.48
+//		elsif Type == 1
+//			Me = create VILLAGER GREEK_HOUSEWIFE at {Position}
+//			MySpeed = 0.4
+//		end if
+//	else
+//		Me = Object
+//		play string sound "SCRIPT16_REWARDSTING"
+//	end if
+//
+//	disable Me reactable
+//
+//	move Me position to {TeleportPos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+//	SPEED of Me = MySpeed
+//	wait until {Me} near {TeleportPos} radius 5
+//
+//	TeleportFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on Me time -1 
+//	set TeleportFX colour red 0 green 0 blue 255
+//	begin loop
+//		set Me alpha MyFade
+//		MyFade-=0.05
+//	until MyFade <= 0
+//	end loop
+//
+//	set TeleportFX colour red 255 green 0 blue 0
+//	wait 0.2 seconds
+//	delete Me
+//end script LT_Villager
+//
+////-------------------------------------------------------------------------
+//// Add Non-functional group
+////-------------------------------------------------------------------------
+//begin script LT_AddNonFunctionalGroup(Start, End, Amount)
+//	Runners[LT_MAX_VILLAGERS]
+//	Looper = 0
+//	Position = 0
+//	Type = 0
+//start
+//
+//	while Looper < Amount
+//		if Amount >= LT_MAX_VILLAGERS
+//			Amount = (LT_MAX_VILLAGERS-1)
+//		end if
+//
+//		Position = marker at {Start} + {number from -(LT_RADIUS) to LT_RADIUS, 0, number from -(LT_RADIUS) to LT_RADIUS}
+//
+//		Type = number from 0 to 1
+//		if Type == 0
+//			Runners[Looper] = create VILLAGER GREEK_FARMER at {Position}
+//		elsif Type == 1
+//			Runners[Looper] = create VILLAGER GREEK_HOUSEWIFE at {Position}
+//		end if
+//
+//		move Runners[Looper] position to {End}
+//		SPEED of Runners[Looper] = 0.4
+//		
+//		Looper++
+//	end while
+//
+//	wait 25 seconds
+//
+//	Looper = 0
+//	while Looper < Amount
+//		delete Runners[Looper]
+//		Looper++
+//	end while
+//
+//end script LT_AddNonFunctionalGroup
+
+//-------------------------------------------------------------------------
+// Teleport Dude
+//-------------------------------------------------------------------------
+begin script LT_TeleportDude(Me, Pos)
+	FX			= 0
+	TempWeather	= 0
+start
+
+TempWeather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {Pos} + {0, 100, 0}
+	set cloud for TempWeather above {Pos} + {0, 100, 0}
+	set cloud generation 4
+	set TempWeather properties rainfall 0 snowfall 0 overcast 0.7
+
+	play string sound "REWARD13"
+
+	if not {Me} near {Pos} radius 15
+		move Me position to {Pos}
+
+		FX = create visual effect VISUAL_EFFECT_TELEPORTER_PEOPLE on Me time -1// target {Pos}
+
+		wait until {Me} near {Pos} radius 2
+	end if
+
+	set lightning strike at {Pos} from TempWeather scale 0.3
+	delete Me
+	play string sound "SCRIPT29_PORTHOLE"
+	play string sound "SCRIPT29_PORTHOLELIGHTNING"
+
+end script LT_TeleportDude

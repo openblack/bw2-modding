@@ -1,0 +1,9 @@
+run script RunLand10SmokeSignals
+
+begin script RunLand10SmokeSignals
+
+start
+
+	run script Land10SmokeSignals
+
+end script RunLand10SmokeSignals

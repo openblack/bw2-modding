@@ -1,0 +1,33 @@
+run script LandStressConrol
+
+begin script LandStressConrol
+PlayerCreature = 0
+EnemyCreature = 0
+
+GreekTown = 0
+JapaneseTown = 0
+AztecTown = 0
+start
+	PlayerCreature = create CREATURE CREATURE_TYPE_APE at {672.347, 60.063, 687.012}
+	EnemyCreature = create CREATURE CREATURE_TYPE_LION at {1001.482, 289.125, 2438.541}
+	
+	set player 1 creature to PlayerCreature
+	set player 2 creature to EnemyCreature
+	
+	SCALE of PlayerCreature = 1
+	SCALE of EnemyCreature = 1
+	
+	release PlayerCreature
+	release EnemyCreature
+	
+	GreekTown = get TOWN at {672.347, 60.063, 687.012} radius 50
+	JapaneseTown = get TOWN at {950.365, 74.185, 1444.320} radius 50
+	AztecTown = get TOWN at {1001.482, 289.125, 2438.541} radius 50
+	
+	set player 0 alignment 1
+	set player 1 alignment -1
+	set player 2 alignment 0
+
+	wait 5000 seconds
+	//Create the 20 actors...
+end script LandStressConrol

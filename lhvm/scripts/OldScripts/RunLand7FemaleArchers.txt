@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Female Archers script
+//-----------------------------------------------------------------------------
+run script RunLand7FemaleArchers
+
+begin script RunLand7FemaleArchers
+
+start
+
+	run script Land7FemaleArchers
+
+end script RunLand7FemaleArchers

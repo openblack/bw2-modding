@@ -1,0 +1,6 @@
+run script RunLand10Women
+
+begin script RunLand10Women
+start
+	run script Land10Women
+end script RunLand10Women

@@ -1,0 +1,30 @@
+//------------------------------------------------
+//  LAND 4 JAPANESE CREATURE AI
+//------------------------------------------------
+
+begin script L4JCAI
+
+CreatePos = marker at {643.847,31.600,1321.442}
+
+start
+
+	//commented out cos it was triggering before intro in LandControl : Ken
+	//say "running Jap creature AI"
+	//wait until read
+
+	L4JCAI_JapCreature = create CREATURE CREATURE_TYPE_APE at {CreatePos}
+	SCALE of L4JCAI_JapCreature = 1.0
+
+	
+
+	release L4JCAI_JapCreature
+
+	begin loop
+		///if the capital is running low on resources, ferry them from outpost1????
+		//have the creature wade out to the gong and bang it at the right times?
+		if L4JapaneseBattleground == 1
+			//make the creature organise the Japanese armies
+			//when the army is in position be sure to reset the JapaneseBattleground to 2
+		end if
+	end loop
+end script L4JCAI

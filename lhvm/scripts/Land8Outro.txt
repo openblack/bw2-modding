@@ -1,0 +1,67 @@
+begin script Land8Outro
+JapaneseL = 0
+JapaneseR = 0
+start
+
+	JapaneseL = create VILLAGER VILLAGER_INFO_TARANAGA at {1368.774, 370.212, 1998.744}
+	JapaneseR = create VILLAGER VILLAGER_INFO_HIROKU at {1367.513, 370.241, 1998.609}
+	
+	set JapaneseL focus to {1346.012, 136.192, 1168.730}
+	set JapaneseR focus to {1346.012, 136.192, 1168.730}
+	play anim "a_p_chatting_paired01_a" on JapaneseL loop -1
+	play anim "a_p_talk2_male" on JapaneseR loop -1
+	
+	
+	
+	begin cinema
+		//AGC: Moved fade out & wait inside the cinema block
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		start music "cut_scene_sad_34s_01" loop 100
+		wait 2 seconds
+		
+	
+		
+		reset camera path
+		queue camera move with position {1363.922, 374.267, 1988.515} focus {1420.197, 341.265, 2064.308} time 0.0
+		queue camera move with position {1361.937, 374.793, 1984.338} focus {1418.199, 341.779, 2060.132} time 14.0
+		
+			queue camera move with position {785.488, 357.202, 1205.112} focus {840.877, 337.240, 1285.947} time 9.0
+		
+		queue camera move with position {650.272, 563.383, 488.249} focus {703.732, 527.872, 564.940} time 9.0
+		
+			queue camera move with position {1171.682, 294.855, 563.100} focus {1256.704, 277.246, 612.722} time 7.0
+		queue camera move with position {1715.248, 333.406, 765.381} focus {1798.085, 293.342, 804.529} time 9.0
+		play camera path with easein 20 easeout 8 method SCRIPT_CAMERAPATH_EQUALDISTANCE	
+		set fade in time 2
+		
+		
+		
+		wait 2 seconds
+		//Gen of city:The Greeks beat the Norse and then they humbled us. Come the final battle we must support them.		
+		say "BW2T_SCRIPT_08FINAL_PDM_ENDLAND_10"
+		wait until read
+		//Gen of War:Agreed. Even the Teachings of War were no help against these Greeks. They are surely worthy of our respect.		
+		say "BW2T_SCRIPT_08FINAL_PDM_ENDLAND_20"
+		wait until read
+		//Gen of War:But to defeat the Aztecs they will need guile and cunning.		
+		say "BW2T_SCRIPT_08FINAL_PDM_ENDLAND_30"
+		wait until read
+		//Gen of War:They can stop the Aztec Epic Miracles if they are clever.		
+		say "BW2T_SCRIPT_08FINAL_PDM_ENDLAND_40"
+		wait until read
+		//Gen of War:To do this the Greeks must cross the dead deserts to the Aztec sacrificial lands.		
+		say "BW2T_SCRIPT_08FINAL_PDM_ENDLAND_50"
+		wait until read
+		
+		eject evil spirit
+		say "BW2T_SCRIPT_08FINAL_ADVISORS_OUTRO_20"
+		wait until read
+		send evil spirit home
+		
+		wait until camera ready
+		stop music with fadetime 5
+	end cinema
+
+end script Land8Outro

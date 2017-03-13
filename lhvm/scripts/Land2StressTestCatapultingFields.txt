@@ -1,0 +1,629 @@
+//==============================================================
+// Land 2 Catapulting Fields
+// Matt.L
+//==============================================================
+
+//-------------------------------------------------------------------------
+// Constants
+//-------------------------------------------------------------------------
+define CF_FALSE = 0
+define CF_TRUE = 1
+
+define CF_MAX_RESCUE_VILLAGERS = 15
+
+define CF_CHAOS_NUM_MEN = 50
+
+define CF_ADVISORS_CATAPULTS = 0
+define CF_ADVISORS_CATAPULT_INITIAL_ENCOURAGEMENT = 1
+define CF_ADVISORS_CATAPULT_ENCOURAGEMENT_AFTER_ONE_HIT = 2
+define CF_ADVISORS_CATAPULT_ENCOURAGEMENT_AFTER_CLOSE_MISS = 2
+define CF_ADVISORS_VILLAGERS_BY_WALL_ALERT = 3
+define CF_ADVISORS_VILLAGERS_BY_WALL_PICKUP = 4
+define CF_ADVISORS_VILLAGERS_BY_WALL_PUTDOWN = 5
+define CF_ADVISORS_RING_OF_FIRE = 6
+define CF_ADVISORS_SMASHWALL = 9
+define CF_ADVISORS_SMASHWALLURGENT = 10
+define CF_ADVISORS_SMASHWALLSUCCESS = 11
+define CF_ADVISORS_VOLCANO_TWO = 12
+
+define CF_ADVISORS_NONE = 99
+
+define CF_VILLAGES_TO_RESCUE = 5
+
+//-------------------------------------------------------------------------
+// Globals
+//-------------------------------------------------------------------------
+global CF_Farmers[30]
+global CF_CatapultRun = CF_FALSE
+global CF_Stage = 0
+
+global CF_RescuePos = 0
+
+global CF_CurrentAdvisorID = CF_ADVISORS_NONE
+
+global CF_WallVillagersSaved = 0
+global CF_GatehouseCameraTrigger = 0
+
+global CF_WallVillagerSayPickup = CF_TRUE
+global CF_WallVillagerSayPutDown = CF_TRUE
+
+//-------------------------------------------------------------------------
+// Script defines
+//-------------------------------------------------------------------------
+define script CF_FarmerVillagers
+define script CF_FarmerArcherGroup(Position)
+define script CF_CatapultControl(Position, WallFirePos, GranaryFire)
+define script CF_Camera
+define script CF_RescueVillagers
+define script CF_WallVillager
+define script CF_PlatoonRace
+define script CF_Advisors(ID)
+define script CF_BreakHouse
+define script CF_BreakWindmill
+
+//-------------------------------------------------------------------------
+// Land 2 Catapulting Fields
+//-------------------------------------------------------------------------
+begin script Land2CatapultingFields	
+start
+
+	run background script CF_CatapultControl(marker at {1575.094, 127.967, 1856.596}, marker at {1735.736, 110.967, 1775.620}, CF_TRUE)
+	run background script CF_CatapultControl(marker at {1560.632, 129.589, 1843.384}, marker at {1735.736, 110.967, 1775.620}, CF_FALSE)
+	run background script CF_CatapultControl(marker at {1562.740, 131.154, 1821.006}, marker at {1735.736, 110.967, 1775.620}, CF_FALSE)
+
+	run background script CF_FarmerArcherGroup(marker at {1528.873, 129.285, 1884.062})
+	run background script CF_FarmerArcherGroup(marker at {1533.405, 130.087, 1855.327})
+	run background script CF_FarmerArcherGroup(marker at {1533.405, 130.087, 1855.327})
+
+	run background script CF_FarmerVillagers
+
+
+	run script CF_Camera
+
+end script Land2CatapultingFields
+
+//-------------------------------------------------------------------------
+// Camera
+//-------------------------------------------------------------------------
+begin script CF_Camera
+start
+
+	run background script Land2RingOfFire
+	run background script Land2AztecWall
+	start music "cut_scene_battle_02 " loop 2
+
+	begin interactive camera
+    
+		//wait 10 seconds
+
+		run background script CF_Advisors(CF_ADVISORS_CATAPULTS)		
+
+		move camera position to {1675.627, 151.583, 1797.298} time 8 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1608.012, 100.057, 1849.959} time 8 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1636.290, 143.251, 1825.150} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1544.908, 111.612, 1850.589} time 4 catmullrom bias  0.0 tension 0.0
+
+		wait 8 seconds
+		run background script CF_BreakWindmill
+		wait 10 seconds
+
+		//wait until player has smashed catapults
+		InCameraRollMode = 0
+		//TEMP
+		wait 10 seconds
+		//TEMP
+		InCameraRollMode = 1
+
+		////////////////////////////////////////////////////////////////////////////////////////////
+		//out field
+
+		run background script CF_Advisors(CF_ADVISORS_VILLAGERS_BY_WALL_ALERT)
+
+		run background script Land2AudioDistantExplosions(5)
+
+		CF_Stage = 1
+
+		run background script Land2AudioDistantScreams(3)
+		run background script CF_RescueVillagers
+
+		move camera position to {1623.096, 138.361, 1826.247} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1694.153, 126.133, 1756.960} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1813.487, 115.944, 1784.718} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1853.490, 103.199, 1693.958} time 4 catmullrom bias  0.0 tension 0.0
+
+		//Explosion here
+		run background script CF_BreakHouse
+		wait 3 seconds
+
+		run background script Land2AudioDistantExplosions(5)
+		wait 5 seconds
+
+		move camera position to {1808.094, 126.283, 1714.534} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1722.938, 86.749, 1680.098} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1819.742, 136.308, 1705.469} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1739.835, 89.554, 1667.664} time 4 catmullrom bias  0.0 tension 0.0
+
+		wait 8 seconds
+		InCameraRollMode = 0
+		wait until CF_GatehouseCameraTrigger == 1
+
+		InCameraRollMode = 1
+
+		move camera position to {1740.312, 131.027, 1704.577} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1721.159, 123.593, 1606.714} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1664.611, 151.913, 1609.313} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1570.250, 159.336, 1577.037} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1613.938, 153.291, 1610.866} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1515.146, 141.192, 1601.137} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1594.518, 168.658, 1624.935} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1580.456, 103.934, 1550.020} time 4 catmullrom bias  0.0 tension 0.0
+
+		move camera position to {1584.810, 164.929, 1609.587} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1652.791, 99.312, 1576.823} time 4 catmullrom bias  0.0 tension 0.0
+
+		wait 7 seconds
+		RF_RunRing = 1	
+		wait 1 seconds		
+
+		
+		wait 1.5 seconds
+
+		//run the ring of fire
+		run background script CF_Advisors(CF_ADVISORS_RING_OF_FIRE)
+		//run background script CF_PlatoonRace
+
+		wait 2.5 seconds
+
+		run background script Land2AudioDistantScreams(3)
+
+		
+
+		wait 8 seconds
+		InCameraRollMode = 0
+		
+		wait until RF_MoveCameraToShowRescuePos == 1
+
+		InCameraRollMode = 1
+
+		//walls		
+
+		//Move to the wall
+		run background script CF_Advisors(CF_ADVISORS_SMASHWALL)
+
+		move camera position to {1610.106, 164.060, 1650.700} time 4 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1613.720, 98.333, 1725.981} time 4 catmullrom bias  0.0 tension 0.0
+
+		wait 4 seconds
+
+		InCameraRollMode = 0
+		//wait until you've smashed th wall
+		//TEMP
+		wait 16 seconds
+		//TEMP	
+		InCameraRollMode = 1
+		shake camera strength 8.0	
+
+		//Explode the second volcano
+		run background script Land2Volcano(marker at {1728.982, 109.584, 1806.910})	
+
+
+		CF_Stage = 2
+		L2Events = 2	
+
+		
+	end interactive camera
+	
+
+end script CF_Camera
+
+//-------------------------------------------------------------------------
+// Land 2 Catapulting Fields
+//-------------------------------------------------------------------------
+begin script CF_FarmerVillagers
+	CreatePos = marker at {1651.156, 118.712, 1824.774}
+	VillagerLoop = 0
+start
+
+	force while VillagerLoop < 30
+		CF_Farmers[VillagerLoop] = create VILLAGER GREEK_FARMER at {CreatePos} + {number from -20 to 20, 0, number from -20 to 20}
+		disable CF_Farmers[VillagerLoop] reactable
+		move CF_Farmers[VillagerLoop] position to {CreatePos} + {number from -20 to 20, 0, number from -20 to 20}
+		SPEED of CF_Farmers[VillagerLoop] = 0.4
+		VillagerLoop++
+	end while
+
+	while CF_CatapultRun == CF_FALSE and L2Events < 1
+		VillagerLoop = 0
+		while VillagerLoop < 30
+			if not CF_Farmers[VillagerLoop] is DEAD
+				move CF_Farmers[VillagerLoop] position to {CreatePos} + {number from -20 to 20, 0, number from -20 to 20}
+				SPEED of CF_Farmers[VillagerLoop] = 0.4
+				VillagerLoop++
+			end if
+		end while
+	end while
+
+	VillagerLoop = 0
+	while VillagerLoop < 30
+		HEALTH of CF_Farmers[VillagerLoop] = 0
+		VillagerLoop++
+	end while
+
+end script CF_FarmerVillagers
+
+//-------------------------------------------------------------------------
+// Land 2 Catapult Control
+//-------------------------------------------------------------------------
+begin script CF_CatapultControl(Position, WallFirePos, GranaryFire)
+	Catapult = 0
+	Target = 0
+	Building = 0
+	WallSeg = 0
+	GreekTown = 0
+	WallPos1 = marker at {1710.853, 124.258, 1686.621}
+	WallPos2 = marker at {1684.259, 129.605, 1694.209}
+	Granary = 0
+
+	AttackPos = marker at {1649.427, 119.170, 1823.967}
+start
+
+	GreekTown = get TOWN at {2015.536, 99.536, 897.742} radius 60
+	Granary = get HOUSE at {1642.650, 124.151, 1793.890}
+
+	Catapult = create siege weapon CATAPULT_1 belonging to GreekTown at {Position} 
+	ANGLE of Catapult = -90
+
+	begin loop
+		clear siege weapon Catapult action queue
+		if GranaryFire == CF_FALSE		
+			Target = CF_Farmers[number from 0 to 29]
+			add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {AttackPos} to siege weapon Catapult action queue
+		else		
+			add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using Granary to siege weapon Catapult action queue
+		end if
+		wait 10 seconds
+	until CF_Stage >= 1
+	end loop
+
+	begin loop
+
+		//Get building and clear siege weapon action queue
+		Building = get HOUSE at {1786.597, 109.981, 1767.559} radius 30
+		clear siege weapon Catapult action queue
+
+		//attack building if it exists
+		if Building exists
+			add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using Building to siege weapon Catapult action queue
+			wait 15 seconds
+		end if
+
+	until not Building exists or CF_Stage >= 2
+	end loop
+
+	delete Catapult
+	Catapult = create siege weapon CATAPULT_1 belonging to GreekTown at {WallFirePos} 
+	//set Catapult position to {WallFirePos}
+ 
+	//Now fire at the walls
+	begin loop
+
+		clear siege weapon Catapult action queue
+
+		if number from 1 to 2 == 1
+			WallSeg = get wall segment nearest {WallPos1} radius 15
+		else
+			WallSeg = get wall segment nearest {WallPos2} radius 15
+		end if
+
+		add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using WallSeg to siege weapon Catapult action queue
+		wait 15 seconds
+
+	until CF_Stage >= 3 or not WallSeg exists or L2Events >= 1
+	end loop
+
+	wait 5 seconds
+
+	delete Catapult
+
+end script CF_CatapultControl
+
+//-------------------------------------------------------------------------
+// Farmer archers
+//-------------------------------------------------------------------------
+begin script CF_FarmerArcherGroup(Position)
+	ArcherGroup = 0
+	Target = 0
+start
+
+	ArcherGroup = create platoon PLATOON_INFO_AZTEC_RANGED_8 at {Position} with 25 men and 0 women
+	PLAYER of ArcherGroup = 1
+
+	begin loop
+		clear ArcherGroup action queue
+		Target = CF_Farmers[number from 0 to 29]
+		add action PLATOON_AGENDA_ACTION_ATTACK using Target to front of ArcherGroup action queue
+		wait until not Target exists
+	until CF_Stage == 2
+	end loop
+
+	delete ArcherGroup
+
+end script CF_FarmerArcherGroup
+
+//-------------------------------------------------------------------------
+// Rescue Villagers
+//-------------------------------------------------------------------------
+begin script CF_RescueVillagers
+	SafeHighlightFX = 0
+	PlatoonCreate = marker at {1838.077, 102.452, 1801.510}
+	PlatoonMovePos = marker at {1816.935, 108.800, 1732.720}
+	Attackers = 0
+	Target = 0
+	VilagerLoop = 0
+	AttackPos = marker at {1793.315, 116.403, 1700.669}
+start
+
+	CF_RescuePos = marker at {1794.203, 118.000, 1669.310}
+	SafeHighlightFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 at {CF_RescuePos} time 30
+	set SafeHighlightFX colour red 0 green 255 blue 0
+
+	Attackers = create platoon PLATOON_INFO_AZTEC_MELEE_8 at {PlatoonCreate} with 50 men and 0 women
+	PLAYER of Attackers = 1
+
+	VilagerLoop = 0
+	while VilagerLoop < CF_MAX_RESCUE_VILLAGERS
+		run background script CF_WallVillager
+		VilagerLoop++
+	end while
+
+	move Attackers position to {AttackPos}
+
+end script CF_RescueVillagers
+
+//-------------------------------------------------------------------------
+// Land 2 Catapulting Fields
+//-------------------------------------------------------------------------
+begin script CF_WallVillager
+	CreatePos = marker at {1788.807, 116.389, 1703.362}
+	VillagerLoop = 0
+	Me = 0
+	Quitter = 0
+	SayStuff = CF_FALSE
+start
+
+	if number from 1 to 2 == 1	
+		Me = create VILLAGER GREEK_FARMER at {CreatePos} + {number from -10 to 10, 0, number from -10 to 10}
+	else
+		Me = create VILLAGER GREEK_HOUSEWIFE at {CreatePos} + {number from -10 to 10, 0, number from -10 to 10}
+	end if
+
+	attach Me to L2GreekTown
+	disable Me reactable
+
+	begin loop
+		//If I'm held then check to see where I land.. have I been saved?
+		if Me is HELD
+			wait until not Me is HELD
+			if CF_WallVillagerSayPickup == CF_TRUE
+				CF_WallVillagerSayPickup = CF_FALSE
+				run background script CF_Advisors(CF_ADVISORS_VILLAGERS_BY_WALL_PICKUP)
+			end if
+
+			if {Me} near {CF_RescuePos} radius 10
+				if CF_WallVillagerSayPutDown == CF_TRUE
+					run background script CF_Advisors(CF_ADVISORS_VILLAGERS_BY_WALL_PUTDOWN)
+					CF_WallVillagerSayPutDown = CF_FALSE
+				end if
+				run background script LT_Villager(-1, Me)
+				Quitter = 1
+			end if
+		end if
+
+		//If I'm not navigating then move me somewhere
+		if variable get Me navigation state != variable NAV_STATE_NAVIGATING
+			move Me position to {CreatePos} + {number from -20 to 20, 0, number from -20 to 20} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+			SPEED of Me = 0.4
+		end if
+
+	until Quitter == 1 or L2Events >= 1 or HEALTH of Me <= 0
+	end loop
+
+	CF_WallVillagersSaved++
+
+	//This name is mis-leading.. this will also trigger if this many people die in the script
+	if CF_WallVillagersSaved >= CF_VILLAGES_TO_RESCUE
+		CF_GatehouseCameraTrigger = 1
+	end if
+
+	HEALTH of Me = 0
+
+end script CF_WallVillager
+
+//-------------------------------------------------------------------------
+// Platoon race
+//-------------------------------------------------------------------------
+begin script CF_PlatoonRace
+	ChaosPlatoon[10]
+	ChaosPos[10]
+	CreateLoop = 0
+start
+
+	ChaosPos[0] = marker at {1604.367, 133.052, 1783.344}
+	ChaosPos[1] = marker at {1665.201, 122.583, 1754.083}
+	ChaosPos[2] = marker at {1747.759, 116.598, 1732.300}
+	ChaosPos[3] = marker at {1547.005, 137.262, 1761.299}
+	ChaosPos[4] = marker at {1774.167, 117.029, 1692.083}
+	ChaosPos[5] = marker at {1572.873, 150.845, 1556.855}
+	ChaosPos[6] = marker at {1616.739, 150.282, 1581.156}
+	ChaosPos[7] = marker at {1659.435, 153.746, 1557.063}
+	ChaosPos[8] = marker at {1585.632, 153.464, 1512.421}
+	ChaosPos[9] = marker at {1667.450, 157.087, 1500.669}
+
+	force while CreateLoop < 10
+		if CreateLoop < 2
+			ChaosPlatoon[CreateLoop] = create platoon PLATOON_INFO_AZTEC_MELEE_8 at {ChaosPos[CreateLoop]} with CF_CHAOS_NUM_MEN men and 0 women
+			PLAYER of ChaosPlatoon[CreateLoop] = 1
+		elsif CreateLoop >=2 and CreateLoop < 5
+			ChaosPlatoon[CreateLoop] = create platoon PLATOON_INFO_AZTEC_RANGED_8 at {ChaosPos[CreateLoop]} with CF_CHAOS_NUM_MEN men and 0 women
+			PLAYER of ChaosPlatoon[CreateLoop] = 1
+		elsif CreateLoop >= 5 and CreateLoop < 7
+			ChaosPlatoon[CreateLoop] = create platoon PLATOON_INFO_GREEK_MELEE_8 at {ChaosPos[CreateLoop]} with CF_CHAOS_NUM_MEN men and 0 women
+			PLAYER of ChaosPlatoon[CreateLoop] = 0
+		else
+			ChaosPlatoon[CreateLoop] = create platoon PLATOON_INFO_GREEK_RANGED_8 at {ChaosPos[CreateLoop]} with CF_CHAOS_NUM_MEN men and 0 women
+			PLAYER of ChaosPlatoon[CreateLoop] = 0
+		end if		
+
+		//Attack in area
+
+		CreateLoop++
+	end while
+
+	wait until L2Events >= 1
+
+	CreateLoop = 0
+	force while CreateLoop < 10
+		delete ChaosPlatoon[CreateLoop]
+		CreateLoop++
+	end while
+
+end script CF_PlatoonRace
+
+//-------------------------------------------------------------------------
+// Platoon race
+//-------------------------------------------------------------------------
+begin script CF_Advisors(ID)
+	SetFlag = CF_FALSE
+start
+
+	CF_CurrentAdvisorID = ID
+	SetFlag = CF_TRUE
+
+	begin known cinema
+
+		if ID == CF_ADVISORS_CATAPULTS
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_10"
+			wait until read
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_20"
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_FIELDS_30"
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_FIELDS_40"
+			wait until read
+
+
+		elsif ID == CF_ADVISORS_CATAPULT_INITIAL_ENCOURAGEMENT
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_50"
+			wait until read
+
+		elsif ID == CF_ADVISORS_CATAPULT_ENCOURAGEMENT_AFTER_ONE_HIT
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_60"
+			wait until read
+
+		elsif ID == CF_ADVISORS_CATAPULT_ENCOURAGEMENT_AFTER_CLOSE_MISS
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_70"
+			wait until read
+
+		elsif ID == CF_ADVISORS_VILLAGERS_BY_WALL_ALERT
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_80"
+			wait until read
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_90"
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_FIELDS_100"
+			wait until read
+
+		elsif ID == CF_ADVISORS_VILLAGERS_BY_WALL_PICKUP
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_110"
+			wait until read
+
+		elsif ID == CF_ADVISORS_VILLAGERS_BY_WALL_PUTDOWN
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_120"
+			wait until read
+
+		elsif ID == CF_ADVISORS_RING_OF_FIRE
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_130"
+			wait until read
+
+		elsif ID == CF_ADVISORS_SMASHWALL
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_160"
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_FIELDS_170"
+			wait until read
+			say "BW2T_SCRIPT_02FINAL_FIELDS_180"
+			wait until read
+
+		elsif ID == CF_ADVISORS_SMASHWALLURGENT
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_200"
+			wait until read
+
+		elsif ID == CF_ADVISORS_SMASHWALLSUCCESS
+			eject evil spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_210"
+			wait until read
+
+		elsif ID == CF_ADVISORS_VOLCANO_TWO
+			eject good spirit
+			say "BW2T_SCRIPT_02FINAL_FIELDS_220"
+			wait until read
+
+		end if	
+
+		send good spirit home
+		send evil spirit home
+	end known cinema
+	
+
+until CF_CurrentAdvisorID != ID and SetFlag == CF_TRUE
+end script CF_Advisors
+
+//-------------------------------------------------------------------------
+// Break House
+//-------------------------------------------------------------------------
+begin script CF_BreakHouse
+	RockCreate = marker at {1788.508, 109.409, 1780.870}
+	CrashPos = marker at {1770.542, 110.389, 1760.764}
+	MyRock = 0
+	House = 0
+start
+	
+	House = get HOUSE at {1771.029, 110.408, 1762.678}
+	MyRock = create ROCK_OBJECT ROUND_ROCK_LARGE at {RockCreate}
+	ALTITUDE of MyRock = 30
+
+	set MyRock velocity heading {CrashPos} speed 35
+
+end script CF_BreakHouse
+
+//-------------------------------------------------------------------------
+// Break Windmill
+//-------------------------------------------------------------------------
+begin script CF_BreakWindmill
+	RockCreate = marker at {1631.286, 140.000, 1804.118}
+	CrashPos = marker at {1646.068, 124.367, 1791.383}
+	MyRock = 0
+start
+
+	MyRock = create ROCK_OBJECT ROUND_ROCK_LARGE at {RockCreate}
+	ALTITUDE of MyRock = 30
+
+	set MyRock velocity heading {CrashPos} speed 35
+
+end script CF_BreakWindmill

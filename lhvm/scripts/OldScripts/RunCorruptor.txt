@@ -1,0 +1,21 @@
+//-----------------------------------------------------------------------------
+run script RunCorruptor
+//-----------------------------------------------------------------------------
+begin script RunCorruptor
+
+CamPos = marker at {1395.224,12.860,1315.209}
+CamFoc = marker at {1390.224,5.360,1310.209}
+
+start
+
+	// Setup the camera position
+	begin cinema
+		set camera position to {CamPos}
+		set camera focus to {CamFoc}
+	end cinema
+
+	run script Corruptor
+	
+end script RunCorruptor
+
+//-----------------------------------------------------------------------------

@@ -1,0 +1,11 @@
+run script RunLand2CatapultingFields
+
+begin script RunLand2CatapultingFields
+	Gatehouse		= 0
+start
+	Gatehouse = get HOUSE GATEHOUSE at {1727.538, 115.912, 1678.221} radius 10
+	set gate Gatehouse open
+	L2_Trigger_Wall_Villagers = 1
+	run background script AA_WallVillagersBackground
+	run script CF_RescueVillagers
+end script RunLand2CatapultingFields

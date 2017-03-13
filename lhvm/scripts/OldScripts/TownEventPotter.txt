@@ -1,0 +1,786 @@
+/*-----------------------------------------------------------------------------
+POTTER EVENT
+
+By: Matthew Leonard
+Script Started: 07 September 2004
+
+The script around the customers is quite messy.. have had problems.
+Without the wait 0.x seconds in there the script seems to skip some of the commands.
+A nasty timer is in script now which releases the customer after 100 seconds no matter what. 
+This is ample time for the customer todo their script business, and ensures they dont get stuck anywhere.
+-----------------------------------------------------------------------------*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+//Standard true false
+define PE_FALSE = 0
+define PE_TRUE = 1
+
+//The number of pots created and stacked
+define PE_MAX_POTS = 48
+
+//House search stuff
+define PE_MIN_HOUSE_SEARCH = 20
+define PE_MAX_HOUSE_SEARCH = 400
+define PE_HOUSE_INCREMENT = 40
+
+define PE_CUSTOMER_WAIT = 30	//The amount of time the game waits before getting a new customer.
+
+define PE_BUILD_ALT = 0.001
+//define PE_BUILD_ALT = 1
+define PE_BUILD_ROTATE = 5
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global PE_Pots[PE_MAX_POTS]
+global PE_LastPotID = 0
+global PE_Override = PE_FALSE
+global PE_Customer = 0
+global PE_PotterHouse = 0
+global PE_Table = 0
+global PE_DudeInTransit = PE_FALSE	//Becoms true when the potter is moving from the plinth to table
+global PE_HarryPotter = 0
+global PE_LongPlay = PE_FALSE	//Long advisor banter dialogue session which should only play once
+global PE_GetNewCustomer = PE_TRUE
+
+//-----------------------------------------------------------------------------
+//	Defines
+//-----------------------------------------------------------------------------
+define script PE_StackPot
+define script PE_AdmirePots
+define script PE_PotterConditions
+define script PE_SendCustomerHome
+define script PE_WatchPots
+define script PE_NightWatch
+define script PE_Advisors(CommentID)
+
+define script PE_BuildPot(MakePot)
+define script PE_Clean
+define script ShowCustomer
+
+//-----------------------------------------------------------------------------
+//	Town Event Potter
+//-----------------------------------------------------------------------------
+begin script TownEventPotter
+
+	//Objects				
+	Plinth = 0		
+	MakePot = 0
+	
+	//Positions
+	MakeDudePos = 0
+	MoveToTablePos = 0	
+	DudePos = 0
+	BuyPos_1 = 0
+	BuyPos_2 = 0
+	PlinthPos = 0
+	
+	//Misc
+	StackLoop = PE_MAX_POTS
+	PickUpLoop = 0
+
+start
+		
+	run background script PE_Clean
+
+	run background script ShowCustomer
+
+	run script PE_PotterConditions
+	
+	//Setup the relative positions
+	PlinthPos = marker at get world position from PE_PotterHouse to {-3.0, 0.213, 2.4} //Was 2.6
+	PE_Table = marker at get world position from PE_PotterHouse to {-1.00, -0.1, 8.2}
+	BuyPos_1 = marker at {PE_Table} + {0, 0, 1}
+	BuyPos_2 = marker at {PE_Table} + {0.8, 0, 1}			
+	
+	Plinth = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {PlinthPos}
+	override mesh for Plinth with "..\features\m_block_fathi"
+	SCALE of Plinth = 0.1
+	ALTITUDE of Plinth = -2
+	disable Plinth pickup
+	disable Plinth moveable
+	enable Plinth indestructible
+	ANGLE of Plinth = ANGLE of PE_PotterHouse - 180
+		
+	//Create a table where the pots will be stacked.		
+	PE_Table = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {PE_Table}
+	override mesh for PE_Table with "m_japanesetable"
+	ALTITUDE of PE_Table = 0
+	ANGLE of PE_Table = ANGLE of PE_PotterHouse - 180
+	
+	DudePos = marker at get world position from Plinth to {0.5, 0, -1}
+	MakeDudePos = marker at get world position from Plinth to {0.2, 0, -0.75}
+	MoveToTablePos = marker at get world position from PE_Table to {0, 0, 0.8}
+
+	PE_HarryPotter = create VILLAGER VILLAGER_INFO_GREEK_SHEPHERD_MALE at {DudePos}	
+
+	//The potter sleeps at night
+	run background script PE_NightWatch
+	
+	//Create a starting pot
+	run script PE_StackPot
+	
+	run background script PE_AdmirePots
+
+	//Watch the pots to see when they've been knocked over now
+	run background script PE_WatchPots
+	
+	begin loop
+		
+		begin loop
+			
+			//Create a pot
+			move PE_HarryPotter position to {MakeDudePos}
+			wait until {PE_HarryPotter} near {MakeDudePos} radius 1
+						
+			wait 0.6 seconds
+			
+			if not MakePot exists
+				MakePot = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at get world position from Plinth to {0, 0, -0.2}
+				override mesh for MakePot with "..\features\M_GREEK_TF_URN03_N"
+				ALTITUDE of MakePot = 0.4
+				disable MakePot pickup
+				disable MakePot moveable
+			end if
+			
+			set PE_HarryPotter focus to {MakePot}
+				
+			//Carrying a magic hammer
+			set PE_HarryPotter carrying CARRIED_OBJECT_HAMMER
+			
+			run background script PE_BuildPot(MakePot)
+
+			begin loop
+				play anim "a_p_sculptor" on PE_HarryPotter loop 1 
+				wait until PE_HarryPotter played
+			until ALTITUDE of MakePot >= 1
+			end loop		
+			
+			PE_DudeInTransit = PE_TRUE
+			
+			delete MakePot
+
+			//Carrying nothing
+			set PE_HarryPotter carrying CARRIED_OBJECT_POT			
+
+			move PE_HarryPotter position to {MoveToTablePos}
+			override PE_HarryPotter anim "a_p_carrying_pot"
+			SPEED of PE_HarryPotter = 0.05
+			
+			wait until {PE_HarryPotter} near {MoveToTablePos} radius 1
+			
+			set PE_HarryPotter focus to {PE_Pots[PE_LastPotID]}
+			wait 0.5 seconds
+		
+			//Reset speed
+			SPEED of PE_HarryPotter = 0.12
+		
+			run script PE_StackPot
+			StackLoop--					
+			set PE_HarryPotter carrying CARRIED_OBJECT_NONE
+
+			PE_DudeInTransit = PE_FALSE
+			
+		until StackLoop == 0 or PE_Override != 0
+		end loop
+		
+		SPEED of PE_HarryPotter = 0.12
+		
+		if StackLoop == 0
+		
+//			say "Finished stacking the pots"
+//			wait 3 seconds
+			
+			move PE_HarryPotter position to extra position 6 of PE_PotterHouse
+			wait until {PE_HarryPotter} at extra position 6 of PE_PotterHouse
+			
+			move PE_HarryPotter to limbo
+			
+			//Realism.. he's walking to the window so there's a wait. awesome
+			wait 1 seconds
+			
+			//He's walked to the window now
+			release PE_HarryPotter from limbo
+			
+			set PE_HarryPotter position to extra position 3 of PE_PotterHouse
+			set PE_HarryPotter focus to {PE_Table}
+			
+			wait until StackLoop == 0 or PE_Override != 0
+			
+			//Run to the door
+			move PE_HarryPotter to limbo
+			wait 0.5 seconds
+			release PE_HarryPotter from limbo			
+			
+			set PE_HarryPotter position to extra position 6 of PE_PotterHouse			
+			
+		end if
+		
+		//Wait until an override is needed
+		while PE_Override == 0			
+			//Do some idle stuff in here
+			wait 2 seconds			
+		end while
+		
+		//Override to buy
+		if PE_Override == 1
+
+			//say "I am now going to talk to Harry Potter"
+			wait 0.5 seconds
+
+			//Customer goes to meet craftsman
+			move PE_Customer position to {PE_HarryPotter}
+			move PE_HarryPotter position to {PE_Customer}
+			wait until {PE_Customer} near {PE_HarryPotter} radius 1
+			
+			set PE_HarryPotter focus to {PE_Customer}
+			set PE_Customer focus to {PE_HarryPotter}
+			
+			play anim "a_p_talking" on PE_Customer loop 1 
+			play anim "a_p_talk1_male" on PE_HarryPotter loop 1 
+			
+			wait until PE_Customer played and PE_HarryPotter played
+			wait 0.2 seconds
+			
+			//Now move to the table to discuss the pots further and buy
+			move PE_HarryPotter position to {BuyPos_1}
+			move PE_Customer position to {BuyPos_2}
+			
+			wait until {PE_HarryPotter} at {BuyPos_1}
+			wait until {PE_Customer} at {BuyPos_2}		
+			
+			set PE_HarryPotter focus to {PE_Customer}
+			set PE_Customer focus to {PE_Pots[PE_LastPotID]}
+									
+			//Do some chatting animations
+			play anim "a_p_talk_and_pointing" on PE_Customer loop 1 
+			play anim "a_p_talk_to_neighbour" on PE_HarryPotter loop 1 
+						
+			wait until PE_Customer played and PE_HarryPotter played
+			
+			set PE_Customer focus to {PE_Pots[PE_LastPotID]}
+			wait 1 seconds			
+			
+			delete PE_Pots[PE_LastPotID]
+			
+			set PE_Customer carrying CARRIED_OBJECT_POT
+
+			//A new pot can be created
+			StackLoop++
+
+			//say "Time to head home"
+			wait 0.2 seconds
+
+			run background script PE_SendCustomerHome
+		
+		//Override to get angry at pots being moved
+		elsif PE_Override == 2							
+			
+			move PE_HarryPotter position to {MoveToTablePos}		
+			wait until {PE_HarryPotter} near {MoveToTablePos} radius 1
+			
+			set PE_HarryPotter carrying CARRIED_OBJECT_NONE
+
+			//Decide randomly whether to become angry or upset			
+			if number from 1 to 2 == 1
+				//Shake fist to the sky
+				play anim "a_p_shake_fist_woman" on PE_HarryPotter loop 1 
+			else
+				//Get upset
+				play anim "a_p_crying" on PE_HarryPotter loop 1 
+			end if
+			
+			wait until PE_HarryPotter played			
+
+			while PickUpLoop < PE_MAX_POTS
+				
+				
+				//Big, long, nasty check to see wheterh the pot needs re-stacking.
+				if PE_Pots[PickUpLoop] exists and ALTITUDE of PE_Pots[PickUpLoop] < 0.5 or PITCH of PE_Pots[PickUpLoop] != 0 or ZANGLE of PE_Pots[PickUpLoop] != 0 or ANGLE of PE_Pots[PickUpLoop] != 0
+				
+					move PE_HarryPotter position to {PE_Pots[PickUpLoop]}
+					wait until {PE_HarryPotter} near {PE_Pots[PickUpLoop]} radius 1
+					
+					play anim "a_p_pick_up_bag" on PE_HarryPotter loop 1 
+					wait until PE_HarryPotter played
+					
+					delete PE_Pots[PickUpLoop]
+					
+					move PE_HarryPotter position to {MoveToTablePos}
+					override PE_HarryPotter anim "a_p_carrying_pot"
+					SPEED of PE_HarryPotter = 0.05
+					
+					wait until {PE_HarryPotter} near {MoveToTablePos} radius 1
+					
+					set PE_HarryPotter focus to {PE_Pots[PE_LastPotID]}
+					wait 1.5 seconds
+					
+					play anim "a_p_nodding" on PE_HarryPotter loop 1 
+					
+					run script PE_StackPot
+					SPEED of PE_HarryPotter = 0.12
+				end if
+				
+				PickUpLoop++
+				
+			end while						
+			
+			//Reset loop and override
+			PickUpLoop = 0
+		
+		//The potter goes in his house to sleep	
+		elsif PE_Override == 3
+			
+			move PE_HarryPotter position to extra position 6 of PE_PotterHouse
+			
+			wait until {PE_HarryPotter} at extra position 6 of PE_PotterHouse
+			
+			move PE_HarryPotter to limbo
+			
+			wait PE_Override == 0
+			
+			release PE_HarryPotter from limbo
+			
+		end if	
+		
+		//Reset override
+		PE_Override = 0
+		
+	end loop
+
+end script TownEventPotter
+
+//-----------------------------------------------------------------------------
+//	PE_StackPot
+//-----------------------------------------------------------------------------
+begin script PE_StackPot
+	PotLoop = 0
+	PotX = 0
+	PotY = 0
+	PotZ = 0
+	PotDone = PE_FALSE
+start
+	
+	while PotLoop < PE_MAX_POTS and PotDone == PE_FALSE
+		
+		//Make sure the Table isnt held
+		if PE_Table is HELD
+			wait until not PE_Table is HELD
+			wait 0.5 seconds
+		end if
+
+		//Make sure the table exists
+		if not PE_Table exists
+			//I hate it when objects appear out of no where!!!
+			wait until not {PE_PotterHouse} near camera position radius 150
+			
+			PE_Table = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {PE_Table}
+			override mesh for PE_Table with "m_japanesetable"
+			ALTITUDE of PE_Table = 0
+			ANGLE of PE_Table = ANGLE of PE_PotterHouse - 180								
+		end if
+		
+		//Make sure the table is in it's correct poosition
+		if not {PE_Table} at get world position from PE_PotterHouse to {-1.00, -0.1, 8.2} or ANGLE of PE_Table != 180 or ZANGLE of PE_Table != 0 or PITCH of PE_Table != 0
+			set PE_Table position to get world position from PE_PotterHouse to {-1.00, -0.1, 8.2}
+			ANGLE of PE_Table = ANGLE of PE_PotterHouse - 180
+			PITCH of PE_Table = 0
+			ZANGLE of PE_Table = 0
+		end if		
+
+		//Check to see whether the pot exists or not.
+		if not PE_Pots[PotLoop] exists
+		
+			PE_Pots[PotLoop] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at get world position from PE_Table to {PotX/2, 0, PotY/2} - {0.7, 0, 0.3}			
+			override mesh for PE_Pots[PotLoop] with "..\features\M_GREEK_TF_URN03_N"
+			ALTITUDE of PE_Pots[PotLoop] = PotZ + 0.6		
+									
+			PotDone = PE_TRUE
+			PE_LastPotID = PotLoop
+			
+		end if
+		PotLoop++
+		
+		//Sort out X/Y values
+		PotX++
+		if PotX == 4
+			PotY++
+			PotX = 0
+		end if
+		
+		if PotY == 2
+			PotZ+=0.55
+			PotY = 0
+		end if
+		
+	end while
+
+end script PE_StackPot
+
+//-----------------------------------------------------------------------------
+//	Admire Pots
+//-----------------------------------------------------------------------------
+begin script PE_AdmirePots	
+	AdmirePos = 0
+	AdmireTimer = create timer for 10000 seconds
+start
+	
+	begin loop
+		begin loop
+			
+			//When this timer is 0 the loop is quit and we wotn get anywhere!
+			AdmireTimer = create timer for 10000 seconds
+
+			//Wait a bit.. we dont want a continuous barrage of customers.
+			wait PE_CUSTOMER_WAIT seconds
+
+			//Reset
+			PE_GetNewCustomer = PE_FALSE
+
+			PE_Customer = get VILLAGER at {PE_Table} radius 20 excluding scripted
+			AdmirePos = marker at get world position from PE_PotterHouse to {-2.225, 0.458, 8.028}
+
+			//say "Searching for a customer"
+			wait 0.2 seconds		
+			
+			if PE_Customer exists and not PE_Override == 2
+				
+				//Set the admire timer
+				AdmireTimer = create timer for 100 seconds
+
+				//Incase they're coming from the pub etc and have a beer mug
+				set PE_Customer carrying CARRIED_OBJECT_NONE
+
+				//say "Found a customer and override != 2"
+				wait 0.2 seconds
+
+				//Perform a few basic table checks
+				if PE_Table exists and {PE_Table} at get world position from PE_PotterHouse to {-1.00, -0.1, 8.2}
+
+					move PE_Customer position to {AdmirePos}
+					wait until {PE_Customer} at {AdmirePos}
+					
+					//say "customer is at admire pos"
+					wait 1 second
+
+					set PE_Customer focus to {PE_Pots[PE_LastPotID]}
+					play anim "a_p_inspect_object_1" on PE_Customer
+					wait until PE_Customer played
+					
+					//say "Played animation on customer"
+					wait 0.2 seconds
+
+					//The villager now makes a random decision as to whether to buy the pot
+					if PE_Pots[PE_LastPotID] exists  and number from 1 to 3 == 1
+						
+						//say "Waiting until Harry Potter isnt in transit, then overriding to buy"
+						//wait 2 seconds
+						
+						//Play this on the customer until Harry Potter arrives
+						play anim "a_p_nodding" on PE_Customer loop 1
+
+						//Wait until the potter has stacked his current pot. This prevents a pot form being lost
+						wait until PE_DudeInTransit == PE_FALSE
+
+						PE_Override = 1	//Override to buy
+						wait until PE_GetNewCustomer == PE_TRUE
+					else
+
+						//say "I dont want to buy a pot right now"
+						//wait 3 seconds
+
+						release PE_Customer
+					end if
+				else
+					
+					//say "Table check failed"
+					//wait 3 seconds
+
+				end if
+			else
+				
+				//say "Customer check failed"
+				//wait 3 seconds
+
+			end if
+
+			until not villager PE_Customer available or get AdmireTimer time remaining == 0
+		end loop
+		
+		set PE_Customer carrying CARRIED_OBJECT_NONE
+		release PE_Customer		
+	end loop
+
+end script PE_AdmirePots
+
+//-----------------------------------------------------------------------------
+//	Potter Conditions
+//-----------------------------------------------------------------------------
+begin script PE_PotterConditions	
+	PotterHousePos = marker at {1022.561, 70.004, 654.974}
+	SearchRadius = PE_MIN_HOUSE_SEARCH
+	CreatureMine = 0		
+start
+	
+	begin loop	
+		PE_PotterHouse = get HOUSE ABODE_INFO_GREEK_SHACK_Y at {PotterHousePos} radius SearchRadius	excluding scripted		
+		SearchRadius += PE_HOUSE_INCREMENT
+		
+		if SearchRadius > PE_MAX_HOUSE_SEARCH
+			SearchRadius = PE_MIN_HOUSE_SEARCH		
+		end if
+		
+		wait 10 seconds
+		
+	until PE_PotterHouse exists
+	end loop
+	
+	wait until HEALTH of PE_PotterHouse == 1.0 and BUILT of PE_PotterHouse == 1.0
+	//wait until not camera position near {PE_PotterHouse} radius 200	
+	//ALEX S: Changed above to below.
+	wait until {PE_PotterHouse} not viewed
+	//PE_PotterHouse = create HOUSE ABODE_INFO_GREEK_SHACK_Y at {946.112, 74.535, 685.845}
+	//ANGLE of PE_PotterHouse = 300
+	
+
+end script PE_PotterConditions
+
+//-----------------------------------------------------------------------------
+//	Send Customer Home
+//-----------------------------------------------------------------------------
+begin script PE_SendCustomerHome
+	CustomerHouse = 0
+	PotterTown = 0
+start
+	
+	//Temp
+	PotterTown = get TOWN at {939.149, 66.125, 723.014} radius 100
+	
+	CustomerHouse = get random home in town PotterTown
+	
+	//Make sure the home exists or we'll run into problems
+	if CustomerHouse exists
+		move PE_Customer position to extra position 1 of CustomerHouse			
+		//override PE_Customer anim "a_p_carrying_pot"
+		//SPEED of PE_Customer = 0.05
+		
+		wait until {PE_Customer} at extra position 1 of CustomerHouse
+
+		//say "Now I am at home, which is nice.. Press N"		
+		//wait until key KB_N down
+		
+		//say "Releasing.. NOW!"
+		//wait 2 seconds
+
+		SPEED of PE_Customer = 0.12
+		release PE_Customer
+		PE_GetNewCustomer = PE_TRUE
+	else
+		release PE_Customer
+
+		//say "There are no homes in this town so I'm going to wodner around aimlessley"
+		//wait 1.5 seconds
+		PE_GetNewCustomer = PE_TRUE
+	end if
+	
+	set PE_Customer carrying CARRIED_OBJECT_NONE
+
+end script PE_SendCustomerHome
+
+//-----------------------------------------------------------------------------
+//	Watch Pots
+//-----------------------------------------------------------------------------
+begin script PE_WatchPots
+	CheckID = 0
+start	
+				
+	begin loop
+		
+		//Make sure the player is near
+		if camera position near {PE_Pots[CheckID]} radius 50
+			//Player is holding a pot
+			if PE_Pots[CheckID] is HELD
+				run background script PE_Advisors(0)
+				wait until not PE_Pots[CheckID] is HELD
+				PE_Override = 2
+			end if
+
+			//A pot is moving.. restack
+			if PE_Pots[CheckID] is MOVING and SPEED of PE_Pots[PE_LastPotID] > 0.01			
+				run background script PE_Advisors(1)
+				PE_Override = 2
+			end if
+			
+			//A pot has been destroyed
+			/*
+			if PE_Pots[CheckID] exists
+				say "blah"
+			else
+				//run script PE_Advisors(2)
+				//PE_Override = 2					
+				say "blah"
+			end if
+			*/
+			
+			CheckID++
+			
+			if CheckID > PE_LastPotID
+				CheckID = 0
+			end if
+			
+			//wait 0.5 seconds and PE_Override == 0
+			wait until PE_Override == 0
+
+		end if
+
+	end loop
+	
+end script PE_WatchPots
+
+//-----------------------------------------------------------------------------
+//	Night watch
+//-----------------------------------------------------------------------------
+begin script PE_NightWatch
+start
+
+	begin loop
+		wait until get game time > 18.00
+		PE_Override = 3
+		
+		//Wait until time is less than early morning, then wait until shorlt yafter dawn
+		wait until get game time < 5.00
+		wait until get game time > 7.00
+		PE_Override = 0
+		
+	end loop
+	
+end script PE_NightWatch
+
+//-----------------------------------------------------------------------------
+//	Build Pot
+//-----------------------------------------------------------------------------
+begin script PE_BuildPot(pot)
+start
+
+	while pot exists and PE_Override == 0
+
+		wait until {PE_HarryPotter} near {pot} radius 1 and not PE_HarryPotter is HELD and HEALTH of PE_HarryPotter > 0
+
+		ANGLE of pot += PE_BUILD_ROTATE
+
+		//Increase the altitude when necessery
+		if ALTITUDE of pot < 1.1
+			ALTITUDE of pot += PE_BUILD_ALT
+		end if
+	end while
+
+end script PE_BuildPot
+
+//-----------------------------------------------------------------------------
+//	Build Pot
+//-----------------------------------------------------------------------------
+begin script PE_Advisors(CommentID)
+start
+	begin dialogue
+		
+		//You are holding/ have stolen a pot
+		if CommentID == 0
+			eject good spirit
+			say "GA: You know, if you were human that would be classed as stealing"
+			wait until read
+
+			eject evil spirit
+			say ""
+			wait until read
+		
+		//Pot is moving
+		elsif CommentID == 1
+			eject evil spirit
+			say "EA: Way to go Boss! I find nothing more satisfying than knocking things over"
+			wait until read
+
+			eject good spirit
+			say "GA: Well I think it's disgraceful"
+			wait until read
+			
+			if PE_LongPlay == PE_FALSE
+				eject evil spirit
+				say "EA: Oh everytings disgraceful to you. Hitting villgers is disgraceful"
+				wait until read
+
+				eject evil spirit
+				say "EA: Setting things on fire is disgraceful"
+				wait until read
+
+				eject evil spirit
+				say "EA: Drowning puppies is disgraceful, you're no fun"
+				wait until read
+
+				PE_LongPlay = PE_TRUE
+			end if
+
+		//You have completley wrecked the pots
+		elsif CommentID == 2
+			eject good spirit
+			say "GA: You've wrecked this mans pots"
+			wait until read
+			
+			eject evil spirit
+			say "EA: And a mighty fine job you've done of it too Boss!"
+			wait until read
+			
+			say "GA: I hardly think destroying a mans hard work is a job well done"
+			wait until read
+				
+			say "EA: Well that's where we differ Beardy. I'm right and your wrong."
+			wait until read
+
+		end if
+		
+		//Make sure both spirits are sent home before the script ends.
+		send good spirit home
+		send evil spirit home
+
+	end dialogue
+end script PE_Advisors
+
+//-----------------------------------------------------------------------------
+//	Clean
+//-----------------------------------------------------------------------------
+begin script PE_Clean
+	Stone = 0
+start
+
+	begin loop
+		
+		Stone = get SCRIPT_OBJECT_TYPE_MOBILE_STATIC at {PE_PotterHouse} radius 50
+		
+		if Stone exists
+			delete Stone
+		end if
+
+	end loop
+
+end script PE_Clean
+
+//-----------------------------------------------------------------------------
+//	Show Customer
+//-----------------------------------------------------------------------------
+begin script ShowCustomer
+start
+	begin loop
+	if key KB_V down
+		if PE_Customer exists
+			begin cinema
+				set camera position to {PE_Customer} + {0, 5, 1}
+				set camera focus to {PE_Customer}
+			end cinema
+		else
+			say "Customer doesnt exist right now"
+			wait 1 seconds
+		end if
+	end if
+	end loop
+end script ShowCustomer

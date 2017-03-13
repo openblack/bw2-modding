@@ -1,0 +1,2376 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define LC7_TRUE = 1
+define LC7_FALSE = 0
+
+define LC7_NUM_OF_PLATOONS = 25
+define LC7_NUM_OF_SETTLEMENTS	= 4
+define LC7_NUMBER_OF_STANDARD_PLATOONS = 4
+
+define LC7_AT_PEACE = 0
+define LC7_AT_WAR = 1
+
+define LC7_PASSIVE = 0
+define LC7_AGGRESSIVE = 1
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+
+define script Land7GeneralComments
+define script Land7JapanArmyManager
+define script Land7CityManager
+define script NumberOfPlayerTowns
+define script GetNearestSettlement(Town)
+define script CatapultManager
+define script RegenerateBigPlatoon
+//define script ArmyTakeOverStorm
+define script ManageCreature
+define script GatehouseManager
+define script MoveCatapult(Catapult)
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global TwoSettlementsTakenComment = 0
+global FourSettlementsTakenComment = 0 
+global LC7_Platoon[LC7_NUM_OF_PLATOONS]
+global LC7_PlatoonPos[LC7_NUM_OF_PLATOONS]
+global LC7_Condition = LC7_AT_PEACE
+global NumberOfTownsPlayerHasTaken = 0
+global L7JapEastTown = 0
+global L7JapWestTown = 0
+global L7JapTreasury = 0
+global L7Settlement[LC7_NUM_OF_SETTLEMENTS]
+global L7SettlementCaptured = 0
+global NearestSettlement
+global CatapultsInPosition = 1
+global LevelComplete = 0
+global PitOverride = 0
+global StopRegenerating = 0
+
+
+begin script Land7JapanCapital
+
+Counter = 0
+Counter2 = 0
+CreatureStartPos = marker at {1045.265, 356.638, 1563.916}  //marker at {578.309,428.751,1787.160}
+
+FoodFree = 0
+WoodFree = 0
+OreFree = 0
+FoodPos = marker at {751.015,231.352,899.972}
+WoodPos = marker at {722.575,231.626,928.172}
+OrePos = marker at {748.840,231.411,918.147}
+
+Threshold =  0
+
+start
+
+	NearestSettlement = -1
+
+	set town L7JapanCap platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.2
+	L7JapEastTown = get town with id 1
+	L7JapWestTown = get town with id 2
+	L7JapTreasury = get town with id 9
+
+	run script GCAI_InitCreature(CreatureStartPos,variable CREATURE_TYPE_TIGER,0.7,0,1)
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_WATER available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_LIGHTNING available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_3 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_2 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_2 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+
+	Counter = 0
+	while Counter < LC7_NUM_OF_SETTLEMENTS
+		L7Settlement[Counter] = get town with id (Counter+3)
+		disable migration from L7Settlement[Counter] to L7JapanCap
+		disable migration from L7Settlement[Counter] to L7JapEastTown
+		disable migration from L7Settlement[Counter] to L7JapWestTown
+		Counter++
+	end while
+
+	Counter = 0
+	while Counter < LC7_NUM_OF_SETTLEMENTS
+		Counter2 = 0
+		while Counter2 < LC7_NUM_OF_SETTLEMENTS
+			if Counter != Counter2
+				disable migration from L7Settlement[Counter] to L7Settlement[Counter2]
+			end if
+			Counter2++
+		end while
+		Counter++
+	end while
+	disable migration from L7JapEastTown to L7JapanCap
+	disable migration from L7JapWestTown to L7JapanCap
+
+/*	FoodFree = create STORE FOOD at {FoodPos}
+	WoodFree = create STORE WOOD at {WoodPos}
+	OreFree = create STORE ORE at {OrePos}
+	add resource RESOURCE_TYPE_FOOD 2000 to FoodFree
+	add resource RESOURCE_TYPE_WOOD 2000 to WoodFree
+	add resource RESOURCE_TYPE_ORE 500 to OreFree
+	*/
+
+	add resource RESOURCE_TYPE_FOOD 2000 to L7GreekTown
+	add resource RESOURCE_TYPE_WOOD 2000 to L7GreekTown
+	add resource RESOURCE_TYPE_ORE 500 to L7GreekTown
+
+	add resource RESOURCE_TYPE_WOOD 1000 to L7Settlement[3]
+	add resource RESOURCE_TYPE_ORE 1000 to L7Settlement[2]
+
+	disable L7JapEastTown town manager
+	disable L7JapWestTown town manager
+	disable L7JapanCap town manager
+
+	//Migration thresholds
+	// Enemy --> Player
+	Threshold = get town L7JapanCap impressiveness
+	set migration threshold from L7JapanCap to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_CAPITAL_TO_GREEK - Threshold
+	set town L7JapanCap maximum population to 100
+
+	// East town --> Player
+	Threshold = get town L7JapEastTown impressiveness
+	set migration threshold from L7JapEastTown to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_EASTTOWN_TO_GREEK - Threshold
+	set town L7JapEastTown maximum population to 50
+
+	// West town --> Player
+	Threshold = get town L7JapWestTown impressiveness
+	set migration threshold from L7JapWestTown to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_WESTTOWN_TO_GREEK - Threshold
+	set town L7JapWestTown maximum population to 50
+
+	// L7JapTreasury town --> Player
+	Threshold = get town L7JapTreasury impressiveness
+	set migration threshold from L7JapTreasury to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_TREASURY_TO_GREEK - Threshold
+	set town L7JapTreasury maximum population to 10
+
+	// L7Settlement[0] town --> Player
+	Threshold = get town L7Settlement[0] impressiveness
+	set migration threshold from L7Settlement[0] to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_SETTLEMENT1_TO_GREEK - Threshold
+	set town L7Settlement[0] maximum population to 20
+
+	// L7Settlement[1] town --> Player
+	Threshold = get town L7Settlement[1] impressiveness
+	set migration threshold from L7Settlement[1] to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_SETTLEMENT2_TO_GREEK - Threshold
+	set town L7Settlement[1] maximum population to 20
+
+	// L7Settlement[2] town --> Player
+	Threshold = get town L7Settlement[2] impressiveness
+	set migration threshold from L7Settlement[2] to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_SETTLEMENT3_TO_GREEK - Threshold
+	set town L7Settlement[2] maximum population to 20
+
+	// L7Settlement[3] town --> Player
+	Threshold = get town L7Settlement[3] impressiveness
+	set migration threshold from L7Settlement[3] to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_SETTLEMENT4_TO_GREEK - Threshold
+	set town L7Settlement[3] maximum population to 20
+
+
+	// L7Settlement[4] town --> Player
+	//Threshold = get town L7Settlement[4] impressiveness
+	//set migration threshold from L7Settlement[4] to L7GreekTown GLOBAL_VALUE_THRESHOLD_LAND_7_SETTLEMENT5_TO_GREEK - Threshold
+
+	run background script CatapultManager
+
+	Counter = 0
+	while Counter < LC7_NUM_OF_SETTLEMENTS
+		disable migration from L7Settlement[Counter] to L7JapanCap
+		Counter++
+	end while
+
+	//Initial player troop levels
+	set initial level of player melee platoon to ARMY_UNIT_TYPE_MELEE_1
+	set initial level of player ranged platoon to ARMY_UNIT_TYPE_RANGED_1
+	set initial level of player siege weapon to SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1
+
+
+	//enable build menu override with ABODE_NUMBER_STORAGE_PIT
+	//PitOverride = 1
+
+	run background script Land7JapanArmyManager
+	run background script Land7GeneralComments
+	run background script Land7CityManager
+	run background script NumberOfPlayerTowns
+	//run background script ArmyTakeOverStorm
+	run background script ManageCreature
+	run background script GatehouseManager
+	
+	//DEBUG STUFF - TURN OFF--------
+	/*
+	set research ARTEFACT_ABODE_NUMBER_MELEE_ARMOURY available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_TEMPLE available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_RANGED_ARMOURY available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_WORKSHOP available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_WALLTOWER_TECH0 available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_FIRE_FIRE available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_AIR_TEMPEST available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_MAGIC_TYPE_WATER_RAIN available to RESEARCH_AVAILABILITY_RESEARCHED
+	//------------------------------
+	*/
+	run script GCAI_SetTask_PerformRole(CreatureStartPos,100,variable CR_NONE)
+
+end script Land7JapanCapital
+
+//*********************************************************************
+
+begin script Land7GeneralComments
+
+Settlement6Taken = 0
+Settlement3Taken = 0
+BothSettlementsTaken = 0
+TownConversion = 0
+TownToAttack = 0
+TakingSettlementsComments = 0
+EastTownTaken = 0
+WestTownTaken = 0
+EnemyUnderAttack = 0
+CatapultComment = 0
+CatapultComment2 = 0
+Counter = 0
+ImpressiveComment = 0
+BothTownsComment = 0
+SiegeWSCommentSaid = 0
+CatapultBuiltCommentSaid = 0
+PlatoonDown[LC7_NUM_OF_PLATOONS]
+TreasuryTaken = 0
+EpicCommentSaid = 0
+TroopsTimer = 0
+TroopsNear = 0
+
+PlatoonCrossedLine = 0
+PlayersPlatoon = 0
+LinePosOneC = marker at {1403.363, 235.219, 974.982}
+LinePosTwoC = marker at {1962.824, 181.062, 777.128}
+LineCheckPosC = marker at {1205.294, 206.503, 1100.944}
+
+ArmyBuiltComment = 0
+
+EpicSaid = 0
+EpicMade = 0
+
+start
+
+wait 2 seconds
+
+while LevelComplete == 0 // and PLAYER of L7GreekTown != 1
+
+	if get number of type WONDER SCRIPT_FIND_TYPE_ANY in L7JapanCap min built 1.0 > 0 and LC7_Condition == LC7_AT_WAR and EpicSaid == 0 and get town L7GreekTown RESOURCE_TYPE_ORE total > 999
+		begin dialogue
+			//say "Unleash the hurricane!"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESEUSEHURRICANE_10"
+			wait until read
+		end dialogue
+		EpicSaid = 1
+	end if
+
+	if get number of type WONDER SCRIPT_FIND_TYPE_ANY in L7JapanCap min built 1.0 > 0 and EpicMade == 0
+		EpicMade = 1
+		begin dialogue
+			say "BW2T_SCRIPT_07FINAL_EPIC_HURRICANE_READY"
+			wait until read
+		end dialogue
+	end if
+
+
+	if get number of platoon belonging to player 0 > 0 and ArmyBuiltComment == 0
+		ArmyBuiltComment++
+		begin dialogue
+			//They seek to conquer us through war, but their lack of honor shall be their undoing. Send our warriors out!
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_INVADETOWN_40"
+			wait until read
+		end dialogue
+	end if
+
+
+	if PlatoonCrossedLine == 0
+		PlayersPlatoon = get platoon of player 0 nearest {LineCheckPosC} radius 6000
+	end if
+
+	if PlayersPlatoon exists and PlatoonCrossedLine == 0
+		//Player platoon crosses a line, so comment
+		if {PlayersPlatoon} and {L7JapEastTown} on same side of line between {LinePosOneC} and {LinePosTwoC}
+			begin dialogue
+				//"Mobilize the armies - stem this greek tide at once!"
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_INVADETOWN_70"
+				wait until read
+			end dialogue
+			PlatoonCrossedLine++
+		end if
+	end if
+
+	
+	if NumberOfTownsPlayerHasTaken == 1 and TakingSettlementsComments == 0
+		if L7SettlementCaptured == LC7_PASSIVE
+			begin dialogue
+				//Mighty creature....regret coming here...
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_IMPRESSTOWN_10"
+				wait until read
+			end dialogue
+		elsif L7SettlementCaptured == LC7_AGGRESSIVE
+			begin dialogue
+				//say "My brother was right. The Greeks do posses martial strength. But they will not unseat us from our high vantage point."
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_INVADETOWN_10"
+				wait until read
+			end dialogue
+		end if
+		TakingSettlementsComments++
+	end if
+
+	if NumberOfTownsPlayerHasTaken == 2 and TakingSettlementsComments == 1
+		if L7SettlementCaptured == LC7_PASSIVE
+			begin dialogue
+				
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_IMPRESSTOWN_20"
+				wait until read
+			end dialogue
+		elsif L7SettlementCaptured == LC7_AGGRESSIVE
+			begin dialogue
+				//say "Their strength increases. But they will not be able to pass my midfield defences. My catapults will decimate any who try!"
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_INVADETOWN_20"
+				wait until read
+			end dialogue
+		end if
+
+		/*begin dialogue
+			eject good spirit
+				say "BW2T_SCRIPT_06FINAL_INTRO_100"
+				wait until read
+			send good spirit home
+		end dialogue*/
+
+		TakingSettlementsComments++
+	end if
+
+	if NumberOfTownsPlayerHasTaken == 3 and TakingSettlementsComments == 2
+		if L7SettlementCaptured == LC7_PASSIVE
+			begin dialogue
+				//say "The Greek lies blind more of our people."
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_IMPRESSTOWN_30"
+				wait until read
+			end dialogue
+		elsif L7SettlementCaptured == LC7_AGGRESSIVE
+			begin dialogue
+				//say "..foolishness... Fire some warning shots from our siege weapons."
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_INVADETOWN_30"
+				wait until read
+			end dialogue
+		end if
+		TakingSettlementsComments++
+	end if
+	
+	if NumberOfTownsPlayerHasTaken == 4 and TakingSettlementsComments == 3
+		if L7SettlementCaptured == LC7_PASSIVE
+			begin dialogue
+				//say "Enough of this! Send out some troops to take those settlements back!"
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_IMPRESSTOWN_50"
+				wait until read
+			end dialogue
+		elsif L7SettlementCaptured == LC7_AGGRESSIVE
+			begin dialogue
+				//say "Their armies are no match for our own. Its time to prove that fact. Send out our troops!"
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_INVADETOWN_50"
+				wait until read
+			end dialogue
+		end if
+
+		TakingSettlementsComments++
+	end if
+
+	if (PLAYER of L7JapEastTown == 0 or variable get town L7JapEastTown status == variable TOWN_STATUS_MIGRATION_STARTED) and EastTownTaken == 0
+		begin dialogue
+			//say "My northern outpost! That's mine give it back!"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYEREXPANDS_20"
+			wait until read
+			EastTownTaken = 1
+		end dialogue
+	end if
+
+	if (PLAYER of L7JapWestTown == 0 or variable get town L7JapWestTown status == variable TOWN_STATUS_MIGRATION_STARTED) and WestTownTaken == 0
+		begin dialogue
+
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYEREXPANDS_10"
+			wait until read
+			WestTownTaken = 1
+		end dialogue
+	end if
+	
+	if town L7JapanCap is under takeover from player 0 and EnemyUnderAttack == 0
+		begin dialogue
+			//say "They dare to assault my city?!"
+			//say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYEREXPANDS_50"
+			//wait until read
+			// " They are over-running our towns. Honor cannot permit this. Attack! Attack!"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESEFIGHTBACK_20"
+			wait until read
+			EnemyUnderAttack = 1
+		end dialogue
+	end if
+	
+	if EastTownTaken == 1 and WestTownTaken == 1 and PLAYER of L7JapEastTown == 0 and BothTownsComment == 0
+		begin dialogue
+			//say ...will soon learn the terrible force of our revenge." 
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYEREXPANDS_30"
+			wait until read
+			BothTownsComment = 1
+		end dialogue
+	end if
+	
+
+	/*if LC7_Platoon[7] exists and CatapultComment == 0 and CatapultsInPosition == 2
+		if {LC7_Platoon[7]} viewed
+			begin dialogue
+				//say "Admiring my strategic positions on the hill tops? Look all you want; you'll have trouble even getting close to them!"
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESE_ANGER_100"
+				wait until read
+				CatapultComment = 1
+			end dialogue
+		end if
+	end if
+	
+	if (LC7_Platoon[7] not exists or LC7_Platoon[10] not exists) and CatapultComment2 == 0 and CatapultsInPosition == 2 and PlatoonDown[Counter] != 2
+		begin dialogue
+			//say "Our catapult is down? How can this be? Send reinforcements!"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESELOSECATAPULT_10"
+			wait until read
+			CatapultComment2 = 1
+			PlatoonDown[Counter] = 2
+		end dialogue
+	end if
+
+	if (LC7_Platoon[11] not exists or LC7_Platoon[12] not exists) and CatapultComment2 == 1 and CatapultsInPosition == 2 and PlatoonDown[Counter] != 2
+		begin dialogue
+			//say "They took out another of our catapults?"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESELOSECATAPULT_20"
+			wait until read
+			CatapultComment2 = 2
+			PlatoonDown[Counter] = 2
+		end dialogue
+	end if
+
+	*/
+
+	//Impressiveness threshold checks
+	if get town L7GreekTown impressiveness > GLOBAL_VALUE_LAND_7_IMPRESSIVENESS_LEVEL_1 and ImpressiveComment == 0
+		begin dialogue
+			say	"BW2T_SCRIPT_07FINAL_ADVISORS_PLAYEREXPANDS_60"
+			wait until read
+		end dialogue
+		ImpressiveComment++
+	elsif get town L7GreekTown impressiveness > GLOBAL_VALUE_LAND_7_IMPRESSIVENESS_LEVEL_2 and ImpressiveComment == 1
+		begin dialogue
+			//say "...send out raiding parties!"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYEREXPANDS_70"
+			wait until read
+		end dialogue
+
+		TroopsTimer = create timer for 60 seconds
+		TroopsNear = 1
+
+		ImpressiveComment++
+	elsif get town L7GreekTown impressiveness > GLOBAL_VALUE_LAND_7_IMPRESSIVENESS_LEVEL_3 and ImpressiveComment == 2
+		begin dialogue
+			//say "What a formidable city!"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYEREXPANDS_80"
+			wait until read
+		end dialogue
+		ImpressiveComment++
+	end if
+	
+	//Buildings built checks
+	if SiegeWSCommentSaid == 0 and get number of type HOUSE ABODE_NUMBER_WORKSHOP in L7GreekTown min built 1.0 > 0 
+		SiegeWSCommentSaid = 1
+		begin dialogue
+			//The Greeks are going to try and play me at my favourite game!
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESE_ANGER_150"
+			wait until read
+		end dialogue
+	end if
+	
+	if CatapultBuiltCommentSaid == 0 and get number of type SCRIPT_OBJECT_TYPE_SIEGE_WEAPON in L7GreekTown min built 1.0 > 0 
+		CatapultBuiltCommentSaid = 1
+		begin dialogue
+			//Oh boy, catapults!
+			eject evil spirit
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYERTHRUWALL_40"
+				wait until read
+			send evil spirit home
+		end dialogue
+	end if
+
+	//Check for special temple takeover
+	if PLAYER of L7JapTreasury == 0 and TreasuryTaken == 0
+		TreasuryTaken = 1
+		//begin dialogue
+			//say "BW2T_SCRIPT_07FINAL_JAPANCAPITAL_10"
+			//wait until read
+		//end dialogue
+	end if
+
+    //Check for epic miracle building
+	if EpicCommentSaid == 0 and get number of type SCRIPT_OBJECT_TYPE_WONDER in L7GreekTown min built 0.0 > 0 
+		EpicCommentSaid = 1
+		begin dialogue
+			//say "They are building an epic miracle. Tear it down!"
+			say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESE_ANGER_250"
+			wait until read
+		end dialogue
+	end if
+
+	/*if TroopsTimer != 0
+		if get TroopsTimer time remaining <= 0 and TroopsNear == 1
+			begin dialogue
+				//say "My army will be there soon."
+				say "BW2T_SCRIPT_07FINAL_ADVISORS_JAPANESE_ANGER_260"
+				wait until read
+			end dialogue
+
+			TroopsNear = 2
+		end if
+	end if*/
+		
+
+end while
+
+//Level completed (or lost)
+
+/* if PLAYER of L7GreekTown != 0 //Enemy won
+	begin dialogue
+		say "BW2T_SCRIPT_07FINAL_JAPANCAPITAL_20"
+		wait until read
+	end dialogue
+
+els*/
+
+if PLAYER of L7JapanCap != 1
+
+//Player won aggressive way
+
+	begin dialogue
+		say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYERTHRUWALL_70"
+		wait until read
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 value 1
+		wait 3 seconds
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_10
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_11
+		wait 1 second
+	end dialogue
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_JAPANCAPITAL
+
+else //Non-aggressive win
+
+	begin dialogue
+		say "BW2T_SCRIPT_07FINAL_ADVISORS_PLAYERTHRUWALL_70"
+		wait until read
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 value 1
+		wait 3 seconds
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_10
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_11
+		wait 1 second
+	end dialogue
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_JAPANCAPITAL
+
+end if
+
+end script Land7GeneralComments
+
+//*********************************************************************
+
+begin script Land7JapanArmyManager
+
+PlayerSiege = 0
+
+HurricaneWarning = 0
+
+EastTownTakenAttack = 0
+WestTownTakenAttack = 0
+CatapultAction = 0
+TroopsSent = 0
+
+TakingSettlementsAction = 0
+AttackCatapultStarted = 0
+Counter = 0
+Counter2 = 0
+
+TempPlatoon = 0 //Used to give some platoons their orders
+TempCatapult = 0
+
+PatrolPos1 = 0
+PatrolPos2 = 0 
+PatrolPos3 = 0 
+
+Waypoint = 0
+
+RetaliationPlatoon1 = 0
+RetaliationPlatoon2 = 0
+RetaliationPlatoon3 = 0
+RetaliationPlatoon4 = 0
+RetaliationPlatoon5 = 0
+
+AttackFlankPos1 = 0
+AttackFlankPos2 = 0
+AttackFlankPos3 = 0
+AttackFlankPos4 = 0
+
+TownToAttack = 0
+PlayerOfTown = 0
+
+ImpressiveAction = 0
+CatapultMoveTimer = 0
+LC7_InitialPlatoonPos[LC7_NUM_OF_PLATOONS]
+PlatoonDown2[LC7_NUM_OF_PLATOONS]
+
+CatapultWarningTarget1 = 0
+CatapultsCanStop = 2
+CatapultStopTimer = 0
+CatapultPosE3One = 0
+CatapultPosE3Two = 0
+CastEpicPos = 0
+WarTimer = 0
+
+TreasuryAction = 0
+CatapultTemp = 0
+
+WallPos[10]
+Walls[10]
+GatePos[5]
+
+EpicAttacked = 0
+TempEpicPos = 0
+JapaneseEpicPos = 0
+EpicFired = 0
+EpicTarget = 0
+EpicHurr = 0
+EpicBuilder = 0 //Used to cheat build the object
+BuildingEpic = 0
+JapaneseEpic = 0
+
+
+CreatureTimer = 0
+CreatureGoHome = 0
+CreatureFireballPos = 0
+TempGate = 0
+WarningEpicPos = 0
+
+LC7_ExtraPlatoons[6]
+
+TakeOverTimer = 0
+
+LittleSiegePosOne = marker at {940.125, 202.815, 971.107}
+LittleSiegePosTwo = marker at {927.453, 202.895, 971.995}
+LittleSiegePosThree = marker at {957.750, 202.741, 969.011}
+WallPlayer = 0
+
+DefendTownPos = marker at {645.317, 470.517, 1827.056}
+DefendersOnePos = marker at {644.411, 424.879, 1707.702}
+DefendersTwoPos = marker at {645.753, 393.334, 1624.454}
+DefendersThreePos = marker at {652.835, 381.173, 1577.268}
+
+DefendTownMovePos = marker at {629.680, 467.691, 1819.949}
+
+DefendersOne = 0
+DefendersTwo = 0
+DefendersThree = 0
+
+DefendersSent = 0
+
+PlatoonCrossesLine = 0
+LinePosOne = marker at {1403.363, 235.219, 974.982}
+LinePosTwo = marker at {1962.824, 181.062, 777.128}
+PlayerPlatoon = 0
+LineGoPos = marker at {1300.551, 253.938, 1315.292}
+LineCheckPos = marker at {1205.294, 206.503, 1100.944}
+
+ArmyBuilt = 0
+
+RouteArmy[3]
+RouteArmyPos[3]
+RouteArmyTimer = 0
+RouteArmyCurrent = 0
+RouteDefendPos[2]
+RouteLinePos[2]
+PlatoonCrossesLineTwo = 0
+
+CanNavToPos = marker at {724.810, 231.773, 911.623}
+AltCatapultPos = marker at {886.128, 205.332, 955.262}
+
+WestTownTributeGiven = LC7_FALSE
+EastTownTributeGiven = LC7_FALSE
+JapTreasuryTributeGiven = LC7_FALSE
+
+AttackTimer = 0
+
+SiegePlatoon = 0
+SiegeArrived = 0
+
+WestTownTroopsOnePos = marker at {1931.332, 325.335, 1376.361}
+WestTownTroopsTwoPos = marker at {1986.666, 335.119, 1372.440}
+WestTownTroopsOne = 0
+WestTownTroopsTwo = 0
+WestTownArcherPos = marker at {1935.811, 311.936, 1262.607} //marker at {1945.554, 316.933, 1274.794}
+WestTownArcher = 0
+WestTownArcherPos2 = marker at {1848.732, 329.441, 1319.997}
+WestTownArcher2 = 0
+WestWallOnePos = marker at {1908.607, 313.171, 1305.018}
+WestWallTwoPos = marker at {1861.982, 324.562, 1368.511}
+WestWallOne = 0
+WestWallTwo = 0
+
+AltWaypoint = 0
+AltPatrolPos1 = 0
+AltPatrolPos2 = 0
+AltPatrolPos3 = 0
+
+DefendFarTownPos = marker at {2024.671, 247.467, 907.180}
+
+LittleSiegePlatoon1 = 0
+LittleSiegePlatoon2 = 0
+LittleSiegePlatoon3 = 0
+
+LittleSiegeArrived1 = 0
+LittleSiegeArrived2 = 0
+LittleSiegeArrived3 = 0
+
+WaypointRouteMain = 0
+WaypointMain[6]
+
+CatapultHelpers1 = 0
+CatapultHelpers2 = 0
+CatapultFirst = 0
+CatapultSecond = 0
+
+
+start
+
+WaypointMain[0] = marker at {1128.534, 321.407, 1486.510}
+WaypointMain[1] = marker at {1279.548, 278.380, 1391.302}
+WaypointMain[2] = marker at {1342.946, 244.620, 1240.918}
+WaypointMain[3] = marker at {1237.593, 210.324, 1120.374}
+WaypointMain[4] = marker at {1045.829, 202.935, 961.244}
+WaypointMain[5] = marker at {814.113, 213.887, 932.324}
+
+WaypointRouteMain = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {WaypointMain[0]}
+Counter = 0
+while Counter < 6
+	add {WaypointMain[Counter]} to waypoint list WaypointRouteMain
+	Counter++
+end while
+
+
+AttackTimer = create timer for 250 seconds
+
+TakeOverTimer = create timer for 0 seconds
+
+CatapultStopTimer = create timer for 0 seconds
+EpicBuilder = create timer for 0 seconds
+
+RouteArmyTimer = create timer for 300 seconds
+RouteArmyPos[0] = marker at {1206.006, 207.050, 1136.943}
+RouteArmyPos[1] = marker at {1247.470, 209.492, 1087.134}
+RouteArmyPos[2] = marker at {1283.194, 224.664, 1171.619}
+
+RouteDefendPos[0] = marker at {1537.265, 244.058, 1109.239}
+RouteDefendPos[1] = marker at {1684.712, 258.432, 1060.869}
+
+RouteLinePos[0] = marker at {1472.124, 237.995, 1042.528}
+RouteLinePos[1] = marker at {2098.523, 241.167, 826.389}
+
+WallPos[0] = marker at {1180.023, 205.690, 1113.975}
+WallPos[1] = marker at {1228.186, 206.051, 1066.700}
+WallPos[2] = marker at {1490.915, 212.483, 968.734}
+WallPos[3] = marker at {1548.254, 212.331, 939.122}
+WallPos[4] = marker at {1796.539, 220.004, 850.251}
+WallPos[5] = marker at {1875.684, 224.726, 816.729}
+WallPos[6] = marker at {1126.198, 313.385, 1436.795}
+WallPos[7] = marker at {1166.511, 313.578, 1493.636}
+WallPos[8] = marker at {869.108, 377.077, 1655.895}
+WallPos[9] = marker at {839.092, 379.054, 1570.842}
+
+GatePos[0] = marker at {880.078, 376.669, 1605.493}
+GatePos[1] = marker at {1155.277,313.706,1462.340}
+GatePos[2] = marker at {1222.258,207.465,1104.651}
+GatePos[3] = marker at {1514.523,212.683,952.414}
+GatePos[4] = marker at {1835.630,220.028,826.246}
+
+
+EpicTarget = marker at {783.947, 214.672, 976.815}
+
+Counter = 0
+while Counter < 10
+
+	Walls[Counter] = get wall segment nearest {WallPos[Counter]} radius 15
+
+	Counter++
+end while
+
+WestWallOne = get wall segment nearest {WestWallOnePos} radius 15
+WestWallTwo = get wall segment nearest {WestWallTwoPos} radius 15
+
+
+CreatureTimer = create timer for 0 seconds
+CreatureFireballPos = marker at {867.704,205.506,918.943}
+
+CatapultMoveTimer = create timer for 0 seconds
+CatapultWarningTarget1 = marker at {819.867,214.347,937.453}
+CatapultPosE3One = marker at {1594.358,229.445,856.602}  //marker at {1660.331,231.879,871.915}
+CatapultPosE3Two = marker at {1620.895, 217.721, 805.484}
+CastEpicPos = marker at {790.998, 182.224, 707.129}
+WarningEpicPos = marker at {681.495,243.749,936.357}
+
+LC7_PlatoonPos[0] = marker at {1441.765,293.532,1415.382}
+LC7_PlatoonPos[1] = marker at {1488.332,254.335,1129.662}
+LC7_PlatoonPos[2] = marker at {1314.485,236.446,1191.961}
+LC7_PlatoonPos[3] = marker at {1129.435,263.042,1245.907}
+LC7_PlatoonPos[4] = marker at {1204.140,261.153,1286.815}
+LC7_PlatoonPos[5] = marker at {566.034,378.767,1533.872}
+LC7_PlatoonPos[6] = marker at {432.308,378.618,1603.561}
+LC7_PlatoonPos[7] = marker at {930.059,218.975,1051.237}  //marker at {976.345,237.435,1176.024}
+LC7_PlatoonPos[8] = marker at {1258.169,239.471,1005.418} // marker at {1271.902,228.659,968.363}
+LC7_PlatoonPos[9] = marker at {1662.356,233.025,882.276}
+LC7_PlatoonPos[10] = marker at {1050.331,247.777,1108.417} //marker at {1041.116,244.764,1153.529}
+LC7_PlatoonPos[11] = marker at {1204.373,217.634,963.989} //marker at {1221.928,217.607,969.434}
+LC7_PlatoonPos[12] = marker at {1322.262,231.581,928.955} //marker at {1357.244,246.278,969.123}
+LC7_PlatoonPos[13] = marker at {1593.732, 229.540, 862.865}
+LC7_PlatoonPos[14] = marker at {1685.361, 233.868, 825.716}
+
+
+AttackFlankPos1 = marker at {730.922,226.178,829.229}
+AttackFlankPos2 = marker at {723.679,226.932,938.394}
+AttackFlankPos3 = marker at {582.462,234.517,937.635}
+AttackFlankPos4 = marker at {659.440,236.523,954.231}
+
+PatrolPos1 = marker at {1730.456, 266.322, 1086.597}
+PatrolPos2 = marker at {1952.528, 278.171, 1036.217}
+PatrolPos3 = marker at {1859.435, 302.637, 1254.213}
+
+AltPatrolPos1 = marker at {1465.896, 286.939, 1380.207}
+AltPatrolPos2 = marker at {1249.704, 288.217, 1408.417}
+AltPatrolPos3 = marker at {1438.660, 250.584, 1172.318}
+
+Counter = 0
+
+LC7_Platoon[0] = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {PatrolPos1} with 200 men and 0 women
+PLAYER of LC7_Platoon[0] = 1
+attach LC7_Platoon[0] to L7JapanCap
+disable platoon LC7_Platoon[0] respond to town L7JapanCap attack
+disable platoon LC7_Platoon[0] respond to town L7JapEastTown attack
+disable platoon LC7_Platoon[0] respond to town L7JapWestTown attack
+disable platoon LC7_Platoon[0] respond to local platoon attack
+disable platoon LC7_Platoon[0] respond to player army
+
+while Counter < LC7_NUM_OF_SETTLEMENTS
+	disable platoon LC7_Platoon[0] respond to town L7Settlement[Counter] attack
+	Counter++
+end while
+
+
+//Extra defence for big town
+WestTownTroopsOne = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {WestTownTroopsOnePos} with 20 men and 0 women
+PLAYER of WestTownTroopsOne = 1
+WestTownTroopsTwo = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {WestTownTroopsTwoPos} with 20 men and 0 women
+PLAYER of WestTownTroopsTwo = 1
+enable platoon WestTownTroopsOne respond to town L7JapEastTown attack
+enable platoon WestTownTroopsOne respond to town L7JapWestTown attack
+enable platoon WestTownTroopsTwo respond to town L7JapEastTown attack
+enable platoon WestTownTroopsTwo respond to town L7JapWestTown attack
+WestTownArcher = create platoon PLATOON_INFO_JAPANESE_RANGED_2 at {WestTownArcherPos} with 20 men and 0 women
+PLAYER of WestTownArcher = 1
+WestTownArcher2 = create platoon PLATOON_INFO_JAPANESE_RANGED_2 at {WestTownArcherPos2} with 20 men and 0 women
+PLAYER of WestTownArcher2 = 1
+add action PLATOON_AGENDA_ACTION_GET_ON_WALL using WestWallOne to WestTownArcher action queue
+add action PLATOON_AGENDA_ACTION_GET_ON_WALL using WestWallTwo to WestTownArcher2 action queue
+
+
+
+run background script RegenerateBigPlatoon
+
+DefendersOne = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {DefendersOnePos} with 20 men and 0 women
+PLAYER of DefendersOne = 1
+attach DefendersOne to L7JapanCap
+set DefendersOne focus to {L7GreekTown}
+DefendersTwo = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {DefendersTwoPos} with 20 men and 0 women
+PLAYER of DefendersTwo = 1
+attach DefendersTwo to L7JapanCap
+set DefendersTwo focus to {L7GreekTown}
+DefendersThree = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {DefendersThreePos} with 20 men and 0 women
+PLAYER of DefendersThree = 1
+attach DefendersThree to L7JapanCap
+set DefendersThree focus to {L7GreekTown}
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {DefendersOnePos} to DefendersOne action queue
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {DefendersTwoPos} to DefendersTwo action queue
+add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {DefendersThreePos} to DefendersThree action queue
+
+wait 20 seconds
+
+Counter = 15
+while Counter < LC7_NUM_OF_PLATOONS
+	if Counter != 19 and Counter != 20
+		if Counter == 8 or Counter == 9
+			LC7_Platoon[Counter] = create platoon PLATOON_INFO_JAPANESE_RANGED_2 at {WallPos[Counter-15]} - {5,5} with 20 men and 0 women
+		else
+			LC7_Platoon[Counter] = create platoon PLATOON_INFO_JAPANESE_RANGED_2 at {WallPos[Counter-15]} - {5,5} with 20 men and 0 women
+		end if
+
+		PLAYER of LC7_Platoon[Counter] = 1
+		attach LC7_Platoon[Counter] to L7JapanCap
+	end if
+	if Walls[Counter-15] exists and Counter != 19 and Counter != 20
+		add action PLATOON_AGENDA_ACTION_GET_ON_WALL using Walls[Counter-15] to LC7_Platoon[Counter] action queue
+		//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {WallPos[Counter-15]} to LC7_Platoon[Counter] action queue
+	elsif Counter != 19 and Counter != 20
+		//begin dialogue
+			//say "BW2T_SCRIPT_07FINAL_JAPANCAPITAL_30" with number (Counter - 15)
+			//wait until read
+		//end dialogue
+		
+	end if
+	Counter++
+end while
+
+CatapultTemp = marker at {1998.578,319.583,1378.527}
+
+Waypoint = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {LC7_Platoon[0]}
+add {PatrolPos1} to waypoint list Waypoint
+add {PatrolPos2} to waypoint list Waypoint
+add {PatrolPos3} to waypoint list Waypoint
+
+AltWaypoint = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {LC7_Platoon[0]}
+add {AltPatrolPos1} to waypoint list AltWaypoint
+add {AltPatrolPos2} to waypoint list AltWaypoint
+add {AltPatrolPos3} to waypoint list AltWaypoint
+
+
+move LC7_Platoon[0] along Waypoint with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR //Big platoon
+
+
+//Enable gate openings
+/*Counter = 0
+while Counter < 5
+	TempGate = get HOUSE GATEHOUSE at {GatePos[Counter]} radius 100
+	enable gate TempGate can open for platoons
+	Counter++
+	//set gate TempGate open
+end while*/
+
+
+begin loop
+	
+	if LC7_Condition == LC7_AT_PEACE
+
+		//Attack timer sends down occasional troops
+		if get AttackTimer time remaining <= 0
+			AttackTimer = create timer for 10 seconds
+
+			if SiegePlatoon not exists
+				if can town L7JapanCap recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20
+					if adult size of L7JapanCap - get number of soldiers in town L7JapanCap > 0
+						SiegePlatoon = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapanCap platoon of size 20
+						SiegeArrived = 0
+						move SiegePlatoon along WaypointRouteMain with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AltCatapultPos} to SiegePlatoon action queue					
+					end if
+				end if
+			
+			elsif SiegePlatoon exists
+
+				if {SiegePlatoon} near {AltCatapultPos} radius 30
+					SiegeArrived = 1
+					clear SiegePlatoon action queue
+				end if
+
+				if SiegePlatoon can navigate to {CanNavToPos} and get size of SiegePlatoon action queue < 1 //platoon SiegePlatoon idle
+					clear SiegePlatoon action queue
+					set SiegePlatoon attack L7GreekTown with severity 0.5 //add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos} to SiegePlatoon action queue
+				elsif not SiegePlatoon can navigate to {CanNavToPos} and get size of SiegePlatoon action queue < 1 // and platoon SiegePlatoon current action is PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos}
+					if SiegeArrived == 0
+						clear SiegePlatoon action queue
+						move SiegePlatoon along WaypointRouteMain with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AltCatapultPos} to SiegePlatoon action queue
+					else
+						clear SiegePlatoon action queue
+					end if					
+				end if
+		
+			end if
+
+		end if
+
+
+		//Send people to deter from first pass
+		if get RouteArmyTimer time remaining <= 0 and RouteArmyCurrent < 3
+			if LC7_Platoon[0] exists
+				if size of LC7_Platoon[0] > 20
+					RouteArmy[RouteArmyCurrent] = split 20 soldiers from platoon LC7_Platoon[0]
+					add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {RouteArmyPos[RouteArmyCurrent]} to RouteArmy[RouteArmyCurrent] action queue
+					attach RouteArmy[RouteArmyCurrent] to L7JapanCap
+
+					if GCAI_CurrentTask != GCAI_TASK_LEADPLATOON
+						run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(RouteArmy[RouteArmyCurrent],RouteArmyPos[RouteArmyCurrent], 150)
+					end if
+
+				end if
+			end if
+			RouteArmyCurrent++
+			RouteArmyTimer = create timer for 35 seconds
+		end if
+
+
+		//If they build an army - send some people down
+		if get number of platoon belonging to player 0 > 0 and ArmyBuilt == 0 and ImpressiveAction <= 2
+			ImpressiveAction = 3
+			ArmyBuilt++
+			if size of LC7_Platoon[0] > 20
+				LittleSiegePlatoon1 = split 20 soldiers from platoon LC7_Platoon[0]
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {LittleSiegePosOne} to LittleSiegePlatoon1 action queue
+				attach LittleSiegePlatoon1 to L7JapanCap
+				if GCAI_CurrentTask != GCAI_TASK_LEADPLATOON
+					run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(LittleSiegePlatoon1,LittleSiegePosOne, 150)
+				end if
+			end if
+		end if
+
+
+		if PlatoonCrossesLine == 0 or PlatoonCrossesLineTwo == 0
+			PlayerPlatoon = get platoon of player 0 nearest {RouteLinePos[0]} radius 6000
+			PlayerSiege = get siege weapon of player 0 nearest {RouteLinePos[0]} radius 6000
+		end if
+
+		if PlayerPlatoon exists and PlatoonCrossesLine == 0
+			//Player platoon crosses a line, so we send some troops to intercept them
+			if ({PlayerPlatoon} and {L7JapEastTown} on same side of line between {LinePosOne} and {LinePosTwo}) or ({MyCreature} and {L7JapEastTown} on same side of line between {LinePosOne} and {LinePosTwo}) or ({PlayerSiege} and {L7JapEastTown} on same side of line between {LinePosOne} and {LinePosTwo})
+				if LC7_Platoon[0] exists
+					PlatoonCrossesLine = 1
+
+					if size of LC7_Platoon[0] > 20
+						TempPlatoon = split 20 soldiers from platoon LC7_Platoon[0]
+						add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {LineGoPos} to TempPlatoon action queue
+						attach TempPlatoon to L7JapanCap
+					end if
+
+					clear LC7_Platoon[0] action queue
+					move LC7_Platoon[0] along AltWaypoint with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR //Big platoon
+
+					if size of LC7_Platoon[0] > 40
+						TempPlatoon = split 40 soldiers from platoon LC7_Platoon[0]
+						add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {DefendFarTownPos} to TempPlatoon action queue
+						attach TempPlatoon to L7JapanCap
+					end if
+
+				end if
+				
+			end if
+
+		end if
+
+		if PlayerPlatoon exists and PlatoonCrossesLineTwo == 0
+			if ({PlayerPlatoon} and {L7JapEastTown} on same side of line between {RouteLinePos[0]} and {RouteLinePos[1]}) or ({MyCreature} and {L7JapEastTown} on same side of line between {RouteLinePos[0]} and {RouteLinePos[1]}) or ({PlayerSiege} and {L7JapEastTown} on same side of line between {LinePosOne} and {LinePosTwo})
+				PlatoonCrossesLineTwo = 1
+				Counter = 0
+				while Counter < 2
+					if RouteArmy[Counter] exists
+						clear RouteArmy[Counter] action queue
+						add action PLATOON_AGENDA_ACTION_ATTACK_ANY_ENEMY_IN_AREA using  {RouteDefendPos[Counter]} to RouteArmy[Counter] action queue
+						attach RouteArmy[Counter] to L7JapanCap
+					end if
+					Counter++
+				end while
+
+			end if
+		end if
+
+
+		if NumberOfTownsPlayerHasTaken == 2 and TakingSettlementsAction == 0 and ImpressiveAction < 2
+			TakingSettlementsAction++ 
+		
+			//Create a couple more enemy platoons to defend the home town
+			//if can town L7JapanCap recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20
+				//LC7_ExtraPlatoons[0] = recruit ARMY_UNIT_TYPE_MELEE_4 town L7JapanCap platoon of size 20
+				//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {DefendTownPos} to LC7_ExtraPlatoons[0] action queue
+				
+				//LC7_ExtraPlatoons[1] = recruit ARMY_UNIT_TYPE_MELEE_4 town L7JapanCap platoon of size 20
+				//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {DefendTownPos} to LC7_ExtraPlatoons[1] action queue
+			//end if
+
+			//Send a very small platoon to have a look at the player's town
+			if LC7_Platoon[0] exists
+				if size of LC7_Platoon[0] > 20
+					LittleSiegePlatoon2 = split 20 soldiers from platoon LC7_Platoon[0]
+					add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {LittleSiegePosTwo} to LittleSiegePlatoon2 action queue
+					attach LittleSiegePlatoon2 to L7JapanCap
+					if GCAI_CurrentTask != GCAI_TASK_LEADPLATOON
+						run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(LittleSiegePlatoon2,LittleSiegePosTwo, 150)
+					end if
+					ImpressiveAction = 3
+					
+					enable platoon LittleSiegePlatoon2 respond to town L7JapanCap attack
+					enable platoon LittleSiegePlatoon2 respond to town L7JapEastTown attack
+					enable platoon LittleSiegePlatoon2 respond to town L7JapWestTown attack
+
+					Counter2 = 0
+					while Counter2 < LC7_NUM_OF_SETTLEMENTS
+						enable platoon LittleSiegePlatoon2 respond to town L7Settlement[Counter2] attack
+						Counter2++
+					end while
+
+				end if
+			end if
+		end if
+					
+		if NumberOfTownsPlayerHasTaken == 3 and TakingSettlementsAction <= 1
+			//Order catapults to fire warning shots near town
+			//Counter = 5
+			if CatapultsCanStop != 1
+				//while Counter < 8
+					if LC7_Platoon[7] exists
+						if {LC7_Platoon[7]} not near {LC7_PlatoonPos[7]} radius 20
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[7]} to siege weapon LC7_Platoon[7] action queue
+						end if
+						add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_AREA_HOLDING_POSITION using {CatapultWarningTarget1} to siege weapon LC7_Platoon[7] action queue
+					end if
+					//Counter++
+				//end while
+			end if
+			TakingSettlementsAction = 2
+			if CatapultsCanStop != 1
+				CatapultStopTimer = create timer for 120 seconds //Stop after 2 minutes
+				CatapultsCanStop = 1
+			end if
+
+			//Also start to build the Japanese hurricane epic
+			JapaneseEpicPos = marker at {647.028, 470.494, 1832.202}
+			JapaneseEpic = get planned WONDER SCRIPT_FIND_TYPE_ANY in L7JapanCap near {JapaneseEpicPos} radius 100
+			JapaneseEpic = build building at {JapaneseEpic} desire 1.0
+			PLAYER of JapaneseEpic = 1
+
+			EpicBuilder = create timer for 10 seconds
+			BuildingEpic = 1
+
+			//Send a very small platoon to have a look at and attack the town
+			if LC7_Platoon[0] exists 
+				if size of LC7_Platoon[0] > 20
+					TempPlatoon = split 20 soldiers from platoon LC7_Platoon[0]
+					
+					if TempPlatoon can navigate to {CanNavToPos}
+
+						set TempPlatoon attack L7GreekTown with severity 0.3					
+						if GCAI_CurrentTask != GCAI_TASK_LEADPLATOON
+							run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(TempPlatoon,L7GreekTown,150)
+						end if
+
+					else
+						if PLAYER of L7JapWestTown == 1 and variable get town L7JapWestTown status != variable TOWN_STATUS_MIGRATION_STARTED
+							TempCatapult = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_2 town L7JapWestTown siege weapon
+							//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {AltCatapultPos} to siege weapon TempCatapult action queue
+							//add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon TempCatapult action queue
+							
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {AltCatapultPos} to siege weapon TempCatapult action queue
+
+						end if
+					end if
+
+					attach TempPlatoon to L7JapanCap
+					enable platoon TempPlatoon respond to town L7JapanCap attack
+					enable platoon TempPlatoon respond to town L7JapEastTown attack
+					enable platoon TempPlatoon respond to town L7JapWestTown attack
+
+					Counter2 = 0
+					while Counter2 < LC7_NUM_OF_SETTLEMENTS
+						enable platoon TempPlatoon respond to town L7Settlement[Counter2] attack
+						Counter2++
+					end while
+
+				end if
+			end if
+
+		end if
+
+		if get CatapultStopTimer time remaining <= 0 and CatapultsCanStop == 1
+			//Counter = 5
+			//while Counter < 8
+				if LC7_Platoon[7] exists
+					clear LC7_Platoon[7] action queue
+				end if
+			//end while
+			CatapultsCanStop = 0
+		end if
+
+		
+		if NumberOfTownsPlayerHasTaken == 4 and TakingSettlementsAction == 2
+			//Take over a town and start attacking the player a lot
+			
+			NearestSettlement = -1
+			run script GetNearestSettlement(L7JapanCap)
+
+			if NearestSettlement != -1 
+				
+				if PLAYER of NearestSettlement != 1
+
+					Counter = 0				
+
+					if LC7_Platoon[0] exists 
+						if size of LC7_Platoon[0] > 20
+							//Spilt off and take over a town
+							LC7_Platoon[1] = split 20 soldiers from platoon LC7_Platoon[0]
+							wait until LC7_Platoon[1] exists
+							clear LC7_Platoon[1] action queue
+							set LC7_Platoon[1] attack NearestSettlement with severity 0.7 for takeover
+							//Send out the creature with the platoon
+							run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(LC7_Platoon[1],NearestSettlement,150)
+							attach LC7_Platoon[1] to L7JapanCap
+							
+							enable platoon LC7_Platoon[1] respond to town L7JapanCap attack
+							enable platoon LC7_Platoon[1] respond to town L7JapEastTown attack
+							enable platoon LC7_Platoon[1] respond to town L7JapWestTown attack
+
+							Counter2 = 0
+							while Counter2 < LC7_NUM_OF_SETTLEMENTS
+								enable platoon LC7_Platoon[1] respond to town L7Settlement[Counter2] attack
+								Counter2++
+							end while
+
+						end if
+					end if
+				end if
+			end if
+			
+			LC7_Condition = LC7_AT_WAR //Attack the player loads at this point
+			WarTimer = create timer for 0 seconds
+			TakingSettlementsAction++
+		end if
+		
+		//Still needed?
+		if get CreatureTimer time remaining <= 0 and CreatureGoHome == 1
+			CreatureGoHome = 0
+			run background script GCAI_SetTask_PerformRole_Previous
+		end if
+
+		
+		
+		//Impressiveness attacks
+		if get town L7GreekTown impressiveness > GLOBAL_VALUE_LAND_7_IMPRESSIVENESS_LEVEL_0 and ImpressiveAction == 0
+			
+			ImpressiveAction++
+
+			//Extra little attack / look
+			if LC7_Platoon[0] exists
+				if size of LC7_Platoon[0] > 20
+					LittleSiegePlatoon3 = split 20 soldiers from platoon LC7_Platoon[0]
+					wait until LittleSiegePlatoon3 exists
+					attach LittleSiegePlatoon3 to L7JapanCap
+					add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {LittleSiegePosThree} to LittleSiegePlatoon3 action queue
+
+					enable platoon LittleSiegePlatoon3 respond to town L7JapanCap attack
+					enable platoon LittleSiegePlatoon3 respond to town L7JapEastTown attack
+					enable platoon LittleSiegePlatoon3 respond to town L7JapWestTown attack
+
+					Counter2 = 0
+					while Counter2 < LC7_NUM_OF_SETTLEMENTS
+						enable platoon LittleSiegePlatoon3 respond to town L7Settlement[Counter2] attack
+						Counter2++
+					end while
+
+				end if
+			end if
+
+		elsif get town L7GreekTown impressiveness > GLOBAL_VALUE_LAND_7_IMPRESSIVENESS_LEVEL_1 and ImpressiveAction == 1
+
+			if adult size of L7JapanCap - get number of soldiers in town L7JapanCap > 0
+				LC7_ExtraPlatoons[3] = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapanCap platoon of size 20
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {DefendTownMovePos} to LC7_ExtraPlatoons[3] action queue
+			end if
+
+			ImpressiveAction++
+
+			//Extra little attack/look
+			if LC7_Platoon[0] exists 
+				if size of LC7_Platoon[0] > 20
+					TempPlatoon = split 20 soldiers from platoon LC7_Platoon[0]
+					wait until TempPlatoon exists
+
+					if TempPlatoon can navigate to {CanNavToPos}
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AttackFlankPos2} to TempPlatoon action queue
+						set TempPlatoon attack L7GreekTown with severity 0.4
+					else
+						add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using  {LittleSiegePosTwo} to TempPlatoon action queue
+					end if
+
+					attach TempPlatoon to L7JapanCap
+
+					enable platoon TempPlatoon respond to town L7JapanCap attack
+					enable platoon TempPlatoon respond to town L7JapEastTown attack
+					enable platoon TempPlatoon respond to town L7JapWestTown attack
+
+					Counter2 = 0
+					while Counter2 < LC7_NUM_OF_SETTLEMENTS
+						enable platoon TempPlatoon respond to town L7Settlement[Counter2] attack
+						Counter2++
+					end while
+
+				end if
+			end if
+			
+		elsif (get town L7GreekTown impressiveness > GLOBAL_VALUE_LAND_7_IMPRESSIVENESS_LEVEL_2 or get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH0 in L7GreekTown min built 1.0 > 3 or get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH1 in L7GreekTown min built 1.0 > 3) and ImpressiveAction <= 2
+			if PLAYER of L7JapWestTown != 0
+				//if can town L7JapWestTown recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_3 siege weapon
+					CatapultFirst = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_2 belonging to L7JapWestTown at {L7JapWestTown} + {20,20}
+					if LC7_Platoon[0] exists
+						if size of LC7_Platoon[0] > 20
+							CatapultHelpers1 = split 20 soldiers from platoon LC7_Platoon[0]
+							add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using CatapultFirst to CatapultHelpers1 action queue
+							//add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos} to TempPlatoon action queue
+						end if
+					end if
+					run background script MoveCatapult(CatapultFirst)
+					//wait until not TempCatapult recruiting
+					/*if get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH0 in L7GreekTown min built 1.0 > 2 or get number of type HOUSE ABODE_NUMBER_WALLTOWER_TECH1 in L7GreekTown min built 1.0 > 2
+						WallPlayer = get building ABODE_NUMBER_WALLTOWER_TECH0 in L7GreekTown min built 1.0
+						if WallPlayer exists
+							add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using WallPlayer to siege weapon CatapultFirst action queue
+							WallPlayer = 2
+						else
+							WallPlayer = get building ABODE_NUMBER_WALLTOWER_TECH1 in L7GreekTown min built 1.0
+							if WallPlayer exists
+								add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using WallPlayer to siege weapon CatapultFirst action queue
+								WallPlayer = 2
+							end if
+						end if
+					end if
+
+					if WallPlayer != 2
+						add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_THING using L7GreekTown to siege weapon CatapultFirst action queue
+					end if
+				//end if*/
+			end if
+			
+		/*	if LC7_Platoon[0] exists 
+				if size of LC7_Platoon[0] > 20
+					LC7_ExtraPlatoons[4] = split 20 soldiers from platoon LC7_Platoon[0]
+					wait until LC7_ExtraPlatoons[4] exists
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AttackFlankPos2} to LC7_ExtraPlatoons[4] action queue
+					set LC7_ExtraPlatoons[4] attack L7GreekTown with severity 0.4
+					attach LC7_ExtraPlatoons[4] to L7JapanCap
+				end if
+			end if*/
+
+			ImpressiveAction = 3
+			
+		elsif get town L7GreekTown impressiveness > GLOBAL_VALUE_LAND_7_IMPRESSIVENESS_LEVEL_3 and ImpressiveAction == 3
+			
+			NearestSettlement = -1
+			run script GetNearestSettlement(L7JapanCap)
+			
+			if NearestSettlement != -1
+				
+				if PLAYER of NearestSettlement != 1 //Settlement available
+					if LC7_Platoon[0] exists 
+						if size of LC7_Platoon[0] > 20
+							LC7_ExtraPlatoons[5] = split 20 soldiers from platoon LC7_Platoon[0]
+							wait until LC7_ExtraPlatoons[5] exists
+							set LC7_ExtraPlatoons[5] attack NearestSettlement with severity 0.7 for takeover
+							attach LC7_ExtraPlatoons[5] to L7JapanCap
+
+							enable platoon LC7_ExtraPlatoons[5] respond to town L7JapanCap attack
+							enable platoon LC7_ExtraPlatoons[5] respond to town L7JapEastTown attack
+							enable platoon LC7_ExtraPlatoons[5] respond to town L7JapWestTown attack
+
+							Counter2 = 0
+							while Counter2 < LC7_NUM_OF_SETTLEMENTS
+								enable platoon LC7_ExtraPlatoons[5] respond to town L7Settlement[Counter2] attack
+								Counter2++
+							end while
+
+						end if
+					end if
+				end if
+			end if
+			
+			ImpressiveAction++
+			
+		end if
+		
+		
+		//Uses (TakingSettlementsAction)? so that the catapults are not ordered to fire twice
+		if WestTownTakenAttack == 1 and EastTownTakenAttack == 1 //and TakingSettlementsAction < 1
+
+			TakingSettlementsAction = 2
+			//Order catapults to fire on town
+			//Counter = 5
+			//while Counter < 8
+				if LC7_Platoon[7] exists
+					if {LC7_Platoon[7]} not near {LC7_PlatoonPos[7]} radius 20
+						add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[7]} to siege weapon LC7_Platoon[7] action queue
+					end if
+					add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_AREA_HOLDING_POSITION using {CatapultWarningTarget1} to siege weapon LC7_Platoon[7] action queue
+				end if
+				//Counter++
+			//end while
+
+			Counter = 12
+			while Counter < 15
+				if LC7_Platoon[Counter] exists
+					if {LC7_Platoon[Counter]} not near {LC7_PlatoonPos[Counter]} radius 20
+						add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[Counter]} to siege weapon LC7_Platoon[Counter] action queue
+					end if
+					add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_AREA_HOLDING_POSITION using {CatapultWarningTarget1} to siege weapon LC7_Platoon[Counter] action queue
+				end if
+				Counter++
+			end while
+			CatapultsCanStop = 0 //They'll never stop now
+
+			//Send a big platoon out to smash the player's head in
+			Counter = 1
+			while Counter < 6
+				if LC7_ExtraPlatoons[Counter] exists
+					clear LC7_ExtraPlatoons[Counter] action queue
+					set LC7_ExtraPlatoons[Counter] attack L7GreekTown with severity 1.0 for takeover
+					attach LC7_ExtraPlatoons[Counter] to L7JapanCap
+					run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(LC7_ExtraPlatoons[Counter],L7GreekTown,150)
+				end if
+                
+				Counter++
+
+			end while
+					
+
+			LC7_Condition = LC7_AT_WAR
+			WarTimer = create timer for 0 seconds
+
+		end if
+		
+		
+	
+	elsif LC7_Condition == LC7_AT_WAR
+
+
+		//Fire the epic
+		if EpicFired == 0 and get number of type WONDER SCRIPT_FIND_TYPE_ANY in L7JapanCap min built 1.0 > 0 and HEALTH of JapaneseEpic >= 1.0 and get town L7GreekTown RESOURCE_TYPE_ORE total > 999
+			EpicFired = 1
+			//create epic EPIC_WONDER_NUMBER_HURRICANE at {CastEpicPos}
+
+			if HEALTH of JapaneseEpic >= 1.0
+				
+				CHARGE of JapaneseEpic = 1.0
+				BuildingEpic = 2
+				
+				HurricaneWarning = create visual effect VISUAL_EFFECT_EPIC_TARGET_WARNING at {CastEpicPos} time 15 target {CastEpicPos}
+				wait 15 seconds
+				EpicHurr = create hurricane at {CastEpicPos} player 1 direction {EpicTarget}
+				
+				run background script Land7Hurricane(JapaneseEpic, EpicHurr)
+
+	/*
+
+				invoke EpicHurr EPIC_PULSE_UP
+				wait 0.5 seconds
+				invoke EpicHurr EPIC_HURRICANE_BEAM_DOWN
+				invoke EpicHurr EPIC_START_GROUND_SWIRL
+				wait 4 seconds
+				invoke EpicHurr EPIC_HURRICANE_END_BEAM
+				invoke EpicHurr EPIC_START_TOP_SWIRL
+
+				invoke EpicHurr EPIC_CREATE_CLOUDS
+				invoke EpicHurr EPIC_SET_CLOUDS_STORM
+				invoke EpicHurr EPIC_MOVE_TORNADO
+
+
+				invoke EpicHurr EPIC_EXIT_TORNADO	
+				wait 0.2 seconds
+				invoke EpicHurr EPIC_ENTER_TORNADO
+				invoke EpicHurr EPIC_ENABLE_TORNADO_DESTRUCTION
+
+				wait 3 seconds
+				invoke EpicHurr EPIC_EXIT_TORNADO
+				wait 4 seconds
+				invoke EpicHurr EPIC_ENTER_TORNADO
+				wait 4 seconds
+				invoke EpicHurr EPIC_EXIT_TORNADO
+				invoke EpicHurr EPIC_STOP_TORNADO
+				invoke EpicHurr EPIC_CLEAR_CLOUDS
+				invoke EpicHurr EPIC_END_TORNADO
+			*/
+
+			end if
+
+		end if
+
+		//Recruit a lot and send them to the player's town
+		
+		//Stop adding troops to big platoon - player can eradicate it now
+		StopRegenerating = 1
+
+		if get WarTimer time remaining <= 0
+			if LC7_Platoon[0] exists and get WarTimer time remaining <= 0
+				if size of LC7_Platoon[0] > 20 //If enough left
+					TempPlatoon = split 20 soldiers from platoon LC7_Platoon[0]
+					wait until TempPlatoon exists
+					set TempPlatoon attack L7GreekTown with severity 0.8
+					attach TempPlatoon to L7JapanCap
+					WarTimer = create timer for GLOBAL_VALUE_ALIGNMENT_LAND_7_WAR_TIMER seconds
+				end if
+			end if
+
+			if can town L7JapanCap recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20 and get WarTimer time remaining <= 0
+
+				if adult size of L7JapanCap - get number of soldiers in town L7JapanCap > 0
+					//if PLAYER of L7JapWestTown == 0
+						//TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapanCap platoon of size 20
+						//attach TempPlatoon to L7JapanCap
+						//set TempPlatoon attack L7JapWestTown with severity 0.8 for takeover
+					if PLAYER of L7JapEastTown == 0
+						TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapanCap platoon of size 20
+						attach TempPlatoon to L7JapanCap
+						set TempPlatoon attack L7JapEastTown with severity 0.8 for takeover
+					else
+						TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapanCap platoon of size 20
+						attach TempPlatoon to L7JapanCap
+						move TempPlatoon along WaypointRouteMain with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+						set TempPlatoon attack L7GreekTown with severity 0.8
+					end if
+			
+
+					//If the creature's not busy, we send him out with a platoon
+					if GCAI_CurrentTask != GCAI_TASK_LEADPLATOON
+						if PLAYER of L7JapWestTown == 0
+							run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(TempPlatoon,L7JapWestTown,150)
+						elsif PLAYER of L7JapEastTown == 0
+							run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(TempPlatoon,L7JapEastTown,150)
+						else
+							if TempPlatoon can navigate to {CanNavToPos}
+								run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(TempPlatoon,L7GreekTown,150)
+							end if
+						end if
+					end if
+
+				end if
+
+			//	if 	TempCatapult not exists
+			//		TempCatapult = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_2 town L7JapanCap siege weapon
+			//		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {AltCatapultPos} to TempPlatoon action queue
+			//	end if
+
+				WarTimer = create timer for GLOBAL_VALUE_ALIGNMENT_LAND_7_WAR_TIMER seconds	
+
+			end if
+
+		
+		end if
+
+
+	end if
+	
+	//If enemy town attacked - defend it
+	if town L7JapanCap is under takeover from player 0 and get TakeOverTimer time remaining <= 0
+
+		if PLAYER of L7JapWestTown == 1 and PLAYER of L7JapEastTown == 1 and variable get town L7JapEastTown status != variable TOWN_STATUS_MIGRATION_STARTED and variable get town L7JapWestTown status != variable TOWN_STATUS_MIGRATION_STARTED
+			//Attack player from these towns
+			if can town L7JapWestTown recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20
+				if adult size of L7JapWestTown - get number of soldiers in town L7JapWestTown > 20
+					TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapWestTown platoon of size 20
+					attach TempPlatoon to L7JapanCap
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos} to TempPlatoon action queue
+				end if
+			end if
+			if can town L7JapEastTown recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20
+				if adult size of L7JapEastTown - get number of soldiers in town L7JapEastTown > 20
+					TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapEastTown platoon of size 20
+					attach TempPlatoon to L7JapanCap
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos} to TempPlatoon action queue
+				end if
+			end if
+		else
+			if can town L7JapanCap recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20
+				if adult size of L7JapanCap - get number of soldiers in town L7JapanCap > 0
+					TempPlatoon = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapanCap platoon of size 20
+					attach TempPlatoon to L7JapanCap
+					add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {DefendTownPos} to TempPlatoon action queue
+				end if
+			end if
+		end if
+
+		if DefendersSent == 0
+			DefendersSent = 1
+			if DefendersOne exists
+				clear DefendersOne action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos} to DefendersOne action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {DefendersOnePos} to DefendersOne action queue
+			end if
+
+			if DefendersTwo exists
+				clear DefendersTwo action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos} to DefendersTwo action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {DefendersTwoPos} to DefendersTwo action queue
+			end if
+
+ 			if DefendersThree exists
+				clear DefendersThree action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {DefendTownPos} to DefendersThree action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {DefendersThreePos} to DefendersThree action queue
+			end if
+		
+		end if
+
+		TakeOverTimer = create timer for 60 seconds
+
+	end if
+
+	if get EpicBuilder time remaining <= 0 and BuildingEpic == 1
+		if BUILT of JapaneseEpic < 1.0
+			BUILT of JapaneseEpic += 0.1
+			EpicBuilder = create timer for 10 seconds
+		
+		elsif CHARGE of JapaneseEpic < 1.0
+			CHARGE of JapaneseEpic += 0.05
+			EpicBuilder = create timer for 10 seconds
+
+		end if
+	end if
+
+
+	//Catapults destroyed checking - position E1
+	
+	if LC7_Platoon[7] not exists and CatapultAction == 0 and CatapultsInPosition == 2 and PLAYER of L7JapEastTown == 1 and PlatoonDown2[7] != 2 and variable get town L7JapEastTown status != variable TOWN_STATUS_MIGRATION_STARTED
+		Counter2 = 1
+		while Counter2 < 5 and TroopsSent == 0
+			if LC7_Platoon[Counter2] exists
+				clear LC7_Platoon[Counter2] action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[7]} to LC7_Platoon[Counter2] action queue
+				TroopsSent = 1
+			end if
+			Counter2++
+		end while
+		
+		CatapultAction = 1
+		PlatoonDown2[7] = 2
+	elsif LC7_Platoon[10] not exists and CatapultAction == 0 and CatapultsInPosition == 2 and PLAYER of L7JapEastTown == 1 and PlatoonDown2[10] != 2 and variable get town L7JapEastTown status != variable TOWN_STATUS_MIGRATION_STARTED
+		Counter2 = 1
+		while Counter2 < 5 and TroopsSent == 0
+			if LC7_Platoon[Counter2] exists
+				clear LC7_Platoon[Counter2] action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[10]} to LC7_Platoon[Counter2] action queue
+				TroopsSent = 1
+			end if
+			Counter2++
+		end while
+		
+		CatapultAction = 1
+		PlatoonDown2[10] = 2
+	end if
+	//Counter++
+
+
+	//Position E2 - send to E3
+
+	if (LC7_Platoon[11] not exists) and (CatapultAction == 1) and (CatapultsInPosition == 2) and (PLAYER of L7JapEastTown == 1) and (PlatoonDown2[11] != 2) and variable get town L7JapEastTown status != variable TOWN_STATUS_MIGRATION_STARTED
+		TempCatapult = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1 town L7JapWestTown siege weapon
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultPosE3One} to siege weapon TempCatapult action queue
+		add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon TempCatapult action queue
+		TempCatapult = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1 town L7JapWestTown siege weapon
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultPosE3Two} to siege weapon TempCatapult action queue
+		add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon TempCatapult action queue
+		
+		CatapultAction = 2
+		PlatoonDown2[11] = 2
+
+		//LC7_Condition = LC7_AT_WAR
+		//WarTimer = create timer for 0 seconds
+
+	elsif LC7_Platoon[12] not exists and CatapultAction == 1 and CatapultsInPosition == 2 and PLAYER of L7JapEastTown == 1 and variable get town L7JapEastTown status != variable TOWN_STATUS_MIGRATION_STARTED and PlatoonDown2[12] != 2 
+		Counter2 = 10
+		while Counter2 < 15 and TroopsSent == 0
+			if LC7_Platoon[Counter2] not exists
+				LC7_Platoon[Counter2] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_2 belonging to L7JapEastTown at {CatapultTemp}
+			end if
+			add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultPosE3One} to siege weapon LC7_Platoon[Counter2] action queue
+			add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7Settlement[3] to siege weapon LC7_Platoon[Counter2] action queue
+			Counter2++
+		end while
+		
+		CatapultAction = 2
+		PlatoonDown2[12] = 2
+		//LC7_Condition = LC7_AT_WAR
+		//WarTimer = create timer for 0 seconds
+	end if
+
+	//Check for special temple takeover
+	if (PLAYER of L7JapTreasury == 0 or variable get town L7JapTreasury status == variable TOWN_STATUS_MIGRATION_STARTED) and TreasuryAction == 0
+		TreasuryAction = 1
+		if PLAYER of L7JapTreasury == 0
+			increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_TEMPLE
+			JapTreasuryTributeGiven = LC7_TRUE
+		end if
+	end if
+
+	if variable get town L7JapTreasury status == variable TOWN_STATUS_MIGRATED and JapTreasuryTributeGiven != LC7_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_TEMPLE
+		JapTreasuryTributeGiven = LC7_TRUE
+	end if
+
+	//Check for epic miracle building and attack it
+	if EpicAttacked == 0 and get number of type SCRIPT_OBJECT_TYPE_WONDER in L7GreekTown min built 1.0 > 0 
+		EpicAttacked = 1
+		TempEpicPos = get WONDER SCRIPT_FIND_TYPE_ANY at {L7GreekTown} radius 200
+		Counter = 0
+		if LC7_Platoon[0] exists 
+			if size of LC7_Platoon[0] > 20
+				TempPlatoon = split 20 soldiers from platoon LC7_Platoon[0]
+				attach TempPlatoon to L7JapanCap
+				wait until TempPlatoon exists
+				clear TempPlatoon action queue
+				add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using TempEpicPos to TempPlatoon action queue
+			end if
+		end if
+	end if
+
+	//Big town retaliations - two split off and attack you
+	if (PLAYER of L7JapEastTown == 0 or variable get town L7JapEastTown status == variable TOWN_STATUS_MIGRATION_STARTED) and EastTownTakenAttack == 0
+		//First flanking attack
+					
+		if LC7_Platoon[0] exists 
+			if size of LC7_Platoon[0] > 40
+				LC7_Platoon[1] = split 40 soldiers from platoon LC7_Platoon[0] //Reuse platoon 1?
+				wait until LC7_Platoon[1] exists
+				clear LC7_Platoon[1] action queue
+
+				if LC7_Platoon[1] can navigate to {CanNavToPos}
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AttackFlankPos1} to LC7_Platoon[1] action queue
+					set LC7_Platoon[1] attack L7GreekTown with severity 0.7
+				//Send out the creature with the platoon
+					run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(LC7_Platoon[1],L7GreekTown,150)
+				else
+					if PLAYER of L7JapWestTown == 1 and variable get town L7JapWestTown status != variable TOWN_STATUS_MIGRATION_STARTED
+						CatapultSecond = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_2 town L7JapWestTown siege weapon
+						if size of LC7_Platoon[0] > 20
+							CatapultHelpers2 = split 20 soldiers from platoon LC7_Platoon[0]
+							add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using CatapultSecond to CatapultHelpers2 action queue
+							//add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos} to TempPlatoon action queue
+						end if
+					//	add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {AltCatapultPos} to siege weapon CatapultSecond action queue
+					//	add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon CatapultSecond action queue
+					run background script MoveCatapult(CatapultSecond)
+					end if
+				end if
+
+				attach LC7_Platoon[1] to L7JapanCap
+			
+				//LC7_Platoon[2] = split 20 soldiers from platoon LC7_Platoon[0]
+				//wait until LC7_Platoon[2] exists
+				//clear LC7_Platoon[2] action queue
+				//add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AttackFlankPos2} to LC7_Platoon[2] action queue
+				//set LC7_Platoon[2] attack L7GreekTown with severity 0.7
+			end if
+		end if
+
+		//Send troops to town
+
+		if LC7_Platoon[0] exists 
+			if size of LC7_Platoon[0] > 20
+				TempPlatoon = split 20 soldiers from platoon LC7_Platoon[0] //Reuse platoon 1?
+				wait until TempPlatoon exists
+				clear TempPlatoon action queue
+				attach TempPlatoon to L7JapanCap
+				set TempPlatoon attack L7JapEastTown with severity 0.7
+			end if
+		end if
+
+
+		EastTownTakenAttack = 1
+        
+		if PLAYER of L7JapEastTown == 0
+			increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_EASTTOWN
+			EastTownTributeGiven = LC7_TRUE
+		end if
+	end if
+
+    if variable get town L7JapEastTown status == variable TOWN_STATUS_MIGRATED and EastTownTributeGiven != LC7_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_EASTTOWN
+		EastTownTributeGiven = LC7_TRUE
+	end if
+
+
+
+	if (PLAYER of L7JapWestTown == 0 or variable get town L7JapWestTown status == variable TOWN_STATUS_MIGRATION_STARTED) and WestTownTakenAttack == 0
+		
+		//Second flanking attack
+
+		if LC7_Platoon[0] exists 
+			if size of LC7_Platoon[0] > 40
+
+				LC7_Platoon[3] = split 40 soldiers from platoon LC7_Platoon[0]
+				wait until LC7_Platoon[3] exists
+				clear LC7_Platoon[3] action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AttackFlankPos3} to LC7_Platoon[3] action queue
+				set LC7_Platoon[3] attack L7GreekTown with severity 0.7
+				//Send out the creature with the platoon
+				run background script GCAI_SetTask_LeadPlatoonToPosThenAttack(LC7_Platoon[3],L7GreekTown,150)
+				attach LC7_Platoon[3] to L7JapanCap
+			
+
+				//LC7_Platoon[4] = split 20 soldiers from platoon LC7_Platoon[0]
+				//wait until LC7_Platoon[4] exists
+				//clear LC7_Platoon[4] action queue
+				//add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {AttackFlankPos4} to LC7_Platoon[4] action queue
+				//set LC7_Platoon[4] attack L7GreekTown with severity 0.7
+			end if
+		end if
+
+		//Send troops to town
+
+		if LC7_Platoon[0] exists 
+			if size of LC7_Platoon[0] > 20
+				TempPlatoon = split 20 soldiers from platoon LC7_Platoon[0] //Reuse platoon 1?
+				wait until TempPlatoon exists
+				clear TempPlatoon action queue
+				set TempPlatoon attack L7JapWestTown with severity 0.7
+				attach TempPlatoon to L7JapanCap
+			end if
+		end if
+
+		WestTownTakenAttack = 1
+
+		if PLAYER of L7JapWestTown == 0
+			increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_WESTTOWN
+			WestTownTributeGiven = LC7_TRUE
+		end if
+	end if
+
+	if variable get town L7JapWestTown status == variable TOWN_STATUS_MIGRATED and WestTownTributeGiven != LC7_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_WESTTOWN
+		WestTownTributeGiven = LC7_TRUE
+	end if
+
+	//Stop override of build menu
+	//if get number of type HOUSE ABODE_NUMBER_STORAGE_PIT in L7GreekTown min built 0.0 > 0 and PitOverride == 1
+	//	PitOverride = 0
+	//	disable build menu override
+	//end if
+
+	if LittleSiegePlatoon1 exists
+
+		if {LittleSiegePlatoon1} near {LittleSiegePosOne} radius 30
+			LittleSiegeArrived1 = 1
+		end if
+
+		if LittleSiegePlatoon1 can navigate to {CanNavToPos} and get size of LittleSiegePlatoon1 action queue < 1 //platoon SiegePlatoon idle
+			clear LittleSiegePlatoon1 action queue
+			set LittleSiegePlatoon1 attack L7GreekTown with severity 0.5 //add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos} to SiegePlatoon action queue
+		elsif not LittleSiegePlatoon1 can navigate to {CanNavToPos} // and platoon SiegePlatoon current action is PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos}
+			if LittleSiegeArrived1 == 0
+				clear LittleSiegePlatoon1 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {LittleSiegePosOne} to LittleSiegePlatoon1 action queue
+			else
+				clear LittleSiegePlatoon1 action queue
+			end if					
+		end if
+
+	end if
+
+	if LittleSiegePlatoon2 exists
+
+		if {LittleSiegePlatoon2} near {LittleSiegePosTwo} radius 30
+			LittleSiegeArrived2 = 1
+		end if
+
+		if LittleSiegePlatoon2 can navigate to {CanNavToPos} and get size of LittleSiegePlatoon2 action queue < 1 //platoon SiegePlatoon idle
+			clear LittleSiegePlatoon2 action queue
+			set LittleSiegePlatoon2 attack L7GreekTown with severity 0.5 //add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos} to SiegePlatoon action queue
+		elsif not LittleSiegePlatoon2 can navigate to {CanNavToPos} // and platoon SiegePlatoon current action is PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos}
+			if LittleSiegeArrived2 == 0
+				clear LittleSiegePlatoon2 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {LittleSiegePosTwo} to LittleSiegePlatoon2 action queue
+			else
+				clear LittleSiegePlatoon2 action queue
+			end if					
+		end if
+
+	end if
+
+	if LittleSiegePlatoon3 exists
+
+		if {LittleSiegePlatoon3} near {LittleSiegePosThree} radius 30
+			LittleSiegeArrived3 = 1
+		end if
+
+		if LittleSiegePlatoon3 can navigate to {CanNavToPos} and get size of LittleSiegePlatoon3 action queue < 1 //platoon SiegePlatoon idle
+			clear LittleSiegePlatoon3 action queue
+			set LittleSiegePlatoon3 attack L7GreekTown with severity 0.5 //add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos} to SiegePlatoon action queue
+		elsif not LittleSiegePlatoon3 can navigate to {CanNavToPos} // and platoon SiegePlatoon current action is PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {CanNavToPos}
+			if LittleSiegeArrived3 == 0
+				clear LittleSiegePlatoon3 action queue
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {LittleSiegePosThree} to LittleSiegePlatoon3 action queue
+			else
+				clear LittleSiegePlatoon3 action queue
+			end if					
+		end if
+
+	end if
+
+	if CatapultHelpers1 exists
+		if get size of CatapultHelpers1 action queue < 1 or (CatapultHelpers1 can navigate to {CanNavToPos} and {CatapultHelpers1} near {L7GreekTown} radius 400)
+			set CatapultHelpers1 attack L7GreekTown with severity 0.4
+		end if
+	end if
+
+	if CatapultHelpers2 exists
+		if get size of CatapultHelpers2 action queue < 1 or (CatapultHelpers2 can navigate to {CanNavToPos} and {CatapultHelpers2} near {L7GreekTown} radius 400)
+			set CatapultHelpers2 attack L7GreekTown with severity 0.4
+		end if
+	end if
+
+until LevelComplete == 1 //PLAYER of L7JapanCap != 1 or variable get town L7JapanCap status == variable TOWN_STATUS_MIGRATION_STARTED
+end loop
+
+
+	///TA: DEAL WITH TICKING THE OBJECTIVE
+	if PLAYER of L7JapanCap == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment -0.1		
+	else
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment 0.1				
+	end if
+	//Either way we have completed the land.
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+				
+				
+				
+run background script LandOver(L7GreekTown)
+
+begin loop
+	
+	if PLAYER of L7JapWestTown == 0 and WestTownTributeGiven != LC7_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_WESTTOWN
+		WestTownTributeGiven = LC7_TRUE
+	end if
+
+	if variable get town L7JapWestTown status == variable TOWN_STATUS_MIGRATED and WestTownTributeGiven != LC7_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_WESTTOWN
+		WestTownTributeGiven = LC7_TRUE
+	end if
+
+	if PLAYER of L7JapEastTown == 0 and EastTownTributeGiven != LC7_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_EASTTOWN
+		EastTownTributeGiven = LC7_TRUE
+	end if
+
+	if variable get town L7JapEastTown status == variable TOWN_STATUS_MIGRATED and EastTownTributeGiven != LC7_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_EASTTOWN
+		EastTownTributeGiven = LC7_TRUE
+	end if
+
+end loop
+
+end script Land7JapanArmyManager
+
+//*********************************************************************
+
+begin script Land7CityManager
+
+start
+
+end script Land7CityManager
+
+//*********************************************************************
+
+begin script NumberOfPlayerTowns
+
+PlayerOwnsSettlement[LC7_NUM_OF_SETTLEMENTS]
+TributeGiven[LC7_NUM_OF_SETTLEMENTS]
+Counter = 0
+Migration = L7GreekTown //Does this work?
+
+start
+	
+	begin loop
+		Counter = 0
+	
+		while Counter < LC7_NUM_OF_SETTLEMENTS
+
+			if variable get town L7Settlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED
+				Migration = get town L7Settlement[Counter] is migrating to
+			end if
+
+			if PlayerOwnsSettlement[Counter] != LC7_TRUE 
+ 				if (variable get town L7Settlement[Counter] status == variable TOWN_STATUS_CAPTURED and PLAYER of L7Settlement[Counter] == 0) or (variable get town L7Settlement[Counter] status == variable TOWN_STATUS_MIGRATION_STARTED and PLAYER of Migration == 0)
+					if PLAYER of L7Settlement[Counter] != 0
+						L7SettlementCaptured = LC7_PASSIVE
+					else
+						L7SettlementCaptured = LC7_AGGRESSIVE
+						TributeGiven[Counter] = LC7_TRUE
+						//Tribute giving
+						if Counter == 1 or Counter == 2
+							increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SETLEMENT_LOW
+						elsif Counter == 3 or Counter == 4
+							increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SETLEMENT_MED
+						elsif Counter == 0
+							increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SETLEMENT_HIGH
+						end if
+
+					end if
+					NumberOfTownsPlayerHasTaken++
+					PlayerOwnsSettlement[Counter] = LC7_TRUE
+
+				end if
+			end if
+
+			if TributeGiven[Counter] == LC7_FALSE
+				if variable get town L7Settlement[Counter] status == variable TOWN_STATUS_MIGRATED
+					Migration = get town L7Settlement[Counter] is migrating to
+					if PLAYER of Migration == 0
+						TributeGiven[Counter] = LC7_TRUE
+						//Tribute giving
+						wait 1 second
+						if Counter == 1 or Counter == 2
+							increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SETLEMENT_LOW
+						elsif Counter == 3 or Counter == 4
+							increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SETLEMENT_MED
+						elsif Counter == 0
+							increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SETLEMENT_HIGH
+						end if
+					end if
+				end if
+			end if
+
+		Counter++
+
+		end while
+
+		if (PLAYER of L7JapanCap == 0 or variable get town L7JapanCap status == variable TOWN_STATUS_MIGRATION_STARTED) and LevelComplete == 0
+			LevelComplete = 1
+		end if
+	
+		//until LevelComplete == 1
+	end loop
+	
+		
+
+end script NumberOfPlayerTowns
+
+
+//-------------------------------------------------------
+//-----------GetNearestSettlement---------------//
+//------------------------------------------------------
+
+begin script GetNearestSettlement(Town)
+
+//Special version that doesn't include the two settlements at the bottom of the cliff
+
+	Ctr				= 0
+	PlayerID		= 0
+	TownDist		= 0
+	NearestTown		= -1
+	NearestDist		= 10000
+
+start
+
+	Ctr = 0
+
+	if Town exists
+		NearestSettlement = -1
+		PlayerID = PLAYER of Town		
+	
+		while Ctr < LC7_NUM_OF_SETTLEMENTS
+			if L7Settlement[Ctr] exists
+				if PLAYER of L7Settlement[Ctr] != PlayerID and L7Settlement[Ctr] != Town and Ctr != 1 and Ctr != 2 and variable get town L7Settlement[Ctr] status != variable TOWN_STATUS_MIGRATION_STARTED
+					TownDist = get distance from {L7Settlement[Ctr]} to {Town}
+				
+					if TownDist < NearestDist
+						NearestDist = TownDist
+						NearestTown = L7Settlement[Ctr]
+					end if
+				end if
+			end if
+			Ctr++
+		end while
+		
+		NearestSettlement = NearestTown
+	end if
+
+end script GetNearestSettlement
+
+
+//Catapult management
+begin script CatapultManager
+
+Counter = 0
+CatapultTownGatePos = 0
+CatapultTownGate = 0
+
+GatehouseLocation1 = 0
+GatehouseLocation2 = 0
+Gatehouse1 = 0
+Gatehouse2 = 0
+
+start
+
+	GatehouseLocation1 = marker at {1150.793,313.906,1462.277}
+	GatehouseLocation2 = marker at {880.078, 376.669, 1605.493}
+	
+	CatapultTownGatePos = marker at {1881.295,312.447,1318.061}
+	/*CatapultTownGate = get HOUSE GATEHOUSE at {CatapultTownGatePos} radius 100
+	
+	Gatehouse1 = get HOUSE GATEHOUSE at {GatehouseLocation1} radius 100
+	Gatehouse2 = get HOUSE GATEHOUSE at {GatehouseLocation2} radius 100*/
+
+	Counter = 10
+	
+	/*set gate Gatehouse1 open
+	set gate Gatehouse2 open
+	set gate CatapultTownGate open*/
+
+	wait 20 seconds
+	
+	//LC7_Platoon[5] = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_1 town L7JapWestTown siege weapon
+	//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[5]} to siege weapon LC7_Platoon[5] action queue
+	//add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon LC7_Platoon[5] action queue
+	//add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {LC7_PlatoonPos[5]} to siege weapon LC7_Platoon[5] action queue
+	//LC7_Platoon[7] = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_2 town L7JapWestTown siege weapon
+	LC7_Platoon[7] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_3 belonging to L7JapWestTown at {LC7_PlatoonPos[7]}
+	//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[7]} to siege weapon LC7_Platoon[7] action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon LC7_Platoon[7] action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {LC7_PlatoonPos[7]} to siege weapon LC7_Platoon[7] action queue
+
+	//wait 25 seconds
+
+	LC7_Platoon[Counter] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_3 belonging to L7JapWestTown at {LC7_PlatoonPos[Counter]}
+	//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[7]} to siege weapon LC7_Platoon[7] action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon LC7_Platoon[Counter] action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {LC7_PlatoonPos[Counter]} to siege weapon LC7_Platoon[Counter] action queue
+	Counter ++
+	
+	LC7_Platoon[Counter] = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_3 belonging to L7JapWestTown at {LC7_PlatoonPos[Counter]}
+	//add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[7]} to siege weapon LC7_Platoon[7] action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon LC7_Platoon[Counter] action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {LC7_PlatoonPos[Counter]} to siege weapon LC7_Platoon[Counter] action queue
+	Counter++
+
+
+	while Counter < 15
+		LC7_Platoon[Counter] = recruit SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_3 town L7JapWestTown siege weapon
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {LC7_PlatoonPos[Counter]} to siege weapon LC7_Platoon[Counter] action queue
+		//add action SIEGEWEAPON_AGENDA_ACTION_FACE_THING using L7GreekTown to siege weapon LC7_Platoon[Counter] action queue
+		//add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {LC7_PlatoonPos[Counter]} to siege weapon LC7_Platoon[Counter] action queue
+		Counter++
+		wait 30 seconds
+	end while
+
+	//wait 15 seconds
+
+	CatapultsInPosition = 2
+
+	/*wait 100 seconds
+	set gate Gatehouse1 close
+	set gate Gatehouse2 close
+	set gate CatapultTownGate close*/
+
+end script CatapultManager
+
+
+//----------------------------------------------------//
+//---Regenerate the big platoon if it goes under 50---//
+//----------------------------------------------------//
+
+begin script RegenerateBigPlatoon
+
+TempRegen = 0
+RegenTimer = 0
+
+start
+
+	StopRegenerating = 0
+	RegenTimer = create timer for 0 seconds
+
+	begin loop
+		if LC7_Platoon[0] exists and PLAYER of L7JapEastTown != 0 and variable get town L7JapEastTown status != variable TOWN_STATUS_MIGRATION_STARTED
+			if size of LC7_Platoon[0] <= 50 and get RegenTimer time remaining <= 0//Make it 90
+				if can town L7JapEastTown recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20
+					//if adult size of L7JapEastTown - get number of soldiers in town L7JapEastTown > 10
+						TempRegen = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {L7JapEastTown} + {0,20} with 20 men and 0 women
+						PLAYER of TempRegen = 1
+						//TempRegen = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapEastTown platoon of size 20
+						//wait until not TempRegen recruiting
+						merge platoon TempRegen into platoon LC7_Platoon[0]
+					//end if
+				end if
+				if can town L7JapEastTown recruit ARMY_UNIT_TYPE_MELEE_2 platoon of size 20
+					//if adult size of L7JapEastTown - get number of soldiers in town L7JapEastTown > 10
+						TempRegen = create platoon PLATOON_INFO_JAPANESE_MELEE_2 at {L7JapEastTown} + {0,40} with 20 men and 0 women						
+						PLAYER of TempRegen = 1
+						//TempRegen = recruit ARMY_UNIT_TYPE_MELEE_2 town L7JapEastTown platoon of size 20
+						//wait until not TempRegen recruiting
+						merge platoon TempRegen into platoon LC7_Platoon[0]
+					//end if
+				end if
+				RegenTimer = create timer for 120 seconds
+			end if
+		end if
+	until LevelComplete == 1 or StopRegenerating == 1
+	end loop
+
+end script RegenerateBigPlatoon
+
+//-----------------------------//
+//-Manage the enemy creature---//
+//-----------------------------//
+
+begin script ManageCreature
+
+ActionTimer = 0
+Pos[7]
+Number = 0
+
+start
+
+	Pos[0] = marker at {1758.494,294.395,1286.001}
+	Pos[1] = marker at {1309.638, 237.939, 1208.787}
+	Pos[2] = marker at {1561.893, 238.652, 1042.685}
+	Pos[3] = marker at {1059.764, 348.893, 1537.449}
+	Pos[4] = marker at {905.989, 375.524, 1613.303}
+	Pos[5] = marker at {1040.753, 355.102, 1552.814}
+	Pos[6] = marker at {980.527, 364.907, 1563.479}
+
+	ActionTimer = create timer for 0 seconds //Init timer
+
+	begin loop
+
+		if get ActionTimer time remaining <= 0 and GCAI_CurrentTask != GCAI_TASK_LEADPLATOON and not MyCreature fighting
+			Number = number from 0 to 6
+			run background script GCAI_SetTask_PerformRole(Pos[Number],100,variable CR_SOLDIER)
+			ActionTimer = create timer for 45 seconds
+		end if
+
+	until LevelComplete == 1
+	end loop
+
+end script ManageCreature
+
+
+//---------------------------------------------------------//
+//------Gatehouse management background script-------------//
+//---------------------------------------------------------//
+
+begin script GatehouseManager
+
+GatehousePos[8]
+Gatehouse[8]
+Counter = 0
+
+PlayerPlatoon = 0
+Catapult = 0
+
+start
+
+GatehousePos[0] = marker at {867.838, 378.346, 1614.950}
+GatehousePos[1] = marker at {1155.454, 313.758, 1463.945}
+GatehousePos[2] = marker at {1947.255, 314.400, 1297.158}
+GatehousePos[3] = marker at {1879.656, 312.629, 1337.205}
+GatehousePos[4] = marker at {1959.960, 323.440, 1482.403}
+GatehousePos[5] = marker at {1834.628, 220.244, 826.760}
+GatehousePos[6] = marker at {1507.974, 210.048, 948.587}
+GatehousePos[7] = marker at {1194.197, 205.524, 1084.091}
+
+while Counter < 8
+	Gatehouse[Counter] = get HOUSE ABODE_NUMBER_GATEHOUSE at {GatehousePos[Counter]} radius 50
+	if Gatehouse[Counter] exists
+		set gate Gatehouse[Counter] open
+	end if
+	Counter++
+end while
+
+
+begin loop
+	Counter = 0
+	while Counter < 8
+		if PLAYER of Gatehouse[Counter] != 0
+			PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+			Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE
+			if (PlayerPlatoon exists or Catapult exists or get distance from {MyCreature} to {Gatehouse[Counter]} <= GLOBAL_VALUE_GATEHOUSE_CLOSE_DISTANCE_FOR_CREATURE) and gate Gatehouse[Counter] is open
+				set gate Gatehouse[Counter] close
+			end if
+			
+			PlayerPlatoon = get platoon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+			Catapult = get siege weapon of player 0 nearest {Gatehouse[Counter]} radius GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE
+            if (PlayerPlatoon not exists and Catapult not exists and get distance from {MyCreature} to {Gatehouse[Counter]} > GLOBAL_VALUE_GATEHOUSE_OPEN_DISTANCE_FOR_CREATURE) and not gate Gatehouse[Counter] is open
+				set gate Gatehouse[Counter] open
+			end if
+
+		end if
+		Counter++
+	end while
+
+	until LevelComplete == 1
+end loop
+
+	
+
+end script GatehouseManager
+
+/////////////////
+begin script MoveCatapult(Catapult)
+
+CatapultAttackPosOne = marker at {793.830, 216.085, 935.138}
+CatapultAttackPosTwo = marker at {868.263, 206.669, 964.757}
+CatapultAttackPosThree = marker at {958.237, 203.134, 975.332}
+CatapultAttackPosFour = marker at {1040.187, 203.397, 982.364}
+CatapultAttackPosFive = marker at {1158.232, 203.810, 1058.007}
+CatapultMoveTimer1 = 0
+PointOn = 0
+
+start
+
+CatapultMoveTimer1 = create timer for 10 seconds
+
+
+	begin loop
+		if Catapult exists 
+			if get CatapultMoveTimer1 time remaining <= 0
+				if get size of Catapult action queue < 1
+
+					if PointOn == 0
+						if Catapult can navigate to {CatapultAttackPosFive}
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultAttackPosFive} to siege weapon Catapult action queue
+						end if
+			
+					elsif PointOn == 1
+						if Catapult can navigate to {CatapultAttackPosFour}
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultAttackPosFour} to siege weapon Catapult action queue
+						end if
+
+					elsif PointOn == 2
+						if Catapult can navigate to {CatapultAttackPosThree}
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultAttackPosThree} to siege weapon Catapult action queue
+						end if
+
+					elsif PointOn == 3
+						if Catapult can navigate to {CatapultAttackPosTwo}
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultAttackPosTwo} to siege weapon Catapult action queue
+						end if
+
+					elsif PointOn == 4
+						if Catapult can navigate to {CatapultAttackPosOne}
+							add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultAttackPosOne} to siege weapon Catapult action queue
+						end if
+
+					CatapultMoveTimer1 = create timer for 10 seconds
+					
+					end if
+				end if
+			end if		
+
+			if {Catapult} near {CatapultAttackPosFive} radius 30 and PointOn != 1
+				PointOn = 1
+			elsif {Catapult} near {CatapultAttackPosFour} radius 30 and PointOn != 2
+				PointOn = 2
+			elsif {Catapult} near {CatapultAttackPosThree} radius 30 and PointOn != 3
+				PointOn = 3
+			elsif {Catapult} near {CatapultAttackPosTwo} radius 30 and PointOn != 4
+				PointOn = 4
+			elsif {Catapult} near {CatapultAttackPosOne} radius 30 and PointOn != 5
+				PointOn = 5
+			end if
+		end if
+	until Catapult not exists or PointOn == 5
+	end loop
+
+
+end script MoveCatapult
+

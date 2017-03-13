@@ -1,0 +1,11 @@
+//Land4Gongbusters.txt
+
+global Gong
+
+begin script Land4Gongbusters
+
+start
+Gong = create TREE TREE_INFO_SPRUCE at {1723.150,45.465,892.771}
+SCALE of Gong = 10.0
+
+end script Land4Gongbusters

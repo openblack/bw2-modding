@@ -1,0 +1,295 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	Creature Upgrade - Land 7
+//	~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// CTF (Capture The Flag)
+//
+//CTF - A minimum of five flags; possibly more...
+//Each flag will consist of a ritual stone that will glow if you have enough people of a particular race next to it.
+//This can change to something cooler :)
+//To initialise the creature upgrade a race must control all of the points at once and get the creature to the centre point.
+//
+
+/*
+The two bases closest to the Aztec town are ones that are well controlled by the Aztecs.
+Walls may be surrounding one or both.
+The centre base is controlled by the AZTEC creature - he will come and help to defend it.
+The centre base has a Must-Have oasis... it is also a safe area from the sandstorms that plague the centre of this land.
+
+Variations at the different Oases:
+- FORTS! Cough, minor settlements, cough!
+- landscape (easier to defend because of height advantage)
+- walls
+- armies
+- catapult weapons
+- almost land-locked (surrounded almost by sea/lava/whatever, one narrow entry path.)
+
+
+WATER!
+Troops can die crossing the desert unless they stop off/walk through an Oasis now and again.
+
+*/
+
+//Currently using:
+//Rocks on fire - for each flag.
+//Enemy platoons guard some of the points.
+//One test attack launched after a while on one of your points.
+//Defend routine to choose different ways of defeating the player?
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+//Hero - deliver troops pos:
+//marker at {1789.021,25.774,849.554}
+
+//Hiding place to attack the middle base from:
+//marker at {1275.488,55.935,1580.034}
+
+//Hiding place from where to attack your base that's closest to the enemy... does that make sense? :)
+//marker at {1532.312,69.366,1504.661}
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CU_FALSE			= 0
+define CU_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CU_Waypoints[4]					//... Waypoint array.
+global CU_Flag_Control_Level[4]			//... Flag control array (Who controls a flag).
+global CU_Flag_Pos[5]					//... Flag positions.
+global CU_Flag[5]						//... The flags.
+global CU_Used_Platoon[20]				//... Used platoon.
+global CU_Player_Army_F[5]				//... Looking for player troops at each flag.
+global CU_CPU_Army_F[5]					//... Looking for enemy troops at each flag.
+global CU_Player_Controls_All_Flags		= CU_FALSE
+global CU_Someone_Controls_All_Flags	= CU_FALSE
+global CU_Spawned_Aztec_Army			= 0
+global CU_Starting_Army_Near_Greeks		= 0
+global CU_Starting_Army_In_Middle		= 0
+global CU_Starting_Army_At_Left_Rock	= 0
+global CU_Starting_Army_At_Right_Rock	= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CU_Check_Control_Of_Flags
+define script CU_Check_If_Player_Has_Lost_Or_Won
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//===============================
+begin script Land7CreatureUpgrade
+
+	CU_Near_Greeks_Pos	= 0
+	CU_In_Middle_Pos	= 0
+	CU_Left_Rock_Pos	= 0
+	CU_Right_Rock_Pos	= 0
+	CU_ArmyTest			= 0
+	CU_Players_Town		= 0
+	CU_Enemy_Spawn_Pos	= 0
+
+start
+
+	CU_Players_Town	= get TOWN at {1558.299,53.282,2084.205} radius 100 //{1766.557,27.132,762.960}
+	CU_Enemy_Spawn_Pos = marker at {1678.609,59.893,694.865}//marker at {839.218,34.722,1921.810}
+
+	//-----------------------
+	//...Create Flags
+	//Flags near enemy base:
+	CU_Flag_Pos[0] = marker at {1502.599,51.582,1085.495}//marker at {1040.127,30.601,1959.755}
+	CU_Flag_Pos[1] = marker at {1188.240,53.028,994.815}//marker at {820.042,35.847,1779.924}
+
+	//Central flag:
+	CU_Flag_Pos[2] = marker at {851.802,51.886,1156.786}//marker at {1159.573,30.974,1360.321}
+
+	//Flags near to the player's base:
+	CU_Flag_Pos[3] = marker at {921.295,61.848,1476.068}//marker at {1879.188,25.858,1309.626}
+	CU_Flag_Pos[4] = marker at {1173.978,54.554,1348.114}//marker at {1789.401,28.244,939.940}
+
+	CU_Flag[0] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[0]}
+	CU_Flag[1] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[1]}
+	CU_Flag[2] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[2]}
+	CU_Flag[3] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[3]}
+	CU_Flag[4] = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {CU_Flag_Pos[4]}
+	//-----------------------
+
+
+	//-----------------------
+	//...Create_Starting_Defences
+	CU_Near_Greeks_Pos	= marker at {855.239,58.039,1171.840}//marker at {1877.416,26.109,1301.209}
+	CU_In_Middle_Pos	= marker at {1174.496,60.612,1363.000}//marker at {1167.980,29.704,1356.120}
+	CU_Left_Rock_Pos	= marker at {1184.712,56.065,1006.470}//marker at {1043.997,30.435,1949.693}
+	CU_Right_Rock_Pos	= marker at {1493.453,53.236,1094.536}//marker at {826.513,36.051,1775.251}
+
+	CU_Starting_Army_Near_Greeks	= create platoon PLATOON_INFO_AZTEC_MELEE_1 at {CU_Near_Greeks_Pos} with 22 men and 0 women
+	CU_Starting_Army_In_Middle		= create platoon PLATOON_INFO_AZTEC_MELEE_1 at {CU_In_Middle_Pos} with 25 men and 0 women
+	CU_Starting_Army_At_Left_Rock	= create platoon PLATOON_INFO_AZTEC_MELEE_1 at {CU_Left_Rock_Pos} with 50 men and 0 women
+	CU_Starting_Army_At_Right_Rock	= create platoon PLATOON_INFO_AZTEC_MELEE_1 at {CU_Right_Rock_Pos} with 50 men and 0 women
+
+	set CU_Starting_Army_Near_Greeks player 5
+	set CU_Starting_Army_In_Middle player 5
+	set CU_Starting_Army_At_Left_Rock player 5
+	set CU_Starting_Army_At_Right_Rock player 5
+
+	set player 0 ENEMY to player 5
+	//-----------------------
+
+	run background script CU_Check_Control_Of_Flags
+	run background script CU_Check_If_Player_Has_Lost_Or_Won
+
+	begin loop
+		wait 40 seconds
+		if CU_Spawned_Aztec_Army not exists
+			CU_Spawned_Aztec_Army = create platoon PLATOON_INFO_AZTEC_MELEE_1 at {CU_Enemy_Spawn_Pos} with 15 men and 0 women
+			set CU_Spawned_Aztec_Army player 5
+			set player 0 ENEMY to player 5
+		end if
+		until CU_Someone_Controls_All_Flags == CU_TRUE
+	end loop
+
+	stop script "CU_Check_Control_Of_Flags"
+
+	if CU_Player_Controls_All_Flags == CU_TRUE
+		say "Player has control of all flags! Wahoo! WP! Creature upgrade starting..."
+	elsif CU_Player_Controls_All_Flags == CU_FALSE
+		say "Player has failed. The enemy have managed to power up their creature."
+	end if
+
+	wait 10 seconds
+	say "Old Creature upgrade script complete"
+	wait 10 seconds
+
+end script Land7CreatureUpgrade
+//=============================
+
+
+
+//-----------------------------------------------------------------------------
+//	CU_Check_Control_Of_Flags
+//-----------------------------------------------------------------------------
+begin script CU_Check_Control_Of_Flags
+
+	Counter = 0
+	tt = 0.0
+
+start
+
+	begin loop
+		
+		wait until CU_Spawned_Aztec_Army != 0
+
+		Counter++
+
+		//Get the two army levels around the flags
+		CU_Player_Army_F[0] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[0]} radius 100
+		CU_Player_Army_F[1] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[1]} radius 100
+		CU_Player_Army_F[2] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[2]} radius 100
+		CU_Player_Army_F[3] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[3]} radius 100
+		CU_Player_Army_F[4] = get soldiers of tribe TRIBE_TYPE_GREEK nearest {CU_Flag[4]} radius 100
+		
+		//CU_CPU_Army_F[0] = 25.0
+		CU_CPU_Army_F[0] = get soldiers of tribe TRIBE_TYPE_AZTEC nearest {CU_Flag[0]} radius 100
+		CU_CPU_Army_F[1] = get soldiers of tribe TRIBE_TYPE_AZTEC nearest {CU_Flag[1]} radius 100
+		CU_CPU_Army_F[2] = get soldiers of tribe TRIBE_TYPE_AZTEC nearest {CU_Flag[2]} radius 100
+		CU_CPU_Army_F[3] = get soldiers of tribe TRIBE_TYPE_AZTEC nearest {CU_Flag[3]} radius 100
+		CU_CPU_Army_F[4] = get soldiers of tribe TRIBE_TYPE_AZTEC nearest {CU_Flag[4]} radius 100
+
+		wait 1 second
+	
+		if CU_Spawned_Aztec_Army exists
+			CU_Used_Platoon[Counter] = CU_Spawned_Aztec_Army
+			CU_Spawned_Aztec_Army = 0
+
+		/*
+			tt = CU_CPU_Army_F[0]
+			if tt == 0
+				say "0"
+			elsif (tt > 0 and tt < 22)
+				say "1 to 21"
+			elsif tt > 21
+				say "Greater than 21 troops at the first rock."
+			end if
+		*/
+
+			//Calculate who has the most troops at which location to help decide what to do about it...
+			//flag near base in trouble - send more troops!
+			
+			if CU_CPU_Army_F[0] < 35
+				move CU_Used_Platoon[Counter] position to {CU_Flag[0]}
+				//wait until {CU_Used_Platoon[Counter]} near {CU_Flag[0]} radius 5.0
+			elsif CU_CPU_Army_F[1] < 35
+				move CU_Used_Platoon[Counter] position to {CU_Flag[1]}
+				//wait until {CU_Used_Platoon[Counter]} near {CU_Flag[1]} radius 5.0
+			elsif CU_CPU_Army_F[2] < CU_Player_Army_F[2]
+				//centre flag in trouble
+				move CU_Used_Platoon[Counter] position to {CU_Flag[2]}
+			/*
+			elsif CU_Player_Army_F[3] < 21
+				//flag fairly near the player - send troops if fairly undefended
+				move CU_Used_Platoon[Counter] position to {CU_Flag[3]}
+			elsif CU_Player_Army_F[4] < 30
+				//flags near the player - send troops every now and again...
+				move CU_Used_Platoon[Counter] position to {CU_Flag[4]}
+			*/
+			end if
+			
+		end if
+
+		wait 10 seconds
+		until Counter == 20
+	end loop
+	
+	begin dialogue
+		say "Routine: CU_Check_Control_Of_Flags - is now finished."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script CU_Check_Control_Of_Flags
+
+
+//-----------------------------------------------------------------------------
+//	CU_Check_If_Player_Has_Lost_Or_Won
+//-----------------------------------------------------------------------------
+begin script CU_Check_If_Player_Has_Lost_Or_Won
+
+start
+
+	wait until CU_Spawned_Aztec_Army != 0
+	wait until CU_Player_Army_F[0] > 0
+	wait 10 seconds
+
+	begin loop
+
+		//Check if either the player or CPU has won
+		if CU_Player_Army_F[0] > 0 and CU_Player_Army_F[1] > 0 and CU_Player_Army_F[2] > 0 and CU_Player_Army_F[3] > 0 and CU_Player_Army_F[4] > 0
+			//player has troops at all the flags
+			CU_Player_Controls_All_Flags = CU_TRUE
+			CU_Someone_Controls_All_Flags = CU_TRUE
+			say "Player won"
+			wait until read
+		elsif CU_CPU_Army_F[0] > 0 and CU_CPU_Army_F[1] > 0 and CU_CPU_Army_F[2] > 0 and CU_CPU_Army_F[3] > 0 and CU_CPU_Army_F[4] > 0
+			//cpu has control over all the flags
+			CU_Player_Controls_All_Flags = CU_FALSE //set it in case...
+			CU_Someone_Controls_All_Flags = CU_TRUE
+			say "CPU won - Go straight to jail, do not collect 200 pounds."
+		end if
+
+		until CU_Someone_Controls_All_Flags == CU_TRUE
+	end loop
+
+end script CU_Check_If_Player_Has_Lost_Or_Won
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================

@@ -1,0 +1,556 @@
+define script HandleGreekArmy (GreekArmyPos)
+define script HandleNorseArmy (NorseArmyPos)
+
+global ArmyToolNorseArmy = 0
+global ArmyToolGreekArmy = 0
+
+global ArmyToolGreekTown = 0
+global ArmyToolNorseTown = 0
+
+global ArmyToolGoToWar = 0 // 1=Greeks Ready, 2=Attack Active, 3=Battle Over, 4=delete GreekArmy, 5=All deleted
+global ArmyToolGreekSurvivors = 0
+global ArmyToolNorseSurvivors = 0
+
+global ArmyToolGreekVictories = 0
+global ArmyToolNorseVictories = 0
+global ArmyToolTotalDraws = 0
+global ArmyToolTotalNumberOfBattles = 0
+global ArmyToolAverageGreekSurvivors = 0
+global ArmyToolAverageNorseSurvivors = 0
+global ArmyToolResultsIn = 0
+
+//-----------------------------------------------------------------------
+
+run script ArmyTool
+
+//-----------------------------------------------------------------------
+// MAIN
+//-----------------------------------------------------------------------
+
+begin script ArmyTool
+
+ Eternity = 0
+ Count = 0
+ Gogo = 0
+ GreekArmyPos = 0
+ NorseArmyPos = 0
+
+start
+
+begin dialogue
+	say "LEFT CLICK ON GREEK TOWN CENTRE"
+	wait until read
+	say "LEFT CLICK ON GREEK TOWN CENTRE"
+	wait until read
+end dialogue
+while Gogo == 0
+	if mouse left button down
+		ArmyToolGreekTown = get TOWN at hand position radius 100
+		if ArmyToolGreekTown exists
+			Gogo = 1
+		end if
+	end if
+end while
+Gogo = 0
+
+
+begin dialogue
+	say "LEFT CLICK ON NORSE TOWN CENTRE"
+	wait until read
+	say "LEFT CLICK ON NORSE TOWN CENTRE"
+	wait until read
+end dialogue
+while Gogo == 0
+	if mouse left button down
+		ArmyToolNorseTown = get TOWN at hand position radius 100
+		if ArmyToolNorseTown exists
+			Gogo = 1
+		end if
+	end if
+end while
+Gogo = 0
+
+//set players of towns
+set ArmyToolGreekTown player 0
+set ArmyToolNorseTown player 1
+
+// Make player 0 attack player 1 and vice versa
+set player 0 ENEMY to player 1
+set player 1 ENEMY to player 0
+
+begin dialogue
+	say "LEFT CLICK TO PLACE THE DEFENDING GREEK ARMY"
+	wait until read
+	say "LEFT CLICK TO PLACE THE DEFENDING GREEK ARMY"
+	wait until read
+end dialogue
+
+while Gogo == 0
+	if mouse left button down
+		GreekArmyPos = marker at hand position
+		Gogo = 1
+	end if
+end while
+Gogo = 0
+
+begin dialogue
+	say "LEFT CLICK TO PLACE THE ATTACKING NORSE ARMY"
+	wait until read
+	say "LEFT CLICK TO PLACE THE ATTACKING NORSE ARMY"
+	wait until read
+end dialogue
+
+while Gogo == 0
+	if mouse left button down
+		NorseArmyPos = marker at hand position
+		Gogo = 1
+	end if
+end while
+Gogo = 0
+
+begin loop
+	ArmyToolResultsIn = 0
+	ArmyToolGoToWar = 0 // 1=Greeks Ready, 2=Attack Active, 3=Battle Over, 4=delete GreekArmy, 5=All deleted
+	ArmyToolGreekSurvivors = 0
+	ArmyToolNorseSurvivors = 0
+	ArmyToolNorseArmy = 0
+	ArmyToolGreekArmy = 0
+
+	wait 3 seconds
+
+	run background script HandleGreekArmy (GreekArmyPos)
+	run background script HandleNorseArmy (NorseArmyPos)
+	wait until ArmyToolResultsIn == 1
+until Eternity == 1
+end loop
+
+end script ArmyTool
+
+//---------------------------------------------------------------------
+// HANDLE GREEK
+//---------------------------------------------------------------------
+
+begin script HandleGreekArmy (GreekArmyPos)
+
+ AdditionalTroops = 0
+
+ GreekTQ1WarriorPlatoons = 4
+ GreekTQ1ArcherPlatoons = 2
+ GreekTQ2WarriorPlatoons = 0
+ GreekTQ2ArcherPlatoons = 0
+ GreekTQ3WarriorPlatoons = 0
+
+ start
+
+ ArmyToolGreekArmy = create platoon PLATOON_INFO_GREEK_MELEE_1 at {GreekArmyPos} with GreekTQ1WarriorPlatoons men and 0 women
+
+ if GreekTQ1ArcherPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_GREEK_RANGED_1 at {GreekArmyPos} with GreekTQ1ArcherPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolGreekArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolGreekArmy to front of AdditionalTroops action queue
+ end if
+
+ if GreekTQ2WarriorPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_GREEK_MELEE_3 at {GreekArmyPos} with GreekTQ2WarriorPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolGreekArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolGreekArmy to front of AdditionalTroops action queue
+ end if
+
+ if GreekTQ2ArcherPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_GREEK_RANGED_2 at {GreekArmyPos} with GreekTQ2ArcherPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolGreekArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolGreekArmy to front of AdditionalTroops action queue
+ end if
+
+ if GreekTQ3WarriorPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_GREEK_MELEE_2 at {GreekArmyPos} with GreekTQ3WarriorPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolGreekArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolGreekArmy to front of AdditionalTroops action queue
+ end if
+
+ // ATTACH ARMY TO TOWN 
+ attach ArmyToolGreekArmy to ArmyToolGreekTown
+/// release ArmyToolNorseArmy ???
+
+ArmyToolGoToWar = 1
+
+wait until ArmyToolGoToWar >= 2
+add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using ArmyToolNorseArmy to front of ArmyToolGreekArmy action queue
+
+wait until ArmyToolGoToWar == 4 // wait for flag set to delete greek army
+
+delete ArmyToolGreekArmy
+
+ArmyToolGoToWar = 5
+
+end script HandleGreekArmy
+
+//---------------------------------------------------------------------
+// HANDLE NORSE
+//---------------------------------------------------------------------
+
+begin script HandleNorseArmy (NorseArmyPos)
+
+ AdditionalTroops = 0
+
+ NorseTQ1WarriorPlatoons = 6
+ NorseTQ1ArcherPlatoons = 0
+ NorseTQ2WarriorPlatoons = 0
+ NorseTQ2ArcherPlatoons = 0
+ NorseTQ3WarriorPlatoons = 0
+
+ start
+
+ ArmyToolNorseArmy = create platoon PLATOON_INFO_NORSE_MELEE_1 at {NorseArmyPos} with NorseTQ1WarriorPlatoons men and 0 women
+
+ if NorseTQ1ArcherPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_NORSE_RANGED_1 at {NorseArmyPos} with NorseTQ1ArcherPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolNorseArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolNorseArmy to front of AdditionalTroops action queue
+ end if
+
+ if NorseTQ2WarriorPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_NORSE_MELEE_3 at {NorseArmyPos} with NorseTQ2WarriorPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolNorseArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolNorseArmy to front of AdditionalTroops action queue
+ end if
+
+ if NorseTQ2ArcherPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_NORSE_RANGED_2 at {NorseArmyPos} with NorseTQ2ArcherPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolNorseArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolNorseArmy to front of AdditionalTroops action queue
+ end if
+
+ if NorseTQ3WarriorPlatoons > 0
+	AdditionalTroops = create platoon PLATOON_INFO_NORSE_MELEE_2 at {NorseArmyPos} with NorseTQ3WarriorPlatoons men and 0 women
+	///merge platoon AdditionalTroops into platoon ArmyToolNorseArmy
+	add action PLATOON_AGENDA_ACTION_SUPPORT using ArmyToolNorseArmy to front of AdditionalTroops action queue
+ end if
+
+ // ATTACH ARMY TO TOWN 
+ attach ArmyToolNorseArmy to ArmyToolNorseTown
+ 
+ wait until ArmyToolGoToWar == 1 // wait for greeks to be ready for attack
+
+ // SEND TO ATTACK ArmyToolGREEKARMY
+ add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using ArmyToolGreekArmy to front of ArmyToolNorseArmy action queue
+ ArmyToolGoToWar = 2
+ /// release ArmyToolNorseArmy ???
+
+
+ // TRACK STATUS OF BATTLE
+ while ArmyToolGoToWar == 2
+	if get number of villagers in platoon ArmyToolNorseArmy <= 0 or get number of villagers in platoon ArmyToolGreekArmy <= 0
+		ArmyToolGoToWar = 3
+	end if
+ end while
+
+ //  UPDATE Statistics
+ ArmyToolTotalNumberOfBattles++
+ if get number of villagers in platoon ArmyToolNorseArmy > 0 and get number of villagers in platoon ArmyToolGreekArmy <= 0
+	ArmyToolNorseVictories++
+	ArmyToolNorseSurvivors = get number of villagers in platoon ArmyToolNorseArmy
+	ArmyToolAverageNorseSurvivors = (((ArmyToolNorseVictories-1)*ArmyToolAverageNorseSurvivors) + ArmyToolNorseSurvivors)/ArmyToolNorseVictories
+ elsif get number of villagers in platoon ArmyToolGreekArmy > 0 and get number of villagers in platoon ArmyToolNorseArmy <= 0
+	ArmyToolGreekVictories++
+	ArmyToolGreekSurvivors = get number of villagers in platoon ArmyToolGreekArmy
+	ArmyToolAverageGreekSurvivors = (((ArmyToolGreekVictories-1)*ArmyToolAverageGreekSurvivors) + ArmyToolGreekSurvivors)/ArmyToolGreekVictories
+ else
+	ArmyToolTotalDraws++
+ end if
+
+ wait 3 seconds
+
+ ArmyToolGoToWar = 4 // tell GreekArmy to delete
+
+ delete ArmyToolNorseArmy
+
+ wait until ArmyToolGoToWar == 5 // wait for Greeks to delete
+ 
+ ArmyToolResultsIn = 1 // all averages etc calculated, ready for main script loop to restart
+
+end script HandleNorseArmy
+
+
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// OLD VERSION OF ARMYTOOL
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
+
+
+
+
+
+/*
+
+begin script ArmyTool
+
+//testing testing 123
+
+ //GreekTown = get TOWN at {0.000,0.000,0.000}
+ WarriorTotal = 0
+ ArcherTotal = 0
+ SiegeTotal = 0
+ Warrior = 0
+ Archer = 0
+ Siege = 0
+ NorseArmy = 0
+ TargettingDevice = 0
+ ArmyToolPos = 0
+ SpawnDevice = 0
+ ArmySpawnPos = 0
+ WarriorDisplay = 0
+ArcherDisplay = 0
+ SiegeDisplay = 0
+ TargetPos = 0
+ TSpangle = 0
+ SSpangle = 0
+ Looping = 0
+ Firsttime = 0
+ Eternity = 0
+
+start
+
+MyCreature = get player 1 creature
+
+//---------------------------
+// USER PLACES SCRIPT TOOLS
+//---------------------------
+
+clear left clicked position
+begin dialogue
+//	eject good spirit
+	say "DOUBLE CLICK on the ground where you want the Army Tools to appear"
+	wait until read or mouse left button down
+end dialogue
+
+while not left clicked position near hand position radius 10
+end while
+
+ArmyToolPos = marker at left clicked position
+clear left clicked position
+
+WarriorDisplay = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {ArmyToolPos}+{-10,10}
+set WarriorDisplay score 0
+ArcherDisplay = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {ArmyToolPos}+{0,10}
+set ArcherDisplay score 0
+SiegeDisplay = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {ArmyToolPos}+{10,10}
+set SiegeDisplay score 0
+
+//-------------------------------
+// MAIN LOOP
+//-------------------------------
+
+begin loop // Loops entire army creation process so more than one army can be created without X menu killing the other scripts
+
+	if Firsttime == 0
+		Firsttime = 1
+	else
+		begin dialogue
+			say "Press the K and C keys simultaneously to create another army"
+			wait until read
+		end dialogue
+
+		wait until key KB_K down and key KB_C down
+	end if
+
+	// Place the last of the tools
+	TargettingDevice = create VILLAGER MALE at {ArmyToolPos}+{10,0}
+	TSpangle = create special effect SPOT_VISUAL_HIGHLIGHT_ON_OBJECT on TargettingDevice time -1
+	SpawnDevice = create VILLAGER MALE at {ArmyToolPos}+{-10,0}
+	SSpangle = create special effect SPOT_VISUAL_HIGHLIGHT_ON_OBJECT on SpawnDevice time -1
+
+	//---------------------------
+	// USER SETS ARMY PROPERTIES
+	//---------------------------
+
+	begin cinema
+		// USER SETS WARRIOR UNIT TOTAL
+		move camera position to {WarriorDisplay}+{0.000,7.500,-7.500} time 2
+		move camera focus to {WarriorDisplay} time 2
+		wait until camera ready
+	//	eject good spirit
+		say "ENEMY WARRIORS: LMB raises, RMB lowers. Press SPACE Key when set." ///by good spirit
+		wait until read or mouse left button down or key KB_SPACE down
+	//	send good spirit home
+
+		while Looping == 0 // can't use a normal loop in cinema
+			if mouse left button down
+				WarriorTotal++
+				set WarriorDisplay score WarriorTotal
+				//wait 0.1 seconds
+			end if
+			if mouse right button down
+				WarriorTotal--
+				set WarriorDisplay score WarriorTotal
+				//wait 0.1 seconds
+			end if
+			if key KB_SPACE down
+				Looping = 1
+			end if
+		end while
+		Looping = 0
+
+		// USER SETS ARCHER UNIT TOTAL
+		move camera position to {ArcherDisplay}+{0.000,7.500,-7.500} time 1
+		move camera focus to {ArcherDisplay} time 1
+		wait until camera ready
+	//	eject good spirit
+		say "ENEMY ARCHERS: LMB raises, RMB lowers. Press SPACE Key when set." ///by good spirit
+		wait until read or mouse left button down or key KB_SPACE down
+	//	send good spirit home
+
+		while Looping == 0
+			if mouse left button down
+				ArcherTotal++
+				set ArcherDisplay score ArcherTotal
+				wait 0.1 seconds
+			end if
+			if mouse right button down
+				ArcherTotal--
+				set ArcherDisplay score ArcherTotal
+				wait 0.1 seconds
+			end if
+			if key KB_SPACE down
+				Looping = 1
+			end if
+		end while
+		Looping = 0
+
+		// USER SETS SIEGE UNIT TOTAL
+		move camera position to {SiegeDisplay}+{0.000,7.500,-7.500} time 1
+		move camera focus to {SiegeDisplay} time 1
+		wait until camera ready
+	//	eject good spirit
+		say "ENEMY CATAPULTS: LMB raises, RMB lowers. Press Escape Key when set." ///by good spirit
+		wait until read or mouse left button down or key KB_SPACE down
+	//	send good spirit home
+
+		while Looping == 0
+			if mouse left button down
+				SiegeTotal++
+				set SiegeDisplay score SiegeTotal
+				wait 0.1 seconds
+			end if
+			if mouse right button down
+				SiegeTotal--
+				set SiegeDisplay score SiegeTotal
+				wait 0.1 seconds
+			end if
+			if key KB_SPACE down
+				Looping = 1
+			end if
+		end while
+		Looping = 0
+
+		move camera position to {SpawnDevice}+{0.000,7.500,-7.500} time 1
+		move camera focus to {SpawnDevice} time 1
+	//	eject evil spirit
+		say "Now set where you want the army to appear by moving this rock." ///by evil spirit
+		wait until camera ready
+		wait until read
+	//	send evil spirit home
+
+	end cinema
+
+	//---------------------------
+	// USER SETS ARMY POSITION
+	//---------------------------
+
+	while SpawnDevice is not HELD_ANY
+		if TargettingDevice is HELD_ANY
+			begin dialogue
+	//			eject evil spirit
+				make evil spirit point at {SpawnDevice}
+				say "Wrong Rock! You have to set the army spawn point first." ///by evil spirit
+				wait until read or TargettingDevice is not HELD_ANY
+			end dialogue
+		end if
+	end while
+
+	begin dialogue
+	//	eject evil spirit
+		say "Place this rock where you want the enemy army to spawn." ///by evil spirit
+		wait until read or SpawnDevice is not HELD_ANY
+	end dialogue
+
+	wait until SpawnDevice is not HELD_ANY
+
+	ArmySpawnPos = marker at {SpawnDevice}
+	delete SpawnDevice with explosion
+
+
+
+
+	//-----------------------------
+	// ARMY CREATED
+	//-----------------------------
+
+	//while size of NorseArmy < WarriorTotal
+	//	Warrior = create WARRIOR NORSE at {ArmySpawnPos}
+	//	attach Warrior to NorseArmy
+	//end while
+	
+	//while size of NorseArmy < (WarriorTotal+ArcherTotal)
+	//	Archer = create ARCHER NORSE at {ArmySpawnPos}
+	//	attach Archer to NorseArmy
+	//end while
+	Archer = create platoon ARMY_UNIT_TYPE_RANGED_1 tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_CRESCENT_RABBLE at {ArmySpawnPos} facing camera position with ArcherTotal villagers
+	merge platoon Archer into platoon NorseArmy
+
+	//while size of NorseArmy < (WarriorTotal+ArcherTotal+SiegeTotal)
+	//	Siege = create CATAPULT NORSE at {ArmySpawnPos}
+	//	attach Siege to ArmySpawnPos
+	//end while
+
+	///Siege = create platoon ARMY_UNIT_TYPE_RANGED_1_MACHINE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_CRESCENT at {ArmySpawnPos} facing camera position with SiegeTotal villagers
+	///merge platoon Siege into platoon NorseArmy
+
+	//------------------------------------
+	// USER SETS TARGET POSITION
+	//------------------------------------
+
+	begin cinema
+	move camera position to {TargettingDevice}+{0.000,7.500,-7.500} time 1
+	move camera focus to {TargettingDevice} time 1
+	//	eject evil spirit
+		make evil spirit point at {TargettingDevice}
+		say "Now place the other rock where you want them to attack." ///by evil spirit
+		wait until read or TargettingDevice is HELD_ANY
+		wait until camera ready or TargettingDevice is HELD_ANY
+	end cinema
+
+	wait until TargettingDevice is HELD_ANY
+
+	begin dialogue
+	//	eject evil spirit
+		say "Drop the rock where you want to the army to attack!" ///by evil spirit
+		wait until read or TargettingDevice is not HELD_ANY
+	end dialogue
+
+	TargetPos = marker at {TargettingDevice}
+	delete TargettingDevice with explosion
+
+	//--------------------
+	// MOVE THE ARMY
+	//--------------------
+
+	move NorseArmy position to {TargetPos}
+	///while size of NorseArmy > 0
+	///	wait 1 second
+	///end while
+
+	// BODGE LINE BECAUSE PLATOONS DON'T CURRENTLY MERGE PROPERLY
+	//wait 2.5 seconds
+	//move Archer position to {TargetPos}
+
+until Eternity == 1
+end loop
+
+end script ArmyTool
+*/

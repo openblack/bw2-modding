@@ -1,0 +1,105 @@
+//Land6DecayChallenge.txt
+
+define script L6DC_ClickForQuest
+define script L6DC_ClickAgain
+define script L6DC_HaveIGotRock
+
+global L6DC_Falconer = 0
+global L6DC_FoundFalcon = 0
+global L6DC_ChallengeComplete = 0
+global L6DC_GotChallenge = 0
+global L6DC_Highlight = 0
+global L6DC_FALSE = 0
+global L6DC_TRUE = 1
+global L6DC_Rock1 = 0
+global L6DC_Rock2 = 0
+global L6DC_Rock3 = 0
+global L6DC_Rock4 = 0
+global L6DC_Rock5 = 0
+
+begin script Land6DecayChallenge
+
+L6DC_FalconerPos = 0
+L6DC_FalconPos = 0
+L6DC_RockPos = 0
+
+start
+
+L6DC_FalconerPos = marker at {1204.847,126.935,1215.364}
+L6DC_FalconPos = marker at {1174.296,95.693,1232.921}
+L6DC_RockPos = marker at {1175.648,93.351,1240.320}
+
+L6DC_Falconer = create VILLAGER MERRYMAN8 at {L6DC_FalconerPos}
+L6DC_Rock1 = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER1_SAND at {L6DC_RockPos}
+L6DC_Rock2 = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER1_SAND at {L6DC_RockPos}
+L6DC_Rock3 = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER1_SAND at {L6DC_RockPos}
+L6DC_Rock4 = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER1_SAND at {L6DC_RockPos}
+L6DC_Rock5 = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER1_SAND at {L6DC_RockPos}
+
+run script L6DC_ClickForQuest
+run background script L6DC_HaveIGotRock
+
+end script Land6DecayChallenge
+
+//=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+
+begin script L6DC_ClickForQuest
+
+HighlightPos = 0
+
+start
+
+	HighlightPos = marker at {L6DC_Falconer}
+	L6DC_Highlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of L6DC_Highlight = 5
+
+	wait until L6DC_Highlight right clicked
+
+	if L6DC_GotChallenge == L6DC_FALSE
+		clear right clicked object
+		L6DC_GotChallenge = L6DC_TRUE
+	end if
+
+	say "got the quest"
+	wait until read
+
+	run background script L6DC_ClickAgain
+
+end script L6DC_ClickForQuest
+
+//---------------------------------------------------------------------------------------
+
+begin script L6DC_ClickAgain
+
+start
+
+	if L6DC_ChallengeComplete != 1
+		wait until L6DC_Highlight right clicked
+
+		begin dialogue
+		say "Try and find the Falcon"
+		wait until read	
+		end dialogue
+
+		clear right clicked object
+	end if
+
+end script L6DC_ClickAgain
+
+//-------------------------------------------------------------------------------------------
+
+begin script L6DC_HaveIGotRock
+
+ObjectInHand = 0
+
+start
+
+while L6DC_ChallengeComplete != 1
+	ObjectInHand = get object held
+	if ObjectInHand == L6DC_Rock1
+		say "Got the rock - hurrah!"
+		wait until read
+		end if
+end while
+
+end script L6DC_HaveIGotRock

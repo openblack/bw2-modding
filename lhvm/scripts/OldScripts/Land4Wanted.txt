@@ -1,0 +1,28 @@
+//------------------------------------------------
+//  LAND 4 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land4Wanted
+
+ L4Actor1Pos = marker at {1877.197,31.197,1853.875}	// Greek Area coast
+ L4Actor1 = create VILLAGER MALE at {L4Actor1Pos}
+ PosterPos1 = marker at {1749.994,34.060,1710.355}
+ L4Actor2Pos = marker at {1196.223, 50.880, 1454.904}	// Mountain Area coast
+ L4Actor2 = create VILLAGER MALE at {L4Actor2Pos}
+ PosterPos2 = marker at {1747.494,34.060,1710.355}
+ L4Actor3Pos = marker at {1196.223, 50.880, 1454.904}	// behind Japan Capital
+ L4Actor3 = create VILLAGER MALE at {L4Actor3Pos}
+ PosterPos3 = marker at {1744.994,34.060,1710.355}
+ JailLocation = marker at {1745.475,34.375,1706.530} // hut near Greek TC
+
+start
+	
+	run background script GlobalWanted (9, L4Actor1, L4Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (10, L4Actor2, L4Actor2Pos, JailLocation, PosterPos2)
+
+	run background script GlobalWanted (11, L4Actor3, L4Actor3Pos, JailLocation, PosterPos3)
+
+
+end script Land4Wanted
+

@@ -1,0 +1,470 @@
+/////////////////////////////////////////////////////////////////////////////////////
+// Land 5 Garden Challenge
+/////////////////////////////////////////////////////////////////////////////////////
+// On a later land, the same two villagers are there, but this time Tid’s garden is the
+// nicer. Paul is now the jealous one (complaining that his garden was burnt down
+// previously if that was the case), and wants god to make is garden the nicer now.
+// Since the player now has access to actual gardens to place (as well as embellishments)
+// the level of impressiveness they need to attain can be much higher. Again, they can
+// just burn Tid’s nice new garden down to resolve the challenge. When he completes the
+// challenge, he will be given the level two gardens.
+/////////////////////////////////////////////////////////////////////////////////////
+// Todo:
+// Move L5GC_GoodIntro into the games super globals.
+// Replace L5JapanOutpost1 with the real town.
+// Place this into the land
+// Get a function that gets the impresiveness of a building, and then put it into the script
+/////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Defines
+define L5GC_TRUE										= 1
+define L5GC_FALSE										= 0
+define L5GC_MORE_IMPRESIVE_AMOUNT						= 25 // the amount the new garden needs to be impresive over the old
+define L5GC_BURN_IMPRESIVE_AMOUNT						= 2 // the maximum amount of impresiveness it is expected that a burned garden would have.
+define L5GC_MIN_HEALTH_AMOUNT							= 0.8 // the min HELTH the new garden's house can have and still be impresive
+define L5GC_DEBUG										= L5GC_FALSE
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Globals
+global L5GC_GoodIntro									= L5GC_FALSE // should be among the super globals
+global L5GC_ChallengeFinished							= L5GC_FALSE
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Scripts
+define script L5GC_IntroCutScene // 
+define script L5GC_GoodOutroCutScene // if the player resolved L5GC in the good way
+define script L5GC_EvilOutroCutScene // if the player resolved L5GC in the evil way
+define script L5GC_Reminder1(challenge_location)
+define script L5GC_Reminder2(challenge_location)
+define script L5GC_Reminder3(challenge_location)
+define script L5GC_AdvisorFixHouse(evil_garden_house,good_garden_house)
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+//run script Land5Gardens
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+begin script Land5Gardens
+	ChallengeScroll = 0
+	L5GC_ParaHouseLoc = marker at {630.094, 115.894, 1088.420}
+	L5GC_ParaHouse = 0
+	L5GC_TitsuHouseLoc = marker at {633.415, 117.231, 1087.017}
+	L5GC_TitsuHouse = 0
+	ScrollPosition = marker at {595.425, 116.322, 1071.942}
+	
+	//Temp - just to see resolutions of the script.
+	GoodScroll = 0
+	EvilScroll = 0
+	
+start
+		L5GC_ParaHouse = get HOUSE at {L5GC_ParaHouseLoc}
+		L5GC_TitsuHouse = get HOUSE at {L5GC_TitsuHouseLoc}
+
+	if L5GC_DEBUG == L5GC_FALSE
+		wait until PLAYER of L5JapanOutpost1 == 0
+
+		wait number from 30 to 200 seconds
+	end if
+	
+	ChallengeScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPosition}
+
+	if L5GC_DEBUG == L5GC_TRUE
+		GoodScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {633.124, 117.416, 1095.979}
+		EvilScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {579.945, 121.170, 1055.637}
+
+		begin loop
+			if  ChallengeScroll right clicked
+				clear right clicked object
+				run script L5GC_IntroCutScene
+			end if
+			
+			if  GoodScroll right clicked
+				clear right clicked object
+				run script L5GC_GoodOutroCutScene
+			end if
+			
+			if  EvilScroll right clicked
+				clear right clicked object
+				run script L5GC_EvilOutroCutScene
+			end if	
+		end loop
+	end if
+	
+	wait until ChallengeScroll right clicked or L5GC_TitsuHouse not exists or L5GC_ParaHouse not exists
+	if  ChallengeScroll right clicked
+		clear right clicked object
+		delete ChallengeScroll
+		run script L5GC_IntroCutScene
+	else
+		delete ChallengeScroll
+	end if
+	
+	run background script L5GC_Reminder1(L5GC_ParaHouseLoc)
+	run background script L5GC_AdvisorFixHouse(L5GC_ParaHouse,L5GC_TitsuHouse)
+
+	wait until L5GC_TitsuHouse not exists or L5GC_ParaHouse not exists or (get abode L5GC_ParaHouse base productivity > get abode L5GC_TitsuHouse base productivity + L5GC_MORE_IMPRESIVE_AMOUNT and HEALTH of L5GC_ParaHouse > L5GC_MIN_HEALTH_AMOUNT)
+	L5GC_ChallengeFinished = L5GC_TRUE
+
+	if L5GC_TitsuHouse exists and L5GC_ParaHouse exists
+		if get abode L5GC_TitsuHouse base productivity < L5GC_BURN_IMPRESIVE_AMOUNT
+			run script L5GC_EvilOutroCutScene
+		else
+			run script L5GC_GoodOutroCutScene
+		end if
+	elsif L5GC_ParaHouse exists
+		run script L5GC_EvilOutroCutScene
+	else
+		// what do we do if Para's house is destroyed?
+		say "no houses exist"
+	end if
+
+	// give some coins
+end script Land5Gardens
+
+begin script L5GC_Reminder1(challenge_location)
+start
+	wait number from 500 to 1000 seconds
+	if L5GC_ChallengeFinished == L5GC_FALSE
+		wait until ({challenge_location} viewed and camera position near {challenge_location} radius 500) or L5GC_ChallengeFinished != 0
+		if L5GC_ChallengeFinished == L5GC_FALSE
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_GARDEN_REMINDER_10" //by good spirit
+				wait 2 seconds
+				send good spirit home
+			end dialogue
+		end if
+	end if
+
+	if L5GC_ChallengeFinished == L5GC_FALSE
+		run background script L5GC_Reminder2(challenge_location)
+	end if
+end script L5GC_Reminder1
+
+begin script L5GC_Reminder2(challenge_location)
+start
+	wait number from 400 to 1000 seconds
+	if L5GC_ChallengeFinished == L5GC_FALSE
+		wait until ({challenge_location} viewed and camera position near {challenge_location} radius 500) or L5GC_ChallengeFinished != 0
+		if L5GC_ChallengeFinished == L5GC_FALSE
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_GARDEN_REMINDER_20" //by good spirit
+				wait 2 seconds
+				send good spirit home
+			end dialogue
+		end if
+	end if
+
+	if L5GC_ChallengeFinished == L5GC_FALSE
+		run background script L5GC_Reminder3(challenge_location)
+	end if
+end script L5GC_Reminder2
+
+begin script L5GC_Reminder3(challenge_location)
+start
+	wait number from 400 to 1000 seconds
+	if L5GC_ChallengeFinished == L5GC_FALSE
+		wait until ({challenge_location} not viewed and camera position not near {challenge_location} radius 500) or L5GC_ChallengeFinished != 0
+		if L5GC_ChallengeFinished == L5GC_FALSE
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_GARDEN_REMINDER_30" //by evil spirit
+				wait 2 seconds
+				send evil spirit home
+			end dialogue
+		end if
+	end if
+end script L5GC_Reminder3
+
+begin script L5GC_AdvisorFixHouse(evil_garden_house,good_garden_house)
+start
+	wait until get abode evil_garden_house base productivity > get abode good_garden_house base productivity + L5GC_MORE_IMPRESIVE_AMOUNT and {evil_garden_house} viewed and camera position near {evil_garden_house} radius 500 
+	if HEALTH of evil_garden_house <= L5GC_MIN_HEALTH_AMOUNT and L5GC_ChallengeFinished == 0
+		begin dialogue
+			eject good spirit
+			say "BW2T_SCRIPT_05NEW_GARDEN_BROKENHOUSE_10" //by good spirit
+			wait 2 seconds
+			send good spirit home
+		end dialogue
+	end if
+end script L5GC_AdvisorFixHouse
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+begin script L5GC_IntroCutScene
+	good_garden_villager = 0
+	evil_garden_villager = 0
+	RelCamPos = 0
+	RelCamFoc = 0
+	House = 0
+start
+	House = get HOUSE at {627.679, 115.875, 1088.729} radius 5
+	good_garden_villager =  create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {615.840, 115.412, 1084.375}
+	evil_garden_villager =  create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {721.057, 82.255, 1081.584}
+
+	disable good_garden_villager alternative mesh
+	enable evil_garden_villager alternative mesh
+
+	set good_garden_villager position to {612.846, 115.409, 1082.531}
+	play anim "a_p_garden_farmer_sowing_seeds" on good_garden_villager loop -1
+	set good_garden_villager focus to {617.012, 115.408, 1088.473}
+	
+	set evil_garden_villager position to {606.801, 115.457, 1074.885}
+	set evil_garden_villager focus to {good_garden_villager}
+	play anim "a_p_garden_upsetpose" on evil_garden_villager loop 100
+	
+	
+	
+	begin cinema
+		wait 0.2 seconds
+		RelCamPos=marker at get world position from good_garden_villager to {-17.041, 9.321, -1.886}
+		RelCamFoc=marker at get world position from good_garden_villager to {-16.148, 8.885, -1.776}
+		
+		set camera lens 27
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		RelCamPos=marker at get world position from good_garden_villager to {-17.041, 9.321, -1.886}
+		RelCamFoc=marker at get world position from good_garden_villager to {-15.033, 8.342, -1.637}
+		
+		move camera position to {RelCamPos} time 26
+		move camera focus to {RelCamFoc} time 26
+		wait 3 seconds
+		
+		set camera lens 24
+		
+		
+		RelCamPos=marker at get world position from House to {-13.206, 0.679, 5.657}
+		RelCamFoc=marker at get world position from House to {-14.153, 0.699, 5.337}
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		RelCamPos=marker at get world position from House to {-13.336, 0.681, 5.613}
+		RelCamFoc=marker at get world position from House to {-14.283, 0.702, 5.293}
+		
+		
+		
+		
+		
+		move camera position to {RelCamPos} time 8
+		move camera focus to {RelCamFoc} time 8
+		
+		
+		wait 2 seconds
+		
+		//set camera position to {624.703, 110.539, 1069.973}
+		//set camera focus to {625.518, 110.450, 1070.545}
+		//set camera position to {624.661, 110.539, 1070.039}
+		//set camera focus to {625.475, 110.394, 1070.603}
+		
+		RelCamPos=marker at get world position from House to {-27.481, 1.374, 2.565}
+		RelCamFoc=marker at get world position from House to {-26.488, 1.279, 2.630}
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//ALTITUDE of evil_garden_villager = 0.05
+		ALTITUDE of evil_garden_villager = 0.3
+		//move camera position to {624.827, 110.509, 1070.154} time 5
+		//move camera focus to {625.640, 110.365, 1070.717} time 5
+		
+		RelCamPos=marker at get world position from House to {-27.377, 1.364, 2.572}
+		RelCamFoc=marker at get world position from House to {-26.383, 1.269, 2.637}
+		move camera position to {RelCamPos} time 5
+		move camera focus to {RelCamFoc} time 5
+		
+		wait 2 seconds
+		play anim "a_p_garden_turn_180" on evil_garden_villager loop 1 disable stand
+		//play anim "a_p_turn_180" on evil_garden_villager loop 1
+		wait 0.75 seconds
+		
+		RelCamPos=marker at get world position from House to {-23.785, 0.948, 2.924}
+		RelCamFoc=marker at get world position from House to {-24.743, 0.950, 2.637}
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		ALTITUDE of evil_garden_villager = 0.0
+		
+		wait until evil_garden_villager played
+		set evil_garden_villager focus to get target from focus position of evil_garden_villager to {evil_garden_villager} distance 1 angle 0
+		wait 0.75 seconds
+		play anim "a_p_stand_despair_2" on evil_garden_villager loop 1
+		wait 0.75 seconds
+		RelCamPos=marker at get world position from House to {-26.764, 0.216, 2.866}
+		RelCamFoc=marker at get world position from House to {-25.915, 0.558, 2.466}
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		wait 0.75 seconds
+		say "Why is my garden rubbish?"
+		wait until read
+		wait 0.5 seconds 
+		RelCamPos=marker at get world position from House to {-47.088, 36.965, 19.092}
+		RelCamFoc=marker at get world position from House to {-46.671, 36.163, 18.665}
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		RelCamPos=marker at get world position from House to {-48.030, 38.776, 20.057}
+		RelCamFoc=marker at get world position from House to {-47.613, 37.974, 19.629}
+		
+		move camera position to {RelCamPos} time 10
+		move camera focus to {RelCamFoc} time 10
+		wait 0.5 seconds 
+		move evil_garden_villager position to {605.302, 115.434, 1072.609}
+		wait 3 seconds 
+		//play anim "a_p_stand_despair_1" on evil_garden_villager loop 1
+		play anim "a_p_kicking_ground" on evil_garden_villager loop 1
+		wait 2 seconds 
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds 
+		
+		set anim speed of evil_garden_villager to 1
+		set anim speed of good_garden_villager to 1
+	end cinema
+	wait until widescreen transition complete
+
+	delete good_garden_villager
+	delete evil_garden_villager
+
+	set fade in time 2
+	wait 2 seconds
+end script L5GC_IntroCutScene
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+begin script L5GC_GoodOutroCutScene
+	good_garden_villager = 0
+	evil_garden_villager = 0
+	House = 0
+	RelCamPos = 0
+	RelCamFoc = 0
+start
+	House = get HOUSE at {627.679, 115.875, 1088.729} radius 5
+
+	good_garden_villager =  create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {721.057, 82.255, 1081.584}
+	evil_garden_villager =  create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {721.057, 82.255, 1081.584}
+
+	disable good_garden_villager alternative mesh
+	enable evil_garden_villager alternative mesh
+
+	set good_garden_villager position to {611.503, 115.512, 1079.035}
+	
+	set evil_garden_villager position to {608.641, 115.463, 1074.206}
+	set evil_garden_villager focus to {606.062, 115.420, 1072.139}
+	begin cinema
+		set camera lens 60
+		RelCamPos=marker at get world position from House to {-26.902, 0.764, 0.574}
+		RelCamFoc=marker at get world position from House to {-25.905, 0.700, 0.599}
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		RelCamPos=marker at get world position from House to {-26.774, 0.756, 0.577}
+		RelCamFoc=marker at get world position from House to {-25.776, 0.691, 0.602}
+		
+		
+		move camera position to {RelCamPos} time 10
+		move camera focus to {RelCamFoc} time 10
+		play anim "a_p_garden_ambient1" on evil_garden_villager loop -1
+		set anim speed of evil_garden_villager to 0.75
+		move good_garden_villager position to {609.257, 115.500, 1075.783}
+		wait 3 seconds
+		play anim "a_p_queuing" on good_garden_villager loop -1
+		set anim speed of good_garden_villager to 0.75
+		wait 0.5 seconds
+		say "Nice garden."
+		wait until read
+		wait 3 seconds
+		
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds 
+		set anim speed of evil_garden_villager to 1
+		set anim speed of good_garden_villager to 1
+	end cinema
+	wait until widescreen transition complete
+
+	delete good_garden_villager
+	delete evil_garden_villager
+
+	set fade in time 2
+	wait 2 seconds
+end script L5GC_GoodOutroCutScene
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+begin script L5GC_EvilOutroCutScene
+	good_garden_villager = 0
+	evil_garden_villager = 0
+	House = 0
+	RelCamPos = 0
+	RelCamFoc = 0
+start
+	House = get HOUSE at {627.679, 115.875, 1088.729} radius 5
+
+	good_garden_villager =  create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {721.057, 82.255, 1081.584}
+	evil_garden_villager =  create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {721.057, 82.255, 1081.584}
+
+	disable good_garden_villager alternative mesh
+	enable evil_garden_villager alternative mesh
+
+	
+	set evil_garden_villager position to {602.062, 115.579, 1077.469}
+	set good_garden_villager position to {604.433, 115.446, 1080.991}
+	set good_garden_villager focus to {606.267, 115.357, 1083.042}
+	begin cinema	
+		set camera lens 60
+		//set camera position to {627.349, 110.163, 1072.632}
+		//set camera focus to {626.745, 110.062, 1071.841}
+		//set camera position to {627.177, 110.149, 1072.592}
+		//set camera focus to {626.601, 110.071, 1071.777}
+		RelCamPos=marker at get world position from House to {-22.374, 0.935, 8.339}
+		RelCamFoc=marker at get world position from House to {-23.366, 0.868, 8.231}
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		RelCamPos=marker at get world position from House to {-22.397, 0.934, 8.336}
+		RelCamFoc=marker at get world position from House to {-23.389, 0.867, 8.229}
+		
+		
+		
+		move camera position to {RelCamPos} time 6
+		move camera focus to {RelCamFoc} time 6
+		//move camera position to {627.304, 110.155, 1072.573} time 6
+		//move camera focus to {626.700, 110.054, 1071.782} time 6
+		//move camera position to {627.127, 110.142, 1072.522} time 6
+		//move camera focus to {626.552, 110.064, 1071.708} time 6
+		play anim "a_p_garden_child_crying_1" on good_garden_villager loop -1
+		set anim speed of good_garden_villager to 0.75
+		
+		move evil_garden_villager position to {603.583, 115.513, 1079.258}
+		wait 2 seconds
+		play anim "a_p_queuing" on evil_garden_villager loop 1
+		wait 1 seconds
+		play anim "a_p_amusement" on evil_garden_villager loop -1
+		//set anim speed of good_garden_villager to 0.75
+		say "Hahahaha! Your garden is rubbish!"
+		wait until read
+		wait 8 seconds
+		
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds 
+		set anim speed of evil_garden_villager to 1
+		set anim speed of good_garden_villager to 1
+	end cinema
+	wait until widescreen transition complete
+
+	delete good_garden_villager
+	delete evil_garden_villager
+
+	set fade in time 2
+	wait 2 seconds
+end script L5GC_EvilOutroCutScene
+
+/////////////////////////////////////////////////////////////////////////////////////

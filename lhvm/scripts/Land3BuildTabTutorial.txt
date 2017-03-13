@@ -1,0 +1,2162 @@
+//------------------------------------------------------------------------------------------------
+//	Constants
+//------------------------------------------------------------------------------------------------
+define BT_True = 1
+define BT_False = 0
+
+define RIGHTCLICK_TOOLBAR = 1
+define DRAG_TOOLBAR_UP = 2
+define DRAG_TOOLBAR_DOWN = 3
+define RIGHTCLICK_TRIBUTE_TAB = 4
+define STAT_MENU = 5
+define CREATURE_TEACH_MENU = 6
+define CREATURE_ROLE_MENU = 7
+define TRIBUTES_MENU = 8
+define MIRACLES_MENU = 9
+define OBJECTIVES_MENU = 10
+define SELECT_TRIBUTE_MENU = 11
+define OPEN_SELECT_TRIBUTE_MENU = 12
+define PERSUADE_PLAYER = 13
+define BUILD_TEMPLE = 14
+define SELECT_TEMPLE = 15
+define TEMPLE_TAKING_TOO_LONG = 16
+define BUILD_ARMOURY = 17
+define SELECT_ARMOURY = 18
+define ARMOURY_TAKING_TOO_LONG = 19
+define ARMIES_NEED_ORE = 20
+define PICK_UP_FLAG = 21
+define PLACE_FLAG = 22
+define SHOOK_FLAG = 23
+define PLATOON_MARCH = 24
+define ORDER_PLATOON_MARCH = 25
+define GRAB_FLAG = 26
+define PLACE_FLAG_REMINDER = 27
+define PLACE_FLAG_IDLE = 28
+define PLACE_FLAG_ON_SETTLEMENT = 29
+define PAHTEMPLE = 30
+//------------------------------------------------------------------------------------------------
+//	Globals
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+//	Script defines
+//------------------------------------------------------------------------------------------------
+define script Land3TheGoodWay
+define script Land3TheEvilWay
+define script BT_AdvisorDialogue(Comment)
+define script BT_OreToolTip(NearestOre)
+define script BT_AddEverythingToToolbar
+define script BT_SetEverythingToHowItShouldBe
+define script BT_ObjectiveTutorial
+define script BT_TalkAboutmakingLargerPlatoon
+//------------------------------------------------------------------------------------------------
+//----Land3BuildTabTutorial----//
+//------------------------------------------------------------------------------------------------
+begin script Land3BuildTabTutorial
+	CommentTimer = create timer for 0 seconds
+	CommentTimer2 = create timer for 0 seconds
+	Comment = 0
+	BuildLowered = 0
+	StoragePit = 0
+	ExampleVideo = 0
+	End = BT_False
+	StatsMenuCommentSaid = BT_False
+	CreatureTeachMenuCommentSaid = BT_False
+	CreatureRoleMenuCommentSaid = BT_False 
+	TributesMenuCommentSaid = BT_False 
+	SpellsMenuCommentSaid = BT_False 
+	ObjectivesMenuCommentSaid = BT_False
+	BT_Scroll = 0
+	BT_ScrollPos = marker at {1071.413, 366.846, 1609.054}
+	EndDialogue = BT_False
+start
+	if L3GreekTown not exists
+		run script Land3Globals
+	end if
+	
+	run background script BT_AddEverythingToToolbar
+	disable toolbar
+	wait 30 seconds
+
+	begin dialogue
+		eject good spirit
+		wait 1 seconds
+	//GA: "we have now achieved town status. excellent! we'll now teach you something more advanced."
+		//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_70"
+		//wait until read
+		BT_Scroll = create highlight GOLD name "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_MISC_10" remind "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_MISC_20" at {BT_ScrollPos}
+		ALTITUDE of BT_Scroll = 5
+		make good spirit point at {BT_Scroll}
+	//GA: "Click the gold scroll when you are ready to learn about the toolbar."
+		say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_80"
+		wait until read or BT_Scroll right clicked 
+		send good spirit home
+	end dialogue
+	
+	// Give the objective for clicking on the scroll
+	// GA: Click on the Gold Scroll.
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 with amount 1 text "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 0
+	enable objective window
+	
+	set CommentTimer time to 180 seconds
+	begin loop
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {BT_Scroll}
+				// GA: Click on the Gold Scroll.
+				say "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL"
+				wait until read
+			end dialogue
+			set CommentTimer time to 300 seconds
+		end if
+	until BT_Scroll right clicked
+	end loop
+	
+	delete BT_Scroll
+	L3InBuildTabTutorial = 1
+	
+	disable tribute visual
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_BUILDTABTUTORIAL1
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	enable tribute visual
+	
+//----Introduce player to toolbar tutorial----//
+
+	enable toolbar in cutscene
+	disable toolbar locked
+	set toolbar menu to MENU_TOOLBAR_BUILD
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	enable toolbar
+	enable toolbar locked
+	enable can use destruction tool	
+	
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_1
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_4
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_7
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	//	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_10 DONT RESET OBJECTIVE
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_11
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_12
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_13
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_14
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_16
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_18
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_19
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_20
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 amount 0 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TOOLBAR_10"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TOOLBAR_20"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 parent objective TRIBUTE_OBJECTIVE_LAND_8
+	enable objective window
+	enable toolbar locked	
+	
+	//----Player raises the toolbar----//
+			
+	begin loop
+		if get toolbar state != variable MENU_TOOLBAR_STATE_OPEN_FULL
+			highlight toolbar item variable MENU_HIGHLIGHT_HANDLE		
+		end if
+		if Comment == 0 and get toolbar state != variable MENU_TOOLBAR_STATE_OPEN_FULL
+			begin dialogue
+				eject good spirit
+				//GA: "Right. Let's open the toolbar."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_60"
+					wait until read
+					make good spirit fly across 0.2 down 1
+				//GA: "See there is a flag at the bottom left of the screen."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_70"
+					wait until read
+				//GA: "All you need to do to open it is click the Action button on it once."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_90"
+					wait until read
+				send good spirit home
+			end dialogue
+
+			Comment++
+			set CommentTimer time to 20 seconds
+		end if
+		
+		if Comment == 1 and get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+					make good spirit fly across 0.2 down 1
+					wait 1 seconds
+				//GA: "See there is a flag at the bottom left of the screen."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_70"
+					wait until read
+				//GA: "All you need to do to open it is click the Action button on it once."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_90"
+					wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimer time to 60 seconds
+		end if
+	until get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL
+	end loop
+	enable objective window
+	clear toolbar highlight
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 1
+	wait 1 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	disable toolbar locked
+	set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+	
+	begin dialogue	
+		eject evil spirit
+			//EA: Hey? What's that?
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_40"
+			wait until read
+		eject good spirit
+		//GA: That is the toolbar.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_50"
+			wait until read
+		send evil spirit home
+			wait 1 seconds
+		//GA: "Good. Now click again to close it."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1060"
+			wait until read
+			send good spirit home
+	end dialogue
+	enable toolbar locked
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TOOLBAR_40"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 parent objective TRIBUTE_OBJECTIVE_LAND_8
+	enable objective window
+	
+	highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+	
+//----Player lowers the toolbar----//
+	set CommentTimer time to 40 seconds
+	begin loop
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+				//GA: "Good. Now click again to close it."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1060"
+					wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimer time to 60 seconds
+		end if
+	until get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED
+	end loop
+	disable toolbar locked
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	clear toolbar highlight
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 1
+	wait 1 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	
+	begin dialogue
+		eject good spirit
+		//GA: "See how you can have it visible or not it's upto you."
+			//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1070"
+			//wait until read
+		//GA: "Open it up again."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1080"
+			wait until read
+		send good spirit home
+	end dialogue
+	enable toolbar locked
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TOOLBAR_20"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 parent objective TRIBUTE_OBJECTIVE_LAND_8
+	enable objective window
+	highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+
+		//GA: "Click on the maximise button."
+			//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_110"
+			//wait until read
+	
+	set CommentTimer time to 40 seconds
+
+	begin loop
+		
+		if get CommentTimer time remaining == 0 and get toolbar state != variable MENU_TOOLBAR_STATE_OPEN_FULL
+			begin dialogue
+				eject good spirit
+			//GA: "See there is a flag at the bottom left of the screen."
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_70"
+				wait until read
+			//GA: "All you need to do to open it is to click it once."
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_90"
+				wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimer time to 60 seconds
+		end if 
+		
+	until get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL
+	end loop
+	disable toolbar locked
+	set toolbar menu to MENU_TOOLBAR_BUILD
+	set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+	
+	clear toolbar highlight
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 1
+	wait 1 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	
+	begin dialogue
+		eject good spirit
+			make good spirit fly across 0.25 down 0.8
+		//GA: The toolbar holds a series of menus.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_100"
+			wait until read
+		//GA: These tabs are used to navigate the different menus.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_110"
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_0 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_1 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_2 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_3 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_4 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_5
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_6 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_5 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_4
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_3 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_2
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_1
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_0
+			wait until read
+		//GA: "The tab currently selected is the construction tab."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_120"
+			wait until read
+			make good spirit fly across 0.75 down 0.8
+		//GA: "So the menu shown is the construction menu."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_130"
+			wait until read
+		//GA: "Each menu is divided into sub-menus."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_150"
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_0 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_1 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_2 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_3 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_4
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_5
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_6
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_5
+			wait 0.2 seconds
+			make good spirit fly across 0.85 down 0.7
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_4 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_3 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_2 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_1 
+			wait 0.2 seconds
+			highlight toolbar item variable MENU_HIGHLIGHT_TAB_0 
+			wait 0.2 seconds
+			wait until read
+			clear toolbar highlight
+			
+		//GA: We're going to show you how to access some advanced features. Press F4 to bring up the Tribute Menu.
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_100"
+			wait until read
+		send good spirit home
+	end dialogue
+	enable toolbar locked
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TOOLBAR_70"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 parent objective TRIBUTE_OBJECTIVE_LAND_8
+	enable objective window
+	set CommentTimer time to 20 seconds
+	
+	begin loop		
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+			//GA: "Select the Tribute menu."
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_340"
+				wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimer time to 20 seconds
+		end if
+
+		if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+			highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+		elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu != variable MENU_TOOLBAR_TRIBUTES 
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_3 
+		elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu == variable MENU_TOOLBAR_TRIBUTES 
+			clear toolbar highlight	
+		end if
+	until get toolbar menu == variable MENU_TOOLBAR_TRIBUTES and get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL 
+	end loop
+	
+	clear toolbar highlight
+	enable objective window
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 1
+	begin dialogue
+		disable toolbar locked
+		set toolbar menu to MENU_TOOLBAR_TRIBUTES
+		set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+		set tribute menu selection to ARTEFACT_ABODE_NUMBER_TEMPLE
+		clear toolbar highlight
+		wait 2 seconds
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+		disable tribute menu scroll
+		
+		eject evil spirit
+		eject good spirit
+		//EA: This is the coolest part of the menu!
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_360"
+			wait until read
+		//GA: You may be wondering what Tribute is for. Well this is where you spend it.
+			//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_140"
+			//wait until read
+		send evil spirit home
+		//GA: The Tribute is like a form of currency. You can spend it on whatever you like, including new buildings.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_370"
+			wait until read
+		//GA: "You can improve your godly powers and add constructions or features to your Town."
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_150"
+			wait until read
+		//GA: "You earn Tribute by finishing Challenges and doing other impressive things."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_380"
+			wait until read
+
+//----Tell player to buy a temple----//	
+
+		//GA: We have plenty of Tribute at the moment.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_390"
+			wait until read
+		//GA: Enough to buy a Temple!
+			set research ARTEFACT_ABODE_NUMBER_TEMPLE available to RESEARCH_AVAILABILITY_AVAILABLE
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_400"
+			wait until read
+			//clear toolbar highlight
+		send good spirit home
+	end dialogue
+	
+	if get research ARTEFACT_ABODE_NUMBER_TEMPLE available != variable RESEARCH_AVAILABILITY_RESEARCHED
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 text "BW2T_SCRIPT_GENERIC_FINALPICKUPS_23"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 parent objective TRIBUTE_OBJECTIVE_LAND_8
+
+		set tribute menu selection to ARTEFACT_ABODE_NUMBER_TEMPLE
+		highlight toolbar item variable MENU_HIGHLIGHT_BUYBUTTON
+	end if
+	
+//----Wait until the player has bought a temple----//
+
+	begin loop
+		if variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_3 and get time since last toolbar button clicked < 1 
+			highlight toolbar item variable MENU_HIGHLIGHT_BUYBUTTON
+		elsif get time since last toolbar button clicked < 1 and (variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_0 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_1 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_2 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_4 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_6)
+			highlight toolbar item variable MENU_HIGHLIGHT_ICON_3
+		end if
+	until get research ARTEFACT_ABODE_NUMBER_TEMPLE available == variable RESEARCH_AVAILABILITY_RESEARCHED
+	end loop
+	enable toolbar locked
+	enable tribute menu scroll
+	clear toolbar highlight
+	set CommentTimer time to 0 seconds 
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+
+//----The good way----//
+
+	run script Land3TheGoodWay
+
+//----Make player build an armoury----//
+	
+	/*begin dialogue
+		eject good spirit
+	//GA: "Well done! Now select the tribute tab."
+		say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1180"
+		wait until read
+		send good spirit home
+	end dialogue
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TOOLBAR_70"
+	enable objective window
+	set CommentTimer time to 20 seconds
+
+	begin loop	
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+			//GA: "Select the Tribute menu."
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_340"
+				wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimer time to 20 seconds
+		end if
+		
+		if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+			highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+			wait until get toolbar state != variable MENU_TOOLBAR_STATE_CLOSED 
+			clear toolbar highlight
+		else
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_3 
+			wait until get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+			clear toolbar highlight
+		end if
+	until get toolbar menu == variable MENU_TOOLBAR_TRIBUTES and get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL 
+	end loop
+	
+	enable objective window
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 1
+	wait 1 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	highlight toolbar item variable MENU_HIGHLIGHT_ICON_3*/
+	
+	run script Land3TheEvilWay
+	disable toolbar in cutscene
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_BUILDTABTUTORIAL3
+	
+	begin dialogue
+		wait 2 seconds
+		eject evil spirit
+		eject good spirit
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 value 1
+		// EA: You see, you can win by taking over Towns using force.
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_320"
+			wait until read
+
+
+		// GA: Or by impressing the people in those other Towns.
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_330"
+			wait until read
+	
+		// EA: My way is best. 
+			//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_340"
+			//wait until read
+
+		// GA: Mine is. More people survive to follow us.
+			//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_350"
+			//wait until read
+
+		// EA: Pah! War solves everything.
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_360"
+			wait until read
+
+		// GA: Well actually, Leader, you can win by a mixture of impressing and war, you know.
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_370"
+			wait until read
+			eject evil spirit
+			make good spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_TUT_G_550
+			make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_TUT_E_550
+			wait until read
+			send good spirit home
+			make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_TUT_E_540
+			wait until read
+			send evil spirit home
+	end dialogue
+	enable dialogue manager
+	
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_1
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_2
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_4
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_7
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_10 
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_11
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_12
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_13
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_14
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_16
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_18
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_19
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_20
+	
+	// Setup the objective for taking over the other towns by force or imprssiveness
+	// Take over every Town on the land.
+	
+	enable objective window
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" start value 0 force open
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 with amount 1 text "BW2T_SCRIPT_08FINAL_SECONDARYOBJECTIVE_70" parent TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND start value 0 force open
+	
+	enable migration from L3MinorTown1 to all other towns
+	enable migration from L3MinorTown2 to all other towns
+	enable migration from L3MinorTown3 to all other towns
+	enable migration from L3MinorTown4 to all other towns
+	disable script controlled migration player 0
+	
+	enable town L3MinorTown1 can be taken by force
+	enable town L3MinorTown3 can be taken by force
+	enable town L3MinorTown4 can be taken by force
+	
+	disable build menu override
+	TUT_FillStoreHouse = TUT_FALSE
+	run background script BT_ObjectiveTutorial
+	L3InBuildTabTutorial = 0
+end script Land3BuildTabTutorial
+//------------------------------------------------------------------------------------------------
+//----Land3TheGoodWay----//
+//------------------------------------------------------------------------------------------------
+begin script Land3TheGoodWay
+	Comment = 0
+	CommentTimer = create timer for 0 seconds
+	ExampleVideo = 0
+	OreTooltip = 0
+	MineTooltip = 0
+	NearestOre = 0
+	NearestOrePos = 0
+	ObjectHeld = 0
+	PlayersTemple = 0
+	NearestMine = 0
+	MyMigration = 0
+	PlayersHeldTemple = BT_False
+	HeldObject = 0
+	MigrationFlag = 0
+start
+
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TEMPLE_10" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+
+	enable objective window
+	enable build menu override with ABODE_NUMBER_TEMPLE
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	clear toolbar highlight
+	begin fullscreen cinema
+		move camera position to {1096.328, 376.736, 1607.108} time 3
+		move camera focus to {1049.551, 308.135, 1662.833} time 3
+		wait until camera ready
+		eject good spirit
+		//GA: "The temple is a glorius building where villagers come to pray to you."
+			//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_500"
+			//wait until read
+		move camera position to {1098.428, 380.667, 1603.474} time 4
+		//GA: Now that you have bought the temple you should build it to improve your town.
+			//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_640"
+			//wait until read
+		//GA: "You can now build a Temple. This is a good thing with a capital G.  Your Town's impressiveness will increase."
+			make good spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_TUT_G_490
+			wait until read
+		//GA: Select the Temple from the Construction menu. Then place it down in your town.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_650"
+			wait until read
+			wait until camera ready
+		send good spirit home
+	end cinema
+	set CommentTimer time to 40 seconds
+		
+	begin loop 
+		if get CommentTimer time remaining == 0 
+			run background script BT_AdvisorDialogue(SELECT_TEMPLE)
+			set CommentTimer time to 60 seconds
+		end if
+		
+		HeldObject = get object held
+		if HeldObject exists
+			if variable get HeldObject sub type == variable ABODE_NUMBER_TEMPLE
+				PlayersHeldTemple = BT_True
+				clear toolbar highlight
+			else
+				PlayersHeldTemple = BT_False
+			end if
+		else	
+			PlayersHeldTemple = BT_False
+		end if
+		
+		if PlayersHeldTemple == BT_False and get number of type HOUSE ABODE_NUMBER_TEMPLE in L3GreekTown min built 0 == 0
+			if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+				highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+			elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu != variable MENU_TOOLBAR_BUILD 
+				highlight toolbar item variable MENU_HIGHLIGHT_MODE_0 
+			elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu == variable MENU_TOOLBAR_BUILD 
+				clear toolbar highlight	
+			end if
+		end if
+	until get number of type HOUSE ABODE_NUMBER_TEMPLE in L3GreekTown min built 0 > 0
+	end loop
+	
+	clear toolbar highlight
+		
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	disable build menu override
+	
+	PlayersTemple = get building ABODE_NUMBER_TEMPLE in L3GreekTown min built 0
+	
+	NearestOre = get ORE_ROCK at {PlayersTemple} radius 200
+	
+	NearestMine = get HOUSE at {1006.005, 364.943, 1601.751} radius 20
+	
+	begin dialogue
+		eject good spirit
+		//GA: "Some buildings require Ore to be built."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_799"
+			wait until read
+		//GA: "There are two sources of Ore."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_798"
+			wait until read
+		//GA: "The first is the Ore mine -."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_797"
+			wait until read
+			if NearestMine exists
+				MineTooltip = create tooltip on NearestMine with text "BW2T_INTERFACE_MENU_BUILD_MINE"
+			end if
+		//GA: "An ore deposit in the ground that can be mined by your villagers."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_796"
+			wait until read
+		//GA: "There are also Ore rocks."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_786"
+			wait until read
+			run background script BT_OreToolTip(NearestOre)
+			eject evil spirit				
+		//EA: "The villagers can mine these but to save time you can add them to the store house yourself."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_785"
+			wait until read
+		send good spirit home 
+		send evil spirit home
+	end dialogue
+		
+//----Check if the temple is taking ages to build----//
+
+	set CommentTimer time to 40 seconds
+	Comment = 0
+	
+	begin loop
+		if get CommentTimer time remaining == 0 
+			if Comment == 0
+				run background script BT_AdvisorDialogue(TEMPLE_TAKING_TOO_LONG)
+				Comment = 1
+				set CommentTimer time to 200 seconds
+			elsif Comment == 1
+				run background script BT_AdvisorDialogue(ARMOURY_TAKING_TOO_LONG)
+				set CommentTimer time to 300 seconds
+			end if
+		end if
+	until get number of type HOUSE ABODE_NUMBER_TEMPLE in L3GreekTown min built 1 > 0 
+	end loop
+	
+	if MineTooltip exists
+		delete MineTooltip
+	end if
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1
+	
+	play string sound "script37_crowd"
+	begin dialogue
+		eject good spirit
+		//GA: "Well done."
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_ASSIGN_JOB_COMPLETE_10"
+			wait until read
+		send good spirit home
+	end dialogue
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	wait 30 seconds
+	
+//----Trigger migration and show player----//
+	
+	begin cinema	
+		enable force flag draw
+		eject good spirit
+		move camera position to {1121.685, 380.378, 1179.737} time 15
+		move camera focus to {1112.212, 343.766, 1272.315} time 15
+		//GA: "If you build a very impressive city then people will come from far and wide to live in it. Civic buildings are a good way to increase impressiveness."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_590"
+			wait until read		
+		//GA: "Nobody gets hurt and we get more followers, making us more powerful."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_580"
+			wait until read			
+			wait until camera ready
+			start migration from L3MinorTown1 to L3GreekTown
+			wait 2 seconds
+			MigrationFlag = get MIGRATION_FLAG at {L3MinorTown1} radius 50
+		//GA: Look! Those people are migrating! They want to live in our Town! They're bringing all their worldly goods. Hooray!
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_680"
+			if MigrationFlag exists
+				make good spirit point at {MigrationFlag}
+			else
+				make good spirit point at {L3MinorTown1}
+			end if
+			wait until read
+			stop good spirit pointing
+			wait 0.2 seconds
+			make good spirit fly across 0.85 down 0.7
+		//GA: This is the first step to spreading your message of peace, and uniting all the peoples of this land.
+			//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_690"
+			//wait until read
+		//GA: People of all tribes will be drawn from far and wide to live in a good city. We'll beat our foes the clever way!
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_700"
+			wait until read
+		send good spirit home
+		set LookAtTownCommentTimer time to 60 seconds
+	end cinema
+
+	MyMigration = get migration from L3MinorTown1 to L3GreekTown
+	MigrationFlag = get MIGRATION_FLAG at {MyMigration} radius 30
+	disable migration MyMigration can be declined
+	wait until variable get town L3MinorTown1 status == variable TOWN_STATUS_MIGRATION_ARRIVED or variable get town L3MinorTown1 status == variable TOWN_STATUS_MIGRATED or not MyMigration exists
+	
+	if variable get town L3MinorTown1 status == variable TOWN_STATUS_MIGRATION_ARRIVED and MyMigration exists
+		begin cinema
+			if MigrationFlag exists
+				if MigrationFlag is HELD
+					empty player hand
+				end if
+				enable MigrationFlag pulse speed 0.5
+			end if
+			move camera position to get world position from MigrationFlag to {-11.814, 18.561, -24.918} time 3
+			move camera focus to get world position from MigrationFlag to {-11.473, 17.960, -24.195} time 3
+			wait until camera ready
+			reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_GENERIC_FINALPICKUPS_21" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+			eject good spirit
+		//GA: "These people have come to join our town."
+			say "BW2T_SCRIPT_03FINAL_MIGRATION_EXPLANATION_10"
+			wait until read
+		//GA: "Pick up their Migration flag and drop it anywhere within our Influence ring."
+			say "BW2T_SCRIPT_03FINAL_MIGRATION_EXPLANATION_20"
+			wait until read
+			send good spirit home
+		end cinema
+	end if
+	
+	if MyMigration exists or variable get town L3MinorTown1 status == variable TOWN_STATUS_MIGRATED
+		set CommentTimer time to 40 seconds
+		
+		begin loop
+			if get CommentTimer time remaining == 0
+				begin dialogue
+					eject good spirit
+					//GA: "Pick up their Migration flag and drop it anywhere within our Influence ring."
+						say "BW2T_SCRIPT_03FINAL_MIGRATION_EXPLANATION_20"
+						wait until read
+					send good spirit home
+				end dialogue
+				set CommentTimer time to 60 seconds
+			end if
+		until variable get town L3MinorTown1 status == variable TOWN_STATUS_MIGRATED or MyMigration not exists
+		end loop
+		if variable get town L3MinorTown1 status == variable TOWN_STATUS_MIGRATED
+			if MigrationFlag exists
+				disable MigrationFlag pulse with fadetime 0
+			end if
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1
+			disable force flag draw
+			begin dialogue
+			//MIGRANT: "Oh thank you! Thank you, Great One, for welcoming us into your magnificent town!"
+				say "BW2T_SCRIPT_GLOBAL_MIGRATION_ACCEPT_20"
+				wait until read
+			end dialogue
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+		else
+			enable objective window
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 status to TRIBUTE_OBJECTIVE_STATE_FAILED 
+			begin dialogue
+				eject good spirit 
+				//GA: "You killed them. I can't believe it."
+					say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_03"
+					wait until read
+				send good spirit home
+			end dialogue
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 status to TRIBUTE_OBJECTIVE_STATE_FAILED_HIDDEN
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+		end if
+	else
+		enable objective window
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 status to TRIBUTE_OBJECTIVE_STATE_FAILED 
+		begin dialogue
+			eject good spirit 
+			//GA: "You killed them. I can't believe it."
+				say "BW2T_HELP_TEXT_GUIDANCE_KILLING_GA_03"
+				wait until read
+			send good spirit home
+		end dialogue
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 status to TRIBUTE_OBJECTIVE_STATE_FAILED_HIDDEN
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_3
+	end if
+end script Land3TheGoodWay
+//------------------------------------------------------------------------------------------------
+//----Land3TheEvilWay----//
+//------------------------------------------------------------------------------------------------
+begin script Land3TheEvilWay
+	Comment = 0
+	Comment2 = 0
+	CommentTimer = create timer for 0 seconds
+	CommentTimer2 = create timer for 0 seconds
+	IdleTimer = create timer for 0 seconds
+	FlagPlaced = BT_False
+	FlagHeld = BT_False
+	CommentSaid = BT_False
+	AttackCommentSaid = BT_False
+	ThatIsSweetSaid = BT_False
+	PlayersPlatoon = 0
+	PlayersPlatoon2 = 0
+	Highlight = 0
+	DestinationBeam = 0
+	DroppedTotal = 0
+	ExampleVideo = 0
+	PlayersStoragePit = 0
+	CamPos = marker at {1427.051, 323.386, 1356.279}
+	CamFocus = marker at {1341.858, 299.094, 1402.666}
+	PlayersTownCentre = 0
+	Villager = 0
+	Armoury = 0
+	OutOfTownPos = marker at {1200.003, 378.248, 1668.081}
+	ArmyFlag = 0
+	StopReminders = 0
+	NearestOre = 0
+	ObjectHeld = 0
+	OreTooltip = 0
+	ArmouryFlag = 0
+	Campos = 0
+	Scroll = 0
+	Reminded = 0
+	CenterMan = 0
+	HeldObject = 0
+	OreNeeded = 0
+	L3MinorTown2TownCenter = 0
+	PerfectComment = BT_False
+	ExperienceCommentSaid = BT_False
+	ToolbarSet = BT_False
+	PlayersHeldArmoury = BT_False
+	TakeThisCommentSaid = BT_False
+	EmptyHandCommentSaid = BT_False
+start
+	clear toolbar highlight
+	enable toolbar locked
+	
+	L3MinorTown2TownCenter = get building ABODE_NUMBER_TOWN_CENTRE in L3MinorTown2 min built 0 
+	Scroll = create highlight GOLD name "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_MISC_30" remind "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_MISC_30" at {1084.329, 363.607, 1631.038}
+
+	// Give the objective for clicking on the scroll
+	// GA: Click on the Gold Scroll.
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_15
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 with amount 1 text "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 0
+	enable objective window
+		
+	set CommentTimer time to 60 seconds
+	begin loop
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {Scroll}
+				// GA: Click on the Gold Scroll.
+				say "BW2T_SCRIPT_GENERIC_CLICK_ON_GOLD_SCROLL"
+				wait until read
+			end dialogue
+			if Reminded == 0
+				Reminded++
+				set CommentTimer time to 180 seconds
+			elsif Reminded > 0
+				set CommentTimer time to 300 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	
+	delete Scroll
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 value 1
+	disable dialogue manager
+	
+	disable tribute visual
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_BUILDTABTUTORIAL2
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_15 
+	enable tribute visual
+	
+	begin dialogue
+		eject evil spirit
+		//EA: Armouries are where you can turn your people into warriors. Warriors who can take other Towns and lands by force.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_440"
+			wait until read
+		//EA: Buying the Armoury is the first step towards having an army.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_730"
+			wait until read
+			if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+				eject good spirit
+				//GA: Open the toolbar and click the Tributes tab."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_350"
+					wait until read
+			elsif get toolbar menu != variable MENU_TOOLBAR_TRIBUTES
+				eject good spirit
+				//GA: "Select the Tribute menu."
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_340"
+					wait until read
+			end if
+			//highlight toolbar item 0
+		send evil spirit home
+		send good spirit home
+	end dialogue
+	
+	set CommentTimer time to 60 seconds
+	begin loop		
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+					eject good spirit
+					//GA: Open the toolbar and click the Tributes tab."
+						say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_350"
+						wait until read
+				elsif get toolbar menu == variable MENU_TOOLBAR_TRIBUTES
+					eject good spirit
+					//GA: "Select the Tribute menu."
+						say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_340"
+						wait until read
+				end if
+				send good spirit home
+			end dialogue
+			set CommentTimer time to 60 seconds
+		end if
+		if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+			highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+		elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu != variable MENU_TOOLBAR_TRIBUTES 
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_3 
+		elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu == variable MENU_TOOLBAR_TRIBUTES 
+			clear toolbar highlight	
+		end if
+		
+	until get toolbar menu == variable MENU_TOOLBAR_TRIBUTES and get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL 
+	end loop
+	set research ARTEFACT_ABODE_NUMBER_MELEE_ARMOURY available to RESEARCH_AVAILABILITY_AVAILABLE
+	clear toolbar highlight	
+	disable toolbar locked
+	set toolbar menu to MENU_TOOLBAR_TRIBUTES
+	set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+	disable tribute menu scroll
+	
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 text "BW2T_SCRIPT_GENERIC_FINALPICKUPS_22"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 parent objective TRIBUTE_OBJECTIVE_LAND_10
+	set research ARTEFACT_ABODE_NUMBER_TEMPLE available to RESEARCH_AVAILABILITY_AVAILABLE
+
+//----Wait until player has bought the armoury----//
+	run background script BT_AdvisorDialogue(PAHTEMPLE)
+	set tribute menu selection to ARTEFACT_ABODE_NUMBER_MELEE_ARMOURY
+	highlight toolbar item variable MENU_HIGHLIGHT_BUYBUTTON
+
+//----Wait until the player has bought a armoury----//
+
+	begin loop
+		if variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_3 and get time since last toolbar button clicked < 1 
+			highlight toolbar item variable MENU_HIGHLIGHT_BUYBUTTON
+		elsif get time since last toolbar button clicked < 1 and (variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_0 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_1 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_2 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_4 or variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_6)
+			highlight toolbar item variable MENU_HIGHLIGHT_ICON_3
+		end if
+	until get research ARTEFACT_ABODE_NUMBER_MELEE_ARMOURY available == variable RESEARCH_AVAILABILITY_RESEARCHED
+	end loop
+	enable toolbar locked
+	enable tribute menu scroll
+	clear toolbar highlight
+	run background script BT_SetEverythingToHowItShouldBe
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 value 1
+	PlayersTownCentre = get building ABODE_NUMBER_TOWN_CENTRE in L3GreekTown min built 1.0
+	
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_ARMY_10" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+	enable objective window
+	
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	begin fullscreen cinema
+		enable build menu override with ABODE_NUMBER_MELEE_ARMOURY
+		move camera position to {1096.328, 376.736, 1607.108} time 3
+		move camera focus to {1049.551, 308.135, 1662.833} time 3
+		wait until camera ready
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+		eject evil spirit
+	//EA: Armouries are where you can turn your people into warriors. Warriors who can take other Towns and lands by force.
+		//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_440"
+		//wait until read
+		move camera position to {1099.295, 380.152, 1602.749} time 4
+	//EA: Buying the Armoury is the first step towards having an army.
+		//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_730"
+		//wait until read
+	//EA: But that isn't enough, you now have to build it.
+		//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_740"
+		//wait until read
+	//EA: Select the Armoury from the Construction menu. Then place it down in your town.
+		say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_750"
+		wait until read
+		wait until camera ready
+		send evil spirit home
+	end cinema
+	
+	set CommentTimer time to 40 seconds
+	
+	begin loop
+		if get number of type HOUSE ABODE_NUMBER_MELEE_ARMOURY in L3GreekTown min built 0 == 0 and get CommentTimer time remaining == 0
+			run background script BT_AdvisorDialogue(SELECT_ARMOURY)
+			set CommentTimer time to 60 seconds
+		end if
+		HeldObject = get object held
+		if HeldObject exists
+			if variable get HeldObject sub type == variable ABODE_NUMBER_MELEE_ARMOURY
+				PlayersHeldArmoury = BT_True
+				clear toolbar highlight
+			else
+				PlayersHeldArmoury = BT_False
+			end if
+		else	
+			PlayersHeldArmoury = BT_False
+		end if
+		
+		if PlayersHeldArmoury == BT_False and get number of type HOUSE ABODE_NUMBER_MELEE_ARMOURY in L3GreekTown min built 0 == 0
+			if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+				highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+			elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu != variable MENU_TOOLBAR_BUILD 
+				highlight toolbar item variable MENU_HIGHLIGHT_MODE_0 
+			elsif get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu == variable MENU_TOOLBAR_BUILD 
+				clear toolbar highlight	
+			end if
+		end if
+	until get number of type HOUSE ABODE_NUMBER_MELEE_ARMOURY in L3GreekTown min built 0 > 0
+	end loop
+	clear toolbar highlight	
+	disable build menu override
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	
+	set CommentTimer time to 120 seconds
+	Comment = 0
+	
+//----Check if the armoury is taking ages to build----//
+	
+	begin loop
+		if get CommentTimer time remaining == 0 
+			run background script BT_AdvisorDialogue(ARMOURY_TAKING_TOO_LONG)
+			set CommentTimer time to 120 seconds
+		end if
+	until get number of type HOUSE ABODE_NUMBER_MELEE_ARMOURY in L3GreekTown min built 1 > 0
+	end loop
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1
+	wait 0.5 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+	
+	play string sound "script37_crowd"
+	
+	OreNeeded = get amount of RESOURCE_TYPE_ORE for platoon PLATOON_INFO_GREEK_MELEE_1 of size get default size for platoon PLATOON_INFO_GREEK_MELEE_1
+	
+	if get town L3GreekTown RESOURCE_TYPE_ORE total < OreNeeded
+		begin dialogue
+			eject evil spirit
+			//EA: "That is sweet!"
+				say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_16"
+				wait until read
+				wait 1.5 seconds
+			//EA: To recruit armies you need ore.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_775"
+				wait until read
+			//EA: Make some Disciple miners to get more ore.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_780"
+				wait until read
+			send evil spirit home
+		end dialogue
+		ThatIsSweetSaid = BT_True
+	end if
+
+	Armoury = get building ABODE_NUMBER_MELEE_ARMOURY in L3GreekTown min built 1.0
+
+	set CommentTimer time to 80 seconds
+	
+//----Check if the player has enough ore to recruit----//
+
+	while get town L3GreekTown RESOURCE_TYPE_ORE total < OreNeeded
+		if get CommentTimer time remaining == 0 
+			run background script BT_AdvisorDialogue(ARMIES_NEED_ORE)
+			set CommentTimer time to 80 seconds
+		end if
+	end while
+		
+//----add more villagers if the player needs them----//
+	
+	while get number of type VILLAGER SEX_MALE in L3GreekTown < get default size for platoon PLATOON_INFO_GREEK_MELEE_1
+		Villager = create VILLAGER GREEK_SHEPHERD at {PlayersTownCentre}
+		attach Villager to L3GreekTown
+		release Villager
+	end while
+	
+	begin dialogue
+		eject evil spirit
+			if ThatIsSweetSaid == BT_False
+			//EA: "That is sweet!"
+				say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_16"
+				wait until read
+				wait 1.5 seconds
+			end if
+		//EA: Warriors form Platoons. They are recruited via the flags on the top of the Armoury.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_790"
+
+	//----Video of a flag being placed----//
+
+			ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+			set ExampleVideo clipping window left 0 top 0 width 1 height 1
+			play video "Land3 Recruitment"
+
+			wait until read	
+		//EA: Pick up one of the flags on the Armoury, then place it in the highlighted area.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_800"
+			Highlight = create visual effect "gp_s_rayfxball_army.ves" strength 1 scale 1.5 at get world position from Armoury to {-1.018, 0.014, 22.258} + {0,3,0} time -1  
+			set Highlight colour red 255 green 255 blue 255
+			//set Highlight alpha 0.7
+			
+			wait until read
+			wait until not video is playing
+		send evil spirit home
+	end dialogue
+	
+	ArmouryFlag = get ARMY_FLAG at {Armoury} radius 30
+	
+	if ArmouryFlag exists
+		enable ArmouryFlag pulse speed 0.5
+	end if
+	
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_ARMY_20" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+	enable objective window
+
+	Comment = 0
+	set CommentTimer time to 60 seconds
+	
+	while not L3GreekTown recruiting //get army size in town L3GreekTown == 0
+		if Highlight not exists and not L3GreekTown recruiting
+			Highlight = create visual effect "gp_s_rayfxball_army.ves" strength 1 scale 1.5 at get world position from Armoury to {-1.018, 0.014, 22.258} + {0,3,0} time -1  
+			set Highlight colour red 255 green 255 blue 255
+			//set Highlight alpha 0.7
+		elsif Highlight exists and L3GreekTown recruiting
+			stop visual effect Highlight
+			delete Highlight
+		end if
+			
+		if Comment == 0 and get CommentTimer time remaining == 0
+			run background script BT_AdvisorDialogue(PICK_UP_FLAG)
+			set CommentTimer time to 60 seconds
+		end if
+			
+		DroppedTotal = get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+		DroppedTotal += 1
+		
+		if army flag ARMY_FLAG_INFO_GREEK_MELEE held
+			FlagHeld = BT_True
+			Comment++
+			if get CommentTimer time remaining == 0
+				run background script BT_AdvisorDialogue(PLACE_FLAG)
+				set CommentTimer time to 60 seconds
+			end if
+		end if 
+			
+		if DroppedTotal == get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+			FlagHeld = BT_False
+			if Comment2 == 0
+				run background script BT_AdvisorDialogue(SHOOK_FLAG)
+				Comment2++
+			end if
+		end if
+			
+	end while
+	
+	stop visual effect Highlight
+	delete Highlight
+
+	if ArmouryFlag exists
+		disable ArmouryFlag pulse with fadetime 2
+		release ArmouryFlag
+		ArmouryFlag = 0
+	end if
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1
+	wait 1.5 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+	
+	stop visual effect Highlight
+	delete Highlight
+	
+	Comment = 0
+	set CommentTimer time to 0 seconds
+	
+	run background script BT_TalkAboutmakingLargerPlatoon
+	
+	while PlayersPlatoon not exists  
+		PlayersPlatoon = get platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L3GreekTown
+		if PlayersPlatoon exists
+			wait until not PlayersPlatoon recruiting
+		end if
+	end while
+	
+	begin fullscreen cinema
+		clear PlayersPlatoon action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PlayersPlatoon} to PlayersPlatoon action queue
+		if army flag ARMY_FLAG_INFO_GREEK_MELEE held
+			empty player hand
+		end if
+		wait until not video is playing 
+		CenterMan = get platoon PlayersPlatoon member at offset 0
+		enable army flag in widescreen
+		set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+		enable toolbar in cutscene
+		wait until not PlayersPlatoon is moving and get size of PlayersPlatoon action queue == 0
+		ArmouryFlag = get ARMY_FLAG at {PlayersPlatoon} radius 30
+		if ArmouryFlag exists
+			move camera position to get world position from ArmouryFlag to {10.224, 11.543, 9.901} time 3
+			move camera focus to get world position from ArmouryFlag to {9.633, 10.967, 9.337} time 3
+		else
+			move camera position to get world position from CenterMan to {-0.119, 10.240, 11.883} time 3
+			move camera focus to get world position from CenterMan to {0.252, -44.118, -72.053} time 3
+		end if
+		wait until camera ready
+		wait until read
+		eject evil spirit
+		//EA: "Armies are the best thing ever, but you're gonna need to keep them under control! So ya need to know all about these here FLAGS!"
+			say "BW2T_SCRIPT_03FINAL_FLAGS_TUTORIAL_10"
+			wait until read
+			make evil spirit point to ArmouryFlag
+		//EA: "Every Platoon has a flag. You can see it, held up high above the army, and also in the bottom right hand corner of the screen."
+			say "BW2T_SCRIPT_03FINAL_FLAGS_TUTORIAL_20"
+			wait 2 seconds
+			stop evil spirit pointing
+			wait 3 seconds
+			make evil spirit fly across 0.8 down 0.8
+			highlight toolbar item variable MENU_HIGHLIGHT_ARMYICON 
+			wait until read
+			clear toolbar highlight
+		//EA: "Each platoon type has a different colour and symbol on their flag to make them easy to identify, this one is a swordsman platoon"
+			say "BW2T_SCRIPT_03FINAL_FLAGS_TUTORIAL_30"
+			make evil spirit point to ArmouryFlag
+			wait 2 seconds
+			stop evil spirit pointing
+			wait until read
+		//EA: "The flags also tell you what rank the platoon is. Those pips along the top indicate the rank, from raw recruits to seasoned veterans."
+			say "BW2T_SCRIPT_03FINAL_FLAGS_TUTORIAL_40"
+			wait until read
+			make evil spirit fly across 0.8 down 0.8
+			highlight toolbar item variable MENU_HIGHLIGHT_ARMYICON 
+		//EA: "If you click on the flags in the bottom right with the Action button you pick up the flag and gain control of the platoon. Click on the flag with the Move button and you will go directly to the platoon."
+			say "BW2T_SCRIPT_03FINAL_FLAGS_TUTORIAL_50"
+			wait until read
+			clear toolbar highlight
+		//EA: "And there you have it. The basics of army flags…"
+			say "BW2T_SCRIPT_03FINAL_FLAGS_TUTORIAL_60"
+			wait until read
+			if not army flag ARMY_FLAG_INFO_GREEK_MELEE held
+				wait 0.7 seconds
+			//EA: "Pick up the platoon flag, Boss."
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_220"
+				wait until read
+			end if
+		send evil spirit home
+		disable army flag in widescreen
+		disable toolbar in cutscene
+	end cinema
+	
+	set CommentTimer time to 60 seconds
+	
+	while not army flag ARMY_FLAG_INFO_GREEK_MELEE held
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject evil spirit
+			//EA: "Pick up the platoon flag, Boss."
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_220"
+				wait until read
+				send evil spirit home
+			end dialogue
+			set CommentTimer time to 60 seconds
+		end if
+	end while
+	
+	Highlight = create visual effect "gp_s_rayfxball_army.ves" strength 1 scale 1.5 at {OutOfTownPos} + {0,3,0} time -1 
+	set Highlight colour red 255 green 255 blue 255
+	//set Highlight alpha 0.7
+	
+	begin interactive camera
+		move camera position to {1217.728, 396.659, 1682.791} time 3
+		move camera focus to {1153.446, 344.526, 1626.663} time 3
+		eject evil spirit
+	//EA: "Pick up the flag. It's now attached to your Hand. You can do anything with the troops now!"
+		//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_240"
+		//wait until read
+		wait 1 seconds
+	//EA: "That's perfect."
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ROCKCIRCLE_63"
+		wait until read
+		wait until camera ready
+	//EA: "Click on the highlighted area to tell them to go there."
+		say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_250"
+		wait until read
+		send evil spirit home
+	end camera
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_ARMY_30" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+	enable objective window
+	set CommentTimer time to 60 seconds
+	
+	begin loop
+		if EmptyHandCommentSaid == BT_False and army flag ARMY_FLAG_INFO_GREEK_MELEE held
+			EmptyHandCommentSaid = BT_True
+			begin dialogue
+				eject good spirit
+					//GA: "If you want to cancel an action and empty your Hand, simply shake it briskly left and right."
+					say "BW2T_SCRIPT_03FINAL_PICKUP1"
+					wait until read
+				send good spirit home
+			end dialogue
+		end if
+		
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject evil spirit
+			//EA: Come on Boss, get a platoon over to the highlighted area. I've got more stuff to tell you.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_910"
+				wait until read
+				send evil spirit home
+			end dialogue
+			set CommentTimer time to 60 seconds
+		end if
+		
+		PlayersPlatoon2 = get platoon of player 0 nearest {OutOfTownPos} radius 10 
+	until PlayersPlatoon2 exists
+	end loop
+	
+	delete Highlight
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1
+	wait 1.5 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+
+	begin fullscreen cinema
+		move camera position to {1460.667, 369.902, 1325.758} time 4
+		move camera focus to {1392.197, 335.228, 1389.870} time 4			
+		eject evil spirit
+		//EA: "OK, Boss. Let's get aggressive!"
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_920"
+			wait until read
+			wait until camera ready
+			enable L3MinorTown2TownCenter pulse speed 4
+			play sound "SCRIPT_EVILWAYPULSE" at {L3MinorTown2TownCenter} loop -1
+		//EA: "Right. Now let's capture that Town Centre over there."
+			//say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_260"
+			//wait until read
+		//EA: "With the platoon flag in the Hand, click on the enemy Town Centre."
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_270"
+			make evil spirit point to L3MinorTown2
+			wait 2 seconds
+			stop evil spirit pointing
+			wait until read
+		//EA: "Double click the Action button to drop the Platoon's army flag on the highlighted minor Town Centre to capture it."
+			//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_950"	
+			//wait until read
+		//EA: This will order your troops to take over the town.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_940"
+			wait until read
+		send evil spirit home
+		set LookAtTownCommentTimer time to 60 seconds
+		enable town L3MinorTown2 can be taken by force
+	end cinema
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_ARMY_40" parent TRIBUTE_OBJECTIVE_LAND_10 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+	enable objective window
+	
+	set CommentTimer time to 180 seconds
+	
+	//DestinationBeam = create visual effect "gp_s_rayfxball.ves" strength 1 scale 1.5 at {L3MinorTown2} + {0,10,0} time -1  
+	Comment = 0
+	
+	while PLAYER of L3MinorTown2 != 0
+		
+		if Comment == 0 and TakeThisCommentSaid == BT_True and get CommentTimer2 time remaining == 0
+			begin dialogue
+				eject evil spirit
+			//EA: An army marches on its stomach and these guys will eat at twice the normal rate. So keep an eye on your stores!
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1010"
+				wait until read
+				send evil spirit home
+			end dialogue
+			Comment++
+		end if
+			
+		if AttackCommentSaid == BT_False and get CommentTimer time remaining == 0 and not platoon PlayersPlatoon current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L3MinorTown2TownCenter
+			begin dialogue
+				enable L3MinorTown2TownCenter pulse speed 4
+				if not sound "SCRIPT_EVILWAYPULSE" playing
+					play sound "SCRIPT_EVILWAYPULSE" at {L3MinorTown2TownCenter} loop -1
+				end if
+				eject evil spirit
+			//EA: "With the platoon flag in the Hand, click on the enemy Town Centre."
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_270"
+				wait until read
+				send evil spirit home
+			end dialogue
+			set CommentTimer time to 180 seconds
+		elsif platoon PlayersPlatoon current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L3MinorTown2TownCenter and TakeThisCommentSaid == BT_False
+			TakeThisCommentSaid = BT_True
+			stop sound "SCRIPT_EVILWAYPULSE"
+			disable L3MinorTown2TownCenter pulse with fadetime 0
+			begin dialogue
+				eject evil spirit
+				//EA: "Off we go!"
+					say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_230"
+					wait until read
+				send evil spirit home
+			end dialogue
+			set CommentTimer2 time to 20 seconds
+		end if
+		
+		if platoon PlayersPlatoon current action is PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L3MinorTown2TownCenter
+			if sound "SCRIPT_EVILWAYPULSE" playing
+				stop sound "SCRIPT_EVILWAYPULSE"
+				disable L3MinorTown2TownCenter pulse with fadetime 0
+			end if
+		end if
+		
+		if town L3MinorTown2 is under takeover from player 0 and AttackCommentSaid == BT_False
+			AttackCommentSaid = BT_True
+			disable L3MinorTown2TownCenter pulse with fadetime 0
+			stop sound "SCRIPT_EVILWAYPULSE"
+			//stop visual effect DestinationBeam
+			//delete DestinationBeam
+
+			begin dialogue
+				eject evil spirit
+				//EA: "Yeah! This is it! Attack!"
+					say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_280"
+					wait until read
+					eject good spirit
+				//GA: "Oh dear. You know it doesn't have to be war, Leader. You can take Towns by impressing them too!"
+					say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_290"
+					wait until read
+				send good spirit home
+				send evil spirit home
+			end dialogue
+		end if
+	end while
+	
+	disable L3MinorTown2TownCenter pulse with fadetime 0
+	stop sound "SCRIPT_EVILWAYPULSE"
+	//stop visual effect DestinationBeam
+	//delete DestinationBeam
+	enable objective window
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1
+		
+	begin dialogue	
+			wait until read
+			wait 6 seconds
+		eject evil spirit
+		//EA: Way to go! More followers for our glorious war machine!
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_960"
+			wait until read		
+			
+		//EA: Yes! You now own this Town.
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_300"
+			wait until read
+			
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+		//EA: You can do anything in the Green Influence Ring, just like in your Town, Boss.
+			say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_310"
+			wait until read
+			
+		//EA: Attack is the best form of defence. Get your armies out there.
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_DEP_10"
+			wait until read
+	
+		//EA: A newly created platoon starts at experience level 1, and as they fight they gain experience.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_990"
+			wait until read
+			
+		//----Video showing a platoon increasing experience level----//
+
+			ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+			set ExampleVideo clipping window left 0 top 0 width 1 height 1
+			play video "Land3 Army XP Increase"
+
+		//EA: When the Platoon's experience reaches a certain threshold they go up to the next experience level and with it their skills, such as fighting and speed, improve
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1000"
+			wait until read
+			wait until not video is playing 
+	
+		//EA: As we expand our empire you will have many platoons and towns to manage.
+			//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_970"
+			//wait until read
+			
+		//EA: The simplest way to navigate between them or get information regarding them is to use the flags.
+			//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_980"
+		
+	//----Video showing how to use the flags at the edge of the screen----//
+
+		//ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+		//set ExampleVideo clipping window left 0 top 0 width 1 height 1
+		//play video "Land3 Army Flag Click And Pan"
+		
+		wait until read
+		//wait until not video is playing 
+
+	//EA: Lastly, if you want to disband a platoon, drop the platoons flag onto an Armoury and let those weaklings off the hook.
+		say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1020"
+
+	//----Video showing a platoon being disbanded----//
+	
+		ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+		set ExampleVideo clipping window left 0 top 0 width 1 height 1
+		play video "Land3 Army Disbanding"
+		
+		wait until read
+		send evil spirit home
+		wait until not video is playing 
+	end dialogue
+end script Land3TheEvilWay
+//------------------------------------------------------------------------------------------------
+//----BT_AdvisorDialogue----//
+//------------------------------------------------------------------------------------------------
+begin script BT_AdvisorDialogue(Comment)
+start
+	begin dialogue
+				
+		if Comment == DRAG_TOOLBAR_DOWN
+		
+			eject good spirit
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1030"
+				wait until read
+				
+		elsif Comment == RIGHTCLICK_TRIBUTE_TAB
+		
+			eject good spirit
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_1040"
+				wait until read
+				
+		elsif Comment == STAT_MENU
+		
+			eject good spirit
+			//GA: This is the Stats menu.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_260"
+				wait until read
+		
+		elsif Comment == CREATURE_TEACH_MENU
+		
+			eject good spirit
+			//GA: This is the Creature Teach menu.
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_778"
+				wait until read
+				
+		elsif Comment == CREATURE_ROLE_MENU
+		
+			eject good spirit
+			//GA: This is the Creature role menu.
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_777"
+				wait until read
+				
+		elsif Comment == TRIBUTES_MENU
+		
+			eject good spirit
+			//GA: This is the Tributes menu.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_280"
+				wait until read
+
+		elsif Comment == MIRACLES_MENU
+		
+			eject good spirit
+			//GA: This is the Miracles menu.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_290"
+				wait until read
+
+		elsif Comment == OBJECTIVES_MENU
+		
+			eject good spirit
+			//GA: This is the Objectives menu.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_300"
+				wait until read
+				
+		elsif Comment == SELECT_TRIBUTE_MENU
+		
+			eject good spirit
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_4 
+			//GA: Select the Tribute menu and I'll tell you more.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_330"
+				wait until read
+
+		elsif Comment == OPEN_SELECT_TRIBUTE_MENU
+		
+			eject good spirit
+			//GA: Open the toolbar and click the Tributes tab.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_350"
+				wait until read
+				
+		elsif Comment == PERSUADE_PLAYER
+		
+		/*
+				eject good spirit
+				//GA: The Temple is a glorious building where villagers come to pray to you.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_500"
+				wait until read
+				eject evil spirit
+				//EA: We don't want their prayers, we want them ready to fight!
+					say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_510"
+					wait until read
+		*/
+
+			eject good spirit
+
+			eject evil spirit
+
+
+			//EA: Actions speak louder than words, so build an Armoury and get your people combat ready, Boss!
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_520"
+			wait until read
+
+		elsif Comment == BUILD_TEMPLE
+		
+			eject good spirit
+			//GA: Now that you have bought the temple you should build it to improve your town.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_640"
+				wait until read
+
+		elsif Comment == SELECT_TEMPLE
+		
+			eject good spirit
+			//GA: Select the Temple from the Construction menu. Then place it down in your town.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_650"
+				wait until read
+				
+		elsif Comment == TEMPLE_TAKING_TOO_LONG
+		
+			eject good spirit
+			eject evil spirit 
+		//EA: "Boss, let's speed things up by using Godbuilding."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_GODBUILDING_10"
+			wait until read
+		//EA: "Pick up some wood or ore."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_GODBUILDING_20"	
+			wait until read
+		//GA: "Hold your Hand over the Temple."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_GODBUILDING_26" 
+			wait until read
+		//GA: "And hold the Action button to help construct the building."
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_GODBUILDING_30"	
+			wait until read
+				
+		elsif Comment == BUILD_ARMOURY
+		
+			eject evil spirit
+			//EA: Buying the Armoury is the first step towards having an army.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_730"
+				wait until read
+			//EA: But that isn't enough, you now have to build it.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_740"
+				wait until read
+				set toolbar menu to MENU_TOOLBAR_BUILD
+				set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+			//EA: Select the Armoury from the Construction menu. Then place it down in your town.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_750"
+				wait until read
+				
+		elsif Comment == SELECT_ARMOURY
+		
+			eject evil spirit
+			//EA: Select the Armoury from the Construction menu. Then place it down in your town.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_750"
+				wait until read
+				
+		elsif Comment == ARMOURY_TAKING_TOO_LONG
+
+			eject evil spirit
+			//EA: Sheesh, the people can be slow at building, Boss. We should do some Godbuilding, you know, to speed it up.
+				say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_180"
+				wait until read
+
+		elsif Comment == ARMIES_NEED_ORE
+
+			eject evil spirit
+			//EA: To recruit armies you need ore.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_775"
+				wait until read
+			//EA: Make some Disciple miners to get more ore.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_780"
+				wait until read
+
+		elsif Comment == PICK_UP_FLAG
+		
+			eject evil spirit
+			//EA: Pick up one of the flags on the Armoury, then place it in the highlighted area.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_800"
+				wait until read
+					
+		elsif Comment == PLACE_FLAG
+		
+			eject evil spirit
+			//EA: Place the flag in the highlighted area.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_810"
+				wait until read
+
+		elsif Comment == SHOOK_FLAG
+
+			eject evil spirit
+			//EA: You shook the flag out of your hand. Shaking the hand drops the object in the hand.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_820"
+				wait until read
+			
+		elsif Comment == ORDER_PLATOON_MARCH
+			
+			eject evil spirit
+			//EA: Pick up the flag above your platoon and place it in the highlighted area.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_880"
+				wait until read
+
+		elsif Comment == PLACE_FLAG_IDLE
+		
+			eject evil spirit
+			//EA: Come on Boss, get a platoon over to the highlighted area. I've got more stuff to tell you.
+				say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_910"
+				wait until read
+		
+		elsif Comment == PAHTEMPLE		
+			
+			eject evil spirit
+			//EA: "Pah! Temple? You also have enough to build an Armoury!"
+				//say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_430"
+				//wait until read or get research ARTEFACT_ABODE_NUMBER_MELEE_ARMOURY available == variable RESEARCH_AVAILABILITY_RESEARCHED
+			//EA: "Pah! Temple? Why build a temple when you can build an armoury!"
+			make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_TUT_E_510
+			wait until read
+
+		end if
+		send good spirit home
+		send evil spirit home
+	end dialogue
+end script BT_AdvisorDialogue
+//------------------------------------------------------------------------------------------------
+//----BT_OreToolTip----//
+//------------------------------------------------------------------------------------------------
+begin script BT_OreToolTip(NearestOre)
+	OreTooltip = 0
+start
+	if NearestOre exists
+		OreTooltip = create	tooltip on NearestOre with text "BW2T_SCRIPT_03FINAL_TOOTIP_10"
+	end if
+	
+	begin loop
+	
+		if NearestOre is HELD
+			delete OreTooltip
+		end if
+	
+	until get number of type HOUSE ABODE_NUMBER_TEMPLE in L3GreekTown min built 1 > 0 
+	end loop
+	
+	if OreTooltip exists
+		delete OreTooltip
+	end if	
+	
+end script BT_OreToolTip
+//------------------------------------------------------------------------------------------------
+//----BT_AddEverythingToToolbar----//
+//------------------------------------------------------------------------------------------------
+begin script BT_AddEverythingToToolbar
+start
+	set research ARTEFACT_ABODE_NUMBER_A available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_B available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_C available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_D available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_E available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_SKYSCRAPER available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_ALTAR available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_STORAGE_PIT available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_CRECHE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_TEMPLE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_PUB available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_CREATURE_PEN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_FIELD available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_MELEE_ARMOURY available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_RANGED_ARMOURY available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_WORKSHOP available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_UNIVERSITY available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_PRISON available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_SMELTER available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_GRANARY available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_LUMBERMILL available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_MARKET_POT available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_MARKET_STATUE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_MARKET_PLANT available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_AMPITHEATRE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_GRAVEYARD available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_OLD_PERSONS_HOME available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_BATHHOUSE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_WALLTOWER_TECH0 available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_ABODE_NUMBER_GATEHOUSE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_EPIC_WONDER_NUMBER_HURRICANE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EPIC_WONDER_NUMBER_EARTHQUAKE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EPIC_WONDER_NUMBER_VOLCANO available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EPIC_WONDER_NUMBER_SIREN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_MAGIC_TYPE_LIFE_HEAL available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_MAGIC_TYPE_FIRE_FIRE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_MAGIC_TYPE_AIR_TEMPEST available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_MAGIC_TYPE_EARTH_METEOR available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_MAGIC_TYPE_WATER_RAIN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_MAGIC_TYPE_WATER_STORM available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_HEAL available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_WATER available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_FIREBALL available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_LIGHTNING available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_CREATURE_TOY_GOOD available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_TOY_NEUTRAL available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_TOY_EVIL available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_1 available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_1 available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_1 available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_CREATURE_ROLE_ENTERTAINER_1 available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_FERTILITY_STATUE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_FOUNTAIN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_STREETLAMP available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_TORTURE_PIT available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_COLUMN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_GARDEN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_WELL available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_SPIKE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_HAND_MULTIPICKUP available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_HAND_FISTING available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_HAND_GESTURES available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+	set research ARTEFACT_LASTLAND_ONE_MAN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_LASTLAND_ONE_WOMAN available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_LASTLAND_HUNDRED_SOLDIERS available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_LASTLAND_HUNDRED_ARCHERS available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+	set research ARTEFACT_LASTLAND_SIEGE_ENGINE available to RESEARCH_AVAILABILITY_TUTORIAL_HACK
+
+end script BT_AddEverythingToToolbar
+//------------------------------------------------------------------------------------------------
+//----BT_SetEverythingToHowItShouldBe----//
+//------------------------------------------------------------------------------------------------
+begin script BT_SetEverythingToHowItShouldBe
+start
+	set research ARTEFACT_ABODE_NUMBER_A available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_B available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_C available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_D available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_E available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_SKYSCRAPER available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_ALTAR available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_STORAGE_PIT available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_CRECHE available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_TEMPLE available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_PUB available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_CREATURE_PEN available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_FIELD available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_MELEE_ARMOURY available to RESEARCH_AVAILABILITY_RESEARCHED
+	set research ARTEFACT_ABODE_NUMBER_RANGED_ARMOURY available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_WORKSHOP available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_UNIVERSITY available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_PRISON available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_SMELTER available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_GRANARY available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_LUMBERMILL available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_MARKET_POT available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_MARKET_STATUE available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_MARKET_PLANT available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_AMPITHEATRE available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_GRAVEYARD available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_OLD_PERSONS_HOME available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_BATHHOUSE available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_WALLTOWER_TECH0 available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_WALLTOWER_TECH1 available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_ABODE_NUMBER_GATEHOUSE available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+
+	set research ARTEFACT_EPIC_WONDER_NUMBER_HURRICANE available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_EPIC_WONDER_NUMBER_EARTHQUAKE available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_EPIC_WONDER_NUMBER_VOLCANO available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_EPIC_WONDER_NUMBER_SIREN available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+
+	set research ARTEFACT_MAGIC_TYPE_LIFE_HEAL available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_MAGIC_TYPE_FIRE_FIRE available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_MAGIC_TYPE_AIR_TEMPEST available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_MAGIC_TYPE_EARTH_METEOR available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_MAGIC_TYPE_WATER_RAIN available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_MAGIC_TYPE_WATER_STORM available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_HEAL available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_WATER available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_FIREBALL available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_LIGHTNING available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+
+	set research ARTEFACT_CREATURE_TOY_GOOD available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_TOY_NEUTRAL available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_TOY_EVIL available to RESEARCH_AVAILABILITY_AVAILABLE
+
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_1 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_2 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_3 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_4 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_1 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_2 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_3 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_4 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_1 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_2 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_3 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_4 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_ENTERTAINER_1 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_ENTERTAINER_2 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_ENTERTAINER_3 available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_CREATURE_ROLE_ENTERTAINER_4 available to RESEARCH_AVAILABILITY_AVAILABLE
+
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_FERTILITY_STATUE available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_FOUNTAIN available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_STREETLAMP available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_TORTURE_PIT available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_COLUMN available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_GARDEN available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_WELL available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_EMBELLISHMENT_INFO_GREEK_SPIKE available to RESEARCH_AVAILABILITY_AVAILABLE
+
+	set research ARTEFACT_HAND_MULTIPICKUP available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_HAND_FISTING available to RESEARCH_AVAILABILITY_AVAILABLE
+	set research ARTEFACT_HAND_GESTURES available to RESEARCH_AVAILABILITY_AVAILABLE
+
+	set research ARTEFACT_LASTLAND_ONE_MAN available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_LASTLAND_ONE_WOMAN available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_LASTLAND_HUNDRED_SOLDIERS available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_LASTLAND_HUNDRED_ARCHERS available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	set research ARTEFACT_LASTLAND_SIEGE_ENGINE available to RESEARCH_AVAILABILITY_NOT_AVAILABLE
+	
+end script BT_SetEverythingToHowItShouldBe
+
+begin script BT_ObjectiveTutorial
+	Scroll = 0
+	CommentTimer = create timer for 0 seconds
+start
+	begin loop
+		if L3_InAScroll == 0
+			if Scroll not exists
+				Scroll = create highlight BRONZE name "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_OBJECTIVES_TITLE" remind "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_OBJECTIVES_TITLE" at {1064.482, 363.596, 1647.128}
+			end if
+		elsif Scroll exists
+			delete Scroll
+		end if
+	until Scroll right clicked 
+	end loop
+	
+	delete Scroll
+	L3_InAScroll = 1
+	
+//----Explain Objectives----//
+	begin loop
+		if get CommentTimer time remaining == 0
+			begin dialogue
+				eject good spirit
+			//GA: "Another important part of the toolbar is the Objectives Menu. Select the Objectives Tab to open it."
+				say "BW2T_SCRIPT_03FINAL_OBJECTIVES_TUTORIAL_10"
+				wait until read
+				send good spirit home
+			end dialogue
+			set CommentTimer time to 20 seconds 
+		end if
+		
+		if not get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL 
+			highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+		elsif not get toolbar menu == variable MENU_TOOLBAR_OBJECTIVES
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_5
+		end if
+	until get toolbar menu == variable MENU_TOOLBAR_OBJECTIVES and get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL 
+	end loop
+	disable toolbar locked
+	set toolbar menu to MENU_TOOLBAR_OBJECTIVES
+	set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+	clear toolbar highlight
+	
+	begin dialogue
+		eject good spirit
+		//GA: "Right, here you can find all the important tasks that will enable you to complete a land, and also some less important tasks that are just interesting to do."
+			say "BW2T_SCRIPT_03FINAL_OBJECTIVES_TUTORIAL_20"
+			wait until read 
+		//GA: "The tabs at the bottom right control which objectives you are looking at. Either all of them or a selection from the total."
+			say "BW2T_SCRIPT_03FINAL_OBJECTIVES_TUTORIAL_30"
+			wait until read 
+			eject evil spirit
+			enable objective window
+		//EA: "The Objectives window up in the top left also displays the objectives."
+			say "BW2T_SCRIPT_03FINAL_OBJECTIVES_TUTORIAL_40"
+			wait until read 
+		//EA: "You only need complete the Gold Scroll objective to complete a land, but you will earn more Tribute by undertaking some of the other ones."
+			say "BW2T_SCRIPT_03FINAL_OBJECTIVES_TUTORIAL_50"
+			wait until read 
+		//EA: "You only need complete the Gold Scroll objective to complete a land, but you will earn more Tribute by undertaking some of the other ones."
+			//say "BW2T_SCRIPT_03FINAL_OBJECTIVES_TUTORIAL_60"
+			//wait until read 
+		//GA: "Yes, you earn Tribute for every objective you complete."
+			say "BW2T_SCRIPT_03FINAL_OBJECTIVES_TUTORIAL_70"
+			wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+	enable toolbar locked
+	L3_InAScroll = 0
+end script BT_ObjectiveTutorial
+
+begin script BT_TalkAboutmakingLargerPlatoon
+	ExampleVideo = 0
+start
+	begin dialogue
+		eject evil spirit
+		//EA: Dropping a flag will make a standard-sized platoon.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_830"
+			wait until read
+			
+		//----Video of an army flag being used to create a large platoon----//
+		
+			ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+			set ExampleVideo clipping window left 0 top 0 width 1 height 1
+			play video "Land3 Drawing Out Platoon"
+			
+		//EA: To recruit a larger platoon hold down the right mouse button and then drag away from the flag.
+			say "BW2T_SCRIPT_03FINAL_BUILDTABTUTORIAL_840"
+			wait until read
+		send evil spirit home
+	end dialogue
+end script BT_TalkAboutmakingLargerPlatoon

@@ -1,0 +1,12 @@
+run script RunLand5ShootMessenger
+
+begin script RunLand5ShootMessenger
+
+start
+
+	if L5GreekTown not exists
+		run background script DemoGlobals
+	end if
+	run script Land5ShootMessenger
+
+end script RunLand5ShootMessenger

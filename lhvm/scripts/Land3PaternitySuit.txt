@@ -1,0 +1,833 @@
+
+define PS_True = 1
+define PS_False = 0
+
+define script Land3SetupPaternity
+define script Land3PaternitySuitMain
+define script Land3CheckStates
+define script Land3PaternitySuitOutro
+define script Land3PaternitySuitOutro2
+define script Land3PaternitySuitIntro
+define script Land3GirlVisitsBoyFriend
+define script PS_Kissing(FrontDoor)
+define script Land3DadControl
+define script PS_AdvisorDialogue
+define script PS_Hearts(House)
+define script PS_AdvisorDialogue2
+define script PS_IntroDialogue
+define script DontShowMe
+
+
+global Dad = 0
+global Girl = 0
+global PS_GirlOnJob = PS_False
+global PS_OutroBegun = PS_False
+global PS_House = 0
+global PS_HouseInitialPos = 0
+global BoyFriendHouse = 0
+global flagtohelppoorlocalisation = 0
+global Messyglobal = 0
+
+begin script Land3PaternitySuit
+
+start
+	if L3GreekTown not exists
+		run script Land3Globals
+	end if
+	run script Land3SetupPaternity
+end script Land3PaternitySuit
+
+//***********************************************
+
+begin script Land3SetupPaternity
+	Scroll = 0
+	ClickedScroll = 0
+	SetupScroll = 0
+	CommentSaid = 0
+	HousePos = marker at {990.548, 364.899, 1642.618}
+
+start
+
+	wait until capacity of L3GreekTown > 20
+	PS_House = get planned HOUSE in L3GreekTown near {HousePos} radius 30
+	if PS_House exists
+		PS_House = build building at {PS_House} desire 1.0
+	else
+		PS_House = get HOUSE at {HousePos}
+	end if
+	
+	wait until BUILT of PS_House == 1
+
+	//BUILT of PS_House = 1
+
+	while ClickedScroll == 0 // and L3PaternitySuitComplete == 0
+		/*if L3InBuildTabTutorial == 1
+			if Scroll exists
+				delete Scroll
+			end if
+			wait until L3InBuildTabTutorial == 0
+		end if*/
+		
+		if SetupScroll == 0
+			Scroll = create highlight SILVER name "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_MISC_10" remind "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_MISC_20" at {PS_House}
+			ALTITUDE of Scroll = 5
+			SetupScroll = 1
+		end if
+		
+		if Scroll right clicked
+			ClickedScroll = 1
+			delete Scroll
+			run script Land3PaternitySuitIntro
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 with amount 1 text "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_MISC_10" amount 1 description "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_REMINDER_10" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_3_PATERNITY_SUIT
+			run background script Land3CheckStates
+			run script Land3PaternitySuitMain
+		end if
+		
+		/*if CommentSaid == 0
+			begin dialogue
+				eject good spirit
+					//say "There's a silver scroll that you haven't clicked leader."
+					say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_19"
+					wait until read
+				send good spirit home
+			end dialogue
+			CommentSaid = 1
+		end if*/
+	end while
+
+end script Land3SetupPaternity
+
+//*****************************************************
+
+begin script Land3PaternitySuitMain
+	CameraPos = 0
+	TimerSet = 0
+	GirlInTransit = 0
+	WoodAtHouse = 0
+	AmountOfWood = 0
+	BoyfriendFrontDoorPos = 0
+start
+
+	run background script Land3GirlVisitsBoyFriend
+	run background script Land3DadControl
+	begin loop
+		WoodAtHouse = get STORE WOODSTORE at {PS_House} radius 50
+		AmountOfWood = get resource WOOD in WoodAtHouse
+
+		attach reaction WoodAtHouse REACTION_FLEE_FROM_OBJECT
+
+		/*if L3InBuildTabTutorial == 1
+			wait until L3InBuildTabTutorial == 0
+			wait 10 seconds
+		end if*/
+		
+		if {Dad} near {Girl} radius 10 and PS_GirlOnJob == PS_True and not Dad is HELD_ANY
+			disable Dad reactable
+			disable Dad moveable
+			disable Dad pickup
+			play string sound "SCRIPT11_REWARDSTING"
+			run script Land3PaternitySuitOutro
+			L3PaternityChallengeState =1
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+			increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_PATERNITY_SUIT
+            wait 2.5 seconds
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+			L3PaternitySuitComplete = 1
+		end if
+
+		if AmountOfWood >= 1000 
+			play string sound "SCRIPT11_REWARDSTING"
+			delete WoodAtHouse
+			run script Land3PaternitySuitOutro2
+			increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_PATERNITY_SUIT
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+            wait 2.5 seconds
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+			L3PaternitySuitComplete = 1
+			L3PaternityChallengeState =1
+		end if
+
+	until L3PaternitySuitComplete == 1
+	end loop
+
+
+end script Land3PaternitySuitMain
+
+//*****************************************************
+
+begin script Land3CheckStates
+
+DadDead = 0
+GirlDead = 0
+
+start
+
+begin loop 
+	/*if  L3InBuildTabTutorial == 1
+		move Girl to limbo
+		move Dad to limbo
+		wait until L3InBuildTabTutorial == 0
+		release Girl from limbo	
+		release Dad from limbo	
+	end if*/
+	if HEALTH of Dad == 0
+		if Girl exists
+			begin dialogue
+				//say "You killed my dad!" by Girl
+				say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_13"
+				wait until read
+			end dialogue
+			enable objective window
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_FAILED 
+            wait 2 seconds
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_FAILED_HIDDEN
+			disable objective window
+			
+			/*play anim "a_p_mourning_into" on Girl
+			wait until Girl played
+			disable objective window
+			play anim "a_p_mourning" on Girl
+			wait until Girl played
+			play anim "a_p_mourning_outof" on Girl
+			wait until Girl played*/
+			
+			L3PaternitySuitComplete = 1
+		end if
+	end if
+
+	if HEALTH of Girl == 0
+		if Dad exists
+			release Dad
+			attach Dad to L3GreekTown
+			enable objective window
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_FAILED 
+            wait 2 seconds
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_FAILED_HIDDEN
+			disable objective window
+			L3PaternitySuitComplete = 1
+		end if
+	end if
+until L3PaternitySuitComplete == PS_True or PS_OutroBegun == PS_True
+end loop
+if Girl exists
+	attach Girl to L3GreekTown
+	release Girl
+end if
+if Dad exists
+	attach Dad to L3GreekTown
+	release Dad
+end if
+end script Land3CheckStates
+
+//*****************************************************
+//*****************************************************
+
+begin script Land3PaternitySuitOutro
+
+RelCamPos=0
+RelCamFoc=0
+AnnoyedFatherCaughtPos=0
+TurnToGod=0
+
+start
+	PS_OutroBegun = PS_True
+	delete Girl
+
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+
+	if BoyFriendHouse not exists
+		BoyFriendHouse = get random home in town L3GreekTown min built 1 excluding scripted
+	end if
+	
+/*
+	AnnoyedFatherCaughtPos = marker at get world position from BoyFriendHouse to {2.834, -0.619, -5.577}
+	set Dad position to {AnnoyedFatherCaughtPos}
+
+	set Dad focus to get world position from BoyFriendHouse to {-1.839, -0.144, -0.297}
+	//wait 1 seconds
+	
+	
+	
+	Dad = create VILLAGER EURONYMOUS at {991.984, 364.911, 1641.803}
+	SCRIPT_OBJECT_PROPERTY_TYPE_AGE of Dad = 34
+	set Dad focus to focus position of Dad
+*/
+	
+	//wait 1 seconds
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		move Dad position to {Dad}
+		AnnoyedFatherCaughtPos = marker at get world position from BoyFriendHouse to {2.834, -0.619, -5.577}
+		set Dad position to {AnnoyedFatherCaughtPos}
+
+		set Dad focus to get world position from BoyFriendHouse to {-1.839, -0.144, -0.297}
+		set fade in time 2
+		play string sound "SCRIPTWOMANCOUPLEKISS"// at {FrontDoor}
+		wait 0.2 seconds
+		TurnToGod = marker at get target from focus position of Dad to {Dad} distance 1 angle 0
+
+		store camera details
+		play anim "a_p_l3paternitysuit_father_talking2" on Dad disable stand blend time 0.0
+		
+		//start music "paternityporn_Land2"
+		set camera lens 70.000
+		set camera lens 65.000 time 5
+
+		RelCamPos=marker at get world position from BoyFriendHouse to {-4.445, 3.187, -8.099}
+		RelCamFoc=marker at get world position from BoyFriendHouse to {62.547, -17.382, 63.232}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//set camera lens 65.000 time 2 easein 0 easeout 0
+		
+		wait 4 seconds
+
+		set camera lens 70.000
+		RelCamPos=marker at get world position from Dad to {-0.549, 1.278, 1.268}
+		RelCamFoc=marker at get world position from Dad to {61.272, -2.742, -77.234}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 0.5 seconds
+
+		wait until Dad played
+
+		play anim "a_p_l3paternitysuit_father_talking1" on Dad// disable stand blend time 0.0
+		wait 1 seconds
+		wait 0.2 seconds
+		set camera lens 39.000
+		RelCamPos=marker at get world position from Dad to {-1.200, 1.568, -2.715}
+		RelCamFoc=marker at get world position from Dad to {43.903, -10.819, 85.675}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 1.3 seconds
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INNOCENT_10" by Dad
+		wait until read
+
+		set camera lens 60.000		
+		RelCamPos=marker at get world position from Dad to {-1.917, 1.210, 1.706}
+		RelCamFoc=marker at get world position from Dad to {36.464, 4.412, -90.579}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INNOCENT_20" by Dad
+		wait until read
+			
+		clear dialogue
+		set camera lens 60.000
+		RelCamPos=marker at get world position from BoyFriendHouse to {4.876, 2.529, -9.710}
+		RelCamFoc=marker at get world position from BoyFriendHouse to {-41.095, -18.021, 76.692}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		set camera lens 62.000 time 5
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INNOCENT_30" by Dad
+		wait until read
+		
+		//wait 2 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		delete Dad
+		restore camera details	
+		set fade in time 2
+		wait 2 seconds
+
+	end cinema
+
+end script Land3PaternitySuitOutro
+
+//*****************************************************
+//*****************************************************
+
+begin script Land3GirlVisitsBoyFriend
+	BoyfriendFrontDoorPos = 0
+	GirlsFrontDoorPos = 0
+	KissingTimer = create timer for 0 seconds
+	FollowHerCommentSaid = PS_False
+	IKnewItCommentSaid = PS_False
+start
+	GirlsFrontDoorPos = marker at get world position from PS_House to {-0.467, 0.008, -3.952}
+
+	begin loop
+
+		if PS_GirlOnJob == PS_False
+		
+			if BoyFriendHouse not exists
+				BoyFriendHouse = get random home in town L3GreekTown min built 1 excluding scripted
+				if BoyFriendHouse exists
+					BoyfriendFrontDoorPos = marker at get world position from BoyFriendHouse to {-0.467, 0.008, -3.952}
+				end if
+			end if
+			
+			while BoyFriendHouse exists and not {Girl} at {BoyfriendFrontDoorPos}
+				
+				if variable get Girl navigation state != variable NAV_STATE_NAVIGATING 
+					move Girl position to {BoyfriendFrontDoorPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+				end if
+				
+				if FollowHerCommentSaid == PS_False
+					begin dialogue
+						eject good spirit 
+					//GA: "Something is amiss here, Leader. Maybe you should see where she's going?"
+						say "BW2T_SCRIPT_03FINAL_PATERNITY_SUIT_20"
+						wait until read
+						send good spirit home
+					end dialogue
+					FollowHerCommentSaid = PS_True
+				end if
+				
+			end while
+			
+			if BoyFriendHouse exists
+				begin dialogue
+				//Girl: "Hello, handsome!"
+					play sound "BW2T_SCRIPT_03FINAL_PATERNITY_SUIT_40" at {Girl}
+					wait until read
+				end dialogue
+
+				move Girl position to extra position 0 of BoyFriendHouse 
+					
+				wait until {Girl} at extra position 0 of BoyFriendHouse
+				
+				move Girl to limbo
+				
+				PS_GirlOnJob = PS_True
+				
+				if get distance from camera position to {BoyFriendHouse} < 40 and {BoyFriendHouse} viewed
+					run background script PS_Hearts(BoyFriendHouse)
+					if IKnewItCommentSaid == PS_False
+						run background script PS_AdvisorDialogue2
+						IKnewItCommentSaid = PS_True
+					end if
+				end if
+				
+				run background script PS_Kissing(BoyfriendFrontDoorPos)
+				
+				set KissingTimer time to 50 seconds
+			end if
+		elsif get KissingTimer time remaining == 0
+			
+			release Girl from limbo	
+			
+			PS_GirlOnJob = PS_False
+			
+			while not {Girl} at {GirlsFrontDoorPos}
+				if variable get Girl navigation state != variable NAV_STATE_NAVIGATING 
+					move Girl position to {GirlsFrontDoorPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+				end if
+			end while	
+			
+			if PS_House exists
+				move Girl position to extra position 0 of PS_House 
+					
+				wait until {Girl} at extra position 0 of PS_House
+					
+				move Girl to limbo
+				
+				wait 15 seconds
+			end if
+				
+			release Girl from limbo 
+			
+			move Girl position to {GirlsFrontDoorPos}
+			
+			wait until {Girl} at {GirlsFrontDoorPos} or Girl is HELD
+		end if
+	until Girl not exists or L3PaternitySuitComplete == PS_True
+	end loop
+end script Land3GirlVisitsBoyFriend
+
+//*****************************************************
+//*****************************************************
+
+begin script PS_Kissing(FrontDoor)
+start
+	begin loop 
+		play sound "SCRIPTWOMANCOUPLEKISS" at {FrontDoor}
+		wait until not sound "SCRIPTWOMANCOUPLEKISS" playing
+		wait 5 seconds	
+		play sound "SCRIPTMANCOUPLEKISS" at {FrontDoor}
+		wait until not sound "SCRIPTMANCOUPLEKISS" playing
+		wait 5 seconds	
+	until PS_GirlOnJob == PS_False or L3PaternitySuitComplete == PS_True
+	end loop
+	
+	release sound "SCRIPTMANCOUPLEKISS"
+	release sound "SCRIPTWOMANCOUPLEKISS"
+	
+end script PS_Kissing
+
+//*****************************************************
+//*****************************************************
+
+begin script Land3PaternitySuitIntro
+	
+	DadPos = marker at {993.163, 369.266, 1642.176}
+	GirlPos = marker at {991.791, 365.032, 1647.727}
+	KissActor = 0
+	RelCamPos=0
+	RelCamFoc=0
+	WoodAtHouse = 0
+//	PS_House=0
+//	Dad=0
+//	Girl=0
+start
+
+
+//PS_House = get HOUSE at {990.235, 364.909, 1640.780}
+
+		begin cinema
+		set fade red 0 green 0 blue 0 time 2
+		//attach reaction PS_House REACTION_FLEE_FROM_OBJECT radius 50
+		wait 2 seconds
+		run background script DontShowMe
+
+		WoodAtHouse = get STORE WOODSTORE at {PS_House} radius 50
+		delete WoodAtHouse
+
+		Dad = create VILLAGER GREEK_BOATMASTER at {DadPos}
+		SCRIPT_OBJECT_PROPERTY_TYPE_AGE of Dad = 34
+		//set Dad position to {DadPos}
+		set Dad focus to {1000.866, 364.768, 1645.224}
+
+		disable anim events on Dad
+		Girl = create VILLAGER GREEK_HOUSEWIFE at {GirlPos}//+{1,0,0}
+		SCRIPT_OBJECT_PROPERTY_TYPE_AGE of Girl = 18
+		KissActor = create VILLAGER JAPANESE_BOATMASTER at {GirlPos}
+		move Girl position to {Girl}
+		set housewife Girl pregnant by Girl
+		set Girl focus to {992.344, 365.004, 1652.321}
+
+		detach reaction Dad
+		detach reaction Girl
+		disable Dad reactable		
+		disable Girl reactable
+		wait until Messyglobal == 1
+		
+		play paired anim VILLAGER_PAIRED_ACTION_PATERNITY_KISS1 using Girl with KissActor snap to position
+		play sound "SCRIPTWOMANCOUPLEKISS" at {Girl}
+
+		start music "cut_scene_sad_100_01"
+
+		set camera lens 70.000
+		
+		//MADE ABSOLUTE OF PAUL.NET - SO IF THE HOUSE HAS BEEN DESTROYED IT STILL PUTS THE CAMERA IN A REASNABLE POS
+		//RelCamPos=marker at get world position from PS_House to {-4.497, 4.082, -7.862}
+		//RelCamFoc=marker at get world position from PS_House to {-3.883, 3.725, -7.158}
+		//set camera position to {RelCamPos}
+		//set camera focus to {RelCamFoc}
+		
+		set camera position to {1000.004, 368.988, 1641.332}
+		set camera focus to {911.747, 333.289, 1671.923}
+		
+		//move Dad position to get world position from PS_House to {-1.171, 0.098, -4.821}
+
+		set fade in time 1
+		set camera lens 67.000 time 2
+
+		play anim "a_p_l3paternitysuit_father_speak" on Dad
+
+		wait 4 seconds
+
+		wait 0.5 seconds
+
+		run background script PS_IntroDialogue
+//wait 100 seconds
+		wait 0.5 seconds
+
+		set camera lens 45.000
+		
+		//RelCamPos=marker at get world position from PS_House to {-3.581, 0.662, -9.715}
+		//RelCamFoc=marker at get world position from PS_House to {48.460, 13.913, 74.640}
+		//set camera position to {RelCamPos}
+		//set camera focus to {RelCamFoc}
+		set camera position to {1001.379, 365.568, 1642.875}
+		set camera focus to {903.674, 378.819, 1659.562}
+
+		wait 3 seconds
+		//RelCamPos=marker at get world position from PS_House to {-3.071, 1.071, -3.162}
+		//RelCamFoc=marker at get world position from PS_House to {62.648, 26.394, -74.156}
+		//set camera position to {RelCamPos}
+		//set camera focus to {RelCamFoc}
+		set camera position to {995.112, 365.977, 1640.896}
+		set camera focus to {1036.347, 391.301, 1728.408}
+		
+		//wait until Dad played
+		//play anim "a_p_paternity_shouting_to_god_accusingly" on Dad loop 2
+		wait 2 seconds
+		delete KissActor
+		KissActor = create VILLAGER FAIN at {GirlPos}
+		set Girl position to {GirlPos}+{1,0,0}
+		set Girl focus to {995.120, 364.849, 1652.200}
+		play paired anim VILLAGER_PAIRED_ACTION_PATERNITY_KISS2 using Girl with KissActor snap to position
+		play sound "SCRIPTWOMANCOUPLEKISS" at {Girl}
+		wait 0.5 second
+		
+		set camera lens 45.000
+		//RelCamPos=marker at get world position from PS_House to {-2.396, 0.795, -7.970}
+		//RelCamFoc=marker at get world position from PS_House to {58.049, 17.919, 69.832}
+		//set camera position to {RelCamPos}
+		//set camera focus to {RelCamFoc}
+		set camera position to {999.318, 365.701, 1643.321}
+		set camera focus to {904.548, 382.825, 1670.250}
+
+		wait 3 seconds
+		set camera lens 70.000
+		//RelCamPos=marker at get world position from PS_House to {-2.166, 1.117, -3.183}
+		//RelCamFoc=marker at get world position from PS_House to {45.160, 16.301, -89.955}
+		//set camera position to {RelCamPos}
+		//set camera focus to {RelCamFoc}
+		set camera position to {994.792, 366.023, 1641.743}
+		set camera focus to {1057.549, 381.209, 1718.110}
+		
+		delete KissActor
+		set Girl focus to {1002.207, 367.679, 1648.671}
+
+		wait 4 seconds
+
+		set camera lens 70.000
+		//RelCamPos=marker at get world position from PS_House to {-3.042, 2.288, -8.587}
+		//RelCamFoc=marker at get world position from PS_House to {53.951, -18.144, 71.004}
+		//set camera position to {RelCamPos}
+		//set camera focus to {RelCamFoc}
+		set camera position to {1000.132, 367.194, 1642.953}
+		set camera focus to {904.996, 346.763, 1666.012}
+		
+		play anim "a_p_brushing_off_rain" on Girl
+
+		wait 4 seconds
+		wait 2 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		wait until flagtohelppoorlocalisation == 1
+		play anim "a_p_stand" on Dad disable stand blend time 0
+		Messyglobal = 0
+		set camera position to {1006.518, 375.886, 1633.695}
+		set camera focus to {954.229, 316.059, 1694.413}
+		
+		set fade in time 2
+		enable anim events on Dad
+		wait 2 seconds
+
+		stop music
+
+	end cinema
+
+	run background script PS_AdvisorDialogue
+end script Land3PaternitySuitIntro
+
+begin script Land3DadControl
+	DadPos		= marker at {994.312, 364.934, 1645.681}
+	FocusPos	= marker at {998.702, 364.835, 1647.459}
+
+	StrollPos_1 = marker at {996.450, 364.966, 1643.717}
+	StrollPos_2 = marker at {995.199, 364.905, 1646.470}
+
+	StrollWay	= 0
+	Rand		= 0
+
+start
+
+	wait 10 seconds
+
+	begin loop
+
+		while not {Dad} near {DadPos} radius 10
+			if variable get Dad navigation state != variable NAV_STATE_NAVIGATING 
+				move Dad position to {DadPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+				wait until variable get Dad navigation state != variable NAV_STATE_NAVIGATING 
+			end if
+		end while	
+		
+		if StrollWay == 0 and {Dad} near {DadPos} radius 10
+			move Dad position to {StrollPos_1} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+			StrollWay = 1
+			wait until variable get Dad navigation state != variable NAV_STATE_NAVIGATING 
+		elsif StrollWay == 1 and {Dad} near {DadPos} radius 10
+			move Dad position to {StrollPos_2} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+			StrollWay = 0
+			wait until variable get Dad navigation state != variable NAV_STATE_NAVIGATING 
+		end if
+		
+		//Random anim
+		Rand = number from 0 to 2
+		
+		if {Dad} near {DadPos} radius 10
+			if Rand == 0  
+				play anim "a_p_looking_for_something" on Dad
+			elsif Rand == 1 
+				play anim "a_p_scratching_head" on Dad
+			elsif Rand == 2 
+				play anim "a_p_look_at_hand" on Dad			
+			end if
+
+			wait until Dad played or Dad is HELD or not {Dad} near {DadPos} radius 10
+		end if
+	until Dad not exists or PS_OutroBegun == PS_True or L3PaternitySuitComplete == PS_True
+	end loop
+
+end script Land3DadControl
+
+begin script PS_AdvisorDialogue
+start
+	begin dialogue
+		eject evil spirit
+		eject good spirit
+		//EA: "Boss! You dirty dog! I knew you had it in you!"
+			say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INTRO_40"
+			wait until read
+		//GA: "it wasn't him silly!"
+			say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INTRO_50"
+			wait until read
+		//GA: "We should find whoever is responsible and clear your good name"
+			say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INTRO_60"
+			wait until read
+			clear dialogue
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+end script PS_AdvisorDialogue
+
+begin script PS_Hearts(House)
+start
+	begin loop
+		trigger floaty number FLOATY_HEART at {House} + {0,5,0}
+		wait 3 seconds
+	until PS_GirlOnJob == PS_False or L3PaternitySuitComplete == PS_True
+	end loop
+end script PS_Hearts
+
+begin script PS_AdvisorDialogue2
+start
+	begin dialogue
+		eject evil spirit 
+	//EA: "I knew something was going on!"
+		say "BW2T_SCRIPT_03FINAL_PATERNITY_SUIT_50"
+		wait until read
+		eject good spirit
+	//GA: "You knew no such thing! Someone ought to let her father know about this…"
+		say "BW2T_SCRIPT_03FINAL_PATERNITY_SUIT_60"
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+end script PS_AdvisorDialogue2
+
+begin script Land3PaternitySuitOutro2
+
+DadPos = marker at {995.135, 364.899, 1643.052}
+	GirlPos = marker at {992.730, 364.978, 1647.050}
+	KissActor = 0
+	RelCamPos=0
+	RelCamFoc=0
+start
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		PS_OutroBegun = PS_True
+		disable Dad reactable
+		disable Dad moveable
+		set fade in time 2
+		set Dad position to get world position from PS_House to {-1.061, 0.031, -4.071}
+		set Dad focus to {999.161, 364.786, 1645.101}
+		set camera lens 70.000
+		RelCamPos=marker at get world position from PS_House to {-4.497, 4.082, -7.862}
+		RelCamFoc=marker at get world position from PS_House to {-3.883, 3.725, -7.158}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		play anim "a_p_l3paternitysuit_father_to_stop" on Dad disable stand blend time 0.0
+
+		wait 1 seconds
+
+		play anim "a_p_paternity_talking_to_god_calmly" on Dad loop 2 disable stand blend time 1.0
+
+
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_DOWRYPAID_10"
+		wait until read
+		RelCamPos=marker at get world position from PS_House to {-1.351, 1.136, -2.635}
+		RelCamFoc=marker at get world position from PS_House to {-6.835, 29.596, -98.344}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_DOWRYPAID_20"
+		wait until read
+		move Dad position to get world position from PS_House to {-1.129, -0.133, -0.534}
+
+		RelCamPos=marker at get world position from PS_House to {-4.497, 4.082, -7.862}
+		RelCamFoc=marker at get world position from PS_House to {-3.883, 3.725, -7.158}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+
+		eject evil spirit
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_DOWRYPAID_30"
+		wait until read
+		eject good spirit
+
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_DOWRYPAID_40"
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_DOWRYPAID_50"
+		wait until read
+
+	end cinema
+
+
+end script Land3PaternitySuitOutro2
+
+begin script PS_IntroDialogue
+
+start
+
+	begin known cinema
+
+		//Dad: "Hey! You! Greek God! If you exist I know you can hear me!"
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INTRO_10"
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INTRO_20"
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INTRO_30"
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_INTRO_35"
+		wait until read
+		flagtohelppoorlocalisation = 1
+
+	end known cinema
+
+end script PS_IntroDialogue
+
+begin script DontShowMe
+
+count=0
+Limoedvillager[30]
+TimeOutLosePpl=0
+
+start
+
+TimeOutLosePpl = create timer for 1.5 seconds
+
+while count < 30 and get TimeOutLosePpl time remaining > 0
+	Limoedvillager[count] = get VILLAGER at {PS_House} radius 20 excluding scripted
+	if Limoedvillager[count] exists
+		move Limoedvillager[count] to limbo
+	end if
+	count++
+end while
+
+Messyglobal = 1
+
+wait until Messyglobal == 0
+count = 0
+
+while count < 30 and get TimeOutLosePpl time remaining < 0
+	if Limoedvillager[count] exists
+		release Limoedvillager[count] from limbo
+	end if
+	count++
+end while
+
+end script DontShowMe

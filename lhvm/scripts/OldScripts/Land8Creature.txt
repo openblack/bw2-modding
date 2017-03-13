@@ -1,0 +1,106 @@
+
+	/*
+define script L8_Creature
+
+begin script L8_Creature
+	CreationPoint = marker at {1281.312,279.603,1843.110}
+	OrePoint = marker at {1266.949,110.679,1037.684}
+	RandNum = 0
+	WaitTime = 0
+	WaitTimer = create timer for 0 seconds
+start
+	run script GCAI_InitCreature(CreationPoint,variable CREATURE_TYPE_TIGER,4.0,0.1,1)
+
+	begin loop
+		RandNum = number from 1 to 2
+		if RandNum == 1
+			//say "gathering local"
+			run script GCAI_SetTask_PerformRole(CreationPoint,300,variable CR_GATHERER)
+		elsif RandNum == 2
+			//say "building"
+			run script GCAI_SetTask_PerformRole(CreationPoint,300,variable CR_BUILDER)
+		end if
+		WaitTime = number from 60 to 300
+		wait WaitTime seconds
+	end loop
+
+	while L8_AB_ArmyState <= 1 and PLAYER of L8_JapaneseCityCapital != 0
+		RandNum = number from 1 to 4
+		if RandNum == 1
+			//say "gathering local"
+			run script GCAI_SetTask_PerformRole(CreationPoint,300,variable CR_GATHERER)
+		elsif RandNum == 2
+			//say "building"
+			run script GCAI_SetTask_PerformRole(CreationPoint,300,variable CR_BUILDER)
+		elsif RandNum == 3
+			//say "gathering mines"
+			run script GCAI_SetTask_PerformRole(OrePoint,300,variable CR_GATHERER)
+		else //if RandNum == 4
+			//say "free will"
+			run script GCAI_SetTask_PerformRole(CreationPoint,300,variable CR_NONE)
+		end if
+
+		WaitTime = number from 60 to 300
+		set WaitTimer time to WaitTime seconds
+		wait until get WaitTimer time remaining <= 0 or L8_AB_ArmyState > 1 or PLAYER of L8_JapaneseCityCapital == 0
+	end while
+
+	//say "becoming more agressive"
+
+	while L8_AB_ArmyState <= 2 and PLAYER of L8_JapaneseCityCapital != 0
+		RandNum = number from 1 to 4
+		if RandNum == 1
+			//say "gathering local"
+			run script GCAI_SetTask_PerformRole(CreationPoint,300,variable CR_GATHERER)
+		elsif RandNum == 2
+			//say "guarding mines"
+			run script GCAI_SetTask_PerformRole(OrePoint,300,variable CR_SOLDIER)
+		elsif RandNum == 3
+			//say "gathering mines"
+			run script GCAI_SetTask_PerformRole(OrePoint,300,variable CR_GATHERER)
+		else //if RandNum == 4
+			//say "free will"
+			run script GCAI_SetTask_PerformRole(CreationPoint,300,variable CR_NONE)
+		end if
+
+		WaitTime = number from 60 to 300
+		set WaitTimer time to WaitTime seconds
+		wait until get WaitTimer time remaining <= 0 or L8_AB_ArmyState > 2 or PLAYER of L8_JapaneseCityCapital == 0
+	end while
+
+	//say "becoming even more agressive"
+
+	run script GCAI_SetTask_PerformRole(L8_JapaneseWarCapital,200,variable CR_SOLDIER)
+
+	while L8_AB_ArmyState <= 4 and PLAYER of L8_JapaneseWarCapital != 0
+		while PLAYER of L8_MinorSettlement[1] != 1
+			wait until L8_AB_MeleePlatoons[4] exists
+			run script GCAI_SetTask_LeadPlatoonToPos(L8_AB_MeleePlatoons[4],L8_MinorSettlement[1])
+			wait until PLAYER of L8_MinorSettlement[1] == 1 or L8_AB_MeleePlatoons[4] not exists
+		end while
+
+		RandNum = number from 1 to 4
+		if RandNum == 1
+			//say "guarding war"
+			run script GCAI_SetTask_PerformRole(L8_JapaneseWarCapital,200,variable CR_SOLDIER)
+		elsif RandNum == 2
+			//say "guarding mines"
+			run script GCAI_SetTask_PerformRole(OrePoint,300,variable CR_SOLDIER)
+		elsif RandNum == 3 and PLAYER of L8_JapaneseCityCapital != 0
+			//say "gathering mines"
+			run script GCAI_SetTask_PerformRole(OrePoint,300,variable CR_GATHERER)
+		else //if RandNum == 4
+			//say "guarding settlement"
+			run script GCAI_SetTask_PerformRole(L8_MinorSettlement[1],100,variable CR_SOLDIER)
+		end if
+
+		WaitTime = number from 60 to 300
+		set WaitTimer time to WaitTime seconds
+		wait until get WaitTimer time remaining <= 0 or L8_AB_ArmyState > 4 or PLAYER of L8_JapaneseWarCapital == 0
+	end while
+
+	run script GCAI_SetTask_PerformRole(L8_GreekTown,200,variable CR_SOLDIER)
+
+	wait until 1 != 1
+end script L8_Creature
+	*/

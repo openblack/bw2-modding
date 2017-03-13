@@ -1,0 +1,96 @@
+//run script Test
+
+//--------------------------------------------------------------------------------------------
+// ** Individual Bonfires **
+//--------------------------------------------------------------------------------------------
+begin script IndividualBonfires (BonfirePos)
+
+ Bonfire = 0
+ Count = 0
+ Marauder[5]
+ CalulatedPosition = 0
+ CalculatedAngle = 0
+ RandomDistanceFromFire = 0
+ RandomAngleModifier = 5
+ DefaultAngle = 75
+ AimingPos = 0
+ Eternity = 0
+ RandomAnim = 0
+  
+start
+	AimingPos = marker at {BonfirePos}+{0.000,0.000,5.000}
+	Bonfire = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {BonfirePos}
+	while Count < 5
+		// set up the actor facing in the right direction
+		RandomDistanceFromFire = number from 2 to 4
+		CalculatedAngle = (DefaultAngle*Count)+ (number from -RandomAngleModifier to RandomAngleModifier)
+		CalulatedPosition = marker at get target from {AimingPos} to {BonfirePos} distance RandomDistanceFromFire angle CalculatedAngle
+		Marauder[Count] = create VILLAGER VILLAGER_INFO_NORSE_FISHERMAN_MALE at {CalulatedPosition}
+		set Marauder[Count] melee tech level 2
+		set Marauder[Count] focus to {BonfirePos}
+		RandomAnim = number from 1 to 10
+		if RandomAnim < 3
+			play anim "M_P_SITTING_DOWN1_SITTING" on Marauder[Count] loop -1
+		elsif RandomAnim == 4
+			play anim "M_P_TALK_TO_NEIGHBOUR" on Marauder[Count] loop -1
+		elsif RandomAnim == 5
+			play anim "M_P_STAND_DESPAIR_2" on Marauder[Count] loop -1
+		elsif RandomAnim == 6
+			play anim "M_P_SLEEPING" on Marauder[Count] loop -1
+		elsif RandomAnim == 7
+			play anim "M_P_TALK_TO_NEIGHBOUR" on Marauder[Count] loop -1
+		elsif RandomAnim > 7
+			play anim "M_P_SLEEPING" on Marauder[Count] loop -1
+		end if
+		
+		
+		Count++
+	end while
+	wait until Eternity == 1
+end script IndividualBonfires
+
+
+//--------------------------------------------------------------------------------------------
+// ** Main **
+//--------------------------------------------------------------------------------------------
+
+begin script Test
+
+ Marauder = 0
+ MarauderCampPos[5]
+ Count = 0
+ LastRandom = 0
+ Random = 0
+ Eternity = 0
+ PatrolMan = 0
+
+start
+	MarauderCampPos[0] = marker at {1301.675,1.992,1443.072}
+	MarauderCampPos[1] = marker at {1308.589,2.010,1440.710}
+	MarauderCampPos[2] = marker at {1306.943,2.157,1449.761}
+	MarauderCampPos[3] = marker at {1312.333,2.269,1444.610}
+	MarauderCampPos[4] = marker at {1312.295,2.589,1448.410}
+	
+	while Count < 5
+		run background script IndividualBonfires (MarauderCampPos[Count])
+		Count++
+	end while
+	Count = 0
+
+	PatrolMan = create VILLAGER VILLAGER_INFO_NORSE_FISHERMAN_MALE at {1306.943,2.157,1449.761}
+	set PatrolMan melee tech level 2	
+	begin loop
+		while Random == LastRandom
+			Random = number from 0 to 4
+		end while
+		LastRandom = Random
+		move PatrolMan position to {MarauderCampPos[Random]}
+		wait until {PatrolMan} near {MarauderCampPos[Random]} radius 6
+		move PatrolMan position to {PatrolMan}
+		play anim "M_P_RALLYINGCROWD" on loop 1
+		wait until PatrolMan played
+	until Eternity == 1
+	end loop
+	
+end script Test
+

@@ -1,0 +1,47 @@
+begin script Land2ExplodingMan
+
+	CreatePos = marker at {2085.286,105.958,919.735}
+	MovePos = marker at {0, 0, 0} //generated
+	FlyPos = marker at {998.524,135.162,1713.986}
+	Man = 0
+	House = 0
+	FakeHouseFire=0
+	Dudex=0
+
+start
+
+	House = get HOUSE at {2082.112,99.964,915.891} radius 20
+	CreatePos = marker at get world position from House to {-1.634, 6.0, -0.117}
+	Man = create VILLAGER GREEK_BOATMASTER at {CreatePos}
+	ALTITUDE of Man = SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of CreatePos
+
+	MovePos = marker at get world position from House to {8.422, -0.014, 1.665}
+
+	move Man position to {MovePos}
+	disable Man reactable
+	disable Man pickup
+	disable Man set on fire
+
+	SPEED of Man = 0.4
+	
+	wait 1 seconds
+
+	wait until {Man} near {MovePos} radius 2
+	FakeHouseFire = create visual effect "gp_s_fire_bbuilding.ves" strength 0.5 scale 1 on House time 10
+	
+	wait until {Man} near {MovePos} radius 0.2
+	play anim "a_p_jump" on Man
+
+	FlyPos = marker at get world position from House to {16.878, 15, 1.782}
+
+	set Man velocity heading {FlyPos} speed 10
+	wait 0.2 seconds
+
+	enable Man on fire 1.0
+
+	wait until ALTITUDE of Man < 2
+	ALTITUDE of Man = 0
+	set Man position to {Man}
+	wait 10 seconds
+
+end script Land2ExplodingMan

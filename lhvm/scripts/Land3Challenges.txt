@@ -1,0 +1,25 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 3
+//===========================================================
+
+// -Globals-
+Land3Globals.txt
+Land3Rooster.txt
+TelephoneBox.txt
+Land3Intro.txt
+Land3Outro.txt
+Land3Departure.txt
+Land3Tutorials.txt
+Land3PaternitySuit.txt
+Land3Objectives.txt
+Land3Marauders.txt
+Land3BuildTabTutorial.txt
+Land3RoadTutorial.txt
+Land3TimeOfDayTutorial.txt
+Land3CreatureTutorial.txt
+Land3DYK.txt
+
+//always the last script
+Land3Control.txt
+
+

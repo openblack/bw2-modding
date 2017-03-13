@@ -1,0 +1,142 @@
+//*************************************************************
+//
+//	Land6Objectives
+//
+//*************************************************************
+
+
+define L6O_FALSE = 0
+define L6O_TRUE = 1
+
+
+
+define script L6O_Advisors(ID)
+
+
+//-----------------------------------------------------------------------------
+//	Set the objectives and test for when they are completed - passed back from AI script
+//-----------------------------------------------------------------------------
+begin script Land6Objectives
+
+	OreObjective = L6O_FALSE
+	CreatureFightObjective = L6O_FALSE
+	//CreatureKillObjective = L6O_FALSE
+	//SettlementsObjective = L6O_FALSE
+	PopulationObjective = L6O_FALSE
+	BuildingObjective = L6O_FALSE
+	//TreesObjective = L6O_FALSE
+	FieldsObjective = L6O_FALSE
+	
+start
+
+	// OBJECTIVES FOR LAND 6 ARE DONE IN THE CAPITAL SCRIPT
+
+	//	reset all objectives for player 0
+
+
+
+/*
+	begin loop
+		//Creature collect 2000 ore
+		if OreObjective == L6O_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_ORE complete
+				OreObjective = L6O_TRUE
+				run background script L6O_Advisors(0)
+			end if			
+		end if		
+		
+		//Win a creature vs creature fight
+		if CreatureFightObjective == L6O_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT complete
+				CreatureFightObjective = L6O_TRUE
+				run background script L6O_Advisors(1)
+			end if			
+		end if
+
+		//Get a population of 600
+		if PopulationObjective == L6O_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION complete
+				PopulationObjective = L6O_TRUE
+				run background script L6O_Advisors(2)
+			end if			
+		end if
+
+		//Create 6 fields
+		if FieldsObjective == L6O_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_PLAYER_BUILD_FIELDS complete
+				FieldsObjective = L6O_TRUE
+				run background script L6O_Advisors(3)
+			end if
+		end if
+		
+		//Build 3 impressive buildings
+		if BuildingObjective == L6O_FALSE
+			if player 0 objective TRIBUTE_OBJECTIVE_BUILD_IMPRESSIVE_BUILDINGS complete
+				BuildingObjective = L6O_TRUE
+				run background script L6O_Advisors(4)
+			end if
+		end if
+		
+	end loop
+*/
+end script Land6Objectives
+
+
+
+//-----------------------------------------------------------------------------
+//	Get the responses from the advisors when an objective is complete
+//-----------------------------------------------------------------------------
+begin script L6O_Advisors(ID)
+
+start
+	if ID == 0
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_06FINAL_OBJECTIVE_MISC_10"
+			wait until read
+			send evil spirit home
+		end dialogue
+		increment tribute by 5
+	end if
+	
+	if ID == 1
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_06FINAL_OBJECTIVE_MISC_20"
+			wait until read
+			send evil spirit home
+		end dialogue
+		increment tribute by 5
+	end if
+
+	if ID == 2
+		begin dialogue
+			eject good spirit
+			say "BW2T_SCRIPT_06FINAL_OBJECTIVE_MISC_30"
+			wait until read
+			send good spirit home
+		end dialogue
+		increment tribute by 5
+	end if
+	
+	if ID == 3
+		begin dialogue
+			eject good spirit
+			say "BW2T_SCRIPT_06FINAL_OBJECTIVE_MISC_40"
+			wait until read
+			send good spirit home
+		end dialogue
+		increment tribute by 5
+	end if
+	
+	if ID == 4
+		begin dialogue
+			eject good spirit
+			say "BW2T_SCRIPT_06FINAL_OBJECTIVE_MISC_50"
+			wait until read
+			send good spirit home
+		end dialogue
+		increment tribute by 5
+	end if
+	
+end script L6O_Advisors

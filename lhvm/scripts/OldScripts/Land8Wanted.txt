@@ -1,0 +1,28 @@
+//Land8Wanted.txt
+//------------------------------------------------
+//  LAND 8 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land8Wanted
+
+ L8Actor1Pos = marker at {996.482,37.854,1045.814}	// Coast 1/3 way to Aztecs
+ L8Actor1 = create VILLAGER MALE at {L8Actor1Pos}
+ PosterPos1 = marker at {1636.200,43.069,944.049}
+ L8Actor2Pos = marker at {1889.068,34.268,1596.021}	// On near shore beside the Aztecs
+ L8Actor2 = create VILLAGER MALE at {L8Actor2Pos}
+ PosterPos2 = marker at {1640.882,43.326,944.370}
+ L8Actor3Pos = marker at {917.385,43.758,1415.091}	// On far Coast in front of Aztecs
+ L8Actor3 = create VILLAGER MALE at {L8Actor3Pos}
+ PosterPos3 = marker at {1645.520,42.756,944.444}
+ JailLocation = marker at {1640.892,42.134,939.981}
+
+start
+	
+	run background script GlobalWanted (21, L8Actor1, L8Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (22, L8Actor2, L8Actor2Pos, JailLocation, PosterPos2)
+
+	run background script GlobalWanted (23, L8Actor3, L8Actor3Pos, JailLocation, PosterPos3)
+
+
+end script Land8Wanted

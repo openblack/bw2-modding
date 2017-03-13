@@ -1,0 +1,458 @@
+
+//------------------------------------------------------------------------------------------------------------------------
+// DEFENDER GAME CODE
+//------------------------------------------------------------------------------------------------------------------------
+
+global DefHiScore
+global DefScore
+global DefScoreboard
+global DefHiScoreboard
+global DefQuit
+global DefAttemptComplete
+global CannonHit
+global MunchkinsAlive
+global GunHeat
+global ShotsFired
+global TotalMarauders = 100
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script DefenderExplodingBarrel (Barrel)
+
+ NearbyMarauder = 0
+ BarrelActive = 0
+ FireBall = 0
+ FlingAim = 0
+ //FuseTimer = create timer for 0 seconds
+ Sample=0
+
+start
+	//set FuseTimer time to 3 seconds
+	while BarrelActive == 0
+		if ALTITUDE of Barrel <= 1
+		//if get FuseTimer time remaining <= 0
+			////NearbyMarauder = get VILLAGER MARAUDER at {Barrel} radius 15
+			NearbyMarauder = get VILLAGER MALE at {Barrel} radius 15 ////
+			if NearbyMarauder exists
+				//launch him and kill him
+				FlingAim = marker at get target from {Barrel} to {NearbyMarauder} distance 0.6 angle 0
+				set NearbyMarauder velocity heading {FlingAim} speed 20
+				HEALTH of NearbyMarauder = 0
+				Sample = number from 626 to 633 //Man scream
+				// AUDIO_TODO play sound constant Sample SOUND_BANK_TYPE_EDITOR at {NearbyMarauder}
+
+			end if
+			////FireBall = cast SPELL_FIREBALL_LEVEL_1 spell at {Barrel} from {Barrel} radius 1.0 time 3 curl 0
+			delete Barrel with explosion
+			GunHeat--
+			Sample = number from 464 to 467 //Barrel collide sound
+			// AUDIO_TODO play sound constant Sample SOUND_TYPE_EDITOR
+			BarrelActive = 1
+		end if
+	end while
+
+	wait 0.5 seconds
+	delete FireBall
+end script DefenderExplodingBarrel
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script DefEscapeToQuit
+start
+	begin loop
+		if key KB_ESC down
+			DefQuit = 1
+		end if
+	until DefQuit == 1 or DefAttemptComplete > 0
+	end loop
+
+end script DefEscapeToQuit
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script ProjectileCheck (Projectile)
+ 
+ EndLoop = 0
+ CannonPos = marker at {952.585, 121.542, 1245.239}
+  
+start
+	while EndLoop == 0
+		if Projectile is not FLYING
+			EndLoop = 1
+		elsif {Projectile} near {CannonPos} radius 10 and CannonHit == 0
+			CannonHit = 1
+		end if
+	end while
+	delete Projectile with explosion
+end script ProjectileCheck
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script MunchkinControl (Munchkin)
+
+ Destination = marker at {949.285, 121.542, 1244.239}
+ EndLoop = 0
+ Hurl = 0
+ DefRockPos = 0
+ RandomNum = 0
+ Projectile = 0
+ CannonPos = marker at {952.585, 121.542, 1245.239}
+ Spangle = 0
+
+start
+	// Make one in two a grenadier
+	RandomNum = number from 1 to 2
+	if RandomNum == 1
+		Hurl = 1
+	end if
+
+	SCALE of Munchkin = 2
+	Spangle = create special effect SPOT_VISUAL_HIGHLIGHT_ON_OBJECT on Munchkin time -1
+	enable Munchkin indestructible
+	disable Munchkin pickup
+	disable Munchkin hurt by fire
+	disable Munchkin set on fire
+	move Munchkin position to {Destination}
+	SPEED of Munchkin = 0.6
+	begin loop
+		if Munchkin is FLYING or HEALTH of Munchkin < 0.5
+			DefScore++
+			set DefScoreboard score DefScore
+			EndLoop = 1
+		elsif {Munchkin} near {Destination} radius 75 and Hurl == 1
+			move Munchkin position to {Munchkin}
+			////Munchkin play ANM_P_THROW_ROCK
+			play anim "A_P_TALK_AND_POINTING" on Munchkin loop 1
+			wait until Munchkin played or Munchkin is FLYING or HEALTH of Munchkin < 0.5
+			if Munchkin is not FLYING and HEALTH of Munchkin >= 0.5
+				DefRockPos = marker at get target from {CannonPos} to {Munchkin} distance 2 angle 180
+				ALTITUDE of DefRockPos = 3
+				Projectile = create with angle 0 and scale 0.4 ROCK_OBJECT ROCK at {DefRockPos}
+				set Projectile target camera position time 2
+				run background script ProjectileCheck (Projectile)
+			end if
+			wait 0.5 seconds
+			move Munchkin position to {Destination}
+			Hurl = 2
+		elsif {Munchkin} near {Destination} radius 25
+			DefAttemptComplete = 1
+		end if
+	until EndLoop == 1 or DefQuit > 0 or DefAttemptComplete > 0
+	end loop
+	delete Munchkin with fade
+	MunchkinsAlive--
+	if DefScore == TotalMarauders
+		DefAttemptComplete = 1
+	end if
+end script MunchkinControl
+
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script AttackOfTheMunchkins
+
+ //Delay = 4
+ Delay = 2
+ SpawnPos[7]
+ Munchkin = 0
+ Count = 0
+ MunchkinsSent = 0
+ RandomNum = 0
+
+start
+	// Spawns appear randomly in a radius of the spawnpos
+	SpawnPos[0] = marker at {792.281, 114.245, 908.077}
+	SpawnPos[1] = marker at {948.962, 77.698, 822.488}
+	SpawnPos[2] = marker at {1124.659, 70.280, 783.209}
+	SpawnPos[3] = marker at {1271.492, 71.659, 962.168}
+	SpawnPos[4] = marker at {1290.699, 70.647, 1229.521}
+	SpawnPos[5] = marker at {1242.779, 136.696, 1494.536}
+	SpawnPos[6] = marker at {1056.702, 104.956, 1620.389}
+
+	DefScore = 0
+	MunchkinsSent = 0
+	begin loop
+		wait Delay seconds
+
+		if MunchkinsSent < TotalMarauders
+			// pick one of the spawnpoints randomly
+			RandomNum = number from 0 to 7
+			////Munchkin = create VILLAGER MARAUDER at {SpawnPos[RandomNum]}+{number from -20 to 20, number from -20 to 20}
+			Munchkin = create VILLAGER MALE at {SpawnPos[RandomNum]}+{number from -20 to 20, number from -20 to 20} ////
+			MunchkinsAlive++
+			MunchkinsSent++
+			run background script MunchkinControl (Munchkin)
+		end if
+/*		
+		if Count > 4 // speed up spawns every 5 munchkins
+			if Delay > 0.5
+				Delay = Delay - 0.5
+			end if
+			Count = 0
+		end if
+*/
+	until DefQuit > 0 or DefAttemptComplete > 0
+	end loop
+end script AttackOfTheMunchkins
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script GrenadeChecks
+
+ TotalHits = 0
+
+start
+	begin loop
+		if CannonHit > 0
+			begin known cinema
+				set fade red 255 green 55 blue 55 time 1.0
+				wait 0.5 seconds
+				set fade in time 0.3
+			end known cinema
+			CannonHit = 0
+			TotalHits++			
+		end if
+		if TotalHits > 4 // each grenade damages the cannon a bit until it is broken
+			begin known cinema
+				say "The Cannon has been damaged and is in need of repair!"
+				wait until read
+			end known cinema
+			DefAttemptComplete = 1
+		end if
+	until DefQuit > 0 or DefAttemptComplete > 0
+	end loop
+end script GrenadeChecks
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script Defender
+
+ CannonPos = marker at {952.585, 121.542, 1245.239}
+ CannonFoc = marker at {953.196, 121.342, 1244.472}
+
+ DefScoreboardPos = marker at {832.408, 61.207, 1079.664}
+ DefHiScoreboardPos = marker at {814.489, 61.135, 1093.535}
+ KillDefender = 0
+ InitialDefHiScore = 5
+ DefHighlight = 0
+ DefHighlightPos = marker at {832.266, 58.219, 1098.321}
+ PowerUp = 0
+ Velocity = 0
+ CameraFocus = 0
+ CamPos = 0
+ Barrel = 0
+ BeginPos = 0
+ BeginFoc = 0
+ GunDelay = 0
+ GunTimer = create timer for 0 seconds
+ ShieldEffect = 0
+ ShieldActive = 0
+ HitPercent = 0
+ MarauderOne = 0
+ MarauderTwo = 0
+ MarauderThree = 0
+ MarauderFour = 0
+ Ruin = 0
+ RuinSmoke = 0
+
+start
+ // create scoreboards
+ DefScoreboard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {DefScoreboardPos}
+ enable DefScoreboard indestructible
+ set DefScoreboard score 0
+ DefHiScoreboard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {DefHiScoreboardPos}
+ enable DefHiScoreboard indestructible
+ set DefHiScoreboard score InitialDefHiScore
+
+ begin loop
+	if DefHiScore <= InitialDefHiScore
+		DefHighlight = create highlight CHALLENGE_TIGER_CANNON HIGHLIGHT_QUEST at {DefHighlightPos}
+		ALTITUDE of DefHighlight = 15
+	else
+		DefHighlight = create highlight CHALLENGE_TIGER_CANNON HIGHLIGHT_CHALLENGE at {DefHighlightPos}
+		ALTITUDE of DefHighlight = 15
+	end if
+
+	wait until DefHighlight right clicked
+	set DefScoreboard score 0
+	DefAttemptComplete = 0
+	DefQuit = 0
+	GunHeat = 0
+	ShotsFired = 0
+	
+	begin dialogue
+		say "The marauders will try and over-run your position."
+		wait until read
+		say "Blow them away with the barrel cannon."
+		wait until read
+		say "The flag on the left will tell you if the cannon is over-heating."
+		wait until read
+	end dialogue
+
+	run background script AttackOfTheMunchkins
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {CannonPos}
+		set camera focus to {CannonFoc}
+		wait 1 second
+		begin cannon
+			set fade in time 2
+				run background script DefEscapeToQuit
+				run background script GrenadeChecks
+				clear dialogue
+				while DefQuit == 0 and DefAttemptComplete == 0
+/*				
+// Code for Cannon Firing one shot at a time with velocity dependant on power-up duration
+					PowerUp = 0
+					wait until mouse left button down or DefQuit == 1 or DefAttemptComplete > 0
+					if DefQuit == 0 and DefAttemptComplete == 0
+						play sound LH_SAMPLE_BALLISTATURNED
+						while mouse left button down and PowerUp < 1 and DefQuit == 0 and DefAttemptComplete == 0
+							PowerUp+= 0.035
+							set cannon strength PowerUp
+							if PowerUp > 1
+								stop sound LH_SAMPLE_BALLISTATURNED
+							end if
+						end while
+						while mouse left button down
+						end while
+						stop sound LH_SAMPLE_BALLISTATURNED
+
+						Velocity = PowerUp * 250
+						CameraFocus = marker at camera focus
+						CamPos = marker at camera position
+						Barrel = create MOBILE_OBJECT MOBILE_OBJECT_INFO_EGPT_BARREL at {CamPos}
+						ALTITUDE of Barrel = ALTITUDE of CamPos
+						set Barrel velocity heading {CameraFocus} speed Velocity
+						play sound LH_SAMPLE_BARRELFIRED
+						// AUDIO_TODO play sound constant number from 89 to 90 SOUND_BANK_TYPE_SPELL
+						run background script DefenderExplodingBarrel (Barrel)
+					end if
+*/
+					if mouse left button down and get GunTimer time remaining <= 0 and GunHeat < 11
+						CameraFocus = marker at camera focus
+						CamPos = marker at camera position
+						Barrel = create MOBILE_OBJECT MOBILE_OBJECT_INFO_EGPT_BARREL at {CamPos}
+						ALTITUDE of Barrel = ALTITUDE of CamPos
+						set Barrel velocity heading {CameraFocus} speed 1000
+						run background script DefenderExplodingBarrel (Barrel)
+						shake camera at camera position radius 40.0 amplitude 0.1 time 0.2
+						//play sound LH_SAMPLE_BARRELFIRED
+						// AUDIO_TODO play sound constant number from 89 to 90 SOUND_BANK_TYPE_SPELL
+						GunHeat++
+						ShotsFired++
+						GunDelay = 0.1 + (GunHeat/20)
+						set GunTimer time to GunDelay seconds
+					elsif mouse right button down
+						//// TEMP HACK UNTIL SHIELD MIRACLE AVAILABLE
+						say "SHIELD NOT IMPLEMENTED"
+						wait until read or not mouse right button down or DefQuit == 0 and DefAttemptComplete == 0
+/*
+						// Shield activated
+						ShieldActive = 1
+						ShieldEffect = cast SPELL_PHYSICAL_SHIELD spell at {CannonPos} from {CannonPos} radius 50 time -1 curl 0 without reaction
+						wait until not mouse right button down or DefQuit == 0 and DefAttemptComplete == 0
+						ShieldActive = 0
+						delete ShieldEffect
+*/
+					end if
+					//wait GunDelay seconds
+					set cannon strength (GunHeat/10) ///!
+				end while
+				set fade red 0 green 0 blue 0 time 2
+				wait 2 seconds
+		end cannon
+		
+				// if incomplete show position being overrun
+				if DefScore != TotalMarauders
+					set camera position to {1419.583,6.483,1279.496}
+					set camera focus to {1407.052,5.071,1287.906}
+					Ruin = create with angle 0 and scale 4 OBJECT MOBILE_STATIC_INFO_BONFIRE at {CannonPos}
+					RuinSmoke = create special effect SPOT_VISUAL_BONFIRE at {CannonPos} time -1
+					SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of RuinSmoke = 20.0
+					////MarauderOne = create VILLAGER MARAUDER at {1407.587,5.025,1283.006}
+					MarauderOne = create VILLAGER MALE at {1407.587,5.025,1283.006} ////
+					enable MarauderOne indestructible
+					disable MarauderOne hurt by fire
+					set MarauderOne focus to camera position
+					////MarauderOne play ANM_P_DANCE_PISS_TAKE_ loop -1
+					play anim "A_P_DANCE_PISS_TAKE_" on MarauderOne loop -1
+					//// MarauderTwo = create VILLAGER MARAUDER at {1410.868,4.851,1283.272}
+					MarauderTwo = create VILLAGER MALE at {1410.868,4.851,1283.272} ////
+					enable MarauderTwo indestructible
+					disable MarauderTwo hurt by fire
+					set MarauderTwo focus to camera position
+					////MarauderTwo play ANM_P_DANCE_PISS_TAKE_ loop -1
+					play anim "A_P_DANCE_PISS_TAKE_" on MarauderTwo loop -1
+					////MarauderThree = create VILLAGER MARAUDER at {1411.990,5.025,1287.813}
+					MarauderThree = create VILLAGER MALE at {1411.990,5.025,1287.813} ////
+					enable MarauderThree indestructible
+					disable MarauderThree hurt by fire
+					set MarauderThree focus to camera position
+					////MarauderThree play ANM_P_DANCE_PISS_TAKE_ loop -1
+					play anim "A_P_DANCE_PISS_TAKE_" on MarauderThree loop -1
+					////MarauderFour = create VILLAGER MARAUDER at {1406.204,5.025,1293.593}
+					MarauderFour = create VILLAGER MALE at {1406.204,5.025,1293.593}
+					enable MarauderFour indestructible
+					disable MarauderFour hurt by fire
+					set MarauderFour focus to camera position
+					////MarauderFour play ANM_P_DANCE_PISS_TAKE_ loop -1
+					play anim "A_P_DANCE_PISS_TAKE_" on MarauderFour loop -1
+
+					set fade in time 2
+					wait 2 seconds
+					eject evil spirit
+					say "Blast it! We've been over-run bythe vagabonds!"
+					wait until read
+					wait 2 seconds
+					set fade red 0 green 0 blue 0 time 2
+					wait 2 seconds
+					delete MarauderOne
+					delete MarauderTwo
+					delete MarauderThree
+					delete MarauderFour
+					delete Ruin
+					delete RuinSmoke
+				end if
+				
+				// show scoreboards
+				set camera position to {1417.104,5.435,1246.915}
+				set camera focus to {1411.342,3.435,1264.673}
+				if DefScore == TotalMarauders
+					DefHiScore = DefScore
+					set DefHiScoreboard score DefHiScore
+					set fade in time 2
+					wait 2 seconds
+					eject evil spirit
+					make evil spirit point at {DefScoreboard}
+					say "Holy Barrelblasting, Boss! You've only gone and nailed 'em all!"				
+					wait until read				
+				elsif DefScore > InitialDefHiScore
+					DefHiScore = DefScore
+					set DefHiScoreboard score DefHiScore
+					set fade in time 2
+					wait 2 seconds	
+					eject good spirit
+					make good spirit point at {DefScoreboard}
+					say "Congratulations, you have a new personal best."				
+					wait until read
+				else
+					set fade in time 2
+					wait 2 seconds
+					eject evil spirit
+					make evil spirit point at {DefScoreboard}					
+					say "Bah. No new high score."
+					wait until read
+				end if
+				HitPercent = (DefScore/ShotsFired)*100
+				say "Your hit percentage was: $d" with number HitPercent
+				wait until read
+	end cinema
+
+ until KillDefender == 1
+ end loop
+
+
+end script Defender

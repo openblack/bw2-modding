@@ -1,0 +1,19 @@
+run script JontyTest
+
+begin script JontyTest
+
+Testlamb=0
+
+start
+
+Testlamb = create ANIMAL AMBIENTANIMAL_INFO_SHEEP_LAMB at hand position
+
+move Testlamb position to {Testlamb}+{10,0,0}
+		wait 1 seconds
+		override Testlamb anim "a_p_l6paternitybirth_lambs_skipping"// on Lambz[0] loop -1
+
+wait 100 seconds
+
+
+
+end script JontyTest

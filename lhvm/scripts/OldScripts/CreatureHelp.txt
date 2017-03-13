@@ -1,0 +1,113 @@
+
+//------------------------------------------------------------------------------------------------------------------------
+begin help script HelpForCreatureActingOnObject(WhichText)
+	ObjectToActOn = 0
+start
+	MyCreature = get player 1 creature
+	if MyCreature exists
+		ObjectToActOn = get target object for MyCreature
+		if ObjectToActOn exists
+			begin dialogue
+				make good spirit cling across 0.2 down 1.0
+				say get action text for MyCreature
+				wait until 5 seconds
+				wait until read
+				wait until 1 second				
+				say single line constant WhichText
+				wait until read
+				send good spirit home
+			end dialogue
+		else
+			//begin dialogue
+				//sy "ERROR! No ObjectToActOn"
+				//wait until read
+			//end dialogue
+		end if
+	end if
+end script HelpForCreatureActingOnObject
+
+//------------------------------------------------------------------------------------------------------------------------
+begin help script HelpForCreatureActingOnPos(WhichText)
+start
+	MyCreature = get player 1 creature
+	if MyCreature exists
+		begin dialogue
+			make good spirit cling across 0.2 down 1.0
+			say get action text for MyCreature
+			wait until 5 seconds
+			wait until read
+			wait until 1 second
+			say constant WhichText
+			wait until read
+			send good spirit home
+		end dialogue
+	end if
+end script HelpForCreatureActingOnPos
+
+//------------------------------------------------------------------------------------------------------------------------
+begin help script HelpForCreatureJustText(WhichText)
+start
+	MyCreature = get player 1 creature
+	if MyCreature exists
+		begin dialogue
+			say single line constant WhichText
+			wait until read
+		end dialogue
+	end if
+end script HelpForCreatureJustText
+
+//------------------------------------------------------------------------------------------------------------------------
+begin help script HelpForCreatureTwoLines(Text1, Text2)
+start
+	MyCreature = get player 1 creature
+	if MyCreature exists
+		begin dialogue
+			say constant Text1
+			wait until read
+			say constant Text2
+			wait until read
+		end dialogue
+	end if
+end script HelpForCreatureTwoLines
+
+//------------------------------------------------------------------------------------------------------------------------
+begin script HelpForCreatureMoveToNewDevelopmentPhase(Text1, Text2)
+start
+	MyCreature = get player 1 creature
+	if MyCreature exists
+		begin dialogue
+			say constant Text1
+			wait until read
+			say constant Text2
+			wait until read
+		end dialogue
+		disable MyCreature development script
+	end if
+end script HelpForCreatureMoveToNewDevelopmentPhase
+
+//------------------------------------------------------------------------------------------------------------------------
+begin help script HelpForCreatureJustFocusOnCreature(WhichText)
+start
+	MyCreature = get player 1 creature
+	if MyCreature exists
+		begin dialogue
+			say single line constant WhichText
+			wait until read
+		end dialogue
+	end if
+end script HelpForCreatureJustFocusOnCreature
+
+//------------------------------------------------------------------------------------------------------------------------
+begin help script HelpForCreaturePointAtCreature(WhichText)
+start
+	MyCreature = get player 1 creature
+	if MyCreature exists
+		begin dialogue
+			eject good spirit
+			make good spirit look at MyCreature
+			say single line constant WhichText
+			wait until read
+			send good spirit home
+		end dialogue
+	end if
+end script HelpForCreaturePointAtCreature

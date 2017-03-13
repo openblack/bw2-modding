@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land 9 Event 1 (SandStorm) script
+//-----------------------------------------------------------------------------
+run script RunLand9Event1
+
+begin script RunLand9Event1
+
+start
+
+	run script Land9Event1
+
+end script RunLand9Event1

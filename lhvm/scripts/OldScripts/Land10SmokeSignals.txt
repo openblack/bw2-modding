@@ -1,0 +1,706 @@
+///////////////////////////////////////////////////////////////////////////////
+//	SMOKE SIGNALS
+//	~~~~~~~~~~~~~
+//
+//	Description:
+//	There are Greek troops stationed on an island that need to be communicated
+//	with to get them to return and bolster the players numbers. A couple of
+//	people are trying to communicate with them via smoke signals.
+//	They are proving unsuccessful as the fire they are using is too small.
+//	It is upto the player to communicate by copying the villagers but using
+//	a nearby volcano instead of a small fire. There will be 5 different signals
+//	that need to be copied from the villagers. Once completed the soldiers on the
+//	island will return.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			17-03-05			By:	Steve
+//	Update date:		13-05-05			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SS_TRUE						= 1
+define SS_FALSE						= 0
+define SS_number_of_positions		= 8
+define SS_number_of_stages			= 5
+define SS_NUM_SMOKE_DUDES			= 4
+define SS_NUM_REINFORCEMENTS		= 3
+define SS_FEEDBACK_ONTO_NEXT		= 1
+define SS_FEEDBACK_GOT_REPLY		= 2
+define SS_FEEDBACK_DONE_ALL			= 3
+define SS_FEEDBACK_HERE_THEY_COME	= 4
+
+define SS_NUM_STONES_IN_PORTAL		= 4
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SS_matching_values[SS_number_of_stages]
+global SS_ResponseFromArmy[SS_number_of_stages]
+global SS_SmokeDude[SS_NUM_SMOKE_DUDES]
+global SS_SmokeDudeAlive[SS_NUM_SMOKE_DUDES]
+global SS_SmokeDudeSitPos[SS_NUM_SMOKE_DUDES]
+global SS_Reinforcements[SS_NUM_REINFORCEMENTS]
+
+global volc							= 0
+global creation_pos					= 0
+
+global SS_AwayPortal[SS_NUM_STONES_IN_PORTAL]
+global SS_ReturnedPortal[SS_NUM_STONES_IN_PORTAL]
+global SS_AwayPortalPos				= 0
+global SS_ReturnedPortalPos			= 0
+
+global SS_smoke_playing_offset		= 0
+global SS_DCampfire					= 0
+global SS_ACampfire					= 0
+global SS_DCampfirePos				= 0
+global SS_ACampfirePos				= 0
+global SS_House						= 0
+global SS_HousePos					= 0
+global SS_ReinforcementLandingPos	= 0
+global SS_OkToStartSmokeSignals		= SS_FALSE
+global SS_DoneAllSignals			= SS_FALSE
+global SS_GettingResponseFromArmy	= SS_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SS_CreatePortals
+define script SS_SetupSmokeSignals
+define script SS_Intro
+define script SS_LookAfterSecondFire
+define script SS_GetResponseFromArmyFire
+define script SS_SendInTheReinforcements(Pos)
+define script SS_CreateSmokeDude(DudeID, DudePos)
+define script SS_IsSmokeDudeAlive(DudeID)
+define script SS_MoveSmokeDudeToSitPos(DudeID)
+define script SS_CreateReinforcements
+define script SS_GetFeedback(Level)
+define script SS_SendTroopBack(Troop)
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land10SmokeSignals
+
+	effect_array[SS_number_of_positions]
+	v_effect = 0
+	counter = 0 
+	aiming_value = 0
+	Scroll			= 0
+	ReminderTimer	= create timer for 0 seconds
+
+start
+
+	SS_ACampfirePos		= marker at {1101.284,205.808,455.393}			// 2 peeps bonfire pos
+
+	// Create the house where the peeps come out of
+	SS_HousePos			= marker at {SS_ACampfirePos} + {10, 10}
+	SS_House			= create HOUSE ABODE_INFO_GREEK_HOUSE_A at {SS_HousePos}
+	ANGLE of SS_House	= 135
+
+	// Create a scroll for the player to click on
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_10FINAL_CHALLENGENAME_SMOKE_SIGNALS_10" remind "BW2T_SCRIPT_10FINAL_CHALLENGENAME_SMOKE_SIGNALS_20" at {SS_HousePos}
+	ALTITUDE of Scroll = 5
+
+	// TODO: Need to highlight the scroll with the advisors properly
+	begin loop
+		if camera position near {SS_HousePos} radius 100
+			if get ReminderTimer time remaining <= 0
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_REMINDER_10"
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 30 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	// Intro
+	run background script SS_Intro
+	//run script SS_SetupSmokeSignals
+	
+	counter = 0
+	while counter < SS_number_of_positions
+		effect_array[counter]=0
+		counter++
+	end while
+//NEW
+	//run script SS_SendInTheReinforcements(creation_pos)
+
+//END OF AMENDED
+	begin loop
+		// AUDIO_TODO play sound constant 126 SOUND_BANK_TYPE_BW2_MINE
+		if hand position near {creation_pos} radius 3
+			v_effect = create visual effect "gp_s_fire_smoke.ves" strength 0 scale 0 at {creation_pos} time 1.5
+			//strength = 0
+			effect_array[0] = 0.0
+			
+		else
+			v_effect = create visual effect "gp_s_fire_smoke.ves" strength 3 scale 0.5 at {creation_pos} time 1.5		
+			//strength = 1
+			effect_array[0] = 1.0
+			
+		end if
+		//wait 0.2 seconds
+		
+		//Check to see if we have the correct order...
+		counter=0
+		aiming_value=0
+		while (counter < SS_number_of_positions)
+			aiming_value+=effect_array[counter]*(2^counter) //Hope we can do this in the script...?
+			counter++
+		end while
+			
+		// Make sure we only start detecting if the player has been successful at the right time (after intro)
+		if SS_OkToStartSmokeSignals == SS_TRUE
+			//If aiming value is the right one...
+			if aiming_value == SS_matching_values[SS_smoke_playing_offset]
+				run background script SS_GetFeedback(SS_FEEDBACK_GOT_REPLY)
+				
+				// Show the response from the island
+				SS_GettingResponseFromArmy = SS_TRUE
+				run script SS_GetResponseFromArmyFire
+				SS_GettingResponseFromArmy = SS_FALSE
+
+				SS_smoke_playing_offset++
+				if (not SS_smoke_playing_offset < SS_number_of_stages)
+					run background script SS_GetFeedback(SS_FEEDBACK_DONE_ALL)
+					SS_DoneAllSignals = SS_TRUE
+				else
+					run background script SS_GetFeedback(SS_FEEDBACK_ONTO_NEXT)
+				end if
+			end if
+		end if
+			
+		//Move the array up...
+		counter=(SS_number_of_positions-1)
+		while (counter > 0)
+			effect_array[counter]=effect_array[counter-1]
+			counter--
+		end while
+		
+	until SS_DoneAllSignals == SS_TRUE
+	end loop
+	
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	
+	begin cinema
+		wait 2 seconds
+		play anim "A_p_L9smokesignals_pointing_celebrating" on SS_SmokeDude[0] loop -1
+		play anim "A_p_L9smokesignals_pointing_celebrating" on SS_SmokeDude[1] loop -1
+		set camera position to {1089.781,213.782,459.128}
+		set camera focus to {1155.199,163.507,402.625}
+		set fade in time 2
+		wait 2 seconds
+		move camera position to {1089.780,224.310,459.128} time 15
+		move camera focus to {1138.022,232.457,371.912} time 15
+		set camera lens 40 time 15
+		wait 7 seconds
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_160"
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_170"
+		wait until read
+		
+		set camera position to {1112.929,285.339,233.679}
+		set camera focus to {1146.083,236.221,314.229}
+		set camera lens 70
+		move camera position to {1112.929,285.339,233.679} time 12
+		move camera focus to {1140.083,236.221,318.229} time 12
+		eject evil spirit
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_200"
+		wait until read
+		send evil spirit home
+	end cinema
+	
+	
+	// Wrap up the smoke signals script (send over the reinforcements)
+	if SS_DoneAllSignals == SS_TRUE
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_10_SMOKESIGNALS
+		run script SS_SendInTheReinforcements(creation_pos)
+	end if
+
+end script Land10SmokeSignals
+
+
+//-----------------------------------------------------------------------------
+//	Create the portals
+//-----------------------------------------------------------------------------
+begin script SS_CreatePortals
+
+	Pos					= 0
+	Ctr					= 0
+	INC					= 50
+	DIST				= 10
+	ANGLE				= 0
+
+start
+
+	SS_AwayPortalPos		= marker at {1155.770,242.610,314.431}
+	SS_ReturnedPortalPos	= marker at {1133.204,205.349,436.165}
+
+	// Create Away portal
+	Ctr = 0
+	force while Ctr < SS_NUM_STONES_IN_PORTAL
+		Pos = marker at get target from {0.000,0.000,0.000} to {SS_AwayPortalPos} distance DIST angle ANGLE
+		SS_AwayPortal[Ctr] = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {Pos}		
+		ANGLE += INC
+		Ctr++
+	end while
+
+	ANGLE = 215
+
+	// Create Return portal
+	Ctr = 0
+	force while Ctr < SS_NUM_STONES_IN_PORTAL
+		Pos = marker at get target from {0.000,0.000,0.000} to {SS_ReturnedPortalPos} distance DIST angle ANGLE
+		SS_ReturnedPortal[Ctr] = create ROCK_OBJECT MOBILE_STATIC_INFO_MONOLITH_HORIZONTAL at {Pos}		
+		ANGLE += INC
+		Ctr++
+	end while
+
+end script SS_CreatePortals
+
+
+//-----------------------------------------------------------------------------
+//	Setup the pattern of smoke signals
+//-----------------------------------------------------------------------------
+begin script SS_SetupSmokeSignals
+start
+
+	// Setup the 2 portals
+	run script SS_CreatePortals
+
+	// Setup the smoke patterns to copy
+	// The figure arrived at is calculated from the bit pattern of 1 byte
+	// i.e. 11011011 = 128 + 64 + 16 + 8 + 2 + 1 = 219
+	// This translates to a pattern of 2 clouds, 1 space, 2 clouds, 1 space, then finally 2 clouds
+	SS_smoke_playing_offset = 0
+	SS_matching_values[0] = 160				// 10100000
+	SS_matching_values[1] = 216				// 11011000
+	SS_matching_values[2] = 212				// 11010100
+	SS_matching_values[3] = 221				// 11011101
+	SS_matching_values[4] = 219				// 11011011
+
+	// Setup the responses from the army on the island
+	SS_ResponseFromArmy[0] = 180			// 10110100
+	SS_ResponseFromArmy[1] = 232			// 11101000
+	SS_ResponseFromArmy[2] = 121			// 01111001
+	SS_ResponseFromArmy[3] = 195			// 11000011
+	SS_ResponseFromArmy[4] = 255			// 11111111
+
+	// Create the signalling fires
+
+	SS_DCampfirePos		= marker at {1125.101,244.226,286.959}			// Reinforcement bonfire pos
+	SS_ACampfirePos		= marker at {1090.908, 202.954, 455.382}			// 2 peeps bonfire pos
+	SS_DCampfire		= create OBJECT MOBILE_STATIC_INFO_BONFIRE at {SS_DCampfirePos}
+	SS_ACampfire		= create OBJECT MOBILE_STATIC_INFO_BONFIRE at {SS_ACampfirePos}
+	enable SS_DCampfire indestructible
+	disable SS_DCampfire pickup
+	disable SS_DCampfire moveable
+	enable SS_ACampfire indestructible
+	disable SS_ACampfire pickup
+	disable SS_ACampfire moveable
+
+	// Setup the actual volcano pos
+	creation_pos = marker at {1102.777, 205.539, 477.402}
+	volc = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {creation_pos}
+
+	// Create the peeps who send the smoke signals and check to see if they are alive or not
+	SS_SmokeDudeSitPos[0] = marker at {1088.595, 202.776, 456.409}
+	SS_SmokeDudeSitPos[1] = marker at {1091.119, 202.893, 457.068}
+	SS_SmokeDudeSitPos[2] = marker at {SS_DCampfirePos} - {2, 2}
+	SS_SmokeDudeSitPos[3] = marker at {SS_DCampfirePos} - {0, 2}
+
+	// Kick off the smoke signals to copy (the peeps using the fire)
+	run background script SS_LookAfterSecondFire
+
+	// Setup the army reinforcements
+	SS_ReinforcementLandingPos = marker at {SS_DCampfirePos} + {10, 10}
+	run background script SS_CreateReinforcements
+	
+	// Create the 2 signallers with the reinforcements
+	run script SS_CreateSmokeDude(2, SS_SmokeDudeSitPos[2])
+	run script SS_CreateSmokeDude(3, SS_SmokeDudeSitPos[3])
+	run background script SS_IsSmokeDudeAlive(2)
+	run background script SS_IsSmokeDudeAlive(3)
+
+end script SS_SetupSmokeSignals
+
+
+//-----------------------------------------------------------------------------
+//	Get the intro to the challenge
+//-----------------------------------------------------------------------------
+begin script SS_Intro
+
+start
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	// Setup the patterns of smoke signals
+	run script SS_SetupSmokeSignals
+	begin cinema
+		wait 2 seconds
+		set camera lens 80
+		set camera position to {1114.144,205.549,460.475}
+		set camera focus to {1042.074,187.175,527.321}
+		move camera position to {1114.144,205.549,460.475} time 8
+		move camera focus to {1016.378,191.039,475.658} time 8
+		set camera lens 55 time 16
+		run script SS_CreateSmokeDude(0, SS_HousePos)
+		run script SS_CreateSmokeDude(1, SS_HousePos)
+		run background script SS_MoveSmokeDudeToSitPos(0)
+		wait 2.5 seconds
+		run background script SS_MoveSmokeDudeToSitPos(1)
+		set fade in time 3
+		wait 3 seconds
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_10"
+		wait until read
+		
+		set camera lens 20
+		set camera position to {1087.690, 204, 455.683}
+		set camera focus to {1107.896, 203.881, 462.835}
+		set camera lens 50 time 10
+		move camera position to {1084.690, 204, 454.683} time 8
+		move camera focus to {1112.171, 204.390, 458.174} time 8
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_20"
+		wait until read
+
+		SS_OkToStartSmokeSignals = SS_TRUE
+
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_30"
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_40"
+		wait until read
+
+		//move camera position to {1083.118,211.007,458.875} time 8
+		//move camera focus to {1112.515,206.904,440.076} time 8
+		set camera position to {1085.104, 205.415, 462.531}
+		set camera focus to {1151.496,190.783,400.539}
+		set camera lens 50
+		move camera position to {1085.004, 204.715, 462.431} time 15
+		move camera focus to {1147.191,210.308,396.610} time 15
+		
+//		move camera position to {SS_HousePos} + {-50.500,3.500,-2.500} time 8
+//		move camera focus to {SS_DCampfirePos} time 8
+
+		eject good spirit
+		eject evil spirit
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_50"
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_INTRO_60"
+		wait until read
+	end cinema
+
+	// Keep track of whether the dudes are alive or not
+	run background script SS_IsSmokeDudeAlive(0)
+	run background script SS_IsSmokeDudeAlive(1)
+
+end script SS_Intro
+
+
+//-----------------------------------------------------------------------------
+//	Create the second fire (the one you have to copy)
+//-----------------------------------------------------------------------------
+begin script SS_LookAfterSecondFire
+
+	counter				= 0
+	v_effect			= 0
+	power_value			= 0
+	bitwise_and			= 0
+	s_value				= 0
+
+start
+
+	wait until SS_OkToStartSmokeSignals == SS_TRUE
+
+	begin loop
+		counter = SS_number_of_positions - 1
+		s_value = SS_matching_values[SS_smoke_playing_offset] // save it at the start so we don't change mid way
+		while (not (counter < 0))
+			power_value=2^counter
+			bitwise_and= s_value ¬& power_value
+			
+			if (bitwise_and != 0)
+				v_effect = create visual effect "gp_s_fire_smoke.ves" strength 1 scale 0.2 at {SS_ACampfirePos} time 1.5
+			else
+				//do nothing
+			end if
+			wait 1.5 seconds
+			counter--
+		until SS_GettingResponseFromArmy == SS_TRUE			// If we're in mid signal when a response is given, stop
+		end while
+		
+		wait 10 seconds
+		wait until SS_GettingResponseFromArmy == SS_FALSE
+	until SS_DoneAllSignals == SS_TRUE
+	end loop
+
+end script SS_LookAfterSecondFire
+
+
+//-----------------------------------------------------------------------------
+//	Give the reponse for each level completed from the reinforcements on the island
+//-----------------------------------------------------------------------------
+begin script SS_GetResponseFromArmyFire
+
+	counter = 0
+	v_effect = 0
+	power_value=0
+	bitwise_and = 0
+	s_value = 0
+
+start
+
+	counter = SS_number_of_positions - 1
+	s_value = SS_ResponseFromArmy[SS_smoke_playing_offset] // save it at the start so we don't change mid way
+	while (not (counter < 0))
+		power_value=2^counter
+		bitwise_and= s_value ¬& power_value
+		
+		if (bitwise_and != 0)
+			v_effect = create visual effect "gp_s_fire_smoke.ves" strength 3 scale 0.5 at {SS_DCampfirePos} time 1.5
+		else
+			//do nothing
+		end if
+		wait 2 seconds
+		counter--
+	end while
+		
+end script SS_GetResponseFromArmyFire
+
+
+//-----------------------------------------------------------------------------
+//	Bring the troops back from their island
+//-----------------------------------------------------------------------------
+begin script SS_SendInTheReinforcements(Pos)
+
+	Counter		= 0
+
+start
+
+	run background script SS_GetFeedback(SS_FEEDBACK_HERE_THEY_COME)
+
+	// Get rid of the signallers
+	if SS_SmokeDude[2] exists
+		delete SS_SmokeDude[2]
+	end if
+
+	if SS_SmokeDude[3] exists
+		delete SS_SmokeDude[3]
+	end if
+
+	// Send the reinforcements across
+	force while Counter < SS_NUM_REINFORCEMENTS
+		if SS_Reinforcements[Counter] exists
+			run background script SS_SendTroopBack(Counter)
+			wait 5 seconds
+		end if
+		Counter++
+	end while
+
+end script SS_SendInTheReinforcements
+
+
+//-----------------------------------------------------------------------------
+//	Move the troop back
+//-----------------------------------------------------------------------------
+begin script SS_SendTroopBack(Troop)
+
+	FinalPosX		= 0
+	FinalPosZ		= 0
+	TeleportFX		= 0
+	Town			= 0
+
+start
+
+	// Make sure we've got the town
+	if L10GreekTown not exists
+		Town = get town with id 0 
+	else
+		Town = L10GreekTown
+	end if
+
+	// Move the troop to the portal
+	if SS_Reinforcements[Troop] exists
+		//NEW TEST DATA
+		//say "Troops returning"
+		//END OF TEST DATA
+		clear SS_Reinforcements[Troop] action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {SS_AwayPortalPos} to SS_Reinforcements[Troop] action queue
+		wait until SS_Reinforcements[Troop] not exists or {SS_Reinforcements[Troop]} near {SS_AwayPortalPos} radius 5
+
+		if SS_Reinforcements[Troop] exists
+			// TEMP: Need to make this look nicer
+			wait 1 second
+			TeleportFX = create visual effect VISUAL_EFFECT_SCRIPT_TARGET on SS_AwayPortalPos time 2
+			SCALE of TeleportFX = 0.7
+			//create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on SS_AwayPortalPos time 2
+			set TeleportFX colour red 0 green 0 blue 255
+			delete SS_Reinforcements[Troop]
+			wait 1 second
+
+			TeleportFX = create visual effect VISUAL_EFFECT_SCRIPT_TARGET on SS_ReturnedPortalPos time 2
+			SCALE of TeleportFX = 0.7
+			//create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on SS_ReturnedPortalPos time 2
+			set TeleportFX colour red 0 green 0 blue 255
+			wait 1 second
+
+			// Recreate the platoon at the bottom portal position
+			if Troop == SS_NUM_REINFORCEMENTS - 1
+				// Ranged
+				SS_Reinforcements[Troop] = create platoon PLATOON_INFO_GREEK_RANGED_1 at {SS_ReturnedPortalPos} with 10 men and 0 women
+			else
+				// Melee
+				SS_Reinforcements[Troop] = create platoon PLATOON_INFO_GREEK_MELEE_1 at {SS_ReturnedPortalPos} with 10 men and 0 women
+			end if
+			PLAYER of SS_Reinforcements[Troop] = 0
+
+			// Move the troop back to the players town
+			FinalPosX = number from -30 to 30
+			FinalPosZ = number from -30 to 30
+			clear SS_Reinforcements[Troop] action queue
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {Town} + {FinalPosX, FinalPosZ} to SS_Reinforcements[Troop] action queue
+			wait until SS_Reinforcements[Troop] not exists or {SS_Reinforcements[Troop]} near {Town} + {FinalPosX, FinalPosZ} radius 5
+
+			if SS_Reinforcements[Troop] exists
+				clear SS_Reinforcements[Troop] action queue
+				attach SS_Reinforcements[Troop] to Town
+				release SS_Reinforcements[Troop]
+			end if
+		end if
+	end if
+
+end script SS_SendTroopBack
+
+
+//-----------------------------------------------------------------------------
+//	Create one of the peeps sending the smoke signals
+//-----------------------------------------------------------------------------
+begin script SS_CreateSmokeDude(DudeID, DudePos)
+start
+
+	if SS_SmokeDude[DudeID] not exists
+		SS_SmokeDude[DudeID] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {DudePos}
+		SS_SmokeDudeAlive[DudeID] = SS_TRUE
+	end if
+
+end script SS_CreateSmokeDude
+
+
+//-----------------------------------------------------------------------------
+//	Flags whether the people doing the smoke signals are alive or not
+//-----------------------------------------------------------------------------
+begin script SS_IsSmokeDudeAlive(DudeID)
+start
+
+	while SS_DoneAllSignals == SS_FALSE
+		if SS_SmokeDude[DudeID] exists and HEALTH of SS_SmokeDude[DudeID] >= 0
+			SS_SmokeDudeAlive[DudeID] = SS_TRUE
+		else
+			SS_SmokeDudeAlive[DudeID] = SS_FALSE
+
+			// Recreate the dude if he is dead but the signals are still being sent
+			if SS_DoneAllSignals == SS_FALSE
+				// Recreate the players signallers properly, but allow the armies to be created when not on screen
+				if DudeID < 2
+					run script SS_CreateSmokeDude(DudeID, SS_HousePos)
+					run background script SS_MoveSmokeDudeToSitPos(DudeID)
+				else
+				wait until not {SS_SmokeDudeSitPos[DudeID]} viewed
+					run script SS_CreateSmokeDude(DudeID, SS_SmokeDudeSitPos[DudeID])
+					set SS_SmokeDude[DudeID] focus to {SS_ACampfirePos}
+				end if
+			end if
+		end if
+	end while
+
+end script SS_IsSmokeDudeAlive
+
+
+//-----------------------------------------------------------------------------
+//	Move the smoke dude to his sitting pos
+//-----------------------------------------------------------------------------
+begin script SS_MoveSmokeDudeToSitPos(DudeID)
+start
+
+	if SS_SmokeDudeAlive[DudeID] == SS_TRUE
+		if not {SS_SmokeDude[DudeID]} near {SS_SmokeDudeSitPos[DudeID]} radius 1
+			move SS_SmokeDude[DudeID] position to {SS_SmokeDudeSitPos[DudeID]}
+			wait until {SS_SmokeDude[DudeID]} near {SS_SmokeDudeSitPos[DudeID]} radius 1 or SS_SmokeDudeAlive[DudeID] == SS_FALSE
+
+			// Make the dude sit down
+			if SS_SmokeDudeAlive[DudeID] == SS_TRUE
+				set SS_SmokeDude[DudeID] focus to {SS_DCampfirePos}
+				play anim "a_p_sitting_down2_sitting_into" on SS_SmokeDude[DudeID] 
+				wait until SS_SmokeDude[DudeID] played
+				play anim "a_p_sitting_down2_sitting" on SS_SmokeDude[DudeID] loop -1
+			end if
+		end if
+	end if
+
+end script SS_MoveSmokeDudeToSitPos
+
+
+//-----------------------------------------------------------------------------
+//	Place the reinforcements on the island
+//-----------------------------------------------------------------------------
+begin script SS_CreateReinforcements
+start
+
+	// New way
+	SS_Reinforcements[0] = create platoon PLATOON_INFO_GREEK_MELEE_1 at {SS_DCampfirePos} + {15, 10} with 10 men and 0 women
+	SS_Reinforcements[1] = create platoon PLATOON_INFO_GREEK_MELEE_1 at {SS_DCampfirePos} + {25, 10} with 10 men and 0 women
+	SS_Reinforcements[2] = create platoon PLATOON_INFO_GREEK_RANGED_1 at {SS_DCampfirePos} + {35, 10} with 10 men and 0 women
+	PLAYER of SS_Reinforcements[0] = 0
+	PLAYER of SS_Reinforcements[1] = 0
+	PLAYER of SS_Reinforcements[2] = 0
+
+end script SS_CreateReinforcements
+
+
+
+//-----------------------------------------------------------------------------
+//	Get some feedback on what's happening
+//-----------------------------------------------------------------------------
+begin script SS_GetFeedback(Level)
+start
+
+	// Try and wait for the dialogue to be ready before continuing
+	wait until dialogue ready or 3 seconds
+	
+	// Get the relevant reply
+	begin dialogue
+		if Level == SS_FEEDBACK_ONTO_NEXT
+			say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_STAGECOMPLETE_10"
+		elsif Level == SS_FEEDBACK_GOT_REPLY
+			say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_STAGECOMPLETE_20"
+		elsif Level == SS_FEEDBACK_DONE_ALL
+			say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_STAGECOMPLETE_30"
+		else
+			say "BW2T_SCRIPT_10FINAL_SMOKESIGNALS_STAGECOMPLETE_40"
+		end if
+		
+		wait until read
+	end dialogue
+
+end script SS_GetFeedback
+
+
+
+//-----------------------------------------------------------------------------
+//	End of Script
+//-----------------------------------------------------------------------------

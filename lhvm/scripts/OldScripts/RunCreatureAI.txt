@@ -1,0 +1,18 @@
+run script RunCreatureAI
+
+begin script RunCreatureAI
+
+start
+
+	begin camera
+//		set camera position to {1349.749,87.378,1481.939}
+//		set camera focus to {1377.345,54.518,1431.053}
+
+		set camera position to {1690.693,134.544,1086.636}
+		set camera focus to {1671.451,106.793,1124.677}
+
+	end camera
+	
+	run script L2NCAI
+
+end script RunCreatureAI

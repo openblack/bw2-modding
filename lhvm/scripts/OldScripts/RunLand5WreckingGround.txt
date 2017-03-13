@@ -1,0 +1,12 @@
+run script RunLand5WreckingGround
+
+begin script RunLand5WreckingGround
+
+start
+
+	if L5GreekTown not exists
+		run background script Land5Globals
+	end if
+	run script Land5WreckingGround
+
+end script RunLand5WreckingGround

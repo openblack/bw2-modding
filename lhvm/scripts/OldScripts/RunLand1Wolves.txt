@@ -1,0 +1,8 @@
+run script RunLand1Wolves
+
+begin script RunLand1Wolves
+start
+	
+	run script Land1Wolves
+
+end script RunLand1Wolves

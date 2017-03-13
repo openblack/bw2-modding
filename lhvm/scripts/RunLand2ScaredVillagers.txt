@@ -1,0 +1,6 @@
+run script RunLand2ScaredVillagers
+
+begin script RunLand2ScaredVillagers
+start
+	run script Land2ScaredVillagers(marker at hand position, marker at hand position + {0, 0, 100}, 20, 0.6, 7)
+end script RunLand2ScaredVillagers

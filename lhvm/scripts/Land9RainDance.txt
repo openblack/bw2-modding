@@ -1,0 +1,795 @@
+///////////////////////////////////////////////////////////////////////////////
+//	RAIN DANCE
+//	~~~~~~~~~~
+//
+//	Description???
+//
+//	Rewards:			Unknown
+//
+//	Start date:			15-03-05			By:	Steve
+//	Update date:		16-03-05			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define RD_TRUE						= 1
+define RD_FALSE						= 0
+define RD_NUM_LEVELS				= 4
+define RD_NUM_DRUMS					= 6
+define RD_MAX_HITS					= 6
+
+// TEMP:
+define RD_TEMP_NUM_ROCKS			= 10
+
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global RD_Drummer					= 0
+global RD_Drum[RD_NUM_DRUMS]
+global RD_CurrentLevel				= 1
+global RD_LevelSuccess				= RD_FALSE
+
+global RD_DrummerSequence[RD_MAX_HITS]
+global RD_DrummerTiming[RD_MAX_HITS]
+global RD_PlayerSequence[RD_MAX_HITS]
+global RD_PlayerTiming[RD_MAX_HITS]
+
+// TEMP:
+global RD_TEMP_ROCK[RD_TEMP_NUM_ROCKS]
+global RD_TEMP_BEAM[RD_TEMP_NUM_ROCKS]
+global RD_TEMP_SPLASH[RD_TEMP_NUM_ROCKS]
+
+global DrumsFailed = 0
+global FailedOnce  = 0
+global PlayOnce	   = 0
+global StopLava	   = RD_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script RD_Setup
+define script RD_Intro
+define script RD_PlayGame(Level)
+define script RD_GiveFeedback(Drum, Height)
+define script RD_PlayDrumSound(Drum)
+define script RD_Outro
+define script RD_DrumFailure
+define script RD_PlayDrums
+define script LookAfterLavaThrows(lava_pos)
+define script MakeRockLookOnFire(Rock)
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land9RainDance
+
+VolcanoSmoke = 0
+SmokePos = marker at {618.041, 161.360, 372.157}
+//HousePos = marker at {524.000, 94.843, 427.625}
+//HouseFoc = marker at {570.086, 93.943, 468.089}
+
+
+Puddle[5]
+Rock = 0
+Storm = 0
+Smoke = 0
+DrummerHouse = 0
+HousePos = marker at {522.130, 94.908, 423.957}
+HouseFoc = marker at {570.086, 93.943, 468.089}
+House = 0
+
+start
+  House = create HOUSE ABODE_INFO_AZTEC_HOUSE_A at {HousePos}
+  ANGLE of House = 270 
+  set House focus to {528.871, 94.841, 426.192}
+  disable House set on fire	
+
+set lava puddle at {558.721, 97.211, 452.214} radius 10 temperature 1
+set lava puddle at {553.950, 102.881, 410.785} radius 10 temperature 1
+set lava puddle at {506.985, 93.983, 389.429} radius 10 temperature 1
+set lava puddle at {480.655, 95.824, 381.126} radius 10 temperature 1
+set lava puddle at {487.400, 97.929, 423.801} radius 10 temperature 1
+
+run background script LookAfterLavaThrows(marker at {558.721, 97.211, 452.214})
+run background script LookAfterLavaThrows(marker at {553.950, 102.881, 410.785})
+run background script LookAfterLavaThrows(marker at {506.985, 93.983, 389.429})
+run background script LookAfterLavaThrows(marker at {480.655, 95.824, 381.126})
+run background script LookAfterLavaThrows(marker at {487.400, 97.929, 423.801})
+
+	
+	// Setup the script objects
+	run script RD_Setup
+
+	/////
+	
+	//run script RD_Outro
+	//wait 40000 seconds
+	
+	// Get the instructions
+	run script RD_Intro
+
+	// Play the game
+	run script RD_PlayDrums
+
+end script Land9RainDance
+
+// ---------------------
+
+begin script RD_PlayDrums
+
+DrumFail = 0
+RandomNumber = 0
+
+start
+
+	// so we don't hear the Aztec general yapping over the game
+	disable dialogue manager
+
+	while RD_CurrentLevel <= RD_NUM_LEVELS and DrumsFailed == 0
+		
+		run script RD_PlayGame(RD_CurrentLevel)
+		
+		if RD_LevelSuccess == RD_TRUE			
+			if RD_CurrentLevel == RD_NUM_LEVELS
+				begin dialogue
+				//RainMan: "the beat was strong baby! You rock!"
+					say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_260"
+					wait until read
+				end dialogue
+			else
+			RandomNumber = number from 1 to 2
+				begin dialogue
+					if RandomNumber == 1
+						//RainMan: "that’s great man. Really swinging. Lets do the next part."
+						say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_220"
+						wait until read
+					elsif RandomNumber == 2
+						//RainMan: "Groovy man! That beat was RUDE!"
+						say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_240"
+						wait until read
+					end if
+				end dialogue
+			end if
+			RD_CurrentLevel++
+		else
+		RandomNumber = number from 1 to 2
+			begin dialogue
+				if RandomNumber == 1
+					//RainMan: "That sounded rubbish, man. No groove!"
+					say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_160"
+					wait until read
+				elsif RandomNumber == 2
+					//RainMan: "that sounded nasty!"
+					say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_180"
+					wait until read
+				end if
+				DrumFail++
+			end dialogue
+		end if
+
+		if DrumFail == 3
+			DrumsFailed = 1
+			run script RD_DrumFailure
+		end if
+	end while
+	
+	if DrumsFailed == 0
+		// Get the storm that quenches the lava
+		LC9_RainDanceComplete = 1
+		run script RD_Outro
+	end if
+
+end script RD_PlayDrums
+
+
+
+//-----------------------------------------------------------------------------
+//	Setup the game objects
+//-----------------------------------------------------------------------------
+begin script RD_Setup
+
+	RD_DrumVillager = 0
+	DrumPos[RD_NUM_DRUMS]
+	DrummerCreatePos	= marker at {654.747,122.406,402.049}
+	RD_DrumVillagerPos = 0
+
+	Ctr					= 0
+	ANGLE				= 0
+	
+	StartX				= 0
+	StartZ				= 0
+	EndX				= 0
+	EndZ				= 0
+	DistX				= 0
+	DistZ				= 0
+	ActualX				= 0
+	ActualZ				= 0
+	NumLavaPools		= RD_TEMP_NUM_ROCKS
+
+start
+
+	// Create the drummer
+	RD_Drummer = create VILLAGER OIL_BARON at {DrummerCreatePos}
+	
+	move RD_Drummer position to {DrummerCreatePos}
+	disable RD_Drummer reactable
+	enable RD_Drummer indestructible
+	disable RD_Drummer set on fire	
+	disable RD_Drummer pickup
+	disable RD_Drummer moveable
+	
+	RD_DrumVillagerPos = marker at {654.591, 120.402, 402.517} //marker at get world position from RD_Drummer to {0.300, 0.000, -0.800}
+	RD_DrumVillager = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {RD_DrumVillagerPos}
+	override mesh for RD_DrumVillager with "..\models\m_drumvillager"
+	disable RD_Drummer pickup
+	disable RD_DrumVillager pickup
+	enable RD_Drummer indestructible
+	enable RD_DrumVillager indestructible
+	
+	// Create the drums
+	while Ctr < RD_NUM_DRUMS
+		DrumPos[Ctr] = marker at get target from {0.000,0.000,0.000} to {RD_Drummer} distance 10 angle ANGLE
+		RD_Drum[Ctr] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {DrumPos[Ctr]}
+		override mesh for RD_Drum[Ctr] with "..\models\m_drum"
+
+		enable RD_Drum[Ctr] indestructible
+		disable RD_Drum[Ctr] pickup
+		disable RD_Drum[Ctr] moveable
+		ANGLE += 180 / RD_NUM_DRUMS
+		SCALE of RD_Drum[Ctr] = 0.5
+		Ctr++
+	end while
+	
+	
+end script RD_Setup
+
+
+
+//-----------------------------------------------------------------------------
+//	Run the intro
+//-----------------------------------------------------------------------------
+begin script RD_Intro
+
+	Scroll				= 0
+	ReminderTimer		= create timer for 0 seconds
+	CameraPos = marker at {649.360, 129.806, 418.322}
+	CameraFoc = marker at {674.281, 76.195, 337.670}
+
+	Rock = 0
+	House =0 
+	CSMixer = 0
+start
+	
+	
+	
+	// Create a scroll for the player to click on
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_MISC_10" remind "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_REMINDER" at {RD_Drummer}
+	ALTITUDE of Scroll = 5
+
+	wait until Scroll right clicked
+	delete Scroll
+	store camera details
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_MISC_10" amount 1 description "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_9_RAINDANCE
+	L9ShowingRainDanceObjective = 1
+
+	// Get the instructions from the drummer
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	
+	CSMixer = create mixer
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.5
+	
+	begin cinema
+		wait 2 seconds
+		if FailedOnce == 0
+			start music "volcano_music"
+			set RD_Drummer position to {522.130, 94.908, 423.957}
+			move RD_Drummer position to {522.130, 94.908, 423.957}
+			
+			
+			
+		
+
+			enable RD_Drummer indestructible
+			disable RD_Drummer set on fire	
+			disable RD_Drummer pickup
+			disable RD_Drummer moveable
+			
+			
+			set camera position to {476.135, 162.970, 504.169}
+			set camera focus to {517.145, 110.275, 429.728}
+			move camera position to {478.561, 159.853, 499.767} time 10
+			move camera focus to {519.570, 107.158, 425.325} time 10
+			set fade in time 2
+			wait 3 seconds
+			
+			shake camera strength 5.0	
+			set camera position to {484.239, 114.226, 440.204}
+			set camera focus to {563.902, 69.755, 399.261}
+			set camera lens 60
+			move camera position to {484.239, 114.226, 440.204} time 8
+			move camera focus to {566.923, 69.905, 405.576} time 8
+			wait 1.7 seconds
+			move RD_Drummer position to {517.673, 94.712, 440.315}
+			disable RD_Drummer reactable
+			SPEED of RD_Drummer = 0.4
+			wait 1.8 seconds
+			shake camera strength 6.0	
+			set camera position to {517.166, 95.709, 438.330}
+			set camera focus to {557.315, 91.741, 346.829}
+			//wait until {RD_Drummer} at {518.543, 94.714, 436.364}
+			//play anim "a_p_l8chickenwolfgrain_framer_look_confused" on RD_Drummer loop 1
+			
+			//wait 3 seconds
+			//shake camera strength 7.0	
+			//set camera position to {518.150, 95.995, 437.398}
+			//set camera focus to {582.163, 105.480, 361.159}
+			//wait 2.3 seconds
+			//say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_340"
+			//wait 3.6 seconds
+			//shake camera strength 6.0	
+			//set camera position to {517.480, 95.753, 438.602}
+			//set camera focus to {553.778, 92.170, 345.490}
+			//wait until RD_Drummer played 
+			//move RD_Drummer position to {519.163, 94.701, 438.138}
+			wait 2.2 seconds
+			set RD_Drummer position to {537.549, 94.662, 459.308}
+			move RD_Drummer position to {576.191, 95.925, 477.741}
+			shake camera strength 5.0	
+			set camera position to {556.632, 109.098, 485.068}
+			set camera focus to {565.775, 63.990, 396.289}
+			move camera position to {556.632, 109.098, 485.068} time 12
+			move camera focus to {559.604, 71.886, 392.298} time 12
+			wait 9 seconds
+			set RD_Drummer position to {628.103, 120.651, 403.093}
+			move RD_Drummer position to {650.364, 120.163, 403.878}
+			stop camera shake
+			set camera position to {644.244, 122.567, 406.275}
+			set camera focus to {565.216, 101.878, 348.596}
+			set camera lens 70
+			move camera position to {645.907, 133.738, 423.486} time 23
+			move camera focus to {675.027, 78.637, 345.282} time 23
+			
+			//move camera position to {650.196, 127.184, 419.871} time 23
+			//move camera focus to {671.345, 88.906, 329.942}	time 23
+			wait 2 seconds
+			say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_100"
+			wait 5 seconds
+			set RD_Drummer position to {654.747,122.406,402.049}
+			move RD_Drummer position to {654.747,122.406,402.049}
+			set RD_Drummer focus to {653.540, 120.019, 404.547}
+			play anim "a_p_L9raindancedrum_drumming_loop" on RD_Drummer loop -1
+			
+			wait until read
+			eject good spirit
+			make good spirit play across 0.5 down 0.5 HELPDUDE_KM_09FINAL_CHALLENGE_RAINDANCE_G_400
+			//say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_400"
+			wait until read
+			
+			
+			set RD_Drummer focus to {RD_Drum[RD_NUM_DRUMS / 2]}
+			//	restore camera details
+			//move camera position to {CameraPos} time 3
+			//move camera focus to {CameraFoc} time 3
+			wait 1 seconds
+		else
+			wait 2 seconds
+			set camera position to {645.907, 133.738, 423.486} 
+			set camera focus to {675.027, 78.637, 345.282} 
+			
+			set RD_Drummer position to {654.747,122.406,402.049}
+			move RD_Drummer position to {654.747,122.406,402.049}
+			set RD_Drummer focus to {653.540, 120.019, 404.547}
+			
+			set RD_Drummer focus to {RD_Drum[RD_NUM_DRUMS / 2]}
+			
+			set fade in time 2
+			wait 3 seconds
+			
+			say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_320"
+ 			wait until read
+ 			
+ 			//Create the house off screen
+ 			House = create HOUSE ABODE_INFO_AZTEC_HOUSE_A at {522.130, 94.908, 423.957}
+ 			
+			
+ 			
+			
+			set House focus to {528.871, 94.841, 426.192}		
+ 			
+		end if 
+		stop music with fadetime 1
+	end cinema
+	wait 1 seconds
+	set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+	
+end script RD_Intro
+
+//-----------------------------------------------------------------------------
+//	Play the next level
+//-----------------------------------------------------------------------------
+begin script NowItsYourTurn
+start
+	begin dialogue
+		say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_140"
+		wait until read
+	end dialogue
+end script NowItsYourTurn
+
+begin script RD_PlayGame(Level)
+
+	SplashFX		= 0
+	HitDrum			= 0
+	DrumHeight		= 0
+	NumHits			= 0
+	RequiredHits	= 0
+	Delay			= 0
+	Timing			= create timer for 0 seconds
+	Tolerance		= 10.5
+	
+start
+
+	DrumHeight		= HEIGHT of RD_Drum[0]
+	
+	if Level == 1
+		RequiredHits = 3
+	elsif Level == 2
+		RequiredHits = 4
+	elsif Level == 3
+		RequiredHits = 5
+	else
+		RequiredHits = RD_MAX_HITS
+	end if
+
+		play anim "a_p_L9raindancedrum_drumming_into" on RD_Drummer
+		wait until RD_Drummer played
+		play anim "a_p_L9raindancedrum_drumming_loop" on RD_Drummer loop -1
+	while NumHits < RequiredHits
+		// Get a random drum to hit and hit it
+		HitDrum = RD_Drum[number from 0 to (RD_NUM_DRUMS - 1)]
+	//	SplashFX = create visual effect "gp_s_gapuff.ves" strength 3 scale 0.5 at {HitDrum} + {0.000,0.000,0.000} time 0.2
+		//SplashFX = create visual effect VISUAL_EFFECT_DRUM_BEAT on HitDrum time 0.2
+		SplashFX = create visual effect "gp_s_drum_impact.ves" strength 3 scale 0.5 at {HitDrum} + {0.000,3.000,0.000} time 0.2
+	
+		set SplashFX colour red 255 green 0 blue 0
+		run background script RD_PlayDrumSound(HitDrum)
+		
+		wait 0.5 seconds
+		
+		// Store the drummers sequence and timing
+		RD_DrummerSequence[NumHits] = HitDrum
+		
+		if NumHits == 0
+			RD_DrummerTiming[NumHits] = 0
+		elsif NumHits < RequiredHits
+			RD_DrummerTiming[NumHits] = Delay
+		end if
+		
+		NumHits++
+	end while
+	play anim "a_p_L9raindancedrum_drumming_loop" on RD_Drummer
+	wait until RD_Drummer played
+	// Store the players sequence
+
+	run background script NowItsYourTurn
+
+	clear right clicked object
+	NumHits = 0
+	while NumHits < RequiredHits
+		set Timing time to 0 seconds
+		wait until RD_Drum[0] right clicked or RD_Drum[1] right clicked or RD_Drum[2] right clicked or RD_Drum[3] right clicked or RD_Drum[4] right clicked or RD_Drum[5] right clicked
+		RD_PlayerSequence[NumHits] = get object right clicked
+
+		run background script RD_PlayDrumSound(RD_PlayerSequence[NumHits])
+		run background script RD_GiveFeedback(RD_PlayerSequence[NumHits], DrumHeight)
+
+		clear right clicked object
+
+		if NumHits == 0
+			RD_PlayerTiming[NumHits] = 0
+		elsif NumHits < RequiredHits
+			RD_PlayerTiming[NumHits] = get Timing time since set
+		end if
+		
+		NumHits++
+	end while
+	
+	// Check to see if the sequences are the same
+	NumHits = 0
+	RD_LevelSuccess = RD_TRUE
+	while NumHits < RequiredHits
+		if RD_PlayerSequence[NumHits] != RD_DrummerSequence[NumHits]
+			RD_LevelSuccess = RD_FALSE
+			NumHits = RequiredHits
+		elsif RD_PlayerTiming[NumHits] < (RD_DrummerTiming[NumHits] - Tolerance) or RD_PlayerTiming[NumHits] > (RD_DrummerTiming[NumHits] + Tolerance)
+			RD_LevelSuccess = RD_FALSE
+			NumHits = RequiredHits		
+		end if
+		NumHits++
+	end while
+	
+end script RD_PlayGame
+
+
+
+//-----------------------------------------------------------------------------
+//	Play the relevant sound
+//-----------------------------------------------------------------------------
+begin script RD_PlayDrumSound(Drum)
+start
+
+	// Play the relevant drum sound
+	if Drum == RD_Drum[0]
+		play string sound "SCRIPT27_challengedrum1"
+	elsif Drum == RD_Drum[1]
+		play string sound "SCRIPT27_challengedrum2"
+	elsif Drum == RD_Drum[2]
+		play string sound "SCRIPT27_challengedrum3"
+	elsif Drum == RD_Drum[3]
+		play string sound "SCRIPT27_challengedrum4"
+	elsif Drum == RD_Drum[4]
+		play string sound "SCRIPT27_challengedrum5"
+	else												// 6th drum sound and catch all
+		play string sound "SCRIPT27_challengedrum6"
+	end if
+
+end script RD_PlayDrumSound
+
+
+
+//-----------------------------------------------------------------------------
+//	Give feedback to the player when they have clicked on a drum
+//-----------------------------------------------------------------------------
+begin script RD_GiveFeedback(Drum, Height)
+
+	SplashFX		= 0
+
+start
+
+	SplashFX = create visual effect "gp_s_drum_impact.ves" strength 3 scale 0.5 at {Drum} + {0.000,3.000,0.000} time 0.2
+
+	//SplashFX = create visual effect "gp_s_gapuff.ves" strength 1 scale 0.5 at {Drum} + {0.000,0.000,0.000} time 0.2
+	set SplashFX colour red 0 green 255 blue 0
+
+end script RD_GiveFeedback
+
+//-----------------------------------------------------------------------------
+//	Create the storm that quenches the lava and allows access
+//-----------------------------------------------------------------------------
+begin script RD_Outro
+
+	Storm			= 0
+	StormPos		= marker at {524.016, 94.846, 425.708}
+	Ctr				= 0
+	Smoke			= 0
+start
+
+if PlayOnce == 0
+
+	PlayOnce = 1
+	
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	begin cinema
+		start music "cut_scene_happy_01" loop 1000
+		wait 2 seconds
+		
+		set RD_Drummer position to {520.757, 94.876, 427.964}
+		move RD_Drummer position to  {520.757, 94.876, 427.964}
+		set RD_Drummer focus to {519.964, 94.846, 429.784}
+		disable RD_Drummer reactable
+		enable RD_Drummer indestructible
+		disable RD_Drummer set on fire	
+		disable RD_Drummer pickup
+		disable RD_Drummer moveable
+		
+		
+		
+		
+		set camera position to {510.152, 393.613, 422.375}
+		set camera focus to {518.950, 295.536, 404.962}
+		move camera position to {510.152, 228.332, 422.375} time 22
+		move camera focus to {518.950, 130.253, 404.962} time 22
+		set fade in time 2
+		Storm = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {523.433, 94.841, 427.096}
+		disable Storm affected by wind		
+		
+		set cloud Storm altitude 180
+		//ALTITUDE of Storm = 1
+		disable Storm affected by wind		
+		set cloud Storm points to 6
+		//set cloud generation 8
+		set Storm properties rainfall 1 snowfall 0 overcast 1
+		wait 22 seconds
+		set camera position to {554.017, 114.043, 473.974}
+		set camera focus to {567.329, 55.647, 393.896}
+		move camera position to {554.526, 111.810, 470.912} time 10
+		move camera focus to {567.838, 53.413, 390.833} time 10
+		wait 2 seconds
+		Smoke = create visual effect "Gp_s_smoke_chimney.ves" strength 10 scale 10 at {557.578, 96.560, 451.606} time 10
+		StopLava = RD_TRUE
+		wait 7 seconds
+		
+		play anim "a_p_excited_1" on RD_Drummer loop 2
+		
+		set camera position to {545.580, 134.121, 462.216}
+		set camera focus to {513.493, 83.831, 381.958}
+		move camera position to {544.614, 132.609, 459.802} time 10
+		move camera focus to {512.528, 82.319, 379.544} time 10
+		
+		
+		
+		wait 7 seconds
+		set camera position to {518.920, 96.346, 433.116}
+		set camera focus to {555.095, 95.818, 339.891}
+		move camera position to {519.012, 96.345, 432.879} time 10
+		move camera focus to {555.188, 95.817, 339.654} time 10
+		say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_300"
+		wait until RD_Drummer played
+		play anim "a_p_talk2_male" on RD_Drummer loop -1
+	
+		wait until read
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		set camera position to {476.377, 157.940, 474.769}
+		set camera position to {476.377, 157.940, 474.769}
+		wait 1 seconds
+		set fade in time 2
+		eject good spirit
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_09FINAL_CHALLENGE_RAINDANCE_G_440
+		wait until read
+		send good spirit home
+		wait 1 seconds
+		stop music with fadetime 5
+end cinema
+
+	
+
+	//	enable dialogue manager
+	PlayOnce = 1
+end if
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	wait 2.5 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+
+end script RD_Outro
+
+// -----------------------------------------
+
+begin script RD_DrumFailure
+
+DrummerHouse = 0
+Smoke = 0
+Rock = 0
+start
+
+DrummerHouse = get HOUSE at {524.016, 94.846, 425.708} radius 10
+enable DrummerHouse set on fire
+set fade red 0 green 0 blue 0 time 1
+wait 1 seconds
+begin cinema
+	
+	start music "volcano_music"
+	wait 2 seconds
+	set camera position to {531.539, 99.824, 431.057}
+	set camera focus to {604.263, 121.515, 365.936}
+	move camera position to {533.020, 100.266, 429.732} time 4
+	move camera focus to {605.744, 121.958, 364.611} time 4
+	set fade in time 1
+	wait 3 seconds
+	
+	Rock = create ROCK_OBJECT ROUND_ROCK_LARGE at {556.813, 108.739, 409.523}
+	set Rock velocity heading {523.754, 294.881, 424.316} speed 72
+	
+	run background script MakeRockLookOnFire(Rock)
+	
+	move camera position to {533.019, 100.266, 429.733} time 1.3
+	move camera focus to {574.852, 182.773, 391.751} time 1.3
+	wait 1 seconds
+	set camera position to {537.624, 148.162, 429.187}
+	set camera focus to {531.875, 158.407, 329.880}
+	wait 0.9 seconds
+	set camera position to {535.439, 150.138, 423.047}
+	set camera focus to {520.236, 52.553, 407.354}
+	set camera lens 40
+	move camera position to {530.515, 125.564, 424.771} time 2
+	move camera focus to {515.311, 27.980, 409.079} time 2
+	wait 1 seconds
+	Smoke = create visual effect "gp_s_steam.ves" strength 1 scale 1 at {522.130, 94.908, 423.957} time 7
+	delete DrummerHouse with explode
+	wait 0.6 seconds
+	
+	disable RD_Drummer reactable
+	enable RD_Drummer indestructible
+	disable RD_Drummer set on fire	
+	disable RD_Drummer pickup
+	disable RD_Drummer moveable
+
+	set RD_Drummer position to {529.688, 94.649, 433.477}
+	move RD_Drummer position to {529.688, 94.649, 433.477}
+	set RD_Drummer focus to {523.757, 94.865, 424.590}
+	
+	
+	
+	set camera position to {529.088, 95.866, 434.406}
+	set camera focus to {492.113, 92.314, 341.563}
+	move camera position to {529.586, 95.901, 435.276} time 8
+	move camera focus to {492.611, 92.349, 342.433} time 8
+	
+	wait 3 seconds
+	play anim "a_p_l9raindancedrum_man_reaction" on RD_Drummer loop -1
+	//say "BW2T_SCRIPT_09FINAL_CHALLENGE_RAINDANCE_280"
+	//wait until read
+	wait 5 seconds
+	wait 3 seconds
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	delete Rock
+	set RD_Drummer position to {654.747,122.406,402.049}
+	move RD_Drummer position to {654.747,122.406,402.049}
+	set RD_Drummer focus to {653.540, 120.019, 404.547}
+			
+		
+	set camera lens 70
+	set camera position to {450.714, 172.725, 472.300}
+	set camera focus to {505.899, 107.529, 420.298}
+	wait 1 seconds
+	set fade in time 2
+	wait 1 seconds
+	stop music with fadetime 4
+end cinema	
+
+wait 10 seconds
+
+DrumsFailed = 0
+FailedOnce = 1
+RD_CurrentLevel = 1
+
+// Get the instructions
+run script RD_Intro
+
+run script RD_PlayDrums
+
+end script RD_DrumFailure
+
+begin script LookAfterLavaThrows(lava_pos)
+Explosion = 0 
+RandomStrength = 0
+RandomScale = 0
+start
+	
+	begin loop
+		RandomStrength = number from 70 to 130
+		RandomStrength /= 100
+		RandomScale = number from 70 to 130
+		RandomScale /= 100
+		Explosion=make player 2 throw miracle MIRACLE_TYPE_FIRE from {lava_pos} heading {lava_pos} + {number from -10 to 10, number from 5 to 10, number from -10 to 10}
+		wait number from 2 to 5 seconds
+		until StopLava == RD_TRUE
+	end loop
+end script LookAfterLavaThrows
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------
+
+begin script MakeRockLookOnFire(Rock)
+RF = 0
+EF = 0
+start
+	RF = create visual effect "gp_s_fire_bbuilding.ves" strength 0.2 scale 0.2 on Rock time 8
+	begin loop	
+		EF = create visual effect "gp_s_fire_bbuilding.ves" strength 1 scale 0.3 at {Rock} time 5
+		
+		until Rock not exists
+	end loop
+end script MakeRockLookOnFire

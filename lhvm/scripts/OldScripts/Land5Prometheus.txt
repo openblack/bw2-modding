@@ -1,0 +1,705 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	Prometheus - Land 4 (err... now land 5)
+//	~~~~~~~~~~~~~~~~~~~~~
+//
+//	Add an "impressiveness" prize to the script for succeeding.
+//	This should probably be a bonus for the player if he/she does well.
+//
+//Gameplay design in finding + grabbing Prometheus - just runs around madly?
+//
+//	Story:	This event does not trigger until the player has converted the nearest Japanese Outpost.
+//			This mythological character is supposed to have stolen fire from the gods and given it to the people.  
+//			The background to this will be that some people have always been trying to get godly powers like the Aztec high priest. 
+//			Prometheus has just succeeded and he gave the powers of fire to a large contingent of villagers within your city.
+//			The villagers run amok causing fires throughout the city until after a duration they lie on the ground in pain before 
+//			spontaneously combusting. The player can use water miracles to cool the afflicted and put out the fires they cause.
+//			When this event is completed the player’s archers will forever more be able to fire fiery arrows.
+//
+//	Rewards:		Fire arrows for your archers.
+//	Drawbacks:		Death to a multitude of villagers when they run amok; possible loss of buildings.
+//
+//	Solutions:		Picking up villagers and dipping them into the sea???
+//					Using the water miracle on as many of them as possible. (Could move them together and do the same.)
+//
+//	TODO:			Remake jail outro with new locations (done?)
+//					Add reward (done?)
+//					Make sure that Prometheus will be put in jail when droped onto jail.
+//					Make sure that player is not evil for his town burning down.
+//					Tie into Global Wanted
+//					Make sure that Prometheus isn't on fire when hot
+//					Make Prometheus run
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define P_FALSE			= 0
+define P_TRUE			= 1
+//-----------------------------------------------------------------------------
+//define NUM_STARTING_INSANE_VILLAGERS = 3
+define NUM_STARTING_BURNING_BUILDINGS = 4
+define NUM_OBJECT_TO_COUNT = 300
+define TIME_TO_INSULT = 5
+define CHANCE_OF_INSULT = 4
+define RADIUS_TO_HEAR_INSULT = 50
+define USE_SOUND_FILE = P_FALSE // If true, sound files will be used. If false, debug text will be used and a radius check will ensure you can't 'hear' people that are far away.
+define TIME_TO_USE_FIRE = 2
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global P_Succeeded					= P_FALSE
+global P_Prometheus_In_Jail			= P_FALSE
+global P_Prometheus					= 0
+global P_Give_Feedback				= P_FALSE
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script P_Good_Spirit_Spots_Trouble
+define script P_Give_Player_Fire_Arrows // now flame thrower
+define script P_Create_Chaos
+define script P_Wait_For_Conversion
+define script P_PrometheusOutro
+//define script P_HandleInsaneVillager(InsaneVillager)
+define script P_AutoKillPrometheus
+define script P_WarnPlayerOfFires
+define script P_PrometheusThrowsInsults
+define script P_Throw_Fireball(From,To,Time)
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=======================
+begin script Land5Prometheus
+
+	EndOfHouseList2		= P_FALSE
+	EndOfPeopleList2	= P_FALSE
+	ObjectToCount[NUM_OBJECT_TO_COUNT]
+	NumBuildingsToStart	= 0
+	NumPeopleToStart	= 0
+	NumBuildingsAtEnd	= 0
+	NumBuildingsCounted = 0
+	NumPeopleAtEnd		= 0
+	HowWellDidIDoBuildings = 0
+	HowWellDidIDoPeople	= 0
+	ObjectToKeepInScript = 0
+start
+	//...Wait until the player has taken over the two Japanese outposts
+	run script P_Wait_For_Conversion
+
+	// count the current buildings
+	begin loop
+		ObjectToCount[NumBuildingsToStart] = 0
+		ObjectToCount[NumBuildingsToStart] = get building HOUSE in L5GreekTown min built 1.0 excluding scripted
+		if ObjectToCount[NumBuildingsToStart] exists
+			NumBuildingsToStart++
+		end if
+		until NumBuildingsToStart >= NUM_OBJECT_TO_COUNT or ObjectToCount[NumBuildingsToStart] not exists
+	end loop
+
+	// count the current people
+	begin loop
+		ObjectToCount[NumPeopleToStart] = 0
+		ObjectToCount[NumPeopleToStart] = get VILLAGER in L5GreekTown excluding scripted
+		if ObjectToCount[NumPeopleToStart] exists
+			NumPeopleToStart++
+		end if
+		until NumPeopleToStart >= NUM_OBJECT_TO_COUNT or ObjectToCount[NumPeopleToStart] not exists
+	end loop	
+
+	run background script P_WarnPlayerOfFires
+
+	run script P_Create_Chaos
+
+	// count the current buildings
+	// and put the fires out.
+	begin loop
+		ObjectToCount[NumBuildingsCounted] = 0
+		ObjectToCount[NumBuildingsCounted] = get HOUSE in L5GreekTown excluding scripted
+		if ObjectToCount[NumBuildingsCounted] exists
+			// make sure the building isn't on fire
+			disable ObjectToCount[NumBuildingsCounted] set on fire
+			set ObjectToCount[NumBuildingsCounted] temperature 0
+			NumBuildingsCounted++
+			if HEALTH of ObjectToCount[NumBuildingsCounted] >= 0.1
+				NumBuildingsAtEnd++
+			end if
+		end if
+		until NumBuildingsCounted >= NUM_OBJECT_TO_COUNT or ObjectToCount[NumBuildingsCounted] not exists
+	end loop
+
+	// count the current people
+	begin loop
+		ObjectToCount[NumPeopleAtEnd] = 0
+		ObjectToCount[NumPeopleAtEnd] = get VILLAGER in L5GreekTown excluding scripted
+		if ObjectToCount[NumPeopleAtEnd] exists
+			NumPeopleAtEnd++
+		end if
+		until NumPeopleAtEnd >= NUM_OBJECT_TO_COUNT or ObjectToCount[NumPeopleAtEnd] not exists
+	end loop	
+
+	// Calculate how many buildings are available now compared to before the fires...
+	HowWellDidIDoBuildings = NumBuildingsToStart / NumBuildingsAtEnd
+
+	// Calculate how many people are alive now compared to before the fires...
+	HowWellDidIDoPeople = NumPeopleToStart / NumPeopleAtEnd
+
+	wait until P_Give_Feedback == P_TRUE
+
+	// Different messages depending upon different levels of success.
+	begin dialogue
+		eject good spirit
+		if HowWellDidIDoBuildings >= 1
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_10" ///by good spirit
+		elsif HowWellDidIDoBuildings >= 0.8
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_20" ///by good spirit
+		elsif HowWellDidIDoBuildings >= 0.6
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_30" ///by good spirit
+		elsif HowWellDidIDoBuildings >= 0.3
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_40" ///by good spirit
+		else
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_50" ///by good spirit
+		end if 
+		wait until read
+		clear dialogue
+
+		if HowWellDidIDoPeople >= 1
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_60" ///by good spirit
+		elsif HowWellDidIDoPeople >= 0.8
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_70" ///by good spirit
+		elsif HowWellDidIDoPeople >= 0.6
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_80" ///by good spirit
+		elsif HowWellDidIDoPeople >= 0.4
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_90" ///by good spirit
+		else
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_FEEDBACK_100" ///by good spirit
+		end if 
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+	//--------------------------------------------------
+end script Land5Prometheus
+//=======================
+
+//-----------------------------------------------------------------------------
+//	P_Good_Spirit_Spots_Trouble
+//-----------------------------------------------------------------------------
+begin script P_Good_Spirit_Spots_Trouble
+
+start
+	wait until L5GreekTown viewed
+
+	begin dialogue
+		eject good spirit
+		say "BW2T_SCRIPT_05NEW_PROMETHEUS_INTRO_10" ///by good spirit
+		wait until read
+		clear dialogue
+		say "BW2T_SCRIPT_05NEW_PROMETHEUS_INTRO_20" ///by good spirit
+		wait until read
+		clear dialogue
+		say "BW2T_SCRIPT_05NEW_PROMETHEUS_INTRO_30" ///by good spirit
+		wait until read
+		clear dialogue
+		eject evil spirit
+    	say "BW2T_SCRIPT_05NEW_PROMETHEUS_INTRO_40" ///by evil spirit
+		wait until read
+		clear dialogue
+		say "BW2T_SCRIPT_05NEW_PROMETHEUS_INTRO_50" ///by good spirit
+		wait until read
+		clear dialogue
+		make evil spirit disappear
+		send good spirit home
+	end dialogue
+end script P_Good_Spirit_Spots_Trouble
+
+
+//-----------------------------------------------------------------------------
+//	P_Give_Player_Fire_Arrows
+//-----------------------------------------------------------------------------
+begin script P_Give_Player_Fire_Arrows
+	PrometheusLastLoc = 0
+	Blueprint = 0
+start
+	while P_Prometheus exists and HEALTH of P_Prometheus >= 0
+		PrometheusLastLoc = marker at {P_Prometheus}
+		wait 1 seconds
+	end while
+	Blueprint = create blueprint RESEARCH_ITEM_MAGIC_TYPE_VECTOR_FLAME at {PrometheusLastLoc}
+	wait until Blueprint right clicked
+end script P_Give_Player_Fire_Arrows
+
+
+//-----------------------------------------------------------------------------
+//	P_Create_Chaos
+//-----------------------------------------------------------------------------
+begin script P_Create_Chaos
+	PrometheusSpawnPos = 0
+	ObjectInHand = 0
+	NothingInHand = P_TRUE
+	ThisIsTrue = P_TRUE
+//	WhichInsaneVillager = 0
+	TargetBuilding = 0
+	Counter = 0
+//	InsaneVillager = 0
+	BurningBuilding = 0
+	SuccessfullAttack = P_TRUE
+//	FireBall = 0
+	HaplessPaserby = 0
+	PTemp = 0
+	PrometheusBaseSpeed = 0
+start
+	PrometheusSpawnPos = get random abode in town L5GreekTown
+
+	/*
+	Counter = 0
+	while Counter < NUM_STARTING_INSANE_VILLAGERS
+		InsaneVillager = get VILLAGER in L5GreekTown excluding scripted
+		//run background script P_HandleInsaneVillager(InsaneVillager)
+		Counter ++
+	end while
+	*/
+
+	Counter = 0
+	while Counter < NUM_STARTING_BURNING_BUILDINGS
+		BurningBuilding = get random abode in town L5GreekTown
+		set BurningBuilding temperature 0.8
+		Counter ++
+	end while
+
+	run background script P_Good_Spirit_Spots_Trouble
+
+	P_Prometheus = create VILLAGER PROMETHEUS at {PrometheusSpawnPos}
+	enable villager P_Prometheus can be imprisoned
+	//SCALE of P_Prometheus = 4
+	PrometheusBaseSpeed = SPEED of P_Prometheus
+	SPEED of P_Prometheus = 1
+	disable P_Prometheus hurt by fire
+	set P_Prometheus temperature 1
+	//disable P_Prometheus set on fire
+
+	run background script P_PrometheusThrowsInsults
+	run background script P_PrometheusOutro
+
+	run background script P_Give_Player_Fire_Arrows
+
+	// for debuging
+	//run background script P_AutoKillPrometheus
+
+	while P_Prometheus exists and HEALTH of P_Prometheus > 0 // do we need to check if he's in jail or anything?
+		if SuccessfullAttack == P_TRUE
+			TargetBuilding = get random abode in town L5GreekTown
+			if TargetBuilding exists
+				move P_Prometheus position to {TargetBuilding}
+				override P_Prometheus anim "a_p_run_male_evil"
+				SuccessfullAttack = P_FALSE
+			end if
+		elsif {P_Prometheus} near {TargetBuilding} radius 10
+			set P_Prometheus position to {P_Prometheus}
+			run script P_Throw_Fireball(P_Prometheus,TargetBuilding,number from 1 to 4)
+			SuccessfullAttack = P_TRUE
+		elsif number from 1 to 10 == 1
+			HaplessPaserby = get VILLAGER at {P_Prometheus} radius 10 excluding scripted
+			if HaplessPaserby exists and HEALTH of HaplessPaserby > 0
+				set P_Prometheus position to {P_Prometheus}
+				set P_Prometheus focus to {HaplessPaserby}
+				run script P_Throw_Fireball(P_Prometheus,HaplessPaserby,1)
+			end if
+			if TargetBuilding exists
+				move P_Prometheus position to {TargetBuilding}
+				override P_Prometheus anim "a_p_run_male_evil"
+			end if
+		end if
+		wait 1 seconds
+		PTemp = get P_Prometheus temperature
+		if PTemp < 0.5
+			if P_Prometheus viewed
+				SPEED of P_Prometheus = PrometheusBaseSpeed
+				begin dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_05NEW_PROMETHEUS_COOLOFF_10" //by good spirit
+					wait 2 seconds
+					send good spirit home
+				end dialogue
+			end if
+			wait 30 seconds
+			if P_Prometheus exists
+				set P_Prometheus temperature 1
+				SPEED of P_Prometheus = 1
+				begin dialogue
+					eject evil spirit
+					say "BW2T_SCRIPT_05NEW_PROMETHEUS_COOLOFF_20" //by evil spirit
+					wait 2 seconds
+					send evil spirit home
+				end dialogue
+			end if
+		end if
+		if TargetBuilding not exists
+			SuccessfullAttack = P_TRUE
+		end if
+	end while
+	/*
+	while P_Prometheus exists and HEALTH of P_Prometheus > 0
+		if SuccessfullAttack == P_TRUE
+			BuildingTarget = get random abode in town L5GreekTown
+			move P_Prometheus position to {BuildingTarget}
+			SuccessfullAttack = P_FALSE
+		end if
+		VillagerTarget = get VILLAGER at {P_Prometheus} radius 10 excluding scripted
+		if VillagerTarget exists
+			begin loop
+				move P_Prometheus position to {VillagerTarget}
+				wait 0.3 seconds
+				until {P_Prometheus} near {VillagerTarget} radius 2 or P_Prometheus not exists or HEALTH of P_Prometheus <= 0
+			end loop
+			if P_Prometheus exists and HEALTH of P_Prometheus > 0
+				set P_Prometheus position to {P_Prometheus}
+				//run background script P_HandleInsaneVillager(VillagerTarget)
+				SuccessfullAttack = P_TRUE
+			end if
+		elsif {P_Prometheus} near {BuildingTarget} radius 10
+			set P_Prometheus position to {P_Prometheus}
+			run script P_Throw_Fireball(P_Prometheus,BuildingTarget)
+			SuccessfullAttack = P_TRUE
+		end if
+		wait 1 seconds
+	end while
+	*/
+end script P_Create_Chaos
+
+//-----------------------------------------------------------------------------
+//	P_PrometheusThrowsInsults
+//-----------------------------------------------------------------------------
+begin script P_PrometheusThrowsInsults
+	ObjectInHand = 0
+	WhichInsult = 0
+start
+	if USE_SOUND_FILE == P_TRUE
+		while P_Prometheus exists and HEALTH of P_Prometheus > 0
+			if (number from 1 to CHANCE_OF_INSULT) == 1
+				ObjectInHand = get object held
+				if ObjectInHand == P_Prometheus
+					WhichInsult = number from 1 to 3
+					if WhichInsult == 1
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_10" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_10" playing
+					elsif WhichInsult == 2
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_20" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_20" playing
+					else
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_30" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_30" playing
+					end if
+				else
+					WhichInsult = number from 1 to 5
+					if WhichInsult == 1
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_10" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_10" playing
+					elsif WhichInsult == 2
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_20" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_20" playing
+					elsif WhichInsult == 3
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_30" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_30" playing
+					elsif WhichInsult == 4
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_40" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_40" playing
+					else
+						play sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_50" at {P_Prometheus}
+						wait until not sound "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_50" playing
+					end if
+				end if
+				wait until read
+			end if
+			wait TIME_TO_INSULT seconds
+		end while
+	/*
+	else
+		while P_Prometheus exists and HEALTH of P_Prometheus > 0
+			if (number from 1 to CHANCE_OF_INSULT) == 1
+				ObjectInHand = get object held
+				if ObjectInHand == P_Prometheus
+					WhichInsult = number from 1 to 3
+					if WhichInsult == 1
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_10"
+					elsif WhichInsult == 2
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_20"
+					else
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULTHAND_30"
+					end if
+				elsif camera position near {P_Prometheus} radius RADIUS_TO_HEAR_INSULT
+					WhichInsult = number from 1 to 5
+					if WhichInsult == 1
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_10"
+					elsif WhichInsult == 2
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_20"
+					elsif WhichInsult == 3
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_30"
+					elsif WhichInsult == 4
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_40"
+					else
+						say "BW2T_SCRIPT_05NEW_PROMETHEUS_INSULT_50"
+					end if
+				end if
+				wait until read
+			end if
+			wait TIME_TO_INSULT seconds
+		end while
+	*/
+	end if
+end script P_PrometheusThrowsInsults
+
+/*
+//-----------------------------------------------------------------------------
+//	P_HandleInsaneVillager
+//-----------------------------------------------------------------------------
+begin script P_HandleInsaneVillager(InsaneVillager)
+	WorthContinuing = P_TRUE
+	SuccessfullAttack = P_TRUE
+	TargetBuilding = 0
+	HaplessPaserby = 0
+	FireBall = 0
+start
+	//SCALE of InsaneVillager = 2
+	disable InsaneVillager hurt by fire
+	while WorthContinuing == P_TRUE
+		// make sure that he doesn't go out.
+		enable InsaneVillager on fire 0.6
+		set InsaneVillager temperature 0.6
+
+		if SuccessfullAttack == P_TRUE
+			TargetBuilding = get random abode in town L5GreekTown
+			if TargetBuilding not exists
+				set InsaneVillager temperature 1
+				WorthContinuing = P_FALSE
+			end if
+			move InsaneVillager position to {TargetBuilding}
+			SuccessfullAttack = P_FALSE
+		elsif {InsaneVillager} near {TargetBuilding} radius 10
+			set InsaneVillager position to {InsaneVillager}
+			run script P_Throw_Fireball(InsaneVillager,TargetBuilding)
+			if number from 1 to 3 == 1
+				SuccessfullAttack = P_TRUE
+			end if
+		elsif number from 1 to 10 == 1
+			HaplessPaserby = get VILLAGER at {InsaneVillager} radius 10
+			if HaplessPaserby exists and HaplessPaserby != P_Prometheus and HaplessPaserby != InsaneVillager
+				set InsaneVillager position to {InsaneVillager}
+				run script P_Throw_Fireball(InsaneVillager,HaplessPaserby)
+				SuccessfullAttack = P_TRUE
+			end if
+		end if
+		wait 1 seconds
+		if InsaneVillager not exists or P_Prometheus not exists or HEALTH of P_Prometheus <= 0 or not InsaneVillager on fire
+			WorthContinuing = P_FALSE
+		end if
+		if TargetBuilding not exists
+			SuccessfullAttack = P_TRUE
+		end if
+	end while
+	//SCALE of InsaneVillager = 1
+	enable InsaneVillager hurt by fire
+	release InsaneVillager
+end script P_HandleInsaneVillager
+*/
+
+//-----------------------------------------------------------------------------
+//	P_Throw_Fireball
+//-----------------------------------------------------------------------------
+begin script P_Throw_Fireball(From,To,Time)
+	FireBall = 0
+start
+	FireBall = cast MAGIC_TYPE_VECTOR_FLAME spell on To from {From} radius 5.0 time 1 curl 0
+	wait Time seconds
+	stop spell FireBall
+	delete FireBall
+end script P_Throw_Fireball
+
+
+//-----------------------------------------------------------------------------
+//	P_Wait_For_Conversion
+//-----------------------------------------------------------------------------
+begin script P_Wait_For_Conversion
+//	ObjectInHand = 0
+	ReadyToStart = 0
+start
+//*
+	while ReadyToStart < 2
+		wait 20 seconds
+		ReadyToStart = 0
+		if PLAYER of L5_PaddyField1 == 0
+			ReadyToStart++
+		end if
+		if PLAYER of L5_PaddyField2 == 0
+			ReadyToStart++
+		end if
+		if PLAYER of L5_PaddyField3 == 0
+			ReadyToStart++
+		end if
+		if PLAYER of L5_PaddyField4 == 0
+			ReadyToStart++
+		end if
+		if PLAYER of L5_PaddyField5 == 0
+			ReadyToStart++
+		end if
+		if PLAYER of L5_PaddyField6 == 0
+			ReadyToStart++
+		end if
+	end while
+//*/
+
+	ReadyToStart = 0
+	while ReadyToStart < 2
+		if camera position not near {L5GreekTown} radius 100 and L5GreekTown not viewed
+			ReadyToStart ++
+		else
+			ReadyToStart = 0
+		end if
+		wait 5 seconds
+	end while
+end script P_Wait_For_Conversion
+
+//-----------------------------------------------------------------------------
+//Success Outro Cutscene
+//-----------------------------------------------------------------------------
+begin script P_PrometheusOutro
+
+	JailPos = marker at {1754.805,33.750,1706.630}
+	Jail = 0
+	RelCamPos=0
+	RelCamFoc=0
+
+	Dim=0
+	Guard[2]
+	DimPos[2]
+	Guard1Pos[2]
+	Guard2Pos[2]
+
+	//PrometheusInJail = P_FALSE
+
+start
+	// make sure that
+	// A) If the jail disapears, a new ones got
+	// B) If there are many jails, we check all of them
+	//    (How does one get more than one jail?)
+	// C) If a new jail gets built durring this challenge, it pick ups.
+
+	// get the jail
+	/*
+	begin loop
+		Jail = get HOUSE ABODE_INFO_GREEK_PRISON in L5GreekTown
+		wait 1 seconds
+		until P_Prometheus not exists or Jail exists or HEALTH of P_Prometheus <= 0
+	end loop
+	*/
+
+	// see if Prometheus enters a jail
+	// probably a better way to do this
+	begin loop
+		wait 1 seconds
+		Jail = get prison of P_Prometheus
+		until Jail exists or P_Prometheus not exists or HEALTH of P_Prometheus <= 0
+	end loop
+
+	if P_Prometheus exists
+		delete P_Prometheus
+	end if
+	
+	if Jail exists
+
+		DimPos[0] = marker at get world position from Jail to {6.184,-3.948,-11.667}
+		Dim = create VILLAGER VILLAGER_INFO_GREEK_LEADER_MALE at {DimPos[0]}	
+
+		Guard1Pos[0] = marker at get target from {Jail} to {Dim} distance 1 angle 90
+		Guard2Pos[0] = marker at get target from {Jail} to {Dim} distance 1 angle 270
+		DimPos[1] = marker at get world position from Jail to {3.897,-2.560,-8.543}
+		Guard1Pos[1] = marker at get target from {Jail} to {DimPos[1]} distance 1 angle 90
+		Guard2Pos[1] = marker at get target from {Jail} to {DimPos[1]} distance 1 angle 270
+
+		Guard[0] = create SOLDIER PLATOON_INFO_GREEK_MELEE_1 at {Guard1Pos[0]}
+		Guard[1] = create SOLDIER PLATOON_INFO_GREEK_MELEE_1 at {Guard2Pos[0]}
+			
+		move Dim position to {DimPos[1]}
+		move Guard[0] position to {Guard1Pos[1]}
+		move Guard[1] position to {Guard2Pos[1]}	
+		
+		begin cinema
+			//wide
+			set camera lens 70.000
+			RelCamPos=marker at get world position from Jail to {3.476,-1.930,-13.877}
+			RelCamFoc=marker at get world position from Jail to {2.582,-1.982,-2.975}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 3 seconds
+			
+			//pull back as they walk up
+			
+			set camera lens 46.000
+			set camera position follow Dim offset {2.306,-0.317,-7.338}
+			set camera focus follow Dim offset {23.865,-19.285,-22.302}
+			wait until {Dim} near {DimPos[1]} radius 0.2
+			set Jail temperature 1000
+			
+			
+			//Building blows up
+			set camera lens 62.000
+			RelCamPos=marker at get world position from Jail to {3.201,0.350,-5.590}
+			RelCamFoc=marker at get world position from Jail to {-5.201,3.509,5.078}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 3 seconds
+			
+			//reaction shot
+			set camera lens 35.000
+			RelCamPos=marker at get world position from Jail to {2.851,-1.540,-7.683}
+			RelCamFoc=marker at get world position from Jail to {13.293,-5.839,-15.858}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 3 seconds
+			
+			//final shot behind group?
+			set camera lens 56.000
+			RelCamPos=marker at get world position from Jail to {4.569,-2.112,-10.334}
+			RelCamFoc=marker at get world position from Jail to {-0.183,0.937,2.412}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 3 seconds
+
+		end cinema
+	// else run outro of Prometheus being dead
+	end if
+
+	// give feedback to the player on how well he's done.
+	P_Give_Feedback = P_TRUE
+
+end script P_PrometheusOutro
+
+
+//-----------------------------------------------------------------------------
+// P_WarnPlayerOfFires
+//-----------------------------------------------------------------------------
+begin script P_WarnPlayerOfFires
+start
+	begin dialogue
+		eject evil spirit
+			say "BW2T_SCRIPT_05NEW_PROMETHEUS_WARNING_10" ///by evil spirit
+			wait until read
+			clear dialogue
+		make evil spirit disappear
+	end dialogue
+end script P_WarnPlayerOfFires
+
+//-----------------------------------------------------------------------------
+begin script P_AutoKillPrometheus
+	ObjectInHand = 0
+start
+	while P_Prometheus exists
+		ObjectInHand = get object held
+		if ObjectInHand == P_Prometheus
+			delete P_Prometheus
+		end if
+	end while
+end script P_AutoKillPrometheus

@@ -1,0 +1,767 @@
+///////////////////////////////////////////////////////////////////////////////
+//	SLAVE REVOLT
+//	~~~~~~~~~~~~
+//	Description:
+//	The player must incite the slaves to revolt against their Egyptian masters (using the riot code).
+//	There will be a group of actors that are slaves that have been given menial tasks to do away from the Egyptian city.
+//	They are badly short of food and wood for shelter. If you supply them with enough resources the slaves
+//	will say they want to fight for you; but they can’t do anything while their relations are enslaved
+//	inside the main city. They say that if one of them can get the message to the slaves inside then they
+//	will revolt against their enslavers. In order to do this they suggest that you must capture an Egyptian soldier;
+//	and then one of the slaves will swap clothes with the soldier in a house and then take the message himself.
+//	You must then make sure he reaches the city. We will need some kind of visual indicator that shows that
+//	this character is on your side.  If he dies then this process should be easily repeatable with another slave
+//	that gets into the Egyptian uniform.
+// 
+//	[The disguised slave is skinny and the uniform is way too big. Possibly have a second disguised slave
+//	whose uniform is way too small.]
+//
+//	When the message is delivered the entire Egyptian slave community will revolt.
+//	They pack up everything and set out in a convoy to join the Greek settlement protected only by the ragged slave
+//	warriors. The Egyptians send their elite armies to massacre the slaves before they get to the Greeks.
+//	They will only survive with help from the player.
+//	The player is rewarded with the blueprint for a wonder if any of the slaves make it to the Greek city.
+//
+//	Rewards:			Wonder Blueprint
+//
+//	Start date:			28-10-03			By:	Steve
+//	Update date:		04-12-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SR_TRUE						= 1
+define SR_FALSE						= 0
+define SR_UNDEFINED					= 0
+define SR_AMOUNT_OF_SLAVE_WORKERS	= 10
+define SR_AMOUNT_OF_SLAVES_RESCUED	= 100
+define SR_AMOUNT_OF_FOOD_NEEDED		= 1000
+define SR_AMOUNT_OF_WOOD_NEEDED		= 1000
+define SR_PLAYER					= 1
+define SR_CREATURE					= 2
+define SR_SLAVE_KILLED				= 1
+define SR_SLAVE_DELIVERED_MESSAGE	= 2
+define SR_JOB_FARMING				= 1
+define SR_JOB_FORESTING				= 2
+define SR_NUM_TREES					= 10
+define SR_NUM_FIELDS				= 5
+define SR_NUM_HUTS					= 2
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SR_SlaveWorker[SR_AMOUNT_OF_SLAVE_WORKERS]
+global SR_SlaveWorkerAlive[SR_AMOUNT_OF_SLAVE_WORKERS]
+global SR_RescuedSlaves[SR_AMOUNT_OF_SLAVES_RESCUED]
+global SR_SlaveWorkersWonOver		= SR_FALSE
+global SR_GotPastGuards				= SR_FALSE
+global SR_SlaveWorkersDead			= 0
+global SR_RescuePos					= 0
+
+// These following globals are used in the setting up of the slave town (placeholdery type stuff)
+global SR_Tree[SR_NUM_TREES]
+global SR_Field[SR_NUM_FIELDS]
+global SR_Hut[SR_NUM_HUTS]
+global SR_StoragePit				= 0
+global SR_SlaveWorkersCentrePoint	= 0
+global SR_PlayersTown				= 0
+global SR_HuntingParty				= 0
+
+// <TEMP>
+global SR_FieldPosIndicator[SR_NUM_FIELDS]				// Placeholder for the placeholder :)
+// </TEMP>
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SR_SetupSlaveWorkersWorkingArea
+define script SR_CreateSlaveWorkers
+define script SR_SetSlaveWorkersWorking
+define script SR_IsSlaveWorkerAlive(SlaveID)
+define script SR_HandleSlaveWorkerDoingJob(SlaveID)
+define script SR_CheckForSlaveWorkersBeingSatisfied
+define script SR_SlaveWorkersConfirmAllegiance
+define script SR_CheckForBringingGuard
+define script SR_CheckForDroppingGuard(Who)
+define script SR_EscortGuardIntoHut(Guard, HutToUse)
+define script SR_CheckForSlaveDeliveringMessage(Slave, MessageDeliveredPos, *ResultOfSlavesEfforts)
+define script SR_CreateMassSlaveExodus
+define script SR_CreateSlaveHuntingParty
+define script SR_HandleHuntingPartyActions
+define script SR_Intro
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land9SlaveRevolt
+start
+
+	// Get the players creature
+	MyCreature = get player 0 creature
+
+	// Setup the global markers
+	SR_RescuePos = marker at {782.191,65.675,2054.758}
+	SR_PlayersTown = marker at {1756.933,26.343,874.419}
+
+	// Setup the slave workers
+	run script SR_SetupSlaveWorkersWorkingArea
+	run script SR_CreateSlaveWorkers
+	run script SR_SetSlaveWorkersWorking
+
+	wait 10 seconds
+	run script SR_Intro
+
+	// Make sure the slaves are on your side before continuing
+	run script SR_CheckForSlaveWorkersBeingSatisfied
+	wait until SR_SlaveWorkersWonOver == SR_TRUE or SR_SlaveWorkersDead == SR_AMOUNT_OF_SLAVE_WORKERS
+
+	// Get the confirmation of allegiance from the slave workers
+	if SR_SlaveWorkersWonOver == SR_TRUE
+		run script SR_SlaveWorkersConfirmAllegiance
+		run script SR_CheckForBringingGuard
+		wait until SR_GotPastGuards == SR_TRUE or SR_SlaveWorkersDead == SR_AMOUNT_OF_SLAVE_WORKERS
+
+		// Kick off the slave revolt if the messenger got through
+		if SR_GotPastGuards == SR_TRUE
+			run script SR_CreateMassSlaveExodus
+			wait 60 seconds
+			run script SR_CreateSlaveHuntingParty
+			run background script SR_HandleHuntingPartyActions
+		else
+			say "All the slaves have been killed - so up yours."
+			wait until read
+		end if
+	else
+		say "All the slaves have been killed - so up yours."
+		wait until read
+	end if
+
+end script Land9SlaveRevolt
+
+
+//-----------------------------------------------------------------------------
+//	Create the slave workers town
+//-----------------------------------------------------------------------------
+begin script SR_SetupSlaveWorkersWorkingArea
+
+	TreePos		= 0
+	FieldPos	= 0
+	StoragePos	= 0
+	HutPos		= 0
+	Counter		= 0
+
+start
+
+	SR_SlaveWorkersCentrePoint	= marker at {1037.415,27.538,1866.855}
+	TreePos						= marker at {SR_SlaveWorkersCentrePoint} + {-50, -50}
+	FieldPos					= marker at {SR_SlaveWorkersCentrePoint} + {70, 70}
+	StoragePos					= marker at {SR_SlaveWorkersCentrePoint} + {0, 0}
+	HutPos						= marker at {SR_SlaveWorkersCentrePoint} + {35, -35}
+
+	// Create the trees the slaves use
+	while Counter < SR_NUM_TREES
+		SR_Tree[Counter] = create TREE TREE_INFO_SPRUCE at {TreePos} + {number from -20 to 20, number from -20 to 20}
+		SCALE of SR_Tree[Counter] = number from 0.5 to 2.0
+		Counter++
+	end while
+
+	// Create the fields the slaves use
+	Counter = 0
+	while Counter < SR_NUM_FIELDS
+		SR_Field[Counter] = create SCRIPT_OBJECT_TYPE_FIELD FIELD_INFO_TYPE_WHEAT at {FieldPos} + {number from -30 to 30, number from -30 to 30}
+		HEIGHT of SR_Field[Counter] = 2.0
+
+		SR_FieldPosIndicator[Counter] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {SR_Field[Counter]}
+		disable SR_FieldPosIndicator[Counter] pickup
+		disable SR_FieldPosIndicator[Counter] moveable
+		disable SR_FieldPosIndicator[Counter] set on fire
+		enable SR_FieldPosIndicator[Counter] indestructible
+
+		Counter++
+	end while
+
+	// Create the huts
+	Counter = 0
+	while Counter < SR_NUM_HUTS
+		SR_Hut[Counter] = create HOUSE ABODE_INFO_NORSE_HUT at {HutPos} + {number from -25 to 25, number from -25 to 25}
+		ANGLE of SR_Hut[Counter] = 180
+		Counter++
+	end while
+
+	// Create the storage pit
+	SR_StoragePit = create HOUSE ABODE_INFO_NORSE_STORAGE_PIT at {StoragePos}
+
+end script SR_SetupSlaveWorkersWorkingArea
+
+
+//-----------------------------------------------------------------------------
+//	Create the slave workers that the player can try to turn
+//-----------------------------------------------------------------------------
+begin script SR_CreateSlaveWorkers
+
+	Counter		= 0
+
+start
+
+	// Create the slave workers
+	while Counter < SR_AMOUNT_OF_SLAVE_WORKERS
+		if number from 1 to 2 == 1
+			SR_SlaveWorker[Counter] = create VILLAGER VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {SR_Hut[0]}
+		else
+			SR_SlaveWorker[Counter] = create VILLAGER VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {SR_Hut[1]}
+		end if
+
+		HEALTH of SR_SlaveWorker[Counter] = 1
+		SR_SlaveWorkerAlive[Counter] = SR_TRUE
+		Counter++
+	end while
+
+end script SR_CreateSlaveWorkers
+
+
+//-----------------------------------------------------------------------------
+//	Make the slaves start working
+//-----------------------------------------------------------------------------
+begin script SR_SetSlaveWorkersWorking
+
+	Counter		= 0
+
+start
+
+	while Counter < SR_AMOUNT_OF_SLAVE_WORKERS
+		run background script SR_IsSlaveWorkerAlive(Counter)
+		run background script SR_HandleSlaveWorkerDoingJob(Counter)
+		Counter++
+	end while
+
+end script SR_SetSlaveWorkersWorking
+
+
+//-----------------------------------------------------------------------------
+//	Flag whether the slave is alive or not
+//-----------------------------------------------------------------------------
+begin script SR_IsSlaveWorkerAlive(SlaveID)
+start
+
+	while SR_SlaveWorkerAlive[SlaveID] == SR_TRUE
+		// Is the slave alive?
+		if SR_SlaveWorker[SlaveID] exists and HEALTH of SR_SlaveWorker[SlaveID] > 0
+			SR_SlaveWorkerAlive[SlaveID] = SR_TRUE
+		else
+			SR_SlaveWorkerAlive[SlaveID] = SR_FALSE
+		end if
+	end while
+
+end script SR_IsSlaveWorkerAlive
+
+
+//-----------------------------------------------------------------------------
+//	Make each slave do his job
+//-----------------------------------------------------------------------------
+begin  script SR_HandleSlaveWorkerDoingJob(SlaveID)
+
+	JobType			= 0
+	Job				= 0
+
+start
+
+	// Make the slave go about his task
+	while SR_SlaveWorkerAlive[SlaveID] == SR_TRUE
+		JobType = number from 1 to 2
+		if JobType == SR_JOB_FARMING
+			// Get a field for the slave to farm from
+			Job = number from 0 to SR_NUM_FIELDS - 1
+			move SR_SlaveWorker[SlaveID] position to {SR_Field[Job]}
+			wait until {SR_SlaveWorker[SlaveID]} near {SR_Field[Job]} radius 3 or SR_SlaveWorkerAlive[SlaveID] == SR_FALSE
+			if SR_SlaveWorkerAlive[SlaveID] == SR_TRUE
+				SR_SlaveWorker[SlaveID] play anim "A_P_FARMER_HARVESTING" loop number from 3 to 10
+				wait until SR_SlaveWorker[SlaveID] played or SR_SlaveWorkerAlive[SlaveID] == SR_FALSE
+			end if
+		else
+			// Get a tree for the slave to go to
+			Job = number from 0 to SR_NUM_TREES - 1
+			move SR_SlaveWorker[SlaveID] position to {SR_Tree[Job]}
+			wait until {SR_SlaveWorker[SlaveID]} near {SR_Tree[Job]} radius 1 or SR_SlaveWorkerAlive[SlaveID] == SR_FALSE
+			if SR_SlaveWorkerAlive[SlaveID] == SR_TRUE
+				SR_SlaveWorker[SlaveID] play anim "a_p_chopping_tree" loop number from 3 to 10
+				wait until SR_SlaveWorker[SlaveID] played or SR_SlaveWorkerAlive[SlaveID] == SR_FALSE
+			end if
+		end if
+	end while
+
+	// Flag that the slave worker is dead
+	SR_SlaveWorkersDead++
+
+end script SR_HandleSlaveWorkerDoingJob
+
+
+//-----------------------------------------------------------------------------
+//	See if the slave workers are on the players side (win them over by giving them enough resources)
+//-----------------------------------------------------------------------------
+begin script SR_CheckForSlaveWorkersBeingSatisfied
+
+	SlaveStoragePit			= 0
+	OriginalFoodAmount		= 0
+	OriginalWoodAmount		= 0
+	CurrentAmountOfFood		= 0
+	CurrentAmountOfWood		= 0
+	GotEnoughFood			= SR_FALSE
+	GotEnoughWood			= SR_FALSE
+
+start
+
+	// Record the starting amount of resources for the slaves
+	SlaveStoragePit = get STORE at {SR_SlaveWorkersCentrePoint} radius 50
+	OriginalFoodAmount = get resource RESOURCE_TYPE_FOOD in SlaveStoragePit
+	OriginalWoodAmount = get resource RESOURCE_TYPE_WOOD in SlaveStoragePit
+
+	// Check to see if the slaves have been given their quota of food and wood
+	while SR_SlaveWorkersWonOver == SR_FALSE
+		CurrentAmountOfFood = get resource RESOURCE_TYPE_FOOD in SlaveStoragePit
+		CurrentAmountOfWood = get resource RESOURCE_TYPE_WOOD in SlaveStoragePit
+
+		if GotEnoughFood == SR_FALSE
+			if CurrentAmountOfFood >= OriginalFoodAmount + SR_AMOUNT_OF_FOOD_NEEDED
+				say "GA: That's enough food leader."
+				wait until read
+				GotEnoughFood = SR_TRUE
+			end if
+		end if
+
+		if GotEnoughWood == SR_FALSE
+			if CurrentAmountOfWood >= OriginalWoodAmount + SR_AMOUNT_OF_WOOD_NEEDED
+				say "GA: That's enough wood leader."
+				wait until read
+				GotEnoughWood = SR_TRUE
+			end if
+		end if
+
+		if GotEnoughFood == SR_TRUE and GotEnoughWood == SR_TRUE
+			say "GA: The slaves have been satisfied leader, well done."
+			wait until read
+			SR_SlaveWorkersWonOver = SR_TRUE
+		end if
+	end while
+
+end script SR_CheckForSlaveWorkersBeingSatisfied
+
+
+//-----------------------------------------------------------------------------
+//	Get the cutscene where the slave workers offer their allegiance to the player
+//-----------------------------------------------------------------------------
+begin script SR_SlaveWorkersConfirmAllegiance
+
+	Scroll			= 0
+	HeadSlave		= 0
+	HutToUse		= SR_Hut[0]
+	TalkPos			= marker at {HutToUse} + {0, 5}
+	RemindTimer		= create timer for 0 seconds
+
+start
+
+	// Create a scroll for the player to click on
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {HutToUse}
+	ALTITUDE of Scroll = 10
+
+	// TODO: Need to highlight the scroll with the advisors properly
+	begin loop
+		if camera position near {HutToUse} radius 100 and Scroll viewed
+			if get RemindTimer time remaining <= 0
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					say "GA: Leader something requires your attention here."
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set RemindTimer time to 30 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	begin cinema
+		// Move the camera in so we can see the head slave
+		move camera position to {TalkPos} + {1.500,1.500,1.500} time 3
+		move camera focus to {TalkPos} + {0.000,1.000,0.000} time 3
+
+		// Create the head slave in a building
+		HeadSlave  = create VILLAGER VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {HutToUse}
+		move HeadSlave position to {TalkPos}
+		wait until {HeadSlave} near {TalkPos} radius 1
+		wait until camera ready
+		HeadSlave play anim "a_p_gossip_man" loop -1
+
+		say "Thanks for providing us with food and wood O mighty one." by HeadSlave
+		wait until read
+		say "We can build some shelter and get something nice and hot inside us." by HeadSlave
+		wait until read
+		say "We will gladly follow and fight for you but need to rescue our families first." by HeadSlave
+		wait until read
+		say "They are being held in the city and we need some way of getting in there to release them." by HeadSlave
+		wait until read
+		say "If you bring us a guard we can steal his uniform to get by the other enemy guards." by HeadSlave
+		wait until read
+		say "We can then get to the slaves, free them and create an uprising."  by HeadSlave
+		wait until read
+
+		// Send the head slave back to his hut
+		move HeadSlave position to {HutToUse}
+
+		// Wait until the head slave is out of sight then delete him
+		wait until {HeadSlave} near {HutToUse} radius 1
+		delete HeadSlave
+	end cinema
+
+	begin dialogue
+		// Get responses from the advisors
+		eject good spirit
+		eject evil spirit
+		say "GA: Oh leader we must help these poor fellows."
+		wait until read
+		say "EA: For once goody, I agree with you."
+		wait until read
+		say "GA: What's this evil, turning good in your old age?"
+		wait until read
+		say "EA: Hell no! If anyones gonna have slaves to torture it should be us."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script SR_SlaveWorkersConfirmAllegiance
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if a guard has been given to the slave workers
+//-----------------------------------------------------------------------------
+begin script SR_CheckForBringingGuard
+start
+
+	if SR_SlaveWorkersDead < SR_AMOUNT_OF_SLAVE_WORKERS
+		run background script SR_CheckForDroppingGuard(SR_PLAYER)
+		run background script SR_CheckForDroppingGuard(SR_CREATURE)
+	end if
+
+end script SR_CheckForBringingGuard
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if a guard has been dropped near the slave workers
+//-----------------------------------------------------------------------------
+begin script SR_CheckForDroppingGuard(Who)
+
+	WhatHappenedToSlave[1]
+	RADIUS						= 20
+	SlaveRescuer				= 0
+	HutToUse					= SR_Hut[0]
+	InHand						= 0
+	ItemType					= 0
+	RescuerOnWayToSlaves		= SR_FALSE
+
+start
+
+	begin loop
+		if RescuerOnWayToSlaves == SR_FALSE
+			// Who are we checking?
+			if Who == SR_PLAYER
+				// Check to see if there is anything in the players hand
+				InHand = get object held
+			else
+				// Check to see if there is anything in the players creatures hand
+				InHand = get object in MyCreature hand
+			end if
+
+			if InHand exists
+				// Get the type of the ting in the players hand
+				ItemType = variable get InHand type
+
+				// Check to make sure it is a villager (needs to be a guard)
+				if ItemType == variable VILLAGER
+					// Wait until the guard has been dropped
+					wait until InHand is not HELD
+
+					// Check to see if the guard has been dropped near enough to the hut
+					if {InHand} near {HutToUse} radius RADIUS
+						run script SR_EscortGuardIntoHut(InHand, HutToUse)
+						
+						// Send a slave to the town to try and free the slaves (needs to be dressed as guard)
+						SlaveRescuer = create VILLAGER VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {HutToUse}
+						move SlaveRescuer position to {SR_RescuePos}
+						RescuerOnWayToSlaves = SR_TRUE
+					end if
+				end if
+			end if
+		else
+			// Check to see if the slave makes it to his destination
+			WhatHappenedToSlave[0] = SR_UNDEFINED
+			run script SR_CheckForSlaveDeliveringMessage(SlaveRescuer, SR_RescuePos, &WhatHappenedToSlave[0])
+
+			// Did the slave make it and get the message delivered?
+			if WhatHappenedToSlave[0] == SR_SLAVE_DELIVERED_MESSAGE
+				// The slave made it so the revolt is going to take place
+				SR_GotPastGuards = SR_TRUE
+			elsif WhatHappenedToSlave[0] == SR_SLAVE_KILLED
+				// The slave is dead so we need to get another one
+				RescuerOnWayToSlaves = SR_FALSE
+			else
+				say "ERROR: Don't know what happened to the slave."
+				wait until read
+			end if
+		end if
+	until SR_GotPastGuards == SR_TRUE
+	until SR_SlaveWorkersDead == SR_AMOUNT_OF_SLAVE_WORKERS
+	end loop
+
+end script SR_CheckForDroppingGuard
+
+
+//-----------------------------------------------------------------------------
+//	Do the cutscene of escorting the guard into the slave hut to change clothes
+//-----------------------------------------------------------------------------
+begin script SR_EscortGuardIntoHut(Guard, HutToUse)
+
+	MasterSlave		= 0
+
+start
+
+	begin cinema
+		// Stop the guard from moving anywhere
+		move Guard position to {Guard}
+
+		// Setup the camera position
+		move camera position to {HutToUse} + {10.000,10.000,0.000} time 2
+		move camera focus to {Guard} time 2
+
+		// Bring the head slave out and escort the guard into the hut
+		MasterSlave = create VILLAGER VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {HutToUse}
+		move MasterSlave position to {Guard}
+		wait until {MasterSlave} near {Guard} radius 3
+
+		// Escort the guard into the hut
+		move Guard position to {HutToUse}
+		wait 1 second
+		move MasterSlave position to {HutToUse}
+		wait until {Guard} near {HutToUse} radius 1
+		wait until {MasterSlave} near {HutToUse} radius 1
+		delete Guard
+		delete MasterSlave
+	end cinema
+
+end script SR_EscortGuardIntoHut
+
+
+//-----------------------------------------------------------------------------
+//	Check for interferance from guards etc for the slave en route to deliver the message
+//-----------------------------------------------------------------------------
+begin script SR_CheckForSlaveDeliveringMessage(Slave, MessageDeliveredPos, *ResultOfSlavesEfforts)
+
+	GotToTheDestination		= SR_FALSE
+	SlaveKilled				= SR_FALSE
+
+start
+
+	while GotToTheDestination == SR_FALSE and SlaveKilled == SR_FALSE
+		// Check to see if the slave has been killed
+		if not Slave exists or HEALTH of Slave <= 0
+			SlaveKilled = SR_TRUE
+		end if
+
+		// Check to see if the slave has made it to his destination
+		if SlaveKilled == SR_FALSE
+			if {Slave} near {MessageDeliveredPos} radius 2
+				GotToTheDestination = SR_TRUE
+			end if
+		end if
+
+		// Handle enemy guards seeing the slave
+	end while
+
+	// Flag the results of the journey
+	if SlaveKilled == SR_TRUE
+		ResultOfSlavesEfforts[0] = SR_SLAVE_KILLED
+	elsif GotToTheDestination == SR_TRUE
+		ResultOfSlavesEfforts[0] = SR_SLAVE_DELIVERED_MESSAGE
+	end if
+
+end script SR_CheckForSlaveDeliveringMessage
+
+
+//-----------------------------------------------------------------------------
+//	Make the slaves attempt to join the player
+//-----------------------------------------------------------------------------
+begin script SR_CreateMassSlaveExodus
+
+	Counter			= 0
+	ChildOrAdult	= 0
+	StartPos		= 0
+	Speed			= 0
+
+start
+
+	// Create the slaves that have been rescued
+	while Counter < SR_AMOUNT_OF_SLAVES_RESCUED
+		ChildOrAdult = number from 1 to 2
+		StartPos = marker at {SR_RescuePos} + {number from -10 to 10, number from -10 to 10}
+		if Counter % 2 == 0
+			if ChildOrAdult == 1
+				SR_RescuedSlaves[Counter] = create CHILD VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {StartPos}
+				Speed = 0.4
+			else
+				SR_RescuedSlaves[Counter] = create VILLAGER VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {StartPos}
+				Speed = 0.6
+			end if
+		else
+			if ChildOrAdult == 1
+				SR_RescuedSlaves[Counter] = create CHILD VILLAGER_INFO_EGYPTIAN_HOUSEWIFE_FEMALE at {StartPos}
+				Speed = 0.4
+			else
+				SR_RescuedSlaves[Counter] = create VILLAGER VILLAGER_INFO_EGYPTIAN_HOUSEWIFE_FEMALE at {StartPos}
+				Speed = 0.5
+			end if
+		end if
+
+		move SR_RescuedSlaves[Counter] position to {SR_PlayersTown} + {number from -20 to 20, number from -20 to 20}
+		SPEED of SR_RescuedSlaves[Counter] = Speed
+		Counter++
+	end while
+	
+
+end script SR_CreateMassSlaveExodus
+
+
+//-----------------------------------------------------------------------------
+//	Make the enemy guards try to kill off the revolting slaves :)
+//-----------------------------------------------------------------------------
+begin script SR_CreateSlaveHuntingParty
+start
+
+	// Create a platoon to hunt the slaves
+	SR_HuntingParty = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_AZTEC formation FORMATION_TYPE_CRESCENT_RABBLE at {SR_RescuePos} facing {SR_RescuedSlaves[SR_AMOUNT_OF_SLAVES_RESCUED - 1]} with 30 villagers
+	set SR_HuntingParty player 6
+	set player 6 ENEMY to player 0
+
+end script SR_CreateSlaveHuntingParty
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the member of the hunting party has managed to catch a slave
+//-----------------------------------------------------------------------------
+begin script SR_HandleHuntingPartyActions
+
+	SlavesKilled		= SR_FALSE
+	HuntingPartyMoving	= SR_FALSE
+	TotalSlavesKilled	= 0
+
+start
+
+	while SlavesKilled == SR_FALSE
+		// Set the hunting party after the slaves
+		if HuntingPartyMoving == SR_FALSE
+			move SR_HuntingParty position to {SR_PlayersTown}
+			HuntingPartyMoving = SR_TRUE
+		else
+			if {SR_HuntingParty} near {SR_PlayersTown} radius 50
+				// Attack the players town
+				say "Attacking the players town here..."
+				wait until read
+				release SR_HuntingParty
+			else
+				// Attack any slaves we're close to
+			end if
+		end if
+	end while
+
+end script SR_HandleHuntingPartyActions
+
+
+//-----------------------------------------------------------------------------
+//	Get the slaves asking for some help
+//-----------------------------------------------------------------------------
+begin script SR_Intro
+
+	MasterSlave		= 0
+	Scroll			= 0
+	HutToUse		= SR_Hut[0]
+	TalkPos			= marker at {HutToUse} + {0, 5}
+	ReminderTimer	= create timer for 0 seconds
+
+start
+
+	// Create a scroll for the player to click on
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {HutToUse}
+	ALTITUDE of Scroll = 10
+
+	// TODO: Need to highlight the scroll with the advisors properly
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			if camera position near {Scroll} radius 100
+				begin dialogue
+					eject good spirit
+					make good spirit point at {Scroll}
+					say "GA: Leader something requires your attention here."
+					wait until read
+					stop good spirit pointing
+					send good spirit home
+				end dialogue
+				set ReminderTimer time to 30 seconds
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	// Get a slave come out of one of the houses and ask for help to get resources
+	begin cinema
+		move camera position to {TalkPos} + {1.500,1.500,1.500} time 3
+		move camera focus to {TalkPos} + {0.000,1.000,0.000} time 3
+		MasterSlave = create VILLAGER VILLAGER_INFO_EGYPTIAN_FARMER_MALE at {HutToUse}
+		move MasterSlave position to {TalkPos}
+		wait until {MasterSlave} near {TalkPos} radius 1
+		wait until camera ready
+		set MasterSlave focus to camera position
+		MasterSlave play anim "a_p_gossip_man" loop -1
+		say "MasterSlave: We are slaves of the *Egyptians/Aztecs - *Delete as appropriate." by MasterSlave
+		wait until read
+		say "MasterSlave: We need to gather food and wood for them and put it in the storage pit." by MasterSlave
+		wait until read
+		say "MasterSlave: After they take what they want we barely have enough for ourselves." by MasterSlave
+		wait until read
+		say "MasterSlave: We are ready to rise up and fight against the enemy of anyone who will help us." by MasterSlave
+		wait until read
+		say "MasterSlave: A thousand of Food and Wood will guarantee our support." by MasterSlave
+		wait until read
+		move MasterSlave position to {HutToUse}
+		wait until {MasterSlave} near {HutToUse} radius 1
+		delete MasterSlave
+	end cinema
+
+	begin dialogue
+		// Get responses from the advisors
+		eject good spirit
+		eject evil spirit
+		say "GA: Using slaves in this day and age just insn;t right leader."
+		wait until read
+		say "EA: What are you going on about now. IDIOT!!!"
+		wait until read
+		say "GA: I'll forgive you for that evil, but let's help them leader."
+		wait until read
+		say "EA: Who needs those insignificant little dorks - unless you wanna get some torturing going."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script SR_Intro
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

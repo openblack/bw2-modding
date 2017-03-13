@@ -1,0 +1,793 @@
+//=============================================================================
+// Land 10 Stealth Mission
+// Lenny
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
+define ST_FALSE		= 0
+define ST_TRUE		= 1
+
+define ST_NUM_GREEK_MALES					= 30
+
+define ST_NUMBER_OF_ROCKS_TO_DROP			= 6
+
+//Lava stuff
+define ST_LAVA_RUN_TIME						= 30	//Total time this mini volcano is active for
+define ST_LAVA_STEP_TIME					= 5		//Time between each lava pool begin created
+define ST_LAVA_TIME_TO_FLASH				= 1.5
+
+//-----------------------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------------------
+global ST_ObstacleRocks[ST_NUMBER_OF_ROCKS_TO_DROP]
+global ST_ObstacleRockGates[ST_NUMBER_OF_ROCKS_TO_DROP]		//Says whether this rock already ahs someone assigned to push it off the edge
+global ST_ObstacleRockPositons[ST_NUMBER_OF_ROCKS_TO_DROP]
+
+global ST_ReinforceTown_1		= 0
+global ST_ReinforceTown_2		= 0
+
+//-----------------------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------------------
+define script ST_GreekTeleport
+define script ST_UnleashEpicEarhtquake
+
+//Obstacle scripts
+define script ST_Obstacle_Snipers(Pos)
+define script ST_Obstacle_RockDrop(ID)
+define script ST_RockDropper(Pos)
+define script ST_SetupRockObstacles
+define script ST_Obstacle_RockExplode(ID)
+define script ST_Obstacle_Lava(Pos)
+define script ST_Obstacle_Lava_FlashAndSmoke(Pos)
+define script ST_Obstacle_ChasingArchers
+define script ST_MoreObstaclePlatoons
+define script ST_Obstacle_ChasingSiege
+define script ST_ObstacleStationarySiege(Pos, ScanPos)
+define script ST_AztecGeneralComments
+
+//-----------------------------------------------------------------------------
+// Land 10 Stealth
+//-----------------------------------------------------------------------------
+begin script Land10Stealth
+start
+
+
+
+
+	//Remove me, I am bad and the bringer of death
+	ST_ReinforceTown_1 = get TOWN at {1626.600,229.007,1080.721} radius 50
+	ST_ReinforceTown_2 = get TOWN at {1227.911,268.256,1700.608} radius 50
+
+	run background script ST_GreekTeleport
+	run background script Land10Women
+
+	run background script ST_SetupRockObstacles
+	run background script ST_RockDropper(marker at {1756.807, 333.217, 1023.817})
+	run background script ST_RockDropper(marker at {1759.646, 333.047, 1018.762})
+	run background script ST_RockDropper(marker at {1758.275, 333.095, 1021.555})
+
+	run background script ST_Obstacle_ChasingArchers
+	run background script ST_MoreObstaclePlatoons
+	run background script ST_Obstacle_Snipers(marker at {1912.056, 210.988, 1177.219})
+
+
+	//Siege obstacles
+	run background script ST_ObstacleStationarySiege (marker at {1606.627,244.067,1236.446}, marker at {1530.431,217.171,1431.445})
+	run background script ST_ObstacleStationarySiege (marker at {1690.262,240.759,1228.489}, marker at {1710.012,211.032,1325.395})
+
+	
+	run background script ST_AztecGeneralComments
+	run background script ST_UnleashEpicEarhtquake
+	
+	run background script ST_Obstacle_ChasingSiege
+
+	//run background script ST_Obstacle_Lava
+
+	//wait 5 seconds
+
+	//L10_DropperState = ST_DROPPER_STATE_UNLEASH
+
+end script Land10Stealth
+
+//-----------------------------------------------------------------------------
+// Greek Teleport
+//-----------------------------------------------------------------------------
+begin script ST_GreekTeleport
+	Looper			= 0
+	Man				= 0
+	TeleportPos		= marker at {1411.213,244.146,644.805}
+	FX				= 0
+start
+
+	wait until L10_ExitTeleport == ST_TRUE
+
+	force while Looper < ST_NUM_GREEK_MALES
+		
+		Man = create VILLAGER GREEK_FARMER at {TeleportPos} + {0.000,0.000,0.000}
+		FX = create visual effect VISUAL_EFFECT_SCRIPT_TARGET on Man time 2
+		SCALE of FX = 0.7
+		//create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on Man time 4 
+		set FX colour red 0 green 0 blue 255
+		attach Man to L10GreekTown
+		release Man
+		Looper++
+
+	end while
+
+	//Wait a short while
+	wait 10 seconds
+
+	//Delete the teleport stones
+
+end script ST_GreekTeleport
+
+//-----------------------------------------------------------------------------
+// Unleash Epic Earthquake
+//-----------------------------------------------------------------------------
+begin script ST_UnleashEpicEarhtquake
+	Earthquake			= 0
+	Wonder				= get WONDER at {1613.991,245.058,1167.948} radius 25	
+	//StartPos			= marker at {1617.001,228.726,793.774}
+	//EndPos				= marker at {1782.714,203.986,858.767}
+	StartPos			= marker at {1579.151,233.676,799.332}
+	EndPos				= marker at {1581.663,233.709,754.840}
+	EarthquakeWarning	= 0
+	WarningEpicPos		= marker at {1608.805,238.655,791.838}
+start	
+
+	if Wonder exists
+
+		wait until L10_TriggerEarthquakeCharge == 1
+
+		Earthquake = create earthquake start {StartPos} end {EndPos} player 1		
+
+		create 30 worshippers at Wonder
+/*
+		//Invoke the stages		
+		invoke Wonder EPIC_WONDER_STAGE_1
+		wait 10 seconds
+
+*/
+		wait until L10_TriggerEarthquake == 1
+/*
+		invoke Wonder EPIC_WONDER_STAGE_2
+		wait 5 seconds
+
+*/		
+		EarthquakeWarning = create visual effect VISUAL_EFFECT_EPIC_TARGET_WARNING at {WarningEpicPos} time 15 target {WarningEpicPos}
+		wait 20 seconds
+
+		run background script EarthquakeSpell(Wonder, Earthquake)
+
+		//crash here
+		//invoke Earthquake EPIC_PULSE_UP
+
+/*
+		invoke Wonder EPIC_WONDER_STAGE_3
+		wait 20 seconds
+
+
+		invoke Earthquake EPIC_PULSE_DOWN
+		invoke Earthquake EPIC_BEAM_DOWN
+		wait 6 seconds
+
+		invoke Earthquake EPIC_CRUMBLE_BUILDINGS
+		invoke Earthquake EPIC_START_SINKING
+		wait 4 seconds
+
+		invoke Earthquake EPIC_SHUT_DOWN_BEAM
+		invoke Earthquake EPIC_START_EXPLOSION
+		invoke Earthquake EPIC_START_CRACKING
+		wait 5 seconds
+
+		invoke Earthquake EPIC_START_SHIFTING
+		wait 5 seconds
+
+		invoke Earthquake EPIC_START_STEAM
+
+		wait 15 seconds
+
+		//invoke Wonder EPIC_WONDER_STAGE_LAST
+
+		invoke Earthquake EPIC_ADD_NAVIGATION
+		invoke Earthquake EPIC_START_CLOSING
+
+		wait 20 seconds
+
+		invoke Earthquake EPIC_END_SPELL
+*/
+	end if
+
+end script ST_UnleashEpicEarhtquake
+
+//-----------------------------------------------------------------------------
+// Obstacle - Snipers
+//-----------------------------------------------------------------------------
+begin script ST_Obstacle_Snipers(Pos)
+	//Snipers		= 0
+start
+
+	Snipers = create platoon PLATOON_INFO_AZTEC_RANGED_3 at {Pos} with 20 men and 0 women
+	PLAYER of Snipers = 1
+
+	set Snipers attack everything near {Snipers} radius 50
+
+end script ST_Obstacle_Snipers
+
+//-----------------------------------------------------------------------------
+// Obstacle - Rock Drop
+//-----------------------------------------------------------------------------
+begin script ST_SetupRockObstacles
+	Looper		= 0
+start
+
+	ST_ObstacleRockPositons[0]		= marker at {1763.272, 332.175, 1025.592}
+	ST_ObstacleRockPositons[1]		= marker at {1763.708, 332.821, 1021.198}
+	ST_ObstacleRockPositons[2]		= marker at {1765.468, 332.663, 1017.936}
+	ST_ObstacleRockPositons[3]		= marker at {1766.967, 332.546, 1012.699}
+	ST_ObstacleRockPositons[4]		= marker at {1762.578, 333.442, 1013.492}
+	ST_ObstacleRockPositons[5]		= marker at {1761.985, 333.071, 1016.472}
+	//ST_ObstacleRockPositons[6]		= marker at {1764.814, 332.980, 1015.436}
+	//ST_ObstacleRockPositons[7]		= marker at {1760.373, 332.981, 1023.591}
+	//ST_ObstacleRockPositons[8]		= marker at {1762.588, 333.846, 1029.118}
+	//ST_ObstacleRockPositons[9]		= marker at {1769.902, 331.176, 1009.514}
+	//ST_ObstacleRockPositons[10]		= marker at {1765.009, 335.382, 1009.365}
+
+	force while Looper < ST_NUMBER_OF_ROCKS_TO_DROP
+		ST_ObstacleRocks[Looper] = create ROCK_OBJECT ROUND_ROCK_LARGE at {ST_ObstacleRockPositons[Looper]}
+		Looper++
+	end while
+
+end script ST_SetupRockObstacles
+
+//-----------------------------------------------------------------------------
+// Rock Dropper
+//-----------------------------------------------------------------------------
+begin script ST_RockDropper(Pos)
+	Dropper		= 0
+	Rock		= 0
+	Looper		= 0
+	HeadPos		= marker at {1878.465,217.704,985.213}
+	RockPos		= marker at {0.000,0.000,0.000} //generated
+
+	RetreatPos	= marker at {1758.768, 333.062, 1020.792}
+start
+
+	Dropper = create VILLAGER AZTEC_FARMER at {Pos}
+	disable Dropper reactable
+	enable Dropper indestructible
+
+	begin loop
+
+		if L10_DropperState == ST_DROPPER_STATE_WAIT
+
+		
+		elsif L10_DropperState == ST_DROPPER_STATE_UNLEASH
+
+			while ST_ObstacleRockGates[Looper] == ST_TRUE and Looper < ST_NUMBER_OF_ROCKS_TO_DROP
+				Looper++
+			end while
+
+			if Looper < ST_NUMBER_OF_ROCKS_TO_DROP
+
+				Rock = ST_ObstacleRocks[Looper]
+
+				if {Rock} near {ST_ObstacleRockPositons[Looper]} radius 4 and not Rock is FLYING
+
+					ST_ObstacleRockGates[Looper] = ST_TRUE
+
+					RockPos = marker at {Rock}
+					move Dropper position to {RockPos}
+					SPEED of Dropper = 0.3
+					wait until {Dropper} near {RockPos} radius 2.3
+
+					move villager Dropper focus to {RockPos}
+
+					if {Rock} near {Dropper} radius 3
+						play anim "a_p_push_object" on Dropper
+
+						wait 1.5 seconds
+						
+						//HeadPos override
+						//HeadPos = marker at {Rock} - {Dropper} + {0.000,20.000,0.000}
+
+						set Rock velocity heading {HeadPos} speed 15
+
+						wait until Dropper played
+
+						play anim "a_p_push_object_outof" on Dropper
+						wait until Dropper played
+
+						move Dropper position to {RetreatPos} + {number from 0 to 3, number from 0 to 3}
+
+						//Wait around for a second or two
+						play anim "a_p_wipe_sweat" on Dropper
+						wait until Dropper played
+
+						if {Rock} near {ST_ObstacleRockPositons[Looper]} radius 4
+							ST_ObstacleRockGates[Looper] = ST_FALSE
+						end if						
+
+					end if
+
+				end if
+
+			//Looper !< ST_NUMBER_OF_ROCKS_TO_DROP
+			else
+				Looper = 0
+
+			end if			
+
+		end if
+
+		wait 2 seconds
+
+	until not Dropper exists
+	end loop
+
+	L10_AztecGeneralCommentID = ST_GENERAL_CREATURE_KILL_ROLLERS
+
+end script ST_RockDropper
+
+//-----------------------------------------------------------------------------
+// Obstacle - Rock Drop
+//-----------------------------------------------------------------------------
+begin script ST_Obstacle_RockDrop(ID)
+	Rock			= 0
+	Man				= 0
+
+	RockPos			= marker at {0.000,0.000,0.000} //generated
+	HeadPos			= marker at {0.000,0.000,0.000} //generated
+	ManCreatePos	= marker at {0.000,0.000,0.000} //generated
+start
+
+	if ID == 0
+		RockPos			= marker at {1756.058,340.472,1025.125}
+		HeadPos			= marker at {1625.102,205.630,1178.086}
+		ManCreatePos	= marker at {1772.178,328.711,1027.309}
+	end if
+
+	//Make sure coords have been setup
+	if XPOS of RockPos != 0
+		Rock = create ROCK_OBJECT ROUND_ROCK_LARGE at {RockPos}
+
+		Man = create VILLAGER AZTEC_FARMER at {ManCreatePos}
+		disable Man reactable
+
+		move Man position to {Rock}
+		wait until {Man} near {Rock} radius 2.3
+
+		move villager Man focus to {Rock}
+
+		play anim "a_p_push_object" on Man
+
+		wait 1.5 seconds
+		set Rock velocity heading {HeadPos} speed 15
+
+		wait until Man played
+
+		//set Rock velocity heading {HeadPos} speed 15
+
+		play anim "a_p_push_object_outof" on Man
+		wait until Man played
+
+	end if
+
+end script ST_Obstacle_RockDrop
+
+//-----------------------------------------------------------------------------
+// Obstacle - Rock Drop
+//-----------------------------------------------------------------------------
+begin script ST_Obstacle_RockExplode(ID)
+	LighterMan		= 0
+
+	RockPos			= marker at {0.000,0.000,0.000} //generated
+	LighterManPos	= marker at {0.000,0.000,0.000} //generated
+	HeadingPos		= marker at {1702.861,250.210,1216.732}
+start
+
+	if ID == 0
+		RockPos				= marker at {1755.125,340.547,1023.203}
+		//LighterManPos		= 
+	end if
+
+	//Make sure coords have been setup
+	if XPOS of RockPos != 0
+		//Rock = get ROCK_OBJECT ROUND_ROCK_LARGE at {RockPos}
+		//set Rock velocity heading {HeadingPos} speed 15
+	end if
+
+end script ST_Obstacle_RockExplode
+
+//-----------------------------------------------------------------------------
+// Obstacle - Lava
+//-----------------------------------------------------------------------------
+begin script ST_Obstacle_Lava(Pos)
+	HeadPos			= marker at {-4, 0, 1}
+	RunTimer		= create timer for ST_LAVA_RUN_TIME seconds
+	FX				= 0
+start
+
+	set lava running at {Pos} heading {HeadPos}
+
+	//	wv_s_flame_explode.ves   -fireball type thing
+	//	bf_s_collsmoke.ves		- play as a repeating flash
+	//  ev_s_lavaexplosion		- ooooh yes!
+	//	eeq_s_rocks
+	//	eeq_s_explosion			- maybe a slightly better rocks explosion
+	//	ev_s_mspotsmoke			- ok if scaled down
+
+	FX = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.5 at {Pos} time 2
+
+	begin loop
+		
+		set lava running at {Pos} heading {HeadPos}
+		wait ST_LAVA_STEP_TIME seconds
+
+	until get RunTimer time remaining == 0
+	end loop
+
+end script ST_Obstacle_Lava
+
+//-----------------------------------------------------------------------------
+// Obstacle - Lava, Flash and Smoke
+//-----------------------------------------------------------------------------
+begin script ST_Obstacle_Lava_FlashAndSmoke(Pos)
+	FX			= 0
+start
+
+	begin loop
+		FX = create visual effect "ev_s_lavaexplosion.ves" strength 1 scale 0.5 at {Pos} time 2
+		wait 100 seconds
+	end loop
+
+end script ST_Obstacle_Lava_FlashAndSmoke
+
+//-----------------------------------------------------------------------------
+// Chasing archers
+//-----------------------------------------------------------------------------
+begin script ST_Obstacle_ChasingArchers
+	//Platoons[4]
+	AreaToAttack	= marker at {1411.745,235.615,1577.327}
+	CreatePos		= marker at {1278.178,268.178,1719.406}
+	GuardPos[4]
+
+	Looper			= 0
+start
+
+	//Platoon_1 = recruit PLATOON_INFO_AZTEC_RANGED_9 town ST_ReinforceTown_1 platoon of size 30
+	//attach Platoon_1 to ST_ReinforceTown_1
+
+	//Platoon_2 = recruit PLATOON_INFO_AZTEC_RANGED_9 town ST_ReinforceTown_1 platoon of size 30
+	//attach Platoon_2 to ST_ReinforceTown_1
+
+	//Platoon_1 = create platoon PLATOON_INFO_AZTEC_RANGED_9 at {AreaToAttack} with 30 men and 0 women
+	//PLAYER of Platoon_1 = 1
+
+	//Platoon_2 = create platoon PLATOON_INFO_AZTEC_RANGED_9 at {AreaToAttack} with 30 men and 0 women
+
+	GuardPos[0] = marker at {1425.050, 251.754, 1440.011} //d-marker at {1425.859,233.522,1542.669}
+	GuardPos[1] = marker at {1364.378,227.254,1543.113}
+	GuardPos[2] = marker at {1368.004,234.003,1589.425}
+	GuardPos[3] = marker at {1474.300, 256.067, 1556.054}  //d-marker at {1414.983,239.342,1590.273}
+
+	begin loop
+		Platoons[Looper] = create platoon PLATOON_INFO_AZTEC_RANGED_3 at {GuardPos[Looper]} with 15 men and 0 women
+		//add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {GuardPos[Looper]} to front of Platoons[Looper] action queue
+		PLAYER of Platoons[Looper] = 1
+		Looper++
+	until Looper >= 4
+	end loop
+
+	//wait until not Platoon_1 recruiting
+	//wait until not Platoon_2 recruiting
+
+	wait 20 seconds
+
+	Looper = 0
+	begin loop
+		set Platoons[Looper] attack everything near {AreaToAttack} radius 50
+		Looper++
+	until Looper >= 4
+	end loop
+
+end script ST_Obstacle_ChasingArchers
+
+//-----------------------------------------------------------------------------
+// Chasing Siege
+//-----------------------------------------------------------------------------
+begin script ST_Obstacle_ChasingSiege
+	Siege_1					= 0
+	Siege_2					= 0
+	Siege_3					= 0
+
+	CatapultSpawn1			= marker at {1293.240,268.569,1709.354}
+	CatapultSpawn2			= marker at {1271.352,267.699,1710.004}
+	CatapultSpawn3			= marker at {1297.239,267.812,1699.314}
+
+	CatapultDefendPos1		= marker at {1347.705,226.569,1571.246}
+	CatapultDefendPos2		= marker at {1357.268,226.357,1552.094}
+	CatapultDefendPos3		= marker at {1372.118,228.356,1533.364}
+
+	AreaToAttack			= marker at {1455.521,228.492,1499.306}
+
+	Target					= 0
+	AttackTimer				= create timer for 0 seconds
+	AttackTimerSet			= ST_FALSE
+start
+
+	wait until LC10_MinorSettlement[2] exists
+
+	Siege_1	= create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to LC10_MinorSettlement[2] at {CatapultSpawn1}
+	Siege_2	= create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to LC10_MinorSettlement[2] at {CatapultSpawn2}
+	Siege_3	= create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to LC10_MinorSettlement[2] at {CatapultSpawn3}
+
+	add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultDefendPos1} to siege weapon Siege_1 action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultDefendPos2} to siege weapon Siege_2 action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultDefendPos3} to siege weapon Siege_3 action queue
+
+	//Wait until the women are released
+	wait until WC_PrisonerRelease >= WC_ESCAPE_STAGE_1
+
+	//add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {AreaToAttack} to siege weapon Siege_1 action queue
+	//add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {AreaToAttack} to siege weapon Siege_2 action queue
+	//add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {AreaToAttack} to siege weapon Siege_3 action queue
+	
+
+	begin loop
+
+		Target = get living villager at {AreaToAttack} radius 30
+
+		if Target exists and AttackTimerSet == ST_FALSE
+			set AttackTimer time to 240 seconds
+			AttackTimerSet = ST_TRUE
+		end if
+
+	until Target exists and PLAYER of Target == 0
+	end loop
+
+	add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {Target} to siege weapon Siege_1 action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {Target} to siege weapon Siege_2 action queue
+	add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {Target} to siege weapon Siege_3 action queue
+	wait until not {Target} near {Siege_1} radius 200 or 60 seconds			
+
+end script ST_Obstacle_ChasingSiege
+
+//-----------------------------------------------------------------------------
+// Aztec General Comments
+//-----------------------------------------------------------------------------
+begin script ST_AztecGeneralComments
+	LastID	= ST_GENERAL_WOMEN_MADE_IT____LAST
+start
+
+	begin loop
+
+		wait until L10_AztecGeneralCommentID != LastID
+		LastID = L10_AztecGeneralCommentID
+
+		begin dialogue
+			if L10_AztecGeneralCommentID == ST_GENERAL_CREATURE_BREAKS_WALLS
+
+				say "BW2T_SCRIPT_10FINAL_STEALTH_10"
+				wait until read
+
+				say "BW2T_SCRIPT_10FINAL_STEALTH_20"
+				wait until read
+
+				eject evil spirit
+				say "BW2T_SCRIPT_10FINAL_STEALTH_40"
+				wait until read
+
+				say "BW2T_SCRIPT_10FINAL_TROOP_FOLLOWING_WOMEN_10"
+				wait until read
+
+				say "BW2T_SCRIPT_10FINAL_TROOP_FOLLOWING_WOMEN_20"
+				wait until read
+
+				say "BW2T_SCRIPT_10FINAL_TROOP_FOLLOWING_WOMEN_30"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_WOMEN_ESCAPING
+
+				//NA
+				
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_ARCHERS_ATTACK
+
+				//Fire at will
+				say "BW2T_SCRIPT_10FINAL_ARCHERS_ATTACK_THE_WOMEN"
+				wait until read
+
+				eject good spirit
+				say "BW2T_SCRIPT_10FINAL_INTRO_WOMEN_RUNNING_30"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_ARCHERS_KILL
+
+				//Show no mercy
+				say "BW2T_SCRIPT_10FINAL_ARCHERS_KILL_SOME_WOMEN"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_ARCHERS_KILLED_BY_CREATURE
+
+				//How did that Creature defeat our archers?!
+				say "BW2T_SCRIPT_10FINAL_ARCHERS_ARE_KILLED_BY_CREATURE"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_CATAPULTS
+
+				//Deploy the catapults
+				say "BW2T_SCRIPT_10FINAL_CATAPULTS_ARRIVE"
+				wait until read
+
+				eject good spirit
+				say "BW2T_SCRIPT_10FINAL_INTRO_WOMEN_RUNNING_10"
+				wait until read
+
+				say "BW2T_SCRIPT_10FINAL_INTRO_WOMEN_RUNNING_20"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_CREATURE_ATTACK
+
+				//Deploy the catapults
+				say "BW2T_SCRIPT_10FINAL_CATAPULTS_ARRIVE"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_STONES_ROLLED
+
+				say "BW2T_SCRIPT_10FINAL_STONE_ROLLERS_ATTACK_WOMEN"
+				wait until read
+
+				eject evil spirit
+				say "BW2T_SCRIPT_10FINAL_INTRO_WOMEN_RUNNING_40"
+				wait until read
+				send evil spirit home
+
+				wait 20 seconds
+				L10_AztecGeneralCommentID = ST_GENERAL_STONES_KILL
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_STONES_KILL
+
+				say "BW2T_SCRIPT_10FINAL_STONES_KILL_SOME_WOMEN"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_CREATURE_KILL_ROLLERS
+
+				say "BW2T_SCRIPT_10FINAL_CREATURE_KILLS_STONE_ROLLERS"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_CREATURE_FIGHT
+
+				say "BW2T_SCRIPT_10FINAL_CREATURE_FIGHT"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_PLAYER_CREATURE_LOST
+
+				say "BW2T_SCRIPT_10FINAL_YOUR_CREATURE_LOSES_FIGHT"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_PLAYER_CREATURE_WON
+
+				say "BW2T_SCRIPT_10FINAL_YOUR_CREATURE_WINS_FIGHT"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_EARTHQUAKE
+
+				say "BW2T_SCRIPT_10FINAL_EARTHQUAKE"
+				wait until read
+
+				eject good spirit
+				say "BW2T_SCRIPT_10FINAL_EARTHQUAKE_10"
+				wait until read
+
+				say "BW2T_SCRIPT_10FINAL_INTRO_WOMEN_RUNNING_50"
+				wait until read
+
+				eject evil spirit
+				say "BW2T_SCRIPT_10FINAL_EARTHQUAKE_20"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_EARTHQUAKE_CHARGE
+
+				say "BW2T_SCRIPT_10FINAL_EARTHQUAKE_30"
+				wait until read
+
+			elsif L10_AztecGeneralCommentID == ST_GENERAL_WOMEN_MADE_IT_BACK
+
+				eject good spirit
+				say "BW2T_SCRIPT_10FINAL_WOMEN_MAKE_IT_BACK_TO_CITY_10"
+				wait until read
+
+				eject evil spirit
+				say "BW2T_SCRIPT_10FINAL_WOMEN_MAKE_IT_BACK_TO_CITY_20"
+				wait until read
+
+				say "BW2T_SCRIPT_10FINAL_WOMEN_MAKE_IT_BACK_TO_CITY_30"
+				wait until read
+
+			end if
+
+			send evil spirit home
+			send good spirit home
+
+		end dialogue
+
+	end loop
+
+end script ST_AztecGeneralComments
+
+//-----------------------------------------------------------------------------
+// More Obstacle Platoons
+//-----------------------------------------------------------------------------
+begin script ST_MoreObstaclePlatoons
+	//Attackers[5]
+	StartPos[5]
+	MovePos[5]
+	Looper	= 0
+start
+
+	StartPos[0] =  marker at {1429.662, 251.384, 1416.243}  //dmarker at {1538.834,210.902,1288.055}
+	StartPos[1] =  marker at {1557.226, 258.733, 1472.050}  //dmarker at {1565.408,210.903,1304.415}
+	StartPos[2] = marker at {1565.979,211.123,1040.158}
+	StartPos[3] = marker at {1580.904,233.746,969.472}
+	StartPos[4] = marker at {2237.918,226.812,991.383}
+
+	MovePos[0] = marker at {1429.662, 251.384, 1416.243}  //dmarker at {1515.720,214.166,1413.784}
+	MovePos[1] = marker at {1557.226, 258.733, 1472.050}  //dmarker at {1565.120,211.142,1422.884}
+	MovePos[2] = marker at {1822.116,212.859,1170.447}
+	MovePos[3] = marker at {1752.458,211.172,1265.294}
+	MovePos[4] = marker at {1884.051,219.295,988.542}
+
+	begin loop
+		Attackers[Looper] = create platoon PLATOON_INFO_AZTEC_RANGED_3 at {StartPos[Looper]} with 20 men and 0 women
+		PLAYER of Attackers[Looper] = 1
+		Looper++
+	until Looper == 5
+	end loop
+
+	wait until WC_PrisonerRelease >= WC_ESCAPE_STAGE_1
+
+	Looper = 0
+
+	begin loop
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {MovePos[Looper]} to Attackers[Looper] action queue
+		set Attackers[Looper] attack everything near {MovePos[Looper]} radius 50
+		Looper++
+	until Looper == 5
+	end loop
+
+end script ST_MoreObstaclePlatoons
+
+//-----------------------------------------------------------------------------
+// Obstacle Stationary Siege
+//-----------------------------------------------------------------------------
+begin script ST_ObstacleStationarySiege(Pos, ScanPos)
+	Siege		= 0
+	Target		= 0
+start
+
+	wait until LC10_MinorSettlement[2] exists
+
+	Siege = create siege weapon SIEGE_BALANCE_TYPE_CATAPULT_LEVEL_4 belonging to LC10_MinorSettlement[2] at {Pos}
+
+	begin loop
+
+		Target = get living villager at {ScanPos} radius 50
+
+		if Target exists
+			add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {Target} to siege weapon Siege action queue
+			wait 30 seconds
+			clear siege weapon Siege action queue
+		end if
+
+		wait 3 seconds
+
+	until L10_WomenSaved > 0
+	end loop
+
+	clear siege weapon Siege action queue
+
+end script ST_ObstacleStationarySiege

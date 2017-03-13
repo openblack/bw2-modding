@@ -1,0 +1,14 @@
+//------------------------------------------------
+//  LAND 1 ISLAND COMPLETE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land1IslandComplete
+start
+
+begin dialogue
+	say "The L1 Island Complete Cut-Scene has not been implemented yet."
+	wait until read
+end dialogue
+
+end script Land1IslandComplete

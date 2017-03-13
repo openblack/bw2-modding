@@ -1,0 +1,167 @@
+//-----------------------------------------------------------------------------
+// CreatureIcons
+//
+// Paul Nettleton
+//
+// The creature icon plinths on the tutorial land
+//
+//-----------------------------------------------------------------------------
+
+begin script LookAfterMan
+StartPos = marker at {1294.963,26.535,1577.017}
+DestPos = 0
+Man = create VILLAGER VILLAGER_INFO_NORSE_FORESTER_MALE at {StartPos}
+HandPos = 0
+start
+	DestPos = marker at {StartPos} + {number from -20 to 20, 0, number from -20 to 20}
+	move Man position to {DestPos}
+	begin loop
+		HandPos = marker at hand position
+ 		if {Man} near {DestPos} radius 5
+			DestPos = marker at {StartPos} + {number from -20 to 20, 0, number from -20 to 20}
+			move Man position to {DestPos}
+		end if 
+		until {HandPos} near {Man} radius 1
+	end loop
+	enable Man on fire 1 
+	set Man target {Man}  time 2
+	wait 2 seconds
+	HEALTH of Man = 0
+	release Man
+end script LookAfterMan
+
+begin script LookAfterWoman
+StartPos = marker at {1294.963,26.535,1577.017}
+DestPos = 0
+Woman = create VILLAGER VILLAGER_INFO_NORSE_HOUSEWIFE_FEMALE at {StartPos}
+ObjectHeld = 0
+start
+	DestPos = marker at {StartPos} + {number from -10 to 10, 0, number from -10 to 10}
+	move Woman position to {DestPos}
+	begin loop
+		if {Woman} near {DestPos} radius 5
+			DestPos = marker at {StartPos} + {number from -10 to 10, 0, number from -10 to 10}
+			move Woman position to {DestPos}
+		end if 
+		
+		ObjectHeld = get object held
+		
+		until ObjectHeld == Woman
+	end loop
+	say single line "WELL DONE!"
+	delete Woman
+	
+end script LookAfterWoman
+
+//-----------------------------------------------------------------------------
+
+begin script CreatureIcons
+CreatureIcons[19]
+CreatureActivated[19]
+CreatureType = 0
+Beam = 0
+
+Rock = 0
+Xpos = 0
+Ypos = 0
+Zpos = 0
+CamXpos = 0
+CamYpos = 0
+CamZpos = 0
+DiffX = 0
+
+DiffZ = 0
+Cam = 0
+Hand = 0
+Height = 0
+start
+	
+	//Keepy uppy
+	/*Rock = create OBJECT ROCK at {960.773,8.040,1267.681}
+	set Rock target {Rock}  time 1
+	Height = HEIGHT of Rock
+	Height /= 2
+	begin loop
+		if Rock clicked
+			clear clicked object
+			Cam = marker at camera position
+			Hand = marker at hand position
+			Xpos = XPOS of Rock
+			Ypos = SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Rock
+			Zpos = ZPOS of Rock
+			CamXpos = XPOS of Cam
+			CamYpos = SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of Hand
+			CamZpos = ZPOS of Cam
+			
+			DiffX = Xpos - CamXpos 
+			DiffZ = Zpos - CamZpos 
+			
+			DiffX /= 10
+			DiffZ /= 10
+			
+			if (Ypos > (CamYpos+Height) )
+				set Rock target {Rock} + {DiffX, 0, DiffZ} + {number from -2 to 2, 0, number from -2 to 2} time 0.5
+			else
+				set Rock target {Rock} + {DiffX, 0, DiffZ} + {number from -2 to 2, 0, number from -2 to 2} time 2
+			end if
+		end if
+		until ALTITUDE of Rock < 0.1
+	end loop
+	
+	say "BAD LUCK!!"
+	wait 5000 seconds*/
+	
+	
+	
+	
+	//TEMPORARY
+	/*Beam = 0
+	while (Beam < 100)
+		run background script LookAfterMan
+		Beam++
+	end while
+	////////////
+	run background script LookAfterWoman
+	wait 50000 seconds*/
+
+	CreatureIcons[0] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_APE at {1037.214,7.518,1640.147} 
+	
+	CreatureIcons[1] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_COW at {1041.718,7.484,1641.519}  
+	CreatureIcons[2] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_TIGER at {1046.905,7.578,1642.202} 
+	CreatureIcons[3] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_LEOPARD at {1051.471,7.370,1642.397} 
+	CreatureIcons[4] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_WOLF at {1055.224,8.030,1640.139} 
+	
+	CreatureIcons[5] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_LION at {1032.328,9.420,1650.955} 
+	CreatureIcons[6] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_HORSE at {1036.377,9.807,1651.516}
+	CreatureIcons[7] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_TORTOISE at {1040.562,10.050,1651.710} 
+	CreatureIcons[8] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_ZEBRA at {1044.291,10.126,1651.864} 
+	
+	CreatureIcons[9] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_BEAR at {1052.563,12.934,1653.270} 
+	CreatureIcons[10] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_POLARBEAR at {1055.744,13.091,1653.124}  
+	CreatureIcons[11] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_SHEEP  at {1059.302,13.400,1652.536} 
+	CreatureIcons[12] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_APE  at {1063.322,13.400,1652.408}  
+	
+	//Don't create the OGRE!!
+	//CreatureIcons[13] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_OGRE  at {1067.912,13.485,1652.359} 
+	
+	CreatureIcons[14] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_APE at {1070.448,18.090,1661.543} 
+	CreatureIcons[15] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_APE at {1075.271,18.160,1661.834} 
+	
+	CreatureIcons[16] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_APE at {1086.640,12.547,1662.879} 
+	CreatureIcons[17] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_APE at {1091.564,11.564,1664.170} 
+	CreatureIcons[18] = create with angle 0 and scale 1 FEATURE FEATURE_INFO_STONE_ICON_APE at {1067.912,13.485,1652.359} 
+	
+	MyCreature = get player 1 creature
+	begin loop
+		if {MyCreature} near {1072.550,0.000,1622.630} radius 50
+			CreatureType = variable get MyCreature sub type
+			if (CreatureActivated[CreatureType] == 0)
+				CreatureActivated[CreatureType]=1
+				Beam = create special effect SPOT_VISUAL_SEE_THIS_BEAM at {CreatureIcons[CreatureType]} time 50
+				SCALE of Beam = 6
+			end if
+		end if 
+	end loop
+end script CreatureIcons
+
+//-----------------------------------------------------------------------------

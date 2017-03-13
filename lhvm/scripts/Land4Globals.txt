@@ -1,0 +1,124 @@
+//-----------------------------------------------------------
+// LAND 4 GLOBALS
+//-----------------------------------------------------------
+global L4GreekTown = 0 //Guildford
+global L4NorseCity = 0	//Norse Capital
+global L4NorseTown1 = 0 //Iron Fist
+global L4NorseTown2 = 0 //Bier Towne
+global L4NorseTown3 = 0 //Metal Mountain
+global L4NorseTown4 = 0 //Thanos Pass
+global L4NorseTown5 = 0 //Spirit Haven
+global L4NorseTown6 = 0 //Hilldale Farms
+global L4NorseTown7 = 0 //Woodvale
+
+global L4NorseWolf = 0
+
+global L4AltarTown = 0
+
+global L4Complete = 0
+
+global L4NorseDefcon = 0
+global ThrowBlokeSacrificed = 0
+
+global L4CapitalConverted = 0
+
+global L4BuildWallComplete = 0
+global L4AltarTutorialComplete = 0
+
+
+//-----------------------------------------------------------------------------
+//	Challenge Booleans
+//-----------------------------------------------------------------------------
+global L4ShowingUndeadLegion = 0
+global L4ShowingThrowBloke = 0
+global L4ShowingNutOil = 0
+global L4ShowingBuildAWall = 0
+global L4ShowingKidnappers = 0
+
+begin script Land4Globals
+	Threshold = 0
+start
+	L4GreekTown = get town with id 0	
+	L4NorseCity = get town with id 1	
+	L4NorseTown1 = get town with id 3
+	L4NorseTown2 = get town with id 4
+	L4NorseTown3 = get town with id 6
+	L4NorseTown4 = get town with id 7
+	L4NorseTown5 = get town with id 9
+	L4NorseTown6 = get town with id 10
+	L4NorseTown7 = get town with id 11	
+	L4CapitalConverted = 0 //flag to control if major enemy town has been converted
+
+//----Greeks Impress Thresholds----//
+
+	Threshold = get town L4NorseTown1 impressiveness
+	set migration threshold from L4NorseTown1 to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT1_TO_GREEK - Threshold
+	
+	Threshold = get town L4NorseTown2 impressiveness
+	set migration threshold from L4NorseTown2 to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT2_TO_GREEK - Threshold
+	
+	Threshold = get town L4NorseTown3 impressiveness
+	set migration threshold from L4NorseTown3 to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT3_TO_GREEK - Threshold
+	
+	Threshold = get town L4NorseTown4 impressiveness
+	set migration threshold from L4NorseTown4 to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT4_TO_GREEK - Threshold
+	
+	Threshold = get town L4NorseTown5 impressiveness
+	set migration threshold from L4NorseTown5 to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT5_TO_GREEK - Threshold
+	
+	Threshold = get town L4NorseTown6 impressiveness
+	set migration threshold from L4NorseTown6 to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT6_TO_GREEK - Threshold
+	
+	Threshold = get town L4NorseTown7 impressiveness
+	set migration threshold from L4NorseTown7 to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT7_TO_GREEK - Threshold
+	
+	Threshold = get town L4NorseCity impressiveness
+	set migration threshold from L4NorseCity to L4GreekTown GLOBAL_VALUE_THRESHOLD_LAND_4_CAPITAL_TO_GREEK - Threshold
+
+//----Norse Impress Thresholds----//
+
+	/*Threshold = get town L4NorseTown1 impressiveness
+	set migration threshold from L4NorseTown1 to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT1_TO_NORSE - Threshold
+	
+	Threshold = get town L4NorseTown2 impressiveness
+	set migration threshold from L4NorseTown2 to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT2_TO_NORSE - Threshold
+	
+	Threshold = get town L4NorseTown3 impressiveness
+	set migration threshold from L4NorseTown3 to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT3_TO_NORSE - Threshold
+	
+	Threshold = get town L4NorseTown4 impressiveness
+	set migration threshold from L4NorseTown4 to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT4_TO_NORSE - Threshold
+	
+	Threshold = get town L4NorseTown5 impressiveness
+	set migration threshold from L4NorseTown5 to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT5_TO_NORSE - Threshold
+	
+	Threshold = get town L4NorseTown6 impressiveness
+	set migration threshold from L4NorseTown6 to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT6_TO_NORSE - Threshold
+	
+	Threshold = get town L4NorseTown7 impressiveness
+	set migration threshold from L4NorseTown7 to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_SETTLEMENT7_TO_NORSE - Threshold
+	
+	Threshold = get town L4GreekTown impressiveness
+	set migration threshold from L4GreekTown to L4NorseCity GLOBAL_VALUE_THRESHOLD_LAND_4_L4GreekTown_TO_NORSE - Threshold*/
+
+//----Set Max Populations For Non-Player Towns----//
+
+	set town L4NorseCity maximum population to 75
+	set town L4NorseTown1 maximum population to 20
+	set town L4NorseTown2 maximum population to 20
+	set town L4NorseTown3 maximum population to 20
+	set town L4NorseTown4 maximum population to 20
+	set town L4NorseTown5 maximum population to 20
+	set town L4NorseTown6 maximum population to 20
+	set town L4NorseTown7 maximum population to 20
+	
+//----Disable Enemy Causing Migrations----//
+	
+	disable migration from L4NorseTown1 to L4NorseTown4
+	disable migration from L4NorseTown2 to L4NorseTown4
+	disable migration from L4NorseTown3 to L4NorseTown4
+	disable migration from L4NorseTown4 to L4NorseTown4
+	disable migration from L4NorseTown5 to L4NorseTown4
+	disable migration from L4NorseTown6 to L4NorseTown4
+	disable migration from L4NorseTown7 to L4NorseTown4
+end script Land4Globals

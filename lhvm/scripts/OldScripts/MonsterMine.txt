@@ -1,0 +1,513 @@
+///////////////////////////////////////////////////////////////////////////////
+//	MONSTER MINE
+//	~~~~~~~~~~~~
+//
+//	There is a monster lurking in a mine that you want to use. If you send
+//	villagers into the mine they will mine the ore but lose half of their
+//	number. To successfully mine the ore without losing villagers you need to
+//	send in a platoon of warriors to defeat the monster.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			20-02-03			By:	Steve
+//	Update date:		25-02-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define MM_TRUE							= 1
+define MM_FALSE							= 0
+define MM_MINERS_GROUP_SIZE				= 10
+define MM_AMOUNT_OF_SHEEP_IN_FLOCK		= 10
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global MM_Miner[MM_MINERS_GROUP_SIZE]
+global MM_Sheep[MM_AMOUNT_OF_SHEEP_IN_FLOCK]
+global MM_MonsterMineActive				= MM_TRUE
+global MM_ArmyEnteredMine				= MM_FALSE
+global MM_MinersEnteredMine				= MM_FALSE
+global MM_MinersMinigCount				= 0
+global MM_MonsterDiseased				= MM_FALSE
+global MM_DiseasedFlock					= 0
+global MM_Shepherd						= 0
+	
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script MM_Intro
+define script MM_Outro
+define script MM_MineOre
+define script MM_KillMiners(MinePos, PlayersTown)
+define script MM_ArmyKillingMonster
+define script MM_HasArmyEnteredMine(Mine, Radius)
+define script MM_HaveMinersEnteredMine(Mine, Radius)
+define script MM_ReleaseSurvivingMinerBackToTown(Miner, PlayersTown)
+define script MM_CreateDiseasedFlock(DiseasedFlockPos)
+define script MM_HandleDiseasedFlockMovements(Waypoint1, Waypoint2, Waypoint3)
+define script MM_CheckToSeeIfMonsterIsPoisoned(Mine, Radius)
+define script MM_MonsterGroans
+define script MM_ClearUpActors
+
+// TODO: Add this functionality if there is time
+//define script MM_ReduceMonsterThreatWithWater
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script MonsterMine
+
+	RADIUS_CHECK				= 20
+	PlayersTown					= get town with id 0
+	MinePos						= marker at {868.237,35.776,757.234}
+	DiseasedFlockPos			= marker at {856.471,42.192,839.849}
+	GrazingPoint1				= marker at {882.852,40.641,836.450}
+	GrazingPoint2				= marker at {844.945,43.366,849.828}
+	GrazingPoint3				= marker at {792.605,43.779,815.052}
+	
+	MonsterGroaning				= MM_FALSE
+	
+start
+
+	// Ask for help with the monster problem
+	run script MM_Intro
+	
+	// Create the diseased flock and move it around a bit
+	run script MM_CreateDiseasedFlock(DiseasedFlockPos)	
+	run background script MM_HandleDiseasedFlockMovements(GrazingPoint1, GrazingPoint2, GrazingPoint3)
+	
+	// Check to see if the monster has been poisoned
+	run background script MM_CheckToSeeIfMonsterIsPoisoned(MinePos, RADIUS_CHECK)
+	
+	while MM_MonsterMineActive == MM_TRUE
+		// Check to see if an army has been sent into the mine
+		run script MM_HasArmyEnteredMine(MinePos, RADIUS_CHECK)
+	
+		// Army has enered the mine	
+		if MM_ArmyEnteredMine == MM_TRUE
+			// Wait until Army has killed monster
+			run script MM_ArmyKillingMonster
+			MM_MonsterMineActive = MM_FALSE
+		
+		// Army hasn't entered the mine, have the miners?
+		else
+			// Check to see if any miners have entered the mine
+			run script MM_HaveMinersEnteredMine(MinePos, RADIUS_CHECK)
+					
+			if MM_MinersEnteredMine == MM_TRUE		
+				// Let the miners get the ore then kill half of them and send the rest running				
+				run script MM_MineOre
+				run script MM_KillMiners(MinePos, PlayersTown)
+				MM_MinersMinigCount = 0
+			end if
+		end if
+		
+		// Start the monster groaning if it is poisoned
+		if MonsterGroaning == MM_FALSE and MM_MonsterDiseased == MM_TRUE
+			run background script MM_MonsterGroans
+			MonsterGroaning = MM_TRUE
+		end if
+	end while
+	
+	// Get thanks for help
+	run script MM_Outro
+	
+	// Clear up any loose ends before the script ends
+	run script MM_ClearUpActors
+
+end script MonsterMine
+
+
+//-----------------------------------------------------------------------------
+//	Kick off a villager asking for help once the first lot of villagers are in danger
+//-----------------------------------------------------------------------------
+begin script MM_Intro
+
+	Scroll		= 0
+	ScrollPos	= marker at {868.237,35.776,757.234}
+	
+	ExMiner		= 0	
+
+start
+
+	// Create a scroll for the player to click on
+//	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}	
+//	wait until Scroll right clicked
+//	delete Scroll
+	
+	begin cinema
+		say "Focus on mine" by ExMiner
+		wait until read
+		say "Exminer asks player for help in removing the monster within"
+	end cinema
+		
+end script MM_Intro
+
+
+//-----------------------------------------------------------------------------
+//	Give a thank you ending to the script with possibly a reward
+//-----------------------------------------------------------------------------
+begin script MM_Outro
+
+	ExMiner		= 0
+
+start
+
+	begin cinema
+		say "Monster dies - celebrations and thanks" by ExMiner
+		wait until read
+		say "Any reward given should be referred to here"
+		wait until read
+	end cinema
+	
+end script MM_Outro
+
+
+//-----------------------------------------------------------------------------
+//	Make the villagers mine the ore
+//-----------------------------------------------------------------------------
+begin script MM_MineOre
+start
+
+	// Play mining effects etc
+	
+end script MM_MineOre
+
+
+//-----------------------------------------------------------------------------
+//	Kill off half of the villagers that are in the mine. Lots of screaming SFX and have the remaining villagers flee
+//-----------------------------------------------------------------------------
+begin script MM_KillMiners(MinePos, PlayersTown)
+
+	MINER_SURVIVING_NUM			= MM_MINERS_GROUP_SIZE / 2
+	Counter						= MINER_SURVIVING_NUM
+	FleePos						= 0
+	TimeUntilOutOfBreath		= 0
+
+start
+
+	// Kill off the second half of the miners
+	while Counter < MM_MINERS_GROUP_SIZE
+		HEALTH of MM_Miner[Counter] = 0
+		Counter++
+	end while
+	
+	Counter = 0
+	
+	// Make the first half of the miner group flee the mine screaming
+	while Counter < MINER_SURVIVING_NUM
+		// Fleeing anims here
+		// Screaming SFX here
+		FleePos = marker at {MinePos} + {number from -50 to 50, number from -50 to 50}
+		move MM_Miner[Counter] position to {FleePos}
+		SPEED of MM_Miner[Counter] = number from 0.8 to 1.2
+		Counter++
+	end while
+	
+	Counter = 0
+	
+	// Wait until the miners have run out of breath, play an out of breath anim, then release the miner back to the town
+	while Counter < MINER_SURVIVING_NUM
+		TimeUntilOutOfBreath = number from 0.5 to 2
+		wait TimeUntilOutOfBreath seconds
+		MM_Miner[Counter] play ANM_P_CROWD_UNIMPRESSED_1 loop number from 1 to 3
+		wait until MM_Miner[Counter] played
+		run script MM_ReleaseSurvivingMinerBackToTown(Counter, PlayersTown)
+		Counter++
+	end while
+
+end script MM_KillMiners
+
+
+//-----------------------------------------------------------------------------
+//	Get the sounds of the army killing off the monster and get the victorious army leaving the mine
+//-----------------------------------------------------------------------------
+begin script MM_ArmyKillingMonster
+
+	ArmySize		= 0
+	
+start
+
+	// Play SFX etc to simulate the Army defeating the monster then move the Army out of the mine
+	// Play SFX
+	// Do graphical effects such as smoke, shakes etc
+	// Move the Army out of the mine making number of survivors dependant on how many entered the mine
+	
+begin dialogue
+say "Soldier emerges from the mine and informs the player that the monster is dead"
+wait until read
+end dialogue
+
+	// Army survivors will be increased if the monster was poisoned
+	if MM_MonsterDiseased == MM_TRUE
+	end if
+
+end script MM_ArmyKillingMonster
+
+
+//-----------------------------------------------------------------------------
+//	See if the Army is going to kill the monster
+//-----------------------------------------------------------------------------
+begin script MM_HasArmyEnteredMine(Mine, Radius)
+
+	Army	= 0
+
+start
+
+	// Check if the Army has eneterd the mine to kill the monster
+	Army = get ROCK_OBJECT at {Mine} radius Radius excluding scripted
+	
+	// Temp check here. Just so you can use a tree instead of having to use a rock. * WILL BE THE ARMY PLATTON EVENTUALLY *
+	if Army not exists
+		Army = get TREE at {Mine} radius Radius excluding scripted
+	end if
+		
+	// Flag that the Army have entered the mine
+	if Army exists
+		// Move Army into the mine
+		move Army position to {Mine}
+begin dialogue
+say "Move Army into mine here...."
+wait until read
+end dialogue
+
+		MM_ArmyEnteredMine = MM_TRUE
+	else
+		MM_ArmyEnteredMine = MM_FALSE
+	end if
+	
+end script MM_HasArmyEnteredMine
+
+
+//-----------------------------------------------------------------------------
+//	See if the miners are going to get ore
+//-----------------------------------------------------------------------------
+begin script MM_HaveMinersEnteredMine(Mine, Radius)
+start
+
+	// Check if the miners are going into the mine to get ore
+	MM_Miner[MM_MinersMinigCount] = get VILLAGER at {Mine} radius Radius excluding scripted
+
+	// Flag that the Miners have entered the mine
+	if MM_Miner[MM_MinersMinigCount] exists
+		// Move the miner into the mine, but don't kick off the killing unless there is a big enough group there
+		move MM_Miner[MM_MinersMinigCount] position to {Mine}
+begin dialogue
+say "Move Miner into mine here...."
+wait until read
+end dialogue
+		
+		MM_MinersMinigCount++
+		if MM_MinersMinigCount >= MM_MINERS_GROUP_SIZE
+			MM_MinersEnteredMine = MM_TRUE
+		else
+			MM_MinersEnteredMine = MM_FALSE
+		end if
+	else
+		MM_MinersEnteredMine = MM_FALSE
+	end if
+	
+end script MM_HaveMinersEnteredMine
+
+
+//-----------------------------------------------------------------------------
+//	Release the surviving miners from the script
+//-----------------------------------------------------------------------------
+begin script MM_ReleaseSurvivingMinerBackToTown(Miner, PlayersTown)
+start
+
+	// Attach the miner to the players town and release them from script
+	attach MM_Miner[Miner] to PlayersTown
+	release MM_Miner[Miner]
+
+end script MM_ReleaseSurvivingMinerBackToTown
+
+
+//-----------------------------------------------------------------------------
+//	Create a diseased flock that the player can give to the monster to make him easier to kill
+//-----------------------------------------------------------------------------
+begin script MM_CreateDiseasedFlock(DiseasedFlockPos)
+
+	Counter						= 0
+
+start
+
+	wait until {DiseasedFlockPos} not viewed
+	
+	// Create the shepherd
+	MM_Shepherd = create VILLAGER VILLAGER_INFO_GREEK_SHEPHERD_MALE at {DiseasedFlockPos} + {5, 5}
+
+	// Create the diseased flock and have the shepherd complaining about the state of the flock	
+	MM_DiseasedFlock = flock at {DiseasedFlockPos}
+	set MM_DiseasedFlock properties inner 5 outer 15
+	
+	while Counter < MM_AMOUNT_OF_SHEEP_IN_FLOCK
+//		MM_Sheep[Counter] = create ANIMAL SHEEP at {DiseasedFlockPos} + {number from -5 to 5, number from -5 to 5}
+		MM_Sheep[Counter] = create VILLAGER VILLAGER_INFO_NORSE_LEADER_MALE at {DiseasedFlockPos} + {number from -5 to 5, number from -5 to 5}		// TEMP: Until sheep are ok
+		attach MM_Sheep[Counter] to MM_DiseasedFlock
+		enable MM_Sheep[Counter] poisoned
+		state MM_Sheep[Counter] LIVING_MOVE_IN_FLOCK
+		Counter++
+	end while
+	
+	// Make the shepherd the leader of the flock
+	attach MM_Shepherd to MM_DiseasedFlock as leader
+	
+end script MM_CreateDiseasedFlock
+
+
+//-----------------------------------------------------------------------------
+//	Move the flock around a bit
+//-----------------------------------------------------------------------------
+begin script MM_HandleDiseasedFlockMovements(Waypoint1, Waypoint2, Waypoint3)
+
+	WAYPOINT_RADIUS		= 20
+	CurrentWaypoint		= 0
+	NextWaypoint		= 0
+	EndPos				= 0
+	GrazingDelay		= 0
+	GotValidWaypoint	= MM_FALSE
+
+start
+
+	while MM_MonsterMineActive == MM_TRUE
+		GotValidWaypoint = MM_FALSE
+		
+		// Where are we
+		if {MM_DiseasedFlock} near {Waypoint1} radius WAYPOINT_RADIUS
+			CurrentWaypoint = 1
+		elsif {MM_DiseasedFlock} near {Waypoint2} radius WAYPOINT_RADIUS
+			CurrentWaypoint = 2
+		else
+			CurrentWaypoint = 3
+		end if
+		
+		// Select a waypoint to move to
+		while GotValidWaypoint == MM_FALSE
+			NextWaypoint = number from 1 to 3
+			
+			// Make sure we are not trying to move the flock to where we are
+			if not CurrentWaypoint == NextWaypoint
+				GotValidWaypoint = MM_TRUE
+			end if
+		end while
+		
+		// Setup the end pos
+		if NextWaypoint == 1
+			EndPos = marker at {Waypoint1}
+		elsif NextWaypoint == 2
+			EndPos = marker at {Waypoint2}
+		else
+			EndPos = marker at {Waypoint3}		
+		end if
+		
+		// Move the flock to the new waypoint
+		move MM_DiseasedFlock position to {EndPos}
+		
+		wait until {MM_DiseasedFlock} near {EndPos} radius WAYPOINT_RADIUS or MM_MonsterMineActive == MM_FALSE
+		GrazingDelay = number from 5 to 15
+		wait GrazingDelay seconds
+	end while
+	
+end script MM_HandleDiseasedFlockMovements
+
+
+//-----------------------------------------------------------------------------
+//	Has the monster been poisoned?
+//-----------------------------------------------------------------------------
+begin script MM_CheckToSeeIfMonsterIsPoisoned(Mine, Radius)
+
+	Counter					= 0
+	SheepHeld				= -1
+	GotDiseasedSheepInHand	= MM_FALSE
+	
+start
+
+	while MM_MonsterDiseased == MM_FALSE
+		// Reset values
+		Counter = 0
+		
+		// Check to see if there is a diseased sheep in the players hand
+		if GotDiseasedSheepInHand == MM_FALSE
+			while Counter < MM_AMOUNT_OF_SHEEP_IN_FLOCK and GotDiseasedSheepInHand == MM_FALSE
+				// Is a diseased sheep being held by the player?
+				if MM_Sheep[Counter] is HELD
+					GotDiseasedSheepInHand = MM_TRUE
+					SheepHeld = Counter
+				end if				
+				Counter++
+			end while
+		end if
+		
+		// Check to see if the player dropped the sheep that was in his hand
+		if GotDiseasedSheepInHand == MM_TRUE
+			if MM_Sheep[SheepHeld] is not HELD
+				// Was the sheep dropped in or near the mine
+				if {MM_Sheep[SheepHeld]} near {Mine} radius Radius
+					MM_MonsterDiseased = MM_TRUE
+				end if
+				GotDiseasedSheepInHand	= MM_FALSE
+				SheepHeld = -1
+			end if
+		end if
+		
+		wait 1 second
+	end while
+
+end script MM_CheckToSeeIfMonsterIsPoisoned
+
+
+//-----------------------------------------------------------------------------
+//	The monster has been poisioned so make him groan and complain
+//-----------------------------------------------------------------------------
+begin script MM_MonsterGroans
+
+	DELAY		= 30
+	Groaning	= 0
+	GroanTimer	= create timer for DELAY seconds
+
+start
+
+	// Put various monster groans / complaints here, probably as 3d sounds
+
+	while MM_MonsterMineActive == MM_TRUE
+		if get GroanTimer time remaining <= 0
+		
+begin dialogue
+say "Monster groans in pain"
+wait until read
+end dialogue
+			
+			// *** DOESN'T WORK. NEED SOME VALID ENUMS ***
+			// TEMP: Replace with correct lines....
+			// GA: "It's our turn to throw the marker." ----------- HELP_TEXT_THROW_MARKER_10
+			// EA: "Boss, we get to throw the marker now." -------- HELP_TEXT_THROW_MARKER_11
+			// GA: "Throw the marker, Leader." -------------------- HELP_TEXT_THROW_MARKER_12
+			// EA: "Hurl that marker, Boss." ---------------------- HELP_TEXT_THROW_MARKER_13					
+			//Groaning = variable constant from HELP_TEXT_THROW_MARKER_10 to HELP_TEXT_THROW_MARKER_13
+			//start say sound constant Groaning
+			set GroanTimer time to DELAY seconds
+		end if
+		wait 1 second
+	end while
+	
+end script MM_MonsterGroans
+
+
+//-----------------------------------------------------------------------------
+//	Clear up the actors in the script
+//-----------------------------------------------------------------------------
+begin script MM_ClearUpActors
+start
+
+	// Release the diseased flock back into the game
+	if MM_DiseasedFlock exists
+		release MM_DiseasedFlock
+	end if
+
+end script MM_ClearUpActors

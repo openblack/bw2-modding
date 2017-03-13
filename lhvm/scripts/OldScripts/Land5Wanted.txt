@@ -1,0 +1,28 @@
+//------------------------------------------------
+//  LAND 5 WANTED CHALLENGES
+//------------------------------------------------
+
+begin script Land5Wanted
+
+ L5Actor1Pos = marker at {1398.342,69.114,366.810} // Behind forest near Japanese
+ L5Actor1 = create VILLAGER MALE at {L5Actor1Pos}
+ PosterPos1 = marker at {1228.080,57.440,633.911}
+ L5Actor2Pos = marker at {2043.776,73.769,898.482}	// In forest halfway towards Aztecs
+ L5Actor2 = create VILLAGER MALE at {L5Actor2Pos}
+ PosterPos2 = marker at {1227.886,57.201,640.600}
+ L5Actor3Pos = marker at {1163.406,57.149,1872.202}	// Behind forest near Greeks
+ L5Actor3 = create VILLAGER MALE at {L5Actor3Pos}
+ PosterPos3 = marker at {1229.103,57.064,646.938}
+ JailLocation = marker at {1234.980,57.766,638.699} // Hut near Japanese TC
+
+start
+	
+	run background script GlobalWanted (12, L5Actor1, L5Actor1Pos, JailLocation, PosterPos1)
+
+	run background script GlobalWanted (13, L5Actor2, L5Actor2Pos, JailLocation, PosterPos2)
+
+	run background script GlobalWanted (14, L5Actor3, L5Actor3Pos, JailLocation, PosterPos3)
+
+
+end script Land5Wanted
+

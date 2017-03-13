@@ -1,0 +1,117 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define RT_True = 1
+define RT_False = 0
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//----Land3RoadTutorial----// 
+//-----------------------------------------------------------------------------
+begin script Land3RoadTutorial
+	RT_Scroll = 0
+	ScrollPos = marker at {1101.911, 363.588, 1571.165}
+	ExampleVideo = 0
+	OldRoadStat = 0
+start
+	begin loop
+		if L3_InAScroll == 0
+			if RT_Scroll not exists
+				RT_Scroll = create highlight BRONZE name "BW2T_SCRIPT_03FINAL_ROADTUTORIAL_10" remind "BW2T_SCRIPT_03FINAL_ROADTUTORIAL_20" at {ScrollPos}
+				ALTITUDE of RT_Scroll = 5
+			end if
+		elsif RT_Scroll exists
+			delete RT_Scroll
+		end if
+	until RT_Scroll right clicked
+	end loop
+	delete RT_Scroll
+	L3_InAScroll = 1
+	OldRoadStat = get total of stat STATS_EVT_BUILDINGS_BUILT_ROAD
+
+	begin dialogue
+		clear dialogue
+		close dialogue
+		eject good spirit
+			make good spirit fly across 0.3 down 0.5
+			//say "As our city grows the greater the distance our villagers will have to travel."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_766"
+			wait until read
+			//say "To aid THEIR little feet we can build roads."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_765"
+			wait until read
+			
+		//----Video of a road being placed----//
+	
+			ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+			set ExampleVideo clipping window left 0 top 0 width 1 height 1
+			play video "roads from town centre"
+			
+			//say "To build a road, grab an existing road by holding down the right mouse button."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_764"
+			wait until read
+			//say "Then drag out the shape of the road you want.  When you're happy with it right click."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_763"
+			wait until read
+			//send good spirit home
+			wait until not video is playing
+			//wait 1 seconds
+			//eject good spirit 
+				//say "Have a go at building a road."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_762"
+				wait until read
+			send good spirit home
+			
+	end dialogue
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 value 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_ROAD_10"
+	enable objective window
+	
+	wait until RT_RoadStat > OldRoadStat
+	
+	begin dialogue
+		eject good spirit
+		//GA: "Well done."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_721"
+			wait until read
+		send good spirit home
+	end dialogue
+	
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_ROADTUTORIAL
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_23 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_23
+
+/*	begin dialogue
+			eject good spirit
+			//say "Well done."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_721"
+			wait until read
+			
+			eject good spirit
+			//say "When fields are place they will fit nicely into gaps made by roads."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_760"
+			wait until read
+			send good spirit home
+
+		//----Video of a field building being placed amongst roads----//
+	
+			ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+			set ExampleVideo clipping window left 0 top 0 width 1 height 1
+			play video "make field in road"
+			wait until not video is playing
+			
+	end dialogue
+	wait until not video is playing
+	*/
+
+	L3_InAScroll = 0
+end script Land3RoadTutorial
+
+//------------------------------

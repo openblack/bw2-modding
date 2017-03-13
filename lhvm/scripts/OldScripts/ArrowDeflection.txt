@@ -1,0 +1,31 @@
+//------------------------------------------------
+//  LAND 3 ARROW DEFLECTION CHALLENGE
+//------------------------------------------------
+
+
+begin script ArrowDeflection
+
+ ArrowDeflectionHighlight = 0
+ ArrowDeflectionHighlightPos = marker at {0.000,0.000,0.000}
+ Eternoty = 0
+
+start
+
+ArrowDeflectionHighlight = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ArrowDeflectionHighlightPos}
+ALTITUDE of ArrowDeflectionHighlight = 3
+
+begin loop
+
+	wait until ArrowDeflectionHighlight clicked
+
+	begin dialogue
+		say "The Arrow Deflection Challenge has not been implemented yet."
+		wait until read
+		say "Awaiting Shield Miracle Implementation"
+		wait until read
+	end dialogue
+
+until Eternity == 1
+end loop
+
+end script ArrowDeflection

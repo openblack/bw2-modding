@@ -1,0 +1,113 @@
+//==============================================================
+// Land 2 Telport
+// Matt.L
+//==============================================================
+
+//-------------------------------------------------------------------------
+// Script Defines
+//-------------------------------------------------------------------------
+define script LT_Villager(Position, Object)
+define script LT_AddGroup(Position, Amount)
+
+//-------------------------------------------------------------------------
+// Land 2 Teleport
+//-------------------------------------------------------------------------
+begin script Land2Teleport
+start
+
+	//Cutscene Villagers
+	run background script LT_AddGroup(marker at {1473.851, 143.262, 523.748}, 5)
+	run background script LT_AddGroup(marker at {1432.762, 143.012, 520.494}, 5)
+	run background script LT_AddGroup(marker at {1406.093, 136.002, 517.017}, 5)
+	run background script LT_AddGroup(marker at {1365.256, 119.649, 525.373}, 5)
+	run background script LT_AddGroup(marker at {1290.377, 95.819, 547.480}, 5)
+	run background script LT_AddGroup(marker at {1218.179, 83.519, 532.884}, 5)
+	run background script LT_AddGroup(marker at {1174.723, 80.536, 530.069}, 5)
+	run background script LT_AddGroup(marker at {1138.306, 84.030, 557.375}, 5)
+	run background script LT_AddGroup(marker at {1119.178, 89.415, 564.243}, 5)
+	run background script LT_AddGroup(marker at {1075.238, 93.056, 569.390}, 5)
+	run background script LT_AddGroup(marker at {1040.869, 84.085, 581.369}, 5)
+	run background script LT_AddGroup(marker at {1005.273, 64.953, 613.975}, 5)
+
+	run background script LT_AddGroup(marker at {1005.273, 64.953, 613.975}, 5)
+	run background script LT_AddGroup(marker at {908.775, 45.848, 673.656}, 5)
+	run background script LT_AddGroup(marker at {879.707, 48.145, 651.890}, 5)
+	run background script LT_AddGroup(marker at {863.201, 51.731, 626.234}, 5)
+	run background script LT_AddGroup(marker at {851.349, 55.731, 609.637}, 5)
+	run background script LT_AddGroup(marker at {825.214, 55.823, 554.325}, 5)
+	run background script LT_AddGroup(marker at {798.778, 56.230, 527.466}, 5)
+	run background script LT_AddGroup(marker at {776.572, 56.064, 498.894}, 5)
+
+	//non-cutscene villagers
+
+	run background script LT_AddGroup(marker at {752.173, 50.218, 476.946}, 5)
+	run background script LT_AddGroup(marker at {827.411, 55.668, 555.006}, 10)
+	run background script LT_AddGroup(marker at {929.169, 46.930, 661.586}, 15)
+	run background script LT_AddGroup(marker at {1157.708, 81.107, 546.725}, 14)
+	run background script LT_AddGroup(marker at {1286.984, 95.441, 550.615}, 15)
+	run background script LT_AddGroup(marker at {1707.448, 158.372, 1217.746}, 25)
+	run background script LT_AddGroup(marker at {2042.246, 99.173, 804.754}, 16)
+	run background script LT_AddGroup(marker at {1795.294, 125.470, 728.372}, 15)
+	run background script LT_AddGroup(marker at {1450.942, 140.048, 520.764}, 15)
+
+end script Land2Teleport
+
+//-------------------------------------------------------------------------
+// Villager Control
+//-------------------------------------------------------------------------
+begin script LT_Villager(Position, Object)
+	Me = 0
+	TeleportPos = marker at {680.902, 43.460, 437.648}
+	MyFade = 1
+	TeleportFX = 0
+	Type = 0
+	MySpeed = 0
+start
+
+	if Object == -1
+		Type = number from 0 to 1
+
+		if Type == 0
+			Me = create VILLAGER GREEK_FARMER at {Position}
+			MySpeed = 0.48
+		elsif Type == 1
+			Me = create VILLAGER GREEK_HOUSEWIFE at {Position}
+			MySpeed = 0.4
+		end if
+	else
+		Me = Object
+		play string sound "REWARDSTING"
+	end if
+
+	disable Me reactable
+
+	move Me position to {TeleportPos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+	SPEED of Me = MySpeed
+	wait until {Me} near {TeleportPos} radius 5
+
+	TeleportFX = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 on Me time -1 
+	set TeleportFX colour red 0 green 0 blue 255
+	begin loop
+		set Me alpha MyFade
+		MyFade-=0.05
+	until MyFade <= 0
+	end loop
+
+	set TeleportFX colour red 255 green 0 blue 0
+	wait 0.2 seconds
+	delete Me
+end script LT_Villager
+
+//-------------------------------------------------------------------------
+// Add Group
+//-------------------------------------------------------------------------
+begin script LT_AddGroup(Position, Amount)
+	Radius = 0
+start
+	Radius = Amount / 2
+	
+	while Amount > 0
+		run background script LT_Villager(marker at {Position} + {number from Radius to -(Radius), number from Radius to -(Radius)} , -1)
+		Amount--
+	end while
+end script LT_AddGroup

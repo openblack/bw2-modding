@@ -1,0 +1,32 @@
+run script RunLand2BarrelRun
+
+begin script RunLand2BarrelRun
+start
+
+	//run script BI_ArrowBarrage
+	//run script BI_BarrelPlatoon
+
+	//Start barrel run
+	//L2_Trigger_BarrelRun = 1
+
+	BI_ShowFenceWorldIcon = 1
+
+	//run background script BI_HayArmies
+	L2_Trigger_BarrelRunBackground = 1
+	L2_Trigger_GoHayArmies = 1	
+
+	run background script BI_HayRoll
+	BI_ShowStickWorldIcon	= BI_TRUE
+
+	/*
+	begin cinema
+		set camera position to {2068.465, 116.851, 954.844} 
+		set camera focus to {2013.729, 63.548, 890.318}
+	end cinema
+	*/
+
+	L2_SceneryPlatoonDelete[3] = 1
+
+	run script Land2BarrelRun	
+
+end script RunLand2BarrelRun

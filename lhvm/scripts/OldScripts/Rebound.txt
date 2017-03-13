@@ -1,0 +1,156 @@
+
+
+global TargetHit
+global TotalFireballs
+global QuitRebound
+global ReboundComplete
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** FIREBALL SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script FireAway (CannonPos, AimPos)
+ 
+ Fireball = 0
+  
+start
+	begin loop
+		wait 3 seconds
+		Fireball = cast SPELL_FIREBALL_LEVEL_1 spell at {AimPos} from {CannonPos} radius 3.0 time 60 curl 0
+		TotalFireballs++
+		/// track fireball in background and count number of shield hits before it dies. "Say" topscores.
+	until TargetHit == 1
+	end loop
+
+end script FireAway
+
+//-------------------------------------------------------------------------------------------------------
+// ** CANCEL GAME SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script CancelRebound (HighlightPos)
+ CancelScroll = 0
+start
+	CancelScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CANCEL_QUEST at {HighlightPos}
+	
+	while QuitRebound == 0 and ReboundComplete == 0
+		if CancelScroll right clicked
+			QuitRebound = 1
+		end if
+	end while
+	delete CancelScroll
+	
+end script CancelRebound
+
+//-------------------------------------------------------------------------------------------------------
+// ** TARGET ON FIRE DETECTION SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script CheckTarget (TargetPos)
+
+ Hut = 0
+ HutFX = 0
+ 
+start
+	Hut = create HOUSE ABODE_INFO_JAPANESE_SHACK_Y at {TargetPos}
+	HutFX = create special effect SPOT_VISUAL_HIGHLIGHT_ON_OBJECT on Hut time -1
+	begin loop
+		if Hut on fire
+			enable Hut on fire 1
+			delete HutFX			
+			wait 3 seconds
+			delete Hut with explosion
+			TargetHit = 1		
+		end if
+	end loop
+
+end script CheckTarget
+
+//-------------------------------------------------------------------------------------------------------
+// ** MAIN SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script Rebound
+
+ HitCount = 0
+ CannonPos[7]
+ AimPos[7]
+ TargetPos[7]
+ Highlight = 0
+ HighlightPos = marker at {1404.635,9.628,1274.087}
+ ShieldDispenser = 0
+ ShieldDispenserPos = marker at {1400.287,1.340,1267.619}
+
+start
+
+CannonPos[0] = marker at {1404.635,19.628,1274.087}
+CannonPos[1] = marker at {1404.635,19.628,1274.087}
+CannonPos[2] = marker at {1378.049,51.232,1400.766}
+CannonPos[3] = marker at {1313.464,38.425,1495.413}
+CannonPos[4] = marker at {1335.005,61.130,1524.619}
+CannonPos[5] = marker at {1398.995,42.519,1369.604}
+CannonPos[6] = marker at {1411.266,43.840,1257.917}
+
+AimPos[0] = marker at {1361.072,8.290,1339.801}
+AimPos[1] = marker at {1361.072,8.290,1339.801}
+AimPos[2] = marker at {1378.049,26.232,1400.766}
+AimPos[3] = marker at {1397.383,3.015,1486.817}
+AimPos[4] = marker at {1377.362,26.130,1398.599}
+AimPos[5] = marker at {1557.677,6.700,1315.370}
+AimPos[6] = marker at {1408.883,44.487,1271.984}
+
+TargetPos[0] = marker at {1412.099,6.620,1319.194}
+TargetPos[1] = marker at {1314.681,6.477,1341.351}
+TargetPos[2] = marker at {1405.218,3.015,1446.016}
+TargetPos[3] = marker at {1297.870,26.800,1492.825}
+TargetPos[4] = marker at {1399.705,27.153,1367.087}
+TargetPos[5] = marker at {1404.373,5.052,1284.770}
+TargetPos[6] = marker at {1374.443,26.130,1399.691}
+
+begin loop // main game loop
+
+	Highlight = create highlight CHALLENGE_DOLPHIN_SHOOT HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of Highlight = 15
+	
+	wait until Highlight right clicked
+	delete Highlight
+	ReboundComplete = 0
+	QuitRebound = 0
+
+	run background script CancelRebound (HighlightPos)
+	
+	ShieldDispenser = create with angle 0 and scale 1.0 SCRIPT_OBJECT_TYPE_SPELL_DISPENSER ABODE_INFO_NORSE_SPELL_DISPENSER at {ShieldDispenserPos}
+	enable ShieldDispenser indestructible
+	disable ShieldDispenser set on fire
+	disable ShieldDispenser hurt by fire	
+	set ShieldDispenser magic properties MAGIC_TYPE_SHIELD
+	enable ShieldDispenser active
+	set ShieldDispenser time to 1 seconds
+
+	TotalFireballs = 0
+	begin loop
+		// Start firing shots constantly
+		run background script FireAway (CannonPos[HitCount], AimPos[HitCount])
+		run background script CheckTarget (TargetPos[HitCount])
+		wait until TargetHit == 1
+		TargetHit = 0
+		HitCount++
+	until HitCount == 7 or QuitRebound == 1
+	end loop
+	
+	ReboundComplete = 1
+
+	if QuitRebound == 0
+		begin dialogue
+			eject evil spirit
+			say "YOU WIN! NO MORE TARGETS."
+			wait until read
+			say "Number of Fireballs used: $d" with number TotalFireballs
+			wait until read
+		end dialogue
+	end if
+
+end loop
+	
+end script Rebound

@@ -1,0 +1,193 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define TS_FALSE = 0
+define TS_TRUE = 1
+define TS_TIME_DECREASE = 5	//This is how much the time limit decreases by
+define TS_START_TIME = 30	//This is the start time
+define TS_COMPLETION_VIBE = 4
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global TS_Stones[7]
+global TS_StoneOrder[7]
+
+global TS_StoneTimer = 0
+global TS_Vibe = 0
+global TS_VibeRay = 0
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script TS_VibeControl
+
+//-----------------------------------------------------------------------------
+//	Land 2 Stones
+//-----------------------------------------------------------------------------
+begin script Land2StandingStones
+	StoneLoop = 0
+	TargetStone = 0
+	CircleCentre = marker at {1719.285, 22.770, 1968.754}
+	Worshippers[7]
+	VillagerLoop = 0
+	HitEffect = 0
+	HoldPos = 0
+	Scroll = 0
+start
+
+	TS_Stones[0] = get FEATURE at {1735.465, 24.824, 1947.564}
+	TS_Stones[1] = get FEATURE at {1712.450, 17.769, 1943.253}
+	TS_Stones[2] = get FEATURE at {1694.350, 16.830, 1959.373} 
+	TS_Stones[3] = get FEATURE at {1692.139, 23.407, 1984.552} 
+	TS_Stones[4] = get FEATURE at {1713.291, 25.158, 1997.978} 
+	TS_Stones[5] = get FEATURE at {1736.453, 24.657, 1992.158} 
+	TS_Stones[6] = get FEATURE at {1746.147, 24.492, 1973.539} 
+
+	//Set the stones order
+	TS_StoneOrder[0] = 0
+	TS_StoneOrder[1] = 5
+	TS_StoneOrder[2] = 2
+	TS_StoneOrder[3] = 3
+	TS_StoneOrder[4] = 1
+	TS_StoneOrder[5] = 6
+	TS_StoneOrder[6] = 4
+
+	//Create the worshipping villagers
+	begin loop
+		Worshippers[VillagerLoop] = create VILLAGER VILLAGER_INFO_GREEK_SHEPHERD_MALE at {CircleCentre}
+		move Worshippers[VillagerLoop] position to {TS_Stones[VillagerLoop]}
+		VillagerLoop++
+	until VillagerLoop == 7
+	end loop
+
+	wait 1.5 seconds
+
+	//Wait a short while then stop them walking!!!
+	VillagerLoop = 0
+	begin loop
+		stop Worshippers[VillagerLoop] moving		
+		play anim "a_p_dance_celebrate07" on Worshippers[VillagerLoop] loop -1
+		VillagerLoop++
+	until VillagerLoop == 7
+	end loop
+
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {CircleCentre}
+	ALTITUDE of Scroll  = 5
+	wait until Scroll right clicked
+
+	//Temp intro 
+	begin cinema
+		
+		delete Scroll
+		say "These people have no feeling or emotion in their dance"
+		wait until read
+
+		say "FIST the ancient sequence on the stones and create a rythm to get a vibe going"
+		wait until read
+
+		TS_VibeRay = create visual effect "gp_s_rayfx.ves" strength 1 scale 0.5 at {CircleCentre} + {0, 3, 0} time -1
+		set TS_VibeRay focus to {CircleCentre} - {0, 5, 0}
+	end cinema
+
+	run background script TS_VibeControl
+	
+	begin loop
+		TS_StoneTimer = create timer for TS_START_TIME - (TS_Vibe*TS_TIME_DECREASE) seconds
+
+		//say "Timer is set at $d" with number TS_START_TIME - (TS_Vibe*TS_TIME_DECREASE)
+		//wait 2 seconds
+
+		//Always start at 0
+		TargetStone = 0
+
+		begin loop
+			
+			if TS_Stones[StoneLoop] right clicked
+				play string sound "Gate_Slam_Shut_01"
+
+				//If this is the right stone
+				if TS_StoneOrder[StoneLoop] == TargetStone
+					//Create an effect here
+					TargetStone++
+
+					//Effect
+					delete HitEffect
+					HitEffect = create visual effect "gp_s_rayfxball.ves" strength 1 scale 1 on TS_Stones[StoneLoop] time 0.5
+					set HitEffect colour red 0 green 255 blue 0								
+
+				else
+					TargetStone = 0
+
+					//Effect
+					delete HitEffect
+					HitEffect = create visual effect "gp_s_rayfxball.ves" strength 1 scale 1 on TS_Stones[StoneLoop] time 0.5
+					set HitEffect colour red 255 green 0 blue 0
+				end if
+
+				clear right clicked object
+			end if
+
+			StoneLoop++
+			if StoneLoop == 7
+				StoneLoop = 0
+			end if		
+
+		until TargetStone == 7
+		end loop
+
+		clear right clicked object
+
+		//The player has got it in time
+		if get TS_StoneTimer time remaining > 0
+			TS_Vibe++
+			say "Yes, nice speed there!"
+			wait until read
+		else			
+			say "Come on, go faster"
+			wait until read
+		end if
+
+	until TS_Vibe > TS_COMPLETION_VIBE
+	end loop
+
+	begin cinema
+
+		say "Look at the animal peoples!"
+		wait until read
+		
+		//Loop throguh the villagers and delete them
+		VillagerLoop = 0
+		begin loop
+			HoldPos = marker at {Worshippers[VillagerLoop]}
+			delete Worshippers[VillagerLoop]
+			Worshippers[VillagerLoop] = create ANIMAL COW at {HoldPos}
+			VillagerLoop++
+		until VillagerLoop == 7
+		end loop
+
+	end cinema
+
+	wait 5000000 seconds
+
+end script Land2StandingStones
+
+//-----------------------------------------------------------------------------
+//	Vibe Control
+//-----------------------------------------------------------------------------
+begin script TS_VibeControl
+start
+
+		begin loop
+			
+			set TS_VibeRay colour red 0 green (TS_Vibe*30) + 30 blue 0
+
+			wait 4 seconds
+			TS_Vibe-=0.1
+			//The vibe cannot go negative
+			if TS_Vibe <= 0
+				TS_Vibe = 0
+			end if			
+
+		end loop
+end script TS_VibeControl

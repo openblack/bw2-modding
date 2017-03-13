@@ -1,0 +1,34 @@
+//-----------------------------------------------------------
+// LAND 7 GLOBALS
+//-----------------------------------------------------------
+global L7GreekTown = 0
+global L7JapanCap = 0
+global L7Complete = 0
+global L7Settlement1 = 0
+global L7Settlement2 = 0
+global L7Settlement3 = 0
+global L7Settlement4 = 0
+global L7Settlement5 = 0
+global L7Settlement6 = 0
+global L7SettlementCounter = 0
+
+//-----------------------------------------------------------------------------
+//	Challenge Booleans
+//-----------------------------------------------------------------------------
+global L7ShowingArcheologistsObjective = 0
+global L7ShowingSevenSamuraiObjective = 0
+global L7ShowingSickTownObjective = 0
+global L7ShowingNutOil2Objective = 0
+
+
+begin script Land7Globals
+start
+	L7GreekTown = get town with id 0
+	L7JapanCap = get town with id 8
+	//L7Settlement1 = get town with id 2
+	//L7Settlement2 = get town with id 3
+	//L7Settlement3 = get town with id 4
+	//L7Settlement4 = get town with id 5
+	//L7Settlement5 = get town with id 6
+	//L7Settlement6 = get town with id 7
+end script Land7Globals

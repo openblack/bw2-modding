@@ -1,0 +1,350 @@
+/*-----------------------------------------------------------------------------
+CHIMNEY SE_Sweep EVENT
+
+By: Matthew Leonard
+Script Started: 07 September 2004
+-----------------------------------------------------------------------------*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SE_FALSE = 0
+define SE_TRUE = 1
+define SE_VOID = 2
+
+define SE_CONDITION_HOUSES_NEEDED = 6
+define SE_MIN_SEARCH = 10
+define SE_MAX_SEARCH = 300
+define SE_SEARCH_INCREMENT = 20
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SE_Sweep = 0
+global SE_SweepTown = 0
+global SE_Sweeping = SE_FALSE
+global SE_InCreche = SE_FALSE
+
+//-----------------------------------------------------------------------------
+//	Defines
+//-----------------------------------------------------------------------------
+define script SE_GetSweep
+//define script SE_TownEventChimneySweep
+define script SE_StartingConditions
+define script SE_AgeHack
+define script SE_CrecheCheck
+define script SE_QuitCheck
+
+//-----------------------------------------------------------------------------
+//	Chimney Sweeper
+//-----------------------------------------------------------------------------
+begin script TownEventChimneySweep
+	SweepHeightMarker = 0
+	SweepHouse = 0
+	SweepSub = 0
+	LastSweepHouse = 0
+	
+	Soot = 0		
+	BoyHome = 0
+	RandomHouse = 0
+start
+
+	run script SE_StartingConditions
+	run script SE_GetSweep
+	run background script SE_AgeHack
+	run background script SE_CrecheCheck
+	run background script SE_QuitCheck
+
+	//Nested loop because the boy goes home at night
+	begin loop
+		
+		//The SE_Sweep walks around the village visting random houses and sweeping their chimneys	
+		begin loop
+
+			LastSweepHouse = SweepHouse
+			//Make sure he isnt sweeping the same house again
+			while LastSweepHouse == SweepHouse// and BUILT of SweepHouse < 1.0
+				SweepHouse = get random home in town SE_SweepTown
+			end while
+			
+			//Make sure this has worked
+			if not SweepHouse == 0
+				move SE_Sweep position to extra position 1 of SweepHouse
+				wait until {SE_Sweep} near extra position 1 of SweepHouse radius 1
+				
+				SE_Sweeping = SE_TRUE
+				
+				set SE_Sweep position to extra position 0 of SweepHouse					
+				
+				Soot = create visual effect VISUAL_EFFECT_CHIMNEY_SMOKE_SMELTING at extra position 0 of SweepHouse time 0.5
+				wait 4 seconds
+				
+				//Different chimneys have different heights. The altitude of the EP is still a bit too high so take smoke off
+				SweepHeightMarker = marker at extra position 0 of SweepHouse
+				ALTITUDE of SE_Sweep = ALTITUDE of SweepHeightMarker
+					
+				Soot = create visual effect VISUAL_EFFECT_CHIMNEY_SMOKE_SMELTING at {SE_Sweep} time 0.1
+				
+				play anim "a_p_brushing_off_rain" on SE_Sweep loop 1 disable stand
+				wait until SE_Sweep played
+					
+				play anim "a_p_wipe_sweat" on SE_Sweep loop 1 disable stand
+				wait until SE_Sweep played
+			
+				//Throw the SE_Sweep back down the chimney
+				
+				enable SE_Sweep indestructible
+				
+				//set SE_Sweep velocity heading extra position 0 of SweepHouse speed 0.1
+				wait 0.3 seconds
+				ALTITUDE of SE_Sweep = 0
+				set SE_Sweep position to extra position 0 of SweepHouse
+
+				disable SE_Sweep indestructible
+			
+				wait 2 seconds
+				set SE_Sweep position to extra position 1 of SweepHouse
+				
+				SE_Sweeping = SE_FALSE
+				
+			end if
+			
+			until get game time > 20.00 or HEALTH of SE_Sweep <= 0			
+			end loop
+			
+			//Make sure he's not mid-air
+			if SE_Sweep exists
+				ALTITUDE of SE_Sweep = 0
+			end if
+			
+			//Send the Sweep home
+			BoyHome = get random home in town SE_SweepTown
+			
+			move SE_Sweep position to extra position 1 of BoyHome
+			wait until {SE_Sweep} at extra position 1 of BoyHome			
+			
+			move SE_Sweep to limbo
+			
+			wait until get game time < 4.00
+			wait until get game time > 5.00
+			
+			release SE_Sweep from limbo
+		
+		until SE_Sweeping == SE_VOID
+		end loop
+
+end script TownEventChimneySweep
+
+//-----------------------------------------------------------------------------
+//    Get SE_Sweep
+//-----------------------------------------------------------------------------
+begin script SE_GetSweep
+      ThisRadius = 0
+      SweepMale = SE_FALSE
+start
+	
+	//For testing
+	SE_Sweep = create CHILD VILLAGER_INFO_GREEK_FARMER_MALE at {916.506, 73.935, 689.739}
+	
+    ThisRadius = SE_MIN_SEARCH
+    while (not SE_Sweep exists and ThisRadius < SE_MAX_SEARCH) or SweepMale == 0
+		SE_Sweep = get CHILD at {SE_SweepTown} radius ThisRadius
+
+        if SE_Sweep exists
+			if SE_Sweep is male
+				SweepMale = SE_TRUE
+            end if
+        end if
+        ThisRadius += SE_SEARCH_INCREMENT
+        
+        //Make sure we dont search a radius which is too big
+        if ThisRadius >= SE_MAX_SEARCH
+			ThisRadius = SE_MIN_SEARCH
+        end if
+        
+    end while
+	
+	
+	//say "Got a SE_Sweep"
+	//wait 1 seconds
+
+	/*
+	begin cinema
+		set camera position to {SE_Sweep} + {3, 3, 3}
+		set camera focus to {SE_Sweep}
+	end cinema
+	*/
+
+end script SE_GetSweep
+
+//-----------------------------------------------------------------------------
+//	Starting Conditions
+//-----------------------------------------------------------------------------
+begin script SE_StartingConditions
+	Houses[SE_CONDITION_HOUSES_NEEDED]
+	i = 0
+	j = 0
+	HousesBuilt = 0
+start
+/*
+	SE_SweepTown = get TOWN at {892.638, 86.500, 738.347} radius 20
+	begin loop
+		i = 0
+		while i < SE_CONDITION_HOUSES_NEEDED
+			Houses[i] = get random home in town SE_SweepTown
+			
+			//Check to make sure the function isnt returning 0, hence no house
+			if Houses[i] exists
+
+				j = 0
+				while j < i
+				if Houses[j] == Houses[i]
+					Houses[i] = get random home in town SE_SweepTown					
+					j = 0
+				else
+					j++
+				end if
+				end while
+				
+				if j == i
+					i++
+					say "got a new house"
+					wait 1 seconds
+				end if
+				
+			end if					
+			
+		end while
+	
+	until i == SE_CONDITION_HOUSES_NEEDED
+	end loop
+*/
+
+	SE_SweepTown = get TOWN at {892.638, 86.500, 738.347} radius 20
+
+	wait until (get number of type HOUSE ABODE_INFO_GREEK_HOUSE_B in SE_SweepTown min built 1.0) + (get number of type HOUSE ABODE_INFO_GREEK_HOUSE_A in SE_SweepTown min built 1.0) >= SE_CONDITION_HOUSES_NEEDED
+	
+end script SE_StartingConditions
+
+//-----------------------------------------------------------------------------
+//	Age Hack
+//-----------------------------------------------------------------------------
+begin script SE_AgeHack
+start	
+	begin loop
+		//Age Hack
+		AGE of SE_Sweep = 11
+		HEALTH of SE_Sweep = 1.0
+		
+		wait 5 seconds
+	until SE_Sweeping == SE_VOID
+	end loop	
+end script SE_AgeHack
+
+//-----------------------------------------------------------------------------
+//	Creche Check
+//-----------------------------------------------------------------------------
+begin script SE_CrecheCheck
+	TheCreche = 0
+	SweepTimer = 0
+	DoneDialogue = SE_FALSE
+	
+start
+	begin loop
+		
+		//Make sure the player has seen the Sweep sweeping recently
+		begin loop
+			
+			wait until {SE_Sweep} viewed and SE_Sweeping == SE_TRUE
+			
+			SweepTimer = create timer for 15 seconds
+		
+		until SE_Sweep is HELD and get SweepTimer time remaining > 0
+		end loop
+		
+		//wait until SE_Sweep is HELD
+		wait until not SE_Sweep is HELD
+		
+		TheCreche = get HOUSE ABODE_INFO_GREEK_CRECHE at {SE_Sweep} radius 20
+		
+		if TheCreche exists
+			
+			//Stop all other loops
+			SE_Sweeping = SE_VOID
+			
+			//Sweep is at creche			
+			SE_InCreche = SE_TRUE
+
+			begin dialogue
+				
+				eject good spirit
+				
+				say "GA: Oh that's very nice of you leader."
+				wait until read
+				
+				say "GA: Freeing a young child from the pain of all that work"
+				wait until read
+				
+				eject evil spirit
+								
+				say "EA: Why free them from pain when causing it is so much more fun?"
+				wait until read
+				
+				send good spirit home
+				send evil spirit home
+				
+				DoneDialogue = SE_TRUE
+				
+			end dialogue
+			
+		end if
+	
+	until SE_Sweeping == SE_VOID and DoneDialogue == SE_TRUE
+	end loop	
+	
+end script SE_CrecheCheck
+
+//-----------------------------------------------------------------------------
+//	Quit Check
+//-----------------------------------------------------------------------------
+begin script SE_QuitCheck
+start
+	
+	begin loop
+		
+		if SE_Sweep on fire or HEALTH of SE_Sweep < 0.5
+			SE_Sweeping = SE_VOID
+		end if
+
+		//Release if the Sweep is sweeping and is held
+		if SE_Sweep is HELD and SE_Sweeping == SE_TRUE
+			wait until not SE_Sweep is HELD
+			SE_Sweeping = SE_VOID
+		end if
+
+		/*
+		if HEALTH of SE_SweepHouse != 1.0 and SE_SweepHouse exists
+			release SE_Sweep
+			SE_Sweeping = SE_VOID
+
+			say "House release"
+			wait 2 seconds
+		end if
+		*/
+	until SE_Sweeping == SE_VOID
+	end loop
+		
+	//Reset altitude
+	ALTITUDE of SE_Sweep = 0
+	
+	wait 2 seconds
+
+	if SE_InCreche == SE_FALSE
+		release SE_Sweep
+	else
+		play anim "a_p_dance_celebrate04" on SE_Sweep loop -1 disable stand
+		//attach to creche
+	end if
+	
+
+end script SE_QuitCheck

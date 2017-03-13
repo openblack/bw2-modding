@@ -1,0 +1,6 @@
+run script RunLand4NorseAttacks
+
+begin script RunLand4NorseAttacks
+start
+	run script Land4NorseAttacks
+end script RunLand4NorseAttacks

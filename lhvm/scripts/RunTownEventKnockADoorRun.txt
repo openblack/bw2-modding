@@ -1,0 +1,8 @@
+run script RunTownEventKnockAdoorRun
+
+begin script RunTownEventKnockAdoorRun
+start
+
+	run script TownEventKnockADoorRun
+
+end script RunTownEventKnockAdoorRun

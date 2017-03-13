@@ -1,0 +1,107 @@
+//---------------------------------------------------------------------
+// Telephone Box
+//---------------------------------------------------------------------
+
+//---------------------------------------------------------------------
+// Land 3 Bench
+//---------------------------------------------------------------------
+begin script Land3Bench
+	Me			= 0
+	Child		= 0
+	Child2		= 0
+	Bench		= 0
+
+	ChildCreate	= marker at {695.295, 543.049, 1248.894}
+	Child2Create	= marker at {693.572, 542.922, 1250.900}
+	CreatePos	= marker at {699.826, 540.365, 1276.575}
+	BenchPos	= marker at {697.428, 540.775, 1271.003}
+	SitPos		= marker at {697.885, 540.767, 1271.159}
+	PokePos		= marker at {698.085, 540.820, 1270.173}
+
+	Rand		= 0
+start
+
+	Child = create CHILD GREEK_FARMER at {ChildCreate}
+	SCALE of Child = 0.7
+	AGE of Child = 6
+
+	Child2 = create CHILD GREEK_FARMER at {Child2Create}
+	SCALE of Child2 = 0.7
+	AGE of Child2 = 6
+
+	Bench = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {BenchPos}
+	override mesh for Bench with "..\features\m_greek_tf_bench01_n"
+
+	Me = create VILLAGER GREEK_FARMER at {CreatePos}
+	set Me carrying CARRIED_OBJECT_NONE
+
+	begin loop
+
+		move Me position to {SitPos}// using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation	
+
+		wait until {Me} at {SitPos}
+
+		set Child carrying CARRIED_OBJECT_CROOK
+
+
+		//Play sit anims
+
+		play anim "a_p_female_siton_bench_into" on Me disable stand blend time 0
+		wait until Me played
+
+		play anim  "a_p_female_siton_bench" on Me loop -1 disable stand blend time 0
+
+		move Child position to {PokePos}
+		SPEED of Child = 0.5
+		wait until {Child} at {PokePos}
+			
+		play anim "a_p_prod_campfire" on Child
+		wait until Child played
+
+		move Child position to {ChildCreate}
+		SPEED of Child = 0.5
+		
+		set anim speed of Me to 1.5
+		play anim "a_p_female_siton_bench_outof" on Me disable stand blend time 0		
+		wait until Me played
+
+		set anim speed of Me to 1
+
+		//Shout random abuse here
+		Rand = number from 0 to 4
+
+		if Rand == 0
+			attach 3d sound "BW2T_SCRIPT_TOWNEVENTS_KNOCKADOORRUN_ANGRYMAN_10" to Me
+		elsif Rand == 1
+			attach 3d sound "BW2T_SCRIPT_TOWNEVENTS_KNOCKADOORRUN_ANGRYMAN_20" to Me
+		elsif Rand == 2
+			attach 3d sound "BW2T_SCRIPT_TOWNEVENTS_KNOCKADOORRUN_ANGRYMAN_30" to Me
+		elsif Rand == 3
+			attach 3d sound "BW2T_SCRIPT_TOWNEVENTS_KNOCKADOORRUN_ANGRYMAN_40" to Me
+		elsif Rand == 4
+			attach 3d sound "BW2T_SCRIPT_TOWNEVENTS_KNOCKADOORRUN_ANGRYMAN_50" to Me
+		end if
+
+		play anim "a_p_shake_fist_woman" on Me disable stand blend time 0
+
+		wait until {Child} at {ChildCreate}
+
+
+		Rand = number from 0 to 2
+
+		if Rand == 0
+			attach 3d sound "BW2T_SCRIPT_TOWNEVENTS_KNOCKADOORRUN_KIDSBANTER_10" to Child
+		elsif Rand == 1
+			attach 3d sound "BW2T_SCRIPT_TOWNEVENTS_KNOCKADOORRUN_KIDSBANTER_30" to Child2
+		end if
+
+		play anim "a_p_child_laughing_1" on Child disable stand blend time 0
+		play anim "a_p_child_laughing_2" on Child2 disable stand blend time 0
+		
+		wait until Me played
+		wait until Child played
+		wait until Child2 played
+
+	end loop
+
+end script Land3Bench

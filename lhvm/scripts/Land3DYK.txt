@@ -1,0 +1,87 @@
+//-----------------------------------------------------------------
+// Land 3 Did You Know - Initial Placement by Phil 13th May 2005
+//-----------------------------------------------------------------
+begin script Land3DidYouKnow
+
+	Sign = 0
+	DYK_POS_1 = marker at {901.233,389.811,1753.716}
+	DYK_POS_2 = marker at {945.758,390.745,1789.656}
+	DYK_POS_3 = marker at {1637.632,271.242,1384.083}
+	DYK_POS_4 = marker at {1019.022,363.607,1638.628}
+	DYK_POS_5 = marker at {1209.852,364.285,1877.982}
+	DYK_POS_6 = marker at {1106.644,368.697,1705.819}
+	DYK_POS_7 = marker at {1036.073,366.119,1559.972}
+	DYK_POS_8 = marker at {973.152,402.285,1390.308}
+	DYK_POS_9 = marker at {696.165,540.578,1274.632}
+	DYK_POS_10 = marker at {860.341,409.106,1542.246}
+	DYK_POS_11 = marker at {1247.438,324.836,1097.742}
+	DYK_POS_12 = marker at {1203.889,312.301,1111.351}
+	DYK_POS_13 = marker at {1169.309,158.667,766.526}
+	DYK_POS_14 = marker at {1782.734,298.153,1131.355}
+	DYK_POS_15 = marker at {1822.687,293.024,1110.715}
+	DYK_POS_16 = marker at {1866.442,291.950,1089.791}
+	DYK_POS_17 = marker at {1881.196,288.860,1062.733}
+	DYK_POS_18 = marker at {1886.666,285.592,1028.502}
+	DYK_POS_19 = marker at {1876.414,290.582,999.437} 
+	DYK_POS_20 = marker at {1862.896,292.779,969.980} 
+	DYK_POS_21 = marker at {1845.865,296.502,954.534} 
+	DYK_POS_22 = marker at {1827.758,308.438,929.191} 
+	DYK_POS_23 = marker at {1210.906,366.159,1605.037}
+	DYK_POS_24 = marker at {1083.601,364.830,1542.023}
+	DYK_POS_25 = marker at {1350.642, 361.030, 1523.533}
+start
+
+//DYK: "If you see your Creature doing something you don’t like, be sure to tell him off. If you reward you Creature for doing something he will do it more often."
+	Sign = create dyk at {DYK_POS_1} title "BW2T_INTERFACE_TOOLTIP_DYK_CREATURE_CREATURE_PUNISH_AND_REWARD_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_CREATURE_CREATURE_PUNISH_AND_REWARD_DESCRIPTION"
+//DYK: "Your Creature is your friend, and will stay with you until the very end. So look after him as best you can."
+	Sign = create dyk at {DYK_POS_2} title "BW2T_INTERFACE_TOOLTIP_DYK_CREATURE_CREATURE_YOUR_FRIEND_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_CREATURE_CREATURE_YOUR_FRIEND_DESCRIPTION"
+//DYK: "Influence equals control. Expanding your influence will give you a larger aread in which to perform your divine work."
+	Sign = create dyk at {DYK_POS_3} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_INFLUENCE_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_INFLUENCE_DESCRIPTION"
+//DYK: "Click and hold with the Action button when picking up an object to engage Multi Pickup. Click the Action button to drop one object at a time. Click and Hold with the Action button to trickle them back out again. Tap to release all objects at once."
+////	Sign = create dyk at {DYK_POS_4} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_MULTI_PICKUP_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_MULTI_PICKUP_DESCRIPTION"
+//DYK: "With a villager in your Hand, keep the Hand still to get detailed information about the person you are holding."
+	Sign = create dyk at {DYK_POS_7} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_VILLAGER_INFO_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_VILLAGER_INFO_DESCRIPTION"	
+//DYK: "You can reach outside your influence for a short time, but the further out you go the faster your influence wears off. Virtual influence can be increased by having more worshippers at the altar."
+	Sign = create dyk at {DYK_POS_8} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_VIRTUAL_INFLUENCE_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_VIRTUAL_INFLUENCE_DESCRIPTION"		
+//DYK: "Watch for fireflies at dawn…"
+	Sign = create dyk at {DYK_POS_9} title "BW2T_INTERFACE_TOOLTIP_DYK_HINTS_FIREFLIES_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HINTS_FIREFLIES_DESCRIPTION"		
+
+	//Hint DYKs
+//DYK: "Earn Tribute by completing objectives, challenges, conquering the land and breaking records."
+	//Sign = create dyk at {DYK_POS_10} title "BW2T_INTERFACE_TOOLTIP_DYK_HINTS_TRIBUTE_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HINTS_TRIBUTE_DESCRIPTION"
+
+	//Toolbar DYKs
+//DYK: "The Objectives menu in the Toolbar will let you know in detail what the remaining Objectives are for the land and how complete they are. You can also press  the Objectives Key to get a quick list of the current Objectives."
+	Sign = create dyk at {DYK_POS_11} title "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_OBJECTIVES_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_OBJECTIVES_DESCRIPTION"
+//DYK: "Spend your hard earned Tribute in the Toolbar's Tribute menu. Here you can choose from a wide range of items to increase your power as a divine being."
+	Sign = create dyk at {DYK_POS_12} title "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_SPENDING_TRIBUTE_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_SPENDING_TRIBUTE_DESCRIPTION"
+//DYK: "Press the Toolbar Key to toggle the Toolbar open and closed."
+	Sign = create dyk at {DYK_POS_13} title "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_TOGGLE_TOOLBAR_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOOLBAR_TOGGLE_TOOLBAR_DESCRIPTION"
+
+	//Town DYKs
+//DYK: "Positioning things in your town is important. Try experimenting to make a truly great city."
+	Sign = create dyk at {DYK_POS_14} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_BUILDING_POSITIONING_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_BUILDING_POSITIONING_DESCRIPTION"
+//DYK: "All abodes have a capacity which your population will attempt to fill up by breeding. So, when buildings are full, build more! Build homes close together to increase population growth at the expense of the happiness of your people."
+	Sign = create dyk at {DYK_POS_15} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_CAPACITY_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_CAPACITY_DESCRIPTION"
+//DYK: "Your people will let you know what buildings they desire. Look in the middle of your Town Centre to find out. Click and drag with the Action button to create it."
+	Sign = create dyk at {DYK_POS_16} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_DESIRE_FOR_PROGRESS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_DESIRE_FOR_PROGRESS_DESCRIPTION"
+//DYK: "People will automatically perform duties as needed in the Town to sustain their lives: harvesting, breeding, gathering resources... But you can make disciples out of them if you want a particular role fulfilled. Just drop a villager near the job you want them to become a disciple in."
+	Sign = create dyk at {DYK_POS_17} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_DISCIPLES_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_DISCIPLES_DESCRIPTION"
+//DYK: "To make a disciple a normal villager you can drop them at the Town Center or any open area. You can also shake your hand while holding one."
+	//Sign = create dyk at {DYK_POS_18} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_DISCIPLE_CANCEL_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_DISCIPLE_CANCEL_DESCRIPTION"
+//DYK: "You can make fields any size you like when you first place them by clicking and dragging with the action button. Also, fields placed on a very fertile area (marked in green) will yield more food."
+	Sign = create dyk at {DYK_POS_19} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_FIELDS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_FIELDS_DESCRIPTION"
+//DYK: "Some rocks contain ore and can be harvested and used much like trees. Place a villager down next to one to turn them into a Mineworker. Drop them into the Storehouse to add them to your resource stockpile. You can also place them next to or pour them on to a building to help the building process."
+	Sign = create dyk at {DYK_POS_20} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_ORE_ROCKS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_ORE_ROCKS_DESCRIPTION"
+//DYK: "Roads are a great way to plan out a city. Lay down your roads first and then place buildings on them. Fields that are dragged out bump up against roads so you can shape the fields by outlining them with roads."
+	Sign = create dyk at {DYK_POS_21} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_PLANNING_CITIES_ROADS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_PLANNING_CITIES_ROADS_DESCRIPTION"
+//DYK: "The Town Centre tells you everything you need to know about your town and the desires of your people. When people need something they will tell you by building different statues at the town centre. Hold the Hand over them to find out more details."
+	Sign = create dyk at {DYK_POS_22} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_TOWN_CENTRE_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_TOWN_CENTRE_DESCRIPTION"
+//DYK: "Buildings can be rotated before placement by holding down the Action button and rotating the building with the mouse."
+	Sign = create dyk at {DYK_POS_23} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_ROTATING_BUILDINGS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_ROTATING_BUILDINGS_DESCRIPTION"
+//DYK: "If you lay out  roads you can fill inside them with a field by dragging out. The field will take the road as its boundary."
+	Sign = create dyk at {DYK_POS_24} title "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_ROADS_AND_FIELDS_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_TOWN_ROADS_AND_FIELDS_DESCRIPTION"
+//DYK: "Press the Action button quickly to tap. Try tapping on a rock or a building."
+	Sign = create dyk at {DYK_POS_25} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_TAPPING_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_TAPPING_DESCRIPTION"
+
+end script Land3DidYouKnow

@@ -1,0 +1,140 @@
+//-----------------------------------------------------------------------------
+//	Land8Objectives
+//-----------------------------------------------------------------------------
+
+begin script Land8Objectives
+	PlayerAlignment = 0
+start
+	reset all objectives for player 0
+
+	///GLOBAL OBJECTIVES
+	///
+
+	///////PRIMARY OBJECTIVES - these are script controlled
+
+
+	//PRIMARY - Dominate Land by Impressiveness    or FORCE
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_8_WINLAND
+
+
+	/////SECONDARY OBJECTIVES - these are controlled by gamecode
+
+
+	//SPECIAL objective
+	
+	//SPECIAL OBJECTIVES
+	PlayerAlignment = alignment of player
+
+	//PICK THE CORRECT change alignment!
+	if PlayerAlignment < 0
+		//Change of heart - convert from GOOD to EVIL
+		set player 0 objective TRIBUTE_OBJECTIVE_AS_SOON_AS_ULTIMATE_EVIL with amount 1 text "BW2T_SCRIPT_OBJECTIVES_PICKUP28" amount 1 description "BW2T_SCRIPT_07FINAL_OBJECTIVE_EVIL_61" start value 0 reward 50000
+	end if
+	if PlayerAlignment > 0
+		//Change of heart - convert from Good to EVIL    
+		set player 0 objective TRIBUTE_OBJECTIVE_AS_SOON_AS_ULTIMATE_GOOD with amount 1 text "BW2T_SCRIPT_OBJECTIVES_PICKUP27" amount 1 description "BW2T_SCRIPT_07FINAL_OBJECTIVE_GOOD_11" start value 0 reward 50000
+	end if
+	
+	
+	//Use Heal Miracle to heal people    
+	set player 0 objective TRIBUTE_OBJECTIVE_HEAL_VILLAGERS with amount 1 text "BW2T_SCRIPT_11FINAL_OBJECTIVE_GOOD_30" amount 1 description "BW2T_SCRIPT_11FINAL_OBJECTIVE_GOOD_31" start value 0 reward 10000 alignment 0.01
+	
+	//Take over 4 town using impressiveness    
+	set player 0 objective TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_IMPRESSIVENESS with amount 4 text "BW2T_SCRIPT_GENERIC_PICKUP163" amount 4 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_GOOD_11" start value 0 reward 20000 alignment 0.05
+	
+	//Use Shield Miracle to protect your villagers   
+	set player 0 objective TRIBUTE_OBJECTIVE_SPECIAL_PROTECT_N_VILLAGERS_WITH_SHIELD_MIRACLE with amount 15 text "BW2T_SCRIPT_OBJECTIVES_PICKUP30" amount 15 description "BW2T_SCRIPT_08FINAL_OBJECTIVE_GOOD_51" class TRIBUTE_OBJECTIVE_CLASS_TOWN start value 0 reward 3000 alignment 0.02
+		
+	////
+	//CHOOSE the miracle objective they haven't unlocked yet!!!	
+	if get research ARTEFACT_MAGIC_TYPE_FIRE_FIRE available  == variable RESEARCH_AVAILABILITY_AVAILABLE 
+		//Use Fire Miracle to defeat an army    
+  		set player 0 objective TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_FIRE with amount 1 text "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_70" amount 1 description "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_71" start value 0 reward 5000 alignment -0.02
+	else
+		if get research ARTEFACT_MAGIC_TYPE_WATER_STORM available  == variable RESEARCH_AVAILABILITY_AVAILABLE 
+			//Use Electricity Miracle to defeat an army    
+	  		set player 0 objective TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_ELECTRICITY with amount 1 text "BW2T_SCRIPT_09FINAL_OBJECTIVE_EVIL_50" amount 1 description "BW2T_SCRIPT_09FINAL_OBJECTIVE_EVIL_51" start value 0 reward 5000	alignment -0.02
+		else
+			if get research ARTEFACT_MAGIC_TYPE_EARTH_METEOR available  == variable RESEARCH_AVAILABILITY_AVAILABLE 
+				//Use Meteor Miracle to defeat an army
+				set player 0 objective TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_METEOR with amount 1 text "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_70" amount 1 description "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_71" start value 0 reward 5000 alignment -0.02
+			end if
+		end if
+	end if
+	
+	//CREATURE OBJECTIVES
+	
+	//Creature Collects 3000 ore    
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_ORE with amount 3000 text "BW2T_SCRIPT_07FINAL_OBJECTIVE_NEUTRAL_60" amount 3000 description "BW2T_SCRIPT_07FINAL_OBJECTIVE_NEUTRAL_61"  class TRIBUTE_OBJECTIVE_CLASS_CREATURE start value 0 reward 5000
+	
+	//Creature kills 12 platoons    
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_KILL_PLATOONS with amount 12 text "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_40" amount 12 description "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_41" start value 0 reward 12000
+	
+	//Win X creature fight   
+	set player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT with amount 4 text "BW2T_SCRIPT_OBJECTIVES_PICKUP32" amount 4 description "BW2T_SCRIPT_06FINAL_OBJECTIVE_EVIL_41" start value 0 reward 12000
+	
+	
+	//ARMY objectives
+	
+	
+	//Never lose a villager to attack    
+	set player 0 objective TRIBUTE_OBJECTIVE_FAILABLE_NEVER_LOSE_VILLAGER_TO_ATTACK with amount 1 text "BW2T_SCRIPT_08FINAL_OBJECTIVE_GOOD_10" amount 1 description "BW2T_SCRIPT_08FINAL_OBJECTIVE_GOOD_11" start value 0 reward 20000 alignment 0.05
+	
+	//Put all the men in to the army   
+	 set player 0 objective TRIBUTE_OBJECTIVE_SPECIAL_ENLIST_ALL_MEN with amount 1 text "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_10" amount 1 description "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_11" start value 0 reward 8000
+	
+	//Take over N towns by force 
+	set player 0 objective TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_FORCE with amount 4 text "BW2T_SCRIPT_GENERIC_PICKUP162" amount 4 description "BW2T_SCRIPT_06FINAL_OBJECTIVE_EVIL_21" start value 0 reward 20000 alignment -0.05
+	
+	//Create 20 platoons    
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATE_PLATOONS with amount 20 text "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_50" amount 20 description "BW2T_SCRIPT_08FINAL_OBJECTIVE_EVIL_51" start value 0 reward 8000
+		
+	
+	//RESOURCE
+	
+	//Collect 6000 ore    
+	set player 0 objective TRIBUTE_OBJECTIVE_MINE_ORE with amount 6000 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_30" amount 6000 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_31" class TRIBUTE_OBJECTIVE_CLASS_RESOURCES start value 0 reward 3000
+	
+	
+	//AMOUNT SETTING
+	//The amount setting must occur last
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_GOLD amount 20
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_SPECIAL amount 0
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_TOWN amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_ARMY amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_CREATURE amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_RESOURCES amount 1
+
+	
+/*
+	set player 0 objective TRIBUTE_OBJECTIVE_REACH_CITY_STATUS amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_REACH_CITY_STATUS text "BW2T_SCRIPT_08FINAL_OBJECTIVES_NAME_20"
+	set player 0 objective TRIBUTE_OBJECTIVE_REACH_CITY_STATUS description "BW2T_SCRIPT_08FINAL_OBJECTIVES_DESCRIPTION_20"
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_KILL_PLATOONS amount 65
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_KILL_PLATOONS text "BW2T_SCRIPT_08FINAL_OBJECTIVES_NAME_30"
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_KILL_PLATOONS description "BW2T_SCRIPT_08FINAL_OBJECTIVES_DESCRIPTION_30"
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN amount 60
+	set player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN text "BW2T_SCRIPT_08FINAL_OBJECTIVES_NAME_40"
+	set player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN description "BW2T_SCRIPT_08FINAL_OBJECTIVES_DESCRIPTION_40"
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATE_PLATOONS amount 100
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATE_PLATOONS text "BW2T_SCRIPT_08FINAL_OBJECTIVES_NAME_50"
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATE_PLATOONS description "BW2T_SCRIPT_08FINAL_OBJECTIVES_DESCRIPTION_50"
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT text "BW2T_SCRIPT_08FINAL_OBJECTIVES_NAME_60"
+	set player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT description "BW2T_SCRIPT_08FINAL_OBJECTIVES_DESCRIPTION_60"
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_08FINAL_OBJECTIVES_NAME_70"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 description "BW2T_SCRIPT_08FINAL_OBJECTIVES_DESCRIPTION_70"
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_08FINAL_OBJECTIVES_NAME_80"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 description "BW2T_SCRIPT_08FINAL_OBJECTIVES_DESCRIPTION_80"
+	*/
+	
+	
+end script Land8Objectives

@@ -1,0 +1,7 @@
+run script GotoLand9
+
+begin script GotoLand9
+start
+	load map "./Data/Landscape/BW2/Land9.bwe"
+	run script LandStart
+end script GotoLand9

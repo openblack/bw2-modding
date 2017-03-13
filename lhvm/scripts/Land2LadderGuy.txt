@@ -1,0 +1,71 @@
+////==============================================================
+//// Land 2 Ladder Guy
+//// Matt.L
+////==============================================================
+//
+////--------------------------------------------------------------
+//// Land2 Ladder Guy
+////--------------------------------------------------------------
+//global LG_GoTrigger = 0
+//
+////--------------------------------------------------------------
+//// Land2 Ladder Guy
+////--------------------------------------------------------------
+//begin script Land2LadderGuy
+//	HousePos = marker at {2061.661, 99.741, 911.160}
+//	PullPos = marker at {0, 0, 0} //Generated
+//	House = 0
+//	Ladder = 0
+//
+//	Cleaner = 0
+//	Soldier = 0
+//start
+//	
+//	House = get HOUSE at {HousePos} radius 20
+//
+//	Ladder = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at get world position from House to {-7.557, 0.019, -0.157}
+//	override mesh for Ladder with "..\features\m_greek_tf_ladder_n"
+//	ANGLE of Ladder = ANGLE of House + 90
+//	PITCH of Ladder = 8.0
+//	ALTITUDE of Ladder = -0.5
+//
+//	Cleaner = create VILLAGER GREEK_TRADER at get world position from Ladder to {0, 0, -0.65}
+//	ALTITUDE of Cleaner = 2.35
+//	ANGLE of Cleaner = ANGLE of House - 180
+//	disable Cleaner reactable
+//	play anim "a_p_sculptor" on Cleaner
+//
+//	PullPos = marker at get world position from Ladder to {0.4, 0, 0.3}
+//	Soldier = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at get world position from House to {-10.496, 0.199, -6.337}
+//	set Soldier focus to {House}
+//	disable Soldier reactable
+//	enable Soldier indestructible
+//
+//	wait 1 seconds
+//
+//	wait until LG_GoTrigger == 1
+//
+//	move Soldier position to {PullPos}
+//	SPEED of Soldier = 0.4
+//	wait until {Soldier} at {PullPos}
+//
+//	move villager Soldier focus to {Ladder}
+//	wait 0.5 seconds
+//
+//	play anim "a_p_pull_object_into" on Soldier
+//	//wait until Soldier played
+//	wait 1 seconds
+//
+//	//Velocity disabled for now.. crashes!!!!
+//	ALTITUDE of Ladder = 0
+//	set Ladder velocity heading get world position from House to {-11.870, 0.254, 0.584} speed 5
+//
+//	wait 0.8 seconds
+//
+//	//set Cleaner velocity heading {Cleaner} speed 1
+//
+//	wait 2 seconds
+//	HEALTH of Cleaner = 0
+//
+//	wait 100 seconds
+//end script Land2LadderGuy

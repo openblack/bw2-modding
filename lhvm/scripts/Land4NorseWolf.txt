@@ -1,0 +1,26 @@
+begin script Land4NorseWolf
+	WolfStartPos = marker at {1752.578,379.418,1650.735}
+	LocalForestPos = marker at {1467.291,396.235,1808.697}
+	WaitTime = 0
+	RandNum = 0
+start
+	run script GCAI_InitCreature(WolfStartPos,variable CREATURE_TYPE_WOLF,0.5,-0.2,1)
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_WATER available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	run script GCAI_SetTask_PerformRole(WolfStartPos,350,variable CR_GATHERER)
+
+	/*
+	begin loop
+		RandNum = number from 1 to 3
+		if RandNum == 1
+			//say "gathering"
+			run script GCAI_SetTask_PerformRole(LocalForestPos,300,variable CR_GATHERER)
+		else //if RandNum == 2 or RandNum == 3
+			//say "guarding"
+			run script GCAI_SetTask_PerformRole(WolfStartPos,250,variable CR_SOLDIER)
+		end if
+
+		WaitTime = number from 60 to 300
+		wait WaitTime seconds
+	end loop
+	*/
+end script Land4NorseWolf

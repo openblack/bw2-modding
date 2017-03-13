@@ -1,0 +1,11 @@
+run script RunAssaultCourse
+
+begin script RunAssaultCourse
+start
+	begin camera
+		set camera position to {1103.417,41.290,1399.497}
+		set camera focus to {1098.766,26.611,1380.245}
+	end camera
+	
+	run script AssaultCourse
+end script RunAssaultCourse

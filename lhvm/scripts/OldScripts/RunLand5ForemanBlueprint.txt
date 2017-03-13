@@ -1,0 +1,12 @@
+run script RunLand5ForemanBlueprint
+
+begin script RunLand5ForemanBlueprint
+
+start
+
+	if L5GreekTown not exists
+		run background script Land5Globals
+	end if
+	run script Land5ForemanBlueprint
+
+end script RunLand5ForemanBlueprint

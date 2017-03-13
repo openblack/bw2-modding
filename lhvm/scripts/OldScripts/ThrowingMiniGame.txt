@@ -1,0 +1,1841 @@
+///////////////////////////////////////////////////////////////////////////////
+//	THROWING MINIGAME
+//	~~~~~~~~~~~~~~~~~
+//
+//	This is a minigame for showing people how to pick up and drop objects
+//	as well as throwing objects. It is done in a mini game style so the player
+//	will hopefully have fun while they learn the interface.
+//
+//	The minigame will be split into levels. We will start off throwing at a
+//	stationary object. Then once the player has mastered this we will move
+//	onto throwing at moving objects. Finally aftertouch will be introduced to
+//	the player.
+//
+//	Rewards:		Stars
+//
+//	Start date:		19-02-2002				By:	Steve
+//	Update date:	27-06-2002				By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define TMG_FALSE				= 0
+define TMG_TRUE					= 1
+define TMG_HIGH_SB				= 0
+define TMG_PLAYER_SB			= 1
+define TMG_SINGLE				= 1
+define TMG_DOUBLE				= 2
+define TMG_TRIPLE				= 3
+define TMG_RAMPAGING			= 4
+define TMG_LOST					= 0
+define TMG_WON					= 1
+define TMG_DREW					= 2
+define TMG_MAX_LEVELS			= 3
+define TMG_NO_OF_POSTS			= 7
+define TMG_AMMO_AMOUNT			= 6
+define TMG_LEVEL_MAX_BASES		= 10
+define TMG_BASES_AMOUNT			= 25
+define TMG_VALID_THROW_RADIUS	= 35				// Was 40
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global TMGLevels[TMG_MAX_LEVELS]
+global TMGLevelTargets[TMG_MAX_LEVELS]
+global TMGLevelTimeLimits[TMG_MAX_LEVELS]
+global TMGLevelCompleted[TMG_MAX_LEVELS]
+global TMGChallengeScroll[TMG_MAX_LEVELS]
+global TMGLevelScrollPos[TMG_MAX_LEVELS]
+global TMGPlayerLevelBestScores[TMG_MAX_LEVELS]
+global TMGHighScoreBoard[TMG_MAX_LEVELS]
+global TMGPlayerScoreBoard[TMG_MAX_LEVELS]
+global TMGAmmo[TMG_AMMO_AMOUNT]
+global TMGAmmoPos[TMG_AMMO_AMOUNT]
+global TMGTargetBases[TMG_BASES_AMOUNT]
+global TMGCloud[TMG_LEVEL_MAX_BASES]
+
+global TMGLevelScrollClicked
+global TMGLevelReached
+global TMGRangeCentre
+global TMGSecondMark
+global TMGCurrentLevel
+global TMGPlayerScore
+global TMGHelpScroll
+global TMGStartTimer
+global TMGPlayingLevel
+global TMGLevelCancelled
+global TMGDoTapRock
+global TMGTarget
+global TMGTargetHit
+global TMGPlayerInterruptedFlow
+global TMGTotalRocksThrown
+global TMGAmountOfTargetsHit
+global TMGHeadshotCount
+global TMGSingleHeadCount
+global TMGDoubleHeadCount
+global TMGTripleHeadCount
+global TMGRampageHeadCount
+global TMGHitPercentage
+global TMGHeadshotPercentage
+global TMGShownEndCutscene
+
+// The following variables really should be locals passed to scripts
+global TMGLevelResult
+global TMGLevelAttempts
+global TMGHut
+
+// Temp variable until new code or artwork are done
+global TMGRangeBush[54]
+global TMGThrowRing[18]
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script TMGIntro
+define script TMGMaintainHelpScroll
+define script TMGSetLevelValues
+define script TMGLevelSetup
+define script TMGWaitForLevelScrollSelection(LevelScroll)
+define script TMGPlayLevel
+define script TMGLevelRoundUp
+define script TMGResetVariables
+define script TMGGetReward
+define script TMGSetupThrowingArea
+define script TMGPlaceHut
+define script TMGPlaceRanges
+define script TMGPlaceScoreBoard(Board)
+define script TMGRaiseScoreBoard(Board)
+define script TMGLowerScoreBoard(Board)
+define script TMGPlaceAmmo
+define script TMGSetUpLevelTargets
+define script TMGAllowAccessToAmmo
+define script TMGDisallowAccessToAmmo
+define script TMGCheckForInteractionWithRock(Rock)
+define script TMGHandleTargetActions
+define script TMGRaiseLowerTarget(Target, RaiseOrLower, Speed)
+define script TMGTestForHittingTarget(Rock)
+define script TMGMaintainAmmo(Rock, MaxDistance)
+define script TMGCreateTargetObstructions(Target, Dist, Space, Altitude, Scale, CentrePostAngle)
+define script TMGThrowingHandDemo
+define script TMGTappingAndAftertouchHandDemo
+define script TMGBeatenAllLevels
+define script TMGHeadshot(Bonus)
+define script TMGShowSummary
+define script TMGLevelTimedOut
+
+//-----------------------------------------------------------------------------
+//	Start script of the throwing minigame
+//-----------------------------------------------------------------------------
+begin script ThrowingMiniGame
+
+Counter		= 0
+
+start
+
+	TMGRangeCentre		= marker at {969.016,7.525,1242.688}
+	TMGSecondMark		= marker at {TMGRangeCentre} + {20, -20}
+	TMGCurrentLevel		= 1
+	
+	run script TMGSetLevelValues
+	run script TMGSetupThrowingArea
+	run script TMGIntro
+	
+	run background script TMGMaintainHelpScroll
+	
+	// Keep the games active for the whole duration of the land
+	while TMGCurrentLevel <= TMG_MAX_LEVELS
+		// Reset values for next level
+		TMGLevelAttempts = 0
+		TMGLevelResult = TMG_LOST
+			
+		while TMGLevelResult != TMG_WON
+			TMGLevelAttempts++
+			run script TMGPlayLevel
+		end while
+		
+		run script TMGGetReward
+		Counter = 0		
+					
+		// Find out which level is the next to complete
+		while TMGLevelCompleted[Counter] == TMG_TRUE
+			Counter++
+		end while
+		
+		if Counter >= TMG_MAX_LEVELS
+			Counter = TMG_MAX_LEVELS-1
+			
+			// We've completed all of the levels so kick off the Firecatcher script
+			if TriggerFirecatcherActive == TMG_FALSE
+				TriggerFirecatcherActive = TMG_TRUE
+			end if
+		end if
+		
+		TMGCurrentLevel = Counter+1
+		TMGLevelReached = Counter+1
+	end while
+
+end script ThrowingMiniGame
+
+//-----------------------------------------------------------------------------
+//	Sets up the values for the levels
+//-----------------------------------------------------------------------------
+begin script TMGSetLevelValues
+
+start
+
+	// Assign the levels a value
+	TMGLevels[0] = 1
+	TMGLevels[1] = 2
+	TMGLevels[2] = 3
+	
+	// Set the levels high scores
+	TMGLevelTargets[0] = 10
+	TMGLevelTargets[1] = 7
+	TMGLevelTargets[2] = 5
+	
+	// Set the levels time limits
+	TMGLevelTimeLimits[0] = 60
+	TMGLevelTimeLimits[1] = 60
+	TMGLevelTimeLimits[2] = 60
+	
+	// Set the levels scroll positions
+	TMGLevelScrollPos[0] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 50 angle -90
+	TMGLevelScrollPos[1] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 50 angle -180
+	TMGLevelScrollPos[2] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 50 angle -270
+	
+	TMGLevelCompleted[0] = TMG_FALSE
+	TMGLevelCompleted[1] = TMG_FALSE
+	TMGLevelCompleted[2] = TMG_FALSE
+	
+	// Which levels are available for the player to play
+	TMGLevelReached = TMGLevels[0]
+	
+	// Flags if the player stops going from one level to the next because he has played a level more than once before playing them all
+	TMGPlayerInterruptedFlow = TMG_FALSE
+	
+	// Flags whether the end of game cutscene has been shown
+	TMGShownEndCutscene = TMG_FALSE
+
+end script TMGSetLevelValues
+
+//-----------------------------------------------------------------------------
+//	Gives an intro to the player about the games they will face
+//-----------------------------------------------------------------------------
+begin script TMGIntro
+
+Scroll				= 0
+Guide				= 0
+GuidePos			= marker at {TMGRangeCentre}
+ChallengeScrollPos	= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 50 angle -90
+GuideChatPos		= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 10 angle 0
+InitialTalkPos		= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 10 angle 0
+InitialTalkFoc		= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 0 angle 0
+PullBackFromTalkPos	= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 30 angle 0
+StartOfPanFoc		= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 100 angle -90
+EndOfPanFoc			= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 100 angle -270
+LookAtBothScoresPos	= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 40 angle -45
+LookAtBothScoresFoc	= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 80 angle -90
+LookAtNextRangePos	= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 140 angle -180
+LookAtNextRangeFoc	= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 10 angle 0
+ReadyForTheGameFoc	= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 50 angle -90
+
+start
+
+	Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {TMGRangeCentre}
+	run script ChallengeHighlightNotify(Scroll, TMGRangeCentre, 1)
+	
+	begin cinema
+		enable highlight draw
+		Guide = create VILLAGER VILLAGER_INFO_SHAOLIN at {GuidePos}
+		move camera position to {InitialTalkPos} + {0.000,2.500,0.000} time 3
+		move camera focus to {InitialTalkFoc} time 3
+		move Guide position to {GuideChatPos}
+		wait until camera ready
+		set Guide focus to camera position
+		Guide play ANM_P_TALK1_MALE loop -1
+		disable highlight draw
+		say "Welcome to my projectile area."
+		wait until read
+		move camera position to {PullBackFromTalkPos} + {0.000,5.000,0.000} time 8
+		move camera focus to {StartOfPanFoc} time 8
+		say "Here you will have a chance to show how good your throwing skills are."
+		wait until camera ready
+		wait until read
+		say "You do this by posting high scores on each of the 3 throwing games."
+		wait until camera ready
+		move camera focus to {EndOfPanFoc} time 8
+		wait until read
+		say "You have to do this within the time limit given."
+		wait until camera ready
+		set camera position to {InitialTalkPos} + {0.000,2.500,0.000}
+		set camera focus to {InitialTalkFoc}
+		wait until read
+		set camera position to {LookAtBothScoresPos} + {0.000,5.000,0.000}
+		set camera focus to {LookAtBothScoresFoc}
+		say "The scoreboard on the left of the range shows the high score you have to beat."
+		wait until read
+		say "The one on the right is your current score."
+		wait until read
+		move camera position to {LookAtNextRangePos} + {0.000,25.000,0.000} time 3
+		move camera focus to {LookAtNextRangeFoc} time 2
+		say "When you beat the high score the next game becomes available."
+		wait until read
+		set camera position to {InitialTalkPos} + {0.000,2.500,0.000}
+		set camera focus to {InitialTalkFoc}
+		say "By the time you have posted high scores on all of the games you'll be a master tosser."
+		wait until read
+		move camera position to {TMGRangeCentre} + {0.000,10.000,0.000} time 2
+		move camera focus to {ReadyForTheGameFoc} time 2
+		say "Just before you start let's run through how to throw."
+		wait until read
+		run script TMGThrowingHandDemo
+		enable highlight draw
+		TMGChallengeScroll[0] = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ChallengeScrollPos}
+		say "Right, if you're ready, start the easy game here by clicking on the scroll."
+		wait until read
+		say "If you need any more help on throwing click on the scroll above my tent. Good luck."
+		wait until read
+		delete Guide
+	end cinema
+	
+end script TMGIntro
+
+//-----------------------------------------------------------------------------
+//	Instructions for levels
+//-----------------------------------------------------------------------------
+begin script TMGLevelSetup
+
+FIRSTATTEMPT		= 1
+Counter				= 0
+
+start
+	
+	// Create the scrolls of those levels have already been reached
+	while Counter < TMGLevelReached
+		if TMGChallengeScroll[Counter] not exists
+			TMGChallengeScroll[Counter] = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {TMGLevelScrollPos[Counter]}
+		end if
+		run background script TMGWaitForLevelScrollSelection(Counter)
+		Counter++
+	end while
+	
+	// Wait until one of the level scrolls have been clicked
+	wait until TMGLevelScrollClicked == TMG_TRUE
+			
+	if TMGLevelCancelled == TMG_FALSE
+		// Place the ammo
+		run background script TMGPlaceAmmo
+
+		// Raise the scoreboards
+		run background script TMGPlaceScoreBoard(TMG_HIGH_SB)
+		run background script TMGPlaceScoreBoard(TMG_PLAYER_SB)
+				
+		// Get the mini intros to the levels
+		if TMGCurrentLevel == TMGLevels[0]
+			begin cinema
+				move camera position to {TMGRangeCentre} + {0.000,10.000,0.000} time 2
+				move camera focus to {TMGLevelScrollPos[TMGCurrentLevel-1]} time 2
+				if TMGLevelAttempts == FIRSTATTEMPT and TMGLevelCompleted[TMGCurrentLevel-1] == TMG_FALSE
+					// Mini intro to level 1 - explanations of how to play the game.
+					say "What you have to do for this game is hit as many targets as you can within the time limit."
+					wait until read
+					say "The score to beat is shown on the high score scoreboard and you have 60 seconds to do it."
+					wait until read
+					say "When you are ready pick up a rock to start the timer. Good luck."
+					wait until read
+				end if
+				wait until camera position near {TMGRangeCentre} radius 1
+			end cinema	
+		elsif TMGCurrentLevel == TMGLevels[1]
+			begin cinema
+				move camera position to {TMGRangeCentre} + {0.000,10.000,0.000} time 2
+				move camera focus to {TMGLevelScrollPos[TMGCurrentLevel-1]} time 2	
+				if TMGLevelAttempts == FIRSTATTEMPT and TMGLevelCompleted[TMGCurrentLevel-1] == TMG_FALSE
+					// Mini intro to level 2
+					say "What you have to do for this game is hit as many targets as you can within the time limit."
+					wait until read
+					say "The score to beat is shown on the high score scoreboard and you have 60 seconds to do it."
+					wait until read
+					say "When you are ready pick up a rock to start the timer. Good luck."
+					wait until read
+				end if
+				wait until camera position near {TMGRangeCentre} radius 1
+			end cinema
+		else
+			begin cinema
+				move camera position to {TMGRangeCentre} + {0.000,10.000,0.000} time 2
+				move camera focus to {TMGLevelScrollPos[TMGCurrentLevel-1]} time 2
+				if TMGLevelAttempts == FIRSTATTEMPT and TMGLevelCompleted[TMGCurrentLevel-1] == TMG_FALSE
+					// Mini intro to level 3
+					say "Ok on this last game we'll introduce aftertouch and tapping."
+					wait until read
+					say "Aftertouch allows you to affect the way the object thrown reacts while in the air."
+					wait until read
+					say "You need to use it because the targets are behind barriers."
+					wait until read
+					say "You'll need to tap the rocks to split them as the ones we are using are too big to use."
+					wait until read
+					say "Tapping on other objects will produce different effects, but you can tap most objects in the world."
+					wait until read
+					run script TMGTappingAndAftertouchHandDemo
+					say "If you want to see the help on throwing or tapping and aftertouch again click on the scroll above my tent."
+					wait until read
+					say "Right now all you need to do is beat the high score in the time given."
+					wait until read
+					say "The timer will start when you tap a rock. Good luck."
+					wait until read
+				end if
+				wait until camera position near {TMGRangeCentre} radius 1
+			end cinema
+		end if
+	end if
+	
+end script TMGLevelSetup
+
+//-----------------------------------------------------------------------------
+//	Checks for the first level scroll that is clicked
+//-----------------------------------------------------------------------------
+begin script TMGWaitForLevelScrollSelection(LevelScroll)
+
+Reminder	= create timer for 30 seconds
+
+start
+
+	// Wait until the scroll is clicked or another one of the level scrolls is clicked
+	begin loop
+		if camera position near {TMGChallengeScroll[LevelScroll]} radius 100 and TMGChallengeScroll[LevelScroll] viewed
+			if get Reminder time remaining <= 0
+				set Reminder time to 30 seconds
+				if not in widescreen
+					begin dialogue
+						if good spirit speaks constant 1
+							eject good spirit
+							make good spirit point at {TMGChallengeScroll[LevelScroll]} in world
+						else
+							eject evil spirit
+							make evil spirit point at {TMGChallengeScroll[LevelScroll]} in world
+						end if
+						say single line constant 1
+						wait until read
+					end dialogue
+				end if
+			end if
+		end if
+	until TMGChallengeScroll[0] right clicked or TMGLevelScrollPos[0] right clicked
+	until TMGChallengeScroll[1] right clicked or TMGLevelScrollPos[1] right clicked
+	until TMGChallengeScroll[2] right clicked or TMGLevelScrollPos[2] right clicked
+	end loop
+	
+	// Find out if this scroll was right clicked
+	if TMGChallengeScroll[LevelScroll] right clicked or TMGLevelScrollPos[LevelScroll] right clicked
+		clear right clicked object
+		enable TMGChallengeScroll[LevelScroll] active
+		TMGCurrentLevel = LevelScroll+1
+		
+		// Flag that the player has stopped the natural flow from one level to the next
+		if ((LevelScroll < (TMGLevelReached - 1)) and (TMGPlayerInterruptedFlow == TMG_FALSE))
+			TMGPlayerInterruptedFlow = TMG_TRUE
+		end if
+		
+		TMGLevelScrollClicked = TMG_TRUE
+	end if
+	
+	delete TMGChallengeScroll[LevelScroll]
+
+end script TMGWaitForLevelScrollSelection
+
+//-----------------------------------------------------------------------------
+//	Handles the actual mechanics of the game
+//-----------------------------------------------------------------------------
+begin script TMGPlayLevel
+
+TimeLimit		= 0
+Counter			= 0
+
+start
+
+	// Setup the level and allow the player to pick up the ammo
+	run script TMGLevelSetup
+	run script TMGResetVariables	
+	run background script TMGAllowAccessToAmmo
+	
+	TimeLimit = TMGLevelTimeLimits[TMGCurrentLevel-1]
+
+	// Start the game mechanics running
+	run background script TMGHandleTargetActions
+	while Counter < TMG_AMMO_AMOUNT
+		run background script TMGCheckForInteractionWithRock(Counter)
+		run background script TMGTestForHittingTarget(Counter)
+		Counter++
+	end while
+
+	// Game will only start once a rock has been picked up by the player
+	wait until TMGStartTimer == TMG_TRUE or TMGLevelCancelled == TMG_TRUE
+	
+	// Let the countdown start
+	if TMGLevelCancelled == TMG_FALSE										// Game started and finished or cancelled
+		set countdown timer draw SCRIPT_COUNTDOWN_DRAW_BOTTOM_LEFT
+		enable countdown timer down with TimeLimit seconds
+		
+		// Let the timer run out or quit if the game is cancelled
+		begin loop
+		until get countdown timer time <= 0
+		until TMGLevelCancelled == TMG_TRUE
+		end loop
+
+		TMGPlayingLevel = TMG_FALSE
+		disable countdown timer
+		if TMGLevelCancelled == TMG_FALSE
+			run background script TMGLevelTimedOut
+		end if
+		run script TMGDisallowAccessToAmmo
+		run script TMGPlaceAmmo
+		run script TMGLevelRoundUp
+	else																	// Game cancelled before it's started
+		run script TMGDisallowAccessToAmmo
+	end if
+		
+end script TMGPlayLevel
+
+//-----------------------------------------------------------------------------
+//	Gives responses to how the player did on the level played
+//-----------------------------------------------------------------------------
+begin script TMGLevelRoundUp
+
+CamFoc			= 0
+MoveToNextRange	= TMG_FALSE
+BeatenAllLevels	= TMG_FALSE
+
+start
+
+	if TMGLevelCancelled == TMG_FALSE
+		// Find out how the player did
+		if TMGPlayerScore > TMGLevelTargets[TMGCurrentLevel-1]
+			TMGLevelResult = TMG_WON
+			set TMGHighScoreBoard[TMGCurrentLevel-1] score TMGPlayerScore
+			TMGLevelTargets[TMGCurrentLevel-1] = TMGPlayerScore
+			TMGLevelCompleted[TMGCurrentLevel-1] = TMG_TRUE
+			say "Well done you beat the high score."
+			wait until read
+			if TMGCurrentLevel < TMG_MAX_LEVELS
+				MoveToNextRange = TMG_TRUE
+			else
+				BeatenAllLevels	= TMG_TRUE
+			end if
+		elsif TMGPlayerScore == TMGLevelTargets[TMGCurrentLevel-1]
+			TMGLevelResult = TMG_DREW
+			say "Nearly. But I'm afraid a draw isn't good enough. Have another go."
+			wait until read
+		else
+			TMGLevelResult = TMG_LOST
+			say "Hard luck. Try again."
+			wait until read
+		end if
+		
+		// Give a summary of how they made their score
+		run script TMGShowSummary
+		
+		// Show the completed game cutscene (only the first time though)
+		if TMGShownEndCutscene == TMG_FALSE and BeatenAllLevels == TMG_TRUE
+			run script TMGBeatenAllLevels
+			TMGShownEndCutscene = TMG_TRUE
+		end if
+		
+		// Move the camera to the next range if the last game was won
+		if MoveToNextRange == TMG_TRUE and TMGPlayerInterruptedFlow == TMG_FALSE
+			if TMGCurrentLevel == TMGLevels[0]
+				CamFoc = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 50 angle -180
+			elsif TMGCurrentLevel == TMGLevels[1]
+				CamFoc = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 50 angle -270
+			end if
+			
+			begin cinema
+				say "For a bit more of a challenge try the next game."
+				wait 1 second
+				move camera position to {TMGRangeCentre} + {0.000,10.000,0.000} time 3
+				move camera focus to {CamFoc} time 3
+				wait until read
+				wait until camera ready
+			end cinema
+		end if
+	end if
+
+end script TMGLevelRoundUp
+
+//-----------------------------------------------------------------------------
+//	Resets the variables for the next playing of the level
+//-----------------------------------------------------------------------------
+begin script TMGResetVariables
+
+start
+
+	// Reset variables
+	TMGPlayingLevel			= TMG_TRUE
+	TMGStartTimer			= TMG_FALSE
+	TMGTarget				= TMG_FALSE
+	TMGTargetHit			= TMG_FALSE
+	TMGLevelScrollClicked	= TMG_FALSE
+	TMGAmountOfTargetsHit	= 0
+	TMGTotalRocksThrown		= 0
+	TMGSingleHeadCount		= 0
+	TMGDoubleHeadCount		= 0
+	TMGTripleHeadCount		= 0
+	TMGRampageHeadCount		= 0
+	TMGHitPercentage		= 0
+	TMGHeadshotPercentage	= 0
+	TMGPlayerScore			= 0
+	
+	// Reset the players scoreboard
+	set TMGPlayerScoreBoard[TMGCurrentLevel-1] score 0
+
+end script TMGResetVariables
+
+//-----------------------------------------------------------------------------
+//	Give the player their rewards
+//-----------------------------------------------------------------------------
+begin script TMGGetReward
+
+start
+
+	if TMGCurrentLevel == TMGLevels[0]
+	elsif TMGCurrentLevel == TMGLevels[1]
+	else
+	end if
+
+end script TMGGetReward
+
+//-----------------------------------------------------------------------------
+//	Places the 3 different ranges down
+//-----------------------------------------------------------------------------
+begin script TMGSetupThrowingArea
+
+start
+
+	run background script TMGPlaceHut
+	run background script TMGPlaceRanges
+	run background script TMGPlaceScoreBoard(TMG_HIGH_SB)
+	run background script TMGPlaceScoreBoard(TMG_PLAYER_SB)
+	run background script TMGPlaceAmmo
+	run background script TMGSetUpLevelTargets
+
+end script TMGSetupThrowingArea
+
+//-----------------------------------------------------------------------------
+//	Creates the hut the villager comes out of
+//-----------------------------------------------------------------------------
+begin script TMGPlaceHut
+
+start
+
+	TMGHut = create HOUSE ABODE_INFO_INDIAN_TENT at {TMGRangeCentre}
+	
+	set TMGHut focus to {TMGSecondMark}
+	ANGLE of TMGHut =  ANGLE of TMGHut - 90
+	
+	enable TMGHut indestructible
+	disable TMGHut set on fire
+	
+end script TMGPlaceHut
+
+//-----------------------------------------------------------------------------
+//	Sets up the ranges of the different levels
+//-----------------------------------------------------------------------------
+begin script TMGPlaceRanges
+
+RangeEdge[54]
+ThrowRing[18]
+Counter				= 0
+Influence			= 0
+
+MARK_1				= 20
+MARK_2				= 30
+MARK_3				= 40
+MARK_4				= 50
+MARK_5				= 60
+MARK_6				= 70
+MARK_7				= 80
+MARK_8				= 90
+MARK_9				= 100
+
+RANGE_1_MIN_ANGLE	= -60
+RANGE_1_MAX_ANGLE	= -120	
+RANGE_2_MIN_ANGLE	= -150
+RANGE_2_MAX_ANGLE	= -210
+RANGE_3_MIN_ANGLE	= -240
+RANGE_3_MAX_ANGLE	= -300
+
+start
+	
+	// Get the positions of the range markers
+	RangeEdge[0] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_1 angle RANGE_1_MIN_ANGLE
+	RangeEdge[1] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_2 angle RANGE_1_MIN_ANGLE
+	RangeEdge[2] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_3 angle RANGE_1_MIN_ANGLE
+	RangeEdge[3] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_4 angle RANGE_1_MIN_ANGLE
+	RangeEdge[4] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_5 angle RANGE_1_MIN_ANGLE
+	RangeEdge[5] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_6 angle RANGE_1_MIN_ANGLE
+	RangeEdge[6] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_7 angle RANGE_1_MIN_ANGLE
+	RangeEdge[7] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_8 angle RANGE_1_MIN_ANGLE
+	RangeEdge[8] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_9 angle RANGE_1_MIN_ANGLE
+
+	RangeEdge[9] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_1 angle RANGE_1_MAX_ANGLE
+	RangeEdge[10] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_2 angle RANGE_1_MAX_ANGLE
+	RangeEdge[11] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_3 angle RANGE_1_MAX_ANGLE
+	RangeEdge[12] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_4 angle RANGE_1_MAX_ANGLE
+	RangeEdge[13] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_5 angle RANGE_1_MAX_ANGLE
+	RangeEdge[14] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_6 angle RANGE_1_MAX_ANGLE
+	RangeEdge[15] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_7 angle RANGE_1_MAX_ANGLE
+	RangeEdge[16] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_8 angle RANGE_1_MAX_ANGLE
+	RangeEdge[17] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_9 angle RANGE_1_MAX_ANGLE
+	
+	RangeEdge[18] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_1 angle RANGE_2_MIN_ANGLE
+	RangeEdge[19] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_2 angle RANGE_2_MIN_ANGLE
+	RangeEdge[20] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_3 angle RANGE_2_MIN_ANGLE
+	RangeEdge[21] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_4 angle RANGE_2_MIN_ANGLE
+	RangeEdge[22] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_5 angle RANGE_2_MIN_ANGLE
+	RangeEdge[23] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_6 angle RANGE_2_MIN_ANGLE
+	RangeEdge[24] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_7 angle RANGE_2_MIN_ANGLE
+	RangeEdge[25] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_8 angle RANGE_2_MIN_ANGLE
+	RangeEdge[26] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_9 angle RANGE_2_MIN_ANGLE
+	
+	RangeEdge[27] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_1 angle RANGE_2_MAX_ANGLE
+	RangeEdge[28] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_2 angle RANGE_2_MAX_ANGLE
+	RangeEdge[29] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_3 angle RANGE_2_MAX_ANGLE
+	RangeEdge[30] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_4 angle RANGE_2_MAX_ANGLE
+	RangeEdge[31] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_5 angle RANGE_2_MAX_ANGLE
+	RangeEdge[32] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_6 angle RANGE_2_MAX_ANGLE
+	RangeEdge[33] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_7 angle RANGE_2_MAX_ANGLE
+	RangeEdge[34] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_8 angle RANGE_2_MAX_ANGLE
+	RangeEdge[35] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_9 angle RANGE_2_MAX_ANGLE
+	
+	RangeEdge[36] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_1 angle RANGE_3_MIN_ANGLE
+	RangeEdge[37] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_2 angle RANGE_3_MIN_ANGLE
+	RangeEdge[38] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_3 angle RANGE_3_MIN_ANGLE
+	RangeEdge[39] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_4 angle RANGE_3_MIN_ANGLE
+	RangeEdge[40] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_5 angle RANGE_3_MIN_ANGLE
+	RangeEdge[41] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_6 angle RANGE_3_MIN_ANGLE
+	RangeEdge[42] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_7 angle RANGE_3_MIN_ANGLE
+	RangeEdge[43] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_8 angle RANGE_3_MIN_ANGLE
+	RangeEdge[44] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_9 angle RANGE_3_MIN_ANGLE
+	
+	RangeEdge[45] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_1 angle RANGE_3_MAX_ANGLE
+	RangeEdge[46] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_2 angle RANGE_3_MAX_ANGLE
+	RangeEdge[47] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_3 angle RANGE_3_MAX_ANGLE
+	RangeEdge[48] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_4 angle RANGE_3_MAX_ANGLE
+	RangeEdge[49] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_5 angle RANGE_3_MAX_ANGLE
+	RangeEdge[50] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_6 angle RANGE_3_MAX_ANGLE
+	RangeEdge[51] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_7 angle RANGE_3_MAX_ANGLE
+	RangeEdge[52] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_8 angle RANGE_3_MAX_ANGLE
+	RangeEdge[53] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance MARK_9 angle RANGE_3_MAX_ANGLE
+	
+	// Place the trees to seperate the different ranges
+	while Counter < 54
+		TMGRangeBush[Counter] = create TREE TREE_INFO_PALM_B at {RangeEdge[Counter]}
+		SCALE of TMGRangeBush[Counter] = 0.75
+		ALTITUDE of TMGRangeBush[Counter] = 0
+		enable TMGRangeBush[Counter] indestructible
+		disable TMGRangeBush[Counter] moveable
+		disable TMGRangeBush[Counter] pickup
+		disable TMGRangeBush[Counter] set on fire
+		Counter++
+	end while
+	
+	// Get the positions of the throw ring markers
+	ThrowRing[0] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_1_MIN_ANGLE - 5
+	ThrowRing[1] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_1_MIN_ANGLE - 15
+	ThrowRing[2] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_1_MIN_ANGLE - 25
+	ThrowRing[3] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_1_MIN_ANGLE - 35
+	ThrowRing[4] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_1_MIN_ANGLE - 45
+	ThrowRing[5] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_1_MIN_ANGLE - 55
+	
+	ThrowRing[6] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_2_MIN_ANGLE - 5
+	ThrowRing[7] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_2_MIN_ANGLE - 15
+	ThrowRing[8] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_2_MIN_ANGLE - 25
+	ThrowRing[9] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_2_MIN_ANGLE - 35
+	ThrowRing[10] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_2_MIN_ANGLE - 45
+	ThrowRing[11] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_2_MIN_ANGLE - 55
+	
+	ThrowRing[12] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_3_MIN_ANGLE - 5
+	ThrowRing[13] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_3_MIN_ANGLE - 15
+	ThrowRing[14] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_3_MIN_ANGLE - 25
+	ThrowRing[15] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_3_MIN_ANGLE - 35
+	ThrowRing[16] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_3_MIN_ANGLE - 45
+	ThrowRing[17] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance TMG_VALID_THROW_RADIUS angle RANGE_3_MIN_ANGLE - 55
+	
+	Counter = 0
+	
+	// Place the rocks to mark the maximum allowable distance the player can carry the rock before throwing it
+	while Counter < 18
+		TMGThrowRing[Counter] = create with angle 0 and scale 0.1 ROCK_OBJECT ROCK at {ThrowRing[Counter]}
+		ALTITUDE of TMGThrowRing[Counter] = 0
+		enable TMGThrowRing[Counter] indestructible
+		disable TMGThrowRing[Counter] moveable
+		disable TMGThrowRing[Counter] pickup
+		set TMGThrowRing[Counter] temperature 2000
+		Counter++
+	end while
+
+	// TODO: Remove this influence when we have influence on the map
+	Influence = create influence at {TMGRangeCentre} radius 120					// TEMP:
+	
+end script TMGPlaceRanges
+
+//-----------------------------------------------------------------------------
+//	Places the Scoreboards for the current level range
+//-----------------------------------------------------------------------------
+begin script TMGPlaceScoreBoard(Board)
+
+BoardPos				= 0
+HighScoreBoardPos		= 0
+PlayerScoreBoardPos		= 0
+DISTANCE				= 70
+
+start
+
+	// Get position of correct ranges scoreboards
+	if TMGCurrentLevel == TMGLevels[0]
+		if Board == TMG_HIGH_SB
+			HighScoreBoardPos = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -65
+		else
+			PlayerScoreBoardPos = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -115
+		end if
+	elsif TMGCurrentLevel == TMGLevels[1]
+		if Board == TMG_HIGH_SB
+			HighScoreBoardPos = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -155
+		else
+			PlayerScoreBoardPos = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -205	
+		end if
+	else
+		if Board == TMG_HIGH_SB
+			HighScoreBoardPos = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -245
+		else
+			PlayerScoreBoardPos = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -295	
+		end if
+	end if
+	
+	if Board == TMG_HIGH_SB
+		if TMGHighScoreBoard[TMGCurrentLevel-1] not exists
+			TMGHighScoreBoard[TMGCurrentLevel-1] = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {HighScoreBoardPos}
+			ALTITUDE of TMGHighScoreBoard[TMGCurrentLevel-1] = -7.0
+			run background script TMGRaiseScoreBoard(TMGHighScoreBoard[TMGCurrentLevel-1])
+			enable TMGHighScoreBoard[TMGCurrentLevel-1] indestructible
+			disable TMGHighScoreBoard[TMGCurrentLevel-1] moveable
+			disable TMGHighScoreBoard[TMGCurrentLevel-1] pickup
+			disable TMGHighScoreBoard[TMGCurrentLevel-1] set on fire
+			enable jc special SJC_ALWAYS_VISIBLE on TMGHighScoreBoard[TMGCurrentLevel-1]
+			set TMGHighScoreBoard[TMGCurrentLevel-1] score TMGLevelTargets[TMGCurrentLevel-1]
+		end if
+	else
+		if TMGPlayerScoreBoard[TMGCurrentLevel-1] not exists
+			TMGPlayerScoreBoard[TMGCurrentLevel-1] = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {PlayerScoreBoardPos}
+			ALTITUDE of TMGPlayerScoreBoard[TMGCurrentLevel-1] = -7.0
+			run background script TMGRaiseScoreBoard(TMGPlayerScoreBoard[TMGCurrentLevel-1])
+			enable TMGPlayerScoreBoard[TMGCurrentLevel-1] indestructible
+			disable TMGPlayerScoreBoard[TMGCurrentLevel-1] moveable
+			disable TMGPlayerScoreBoard[TMGCurrentLevel-1] pickup
+			disable TMGPlayerScoreBoard[TMGCurrentLevel-1] set on fire
+			enable jc special SJC_ALWAYS_VISIBLE on TMGPlayerScoreBoard[TMGCurrentLevel-1]
+			set TMGPlayerScoreBoard[TMGCurrentLevel-1] score 0
+		end if
+	end if
+		
+end script TMGPlaceScoreBoard
+
+//-----------------------------------------------------------------------------
+//	Raises the scoreboards up from the ground
+//-----------------------------------------------------------------------------
+begin script TMGRaiseScoreBoard(Board)
+
+ScoreBoardRaised		= 0
+
+start
+
+	// Play SFX, shake the camera and create some dust
+	play sound LH_SCRIPT_SAMPLE_CAVEDOOR_SLIDE SOUND_BANK_TYPE_SCRIPT_SFX at {Board}
+	shake camera at {Board} radius 40.0 amplitude 0.1 time 4
+
+	// Raise the scoreboard out of the ground
+	while ScoreBoardRaised == TMG_FALSE
+		ALTITUDE of Board += 0.2
+		
+		if ALTITUDE of Board >= 0.0
+			ALTITUDE of Board = 0.0
+			ScoreBoardRaised = TMG_TRUE
+		end if
+	end while
+	
+	// Do a slam SFX for the last raise
+	play sound LH_SCRIPT_SAMPLE_CAVEDOOR_SLAM SOUND_BANK_TYPE_SCRIPT_SFX at {Board}
+	shake camera at {Board} radius 20.0 amplitude 0.5 time 0.5
+
+end script TMGRaiseScoreBoard
+
+//-----------------------------------------------------------------------------
+//	Raises the scoreboards up from the ground
+//-----------------------------------------------------------------------------
+begin script TMGLowerScoreBoard(Board)
+
+ScoreBoardLowered		= 0
+
+start
+
+	// Play SFX, shake the camera and create some dust
+	play sound LH_SCRIPT_SAMPLE_CAVEDOOR_SLIDE SOUND_BANK_TYPE_SCRIPT_SFX at {Board}
+	shake camera at {Board} radius 40.0 amplitude 0.1 time 4
+
+	// Raise the scoreboard out of the ground
+	while ScoreBoardLowered == TMG_FALSE
+		ALTITUDE of Board -= 0.2
+		
+		if ALTITUDE of Board >= -7.0
+			ALTITUDE of Board = -7.0
+			ScoreBoardLowered = TMG_TRUE
+		end if
+	end while
+	
+	delete Board
+
+end script TMGLowerScoreBoard
+
+//-----------------------------------------------------------------------------
+//	Places the ammo the player uses
+//-----------------------------------------------------------------------------
+begin script TMGPlaceAmmo
+
+PlaceAmmo		= 0
+Counter			= 0
+DISTANCE		= 25
+
+start
+
+	if TMGCurrentLevel == TMGLevels[0]
+		TMGAmmoPos[0] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -70
+		TMGAmmoPos[1] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -76
+		TMGAmmoPos[2] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE+3 angle -73
+		TMGAmmoPos[3] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -110
+		TMGAmmoPos[4] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -104
+		TMGAmmoPos[5] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE+3 angle -107
+	elsif TMGCurrentLevel == TMGLevels[1]
+		TMGAmmoPos[0] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -160
+		TMGAmmoPos[1] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -166
+		TMGAmmoPos[2] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE+3 angle -163
+		TMGAmmoPos[3] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -200
+		TMGAmmoPos[4] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -194
+		TMGAmmoPos[5] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE+3 angle -197
+	else
+		TMGAmmoPos[0] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -250
+		TMGAmmoPos[1] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -256
+		TMGAmmoPos[2] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE+3 angle -253
+		TMGAmmoPos[3] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -290
+		TMGAmmoPos[4] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE angle -284
+		TMGAmmoPos[5] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE+3 angle -287
+	end if
+
+	// Only place ammo if you need to
+	while Counter < TMG_AMMO_AMOUNT
+		if TMGAmmo[Counter] not exists or {TMGAmmo[Counter]} not near {TMGAmmoPos[Counter]} radius 5
+			PlaceAmmo = TMG_TRUE
+		else
+			PlaceAmmo = TMG_FALSE
+		end if
+		
+		if PlaceAmmo == TMG_TRUE
+			// Delete the rock as it is not close enough to the start pos
+			if TMGAmmo[Counter] exists
+				delete TMGAmmo[Counter]
+			end if
+			
+			// Create the rock
+			TMGAmmo[Counter] = create with angle 0 and scale 0.5 ROCK_OBJECT ROCK at {TMGAmmoPos[Counter]}
+			enable TMGAmmo[Counter] indestructible
+			disable TMGAmmo[Counter] pickup
+			disable TMGAmmo[Counter] moveable
+			disable TMGAmmo[Counter] set on fire
+			enable jc special SJC_ALWAYS_VISIBLE on TMGAmmo[Counter]
+		end if
+		
+		Counter++
+	end while
+
+end script TMGPlaceAmmo
+
+//-----------------------------------------------------------------------------
+//	Checks to see if the help scroll is clicked
+//-----------------------------------------------------------------------------
+begin script TMGMaintainHelpScroll
+
+MiniGameFinished		= TMG_FALSE
+
+start
+
+	TMGHelpScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {TMGRangeCentre}
+
+	while MiniGameFinished == TMG_FALSE
+		if TMGHelpScroll right clicked or {TMGHelpScroll} right clicked radius 5
+			clear right clicked object	
+			
+			// If there is a level being played stop it
+			if TMGPlayingLevel == TMG_TRUE
+				TMGLevelCancelled = TMG_TRUE
+				TMGPlayingLevel = TMG_FALSE
+				TMGLevelScrollClicked = TMG_FALSE
+			end if
+			
+			enable TMGHelpScroll active
+			begin cinema
+				run script TMGThrowingHandDemo
+				if TMGDoTapRock == TMG_TRUE
+					run script TMGTappingAndAftertouchHandDemo
+				end if
+			end cinema
+			disable TMGHelpScroll active
+			TMGLevelCancelled = TMG_FALSE
+		end if
+		wait 0.1 seconds
+	end while
+
+end script TMGMaintainHelpScroll
+
+//-----------------------------------------------------------------------------
+//	Sets up the targets the player has to attack
+//-----------------------------------------------------------------------------
+begin script TMGSetUpLevelTargets
+
+Pos[TMG_BASES_AMOUNT]
+Counter		= 0
+CreateFires	= 0
+
+start
+
+	Pos[0] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 65 angle -90
+	Pos[1] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 100 angle -100
+	Pos[2] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 90 angle -70
+	Pos[3] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 80 angle -85
+	Pos[4] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 75 angle -95
+	Pos[5] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 85 angle -110
+	Pos[6] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 110 angle -90
+	Pos[7] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 60 angle -70
+	Pos[8] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 55 angle -105
+	Pos[9] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 110 angle -75
+	Pos[10] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 65 angle -160
+	Pos[11] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 65 angle -200
+	Pos[12] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 70 angle -180
+	Pos[13] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 80 angle -180
+	Pos[14] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 90 angle -165
+	Pos[15] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 90 angle -195
+	Pos[16] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 100 angle -160
+	Pos[17] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 100 angle -200
+	Pos[18] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 110 angle -170
+	Pos[19] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 110 angle -190	
+	Pos[20] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 110 angle -250
+	Pos[21] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 70 angle -260
+	Pos[22] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 90 angle -270
+	Pos[23] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 75 angle -280
+	Pos[24] = marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 100 angle -290
+	
+	while Counter < TMG_BASES_AMOUNT
+		// Place the bases
+		TMGTargetBases[Counter] = create OBJECT MOBILE_STATIC_INFO_SINGING_STONE_BASE at {Pos[Counter]}
+		
+		if Counter >= TMG_LEVEL_MAX_BASES and Counter < TMG_LEVEL_MAX_BASES * 2
+			// Create the fires
+			TMGCloud[Counter-TMG_LEVEL_MAX_BASES] = create special effect SPOT_VISUAL_BONFIRE at {TMGTargetBases[Counter]} time -1
+			SCALE of TMGCloud[Counter-TMG_LEVEL_MAX_BASES] = 10
+			ALTITUDE of TMGCloud[Counter-TMG_LEVEL_MAX_BASES] = 1
+			
+		elsif Counter >= TMG_LEVEL_MAX_BASES * 2
+			// Create obstructions
+			run background script TMGCreateTargetObstructions(TMGTargetBases[Counter], 15, 4, 0, 1, 180)
+		end if
+		
+		Counter++
+	end while
+
+end script TMGSetUpLevelTargets
+
+//-----------------------------------------------------------------------------
+//	Allow the player to pick up the ammo and throw it
+//-----------------------------------------------------------------------------	
+begin script TMGAllowAccessToAmmo
+
+Counter			= 0
+
+start
+
+	while Counter < TMG_AMMO_AMOUNT
+		enable TMGAmmo[Counter] pickup
+		enable TMGAmmo[Counter] moveable
+		Counter++
+	end while
+
+end script TMGAllowAccessToAmmo
+
+//-----------------------------------------------------------------------------
+//	Don't allow the player to pick up the ammo and throw it
+//-----------------------------------------------------------------------------	
+begin script TMGDisallowAccessToAmmo
+
+Counter			= 0
+
+start
+
+	while Counter < TMG_AMMO_AMOUNT
+		if TMGAmmo[Counter] is HELD
+			delete TMGAmmo[Counter]
+		else
+			disable TMGAmmo[Counter] pickup
+			disable TMGAmmo[Counter] moveable
+		end if
+		Counter++
+	end while
+
+end script TMGDisallowAccessToAmmo
+
+//-----------------------------------------------------------------------------
+//	Handles the players interaction with the rocks that are thrown
+//-----------------------------------------------------------------------------
+begin script TMGCheckForInteractionWithRock(Rock)
+
+RockInHand			= 0
+RockThrown			= 0
+HandDistance		= 0
+AntiInfluence		= 0
+MAXDISTTRAVEL		= 120
+
+start
+
+	while TMGPlayingLevel == TMG_TRUE
+		// Reset values
+		RockInHand = TMG_FALSE
+		RockThrown = TMG_FALSE
+		
+		// Pick up a rock
+		while RockInHand == TMG_FALSE
+			if TMGAmmo[Rock] is HELD
+				RockInHand = TMG_TRUE
+				TMGStartTimer = TMG_TRUE
+			end if
+		end while
+		
+		// Check to see if the rock was thrown
+		while RockThrown == TMG_FALSE
+			HandDistance = get distance from {TMGRangeCentre} to hand position
+			if HandDistance > TMG_VALID_THROW_RADIUS
+				if AntiInfluence not exists
+					AntiInfluence = create anti influence on TMGAmmo[Rock] radius 15
+				end if
+				//say "Too close to target to release"
+			else
+				if AntiInfluence exists
+					delete AntiInfluence
+				end if
+				if TMGAmmo[Rock] is not HELD
+					RockThrown = TMG_TRUE
+					disable TMGAmmo[Rock] pickup
+					TMGTotalRocksThrown++
+				end if
+			end if
+		end while
+					
+		// Recreate the rock thrown if it has come to rest or gone too far
+		run background script TMGMaintainAmmo(Rock, MAXDISTTRAVEL)
+		
+	until TMGLevelCancelled == TMG_TRUE
+	until TMGPlayingLevel == TMG_FALSE
+	end while
+	
+end script TMGCheckForInteractionWithRock
+
+//-----------------------------------------------------------------------------
+//	Makes the targets react when and how they should do
+//-----------------------------------------------------------------------------
+begin script TMGHandleTargetActions
+
+// Level 1, 2 and 3 variables
+RAISETARGET			= 1
+LOWERTARGET			= 2
+SPEED				= 5
+LowerTargetRange	= 0
+UpperTargetRange	= 0
+RandomTarget		= 0
+RandomTime			= 0
+TargetTimedOut		= 0
+TotemRaised			= 0
+PreviousTarget		= 0
+TargetLife			= create timer for 0 seconds
+
+// Level 2 and 3 variables
+RandomEndTarget		= 0
+PreviousEndTarget	= 0
+TargetAtEndPos		= 0
+Count				= 0
+StartX				= 0
+StartZ				= 0
+EndX				= 0
+EndZ				= 0
+Steps				= 0
+MidTargetPos		= 0
+
+//Level 3 variables
+
+start
+
+	// Setup the upper and lower target ranges (positions)
+	if TMGCurrentLevel == TMGLevels[0]						// LEVEL 1
+		LowerTargetRange = 0
+		UpperTargetRange = 9
+	elsif TMGCurrentLevel == TMGLevels[1]					// LEVEL 2
+		LowerTargetRange = 10
+		UpperTargetRange = 19
+	else													// LEVEL 3
+		LowerTargetRange = 20
+		UpperTargetRange = 24
+	end if
+
+	// Handle the targets
+	if TMGCurrentLevel == TMGLevels[0] or TMGCurrentLevel == TMGLevels[2]	// LEVEL 1 or LEVEL 3
+		while TMGPlayingLevel == TMG_TRUE
+			PreviousTarget = RandomTarget
+			while RandomTarget == PreviousTarget
+				RandomTarget = number from LowerTargetRange to UpperTargetRange
+			end while
+			RandomTime = number from 3 to 6
+			
+			TMGTarget = create with angle 0 and scale 1 SCRIPT_OBJECT_TYPE_TOTEM ABODE_INFO_AFRICAN_TOTEM at {TMGTargetBases[RandomTarget]}
+			set TMGTarget focus to {TMGRangeCentre}
+			ANGLE of TMGTarget =  ANGLE of TMGTarget - 270			
+			disable TMGTarget pickup
+			enable TMGTarget indestructible
+			disable TMGTarget set on fire
+			run script TMGRaiseLowerTarget(TMGTarget, RAISETARGET, SPEED)
+			set TargetLife time to RandomTime seconds
+			
+			while TMGTargetHit == TMG_FALSE and TargetTimedOut == TMG_FALSE
+				if get TargetLife time remaining <= 0.0
+					TargetTimedOut = TMG_TRUE
+				end if
+			end while
+			
+			if TargetTimedOut == TMG_TRUE
+				run script TMGRaiseLowerTarget(TMGTarget, LOWERTARGET, SPEED)
+				delete TMGTarget with fade
+				TargetTimedOut = TMG_FALSE
+			end if
+						
+		until TMGLevelCancelled == TMG_TRUE
+		until TMGPlayingLevel == TMG_FALSE
+		end while
+		
+		// Lower the target straight away in case the time runs out
+		if TMGTarget exists and TMGTargetHit == TMG_FALSE
+			run script TMGRaiseLowerTarget(TMGTarget, LOWERTARGET, SPEED)
+			delete TMGTarget with explosion
+		end if
+		
+	elsif TMGCurrentLevel == TMGLevels[1]					// LEVEL 2
+		while TMGPlayingLevel == TMG_TRUE			
+			// Get a start and end pos
+			PreviousTarget = RandomTarget
+			while RandomTarget == PreviousTarget or RandomTarget == RandomEndTarget
+				RandomTarget = number from LowerTargetRange to UpperTargetRange
+			end while
+			
+			PreviousEndTarget = RandomEndTarget
+			while RandomEndTarget == PreviousEndTarget or RandomEndTarget == RandomTarget
+				RandomEndTarget = number from LowerTargetRange to UpperTargetRange
+			end while
+			
+			// Create the target and stop it from being raised / lowered
+			TMGTargetHit = TMG_FALSE
+			TMGTarget = create with angle 0 and scale 1 SCRIPT_OBJECT_TYPE_TOTEM ABODE_INFO_AFRICAN_TOTEM at {TMGTargetBases[RandomTarget]}
+			set TMGTarget focus to {TMGTargetBases[RandomEndTarget]}
+			ANGLE of TMGTarget =  ANGLE of TMGTarget - 270
+			disable TMGTarget pickup
+			enable TMGTarget indestructible
+			disable TMGTarget set on fire
+			HEIGHT of TMGTarget = 100
+			
+			// Move the target to the end pos
+			Steps = 60
+			StartX = XPOS of TMGTargetBases[RandomEndTarget]
+			StartZ = ZPOS of TMGTargetBases[RandomEndTarget]
+			
+			StartX = StartX - XPOS of TMGTargetBases[RandomTarget]
+			StartZ = StartZ - ZPOS of TMGTargetBases[RandomTarget]
+			
+			StartX = StartX / Steps
+			StartZ = StartZ / Steps
+			
+			Count = 0
+			while Count < Steps and TMGTargetHit == TMG_FALSE
+				MidTargetPos = marker at {TMGTargetBases[RandomTarget]} + {Count*StartX, 0, Count*StartZ}
+				set TMGTarget position to {MidTargetPos}
+				Count++
+			end while
+			
+			set TMGTarget position to {TMGTargetBases[RandomEndTarget]}
+			TargetAtEndPos = TMG_TRUE
+			
+			// Delete the target as it's made the end
+			if TargetAtEndPos == TMG_TRUE
+				delete TMGTarget with fade
+				TargetAtEndPos = TMG_FALSE
+			end if
+						
+		until TMGLevelCancelled == TMG_TRUE
+		until TMGPlayingLevel == TMG_FALSE
+		end while
+		
+		// Delete the target straight away in case the time runs out
+		if TMGTarget exists and TMGTargetHit == TMG_FALSE
+			delete TMGTarget with fade
+		end if
+	end if
+
+end script TMGHandleTargetActions
+
+//-----------------------------------------------------------------------------
+//	Raises / lowers target from ground level to a specific height
+//-----------------------------------------------------------------------------
+begin script TMGRaiseLowerTarget(Target, RaiseOrLower, Speed)
+
+RAISE			= 1
+Done			= 0
+Dust			= 0
+
+start
+
+	Dust = create special effect SPOT_VISUAL_SMOKE at {Target} time 3
+	SCALE of Dust = 7.0
+	Dust = create special effect SPOT_VISUAL_SMOKE at {Target} time 3
+	SCALE of Dust = 9.0
+
+	while Done == TMG_FALSE
+		if RaiseOrLower == RAISE
+			if HEIGHT of Target < 100
+				HEIGHT of Target += Speed
+			else
+				Done = TMG_TRUE
+			end if
+		else
+			if HEIGHT of Target > 0
+				HEIGHT of Target -= Speed
+			else
+				Done = TMG_TRUE
+			end if
+		end if
+	until TMGTargetHit == TMG_TRUE
+	until TMGLevelCancelled == TMG_TRUE
+	end while
+
+end script TMGRaiseLowerTarget
+
+//-----------------------------------------------------------------------------
+//	Handle collisions between the rocks thrown and the targets
+//-----------------------------------------------------------------------------
+begin script TMGTestForHittingTarget(Rock)
+
+RadiusCheck				= 0
+DistanceRockFromTarget	= 0
+HitObject				= 0
+ObjectWhichHit			= 0
+HeadshotAlt				= 0
+HeadshotGot				= 0
+Fireball				= 0
+FireballAimPoint		= 0
+DistanceMarker			= 0
+Bonus					= 0
+
+start
+
+	TMGHeadshotCount = 0
+
+	while TMGPlayingLevel == TMG_TRUE
+		wait until TMGTarget exists
+		TMGTargetHit = TMG_FALSE
+		while TMGTargetHit == TMG_FALSE
+			//RadiusCheck = RADIUS of TMGAmmo[Rock] + RADIUS of TMGTarget
+			//DistanceRockFromTarget = get distance from {TMGAmmo[Rock]} to {TMGTarget}
+
+			//if DistanceRockFromTarget < RadiusCheck
+			//	TMGTargetHit = TMG_TRUE
+			//	delete TMGTarget with explosion
+			//	delete TMGAmmo[Rock] with explosion
+			//	TMGPlayerScore += 1
+			//	set TMGPlayerScoreBoard[TMGCurrentLevel-1] score TMGPlayerScore
+			//end if
+			
+			HitObject = get hit object
+			ObjectWhichHit = get object which hit
+			
+			// Make sure there was a collision between the rock and the target. Doesn't matter which hit which
+			if ((HitObject == TMGTarget and ObjectWhichHit == TMGAmmo[Rock]) or (HitObject == TMGAmmo[Rock] and ObjectWhichHit == TMGTarget))
+				TMGTargetHit = TMG_TRUE
+				TMGAmountOfTargetsHit++
+				
+				// Get an extra bonus point for a headshot, 2 for a double, 3 fora triple and 4 for more than a triple
+				HeadshotAlt = ALTITUDE of TMGAmmo[Rock]
+				if HeadshotAlt > ((HEIGHT of TMGTarget / 10) - 2)
+									
+					TMGHeadshotCount++
+					
+					//Get the bonus points based on the current headshot count
+					if TMGHeadshotCount >= TMG_RAMPAGING							// Rampaging
+						Bonus = 4
+					elsif TMGHeadshotCount == TMG_TRIPLE							// Triple
+						Bonus = 3
+					elsif TMGHeadshotCount == TMG_DOUBLE							// Double
+						Bonus = 2
+					elsif TMGHeadshotCount == TMG_SINGLE							// Sinlge
+						Bonus = 1
+					end if
+					
+					run background script TMGHeadshot(Bonus)
+					HeadshotGot = TMG_TRUE
+					
+					// Add score + bonus to the players score
+					TMGPlayerScore += 1					
+					TMGPlayerScore += Bonus
+				else
+					TMGHeadshotCount = 0
+					TMGPlayerScore += 1
+				end if				
+				
+				if HeadshotGot == TMG_TRUE
+					Fireball = cast SPELL_FIREBALL_LEVEL_1 spell at {TMGTarget} from {TMGAmmo[Rock]} radius 3.0 time 30 curl 0
+					disable Fireball pickup
+					shake camera at camera position radius 40.0 amplitude 0.1 time 1
+					HeadshotGot = TMG_FALSE
+				else
+					FireballAimPoint = marker at {TMGTarget} + {0.000,5.000,0.000}
+					Fireball = cast SPELL_FIREBALL_LEVEL_1 spell at {FireballAimPoint} from {TMGTarget} radius 1.0 time 30 curl 0
+					disable Fireball pickup
+				end if
+				
+				delete TMGTarget with explosion
+				delete TMGAmmo[Rock] with explosion
+				
+				set TMGPlayerScoreBoard[TMGCurrentLevel-1] score TMGPlayerScore
+			else				
+				// If the rock missed the target reset the headshot counter
+				// Make sure the headshot count is only reset if the rock is not in the hand
+				if TMGAmmo[Rock] exists
+					DistanceMarker = marker at get target from {TMGRangeCentre} to {TMGTarget} distance 5 angle 0
+					if get distance from {TMGAmmo[Rock]} to {TMGRangeCentre} > get distance from {DistanceMarker} to {TMGRangeCentre}
+						if TMGAmmo[Rock] is not HELD
+							TMGHeadshotCount = 0
+						end if
+					end if
+				end if			
+			end if	
+		end while
+	until TMGLevelCancelled == TMG_TRUE
+	until TMGPlayingLevel == TMG_FALSE
+	end while
+	
+end script TMGTestForHittingTarget
+
+//-----------------------------------------------------------------------------
+//	Will recreate the rock when necessary i.e. come to rest or thrown too far
+//-----------------------------------------------------------------------------
+begin script TMGMaintainAmmo(Rock, MaxDistance)
+
+TravelDistance		= 0
+RecreateRock		= 0
+
+start
+
+	// Test the rocks state to see if it needs to be recreated
+	while TMGPlayingLevel == TMG_TRUE and RecreateRock == TMG_FALSE
+		TravelDistance = get distance from {TMGAmmo[Rock]} to {TMGRangeCentre}
+		if TMGAmmo[Rock] not exists or TravelDistance > MaxDistance
+			RecreateRock = TMG_TRUE
+		elsif TMGAmmo[Rock] is not FLYING and TMGAmmo[Rock] exists
+			RecreateRock = TMG_TRUE
+		end if
+	until TMGLevelCancelled == TMG_TRUE
+	until TMGPlayingLevel == TMG_FALSE
+	end while
+	
+	// Recreate the rock if the level is still being played, otherwise delete the rock
+	if TMGPlayingLevel == TMG_TRUE
+		// Recreate the rock at it's initial pos
+		if TMGAmmo[Rock] exists
+			delete TMGAmmo[Rock] with explosion
+		end if
+		
+		// Create the rock
+		TMGAmmo[Rock] = create with angle 0 and scale 0.5 ROCK_OBJECT ROCK at {TMGAmmoPos[Rock]}
+		enable TMGAmmo[Rock] indestructible
+		disable TMGAmmo[Rock] set on fire
+		enable jc special SJC_ALWAYS_VISIBLE on TMGAmmo[Rock]
+	else
+		delete TMGAmmo[Rock] with explosion
+	end if
+
+end script TMGMaintainAmmo
+
+//-----------------------------------------------------------------------------
+//	Creates a wall of posts in front of the target
+//-----------------------------------------------------------------------------
+begin script TMGCreateTargetObstructions(Target, Dist, Space, Altitude, Scale, CentrePostAngle)
+
+Obstruction[TMG_NO_OF_POSTS]
+ObstructionPos[TMG_NO_OF_POSTS]
+SPACE				= Space
+FirstPostAngle		= 0
+Count				= 0
+
+start
+
+	FirstPostAngle = ((TMG_NO_OF_POSTS-1) * SPACE)
+	FirstPostAngle = CentrePostAngle - (FirstPostAngle/2)
+	
+	while Count < TMG_NO_OF_POSTS
+		ObstructionPos[Count] = marker at get target from {TMGRangeCentre} to {Target} distance Dist angle (FirstPostAngle + (Count * SPACE))
+		Obstruction[Count] = create with angle 0 and scale 1 MOBILE_OBJECT MOBILE_OBJECT_HANOI_PUZZLE_BASE at {ObstructionPos[Count]}
+		ALTITUDE of Obstruction[Count] = Altitude
+		SCALE of Obstruction[Count] = Scale
+		enable Obstruction[Count] indestructible
+		disable Obstruction[Count] pickup
+		disable Obstruction[Count] moveable
+		disable Obstruction[Count] set on fire
+		set Obstruction[Count] focus to {Target}
+		Count++
+	end while
+
+end script TMGCreateTargetObstructions
+
+//-----------------------------------------------------------------------------
+//	Shows the player how to throw by playing the hand demo
+//-----------------------------------------------------------------------------
+begin script TMGThrowingHandDemo
+
+DoneOnce		= 0
+FoundRock		= 0
+RockCreated		= 0
+TempAmmo		= 0
+DISTANCE		= 25
+TempAmmoPos		= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance DISTANCE+3 angle -107
+
+start
+
+	// Found the rock at it's correct position
+	if TMGAmmo[5] exists and {TMGAmmo[5]} near {TempAmmoPos} radius 1
+		FoundRock = TMG_TRUE
+	end if
+	
+	// Create the rock if it's not found otherwise allow the rock to be picked up and moved
+	if FoundRock == TMG_FALSE
+		TempAmmo = create with angle 0 and scale 0.5 ROCK_OBJECT ROCK at {TempAmmoPos}
+		RockCreated = TMG_TRUE
+	end if
+
+	begin loop
+		begin known cinema
+			disable highlight draw
+			say "Press escape to skip these throwing instructions." with interaction
+			wait until read
+			
+			// Hand demo for throwing		
+			start hand demo "TMGThrow" with pause on trigger
+			say "To throw an object you first need to pick it up."
+			wait until read
+			wait until hand demo trigger
+
+			say "Move your hand over the object you want to pick up."
+			wait until read
+			wait until hand demo trigger
+			
+			if RockCreated == TMG_FALSE
+				enable TMGAmmo[5] pickup
+				enable TMGAmmo[5] moveable
+			end if
+
+			say "Press and hold the Action button until the object is in your hand. Then release the Action button."
+			wait until read
+			wait until hand demo trigger
+			
+			say "Get ready to throw the object by pressing and holding the Action button."
+			wait until read
+			wait until hand demo trigger
+
+			say "Put momentum on the throw by moving the hand forwards."
+			wait until read
+			wait until hand demo trigger
+			
+			say "Release the Action button to throw the object, and watch it fly towards your aiming point."
+			wait until read
+			wait until hand demo trigger
+			
+			say "If you release the Action button without putting momentum on the object you will just drop it."
+			wait until read
+			wait until hand demo played
+		end known cinema
+		
+		DoneOnce = TMG_TRUE
+		
+	until DoneOnce == TMG_TRUE
+	until key KB_ESC down										// See if ESCAPE is pressed
+	end loop
+	
+	// Delete the rock if it's the temp one otherwise move the rock back to it's position and disable pickup and move
+	if RockCreated == TMG_TRUE
+		delete TempAmmo with explosion
+	else
+		set TMGAmmo[5] position to {TMGAmmoPos[5]}
+		wait until TMGAmmo[5] is not FLYING
+		disable TMGAmmo[5] pickup
+		disable TMGAmmo[5] moveable
+	end if
+		
+end script TMGThrowingHandDemo
+
+//-----------------------------------------------------------------------------
+//	Shows how to tap and throw using aftertouch
+//-----------------------------------------------------------------------------
+begin script TMGTappingAndAftertouchHandDemo
+
+TempRock[2]
+Counter		= 0
+DoneOnce	= 0
+
+start
+
+	// Delete the 6 rocks
+	while Counter < TMG_AMMO_AMOUNT
+		if TMGAmmo[Counter] exists
+			delete TMGAmmo[Counter] with explosion
+		end if
+		Counter++
+	end while
+			
+	// Create 2 large rocks for the player to split
+	TempRock[0] = create with angle 0 and scale 1.0 ROCK_OBJECT ROCK at {TMGAmmoPos[2]}
+	disable TempRock[0] pickup
+	disable TempRock[0] moveable
+	disable TempRock[0] set on fire
+	enable jc special SJC_ALWAYS_VISIBLE on TempRock[0]
+	TempRock[1] = create with angle 0 and scale 1.0 ROCK_OBJECT ROCK at {TMGAmmoPos[5]}
+	disable TempRock[1] pickup
+	disable TempRock[1] moveable
+	disable TempRock[1] set on fire
+	enable jc special SJC_ALWAYS_VISIBLE on TempRock[1]
+
+	begin loop
+		begin known cinema
+			disable highlight draw
+			say "Press escape to skip these aftertouch and tapping instructions." with interaction
+			wait until read
+			
+			// Hand demo for tapping and aftertouch		
+//			start hand demo "TMGTapAndAftertouch" with pause on trigger
+			say "*** HAND DEMO STARTS ****"
+			wait until read
+			say "Move the hand over the object you want to tap."
+			wait until read
+			say "Press and release the Action button quickly to tap."
+			wait until read
+			say "As we are tapping rocks they will split into two pieces."
+			wait until read
+			say "Pick up one of the smaller split rocks."
+			wait until read
+			say "Throw the rock as normal, but aim slightly to the side of where you want it to finish."
+			wait until read
+			say "Then just after the rock leaves your hand move the mouse in the direction you want to move it."
+			wait until read
+			say "And you should see the rock move in the air towards your intended target."
+			wait until read
+			say "If your distance allowance and amount of spin imparted are correct the rock should hit the target."
+			wait until read
+//			wait until hand demo played
+			say "*** HAND DEMO ENDS ****"
+			wait until read
+		end known cinema
+		
+		DoneOnce = TMG_TRUE
+		
+	until DoneOnce == TMG_TRUE
+	until key KB_ESC down										// See if ESCAPE is pressed
+	end loop
+		
+	delete TempRock[0] with explosion
+	delete TempRock[1] with explosion
+	
+	run script TMGPlaceAmmo
+
+	TMGDoTapRock = TMG_TRUE
+		
+end script TMGTappingAndAftertouchHandDemo
+
+//-----------------------------------------------------------------------------
+//	The outro for the game. Happens after completing all the mini games
+//-----------------------------------------------------------------------------
+begin script TMGBeatenAllLevels
+
+Guide				= 0
+GuidePos			= marker at {TMGRangeCentre}
+GuideChatPos		= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 10 angle 0
+InitialCamPos		= marker at get target from {TMGSecondMark} to {TMGRangeCentre} distance 10 angle 0
+
+start
+
+	set fade red 0 green 0 blue 0 time 1
+	wait until fade ready
+	
+	begin cinema
+		set camera position to {InitialCamPos} + {0.000,10.000,0.000}
+		set camera focus to {TMGRangeCentre} + {0.000,10.000,0.000}
+		Guide = create VILLAGER VILLAGER_INFO_SHAOLIN at {GuidePos}
+		move Guide position to {GuideChatPos}
+		set fade in time 1
+		move camera position to {InitialCamPos} + {0.000,2.500,0.000} time 3
+		move camera focus to {TMGRangeCentre} time 4
+		wait until fade ready
+		wait until {Guide} near {GuideChatPos} radius 2 or 10 seconds
+		Guide play ANM_P_TALK1_MALE loop -1
+		say "Well done you have beaten the high score for all our games."
+		wait until read
+		say "That has never been done before and is a great achievement."
+		wait until read
+		say "Please take this *PRIZE* as a reward for your efforts."
+		wait until read
+		say "You are truely a master tosser."
+		wait until read
+		move Guide position to {TMGRangeCentre}
+		move camera position to {InitialCamPos} + {0.000,100.000,0.000} time 3
+		wait until {Guide} near {TMGRangeCentre} radius 2 or 10 seconds
+		delete Guide
+	end cinema
+
+end script TMGBeatenAllLevels
+
+//-----------------------------------------------------------------------------
+//	Displays the 'HEADSHOT' message
+//-----------------------------------------------------------------------------
+begin script TMGHeadshot(Bonus)
+
+start
+
+	// Draw text in red
+	set draw text colour red 255 green 0 blue 0
+	
+	if Bonus == TMG_RAMPAGING
+		draw text "RAMPAGING" across 0 down 0.1 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+		TMGRampageHeadCount++
+	elsif Bonus == TMG_TRIPLE
+		draw text "TRIPLE HEADSHOT" across 0 down 0.1 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+		TMGTripleHeadCount++
+	elsif Bonus == TMG_DOUBLE
+		draw text "DOUBLE HEADSHOT" across 0 down 0.1 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+		TMGDoubleHeadCount++
+	elsif Bonus == TMG_SINGLE
+		draw text "HEADSHOT" across 0 down 0.1 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+		TMGSingleHeadCount++
+	end if
+	
+	// Get rid of the 'headshot' text
+	wait 1 second
+	fade all draw text time 1 seconds
+	
+end script TMGHeadshot
+
+//-----------------------------------------------------------------------------
+//	Displays the time up message
+//-----------------------------------------------------------------------------
+begin script TMGLevelTimedOut
+
+start
+
+	// Get rid of any headshot text that might be on screen
+	fade all draw text time 0 seconds
+
+	// Draw text in green
+	set draw text colour red 0 green 255 blue 0
+	
+	draw text "TIME UP!" across 0 down 0 width 1 height 1 size 0.5 fade in time 0.5 seconds
+	wait 1.5 second
+	fade all draw text time 1 seconds
+	
+end script TMGLevelTimedOut
+
+
+//-----------------------------------------------------------------------------
+//	Shows the end of level summary
+//-----------------------------------------------------------------------------
+begin script TMGShowSummary
+
+HeadshotCount = TMGSingleHeadCount + TMGDoubleHeadCount + TMGTripleHeadCount + TMGRampageHeadCount
+
+start
+
+	TMGHitPercentage = (TMGAmountOfTargetsHit / TMGTotalRocksThrown) * 100
+	TMGHeadshotPercentage = (HeadshotCount / TMGAmountOfTargetsHit) * 100
+
+	say "** SUMMARY ***"
+	wait until read
+	
+	say "You threw $d rocks." with number TMGTotalRocksThrown
+	wait until read
+	
+	say "You hit the target with $d rocks." with number TMGAmountOfTargetsHit
+	wait until read
+	
+	// Give their total score
+	say "And made a score of $d" with number TMGPlayerScore
+	wait until read
+	
+	// Give amount of single headshots
+	if TMGSingleHeadCount > 0
+		if TMGSingleHeadCount > 1
+			say "You got $d single headshots." with number TMGSingleHeadCount
+		else
+			say "You got $d single headshot." with number TMGSingleHeadCount
+		end if
+		wait until read
+	end if
+	
+	// Give amount of double headshots
+	if TMGDoubleHeadCount > 0
+		if TMGDoubleHeadCount > 1
+			say "You got $d double headshots." with number TMGDoubleHeadCount
+		else
+			say "You got $d double headshot." with number TMGDoubleHeadCount
+		end if
+		wait until read
+	end if
+	
+	// Give amount of triple headshots
+	if TMGTripleHeadCount > 0
+		if TMGTripleHeadCount > 1
+			say "You got $d triple headshots." with number TMGTripleHeadCount
+		else
+			say "You got $d triple headshot." with number TMGTripleHeadCount
+		end if
+		wait until read
+	end if
+	
+	// Give amount of rampaging headshots
+	if TMGRampageHeadCount > 0
+		if TMGRampageHeadCount > 1
+			say "You got $d rampaging headshots." with number TMGRampageHeadCount
+		else
+			say "You got $d rampaging headshot." with number TMGRampageHeadCount
+		end if
+		wait until read
+	end if
+	
+	// Give headshot hit percentage
+	if HeadshotCount > 0
+		say "You got a total headshot percentage of $d%." with number TMGHeadshotPercentage
+		wait until read
+	end if
+	
+	// Give hit percentage
+	say " You got a hit percentage of $d%." with number TMGHitPercentage
+	wait until read
+	
+	say "** END OF SUMMARY ***"
+	wait until read
+
+end script TMGShowSummary

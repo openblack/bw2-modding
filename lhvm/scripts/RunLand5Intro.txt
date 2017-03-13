@@ -1,0 +1,9 @@
+run script RunLand5Intro
+
+begin script RunLand5Intro
+
+start
+
+run script Land5Intro
+
+end script RunLand5Intro

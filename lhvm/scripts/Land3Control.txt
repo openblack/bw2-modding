@@ -1,0 +1,132 @@
+define script Land3MaintainPopulation
+
+//-----------------------------------------------------------------------------
+//	Land 3 Control
+//-----------------------------------------------------------------------------
+begin script Land3Control
+start
+	run script Land3DidYouKnow
+	run script Land3Globals
+	enable tribute visual
+	enable build menu override with ABODE_NUMBER_LAST
+	
+//----Patch fix for player clicking the creature learning menu----//
+	disable SCRIPT_MENU_TYPE_CREATURE menu
+
+	disable interface action MANACOST_BALANCE_TYPE_GODBUILD
+	disable toolbar
+	disable creature icon visible
+	disable town L3GreekTown desire speech
+	enable drawing of all flags
+	disable can use destruction tool
+	
+  	reset all objectives for player 0
+	
+//----Fix for skipping lands----//
+	disable scripted platoon get on enemy wall
+	enable tribute visual
+	enable show army set effect
+	enable show army bubbles
+
+	disable pause menu in widescreen
+	enable fire system
+	
+	enable floaty icons	
+	enable interface action MANACOST_BALANCE_TYPE_INITIATECREATUREFIST	
+	enable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+	enable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+	enable interface action MANACOST_BALANCE_TYPE_CREATEDISCIPLE
+	enable interface action MANACOST_BALANCE_TYPE_PLACEBLUEPRINT
+
+	enable interface action MANACOST_BALANCE_TYPE_TAPBUILDING
+
+	enable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+	enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+	enable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT                   
+	enable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT                                            
+	enable pickup type PICKUP_BALANCE_TYPE_ROAD                                                     
+	enable pickup type PICKUP_BALANCE_TYPE_SMALLTREE                                               
+	enable pickup type PICKUP_BALANCE_TYPE_TREE                                                   
+	enable pickup type PICKUP_BALANCE_TYPE_SPELLSEED
+	enable pickup type PICKUP_BALANCE_TYPE_ABODE
+	enable pickup type PICKUP_BALANCE_TYPE_ARMYFLAG 
+	enable pickup type PICKUP_BALANCE_TYPE_TOWER
+
+//Must enable fisting so the player can do the creature tutorial.
+	enable interface action MANACOST_BALANCE_TYPE_INITIATEFIST
+	enable interface action MANACOST_BALANCE_TYPE_INITIATECREATUREFIST
+
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_ORE to 0
+// Load the creature
+	load my_creature at {L3CreaturePen}
+	MyCreature = get player 0 creature
+
+// If the loading failed create the creature
+	if MyCreature not exists
+		MyCreature = create CREATURE CREATURE_TYPE_LAST at {L3CreaturePen}
+		set player 0 creature to MyCreature
+		SCALE of MyCreature = 0.3
+		release MyCreature
+	end if
+	disable leash on MyCreature
+	enable MyCreature indestructible
+	disable villager interaction manager
+
+	run script Land3Intro
+	run background script Land3MaintainPopulation
+	//Lenny here
+	if persistent data "SPESHUL_BENCH" == 1
+		run background script Land3Bench
+	end if
+
+//	enable game can be lost					// Need Paul to setup the positions as it crashes game at the moment
+
+//set fade in time 3
+	disable global influence
+	run background script SetupBuildingsLand3
+	run background script Land3Marauders
+	run script Land3Tutorials
+	set town L3GreekTown desire for TOWN_DESIRE_FOR_ORE to -1
+	run script Land3BuildTabTutorial	
+	
+	L3FinishedTutorials = TUT_TRUE
+	enable town L3GreekTown desire speech
+	run background script Land3PaternitySuit
+	run background script Land3TimeOfDayTutorial
+	run background script Land3RoadTutorial
+	run background script Land3Objectives
+	enable villager interaction manager
+	run script Land3CreatureTutorial
+	
+	
+//----Patch fix for player clicking the creature learning menu----//
+	enable SCRIPT_MENU_TYPE_CREATURE menu
+	
+	// run the script for the tombs on this land 0 to 13 are valid values
+	//run background script GT_ActivateTomb(0)
+	//run background script GT_ActivateTomb(1)
+	
+	// Make sure the departure scroll doesn't appear until the player has taken all of the towns
+	wait until L3NumTownsOwnedByPlayer >= 4
+
+	run script Land3Departure				// Have to do all the land 3 tutorials before you can depart the island
+
+end script Land3Control
+
+begin script Land3MaintainPopulation
+	CurrentVillagers = 0
+	VillagerHolder = 0
+start
+	begin loop
+		CurrentVillagers = size of L3GreekTown
+		if CurrentVillagers < 20
+			if number from 1 to 2 == 1
+				VillagerHolder = create VILLAGER GREEK_FARMER at {1052.946, 372.906, 1655.888}
+			else
+				VillagerHolder = create VILLAGER GREEK_HOUSEWIFE at {1052.946, 372.906, 1655.888}
+			end if
+			attach VillagerHolder to L3GreekTown
+			run background script TUT_MoveVillagerAround(VillagerHolder)
+		end if
+	end loop
+end script Land3MaintainPopulation

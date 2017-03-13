@@ -1,0 +1,11 @@
+run script RunLand5TownEvents
+
+begin script RunLand5TownEvents
+start
+	
+	if not L5GreekTown  exists
+		run script Land5Globals
+	end if
+	run script TownEventWindowCleaner(L5GreekTown)
+
+end script RunLand5TownEvents

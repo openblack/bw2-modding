@@ -1,0 +1,8 @@
+run script RunTownEventChimneySweep
+
+begin script RunTownEventChimneySweep
+start
+
+	run script TownEventChimneySweep
+
+end script RunTownEventChimneySweep

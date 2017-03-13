@@ -1,0 +1,10 @@
+run script GotoGodsPlay
+
+begin script GotoGodsPlay
+	
+start
+	
+	stop all scripts excluding files "GotoGodsPlay.txt"
+	load map "scripts/BW2/Tut01.txt"
+
+end script GotoGodsPlay

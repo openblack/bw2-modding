@@ -1,0 +1,279 @@
+begin script Land6Outro
+
+L6TownConversionMethod = 0
+L4Method = 0
+DepartureScroll = 0
+TeleportEffect = 0
+JapaneseL = 0
+CSMixer = 0
+start
+	CSMixer = create mixer
+	
+if variable get town L6JapaneseCapital status == variable TOWN_STATUS_CAPTURED
+	L6TownConversionMethod = 1
+else
+	L6TownConversionMethod = 2
+end if
+
+L4Method = persistent data "LAND4METHODOFCONVERSION"
+
+//PJ TEMP So that if we run this without control it'll choose an outro at random
+if L4Method == 0
+	L4Method = number from 1 to 2
+end if
+
+if L6TownConversionMethod == 1 //aggressive
+
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {1120.411, 136.578, 1994.562}
+	ALTITUDE of DepartureScroll = 3
+	TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {1120.411, 136.578, 1994.562} + {0, 3, 0} time -1
+
+	JapaneseL = create VILLAGER VILLAGER_INFO_HIROKU at {1105.027, 223.555, 2212.463}
+	move JapaneseL position to {1105.027, 223.555, 2212.463}
+	set JapaneseL focus to {1135.935, 136.778, 2023.364}
+	play anim "a_p_talk2_male" on JapaneseL loop -1
+	if L4Method == 1
+		begin cinema
+			//AGC: Moved fade out & wait inside the cinema block
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+
+			wait 2 seconds
+			reset camera path
+
+			queue camera move with position {1100.385, 228.303, 2223.117} focus {1100.812, 207.583, 2125.290} time 0.0
+			queue camera move with position {1100.465, 227.642, 2219.994} focus {1100.893, 206.922, 2122.167} time 24.0
+			queue camera move with position {1101.398, 216.656, 2175.348} focus {1105.744, 186.592, 2080.084} time 12.0
+			play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+			set fade in time 2
+			wait 1 seconds
+
+			//GEN:Yes, these brutal Greeks armies were as overwhelming to us as they were to the Norse.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_TWICE_10"
+			wait until read
+			//GEN:I face the shame of being defeated by them.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_TWICE_20"
+			wait until read
+			//GEN:My brother must be told. It Is like the Prophesy. These people have a god. I have seen Miracles. A Creature!		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_TWICE_30"
+			wait until read
+			//GEN:I must go through the Portal to find my brother immediately..		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_TWICE_40"
+			wait until read
+			eject good spirit
+			say "BW2T_SCRIPT_06FINAL_ADVISORS_OUTRO_10"
+			wait until read
+			send good spirit home
+			
+		end cinema		
+	elsif L4Method == 2
+		begin cinema
+			//AGC: Moved fade out & wait inside the cinema block
+			set fade red 0 green 0 blue 0 time 1
+			wait 1 seconds
+
+			wait 2 seconds
+			reset camera path
+
+			queue camera move with position {1100.385, 228.303, 2223.117} focus {1100.812, 207.583, 2125.290} time 0.0
+			queue camera move with position {1100.465, 227.642, 2219.994} focus {1100.893, 206.922, 2122.167} time 32.0
+			queue camera move with position {1101.398, 216.656, 2175.348} focus {1105.744, 186.592, 2080.084} time 12.0
+			play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+			set fade in time 2
+			wait 1 seconds
+
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_AFTERIMPRESSLAND4WIN_10"//	JAPANESE_GENERAL_PEACE	The rumors said the Greeks were noble and tempted the Norse with fine Towns and enlightened culture. This is wrong.		
+			wait until read
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_AFTERIMPRESSLAND4WIN_20"//	JAPANESE_GENERAL_PEACE	These brutal Greek armies were as violent to us as they were impressive to the Norse.		
+			wait until read
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_AFTERIMPRESSLAND4WIN_30"//	JAPANESE_GENERAL_PEACE	I face the shame of being defeated by them.		
+			wait until read
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_AFTERIMPRESSLAND4WIN_40"//	JAPANESE_GENERAL_PEACE	My brother must be told. It is like the Prophecy. These people must have a god. I have seen Miracles. And a Creature!		
+			wait until read
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_WAR_WIN_AFTERIMPRESSLAND4WIN_50"//	JAPANESE_GENERAL_PEACE	I must go through the Portal to find my brother immediately.		
+			wait until read
+			eject good spirit
+			say "BW2T_SCRIPT_06FINAL_ADVISORS_OUTRO_10"
+			wait until read
+			send good spirit home
+			
+		end cinema
+	end if	
+	
+	wait until DepartureScroll right clicked
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		//GA: "Are you sure you wish to leave the land?"
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_DEPARTURE_10"
+		wait until read
+		//EA: "Click again to confirm"
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_DEPARTURE_11"
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+	clear right clicked object
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+	
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	begin cinema
+		start music "farming_communtiy_land2" loop 10 
+		wait 2 seconds
+		queue camera move with position {1141.917, 146.566, 1994.583} focus {1046.703, 116.006, 1995.425} time 0.0
+		queue camera move with position {1132.020, 155.611, 1994.172} focus {1075.050, 73.517, 1998.078} time 6.0
+		queue camera move with position {1124.835, 143.924, 1994.664} focus {1067.865, 61.830, 1998.570} time 6.0
+		play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		set fade in time 2
+		wait 2 seconds
+		eject good spirit
+		say "BW2T_SCRIPT_06FINAL_JAPANESE_GENERAL_PEACE_STEVE_510" //	GOOD_ADVISOR	The Japanese know what they are up against now. They are sure to take measures against us.
+		wait until read
+		say "BW2T_SCRIPT_06FINAL_JAPANESE_GENERAL_PEACE_STEVE_520" //GOOD_ADVISOR	Let’s go to the next land!
+		wait until read
+		send good spirit home
+		set fade red 0 green 0 blue 0 time 3
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+		wait 3.5 seconds
+		wait 1 seconds
+	end cinema
+	
+elsif L6TownConversionMethod == 2 //impressiveness
+
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {852.426, 56.031, 736.470}
+	ALTITUDE of DepartureScroll = 3
+	TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {852.426, 56.031, 736.470} + {0, 3, 0} time -1
+
+	if L4Method == 1
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		begin cinema
+			wait 2 seconds
+			reset camera path
+
+			queue camera move with position {862.376, 120.720, 567.994} focus {866.746, 80.899, 659.620} time 0.0
+			queue camera move with position {864.758, 91.606, 630.112} focus {863.366, 68.737, 727.451} time 32.0
+			play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+			
+			set fade in time 2
+			wait 1 seconds
+			
+
+			//GEN:The rumours are not true. The Norse faced a brutal Greek horde and yet we were beaten by noble Greeks who built and flourished.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_AFTER_WARLAND4WIN_10"
+			wait until read
+			//GEN:My loyal people have fled to the Greeks. I am ashamed.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_AFTER_WARLAND4WIN_20"
+			wait until read
+			//GEN:My brother must be told. It Is like the Prophesy. These people have a god. I have seen Miracles. A Creature!		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_AFTER_WARLAND4WIN_30"
+			wait until read
+			//GEN:I must go through the Portal to find my brother immediately..		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_AFTER_WARLAND4WIN_40"
+			wait until read
+			eject good spirit
+			say "BW2T_SCRIPT_06FINAL_ADVISORS_OUTRO_10"
+			wait until read
+			send good spirit home
+			
+		end cinema
+
+	elsif L4Method == 2
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		begin cinema
+			wait 2 seconds
+			reset camera path
+
+			queue camera move with position {862.376, 120.720, 567.994} focus {866.746, 80.899, 659.620} time 0.0
+			queue camera move with position {864.758, 91.606, 630.112} focus {863.366, 68.737, 727.451} time 36.0
+			play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+			play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+			set fade in time 2
+			wait 1 seconds
+			
+			//GEN:The rumours were true. The Greeks were noble and built well and the Norse flocked to them.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_TWICE_10"
+			wait until read
+			//GEN:My once-loyal people have done the same. I bow in shame.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_TWICE_20"
+			wait until read
+			//GEN:My brother must know of this at once. There must be divine powers at work here.  I have seen Miracles. A Creature!		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_TWICE_30"
+			wait until read
+			//GEN:The Prophesy says that a tribe will rise from almost total destruction. And they'll have a god to control them.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_TWICE_40"
+			wait until read
+			//GEN:I must leave this land to find my brother at once.		
+			say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_IMPRESS_WIN_TWICE_50"
+			wait until read		
+			eject good spirit
+			say "BW2T_SCRIPT_06FINAL_ADVISORS_OUTRO_10"
+			wait until read
+			send good spirit home
+
+		end cinema
+
+	end if
+	wait until DepartureScroll right clicked
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		//GA: "Are you sure you wish to leave the land?"
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_DEPARTURE_10"
+		wait until read
+		//EA: "Click again to confirm"
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_DEPARTURE_11"
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+	clear right clicked object
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+	
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	begin cinema
+		start music "farming_communtiy_land2" loop 10 
+	
+		wait 2 seconds
+		queue camera move with position {849.810, 64.152, 723.705} focus {867.657, 22.158, 812.688} time 0.0
+		queue camera move with position {850.545, 68.740, 727.682} focus {864.303, -5.926, 792.764} time 6.0
+		queue camera move with position {852.205, 62.073, 734.924} focus {859.938, -26.654, 780.396} time 6.0
+		play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		set fade in time 2
+		wait 2 seconds
+		eject good spirit
+		say "BW2T_SCRIPT_06FINAL_JAPANESE_GENERAL_PEACE_STEVE_510" //	GOOD_ADVISOR	The Japanese know what they are up against now. They are sure to take measures against us.
+		wait until read
+		say "BW2T_SCRIPT_06FINAL_JAPANESE_GENERAL_PEACE_STEVE_520" //GOOD_ADVISOR	Let’s go to the next land!
+		wait until read
+		send good spirit home
+		set fade red 0 green 0 blue 0 time 3
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+		wait 3.5 seconds
+		wait 1 seconds
+	end cinema
+end if
+	disable game can be lost
+	process land end objectives
+	wait until land end objectives processed
+	
+	L6Complete = 1
+	
+	if MyCreature exists
+		save my_creature
+	end if
+	
+	load map "./Data/Landscape/BW2/Land7.bwe"
+	
+	wait 50000 seconds
+end script Land6Outro
+

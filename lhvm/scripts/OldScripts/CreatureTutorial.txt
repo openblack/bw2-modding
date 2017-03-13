@@ -1,0 +1,353 @@
+//-----------------------------------------------------------------------------
+// CreatureTutorial
+//
+// Paul Nettleton
+//
+// The creature tutorial for Gods playground
+//
+//-----------------------------------------------------------------------------
+
+// Make the pig walk around
+
+//-----------------------------------------------------------------------------
+
+begin script MakePigMove(Pig)
+PigPos = 0
+NewPigPos = 0
+start
+	PigPos = marker at {Pig}
+	
+	while (Pig exists)
+		NewPigPos = marker at {PigPos}+{number from -2 to 2, 0, number from -2 to 2}
+		move Pig position to {NewPigPos}
+		wait until {Pig} at {NewPigPos}
+	end while
+end script MakePigMove
+
+//-----------------------------------------------------------------------------
+
+// The main creature tutorial
+
+//-----------------------------------------------------------------------------
+
+begin script CreatureTutorial
+GoldScroll = 0
+ScrollPos = marker at {1134.823,26.130,1431.375}
+Pig = 0
+PigPos = marker at {1071.510,26.130,1431.082}
+LeashType = 0
+PigLeash = 0
+CurrentMagnitude = 0
+RepeatTimer = create timer for 0 seconds
+LeashRepeatTimer = create timer for 0 seconds
+CreatureTrainer = 0
+Hut = 0
+start
+	Hut = get HOUSE at {1159.181,26.130,1452.885} radius 6
+	
+	GoldScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	run script ChallengeHighlightNotify(GoldScroll, marker at {ScrollPos}, 1)
+	
+	//Make the pig house half built, just in case the player has mended it.
+	MyCreature = get player 1 creature
+	detach MyCreature leash
+		
+	begin cinema
+		CreatureTrainer = create VILLAGER VILLAGER_INFO_CREATURE_TRAINER at {1131.129,26.130,1421.562} 
+		set CreatureTrainer focus to {1133.916,26.130,1420.741}
+		move camera position to {1133.663,26.764,1421.606} time 4
+		move camera focus to {1125.238,25.931,1421.146} time 4
+		wait until camera ready
+		say "Hello. I am the creature trainer."
+		wait until read
+		say "I will first teach you about leashes."
+		wait until read
+		
+		set camera lens 40 time 4
+		move camera position to {1130.532,31.130,1414.516} time 4
+		move camera focus to {1126.494,26.416,1419.943} time 4
+		wait until camera ready
+		say "This is the good leash"
+		wait until read
+		clear dialogue
+		wait 1 seconds
+		move camera position to {1127.970,30.787,1413.303} time 4
+		move camera focus to {1125.224,26.403,1419.724} time 4
+		wait until camera ready
+		say "This is the neutral leash"
+		wait until read
+		clear dialogue
+		wait 1 seconds
+		move camera position to {1126.223,30.787,1412.557} time 4
+		move camera focus to {1123.578,26.403,1419.020} time 4
+		wait until camera ready
+		say "This is the evil leash"
+		wait until read
+		clear dialogue
+		wait 1 seconds
+		
+		
+		move camera position to {1130.487,31.131,1411.764} time 4
+		move camera focus to {1125.505,27.684,1417.698} time 4
+		set camera lens 70 time 4
+		say "Pick up the neutral leash (the one in the middle) by clicking on it."
+		wait until read
+		wait until camera ready
+		set MyCreature position to {1132.116,26.130,1430.204}
+		set MyCreature focus to {1130.487,31.131,1411.764}
+	end cinema
+	
+	LeashType = 0
+	set LeashRepeatTimer time to 15 seconds
+	begin loop
+		LeashType = variable get MyCreature leash type 
+		if get LeashRepeatTimer time remaining <= 0
+			say "Pick up the neutral leash, the one in the middle, by clicking on it."
+			wait until read	
+			set LeashRepeatTimer time to 10 seconds
+		end if
+		until LeashType == 2
+	end loop
+	
+	begin cinema
+		move camera position to {1130.859,28.973,1406.499} time 4
+		move camera focus to {1131.143,29.133,1418.298} time 4
+		wait until camera ready
+		say "Well done! Now, double click on your creature to leash him."
+		wait until read
+		clear dialogue
+		release MyCreature
+	end cinema
+	
+	set LeashRepeatTimer time to 2 seconds
+	begin loop
+		LeashType = variable get MyCreature leash type 
+		if LeashType != 2 and LeashRepeatTimer <= 0
+			set LeashRepeatTimer time to 6 seconds
+			say single line "No! Use the neutral leash, the one in the middle"
+			wait until read
+		end if
+		until MyCreature leashed and LeashType == 2
+	end loop
+			
+	wait 2 seconds
+	
+	//Create the pig
+	Pig = create ANIMAL ANIMAL_INFO_PIG at {PigPos}
+	run background script MakePigMove(Pig)
+	
+	begin cinema
+		move camera position to {1133.663,26.764,1421.606} time 4
+		move camera focus to {1125.238,25.931,1421.146} time 4
+		wait until camera ready
+		say "Well done. You can leash the creature with any of the leashes."
+		wait until read
+		say "The good leash makes your creature do good actions."
+		wait until read
+		say "The evil leash makes your creature do evil actions."
+		wait until read
+		say "The neutral leash is also know as the leash of learning."
+		wait until read
+		say "This leash is used to teach your creature things."
+		wait until read
+		say "All leashes can be used to move your creature around the landscape."
+		wait until read
+		set camera position to {1048.794,41.105,1429.317} 
+		set camera focus to {1090.455,26.298,1429.557} 
+		say "Try it now."
+		wait until read
+		say "Double click with the leash attached to move your creature to the other sido of the citadel."
+		wait until read
+		say "Just near this pig."
+		wait until read
+	end cinema
+	
+	set LeashRepeatTimer time to 20 seconds
+	begin loop
+		if LeashRepeatTimer <= 0
+			begin cinema
+				move camera position to {1133.663,26.764,1421.606} time 4
+				move camera focus to {1125.238,25.931,1421.146} time 4
+				wait until camera ready
+				say "Double click with the leash attached to move your creature to the other sido of the citadel."
+				wait until read
+				say "Just near this pig."
+				wait until read
+				clear dialogue
+			end cinema
+			set LeashRepeatTimer time to 20 seconds
+		end if 
+		until {MyCreature} near {1073.911,26.130,1429.910} radius 30
+	end loop
+	
+	begin cinema
+		move camera position to {1048.794,41.105,1429.317} time 4
+		move camera focus to {1090.455,26.297,1429.557} time 4
+		say "Well done!"
+		wait until read
+		say "Now, click on the pig with your creature leashed to get him to pick it up."
+		wait until read
+	end cinema
+	
+	set LeashRepeatTimer time to 20 seconds
+	begin loop
+		if LeashRepeatTimer <= 0
+			begin cinema
+				move camera position to {1048.794,41.105,1429.317} time 4
+				move camera focus to {1090.455,26.297,1429.557} time 4
+				wait until camera ready
+				say "Now, click on the pig with your creature leashed to get him to pick it up."
+				wait until read
+				clear dialogue
+			end cinema
+			set LeashRepeatTimer time to 20 seconds
+		end if 
+		until Pig in MyCreature hand
+	end loop
+	
+	begin cinema
+		say "Well done!"
+		wait until read
+		set camera position to {1140.940,31.913,1424.143} 
+		set camera focus to {1119.703,26.892,1426.995}
+		say "Now, bring the pig over here."
+		wait until read
+		say "Whilst the creature is leashed, click in front of the citadel."
+		wait until read
+		say "You creature should bring the pig back here."
+		wait until read
+	end cinema
+	
+	set LeashRepeatTimer time to 20 seconds
+	begin loop
+		until {Pig} near {1130.048,26.130,1423.840} radius 30 and not Pig in MyCreature hand
+		if LeashRepeatTimer <= 0
+			begin cinema
+				move camera position to {1140.940,31.913,1424.143} time 4
+				move camera focus to {1119.703,26.892,1426.995} time 4
+				wait until camera ready
+				say "Bring the pig to the front of the citadel."
+				wait until read
+				clear dialogue
+			end cinema
+			set LeashRepeatTimer time to 20 seconds
+		end if 
+	end loop
+	
+	begin cinema
+		move camera position to {1133.663,26.764,1421.606} time 4
+		move camera focus to {1125.238,25.931,1421.146} time 4
+		wait until camera ready
+		say "Nice one."
+		wait until read
+		say "You can also use the leash to attach your creature to objects."
+		wait until read
+		set camera position to {1171.900,32.085,1458.553}
+		set camera focus to {1152.395,26.499,1443.499}
+		say "Double click with the right mouse button on this building."
+		wait until read
+		say "Your creature will then be attached to the building."
+		wait until read
+	end cinema
+	
+	
+	set LeashRepeatTimer time to 20 seconds
+	begin loop
+		until MyCreature leashed to Hut
+		if (LeashRepeatTimer <= 0)
+			begin cinema
+				move camera position to {1133.663,26.764,1421.606} time 4
+				move camera focus to {1125.238,25.931,1421.146} time 4
+				wait until camera ready
+				say "Double click with the right mouse button on this building."
+				wait until read
+				say "Your creature will then be attached to the building."
+				wait until read
+			end cinema
+			set LeashRepeatTimer time to 20 seconds
+		end if
+	end loop
+	
+	begin cinema
+		say "Well done!"
+		wait until read
+		clear dialogue
+		set camera position to {1150.216,42.667,1468.570}
+		set camera focus to {1157.034,29.919,1453.671}
+		force MyCreature CREATURE_STOMP Hut
+		wait until MyCreature played
+		set camera position to {1139.026,30.841,1443.989}
+		set camera focus to {1166.108,28.298,1453.296} 
+		say "Oh no! Whats he like, the cheeky monkey."
+		wait until read
+		say "Do you want him to behave like this all the time?"
+		wait until read
+		say "To do this, keep you hand over him and keep the right mouse button down."
+		wait until read
+		say "Then, using the mouse, slap or stroke him."
+		wait until read
+	end cinema
+	
+	release MyCreature
+	run SCRIPT_DEV_FUNCTION_CLEAR_INTERACTION_MAGNITUDE developer function
+	CurrentMagnitude=0
+	set LeashRepeatTimer time to 0 seconds
+	while (CurrentMagnitude == 0) 
+		CurrentMagnitude = get MyCreature interaction magnitude
+		if MyCreature locked interaction
+			if get LeashRepeatTimer time remaining <= 0
+				say single line "Slap him or stroke him."
+				wait until read
+				set LeashRepeatTimer time to 15 seconds
+			end if
+		else
+			if get LeashRepeatTimer time remaining <= 0
+				say single line "Hold your hand over the creature and hold the right mouse button down."
+				wait until read
+				set LeashRepeatTimer time to 15 seconds
+			end if
+		end if
+	end while
+	
+	MyCreature = get player 1 creature
+	//move MyCreature position to {MyCreature}
+	disable MyCreature can drop
+	
+	if CurrentMagnitude < 0
+		begin cinema
+			move camera position to {1048.794,41.105,1429.317} time 4
+			move camera focus to {1090.455,26.297,1429.557} time 4
+			wait until camera ready
+			
+			say "There you go. He won't do this as much in the future."
+			wait until read
+			set camera position to {1133.663,26.764,1421.606}
+			set camera focus to {1125.238,25.931,1421.146} 
+			say "Thats all for now."
+			wait until read
+			say "Why not try experimenting with the other leashes?"
+			wait until read
+		end cinema
+	else
+		begin cinema
+			move camera position to {1048.794,41.105,1429.317} time 4
+			move camera focus to {1090.455,26.297,1429.557} time 4
+			wait until camera ready
+			
+			say "Oh, you want him to do that more? OK then."
+			wait until read
+			set camera position to {1133.663,26.764,1421.606}
+			set camera focus to {1125.238,25.931,1421.146} 
+			say "Thats all for now."
+			wait until read
+			say "Why not try experimenting with the other leashes?"
+			wait until read
+		end cinema
+	end if 
+	
+	enable MyCreature can drop
+	
+end script CreatureTutorial
+
+
+

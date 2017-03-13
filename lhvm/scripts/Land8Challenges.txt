@@ -1,0 +1,36 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 8
+//===========================================================
+
+// -Globals-
+Land8Globals.txt
+GlobalThrowBloke.txt
+Land8ThrowBloke.txt
+Land8Intro.txt
+GlobalCreatureAI.txt
+Land8Earthquake.txt
+
+// -Challenges-
+Land8MonsterMine.txt
+Land8OilBaron.txt
+Land8DarkDisciples.txt
+
+// -Objectives-
+Land8Objectives.txt
+
+// -DYK-
+Land8DYK.txt
+
+// -Dialogue-
+Land8Dialogue.txt
+
+// -End of Land-
+Land8Outro.txt
+Land8Departure.txt
+
+// -Enemy-
+Land8ArmiesNew.txt
+Land8Towns.txt
+
+// -Main Control-
+Land8Control.txt

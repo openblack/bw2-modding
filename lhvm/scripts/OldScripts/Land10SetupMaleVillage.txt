@@ -1,0 +1,33 @@
+
+begin script Land10SetupMaleVillage
+
+Men[40]
+Counter = 0
+TownPos = 0
+Platoon1 = 0
+Platoon2 = 0
+
+start
+
+TownPos = marker at {1093.629, 211.286, 677.588}
+
+while Counter != 40
+	if Men[Counter] not exists and Counter != 40
+		Men[Counter] = create VILLAGER GREEK_FARMER at {TownPos} + {number from -7 to 7, 0, number from -7 to 7}
+		Men[Counter] = create VILLAGER VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at {TownPos} + {number from -7 to 7, 0, number from -7 to 7}
+		attach Men[Counter] to L10GreekTown
+		release Men[Counter]
+		Counter++
+	end if
+end while
+
+//Create a couple of platoons
+/*Platoon1 = create platoon PLATOON_INFO_GREEK_MELEE_1 at {L10GreekTown} + {20,20} with 20 men and 0 women
+attach Platoon1 to L10GreekTown
+PLAYER of Platoon1 = 0
+
+Platoon2 = create platoon PLATOON_INFO_GREEK_RANGED_1 at {L10GreekTown} + {20,45} with 20 men and 0 women
+attach Platoon2 to L10GreekTown
+PLAYER of Platoon2 = 0*/
+
+end script Land10SetupMaleVillage

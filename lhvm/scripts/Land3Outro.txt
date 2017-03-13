@@ -1,0 +1,95 @@
+define L3OUTRO_INCER	= 2
+define L3GLOBAL_TIME	= 20
+
+//-----------------------------------------------------------
+// Land 3 outro dialogue
+//-----------------------------------------------------------
+begin script Land3OutroDialogue
+start
+
+	begin known cinema		
+
+		eject evil spirit
+		say "BW2T_SCRIPT_03FINAL_PDM_ENDLAND_OUTRO_10"
+		wait until read
+		eject good spirit
+		say "BW2T_SCRIPT_03FINAL_PDM_ENDLAND_OUTRO_20"
+		wait until read
+		say "BW2T_SCRIPT_03FINAL_PDM_ENDLAND_OUTRO_30"
+		wait until read
+		send good spirit home
+		send evil spirit home
+
+		L3_Leave = 1
+	end known cinema
+
+end script Land3OutroDialogue
+
+
+begin script Land3Outro
+
+	MovePos		= marker at {4747.776, 237.775, 1681.232}
+	FoveFoc		= marker at {4844.651, 215.504, 1692.328}
+	TimeLeft	= L3GLOBAL_TIME
+	TeleportEffect	=	0
+start
+
+begin cinema
+
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds	
+
+	set camera lens 70.000
+	TeleportEffect = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {945.869, 377.945, 1639.584} time -1
+	ALTITUDE of TeleportEffect = 2
+
+	reset camera path 
+
+	queue camera move with position {1147.842, 489.305, 1399.295} focus {1125.589, 442.420, 1484.769} time 0.0
+	queue camera move with position {1408.638, 867.152, -499.628} focus {1403.938, 822.700, -410.174} time 40.0
+
+    play camera path with easein 0 easeout 0.5 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+
+	set fade in time 2
+	wait 1 seconds
+
+	eject good spirit
+	eject evil spirit
+
+	make good spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_OUTRO_G_10_20
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_OUTRO_E_10_20
+	wait until read
+	send good spirit home
+	send evil spirit home
+	wait 3 seconds
+	eject good spirit
+	eject evil spirit
+	make good spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_OUTRO_G_30_40
+	make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_03FINAL_ADVISORS_OUTRO_E_30_40
+	wait until read
+
+	send good spirit home
+	send evil spirit home
+
+	//set camera lens 133.000 time 3
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	reset camera path 
+
+	set camera position to {923.727, 396.406, 1658.786}
+	set camera focus to {1011.654, 369.475, 1619.504}
+	set fade in time 1
+
+
+	wait 3.5 seconds
+	//set fade red 255 green 255 blue 255 time 0.5
+	reset camera path 
+
+
+	//wait 2 seconds
+
+	end cinema// with widescreen
+
+
+end script Land3Outro

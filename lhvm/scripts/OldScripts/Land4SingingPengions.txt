@@ -1,0 +1,174 @@
+//-----------------------------------------------------------
+
+define False = 0
+define True = 1
+
+define MAX_DISTANCE_BETWEEN_COWS = 12
+
+global ScorePosition
+global MidiPlayer = 0
+
+global Cow1 = 0
+global Cow2 = 0
+global Cow3 = 0
+global Cow4 = 0
+global Cow5 = 0
+global Cow6 = 0
+
+global CowPos[6]
+global CowNote[6]
+
+define script CheckCowIsAlive(Cow, CowID)
+
+//-----------------------------------------------------------
+
+begin script SingingPengions
+
+NewAlignment = 0
+
+AllTogether = False
+Scroll = 0
+start
+
+	CowPos[0] = marker at {758.380,161.703,922.628}
+	CowPos[1] = marker at {704.729,247.866,681.830}
+	CowPos[2] = marker at {887.324,185.714,846.564}
+	CowPos[3] = marker at {898.395,185.448,850.035}
+	CowPos[4] = marker at {1094.422,196.214,846.038}
+	CowPos[5] = marker at {945.387,181.683,554.757}
+
+	CowNote[0] = 60
+	CowNote[1] = 62
+	CowNote[2] = 64
+	CowNote[3] = 65
+	CowNote[4] = 67
+	CowNote[5] = 69
+
+	Cow1 = create ANIMAL COW at {CowPos[0]}
+	Cow2 = create ANIMAL COW at {CowPos[1]}
+	Cow3 = create ANIMAL COW at {CowPos[2]}
+	Cow4 = create ANIMAL COW at {CowPos[3]}
+	Cow5 = create ANIMAL COW at {CowPos[4]}
+	Cow6 = create ANIMAL COW at {CowPos[5]}
+
+	run background script CheckCowIsAlive(Cow1, 0)
+	run background script CheckCowIsAlive(Cow2, 1)
+	run background script CheckCowIsAlive(Cow3, 2)
+	run background script CheckCowIsAlive(Cow4, 3)
+	run background script CheckCowIsAlive(Cow5, 4)
+	run background script CheckCowIsAlive(Cow6, 5)
+	
+	MidiPlayer = create SCRIPT_OBJECT_TYPE_MIDI_PLAYER at {Cow1}
+
+	load midi file "audio/music/cutscene/cowtune.mid" on MidiPlayer
+
+	add note CowNote[0] on Cow1 using MidiPlayer with sound "COWC"
+	add note CowNote[1] on Cow2 using MidiPlayer with sound "COWD"
+	add note CowNote[2] on Cow3 using MidiPlayer with sound "COWE"
+	add note CowNote[3] on Cow4 using MidiPlayer with sound "COWF"
+	add note CowNote[4] on Cow5 using MidiPlayer with sound "COWG"
+	add note CowNote[5] on Cow6 using MidiPlayer with sound "COWA"
+
+	play midi MidiPlayer
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_04FINAL_SINGINGPENGUINS_45" remind "BW2T_SCRIPT_04FINAL_SINGINGPENGUINS_55" at {902.609,187.218,852.672}
+	ALTITUDE of Scroll = 2
+	wait until Scroll right clicked
+	clear right clicked object
+	clear right clicked position
+	delete Scroll
+	
+	begin cinema
+		set camera position to {908.710,204.733,829.002}
+		set camera focus to {860.993,146.148,894.511}
+		eject good spirit
+		//GA:Look! There's some cows here! They look a bit lost!
+		say "BW2T_SCRIPT_04FINAL_SINGINGKIDS_15"
+		wait until read
+		//GA:They seem to be making strange sounds.
+		say "BW2T_SCRIPT_04FINAL_SINGINGKIDS_20"
+		wait until read
+		//GA:Find the other cows and place them all together
+		say "BW2T_SCRIPT_04FINAL_SINGINGKIDS_35"
+		wait until read
+		send good spirit home
+	end cinema
+
+	ScorePosition = 0
+
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_9
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 with amount 1 text "BW2T_SCRIPT_04FINAL_SINGINGPENGUINS_55" amount 1 description "BW2T_SCRIPT_04FINAL_SINGINGPENGUINS_55" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_4_SINGINGPENGUINS	
+
+	begin loop
+		ScorePosition++
+		wait 0.6 seconds
+		if ScorePosition > 31
+			ScorePosition=0
+		end if
+		
+		if AllTogether == False and get distance from {Cow1} to {Cow2} < MAX_DISTANCE_BETWEEN_COWS and get distance from {Cow1} to {Cow3} < MAX_DISTANCE_BETWEEN_COWS and get distance from {Cow1} to {Cow4} < MAX_DISTANCE_BETWEEN_COWS and get distance from {Cow1} to {Cow5} < MAX_DISTANCE_BETWEEN_COWS and get distance from {Cow1} to {Cow6} < MAX_DISTANCE_BETWEEN_COWS 
+			if not Cow1 is HELD and not Cow2 is HELD and not Cow3 is HELD and not Cow4 is HELD and not Cow5 is HELD and not Cow6 is HELD
+				begin cinema
+					eject good spirit
+					eject evil spirit
+					//GA:Brilliant! You've got them all together!
+					say "BW2T_SCRIPT_04FINAL_SINGINGKIDS_40"
+					wait until read
+					//EA:Hmm...I'm sure we've got better things to do than find cows.
+					say "BW2T_SCRIPT_04FINAL_SINGINGKIDS_55"
+					wait until read
+					//GA: listen to their beautiful song! Well done leader you did it!
+					say "BW2T_SCRIPT_04FINAL_SINGINGKIDS_60"
+					wait until read
+				end cinema		
+				wait 2 seconds	
+				NewAlignment = get player 0 alignment + GLOBAL_VALUE_ALIGNMENT_LAND_4_SINGING_COWS
+				set player 0 alignment NewAlignment
+				AllTogether=True
+				// set objective as complete
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+				wait 2.5 seconds
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+			end if
+		end if 
+		
+	end loop
+
+end script SingingPengions
+//-----------------------------------------------------------
+
+begin script CheckCowIsAlive(Cow, CowID)
+
+start
+	begin loop
+		if {Cow} under water
+			delete Cow
+			if CowID == 0
+				Cow1 = create ANIMAL COW at {CowPos[0]}
+				Cow = Cow1
+				add note CowNote[0] on Cow1 using MidiPlayer with sound "COWC"
+			elsif CowID == 1
+				Cow2 = create ANIMAL COW at {CowPos[1]}
+				Cow = Cow2
+				add note CowNote[1] on Cow2 using MidiPlayer with sound "COWD"
+			elsif CowID == 2
+				Cow3 = create ANIMAL COW at {CowPos[2]}
+				Cow = Cow3
+				add note CowNote[2] on Cow3 using MidiPlayer with sound "COWE"
+			elsif CowID == 3
+				Cow4 = create ANIMAL COW at {CowPos[3]}
+				Cow = Cow4
+				add note CowNote[3] on Cow4 using MidiPlayer with sound "COWF"
+			elsif CowID == 4
+				Cow5 = create ANIMAL COW at {CowPos[4]}
+				Cow = Cow5
+				add note CowNote[4] on Cow5 using MidiPlayer with sound "COWG"
+			elsif CowID == 5
+				Cow6 = create ANIMAL COW at {CowPos[5]}
+				Cow = Cow6
+				add note CowNote[5] on Cow6 using MidiPlayer with sound "COWA"
+			end if
+		end if
+	end loop
+end script CheckCowIsAlive
+//-----------------------------------------------------------

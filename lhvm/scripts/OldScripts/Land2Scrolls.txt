@@ -1,0 +1,233 @@
+//================================================================
+// Land 2 Scorlls
+// Matt.L
+//================================================================
+
+//-------------------------------------------------------------
+// Constants
+//-------------------------------------------------------------
+define SC_FALSE = 0
+define SC_TRUE = 1
+
+//-------------------------------------------------------------
+// Script defines
+//-------------------------------------------------------------
+define script Land2Outro
+define script SC_Advisors(ID)
+
+//-------------------------------------------------------------
+// Land 2 Scrolls
+//-------------------------------------------------------------
+begin script Land2Scrolls
+	FieldScroll = 0
+	FieldScrollFX = 0
+	FieldScrollPos = marker at {1728.751, 110.656, 1793.431}
+	FieldToldFlag = SC_FALSE
+
+	BarrelScroll = 0
+	BarrelScrollFX = 0
+	BarrelScrollPos = marker at {2028.897, 110.421, 1051.708}
+	BarrelToldFlag = SC_FALSE
+
+	GorillaScroll = 0
+	GorillaScrollFX = 0
+	GorillaScrollPos = marker at {1784.924, 159.012, 983.695}
+	GorillaToldFlag = SC_FALSE
+
+	ReminderTimer = create timer for 30 seconds
+start
+
+	//Field scroll
+	FieldScroll = create highlight GOLD name "L2FieldScroll" remind "Play the field event"at {FieldScrollPos}
+	FieldScrollFX = create visual effect "gp_s_townctr_beam.ves" strength 1 scale 1 at {FieldScrollPos} time -1 
+	set FieldScrollFX colour red 221 green 221 blue 221
+
+	//Barrel scroll
+	BarrelScroll = create highlight GOLD name "L2BarrelScroll" remind "Play the barrel run event"at {BarrelScrollPos}
+	BarrelScrollFX = create visual effect "gp_s_townctr_beam.ves" strength 1 scale 1 at {BarrelScrollPos} time -1 
+	set BarrelScrollFX colour red 221 green 221 blue 221
+
+	//Gorilla scroll	
+	GorillaScroll = create highlight GOLD name "L2GorillaScroll" remind "Play the gorilla event"at {GorillaScrollPos}
+	GorillaScrollFX = create visual effect "gp_s_townctr_beam.ves" strength 1 scale 1 at {GorillaScrollPos} time -1 
+	set GorillaScrollFX colour red 221 green 221 blue 221
+
+	begin loop
+		if FieldScroll right clicked
+			delete FieldScroll
+			stop visual effect FieldScrollFX
+			run script Land2CatapultingFields
+			L2Events++
+			ReminderTimer = create timer for 30 seconds
+		end if
+
+		if BarrelScroll right clicked
+			delete BarrelScroll
+			stop visual effect BarrelScrollFX
+			run script Land2BarrelRun
+			L2Events++
+			ReminderTimer = create timer for 30 seconds
+		end if
+
+		if GorillaScroll right clicked
+			delete GorillaScroll
+			stop visual effect GorillaScrollFX
+			say "No!"
+			wait 2 seconds
+			L2Events++
+			ReminderTimer = create timer for 30 seconds
+		end if
+
+		if get ReminderTimer time remaining == 0
+			run background script SC_Advisors(SC_ADVISORS_REMINDER)
+			ReminderTimer = create timer for 30 seconds
+		end if
+
+		if get distance from camera position to {FieldScrollPos} < 35 and FieldToldFlag == SC_FALSE
+			FieldToldFlag = SC_TRUE
+			run background script SC_Advisors(SC_ADVISORS_HOVER_NEAR_FARMLAND)
+		end if
+
+		if get distance from camera position to {BarrelScrollPos} < 35 and BarrelToldFlag == SC_FALSE
+			BarrelToldFlag = SC_TRUE
+			run background script SC_Advisors(SC_ADVISORS_HOVER_NEAR_TAVERN)
+		end if
+
+		if get distance from camera position to {GorillaScrollPos} < 35 and BarrelToldFlag == SC_FALSE
+			GorillaToldFlag = SC_TRUE
+			run background script SC_Advisors(SC_ADVISORS_HOVER_NEAR_CREATURE)
+		end if
+
+		//Explode the second volcano
+		if L2Events == 1
+			run background script Land2Volcano(marker at {1728.982, 109.584, 1806.910})
+			L2Events++
+		end if
+
+		move game time 22.00 time 3
+	until L2Events == 3
+	end loop
+
+	run script Land2Outro
+	set fade in time 1
+	Land2Complete = 1
+	load map "./Data/Landscape/BW2/Land3.bwe"
+end script Land2Scrolls
+
+//-------------------------------------------------------------
+// Land 2 Outro
+//-------------------------------------------------------------
+begin script Land2Outro
+	FX = 0
+	VolcanoPos = marker at {1995.963, 100.559, 946.154}
+start
+
+	stop music
+	start music "volcano_music"
+
+	begin cinema
+		set camera position to {2135.206, 152.382, 1015.646}
+		set camera focus to {2058.790, 105.527, 971.298}
+
+		run background script Land2Volcano(VolcanoPos)		
+		
+		move camera position to {2154.383, 200.826, 879.751} time 15
+		move camera focus to {2082.166, 141.600, 915.469} time 15
+
+		shake camera strength 6.0
+		wait 2 seconds
+
+		shake camera strength 4.0
+		wait 2 seconds
+
+		shake camera strength 2.0
+		wait 8 seconds
+
+		stop camera shake
+		
+		move camera position to {1894.361, 207.178, 821.588} time 9
+		move camera focus to {1962.550, 153.564, 871.350} time 9
+
+		shake camera strength 4.0
+		wait 1 seconds
+		FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 2 at {VolcanoPos} - {0, 40, 0} time 3
+		shake camera strength 1.0
+
+		wait 3 seconds
+		shake camera strength 4.0
+		FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 3 at {VolcanoPos} - {0, 40, 0} time 3
+		wait 1 seconds
+		shake camera strength 1.0	
+
+		wait 3 seconds
+		shake camera strength 4.0
+		FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 4 at {VolcanoPos} - {0, 40, 0} time 3
+		wait 0.3 seconds
+		shake camera strength 1.0
+
+		set fade red 0 green 0 blue 0 time 0.3
+
+		stop camera shake
+
+		eject good spirit
+		say "Leader.."
+		wait 2 seconds
+
+		say "Leader.. Leader"
+		wait until read
+
+		eject evil spirit
+		say "Boss"
+		wait until read
+
+		say "Oh no something terrible has happened"
+		wait until read
+
+		stop music with fadetime 1
+	end cinema
+end script Land2Outro
+
+//-------------------------------------------------------------
+// Land 2 Outro
+//-------------------------------------------------------------
+begin script SC_Advisors(ID)
+start
+
+	begin dialogue
+		if ID == SC_ADVISORS_PICK_A_SCROLL
+			eject good spirit
+			say "Oh dear, this is terrible"
+			wait until read
+
+			say "Click on one of the silver scrolls to help your people"
+			wait until read
+
+			say "Or click the gold scroll if you wish to move to the next land"
+			wait until read
+
+		elsif ID == SC_ADVISORS_HOVER_NEAR_FARMLAND
+			eject evil spirit
+			say "Trouble is brewing down by the farm"
+			wait until read
+
+		elsif ID == SC_ADVISORS_HOVER_NEAR_CREATURE
+			eject evil spirit
+			say "He's ferocious, what a guy!"
+			wait until read
+
+		elsif ID == SC_ADVISORS_HOVER_NEAR_TAVERN
+			eject good spirit
+			say "The civic area of the town"
+			wait until read
+
+		elsif ID == SC_ADVISORS_REMINDER
+			eject good spirit
+			say "Click a scroll leader. We must save as many people as we possibly can"
+			wait until read
+
+		end if
+
+		send good spirit home
+		send evil spirit home
+	end dialogue
+end script SC_Advisors

@@ -1,0 +1,1095 @@
+///////////////////////////////////////////////////////////////////////////////
+//	TUTORIAL PROGRESSION
+//	~~~~~~~~~~~~~~~~~~~~
+//	This is the tutorial breakdown for introducing new gameplay elements
+//	to the player.
+//
+//	Tutorial elements:	Disciple Miners
+//						Build Armoury
+//						Making a Platoon
+//						Moving a Platoon [Marauders Attack]
+//						Attaching a Platoon to Object, Army, Wall or Creature (Triggered on Analysis)
+//						Making Walls (2 Choke  Points to cover from Marauder Attack)
+//						Converting by Impressiveness [Norse Guard Mine]
+//						Observing first Tributes (If player continues nurturing observe migrations)
+//						Conquering by Force
+//						Trespassing and Feud Comments when entering Norse Forests
+//
+//
+//	Start date:			14-01-04			By:	Steve
+//	Update date:		02-04-04			By: Steve
+//
+//	ToDo:
+//			If this script does not change majorly:
+//				Make sure that if you have allready done a tutorial element when that
+//					element comes up, that you are not told to do it. Make sure
+//					that nothing sneaks through (such as the army).
+//					(Make sure that the zealots don't want you to kill the marauders if they're
+//					allready dead)
+//					(Make the attacking the marauders work.)
+//					(If Norse die before coments about them are made, make sure there are no coments)
+//				Do we want to be recomending several things at the same time maybe?
+//					This way, the player won't feel like he's being led by the nose,
+//					and we can get some interesting off play between the two advisors...
+//					even though ultimately the player realy will have to do all tutorial bits.
+//			Put a pause between starting the armory and being given a reminder about builder disciples
+//			Do we really want to be creating the Norse unit from nothing?
+//			Until army navigation bug is fixed, make sure Norse don't have to walk through their own town
+//			Make attaching platoon script
+//			Get platoon attacking a villager bug fixed for Maurauders
+//			Make sure that wall building completion isn't triggerd till walls are finished being built.
+//			Make sure that creature is not attacked by Marauders while carying food.
+//			Test converting by impressing tutorial and handling once impresiveness works.
+//			Make sure that trespassing tutorial isn't triggered until greeks invade forest.
+//			Redo Analysis... and make sure that we aren't being given analysis once complete
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define TP_TRUE						= 1
+define TP_FALSE						= 0
+define TP_MIN_GREEK_IMPRESSIVENESS	= 18500
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global TP_Mine						= 0
+global TP_ArmouryPos				= 0
+global TP_Platoon					= 0
+global TP_Wall						= 0
+global TP_DiscipleMinersCreated		= TP_FALSE
+global TP_ArmouryBuilt				= TP_FALSE
+global TP_PlatoonCreated			= TP_FALSE
+global TP_PlatoonMoved				= TP_FALSE
+global TP_WallCreated				= TP_FALSE
+global TP_HomageTakingPlace			= TP_FALSE
+global TP_TributeTakingPlace		= TP_FALSE
+global TP_PilgrimageTakingPlace		= TP_FALSE
+global TP_NorseConverted			= TP_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+// Tutoring scripts
+define script TP_TutorDiscipleMiners
+define script TP_TutorBuildArmoury
+define script TP_TutorMakePlatoon
+define script TP_TutorMovePlatoon
+define script TP_TutorAttachingPlatoon
+define script TP_TutorMakingWalls
+define script TP_TutorConvertingByImpressing
+define script TP_TutorTresspassingAndFeuding
+
+// Analysis scripts
+define script TP_AnalyseDiscipleMiners
+define script TP_AnalyseBuildArmoury
+define script TP_AnalyseMakePlatoon
+define script TP_AnalyseMovePlatoon
+define script TP_AnalyseAttachingPlatoon
+define script TP_AnalyseMakingWalls
+define script TP_AnalyseConvertingByImpressing
+
+// Supplemental scripts
+define script TP_MarauderAttack							// Includes Greek Zealots
+define script TP_NorseGuardMine
+define script TP_HandleNorseTribute
+define script TP_CheckForNorseBeingConverted
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land1TutorialProgression
+
+	MinePos				= marker at {1200.591, 70.062, 1466.495}
+
+start
+
+	// Setup the global variables
+	TP_Mine				= get HOUSE at {MinePos} radius 100
+
+	// Check to see when the Norse are converted
+	run background script TP_CheckForNorseBeingConverted
+
+	// Kick off the tutorials in order
+	run script TP_TutorDiscipleMiners
+	run script TP_TutorBuildArmoury
+	run script TP_TutorMakePlatoon
+	run script TP_TutorMovePlatoon
+	run background script TP_MarauderAttack				// Kick off the Greek Zealots / Marauder attack
+	run script TP_TutorAttachingPlatoon
+	run script TP_TutorMakingWalls
+	run background script TP_NorseGuardMine				// Make the Norse guard the mine the player is using
+	run script TP_TutorConvertingByImpressing
+	run background script TP_HandleNorseTribute			// Allow the Norse to make a homage, tribute or pilgrimage
+	run script TP_TutorTresspassingAndFeuding
+
+end script Land1TutorialProgression
+
+
+
+//-----------------------------------------------------------------------------------------------------------
+//	TTTTTTTTTTT	 UUU	 UUU  TTTTTTTTTTT    OOOOO	   RRRRRRRRR	 IIIIIIIIIII	  AAAAA		 LLL
+//		TTT		 UUU	 UUU	  TTT	   OOO	 OOO   RRR		RRR		 III		AAA	  AAA	 LLL
+//		TTT		 UUU	 UUU	  TTT	  OOO	  OOO  RRR		RRR		 III	   AAA	   AAA	 LLL
+//		TTT		 UUU	 UUU	  TTT	  OOO	  OOO  RRR		RRR		 III	   AAA	   AAA	 LLL
+//		TTT		 UUU	 UUU	  TTT	  OOO	  OOO  RRRRRRRRR		 III	   AAAAAAAAAAA	 LLL
+//		TTT		 UUU	 UUU	  TTT	  OOO	  OOO  RRR	RRR			 III	  AAA		AAA	 LLL
+//		TTT		  UUU	UUU		  TTT	   OOO	 OOO   RRR	  RRR	     III	  AAA		AAA	 LLL
+//		TTT			UUUUU		  TTT		 OOOOO	   RRR		RRR	 IIIIIIIIIII  AAA		AAA  LLLLLLLLLLL
+//-----------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//	Disciple miners tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorDiscipleMiners
+
+	ObjectInHand		= 0
+	ObjectType			= 0
+	DiscipleType		= 0
+
+start
+
+	// Make sure there is no desire to mine naturally
+	set town L1GreekTown desire for GATHER_ORE to 0.0
+
+	// Give the initial task to do here
+	begin dialogue
+		eject good spirit
+		make good spirit point at {TP_Mine}
+		say "GA: Leader look at that mine, we really should mine some ore from it. Create a disciple miner."
+		wait until read
+		stop good spirit pointing
+		send good spirit home
+	end dialogue
+
+	// Kick off the analysis for the task
+	run background script TP_AnalyseDiscipleMiners
+
+	// Check to see if the task has been completed
+	while TP_DiscipleMinersCreated == TP_FALSE
+		ObjectInHand = get object held
+
+		// Make sure there is something in the players hand
+		if ObjectInHand exists
+			// Get the type of the object in the players hand
+			ObjectType = variable get ObjectInHand type
+				
+			// Is the object a villager?
+			if ObjectType == variable VILLAGER
+				// Yep, so wait until they are dropped or they're dead or they no longer exist
+				wait until not ObjectInHand is HELD or not ObjectInHand exists or HEALTH of ObjectInHand <= 0
+
+				// Is the villager alive and well?
+				if ObjectInHand exists and HEALTH of ObjectInHand > 0
+					// Yep, so get the disciple type of the villager
+					DiscipleType = variable get ObjectInHand disciple type
+
+					// Is the villager a miner?
+					if DiscipleType == variable VILLAGER_DISCIPLE_MINER
+						// Yep, so the task has been successfully completed
+						TP_DiscipleMinersCreated = TP_TRUE
+					end if
+				end if
+			else
+				// Nope, so just wait until the hand is empty before checking again
+				wait until not ObjectInHand is HELD or not ObjectInHand exists
+			end if
+		end if
+	end while
+
+	// Make sure that we can display the next message
+	wait until dialogue ready
+
+	// Get a well done from the advisors
+	begin dialogue
+		eject good spirit
+		say "GA: Well done leader we can start mining now we have a disciple miner."
+		wait until read
+		send good spirit home
+	end dialogue
+
+	// Put the town desire for ore back to it's correct value
+	set town L1GreekTown desire for GATHER_ORE to 0.2
+
+end script TP_TutorDiscipleMiners
+
+
+//-----------------------------------------------------------------------------
+//	Build armoury tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorBuildArmoury
+
+	Armoury						= 0
+	BuildLevel					= 0
+	SpeedUpWithDiscipleSaid		= TP_FALSE
+
+start
+
+	// Give the initial task to do here
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "GA: We should really think about some defense leader."
+		wait until read
+		say "EA: Now you're talking goody, build an Armoury boss."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+	// Kick off the analysis for the task
+	run background script TP_AnalyseBuildArmoury
+
+	// Check to see if the armoury has been built
+	while TP_ArmouryBuilt == TP_FALSE
+		if Armoury exists
+			BuildLevel = BUILT of Armoury
+
+			if BuildLevel < 0.3							// Less than 30% built
+				if SpeedUpWithDiscipleSaid == TP_FALSE
+					begin dialogue
+						eject good spirit
+						say "GA: Don't forget leader you can help the villagers by creating a disciple builder."
+						wait until read
+						send good spirit home
+					end dialogue
+					SpeedUpWithDiscipleSaid = TP_TRUE
+				end if
+			elsif BuildLevel == 1.0
+				TP_ArmouryPos = marker at {Armoury}		// Record the position of the armoury
+				TP_ArmouryBuilt = TP_TRUE
+			end if
+		else
+			// Get the armoury
+			wait 1 seconds
+			Armoury = get HOUSE ABODE_INFO_GREEK_ARMOURY at hand position radius 10000
+		end if
+	end while
+
+	// Make sure that we can display the next message
+	wait until dialogue ready
+
+	// Get a well done from the advisors
+	begin dialogue
+		eject evil spirit
+		eject good spirit
+		say "EA: Oh yeah, now we can get some warriors to bash the non believers - he he he."
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+end script TP_TutorBuildArmoury
+
+
+//-----------------------------------------------------------------------------
+//	Make platoon tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorMakePlatoon
+start
+
+	// Give the initial task to do here
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "GA: Now we have our armoury we need some warriors to protect us."
+		wait until read
+		say "EA: Yeah boss get some warriors so we can maim and kill."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+	
+	// Kick off the analysis for the task
+	run background script TP_AnalyseMakePlatoon
+	
+	// Check to see if the platoon has been created
+	while TP_PlatoonCreated == TP_FALSE
+		TP_Platoon = get platoon of player 0 nearest {TP_ArmouryPos} radius 100
+		
+		if TP_Platoon exists
+			TP_PlatoonCreated = TP_TRUE
+		else
+			wait 1 seconds
+		end if
+	end while
+	
+	// Make sure that we can display the next message
+	wait until dialogue ready
+
+	// Get a well done from the advisors
+	begin dialogue
+		eject evil spirit
+		eject good spirit
+		say "EA: Oh yeah boss, we can do some real damage with thses guys. He he he."
+		wait until read
+		say "GA: No evil. We should only use these warriors to defend ourselves from attack."
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+end script TP_TutorMakePlatoon
+
+
+//-----------------------------------------------------------------------------
+//	Move platoon tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorMovePlatoon
+
+	OriginalPlatoonPos	= 0
+	CurrentPlatoonPos	= 0
+	DistanceMoved		= 0
+		
+start
+	
+	if TP_Platoon exists
+		// Record the current position of the platoon
+		OriginalPlatoonPos = marker at {TP_Platoon}
+		
+		// Give the initial task to do here
+		begin dialogue
+			eject good spirit
+			eject evil spirit
+			say "GA: Let's move our army of warriors now leader."
+			wait until read
+			say "EA: Yeah, let's find someone to put to the sword."
+			wait until read
+			send good spirit home
+			send evil spirit home
+		end dialogue
+		
+		// Kick off the analysis for the task
+		run background script TP_AnalyseMovePlatoon
+		
+		// Check to see if the platoon has been created
+		while TP_PlatoonMoved == TP_FALSE
+			// Test to see if the platoon has moves from it's current position
+			CurrentPlatoonPos = marker at {TP_Platoon}
+			DistanceMoved = get distance from {OriginalPlatoonPos} to {CurrentPlatoonPos}
+			
+			// Has the platoon moved far enough?
+			if DistanceMoved > 10
+				TP_PlatoonMoved = TP_TRUE
+			else
+				wait 1 seconds
+			end if
+		end while
+		
+		// Make sure that we can display the next message
+		wait until dialogue ready
+
+		// Get a well done from the advisors
+		begin dialogue
+			eject evil spirit
+			eject good spirit
+			say "GA: That's great leader now we can position our men to defend us from attack."
+			wait until read
+			say "EA: Well yep I guess you can do that if you're yella."
+			wait until read
+			send evil spirit home
+			send good spirit home
+		end dialogue
+	else
+		say "Haven't got a platoon to be able to move it."
+		wait until read
+	end if
+
+end script TP_TutorMovePlatoon
+
+
+//-----------------------------------------------------------------------------
+//	Attaching platoon tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorAttachingPlatoon
+start
+end script TP_TutorAttachingPlatoon
+
+
+//-----------------------------------------------------------------------------
+//	Make walls tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorMakingWalls
+start
+
+	// Give the initial task to do here
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "GA: Let's get some defensive walls built leader."
+		wait until read
+		say "EA: Attack is the best form of defense Goody."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+	// Kick off the analysis for the task
+	run background script TP_AnalyseMakingWalls
+
+	while TP_WallCreated == TP_FALSE
+		TP_Wall = get wall segment nearest {L1GreekTown} radius 500
+
+		if TP_Wall exists
+			TP_WallCreated = TP_TRUE
+		else
+			wait 1 seconds
+		end if
+	end while
+
+	// Get a well done from the advisors
+	begin dialogue
+		eject evil spirit
+		eject good spirit
+		say "GA: Excellent leader, that feels much safer now."
+		wait until read
+		say "EA: Hmmphhh, whatever."
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+end script TP_TutorMakingWalls
+
+
+//-----------------------------------------------------------------------------
+//	Converting by impressing tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorConvertingByImpressing
+start
+
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "GA: Leader you can gain influence over other towns by impressing their villagers."
+		wait until read
+		say "GA: They will be impressed by how well organised and run your towns are."
+		wait until read
+		say "GA: When impressed they will pay homage to you."
+		wait until read
+		say "GA: Then when you become even more impressive they will pay a tribute to you of resources."
+		wait until read
+		say "GA: Eventually when they are so impressed they want to join you they will start a pilgrimage over to your town."
+		wait until read
+		say "GA: You can then accept or decline them into your town."
+		wait until read
+		say "EA: Forget all that nonsense. Just kill 'em to take them over :)"
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+	run background script TP_AnalyseConvertingByImpressing
+
+end script TP_TutorConvertingByImpressing
+
+
+//-----------------------------------------------------------------------------
+//	Tresspassing and feuding tutorial
+//-----------------------------------------------------------------------------
+begin script TP_TutorTresspassingAndFeuding
+start
+
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "GA: Better be careful leader."
+		wait until read
+		say "GA: It might be wise to leave that forest between us and the Norse alone."
+		wait until read
+		say "GA: They consider it a part of their territory and will defend it at all costs."
+		wait until read
+		say "EA: So! What's your point. If we want it, we'll take it and to hell with the Norse."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script TP_TutorTresspassingAndFeuding
+
+
+
+//----------------------------------------------------------------------------------------------------------------
+//	    AAAAA	   NNN		 NNN      AAAAA		 LLL	   YYY	   YYY	    SSSSSS	   IIIIIIIIIII     SSSSSS	 
+//	  AAA   AAA	   NNNNN	 NNN    AAA   AAA	 LLL	   YYY	   YYY	 SSS      SSS	   III	    SSS      SSS
+//	 AAA     AAA   NNN NN	 NNN   AAA    AAA	 LLL	   YYY	   YYY	SSS				   III	   SSS			
+//	 AAA     AAA   NNN	NN	 NNN   AAA    AAA	 LLL		YYY   YYY	 SSSSSSS		   III	    SSSSSSS	
+//	 AAAAAAAAAAA   NNN	 NN	 NNN   AAAAAAAAAAA	 LLL		 YYY YYY		SSSSSSS		   III	   		SSSSSSS	
+//	AAA		  AAA  NNN	  NN NNN  AAA		AAA	 LLL		   YYY				   SSS	   III	   			  SSS
+//	AAA		  AAA  NNN	   NNNNN  AAA		AAA	 LLL		   YYY		 SSS	  SSS	   III	    SSS	     SSS
+//	AAA		  AAA  NNN		 NNN  AAA		AAA	 LLLLLLLLLLL   YYY			SSSSSS	   IIIIIIIIIII     SSSSSS	 
+//----------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//	Disciple miners analysis
+//-----------------------------------------------------------------------------
+begin script TP_AnalyseDiscipleMiners
+
+	HelpLevel			= 1
+	DELAY				= 30
+	ReminderTimer		= create timer for DELAY seconds
+
+start
+
+	while TP_DiscipleMinersCreated == TP_FALSE
+		if get ReminderTimer time remaining <= 0
+			// Say the next level of help here...
+			wait until dialogue ready
+
+			begin dialogue
+				eject good spirit
+say "GA: Disciple Miner Analysis."
+wait until read	or TP_DiscipleMinersCreated == TP_TRUE
+				if HelpLevel == 1
+					say "GA: You need more help, blah blah blah...1..."
+					wait until read or TP_DiscipleMinersCreated == TP_TRUE
+				elsif HelpLevel == 2
+					say "GA: You need more help, blah blah blah...2..."
+					wait until read or TP_DiscipleMinersCreated == TP_TRUE
+				else
+					say "GA: You need more help, blah blah blah...3..."
+					wait until read or TP_DiscipleMinersCreated == TP_TRUE
+				end if
+				send good spirit home
+			end dialogue
+
+			HelpLevel++
+			set ReminderTimer time to DELAY seconds
+		end if
+	end while
+
+end script TP_AnalyseDiscipleMiners
+
+
+//-----------------------------------------------------------------------------
+//	Build armoury analysis
+//-----------------------------------------------------------------------------
+begin script TP_AnalyseBuildArmoury
+
+	HelpLevel			= 1
+	DELAY				= 30
+	ReminderTimer		= create timer for DELAY seconds
+
+start
+
+	while TP_ArmouryBuilt == TP_FALSE
+		if get ReminderTimer time remaining <= 0
+			// Say the next level of help here...
+			wait until dialogue ready
+
+			begin dialogue
+				eject good spirit
+say "GA: Build Amoury Analysis."
+wait until read	or TP_ArmouryBuilt == TP_TRUE
+				if HelpLevel == 1
+					say "GA: You need more help, blah blah blah...1..."
+					wait until read or TP_ArmouryBuilt == TP_TRUE
+				elsif HelpLevel == 2
+					say "GA: You need more help, blah blah blah...2..."
+					wait until read or TP_ArmouryBuilt == TP_TRUE
+				else
+					say "GA: You need more help, blah blah blah...3..."
+					wait until read or TP_ArmouryBuilt == TP_TRUE
+				end if
+				send good spirit home
+			end dialogue
+
+			HelpLevel++
+			set ReminderTimer time to DELAY seconds
+		end if
+	end while
+
+end script TP_AnalyseBuildArmoury
+
+
+//-----------------------------------------------------------------------------
+//	Make platoon analysis
+//-----------------------------------------------------------------------------
+begin script TP_AnalyseMakePlatoon
+
+	HelpLevel			= 1
+	DELAY				= 30
+	ReminderTimer		= create timer for DELAY seconds
+
+start
+
+	while TP_PlatoonCreated == TP_FALSE
+		if get ReminderTimer time remaining <= 0
+			// Say the next level of help here...
+			wait until dialogue ready
+
+			begin dialogue
+				eject good spirit
+say "GA: Make Platoon Analysis."
+wait until read	or TP_PlatoonCreated == TP_TRUE
+				if HelpLevel == 1
+					say "GA: You need more help, blah blah blah...1..."
+					wait until read or TP_PlatoonCreated == TP_TRUE
+				elsif HelpLevel == 2
+					say "GA: You need more help, blah blah blah...2..."
+					wait until read or TP_PlatoonCreated == TP_TRUE
+				else
+					say "GA: You need more help, blah blah blah...3..."
+					wait until read or TP_PlatoonCreated == TP_TRUE
+				end if
+				send good spirit home
+			end dialogue
+
+			HelpLevel++
+			set ReminderTimer time to DELAY seconds
+		end if
+	end while
+	
+end script TP_AnalyseMakePlatoon
+
+
+//-----------------------------------------------------------------------------
+//	Move platoon analysis
+//-----------------------------------------------------------------------------
+begin script TP_AnalyseMovePlatoon
+
+	HelpLevel			= 1
+	DELAY				= 30
+	ReminderTimer		= create timer for DELAY seconds
+
+start
+
+	while TP_PlatoonCreated == TP_FALSE
+		if get ReminderTimer time remaining <= 0
+			// Say the next level of help here...
+			wait until dialogue ready
+
+			begin dialogue
+				eject good spirit
+say "GA: Move Platoon Analysis."
+wait until read	or TP_PlatoonMoved == TP_TRUE
+				if HelpLevel == 1
+					say "GA: You need more help, blah blah blah...1..."
+					wait until read or TP_PlatoonMoved == TP_TRUE
+				elsif HelpLevel == 2
+					say "GA: You need more help, blah blah blah...2..."
+					wait until read or TP_PlatoonMoved == TP_TRUE
+				else
+					say "GA: You need more help, blah blah blah...3..."
+					wait until read or TP_PlatoonMoved == TP_TRUE
+				end if
+				send good spirit home
+			end dialogue
+
+			HelpLevel++
+			set ReminderTimer time to DELAY seconds
+		end if
+	end while
+
+end script TP_AnalyseMovePlatoon
+
+
+//-----------------------------------------------------------------------------
+//	Attaching platoon analysis
+//-----------------------------------------------------------------------------
+begin script TP_AnalyseAttachingPlatoon
+start
+end script TP_AnalyseAttachingPlatoon
+
+
+//-----------------------------------------------------------------------------
+//	Making walls analysis
+//-----------------------------------------------------------------------------
+begin script TP_AnalyseMakingWalls
+
+	HelpLevel			= 1
+	DELAY				= 30
+	ReminderTimer		= create timer for DELAY seconds
+
+start
+
+	while TP_WallCreated == TP_FALSE
+		if get ReminderTimer time remaining <= 0
+			// Say the next level of help here...
+			wait until dialogue ready
+
+			begin dialogue
+				eject good spirit
+say "GA: Make Wall Analysis."
+wait until read	or TP_WallCreated == TP_TRUE
+				if HelpLevel == 1
+					say "GA: You need more help, blah blah blah...1..."
+					wait until read or TP_WallCreated == TP_TRUE
+				elsif HelpLevel == 2
+					say "GA: You need more help, blah blah blah...2..."
+					wait until read or TP_WallCreated == TP_TRUE
+				else
+					say "GA: You need more help, blah blah blah...3..."
+					wait until read or TP_WallCreated == TP_TRUE
+				end if
+				send good spirit home
+			end dialogue
+
+			HelpLevel++
+			set ReminderTimer time to DELAY seconds
+		end if
+	end while
+
+end script TP_AnalyseMakingWalls
+
+
+//-----------------------------------------------------------------------------
+//	Alert the player to when a homage, tribute or pilgrimage occurs
+//-----------------------------------------------------------------------------
+begin script TP_AnalyseConvertingByImpressing
+
+	SaidAboutHomage			= TP_FALSE
+	SaidAboutTribute		= TP_FALSE
+	SaidAboutPilgrimage		= TP_FALSE
+
+start
+
+	begin loop
+		if TP_HomageTakingPlace == TP_TRUE and SaidAboutHomage == TP_FALSE
+			begin dialogue
+				eject good spirit
+				eject evil spirit
+				say "GA: There is a homage taking place by the Norse leader."
+				wait until read
+				say "GA: You're town is getting more impressive, well done."
+				wait until read
+				say "EA: Don't bother trying to impress them boss, just attack them."
+				wait until read
+				send good spirit home
+				send evil spirit home
+			end dialogue
+			SaidAboutHomage = TP_TRUE
+		elsif TP_TributeTakingPlace == TP_TRUE and SaidAboutTribute == TP_FALSE
+			begin dialogue
+				eject good spirit
+				eject evil spirit
+				say "GA: Wow! Leader you're doing great there is a tribute from the Norse taking place."
+				wait until read
+				say "EA: Boossss. What are you doing, don't pander to these wasters, crush them into submission."
+				wait until read
+				send good spirit home
+				send evil spirit home
+			end dialogue
+			SaidAboutTribute = TP_TRUE
+		elsif TP_PilgrimageTakingPlace == TP_TRUE and SaidAboutPilgrimage == TP_FALSE
+			begin dialogue
+				eject good spirit
+				eject evil spirit
+				say "GA: Yesss. We're just about there, the Norse are on a pilgrimage."
+				wait until read
+				say "EA: Oh brother! Am I really part of you."
+				wait until read
+				send good spirit home
+				send evil spirit home
+			end dialogue
+			SaidAboutPilgrimage = TP_TRUE
+		end if
+	until TP_NorseConverted == TP_TRUE
+	end loop
+
+end script TP_AnalyseConvertingByImpressing
+
+
+
+//---------------------------------------------------------------------------------
+//     OOOOO	TTTTTTTTTTT	 HHH	 HHH  EEEEEEEEEEE  RRRRRRRRR	     SSSSSS	  
+//	 OOO   OOO	 	TTT		 HHH	 HHH  EEE		   RRR		RRR	  SSS      SSS
+//	OOO		OOO	 	TTT		 HHH	 HHH  EEE		   RRR		RRR	 SSS				
+//	OOO		OOO	 	TTT		 HHH	 HHH  EEE		   RRR		RRR	  SSSSSSS		
+//	OOO	    OOO	 	TTT		 HHHHHHHHHHH  EEEEEEE	   RRRRRRRRR	 	SSSSSSS		
+//	OOO		OOO	 	TTT		 HHH	 HHH  EEE		   RRR	RRR		 		   SSS
+//	 OOO   OOO	 	TTT		 HHH	 HHH  EEE		   RRR	  RRR	  SSS	  SSS
+//	   OOOOO	 	TTT		 HHH	 HHH  EEEEEEEEEEE  RRR		RRR	 	SSSSSS	  
+//---------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//	Make the marauders attack the players town
+//-----------------------------------------------------------------------------
+begin script TP_MarauderAttack
+
+	REMINDER_DELAY			= 30
+	ATTACK_DELAY			= 300
+	MAX_THINGS_TO_ATTACK	= 5
+	AMOUNT_OF_FOOD_NEEDED	= 1000
+	Scroll					= 0
+	MarauderBand			= 0
+	Villager				= 0
+	TotalThingsAttacked		= 0
+	Foodpile				= 0
+	AmountOfFoodGiven		= 0
+	FoodInPile				= 0
+	MaraudersKilled			= TP_FALSE
+	MaraudersAppeased		= TP_FALSE
+	WarnAboutAttack			= TP_FALSE
+	MarauderSettlement		= get TOWN at {1094.876, 92.942, 1251.804} radius 20
+	ScrollPos				= marker at {1334.866, 59.438, 1553.146}
+	FoodpilePos				= marker at {1087.738, 90.914, 1255.988}
+	MarauderCreatePos		= marker at {1087.738, 90.914, 1255.988}
+	MarauderReturnPos		= marker at {1087.738, 90.914, 1255.988}
+	ReminderTimer			= create timer for 0 seconds
+	MarauderAttackTimer		= create timer for ATTACK_DELAY seconds
+
+start
+
+	// *** CREATE THE MARAUDERS ***
+	MarauderBand = create platoon PLATOON_INFO_NORSE_MELEE_1 at {MarauderCreatePos} with 5 men and 0 women
+	attach MarauderBand to MarauderSettlement
+
+	// *** INTRO ***
+	// Create a scroll for the player to click on
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+	ALTITUDE of Scroll = 10
+
+	// Get a reminder from the advisor
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {Scroll}						
+				// Get a line from the advisors alerting the player to the fact that the zealots want to speak to you
+				say "GA: Leader there seems to be something happening over at the town centre."
+				wait until read
+				stop good spirit pointing
+				send good spirit home
+			end dialogue
+			set ReminderTimer time to REMINDER_DELAY seconds
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	// Get the demands from the zealots about crushing the marauders
+	begin cinema
+		say "The zealots want you to kick the marauders butts."
+		wait until read
+	end cinema
+
+	//set MarauderAttackTimer time to 2 seconds // for testing
+
+	// *** MARAUDER ATTACKS ***
+	// Handle the marauders attacks
+	while MaraudersKilled == TP_FALSE and MaraudersAppeased == TP_FALSE
+		// Check to see if there are any marauders left or if they've been appeased
+		Foodpile = get STORE at {FoodpilePos} radius 40
+		FoodInPile = 0
+		if Foodpile exists
+			FoodInPile = get resource RESOURCE_TYPE_FOOD in Foodpile
+		end if
+		if MarauderBand not exists or get number of villagers in platoon MarauderBand == 0
+			MaraudersKilled = TP_TRUE
+		elsif FoodInPile >= AMOUNT_OF_FOOD_NEEDED or AmountOfFoodGiven >= AMOUNT_OF_FOOD_NEEDED
+			MaraudersAppeased = TP_TRUE
+		elsif FoodInPile > 0 and FoodInPile < AMOUNT_OF_FOOD_NEEDED
+			remove resource RESOURCE_TYPE_FOOD FoodInPile from Foodpile
+			AmountOfFoodGiven += FoodInPile
+		end if
+
+		// Only attack every once in a while if the marauders are not appeased
+		if MaraudersKilled == TP_FALSE and MaraudersAppeased == TP_FALSE
+			// Is it time to kick off the attack
+			if get MarauderAttackTimer time remaining <= 0
+				// Make the marauders attack villagers in the players town
+				TotalThingsAttacked = 0
+				while TotalThingsAttacked < MAX_THINGS_TO_ATTACK and MarauderBand exists
+					// Get the thing to attack
+					Villager = get VILLAGER at {L1GreekTown} radius 50 excluding scripted
+					if Villager exists
+						// Give the attack command
+						if MarauderBand exists
+							add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using Villager to MarauderBand action queue
+							// Check to make sure the action was done before doing the next one
+							wait until get number of action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING in MarauderBand action queue == 0 or MarauderBand not exists
+						end if
+						TotalThingsAttacked++
+					end if
+				end while
+
+				// The attack has been handled so send the marauders home
+				if MarauderBand exists
+					clear MarauderBand action queue
+					add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {MarauderReturnPos} to MarauderBand action queue
+					wait until get number of action PLATOON_AGENDA_ACTION_MOVE_TO_POS in MarauderBand action queue == 0 or MarauderBand not exists
+
+					// They are home so put them into an idle state (waiting for the idle state from Matt)
+					// Make them guard their settlement for now
+					if MarauderBand exists
+						add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using MarauderSettlement to MarauderBand action queue
+											
+						// Reset the timer
+						set MarauderAttackTimer time to ATTACK_DELAY seconds
+					end if					
+				end if
+			end if
+		end if
+	end while
+
+	// Make the minor settlement player owned whether the marauders are killed or appeased
+	set MarauderSettlement player 0
+
+	// *** OUTRO ***
+	// Create a scroll for the player to click on
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+	ALTITUDE of Scroll = 10
+
+	// Get a reminder from the advisor
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {Scroll}						
+				// Get a line from the advisors alerting the player to the fact that the zealots want to speak to you
+				say "GA: Leader there seems to be something happening over at the town centre."
+				wait until read
+				stop good spirit pointing
+				send good spirit home
+			end dialogue
+			set ReminderTimer time to REMINDER_DELAY seconds
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	// Get the resolution from the zealots
+	if MaraudersKilled == TP_TRUE
+		// The zealots are pleased as the marauders have been wiped out
+		begin cinema
+			say "The zealots are happy because you've killed all of the marauders."
+			wait until read
+		end cinema
+	else
+		// The zealots are unhappy as the marauders have been appeased
+		begin cinema
+			say "The zealots are unhappy because you've created a truce with the marauders."
+			wait until read
+		end cinema
+	end if
+
+end script TP_MarauderAttack
+
+
+//-----------------------------------------------------------------------------
+//	Make the Norse send some guards to guard the mine as it's their resource as well
+//-----------------------------------------------------------------------------
+begin script TP_NorseGuardMine
+
+	NorseGuards				= 0
+	TellAboutNorseGuards	= TP_FALSE
+	//CreatePos				= marker at {1481.786, 78.500, 1107.688}
+	CreatePos				= marker at {1451.847, 81.651, 1163.187} // near side of Norse town
+	GuardingTimer			= create timer for 0 seconds
+	Distance				= 0
+
+start
+
+	// Create / get the Norse warriors
+	NorseGuards = create platoon PLATOON_INFO_NORSE_MELEE_1 at {CreatePos} with 5 men and 0 women
+	attach NorseGuards to L1NorseTown
+
+	// Make the Norse warriors guard the mine
+	// Fo now, make them defend near the mine, since building navigation isn't quite working right.
+	//add action PLATOON_AGENDA_ACTION_DEFEND_OBJECT using TP_Mine to NorseGuards action queue
+	//add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {TP_Mine} to NorseGuards action queue
+	//add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {1200.591, 70.062, 1466.495} to NorseGuards action queue // next to mine
+	add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {1200.591, 70.062, 1466.495} to NorseGuards action queue // next to mine
+
+	wait until {NorseGuards} near {TP_Mine} radius 20 or get number of villagers in platoon NorseGuards <= 0
+	set GuardingTimer time to 30 seconds
+	
+	while TellAboutNorseGuards == TP_FALSE
+		if get GuardingTimer time remaining <= 0
+			TellAboutNorseGuards = TP_TRUE
+		elsif camera position near {NorseGuards} radius 50 and NorseGuards viewed
+			TellAboutNorseGuards = TP_TRUE
+		end if
+	end while
+	
+	// Give a warning from the advisors about the Norse defending the mine
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "GA: Look leader. There are Norse warriors guarding our mine."
+		wait until read
+		say "EA: Great. Let's get our warriors over there and show them who's boss."
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+end script TP_NorseGuardMine
+
+
+//-----------------------------------------------------------------------------
+//	Make the Norse send a tribute to the player for their impressivness
+//-----------------------------------------------------------------------------
+begin script TP_HandleNorseTribute
+
+	ImpressiveValue		= 0
+	Pilgrim_Ctr			= 0
+	NorsePilgrims		= 0
+	GreekImpressiveness = 0
+
+start
+
+	begin loop
+		GreekImpressiveness = get impressive value for town L1GreekTown
+		ImpressiveValue = get town L1NorseTown impressive value for town L1GreekTown
+
+		// Norse pay homage?
+		if Pilgrim_Ctr <= 3
+			if town L1NorseTown impressive threshold with town L1GreekTown passed and GreekImpressiveness >= (TP_MIN_GREEK_IMPRESSIVENESS + 3000)
+				Pilgrim_Ctr++
+				NorsePilgrims = L1NorseTown pilgrimage PAY_HOMAGE to town L1GreekTown with 4 pilgrims
+				reset town L1NorseTown impressive value for town L1GreekTown
+				TP_HomageTakingPlace = TP_TRUE
+			end if
+		end if
+
+		// Norse pay tribute?
+		if Pilgrim_Ctr >= 4 and Pilgrim_Ctr <= 7
+			if town L1NorseTown impressive threshold with town L1GreekTown passed and GreekImpressiveness >= (TP_MIN_GREEK_IMPRESSIVENESS + 5000)
+				Pilgrim_Ctr++
+				NorsePilgrims = L1NorseTown pilgrimage PAY_TRIBUTE to town L1GreekTown with 4 pilgrims
+				reset town L1NorseTown impressive value for town L1GreekTown
+				TP_TributeTakingPlace = TP_TRUE
+			end if
+		end if
+
+		// Norse do pilgrimage?
+		if Pilgrim_Ctr == 8
+			if town L1NorseTown impressive threshold with town L1GreekTown passed and GreekImpressiveness >= (TP_MIN_GREEK_IMPRESSIVENESS + 7000)
+				Pilgrim_Ctr++
+				NorsePilgrims = L1NorseTown pilgrimage PAY_PILGRIMAGE to town L1GreekTown with 4 pilgrims
+				run background script ManagePilgrims (NorsePilgrims, 2)
+				reset town L1NorseTown impressive value for town L1GreekTown
+				TP_PilgrimageTakingPlace = TP_TRUE
+			end if
+		end if
+
+	until TP_NorseConverted == TP_TRUE
+	end loop
+
+end script TP_HandleNorseTribute
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the Norse have been converted
+//-----------------------------------------------------------------------------
+begin script TP_CheckForNorseBeingConverted
+start
+
+	// Check to see if the Norse have been taken over
+	begin loop
+		if PLAYER of L1NorseTown == 1
+			TP_NorseConverted = TP_TRUE
+		end if
+	until TP_NorseConverted == TP_TRUE
+	end loop
+
+end script TP_CheckForNorseBeingConverted
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

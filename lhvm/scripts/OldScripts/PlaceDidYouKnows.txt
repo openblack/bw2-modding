@@ -1,0 +1,12 @@
+/*************************************************************************************************
+	Place generic DidYouKnows around map
+*************************************************************************************************/
+begin script PlaceDidYouKnows
+
+//DYK14Pos = marker at {516.680,49.946,638.635}
+
+start
+
+	//run script DidYouKnow(DYK14Pos, variable HELP_TEXT_DYK_14, variable DYK_CREATURE)
+
+end script PlaceDidYouKnows

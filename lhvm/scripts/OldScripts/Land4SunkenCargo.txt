@@ -1,0 +1,4 @@
+//Land4SunkenCargo.txt
+begin script Land4SunkenCargo
+start
+end script Land4SunkenCargo

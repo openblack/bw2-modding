@@ -1,0 +1,6 @@
+run script RunLand4TownObjectives
+
+begin script RunLand4TownObjectives
+start
+	run script Land4TownObjectives
+end script RunLand4TownObjectives

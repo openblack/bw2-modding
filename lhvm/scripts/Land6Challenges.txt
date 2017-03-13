@@ -1,0 +1,19 @@
+//===========================================================
+// This file contains all the scripts to compile in Land 6
+//===========================================================
+
+// -Globals-
+Land6Siren.txt
+Land6Globals.txt
+Land6Intro.txt
+Land6Outro.txt
+Land6Departure.txt
+Land6ForestAmbush.txt
+Land6JapaneseCapitalScript.txt
+Land6PaternityBirth.txt
+Land6Objectives.txt
+Land6ChopSuey.txt
+Land6DYK.txt
+
+//should always be last
+Land6Control.txt

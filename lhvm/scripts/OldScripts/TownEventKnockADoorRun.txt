@@ -1,0 +1,306 @@
+/*-----------------------------------------------------------------------------
+KNOCK A DOOR....RUN!!!
+
+By: Matthew Leonard
+Script Started: 07 September 2004
+-----------------------------------------------------------------------------*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define KR_FALSE = 0
+define KR_TRUE = 1
+
+define KR_HOUSE_INCREMENT = 40
+define KR_MIN_HOUSE_SEARCH = 40
+define KR_MAX_HOUSE_SEARCH = 400
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global KR_TargetHouse = 0
+global KR_KnockTown = 0
+global KR_RetreatHouse = 0
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script KR_GetHouses
+define script KR_MaintainAge(Child, age)
+
+//-----------------------------------------------------------------------------
+//	Knock A Door Run
+//-----------------------------------------------------------------------------
+begin script TownEventKnockADoorRun
+	TargetHousePos = marker at {980.648, 66.071, 758.231}
+	TargetTimer = create timer for 0 seconds
+			
+	TargetGuy = 0
+	TimesBothered = 0
+	KidsBusted = KR_FALSE
+		
+	Kids[3]
+	
+	//Position markers
+	GigglePos_0 = 0
+	GigglePos_1 = 0
+	GigglePos_2 = 0
+	KnockWaypoint = 0	
+	ScanPos = 0
+	TellingOffPos = 0
+	
+start
+	
+	KR_KnockTown = get TOWN at {939.149, 66.125, 723.014} radius 100
+	
+	run script KR_GetHouses
+	
+	//Now set various positions used by this script
+	GigglePos_0 = marker at get world position from KR_TargetHouse to {-5.072, 0.493, 4.177}
+	GigglePos_1 = marker at get world position from KR_TargetHouse to {-5.557, 0.493, 1.696}
+	GigglePos_2 = marker at get world position from KR_TargetHouse to {-5.252, 0.459, 0.821}
+	
+	KnockWaypoint = marker at get world position from KR_TargetHouse to {-4.924, 0.493, 6.379}
+	ScanPos = marker at get world position from KR_TargetHouse to {-0.656, 0.233, 3.352}
+	TellingOffPos = marker at get world position from KR_TargetHouse to {-6.298, 0.493, 2.902}
+	
+	begin loop
+		
+		wait until get game time > 13.00 and get game time < 16.00
+		
+		Kids[0] = create CHILD VILLAGER_INFO_GREEK_FARMER_MALE at extra position 1 of KR_RetreatHouse
+		Kids[1] = create CHILD VILLAGER_INFO_GREEK_HOUSEWIFE_FEMALE at extra position 1 of KR_RetreatHouse
+		Kids[2] = create CHILD VILLAGER_INFO_GREEK_FARMER_MALE at extra position 1 of KR_RetreatHouse
+		
+		run background script KR_MaintainAge(Kids[0], 12)
+		run background script KR_MaintainAge(Kids[1], 13)
+		run background script KR_MaintainAge(Kids[2], 12)
+
+		/* DEBUG
+		begin cinema
+			set camera position to {GigglePos_0} + {10, 10, 0}
+			set camera focus to {GigglePos_0}
+		end cinema
+		*/
+		
+		move Kids[0] position to {GigglePos_0}
+		SPEED of Kids[0] = 0.7
+		move Kids[1] position to {GigglePos_1}
+		SPEED of Kids[1] = 0.7
+		move Kids[2] position to {GigglePos_2}
+		SPEED of Kids[2] = 0.7
+		
+		wait until {Kids[0]} at {GigglePos_0}
+		
+		wait 2 seconds
+		
+		begin loop						
+						
+			//Move the child to the door to knock on via a waypoint to avoid passing through a stone wall
+			move Kids[0] position to {KnockWaypoint}
+			SPEED of Kids[0] = 0.08
+			wait until {Kids[0]} at {KnockWaypoint}
+			
+			move Kids[0] position to extra position 6 of KR_TargetHouse
+			wait until {Kids[0]} at extra position 6 of KR_TargetHouse
+			
+			wait 3 seconds
+			TimesBothered++
+			
+			SPEED of Kids[0] = 0.8		
+			move Kids[0] position to {KnockWaypoint}						
+			wait until {Kids[0]} at {KnockWaypoint}
+						
+			move Kids[0] position to {GigglePos_0}			
+			move Kids[1] position to {GigglePos_1}
+			move Kids[2] position to {GigglePos_2}
+			
+			wait until {Kids[0]} at {GigglePos_0}
+			wait until {Kids[1]} near {GigglePos_1} radius 2					
+			
+			set Kids[0] focus to {Kids[1]}
+			set Kids[1] focus to {Kids[2]}
+			set Kids[2] focus to {Kids[0]}
+			
+			play anim "a_p_child_laughing_1" on Kids[0] loop 1 disable stand
+			play anim "a_p_child_laughing_2" on Kids[1] loop 1 disable stand
+			play anim "a_p_child_laughing_3" on Kids[2] loop 1 disable stand
+			
+			//Bring out the poor sod whose suffering the knock a door run pain and move him forwards
+			if not TargetGuy exists
+				TargetGuy = create VILLAGER VILLAGER_INFO_GREEK_FARMER_MALE at extra position 6 of KR_TargetHouse
+			else
+				release TargetGuy from limbo
+			end if
+			
+			move TargetGuy position to {ScanPos}
+			
+			//The guy has different reactions based on how many times he has been bothered and randomness
+			///This is reset each evening
+			if TimesBothered <= 2
+				wait until {TargetGuy} at {ScanPos}
+				play anim "a_p_looking_for_something" on TargetGuy loop 1 disable stand
+				
+			elsif TimesBothered >= 3 and TimesBothered <= 5
+				SPEED of TargetGuy = 0.4
+				wait until {TargetGuy} at {ScanPos}
+				play anim "a_p_puzzled" on TargetGuy loop 1 disable stand
+					
+			elsif TimesBothered >= 6
+				SPEED of TargetGuy = 0.6
+				wait until {TargetGuy} at {ScanPos}
+				play anim "a_p_shake_fist_woman" on TargetGuy loop 1 disable stand			
+				
+			end if			
+			
+			//Create the timer
+			TargetTimer = create timer for 8 seconds
+			
+			while get TargetTimer time remaining > 0 or TargetGuy is HELD
+				
+				if {TargetGuy} near {Kids[0]} radius 2
+					TargetTimer = create timer for 0 seconds //force the timer to exit now
+					KidsBusted = KR_TRUE
+					
+				elsif {TargetGuy} near {Kids[1]} radius 2
+					TargetTimer = create timer for 0 seconds //force the timer to exit now
+					KidsBusted = KR_TRUE
+					
+				elsif {TargetGuy} near {Kids[2]} radius 2
+					TargetTimer = create timer for 0 seconds //force the timer to exit now
+					KidsBusted = KR_TRUE
+				end if
+				
+			end while								
+			
+			//The kids havent been caught so the guy goes back into his house.
+			if KidsBusted == KR_FALSE
+				move TargetGuy position to extra position 6 of KR_TargetHouse
+				wait until {TargetGuy} at extra position 6 of KR_TargetHouse			
+				move TargetGuy to limbo
+			end if
+			
+			wait 3 seconds
+		
+		until get game time > 22.00 or KidsBusted == KR_TRUE or HEALTH of KR_TargetHouse < 1
+		end loop
+		
+		//Make sure the guy is back in his house before the kids make a move
+		if TargetGuy exists
+			move TargetGuy position to extra position 1 of KR_TargetHouse
+			wait until {TargetGuy} at extra position 1 of KR_TargetHouse			
+			delete TargetGuy
+		end if
+
+		//when it gets too late the kids go home 
+		KR_RetreatHouse = get random abode of type HOUSE_A in town KR_KnockTown
+		
+		if KR_RetreatHouse exists and HEALTH of KR_RetreatHouse == 1.0
+			move Kids[0] position to extra position 1 of KR_RetreatHouse
+			SPEED of Kids[0] = 0.2
+			move Kids[1] position to extra position 1 of KR_RetreatHouse
+			SPEED of Kids[1] = 0.2
+			move Kids[2] position to extra position 1 of KR_RetreatHouse
+			SPEED of Kids[2] = 0.2
+		else
+			//end the script
+			KidsBusted = KR_TRUE
+			release Kids[0]
+			release Kids[1]
+			release Kids[2]
+		end if
+
+		//Need to check here if  the kid has died en-route
+		wait until {Kids[0]} at extra position 1 of KR_RetreatHouse
+		
+		delete Kids[0]
+		delete Kids[1]
+		delete Kids[2]
+	
+	until KidsBusted == KR_TRUE or HEALTH of KR_TargetHouse < 1
+	end loop	
+				
+	move TargetGuy position to {TellingOffPos}
+	wait until {TargetGuy} at {TellingOffPos}
+			
+	play anim "a_p_hands_in_pockets" on Kids[0] loop 1 disable stand	
+	set Kids[0] focus to {TargetGuy}
+	
+	play anim "a_p_look_up" on Kids[1] loop 1 disable stand	
+	set Kids[1] focus to {TargetGuy}
+	
+	play anim "a_p_nodding" on Kids[2] loop 1 disable stand	
+	set Kids[2] focus to {TargetGuy}
+	
+	set TargetGuy focus to {Kids[0]}
+	play anim "a_p_nodding" on TargetGuy loop 1 disable stand		
+	
+	wait 10 seconds
+	
+	play anim "a_p_blow_raspberry" on Kids[0] loop 1 disable stand	
+	wait until Kids[0] played
+	
+	//Now move the kid home.. but get the guy to chase
+	KR_RetreatHouse = get random abode of type HOUSE_A in town KR_KnockTown
+
+	move Kids[0] position to extra position 1 of KR_RetreatHouse
+	SPEED of Kids[0] = 0.8
+	set TargetGuy focus to {KR_RetreatHouse}
+	
+	wait 1 seconds
+	
+	move TargetGuy position to extra position 1 of KR_RetreatHouse
+	SPEED of TargetGuy = 0.7
+	
+	//Wait until both have reached the house
+	wait until {Kids[0]} at extra position 1 of KR_RetreatHouse
+	wait until {TargetGuy} at extra position 1 of KR_RetreatHouse
+	
+	delete Kids[0]
+	release Kids[1]
+	release Kids[2]
+	release TargetGuy
+
+end script TownEventKnockADoorRun
+
+//-----------------------------------------------------------------------------
+//	Get Houses
+//-----------------------------------------------------------------------------
+begin script KR_GetHouses
+	SearchRadius = 0
+start
+	
+	//Get the target house
+	begin loop	
+		KR_TargetHouse = get HOUSE ABODE_INFO_GREEK_SHACK_Y at {KR_KnockTown} radius SearchRadius excluding scripted			
+		SearchRadius += KR_HOUSE_INCREMENT
+		
+		if SearchRadius > KR_MAX_HOUSE_SEARCH
+			SearchRadius = KR_MIN_HOUSE_SEARCH		
+		end if
+		
+		//wait 10 seconds		
+	until KR_TargetHouse exists and BUILT of KR_TargetHouse == 1.0
+	end loop
+
+	begin loop
+		KR_RetreatHouse = get random home in town KR_KnockTown
+	until KR_RetreatHouse exists and not KR_RetreatHouse == KR_TargetHouse and BUILT of KR_RetreatHouse == 1.0
+	end loop
+
+	//KR_RetreatHouse = get random home in town KR_KnockTown
+end script KR_GetHouses
+
+//-----------------------------------------------------------------------------
+//	Get Houses
+//-----------------------------------------------------------------------------
+begin script KR_MaintainAge(Child, Age)
+start
+	begin loop
+		
+		AGE of Child = Age
+	
+		wait 5 seconds
+		until not Child exists
+	end loop
+end script KR_MaintainAge

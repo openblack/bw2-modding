@@ -1,0 +1,8 @@
+run script RunLand8Nymphs
+
+begin script RunLand8Nymphs
+start
+
+	run script Land8Nymphs
+
+end script RunLand8Nymphs

@@ -1,0 +1,9 @@
+run script RunLand6ControlEvil
+
+begin script RunLand6ControlEvil
+start
+
+	run script Land6Globals
+	run script Land6ControlEvil
+	
+end script RunLand6ControlEvil

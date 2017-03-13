@@ -1,0 +1,50 @@
+//Land4Battlefield.txt
+//Needs to know the number of idle platoons within the city!!
+define script GetPlatoons
+
+global BattlefieldPlatoons[3] //<---------------this number will be the number of idle platoons
+global ArmyLeader = 0
+
+begin script Land4Battlefield
+
+start
+
+run script GetPlatoons
+
+end script Land4Battlefield
+
+//=============================================================
+
+begin script GetPlatoons
+
+PosForPlatoon = 0
+CTR = 0
+
+start
+
+PosForPlatoon = marker at {1850.965,103.342,1258.536}
+
+while CTR != 3
+
+	BattlefieldPlatoons[CTR] = get idle platoon of tribe TRIBE_TYPE_JAPANESE nearest {L4JapanCapitol} radius 5000
+	move BattlefieldPlatoons[CTR] position to {PosForPlatoon}
+	wait 2 seconds
+
+	if CTR == 0
+		ArmyLeader = BattlefieldPlatoons[CTR]
+		move ArmyLeader position to {PosForPlatoon}
+	end if
+
+	if CTR > 0
+		say "threading to leader"
+		wait until read
+		thread platoon BattlefieldPlatoons[CTR] to platoon ArmyLeader
+		wait 3 seconds
+	end if
+
+	CTR++
+
+end while
+
+
+end script GetPlatoons

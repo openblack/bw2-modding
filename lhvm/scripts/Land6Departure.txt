@@ -1,0 +1,51 @@
+begin script Land6Departure
+
+DepartureScrollPos = marker at {953.323,132.385,2032.161}
+
+DepartureScroll = 0
+
+start
+
+	run script Land6Outro
+	begin dialogue	
+		eject good spirit
+		say "BW2T_SCRIPT_06FINAL_ADVISORS_OUTRO_10"
+		send good spirit home
+
+	end dialogue
+
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {DepartureScrollPos}
+	ALTITUDE of DepartureScroll = 3
+
+	wait until DepartureScroll right clicked
+
+	begin dialogue
+		eject good spirit
+		say "BW2T_SCRIPT_06FINAL_JAPANESE_GENERAL_PEACE_STEVE_510" //	GOOD_ADVISOR	The Japanese know what they are up against now. They are sure to take measures against us.
+		wait until read
+		say "BW2T_SCRIPT_06FINAL_JAPANESE_GENERAL_PEACE_STEVE_520" //GOOD_ADVISOR	Let’s go to the next land!
+		wait until read
+		send good spirit home
+	end dialogue
+
+	disable game can be lost
+	
+	////
+	//TRIGGER processing of land end objectives
+	process land end objectives
+	wait until land end objectives processed
+
+	clear right clicked object
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+
+	if MyCreature exists
+		save my_creature
+	end if
+
+	run script LandExit
+	L6Complete = 1
+	load map "./Data/Landscape/BW2/Land7.bwe"
+
+
+end script Land6Departure

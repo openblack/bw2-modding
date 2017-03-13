@@ -1,0 +1,168 @@
+// Lenny was here
+
+//-----------------------------------------------------------
+// Constants
+//-----------------------------------------------------------
+
+
+//-----------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------
+//define script Land3Outro
+//define script Land3OutroDialogue
+
+//-----------------------------------------------------------
+// Globals
+//-----------------------------------------------------------
+
+//-----------------------------------------------------------
+// Land 3 Departure
+//-----------------------------------------------------------
+begin script Land3Departure
+
+DepartureScrollPos = marker at {945.869, 379.945, 1639.584}
+
+DepartureScroll = 0
+L3Outro = 0
+
+start
+
+	L3Outro = create mixer
+
+	run script Land3Outro	
+
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {DepartureScrollPos}
+	ALTITUDE of DepartureScroll = 3
+	
+	begin dialogue
+		eject good spirit
+		//GA: "If you want to leave this land click on the Gold Scroll."
+		say "BW2T_SCRIPT_03FINAL_FLAGS_TUTORIAL_70"
+		wait until read
+		send good spirit home
+	end dialogue
+	wait until DepartureScroll right clicked
+
+//	THE AGGRESSIVE VERSION HAS BEEN MOVED TO WHEN YOU HAVE TAKEN OVER THE SECOND TOWN
+//	SO I HAVE REMOVED BOTH AS IT DOESN'T MAKE SENSE TO HAVE ONE WITHOUT THE OTHER - Steve
+
+
+	begin dialogue
+		eject good spirit
+		//say "Are you sure you wish to leave the land?"
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_934"
+		wait until read
+		//say "Click again to confirm"
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_933"
+		wait until read
+		send good spirit home
+	end dialogue
+
+	clear right clicked object
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+
+	begin cinema
+
+		wait until widescreen transition complete
+		set fade in time 1
+			
+		reset camera path 
+
+		queue camera move with position {955.488, 402.956, 1610.881} focus {931.428, 353.145, 1694.182} time 0.0
+		queue camera move with position {951.498, 401.540, 1624.872} focus {932.321, 333.858, 1695.941} time 3.0
+		queue camera move with position {946.374, 380.266, 1638.159} focus {919.158, 297.740, 1687.646} time 1.5
+
+		 play camera path with easein 0 easeout 0 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+
+
+		set mixer L3Outro channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 4
+
+		wait 3 seconds
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		wait 3 seconds
+		//set fade red 0 green 0 blue 0 time 0
+		//wait 5 seconds
+
+	
+	end cinema
+
+
+	////
+	//TRIGGER processing of land end objectives
+	process land end objectives
+	wait until land end objectives processed
+
+
+	reset all objectives for player 0
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_COMPLETE
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 with amount 1 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_ROOSTER_10" amount 1 description "BW2T_SCRIPT_03FINAL_ROOSTER_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_3_ROOSTER1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 with amount 1 text "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_MISC_10" amount 1 description "BW2T_SCRIPT_03FINAL_PATERNITYSUIT_REMINDER_10" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_3_PATERNITY_SUIT
+	
+	if L3RoosterChallengeState == 1
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_24 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE		
+	end if
+	
+	if L3PaternityChallengeState == 1		
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_22 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	end if
+	
+
+	if MyCreature exists
+		save my_creature
+	end if
+
+	run script LandExit
+	L3Complete = 1
+	disable game can be lost
+	//wait 1 seconds
+	load map "./Data/Landscape/BW2/Land4.bwe"
+	wait 2 seconds
+
+end script Land3Departure
+
+//-----------------------------------------------------------
+// Land 3 Outro
+//-----------------------------------------------------------
+/*begin script Land3Outro
+	MovePos		= marker at {4747.776, 237.775, 1681.232}
+	FoveFoc		= marker at {4844.651, 215.504, 1692.328}
+	TimeLeft	= L3GLOBAL_TIME
+start
+
+	begin cinema
+
+		play string sound "SCRIPT14_ARMYOFOLD"
+
+		run background script Land3OutroDialogue
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		
+		set camera position to {931.605, 527.469, 1777.298}
+		set camera focus to {1018.122, 478.324, 1787.296}
+
+		set fade in time 1
+		
+		begin loop
+			move camera position to {MovePos} time TimeLeft
+			wait L3OUTRO_INCER seconds
+			TimeLeft-=(L3OUTRO_INCER*2)
+		until L3_Leave == 1
+		end loop
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 4 seconds
+
+		stop sound "ARMYOFOLD"
+
+	end cinema
+
+end script Land3Outro
+*/
+

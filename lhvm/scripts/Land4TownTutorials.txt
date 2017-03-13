@@ -1,0 +1,190 @@
+define script TT_ArmyReminder
+define script TT_TownCentreTutorial
+
+//-----------------------------------------------------------------------------
+//----Land4TownTutorials----// 
+//-----------------------------------------------------------------------------
+begin script Land4TownTutorials
+start
+	if L4GreekTown not exists
+		run script Land4Globals
+	end if
+	
+	run background script TT_ArmyReminder
+	run background script TT_TownCentreTutorial
+	
+end script Land4TownTutorials
+
+//-----------------------------------------------------------------------------
+//----TT_TownCenterTutorial----// 
+//-----------------------------------------------------------------------------
+begin script TT_TownCentreTutorial
+	TC_Scroll = 0
+	TC = marker at {946.433, 184.855, 684.793}
+	TUT_GreekTC = 0
+	PlayersAlignment = 0
+	ResourceDesiresStatue		= marker at {927.272, 185.106, 669.542}
+	AlignmentStatue				= marker at {941.005, 184.885, 674.348}
+	VillagerDesireStatue		= marker at {945.416, 184.982, 659.552}
+	ImpressiveScroll			= marker at {933.959, 184.859, 656.038}
+	Timer = create timer for 3600 seconds
+start
+	TUT_GreekTC = get building ABODE_NUMBER_TOWN_CENTRE in L4GreekTown min built 0 
+	wait until get Timer time remaining == 0 and size of L4GreekTown < 50
+	TC_Scroll = create highlight BRONZE name "BW2T_SCRIPT_04FINAL_TOWNTUTORIAL_10" remind "BW2T_SCRIPT_04FINAL_TOWNTUTORIAL_20" at {TC}
+	ALTITUDE of TC_Scroll = 5
+	
+	wait until TC_Scroll right clicked
+	clear right clicked object
+	delete TC_Scroll
+	
+	enable build menu override with ABODE_NUMBER_C
+	set town L4GreekTown desire for TOWN_DESIRE_FOR_FOOD to 1
+	set town L4GreekTown desire for TOWN_DESIRE_FOR_HOMES to 1
+	
+	begin cinema
+		eject good spirit
+		move camera position to get world position from TUT_GreekTC to {-1.374, 17.505, -23.869} time 3
+		move camera focus to get world position from TUT_GreekTC to {-1.511, -39.975, 63.635} time 3
+		wait until camera ready
+	//GA: This is the town centre, the single most important building in your town
+		//say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_10"
+		//wait until read 
+
+	//GA: "The statues on you town centre represent your towns desires."
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_15"
+		wait until read 
+		wait until camera ready
+		
+		move camera position to get world position from TUT_GreekTC to {0.396, 13.050, -11.221} time 2
+		move camera focus to get world position from TUT_GreekTC to {0.237, -55.718, 61.388} time 2
+		wait until camera ready
+		make good spirit point at {L4GreekTown} + {0,5,0}
+	//GA: "This tells you what your people would like to build next keeping your people happy is important and they will let you know if they desire a building type"
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_25"
+		wait until read 
+		stop good spirit pointing	
+		
+		move camera position to get world position from TUT_GreekTC to {-2.852, 11.729, -9.239} time 2
+		move camera focus to get world position from TUT_GreekTC to {-61.055, -27.409, 62.044} time 2
+		wait until camera ready
+		make good spirit point at {ResourceDesiresStatue} + {0,9,0}
+	//GA: "See how this statue is carrying grain? Well that represents the people’s desires for food. If they need more ore or wood they will let you know. Keep and eye on the statue as it will change so you can"
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_35"
+		wait 3 seconds
+		stop good spirit pointing	
+		wait until read 
+		send good spirit home
+		eject evil spirit
+		move camera position to get world position from TUT_GreekTC to {-0.313, 10.587, -0.657} time 2
+		move camera focus to get world position from TUT_GreekTC to {0.489, -37.920, 86.785} time 2
+		wait until camera ready
+		make evil spirit point at {AlignmentStatue} + {0,3,0}
+	//EA: "This plinth's height represents the strength of your alignment, how good or evil you are. From its top a flame or fountain will spring as you perform evil or good acts. The whole city will shift to show you if you are good or evil, or even neutral."
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_55"
+		PlayersAlignment = get player 0 alignment 
+		set player 0 alignment 1
+		wait 1 seconds
+		stop evil spirit pointing
+		wait until read 
+		set player 0 alignment PlayersAlignment
+		send evil spirit home
+		eject good spirit
+		move camera position to get world position from TUT_GreekTC to {-0.897, 11.022, 0.516} time 2
+		move camera focus to get world position from TUT_GreekTC to {91.687, -26.774, 0.661} time 2
+		wait until camera ready
+	//GA: "This statue lets you know your peoples desires, what they need or want the most. Watch the height of the statue, the higher it is the more they need the thing they desire."
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_45"
+		make good spirit point at {VillagerDesireStatue} + {0,9,0}
+		wait 2 seconds
+		stop good spirit pointing
+		wait until read 
+		move camera position to get world position from TUT_GreekTC to {-0.029, 6.317, -18.287} time 2
+		move camera focus to get world position from TUT_GreekTC to {-0.266, -42.035, 69.246} time 2
+		wait until camera ready
+		make good spirit point at {ImpressiveScroll} + {0,4,0}
+		//Beam = create visual effect VISUAL_EFFECT_SCRIPT_TARGET at {ImpressiveScroll} time -1
+	//GA: "This scroll shows the impressiveness of your city, the happiness of your people, the population of your city and lots of other useful bits of information about your growing metropolis. Refer to it often."
+		say "BW2T_SCRIPT_04FINAL_TOWNTUTORIAL_30"
+		wait 2 seconds
+		stop good spirit pointing
+		wait until read 
+
+		move camera position to get world position from TUT_GreekTC to {-1.374, 17.505, -23.869} time 3
+		move camera focus to get world position from TUT_GreekTC to {-1.511, -39.975, 63.635} time 3
+		wait until camera ready
+		//GA: Hold your hand over the statues AND leave it there to get more detail.
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_TOWN_CENTER_14"
+		wait until read 
+
+		send good spirit home
+	end cinema
+	
+	set town L4GreekTown desire for TOWN_DESIRE_FOR_FOOD to -1
+	set town L4GreekTown desire for TOWN_DESIRE_FOR_HOMES to -1
+	disable build menu override 
+end script TT_TownCentreTutorial
+
+//-----------------------------------------------------------------------------------
+//------TT_ArmyReminder--------//
+//-----------------------------------------------------------------------------------
+begin script TT_ArmyReminder
+
+ReminderState = 0
+ArmyDone = persistent data "ARMY_TUTORIAL_RUN"
+
+start
+
+begin loop
+
+	if army flag ARMY_FLAG_INFO_GREEK_MELEE held and ReminderState == 0 and ArmyDone != 1
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_ARMY_01"
+			wait until read
+			send evil spirit home
+		end dialogue
+		ReminderState++
+		
+		wait 30 seconds
+		
+	elsif army flag ARMY_FLAG_INFO_GREEK_RANGED held and ReminderState == 0 and ArmyDone != 1
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_ARMY_01"
+			wait until read
+			send evil spirit home
+		end dialogue
+		ReminderState++
+		
+		wait 30 seconds
+	
+	/*elsif army flag ARMY_FLAG_INFO_GREEK_MELEE held and ReminderState == 1
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_ARMY_02"
+			wait until read
+			send evil spirit home
+		end dialogue
+		ReminderState++
+		
+		wait 30 seconds
+		
+	elsif army flag ARMY_FLAG_INFO_GREEK_RANGED held and ReminderState == 1
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_ARMY_02"
+			wait until read
+			send evil spirit home
+		end dialogue
+		ReminderState++
+		
+		wait 30 seconds 
+
+*/
+		
+	end if
+
+end loop
+
+end script TT_ArmyReminder

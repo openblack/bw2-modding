@@ -1,0 +1,553 @@
+//--------------------------------------------------------------------------------------------------------------
+begin script VolcanoSpell(EnemyWonder, Volcano)
+RelCamFoc = 0
+RelCamPos = 0
+TestPos = 0
+Pos[9]
+PrePos[8]
+Wonder=0
+Volcanopos = 0
+Volcanofoc = 0
+MusicEventTimer=0
+MusicEvent1=0
+BeamPlace=0
+Beam=0
+Beam2=0
+AboveV=0
+Dancer=0
+Count=0
+MyDance=0
+TerminalVolcanoObject=0
+VolcanoMixer=0
+
+start
+
+	WhiChEpicSpellIsBeingCast = Volcano
+
+
+	VolcanoMixer = create mixer
+	set mixer VolcanoMixer channel AUDIO_MIXER_CHANNEL_SCRIPT_SFX to 1.0
+	//set mixer VolcanoMixer channel AUDIO_MIXER_CHANNEL_ANIMATION_VILLAGER to 0.0	
+	set mixer VolcanoMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+
+	TestPos = marker at {Volcano}
+	Wonder = get Volcano creator
+	if Wonder not exists
+		Wonder = EnemyWonder
+	end if
+	Volcanopos = marker at {Volcano}
+	Volcanofoc = marker at focus position of Volcano
+	
+	begin interruptible cinema
+	
+		run script SetupDancerPositions(1)
+		MyDance=get Wonder dance
+
+		//say "Set The Dancers to hands in pockets"
+		//wait until read
+		Dancer=get first in MyDance
+	                        
+		while Dancer exists and Count <= 19
+				detach Dancer from MyDance     
+				run background script DancerLookAtWonder(Dancer, Wonder, Count, 1)
+				Count++
+				Dancer=get first in MyDance
+		end while
+
+		disable simulation sound
+
+
+		attach 3d sound "SCULLFIRE" to Volcano
+				
+		RelCamPos=marker at get world position from Volcano to {0.122,1.985,-0.669}
+		RelCamFoc=marker at get world position from Volcano to {3.113,-21.538,32.278}
+		AboveV = marker at {Volcano}+{0.000,13.000,0.000}
+		move camera focus to {AboveV} time 3
+		move camera position to {AboveV} time 3
+		wait 1.5 seconds
+
+		set fade red 255 green 255 blue 255 time 1
+		wait 1 seconds
+		start music "atzec_chant_vocal"
+        detach sound "SCULLFIRE" from Volcano
+
+		play string sound "SCRIPT1_VEPIC_FLAMETHROWERWHOOSH4"
+		play string sound "SCRIPT1_VEPIC_CASTPSELLFREEZE1"
+		play string sound "SCRIPT1_VEPIC_EPICTOWERLOOP2"
+		//play string sound "SCRIPT1_VEPIC_EPICTOWERLOOP3"
+
+		set fade in time 1
+		RelCamPos = marker at get world position from Wonder to {11.424, 5.744, -17.549}
+		RelCamFoc = marker at get world position from Wonder to {-47.609, 48.927, 50.651}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		RelCamPos = marker at get world position from Wonder to {11.744, 6.448, -18.423}
+		RelCamFoc = marker at get world position from Wonder to {-51.427, -20.102, 54.417}
+		move camera position to {RelCamPos} time 5 easein 0 easeout 0
+		move camera focus to {RelCamFoc} time 5 easein 0 easeout 0
+		wait 1 seconds
+			
+		play string sound "SCRIPT1_VEPIC_SYNTH2"
+		wait 2 seconds
+		wait 2 seconds
+		//wait until camera ready
+
+		set camera lens 37.000
+		RelCamPos = marker at get world position from Wonder to {7.523, 6.268, -4.915}
+		RelCamFoc = marker at get world position from Wonder to {-61.679, -22.612, -71.071}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		RelCamPos = marker at get world position from Wonder to {7.523, 6.268, -4.915}
+		RelCamFoc = marker at get world position from Wonder to {-58.945, -25.395, -72.590}
+		move camera position to {RelCamPos} time 2.5 easein 0 easeout 0
+		move camera focus to {RelCamFoc} time 2.5 easein 0 easeout 0
+
+
+
+		wait 2.5 seconds
+
+		set camera lens 70.000
+		RelCamPos = marker at get world position from Wonder to {0.115, 5.435, -22.460}
+  		RelCamFoc = marker at get world position from Wonder to {-0.642, 9.534, 77.454}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+			
+		RelCamPos = marker at get world position from Wonder to {0.115, 28.667, -22.460}
+		RelCamFoc = marker at get world position from Wonder to {-2.107, 43.856, 76.355}
+		move camera position to {RelCamPos} time 10 easein 0 easeout 0
+		move camera focus to {RelCamFoc} time 10 easein 0 easeout 0
+		//set sky colour red 255 green 0 blue 0 time 10
+		enable predefined sky "VOLCANO" time 10
+
+		invoke Wonder EPIC_WONDER_STAGE_1
+		play string sound "SCRIPT1_VEPIC_FLAMETHROWERWHOOSH4"
+		play string sound "SCRIPT1_VEPIC_EPICTOWERELECTRIC2"
+		wait 4 seconds
+		invoke Wonder EPIC_WONDER_STAGE_2
+		play string sound "SCRIPT1_VEPIC_FLAMETHROWERWHOOSH1"
+		wait 4 seconds
+		invoke Wonder EPIC_WONDER_STAGE_3
+		play string sound "SCRIPT1_VEPIC_FLAMETHROWERWHOOSH2"
+		wait 2 seconds
+
+		stop sound "SCRIPT1_VEPIC_SCULLFIRE"
+
+		BeamPlace = marker at get world position from Wonder to {-0.680, 81.780, 0.719}
+		Beam = create visual effect VISUAL_EFFECT_EPIC_VOLCANO_BEAM_PULSE_UP at {BeamPlace}
+		Beam2 = create visual effect "ev_s_beam.ves" strength 0.3 scale 1.0 at {BeamPlace}
+		play string sound "SCRIPT1_VEPIC_BEAMOFLIGHT11"
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		RelCamPos = marker at get world position from Wonder to {0.115, 28.667, -22.460}
+		RelCamFoc = marker at get world position from Wonder to {0.225, 128.576, -18.188}
+		move camera position to {RelCamPos} time 0.6
+		move camera focus to {RelCamFoc} time 0.6
+
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+
+		wait 0.6 seconds
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+
+		stop sound "SCRIPT1_VEPIC_FLAMETHROWERWHOOSH4"
+		stop sound "SCRIPT1_VEPIC_CASTPSELLFREEZE1"
+		stop sound "SCRIPT1_VEPIC_EPICTOWERELECTRIC2"
+		stop sound "SCRIPT1_VEPIC_EPICTOWERLOOP2"
+		//stop sound "SCRIPT1_VEPIC_EPICTOWERLOOP3"
+		set fade red 255 green 255 blue 255 time 1.5
+		wait 1.5 seconds	
+
+		//detach music from Wonder
+		
+		PrePos[0] = marker at {-53.577, 107.356, -58.885}
+		PrePos[1] = marker at {-5.231, 108.043, -97.815}
+		PrePos[2] = marker at {8.837, 136.280, -15.902}
+		PrePos[3] = marker at {65.715, 123.538, 20.191}
+		PrePos[4] = marker at {24.607, 115.444, 54.068}
+		PrePos[5] = marker at {-21.052, 114.106, 53.470}
+		PrePos[6] = marker at {-46.640, 110.361, 39.887}
+		PrePos[7] = marker at {-94.025, 116.346, -12.512}	
+		Pos[0] = marker at get world position from Volcano to {PrePos[0]}
+		Pos[1] = marker at get world position from Volcano to {PrePos[1]}
+		Pos[2] = marker at get world position from Volcano to {PrePos[2]}
+		Pos[3] = marker at get world position from Volcano to {PrePos[3]}
+		Pos[4] = marker at get world position from Volcano to {PrePos[4]}
+		Pos[5] = marker at get world position from Volcano to {PrePos[5]}
+		Pos[6] = marker at get world position from Volcano to {PrePos[6]}
+		Pos[7] = marker at get world position from Volcano to {PrePos[7]}
+
+		set camera lens 48.000
+		RelCamPos = marker at get world position from Volcano to {1.622, 69.480, 87.257}
+		RelCamFoc = marker at get world position from Volcano to {1.594, 69.260, 86.281}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		invoke Volcano EPIC_START_SWIRL
+		set fade in time 1			
+		wait 1 seconds
+		attach atmos "spells" to Volcano// range 2000
+		
+		RelCamPos = marker at get world position from Volcano to {1.622, 69.480, 87.257}
+		RelCamFoc = marker at get world position from Volcano to {1.596, 68.962, 86.401}
+		move camera position to {RelCamPos} time 1
+		move camera focus to {RelCamFoc} time 1
+		set Volcano atmos group 2 time 1 seconds
+		wait 0.5 seconds	
+		play string sound "SCRIPT1_VEPIC_BEAMOFLIGHTSTART1"
+		invoke Volcano EPIC_BEAM_DOWN
+		stop music
+		wait 0.5 seconds
+		play string sound "SCRIPT1_VEPIC_BEAMOFLIGHT10"
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+		wait 1 seconds
+		//play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+		wait 1 seconds
+		//play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+
+		set mixer VolcanoMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+		start music "volcano_music"
+		MusicEventTimer=create timer for 0 seconds
+		MusicEvent1=get music "volcano_music" event "2" time
+
+		invoke Volcano EPIC_START_SHOCKWAVE
+		wait 1 seconds	
+		//play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+		
+		set Volcano atmos group 3 time 1 seconds
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL"
+		
+		invoke Volcano EPIC_START_RISING
+		invoke Volcano EPIC_START_PLUME
+		RelCamPos = marker at get world position from Volcano to {0.620, 224.120, 115.978}
+		RelCamFoc = marker at get world position from Volcano to {0.404, 223.319, 115.419}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 1 seconds
+		//play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 1 seconds
+		//play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 1 seconds
+
+		if Land11VolcanoCasting == 1
+			skip current cutscene
+			//Land11VolcanoCasting = 0
+		end if
+
+
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 1 seconds
+		//play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 1 seconds
+		//play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 1 seconds
+		play string sound "SCRIPT1_VEPIC_DECAYCHARGESPELL2"
+		wait 0.4 seconds
+
+		invoke Volcano EPIC_SHUT_DOWN_BEAM
+		RelCamPos = marker at get world position from Volcano to {25.795, 26.169, 52.671}
+		RelCamFoc = marker at get world position from Volcano to {25.335, 26.000, 51.799}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		wait until get MusicEventTimer time since set >= MusicEvent1
+
+		invoke Volcano EPIC_START_LAVA
+
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+        invoke Volcano EPIC_START_EXPLOSION
+		invoke Volcano EPIC_START_ROCK_SHOWER
+		play string sound "SCRIPT1_VEPIC_VOLCANOSHOCKWAVHIGHPITCHED"
+		wait 0.3 seconds
+		set camera lens 70.000
+		RelCamPos = marker at get world position from Volcano to {72.222, 206.087, 715.843}
+		RelCamFoc = marker at get world position from Volcano to  {71.793, 205.723, 715.017}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		Pos[8] = marker at {Volcano}
+		
+		wait 1 seconds
+        play string sound "SCRIPT1_VEPIC_EXPLOSION2"				
+
+		invoke Volcano EPIC_ADD_NAVIGATION
+
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[0]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH5" at {Pos[2]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH6" at {Pos[1]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.4 seconds
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[4]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[1]}
+		
+		play string sound "SCRIPT1_VEPIC_EXPLOSION1"	
+		invoke Volcano EPIC_START_BUBBLING_LAVA		
+
+		RelCamPos = marker at get world position from Volcano to {-47.517, 58.444, 23.949}
+		RelCamFoc = marker at get world position from Volcano to {-47.005, 57.639, 23.649}
+		/*while {RelCamPos} is under landscape
+			RelCamPos = marker at {RelCamPos}+{0,1,0}
+		end while*/
+
+		wait 2 seconds
+		
+		set camera lens 66.000
+		set camera roll 13 time 0.0
+		
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		
+		play string sound "SCRIPT1_VEPIC_EXPLOSION2"
+		wait 0.2 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[2]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[5]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[3]}
+		wait 0.4 seconds
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		invoke Volcano EPIC_END_ROCK_SHOWER
+
+        invoke Volcano EPIC_FLASH
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[1]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		
+		play string sound "SCRIPT1_VEPIC_EXPLOSION2"
+		wait 0.2 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[2]}
+		wait 0.3 seconds
+
+		//invoke Volcano EPIC_START_ASH
+		
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH11" at {Pos[1]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH5" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH6" at {Pos[6]}
+		wait 0.2 seconds
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+        invoke Volcano EPIC_FLASH
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[2]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[5]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[1]}
+		wait 0.4 seconds
+		
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		invoke Volcano EPIC_START_BUBBLING_LAVA
+		invoke Volcano EPIC_FLASH
+		set camera lens 70.000
+		set camera roll 0.000 time 0.0
+		RelCamPos = marker at get world position from Volcano to {7.264, 65.113, 84.845}
+		RelCamFoc = marker at get world position from Volcano to {-26.214, -2.460, 19.171}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[5]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[4]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[1]}
+
+		invoke Volcano EPIC_START_SMOKE
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+        invoke Volcano EPIC_FLASH
+			
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH11" at {Pos[1]}
+		wait 0.3 seconds
+						
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[0]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH5" at {Pos[2]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH6" at {Pos[1]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		//reset sky colour 3 seconds
+		enable predefined sky "DEFAULT" time 5
+
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[4]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[6]}
+		wait 0.4 seconds
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+        invoke Volcano EPIC_FLASH
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+
+        invoke Volcano EPIC_FLASH
+
+		enable simulation sound 
+		
+		stop music
+
+		invoke Wonder EPIC_WONDER_STAGE_LAST
+
+		wait 2 seconds
+		ATIEndFlag=1			
+        
+		end cinema
+
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[0]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH5" at {Pos[2]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH6" at {Pos[1]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[4]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[6]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH11" at {Pos[1]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH5" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH6" at {Pos[6]}
+		wait 0.2 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[2]}
+		wait 0.3 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[5]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[4]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[1]}
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[4]}
+		detach atmos from Volcano
+        
+		TerminalVolcanoObject = create terminal object at {Pos[8]} with duration of 180 seconds
+		attach atmos "spells" to TerminalVolcanoObject// range 400
+		set TerminalVolcanoObject atmos group 0 time 1 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[6]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		wait 2 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH11" at {Pos[1]}
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[4]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[6]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH11" at {Pos[1]}
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[4]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[6]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH11" at {Pos[1]}
+		play string sound "SCRIPT1_VEPIC_EXPLOSION3"
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[4]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[1]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH17" at {Pos[0]}
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH1" at {Pos[6]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH8" at {Pos[3]}
+		wait 0.4 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH3" at {Pos[5]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH10" at {Pos[2]}
+		wait 0.5 seconds
+		play sound "SCRIPT1_VEPIC_VOLCANOWHOOSH11" at {Pos[1]}
+		TerminalVolcanoObject = create terminal object at {Pos[8]} with duration of 180 seconds
+
+		invoke Volcano EPIC_STOP_EXPLOSION	
+		//
+		//invoke Volcano EPIC_STOP_ASH
+
+		wait 1 seconds
+
+		destroy mixer VolcanoMixer with fadetime 2
+		//stop music
+		
+		invoke Volcano EPIC_STOP_PLUME
+
+		wait 3 seconds
+
+		invoke Volcano EPIC_START_FALLING
+		
+		wait 60 seconds
+
+		invoke Volcano EPIC_END_SPELL
+
+		WhiChEpicSpellIsBeingCast = 0
+
+	
+end script VolcanoSpell

@@ -1,0 +1,181 @@
+define script GT_TombTooltip(Tomb, TombNumber)
+define script GT_TombPlatoonCloseby(Tomb, TombNumber)
+
+define GT_TRUE = 1
+define GT_FALSE = 0
+
+define GT_PLATOONCLOSERADIUS = 25	// distance a platoon must be to a tomb before the reward is given
+
+define GT_TOTAL_TOMBS = 14 // there are 14 tombs spread across land 3 to 11
+
+global GT_TombPositions[GT_TOTAL_TOMBS]
+global GT_TombContents[GT_TOTAL_TOMBS]
+
+begin script GT_ActivateTomb(TombNumber)
+//initialisation
+	StartScroll = 0
+	Tomb = 0
+	Tomb1 = 0
+	
+//main
+start
+	
+	// Land 3 Tombs
+	GT_TombPositions[0] = marker at {689.278,544.094,1258.181}
+	GT_TombPositions[1] = marker at {1613.771,289.234,1214.141}
+	// Land 4 Tombs
+	GT_TombPositions[2] = marker at {1435.221,268.814,902.164}
+	GT_TombPositions[3] = marker at {720.458,292.714,1547.544}
+	
+	Tomb = get FEATURE at {GT_TombPositions[TombNumber]} radius 15
+	
+	run background script GT_TombTooltip(Tomb, TombNumber)
+	run background script GT_TombPlatoonCloseby(Tomb, TombNumber)
+
+end script GT_ActivateTomb
+
+
+//-----------------------------------------------------------------
+// GT_TombTooltip
+//-----------------------------------------------------------------
+
+begin script GT_TombTooltip(Tomb, TombNumber)
+
+	CheckDist = 8
+	TombTT = 0
+	TombTT1 = 0
+	ProximityTimer = 0
+
+start
+
+	begin loop
+
+		if hand position near {Tomb} radius CheckDist
+			// put the right tooltip by the tomb.  there are 14 different titles for the tomb
+			if TombNumber == 0
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_10"
+			elsif TombNumber == 1
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_20"
+			elsif TombNumber == 2
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_30"				
+			elsif TombNumber == 3
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_40"
+			elsif TombNumber == 4
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_50"
+			elsif TombNumber == 5
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_60"
+			elsif TombNumber == 6
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_70"		
+			elsif TombNumber == 7
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_80"
+			elsif TombNumber == 8
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_90"
+			elsif TombNumber == 9
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_100"		
+			elsif TombNumber == 10
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_110"
+			elsif TombNumber == 11
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_120"
+			elsif TombNumber == 12
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_130"		
+			elsif TombNumber == 13
+				TombTT = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_140"	
+			end if
+			
+			
+			ProximityTimer = create timer for 2 seconds
+
+			// check if the player's hand remains near the tomb for a certain amount of time
+			while get ProximityTimer time remaining > 0 and hand position near {Tomb} radius CheckDist + 1
+				if hand position not near {Tomb} radius CheckDist + 1
+					if TombTT exists
+						delete TombTT
+					end if
+				end if
+			end while
+
+			// if the player's hand has left the area delete the tooltip otherwise show a description
+			if hand position not near {Tomb} radius CheckDist + 1
+				if TombTT exists
+					delete TombTT
+				end if
+			else
+				delete TombTT
+				// put the right tooltip by the tomb.  there are 14 different descriptions for the tomb
+				if TombNumber == 0
+					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_150"
+				elsif TombNumber == 1
+					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_160"
+				elsif TombNumber == 2
+					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_170"				
+				elsif TombNumber == 3
+					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_180"
+				elsif TombNumber == 4
+					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_190"
+				elsif TombNumber == 5
+					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_200"
+				elsif TombNumber == 6
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_210"		
+				elsif TombNumber == 7
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_220"
+				elsif TombNumber == 8
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_230"
+				elsif TombNumber == 9
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_240"		
+				elsif TombNumber == 10
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_250"
+				elsif TombNumber == 11
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_260"
+				elsif TombNumber == 12
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_270"		
+				elsif TombNumber == 13
+//					TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_280"	
+				end if
+				//TombTT1 = create tooltip on Tomb with text "BW2T_SCRIPT_TOMB_150"
+			end if
+
+			wait until hand position not near {Tomb} radius CheckDist + 1
+			
+			if TombTT exists
+				delete TombTT
+			end if
+
+			if TombTT1 exists
+				delete TombTT1
+			end if
+			
+		end if	
+
+	end loop
+	
+
+end script GT_TombTooltip
+
+//-----------------------------------------------------------------
+// GT_TombPlatoonCloseby
+//-----------------------------------------------------------------
+
+begin script GT_TombPlatoonCloseby(Tomb, TombNumber)
+
+	Platoon = 0
+	Sword = 0
+	CreatedSword = GT_FALSE
+
+start
+
+	while CreatedSword == GT_FALSE
+		Platoon = 0
+		Platoon = get platoon of player 0 nearest {Tomb} radius GT_PLATOONCLOSERADIUS
+		if Platoon exists 
+			if get distance from {Platoon} to {Tomb} < GT_PLATOONCLOSERADIUS
+				Sword = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {GT_TombPositions[TombNumber]}
+				//Sword = create tooltip on GT_TombPositions[TombNumber] with text "BW2T_SCRIPT_TOMB_150"
+				CreatedSword = GT_TRUE
+			end if
+		end if
+
+		wait 1 seconds
+
+	end while
+	
+end script GT_TombPlatoonCloseby

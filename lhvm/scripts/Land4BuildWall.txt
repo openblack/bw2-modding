@@ -1,0 +1,264 @@
+//***********************************************************************
+//
+//	Build Wall tutorial
+//
+//***********************************************************************
+
+define script Land4BuildWallCinema
+define script Land4CheckForWall
+//define script Land4BuildWallAdvisors
+define script BW_CheckDone
+
+global Tower1Pos = 0
+global Tower2Pos = 0
+
+global Tower1 = 0
+global Tower2 = 0
+
+begin script Land4BuildWall
+	ClickedScroll = 0
+	ScrollBeam = 0
+	Scroll = 0
+	ScrollPos = 0
+	IdleAnims = 0
+	Segment = 0
+	TowerDistance = 0
+	MiddlePos = 0
+start
+
+	Tower1Pos = marker at {1053.905, 175.850, 642.503}
+	Tower2Pos = marker at {1024.256, 177.095, 589.404}
+	ScrollPos = marker at {1035.004, 178.773, 615.759}
+
+	run background script BW_CheckDone
+
+	Tower1 = get HOUSE WALLTOWER_TECH0 at {Tower1Pos} radius 50
+	Tower2 = get HOUSE WALLTOWER_TECH0 at {Tower2Pos} radius 50
+
+	TowerDistance = get distance from {Tower1} to {Tower2}
+	TowerDistance /= 2
+
+	MiddlePos = marker at get target from {Tower2} to {Tower1} distance TowerDistance angle 180
+
+	TowerDistance += 2
+
+	begin loop
+		if get HEALTH of Tower1 == 1 and HEALTH of Tower2 == 1
+			if not Scroll exists
+				Scroll = create highlight BRONZE name "BW2T_SCRIPT_04FINAL_BUILDTUTORIAL_10" remind "BW2T_SCRIPT_04FINAL_BUILDTUTORIAL_20" at {ScrollPos}
+				ALTITUDE of Scroll = 5
+			end if
+		elsif Scroll exists	
+			delete Scroll
+		end if
+		
+		if does Tower1 connect to Tower2
+			Segment = get wall segment nearest {MiddlePos} radius TowerDistance
+			if BUILT of Segment == 1.0
+				delete Scroll
+				//say well done here
+				play string sound "SCRIPT20_REWARDSTING"
+				disable build out of town within influence
+				//player gets wall tech for free after completing this
+
+				begin dialogue
+					eject good spirit
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_150"
+					wait until read
+					
+					send good spirit home
+				end dialogue
+				L4BuildWallComplete = 1
+			end if
+		end if
+	
+	until Scroll right clicked or L4BuildWallComplete == 1
+	end loop
+	
+	if Scroll exists
+		delete Scroll
+	end if
+	
+	if L4BuildWallComplete == 0
+		L4ShowingBuildAWall = 1
+		run script Land4BuildWallCinema
+	end if
+
+
+end script Land4BuildWall
+
+//***************************************************************
+
+begin script Land4BuildWallCinema
+
+CutSceneCameraPos = marker at {1052.812, 181.818, 610.547}
+CutSceneCameraFoc = marker at {1139.433, 148.779, 573.059}
+Tower1Marker = 0
+Tower2Marker = 0
+
+
+start
+
+enable build out of town within influence
+begin fullscreen cinema
+	
+	move camera position to {1007.059, 212.370, 626.511} time 3 easein 0 easeout 2
+	move camera focus to {1090.104, 168.056, 592.753} time 3 easein 0 easeout 2
+
+	eject good spirit
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_50"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_60"
+		wait until read
+
+	eject evil spirit
+		say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_70"
+		wait until read
+
+	send evil spirit home
+	send good spirit home
+	
+end cinema
+
+	enable objective window
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_WALL_90"
+	run background script Land4CheckForWall
+//run script Land4BuildWallAdvisors
+
+end script Land4BuildWallCinema
+
+//***************************************************************
+
+begin script Land4CheckForWall
+
+WallComplete = 0
+Tower1TT = 0
+Tower2TT = 0
+CheckDist = 30
+TowerIcon = 0
+Segment = 0
+MiddlePos = 0
+TowerDistance = 0
+Highlight = 0
+start
+
+Tower1 = get HOUSE WALLTOWER_TECH0 at {Tower1Pos} radius 50
+Tower2 = get HOUSE WALLTOWER_TECH0 at {Tower2Pos} radius 50
+
+TowerDistance = get distance from {Tower1} to {Tower2}
+TowerDistance /= 2
+
+MiddlePos = marker at get target from {Tower2} to {Tower1} distance TowerDistance angle 180
+
+if not does Tower1 connect to Tower2
+	TowerIcon = create world icon BINDABLE_ACTION_TYPE_ACTION on Tower1
+end if
+
+TowerDistance += 2
+
+while L4BuildWallComplete == 0
+
+	Segment = get wall segment nearest {MiddlePos} radius TowerDistance
+	
+	if hand position near {Tower1} radius CheckDist and not does Tower1 connect to Tower2
+		Tower1TT = create tooltip on Tower1 with text "BW2T_SCRIPT_04FINAL_TOOLTIPS_20"
+		wait until hand position not near {Tower1} radius CheckDist + 1
+		delete Tower1TT
+	end if
+
+	if hand position near {Tower2} radius CheckDist and not does Tower1 connect to Tower2
+		Tower2TT = create tooltip on Tower2 with text "BW2T_SCRIPT_04FINAL_TOOLTIPS_30"
+		wait until hand position not near {Tower2} radius CheckDist + 1
+		delete Tower2TT
+	end if
+
+	if does Tower1 connect to Tower2
+		remove world icon TowerIcon
+		if BUILT of Segment == 1.0
+			//say well done here
+			play string sound "SCRIPT20_REWARDSTING"
+			enable objective window
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 value 1							
+			wait 2 seconds
+			
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+			disable objective window
+			
+			disable build out of town within influence
+			//player gets wall tech for free after completing this
+
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_150"
+				wait until read
+				L4BuildWallComplete = 1
+				send good spirit home
+			end dialogue
+		end if
+	end if
+end while
+
+//increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_BUILDWALL
+
+end script Land4CheckForWall
+
+//***************************************************************
+/*
+begin script Land4BuildWallAdvisors
+
+Tower1Marker = 0
+Tower2Marker = 0
+
+start
+	if dialogue ready
+		begin dialogue
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_100"
+			wait until read
+
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_110"
+			wait until read
+
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_120"
+			wait until read
+			Tower1Marker = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 2.6 at {Tower2Pos} time 4
+			set Tower1Marker colour red 0 green 255 blue 255
+			
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_130"
+			wait until read
+			Tower2Marker = create visual effect "gp_s_townctr_beam.ves" strength 0.1 scale 2.6 at {Tower1Pos} time 4
+			set Tower2Marker colour red 0 green 255 blue 255
+
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_TUT_140"
+			wait until read
+
+			send good spirit home
+
+		end dialogue
+	end if
+
+
+end script Land4BuildWallAdvisors
+*/
+
+begin script BW_CheckDone
+	ReminderDone = 0
+start
+	begin loop
+		if NC_GameState == STATE_WAR //or NC_GameState == STATE_SIEGE
+			begin dialogue
+				eject good spirit
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_REMINDER_10"
+					wait until read
+				eject evil spirit	
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_WALL_REMINDER_20"
+					wait until read
+				send good spirit home
+				send evil spirit home
+				ReminderDone = 1
+			end dialogue
+		end if
+	until ReminderDone == 1 or L4BuildWallComplete == 1
+	end loop
+end script BW_CheckDone

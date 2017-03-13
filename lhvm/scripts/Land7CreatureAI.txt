@@ -1,0 +1,302 @@
+// Task enum
+define L7CAI_TASK_GUARD								= 0
+define L7CAI_TASK_CASTFIREBALLS						= 1
+define L7CAI_TASK_LEADPLATOON						= 2
+
+// Interupt enum
+define L7CAI_INTERUPT_NONE							= 0
+define L7CAI_INTERUPT_CASTFIREBALL					= 1
+define L7CAI_INTERUPT_ATTACK						= 2
+define L7CAI_INTERUPT_LOOK							= 3
+
+// Task Lead Platoon State enum
+define L7CAI_TASK_LEADPLATOON_STATE_CATCHUP			= 0
+define L7CAI_TASK_LEADPLATOON_STATE_MOVEAHEAD		= 1
+define L7CAI_TASK_LEADPLATOON_STATE_WAIT			= 2
+
+// Task Lead Platoon Constants
+define L7CAI_TASK_LEADPLATOON_CONSTANT_WAITDISTANCE			= 60
+define L7CAI_TASK_LEADPLATOON_CONSTANT_CATCHUPDISTANCE		= 40
+define L7CAI_TASK_LEADPLATOON_CONSTANT_STOPWAITDISTANCE		= 20
+define L7CAI_TASK_LEADPLATOON_CONSTANT_CHECKWAIT			= 0.2
+define L7CAI_TASK_LEADPLATOON_CONSTANT_INTERUPTCHANCE		= 35
+define L7CAI_TASK_LEADPLATOON_CONSTANT_ENEMYCHECKRADIUS		= 20
+define L7CAI_TASK_LEADPLATOON_CONSTANT_ENEMYATTACKRADIUS	= 50
+
+// Interupt Attack Constants
+define L7CAI_INTERUPT_ATTACK_CONSTANT_CHECKWAIT				= 0.2
+
+// Creature
+global L7CAI_Creature = 0
+
+// Tasks and Interupts
+global L7CAI_CurrentTask = L7CAI_TASK_GUARD
+global L7CAI_CurrentInterupt = L7CAI_INTERUPT_NONE
+
+// Task Guard variables
+global L7CAI_Task_Guard_Pos = 0
+global L7CAI_Task_Guard_Radius = 0
+
+// Task Cast Fireballs variables
+global L7CAI_Task_CastFireballs_FromPos = 0
+global L7CAI_Task_CastFireballs_ToPos = 0
+global L7CAI_Task_CastFireballs_ToRadius = 0
+
+// Task Lead Platoon variables
+global L7CAI_Task_LeadPlatoon_Platoon = 0
+global L7CAI_Task_LeadPlatoon_CatchupTempTarget = 0
+global L7CAI_Task_LeadPlatoon_Target = 0
+global L7CAI_Task_LeadPlatoon_State = L7CAI_TASK_LEADPLATOON_STATE_CATCHUP
+
+// Interupt Cast Fireball variables
+global L7CAI_Interupt_CastFireball_Target = 0
+
+// Interupt Attack variables
+global L7CAI_Interupt_Attack_Target = 0
+global L7CAI_Interupt_Attack_Radius = 0
+
+// Interupt Look variables
+global L7CAI_Interupt_Look_Target = 0
+
+// local scripts
+define script L7CAI_SwitchLoop
+define script L7CAI_DoTask_Guard
+define script L7CAI_DoTask_CastFireballs
+define script L7CAI_DoTask_LeadPlatoonToPos
+define script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+define script L7CAI_DoInterupt_CastFireball
+define script L7CAI_DoInterupt_Attack
+define script L7CAI_DoInterupt_Look
+
+//-----------------------------------------------------------------
+// Interface
+//-----------------------------------------------------------------
+define script L7CAI_InitCreature(Pos,Radius)
+define script L7CAI_SetNewHome(Pos,Radius)
+//-----------------------------------------------------------------
+define script L7CAI_SetTask_Guard
+define script L7CAI_SetTask_LeadPlatoonToPos(Platoon,Target)
+define script L7CAI_SetTask_CastFireballs(FromPos,ToPos,ToRadius)
+//-----------------------------------------------------------------
+define script L7CAI_SetInteruption_CastFireball(Target)
+define script L7CAI_SetInteruption_Attack(Target,Radius)
+define script L7CAI_SetInteruption_Look(Target)
+//-----------------------------------------------------------------
+
+begin script L7CAI_SwitchLoop
+start
+	begin loop
+		if L7CAI_CurrentInterupt != L7CAI_INTERUPT_NONE
+			if L7CAI_CurrentInterupt == L7CAI_INTERUPT_CASTFIREBALL
+				run script L7CAI_DoInterupt_CastFireball
+			elsif L7CAI_CurrentInterupt == L7CAI_INTERUPT_LOOK
+				run script L7CAI_DoInterupt_Look
+			elsif L7CAI_CurrentInterupt == L7CAI_INTERUPT_ATTACK
+				run script L7CAI_DoInterupt_Attack
+			end if
+			L7CAI_CurrentInterupt = L7CAI_INTERUPT_NONE
+		else
+			if L7CAI_CurrentTask == L7CAI_TASK_GUARD
+				run script L7CAI_DoTask_Guard
+			elsif L7CAI_CurrentTask == L7CAI_TASK_CASTFIREBALLS
+				run script L7CAI_DoTask_CastFireballs
+			elsif L7CAI_CurrentTask == L7CAI_TASK_LEADPLATOON
+				run script L7CAI_DoTask_LeadPlatoonToPos
+			end if
+		end if
+	end loop
+end script L7CAI_SwitchLoop
+
+begin script L7CAI_DoTask_Guard
+start
+	set creature L7CAI_Creature role to CR_SOLDIER radius L7CAI_Task_Guard_Radius at {L7CAI_Task_Guard_Pos}
+	release L7CAI_Creature
+
+	wait until L7CAI_CurrentTask != L7CAI_TASK_GUARD or L7CAI_CurrentInterupt != L7CAI_INTERUPT_NONE
+end script L7CAI_DoTask_Guard
+
+begin script L7CAI_DoTask_CastFireballs
+	Target = 0
+start
+	enable script creature L7CAI_Creature run
+	move L7CAI_Creature position to {L7CAI_Task_CastFireballs_FromPos}
+	wait until creature L7CAI_Creature finished script action or L7CAI_CurrentTask != L7CAI_TASK_CASTFIREBALLS or L7CAI_CurrentInterupt != L7CAI_INTERUPT_NONE
+	disable script creature L7CAI_Creature run
+
+	while L7CAI_CurrentTask == L7CAI_TASK_CASTFIREBALLS and L7CAI_CurrentInterupt == L7CAI_INTERUPT_NONE
+		Target = marker at get target from {L7CAI_Task_CastFireballs_ToPos} + {1,0,0} to {L7CAI_Task_CastFireballs_ToPos} distance number from 0 to L7CAI_Task_CastFireballs_ToRadius angle number from 0 to 360
+		force L7CAI_Creature CREATURE_CAST_FIREBOMB_THROW Target at {Target}
+		wait until creature L7CAI_Creature finished script action or L7CAI_CurrentTask != L7CAI_TASK_CASTFIREBALLS or L7CAI_CurrentInterupt != L7CAI_INTERUPT_NONE
+	end while
+end script L7CAI_DoTask_CastFireballs
+
+begin script L7CAI_DoTask_LeadPlatoonToPos
+	EnemyPlatoon = 0
+start
+	run script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+
+	while L7CAI_CurrentTask == L7CAI_TASK_LEADPLATOON and L7CAI_CurrentInterupt == L7CAI_INTERUPT_NONE
+
+		// first, make sure we still have backup
+		if not L7CAI_Task_LeadPlatoon_Platoon exists or platoon L7CAI_Task_LeadPlatoon_Platoon idle
+			run script L7CAI_SetTask_Guard
+		end if
+
+		if L7CAI_CurrentTask == L7CAI_TASK_LEADPLATOON
+			// second, check for any enemy units
+			EnemyPlatoon = get platoon of player 0 nearest {L7CAI_Task_LeadPlatoon_Platoon} radius L7CAI_TASK_LEADPLATOON_CONSTANT_ENEMYCHECKRADIUS
+			if not EnemyPlatoon exists
+				EnemyPlatoon = get platoon of player 0 nearest {L7CAI_Creature} radius L7CAI_TASK_LEADPLATOON_CONSTANT_ENEMYCHECKRADIUS
+			end if
+			if EnemyPlatoon exists
+				run background script L7CAI_SetInteruption_Attack(EnemyPlatoon,L7CAI_TASK_LEADPLATOON_CONSTANT_ENEMYATTACKRADIUS)
+			end if
+
+			if L7CAI_CurrentTask == L7CAI_TASK_LEADPLATOON
+				// catchup state
+				if L7CAI_Task_LeadPlatoon_State == L7CAI_TASK_LEADPLATOON_STATE_CATCHUP
+					// if we have caught up, start to move ahead
+					if {L7CAI_Creature} near {L7CAI_Task_LeadPlatoon_Platoon} radius L7CAI_TASK_LEADPLATOON_CONSTANT_CATCHUPDISTANCE
+						L7CAI_Task_LeadPlatoon_State = L7CAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+						run script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// if they have significantly changed position, change our target
+					elsif get distance from {L7CAI_Task_LeadPlatoon_Platoon} to {L7CAI_Task_LeadPlatoon_CatchupTempTarget} > L7CAI_TASK_LEADPLATOON_CONSTANT_CATCHUPDISTANCE
+						run script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+					end if
+
+				// move ahead state
+				elsif L7CAI_Task_LeadPlatoon_State == L7CAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+					// if we are too far ahead, wait for them
+					if not {L7CAI_Creature} near {L7CAI_Task_LeadPlatoon_Platoon} radius L7CAI_TASK_LEADPLATOON_CONSTANT_WAITDISTANCE
+						L7CAI_Task_LeadPlatoon_State = L7CAI_TASK_LEADPLATOON_STATE_WAIT
+						run script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// do a special interupt to make us look inteligent (but only if we are significantly ahead)
+					elsif number from 1 to L7CAI_TASK_LEADPLATOON_CONSTANT_INTERUPTCHANCE == 1 and (get distance from {L7CAI_Creature} to {L7CAI_Task_LeadPlatoon_Target}) + L7CAI_TASK_LEADPLATOON_CONSTANT_STOPWAITDISTANCE < get distance from {L7CAI_Task_LeadPlatoon_Platoon} to {L7CAI_Task_LeadPlatoon_Target}
+						run background script L7CAI_SetInteruption_Look(L7CAI_Task_LeadPlatoon_Platoon)
+					end if
+
+				// wait state
+				else // L7CAI_Task_LeadPlatoon_State == L7CAI_TASK_LEADPLATOON_STATE_WAIT
+					// if they have caught up, move ahead
+					if {L7CAI_Creature} near {L7CAI_Task_LeadPlatoon_Platoon} radius L7CAI_TASK_LEADPLATOON_CONSTANT_STOPWAITDISTANCE
+						L7CAI_Task_LeadPlatoon_State = L7CAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+						run script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// if they took a short cut, catch up to them
+					elsif get distance from {L7CAI_Creature} to {L7CAI_Task_LeadPlatoon_Target} > get distance from {L7CAI_Task_LeadPlatoon_Platoon} to {L7CAI_Task_LeadPlatoon_Target}
+						L7CAI_Task_LeadPlatoon_State = L7CAI_TASK_LEADPLATOON_STATE_CATCHUP
+						run script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+					// do a special interupt to make us look inteligent
+					elsif number from 1 to L7CAI_TASK_LEADPLATOON_CONSTANT_INTERUPTCHANCE == 1
+						run background script L7CAI_SetInteruption_Look(L7CAI_Task_LeadPlatoon_Platoon)
+					end if
+				end if
+			end if
+		end if
+		wait L7CAI_TASK_LEADPLATOON_CONSTANT_CHECKWAIT seconds
+	end while
+end script L7CAI_DoTask_LeadPlatoonToPos
+
+begin script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+start
+	if L7CAI_Task_LeadPlatoon_State == L7CAI_TASK_LEADPLATOON_STATE_CATCHUP
+		//say "state catchup"
+		L7CAI_Task_LeadPlatoon_CatchupTempTarget = marker at {L7CAI_Task_LeadPlatoon_Platoon}
+		enable script creature L7CAI_Creature run
+		move L7CAI_Creature position to {L7CAI_Task_LeadPlatoon_CatchupTempTarget}	
+	elsif L7CAI_Task_LeadPlatoon_State == L7CAI_TASK_LEADPLATOON_STATE_MOVEAHEAD
+		//say "state move ahead"
+		disable script creature L7CAI_Creature run
+		move L7CAI_Creature position to {L7CAI_Task_LeadPlatoon_Target}	
+	else // L7CAI_Task_LeadPlatoon_State == L7CAI_TASK_LEADPLATOON_STATE_WAIT
+		//say "state wait"
+		force L7CAI_Creature CREATURE_IDLE L7CAI_Creature
+	end if
+end script L7CAI_DoTask_LeadPlatoonToPos_SetStateAction
+
+begin script L7CAI_DoInterupt_CastFireball
+start
+	force L7CAI_Creature CREATURE_CAST_FIREBOMB_THROW L7CAI_Interupt_CastFireball_Target at {L7CAI_Interupt_CastFireball_Target}
+	wait until creature L7CAI_Creature finished script action
+end script L7CAI_DoInterupt_CastFireball
+
+begin script L7CAI_DoInterupt_Attack
+start
+	set creature L7CAI_Creature role to CR_SOLDIER radius L7CAI_Interupt_Attack_Radius at {L7CAI_Interupt_Attack_Target}
+	release L7CAI_Creature
+
+	wait until not L7CAI_Interupt_Attack_Target exists
+end script L7CAI_DoInterupt_Attack
+
+begin script L7CAI_DoInterupt_Look
+start
+	//say "interupt looking"
+	set L7CAI_Creature focus to {L7CAI_Interupt_Look_Target}
+	wait until creature L7CAI_Creature finished script action
+	release L7CAI_Creature focus
+end script L7CAI_DoInterupt_Look
+
+begin script L7CAI_InitCreature(Pos,Radius)
+start
+	run script L7CAI_SetNewHome(Pos,Radius)
+
+	L7CAI_Creature = create CREATURE CREATURE_TYPE_WOLF at {L7CAI_Task_Guard_Pos}
+	SCALE of L7CAI_Creature = 3.0
+	//ALIGNMENT of L7CAI_Creature = -0.8
+	set player 1 creature to L7CAI_Creature
+
+	run background script L7CAI_SwitchLoop
+	run script L7CAI_SetTask_Guard
+end script L7CAI_InitCreature
+
+begin script L7CAI_SetNewHome(Pos,Radius)
+start
+	L7CAI_Task_Guard_Pos = marker at {Pos}
+	L7CAI_Task_Guard_Radius = Radius
+end script L7CAI_SetNewHome
+
+begin script L7CAI_SetTask_Guard
+start
+	L7CAI_CurrentTask = L7CAI_TASK_GUARD
+end script L7CAI_SetTask_Guard
+
+begin script L7CAI_SetTask_CastFireballs(FromPos,ToPos,ToRadius)
+start
+	L7CAI_Task_CastFireballs_FromPos = FromPos
+	L7CAI_Task_CastFireballs_ToPos = ToPos
+	L7CAI_Task_CastFireballs_ToRadius = ToRadius
+	L7CAI_CurrentTask = L7CAI_TASK_CASTFIREBALLS
+end script L7CAI_SetTask_CastFireballs
+
+begin script L7CAI_SetTask_LeadPlatoonToPos(Platoon,Target)
+start
+	L7CAI_Task_LeadPlatoon_Platoon = Platoon
+	L7CAI_Task_LeadPlatoon_Target = Target
+	L7CAI_Task_LeadPlatoon_State = L7CAI_TASK_LEADPLATOON_STATE_CATCHUP
+	L7CAI_CurrentTask = L7CAI_TASK_LEADPLATOON
+end script L7CAI_SetTask_LeadPlatoonToPos
+
+begin script L7CAI_SetInteruption_CastFireball(Target)
+start
+	wait until L7CAI_CurrentInterupt == L7CAI_INTERUPT_NONE
+
+	L7CAI_Interupt_CastFireball_Target = Target
+	L7CAI_CurrentInterupt = L7CAI_INTERUPT_CASTFIREBALL
+end script L7CAI_SetInteruption_CastFireball
+
+begin script L7CAI_SetInteruption_Attack(Target,Radius)
+start
+	wait until L7CAI_CurrentInterupt == L7CAI_INTERUPT_NONE
+
+	L7CAI_Interupt_Attack_Target = Target
+	L7CAI_Interupt_Attack_Radius = Radius
+	L7CAI_CurrentInterupt = L7CAI_INTERUPT_ATTACK
+end script L7CAI_SetInteruption_Attack
+
+begin script L7CAI_SetInteruption_Look(Target)
+start
+	//say "set look"
+	wait until L7CAI_CurrentInterupt == L7CAI_INTERUPT_NONE
+
+	L7CAI_Interupt_Look_Target = Target
+	L7CAI_CurrentInterupt = L7CAI_INTERUPT_LOOK
+end script L7CAI_SetInteruption_Look

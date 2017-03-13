@@ -1,0 +1,1001 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define SS_TRUE				= 1
+define SS_FALSE				= 0
+
+define SS_NUMBER_OF_STATUES	= 7
+
+define SS_RED				= 0
+define SS_ORANGE			= 1
+define SS_YELLOW			= 2
+define SS_GREEN				= 3
+define SS_BLUE				= 4
+define SS_INDIGO			= 5
+define SS_VIOLET			= 6
+
+define SS_TELEPORT_STATUES = SS_TRUE
+
+define SS_PRISM_INFLUENCE_RADIUS = 40
+
+define SS_STATUE_TO_PRISM_DISTANCE = 13
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global SS_ChallengeOver = SS_FALSE
+global SS_Stand[SS_NUMBER_OF_STATUES]
+global SS_StandFull[SS_NUMBER_OF_STATUES]
+global SS_StandHasCorrectStatue[SS_NUMBER_OF_STATUES]
+global SS_StatueHome[SS_NUMBER_OF_STATUES]
+global SS_StatueStartPos[SS_NUMBER_OF_STATUES]
+global SS_StatueTeleportPos[SS_NUMBER_OF_STATUES]
+global SS_StatueEffectColourRed[SS_NUMBER_OF_STATUES]
+global SS_StatueEffectColourBlue[SS_NUMBER_OF_STATUES]
+global SS_StatueEffectColourGreen[SS_NUMBER_OF_STATUES]
+global SS_StatueObject[SS_NUMBER_OF_STATUES]
+global SS_StatueModel[SS_NUMBER_OF_STATUES]
+global SS_StatueIsOnWhichStand[SS_NUMBER_OF_STATUES] // -1 is none
+global SS_StatueBallEffect[SS_NUMBER_OF_STATUES]
+global SS_StatueRayEffect[SS_NUMBER_OF_STATUES]
+global SS_Prism				= 0
+global SS_PrismColouredBallEffect[SS_NUMBER_OF_STATUES]
+global SS_Prism_Pos			= 0
+global SS_StatuesPlaced		= 0
+global SS_NumStatuesOnAnyStands = 0	// may be correct or not
+global SS_TeleportCutscene	= SS_FALSE
+global SS_Effectss[7]
+global SS_EffectssStatues[7]
+global Dude[10]
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script SS_Statue(Colour)
+define script SS_Intro
+define script SS_Outro
+define script SS_AdvisorComments_Control
+define script SS_AdvisorComments_FoundRedStatue
+define script SS_AdvisorComments_FoundStatue1
+define script SS_AdvisorComments_FoundStatue2
+define script SS_AdvisorComments_FoundStatue3
+define script SS_AdvisorComments_FoundStatue4
+define script SS_AdvisorComments_TeleportStatueBack
+define script SS_CreateStatueRay(Colour)
+define script SS_PJsCheatScript
+define script SS_Transforarion(statuex)
+define script Outro_MoveMeAndAnimateMe(whoami)
+
+
+
+
+//-----------------------------------------------------------------------------
+// Land7SevenSamurai
+//-----------------------------------------------------------------------------
+begin script Land7SevenSamuraiInitGlobals
+	count = 0
+start
+	SS_Prism_Pos = marker at {1333.781, 189.316, 601.402}
+
+	SS_StatueStartPos[0] = marker at {247.311,264.017,396.805}
+	SS_StatueStartPos[1] = marker at {2203.156,356.200,1304.824}
+	SS_StatueStartPos[2] = marker at {452.311,674.706,2049.894}
+	SS_StatueStartPos[3] = marker at {1497.891,252.742,1726.332}
+	SS_StatueStartPos[4] = marker at {1172.518,185.912,495.575}
+	SS_StatueStartPos[5] = marker at {1000.669,185.007,719.782}
+	SS_StatueStartPos[6] = marker at {1078.354,253.462,1324.725}
+
+	SS_StatueTeleportPos[0] = marker at {1337.403,191.413,603.605}
+	SS_StatueTeleportPos[1] = marker at {1327.391,191.413,584.199}
+	SS_StatueTeleportPos[2] = marker at {1320.581,191.412,601.542}
+	SS_StatueTeleportPos[3] = marker at {1328.917,191.146,606.426}
+	SS_StatueTeleportPos[4] = marker at {1332.496,191.417,595.101}
+	SS_StatueTeleportPos[5] = marker at {1335.208,191.413,581.452}
+	SS_StatueTeleportPos[6] = marker at {1334.308,191.405,610.574}
+
+	SS_StatueEffectColourRed[0] = 255
+	SS_StatueEffectColourRed[1] = 255
+	SS_StatueEffectColourRed[2] = 255
+	SS_StatueEffectColourRed[3] = 0
+	SS_StatueEffectColourRed[4] = 0
+	SS_StatueEffectColourRed[5] = 128
+	SS_StatueEffectColourRed[6] = 255
+
+	SS_StatueEffectColourGreen[0] = 0
+	SS_StatueEffectColourGreen[1] = 128
+	SS_StatueEffectColourGreen[2] = 255
+	SS_StatueEffectColourGreen[3] = 255
+	SS_StatueEffectColourGreen[4] = 0
+	SS_StatueEffectColourGreen[5] = 0
+	SS_StatueEffectColourGreen[6] = 0
+
+	SS_StatueEffectColourBlue[0] = 0
+	SS_StatueEffectColourBlue[1] = 0
+	SS_StatueEffectColourBlue[2] = 0
+	SS_StatueEffectColourBlue[3] = 0
+	SS_StatueEffectColourBlue[4] = 255
+	SS_StatueEffectColourBlue[5] = 192
+	SS_StatueEffectColourBlue[6] = 192
+
+	SS_StatueModel[0] = variable MOBILE_STATIC_INFO_SEVEN_SAMURAI_01
+	SS_StatueModel[1] = variable MOBILE_STATIC_INFO_SEVEN_SAMURAI_02
+	SS_StatueModel[2] = variable MOBILE_STATIC_INFO_SEVEN_SAMURAI_03
+	SS_StatueModel[3] = variable MOBILE_STATIC_INFO_SEVEN_SAMURAI_04
+	SS_StatueModel[4] = variable MOBILE_STATIC_INFO_SEVEN_SAMURAI_05
+	SS_StatueModel[5] = variable MOBILE_STATIC_INFO_SEVEN_SAMURAI_06
+	SS_StatueModel[6] = variable MOBILE_STATIC_INFO_SEVEN_SAMURAI_07
+
+	while count < SS_NUMBER_OF_STATUES
+		SS_StatueHome[count] = marker at get target from {SS_Prism_Pos} + {1,0,0} to {SS_Prism_Pos} distance SS_STATUE_TO_PRISM_DISTANCE angle 40 + 26 * count
+		SS_StandHasCorrectStatue[count] = SS_FALSE
+		SS_StatueIsOnWhichStand[count] = -1
+		SS_Stand[count] = create FEATURE FEATURE_INFO_SEVEN_SAMURAI_BASE at {SS_StatueHome[count]}
+		set SS_Stand[count] focus to get target from {SS_Prism_Pos} to {SS_StatueHome[count]} distance SS_STATUE_TO_PRISM_DISTANCE angle -90
+		disable SS_Stand[count] moveable
+		count++
+	end while
+
+	//----Create Prism----//
+	SS_Prism = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {SS_Prism_Pos}
+	disable SS_Prism moveable
+	override mesh for SS_Prism with "m_prism"
+	SCALE of SS_Prism = 0.5
+
+	enable SS_Prism indestructible
+	disable SS_Prism set on fire	
+	disable SS_Prism pickup
+
+end script Land7SevenSamuraiInitGlobals
+
+//-----------------------------------------------------------------------------
+// Land 7 Seven Samurai
+//-----------------------------------------------------------------------------
+begin script Land7SevenSamurai
+	StatueAtPos		= 0
+	Counter			= 0
+	Counter2		= 0
+	HeldObject		= 0
+	HeldObjectType	= 0
+
+	Scroll			= 0
+	ScrollPos		= marker at {1338.277,183.876,597.167}
+
+	PrismInfluence = 0
+start
+	run script Land7SevenSamuraiInitGlobals
+
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_07FINAL_CHALLENGENAME_SEVEN_SAMURAI" remind "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_REMINDER"at {ScrollPos}
+	wait until Scroll right clicked
+
+	delete Scroll
+
+	//----Give statues there behaviour----//
+	run background script SS_Statue(SS_RED)
+	run background script SS_Statue(SS_ORANGE)
+	run background script SS_Statue(SS_YELLOW)
+	run background script SS_Statue(SS_GREEN)
+	run background script SS_Statue(SS_BLUE)
+	run background script SS_Statue(SS_INDIGO)
+	run background script SS_Statue(SS_VIOLET)
+	
+	if SS_TELEPORT_STATUES == SS_TRUE
+		PrismInfluence = create influence at {SS_Prism_Pos} radius SS_PRISM_INFLUENCE_RADIUS
+	end if
+
+	run script SS_Intro	
+
+	//run background script SS_PJsCheatScript
+
+	run background script SS_AdvisorComments_Control
+
+	reset player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 with amount 1 text "BW2T_SCRIPT_07FINAL_CHALLENGENAME_SEVEN_SAMURAI" amount 0 description "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_7_SEVENSAMURAI
+	L7ShowingSevenSamuraiObjective = 1
+
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 amount 1
+	//set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 text "BW2T_SCRIPT_07FINAL_CHALLENGENAME_SEVEN_SAMURAI" amount 0
+
+	wait until SS_StatuesPlaced == 7
+
+	delete PrismInfluence
+
+	wait 2 seconds
+		
+	//wait 10 seconds
+	run script SS_Outro
+	
+	SS_ChallengeOver = SS_TRUE
+
+	wait 1 seconds
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 value 1
+	//increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_7_SEVENSAMURAI
+
+end script Land7SevenSamurai
+
+//-----------------------------------------------------------------------------
+// Statue
+//-----------------------------------------------------------------------------
+begin script SS_Statue(Colour)
+	Statue_Teleport_Effect = 0
+	Influence			= 0
+	Count				= 0
+	StatueDropPos		= 0
+	TeleportEffectLoc	= 0
+
+	IsAtStartPos		= SS_FALSE
+start	
+
+	
+
+	begin loop
+
+		//----Create Statue----//	
+		if SS_StatueObject[Colour] not exists
+			// this is the old way, so make it easy to change back without needing a revert.
+			SS_StatueObject[Colour] = create ROCK_OBJECT constant SS_StatueModel[Colour] at {SS_StatueStartPos[Colour]}
+			SS_StatueBallEffect[Colour] = create visual effect "gp_s_samurai_rainbow.ves" strength 1 scale 1 on SS_StatueObject[Colour] time -1 
+			set SS_StatueBallEffect[Colour] colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+
+			if SS_TELEPORT_STATUES == SS_FALSE
+				Influence = create influence on SS_StatueObject[Colour] radius 1
+			end if
+			IsAtStartPos = SS_TRUE
+
+			enable SS_StatueObject[Colour] indestructible
+			disable SS_StatueObject[Colour] set on fire	
+			disable SS_StatueObject[Colour] pickup
+			disable SS_StatueObject[Colour] moveable
+
+			
+		end if
+		
+		if SS_StatueObject[Colour] right clicked and SS_TELEPORT_STATUES == SS_TRUE and IsAtStartPos == SS_TRUE
+			if SS_TeleportCutscene == SS_TRUE
+				TeleportEffectLoc = marker at {SS_StatueObject[Colour]} + {0.000,1.000,0.000}
+				Statue_Teleport_Effect = create visual effect "gp_s_samurai_teleport.ves" strength 1 scale 3 at {TeleportEffectLoc} time 1 target {SS_StatueObject[Colour]} + {0.000,3.000,0.000}
+				set Statue_Teleport_Effect colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+				wait 1 seconds
+				stop visual effect SS_StatueBallEffect[Colour]
+				move SS_StatueObject[Colour] to limbo
+				wait 0.5 seconds
+				stop visual effect Statue_Teleport_Effect
+				wait 0.5 seconds
+				TeleportEffectLoc = marker at {SS_StatueTeleportPos[Colour]} + {0.000,1.000,0.000}
+				Statue_Teleport_Effect = create visual effect "gp_s_samurai_teleport.ves" strength 1 scale 3 at {TeleportEffectLoc} time 1 target {SS_StatueTeleportPos[Colour]} + {0.000,3.000,0.000}
+				set Statue_Teleport_Effect colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+				wait 1 seconds
+
+				release SS_StatueObject[Colour] from limbo
+				set SS_StatueObject[Colour] position to {SS_StatueTeleportPos[Colour]}
+				enable SS_StatueObject[Colour] pickup
+				enable SS_StatueObject[Colour] moveable
+				SS_StatueBallEffect[Colour] = create visual effect "gp_s_samurai_rainbow.ves" strength 1 scale 1 on SS_StatueObject[Colour] time -1 
+				set SS_StatueBallEffect[Colour] colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+				wait 2 seconds
+				stop visual effect Statue_Teleport_Effect
+			else
+				SS_TeleportCutscene = SS_TRUE
+				begin cinema
+					TeleportEffectLoc = marker at {SS_StatueObject[Colour]} + {0.000,1.000,0.000}
+					Statue_Teleport_Effect = create visual effect "gp_s_samurai_teleport.ves" strength 1 scale 3 at {TeleportEffectLoc} time 1 target {SS_StatueObject[Colour]} + {0.000,3.000,0.000}
+					set Statue_Teleport_Effect colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+					wait 1 seconds
+					stop visual effect SS_StatueBallEffect[Colour]
+					move SS_StatueObject[Colour] to limbo
+					wait 0.5 seconds
+
+					set camera position to {1296.628,218.035,610.365}
+					set camera focus to {1371.701,159.535,579.682}
+					stop visual effect Statue_Teleport_Effect
+					wait 0.5 seconds
+					TeleportEffectLoc = marker at {SS_StatueTeleportPos[Colour]} + {0.000,1.000,0.000}
+					Statue_Teleport_Effect = create visual effect "gp_s_samurai_teleport.ves" strength 1 scale 3 at {TeleportEffectLoc} time 1 target {SS_StatueTeleportPos[Colour]} + {0.000,3.000,0.000}
+					set Statue_Teleport_Effect colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+					wait 1 seconds
+
+					release SS_StatueObject[Colour] from limbo
+					set SS_StatueObject[Colour] position to {SS_StatueTeleportPos[Colour]}
+					enable SS_StatueObject[Colour] pickup
+					enable SS_StatueObject[Colour] moveable
+					SS_StatueBallEffect[Colour] = create visual effect "gp_s_samurai_rainbow.ves" strength 1 scale 1 on SS_StatueObject[Colour] time -1 
+					set SS_StatueBallEffect[Colour] colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+					wait 2 seconds
+					stop visual effect Statue_Teleport_Effect
+				end cinema
+			end if
+			IsAtStartPos = SS_FALSE
+		end if
+
+		if SS_StatueObject[Colour] is HELD_ANY
+		//if SS_StatuesPlaced != 7
+			if SS_StatueIsOnWhichStand[Colour] != -1
+				if SS_StatueIsOnWhichStand[Colour] == Colour
+					SS_StandHasCorrectStatue[Colour] = SS_FALSE
+					SS_StatuesPlaced--
+					stop visual effect SS_StatueRayEffect[Colour]
+					stop visual effect SS_PrismColouredBallEffect[Colour]
+				end if
+				SS_StandFull[SS_StatueIsOnWhichStand[Colour]] = SS_FALSE
+				SS_NumStatuesOnAnyStands--
+				SS_StatueIsOnWhichStand[Colour] = -1
+				enable SS_StatueObject[Colour] moveable
+			end if
+			wait until SS_StatueObject[Colour] is not HELD_ANY
+			if not SS_StatueObject[Colour] in limbo // hasn't been eaten
+				StatueDropPos = marker at hand position
+				Count = 0
+				force while Count < SS_NUMBER_OF_STATUES
+					if {SS_StatueObject[Colour]} near {SS_StatueHome[Count]} radius 3 and SS_StandFull[Count] == SS_FALSE
+						XANGLE of SS_StatueObject[Colour] = 0
+						ZANGLE of SS_StatueObject[Colour] = 0
+						ALTITUDE of SS_StatueObject[Colour] = 1
+						set SS_StatueObject[Colour] position to {SS_StatueHome[Count]}
+						ALTITUDE of SS_StatueObject[Colour] = 1
+						set SS_StatueObject[Colour] focus to  get target from {SS_Prism_Pos} to {SS_StatueObject[Colour]} distance SS_STATUE_TO_PRISM_DISTANCE angle -90
+						SS_StandFull[Count] = SS_TRUE
+						SS_NumStatuesOnAnyStands++
+						SS_StatueIsOnWhichStand[Colour] = Count
+						disable SS_StatueObject[Colour] moveable
+						if SS_StatueIsOnWhichStand[Colour] == Colour
+							SS_StandHasCorrectStatue[Colour] = SS_TRUE
+							SS_StatuesPlaced++
+							run script SS_CreateStatueRay(Colour)
+							SS_PrismColouredBallEffect[Colour] = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 at {SS_Prism}+{0,0.8,0} time -1
+							set SS_PrismColouredBallEffect[Colour] colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+						end if
+						Count = SS_NUMBER_OF_STATUES
+					end if
+					Count++
+				end while
+			end if
+		end if
+		
+		//----Delete Statue If Under Water Or eaten----//
+		if ({SS_StatueObject[Colour]} under water or SS_StatueObject[Colour] in limbo) and not SS_StatueObject[Colour] is HELD_ANY
+			delete SS_StatueObject[Colour]
+			run background script SS_AdvisorComments_TeleportStatueBack
+		end if
+
+		//----Let Statue re teleport if outside prism influence
+		if get distance from {SS_StatueObject[Colour]} to {SS_Prism_Pos} > SS_PRISM_INFLUENCE_RADIUS and SS_TELEPORT_STATUES == SS_TRUE and not SS_StatueObject[Colour] is HELD_ANY
+			IsAtStartPos = SS_TRUE
+		end if
+
+		wait 0.2 seconds
+		
+	until SS_ChallengeOver == SS_TRUE
+	end loop
+	
+	stop visual effect SS_StatueRayEffect[Colour]
+	stop visual effect SS_PrismColouredBallEffect[Colour]
+	stop visual effect SS_StatueBallEffect[Colour]
+	delete SS_StatueObject[Colour]
+end script SS_Statue
+
+//-----------------------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------------------
+begin script SS_Intro
+
+start
+
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		set fade in time 1
+
+		set camera position to {2204.381, 357.876, 1301.579}
+		set camera focus to {2166.954, 324.227, 1387.992}
+
+		move camera position to {2204.894, 357.838, 1302.266} time 3 easein 0 easeout 0
+		move camera focus to {2159.191, 319.847, 1382.686} time 3 easein 0 easeout 0
+
+		eject good spirit
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_20"
+
+		wait 3 seconds
+
+		set camera position to {1175.232, 186.238, 494.214}
+		set camera focus to {1099.915, 133.074, 532.959}
+		move camera position to {1174.600, 185.901, 493.558} time 3 easein 0 easeout 0
+		move camera focus to {1107.120, 141.428, 552.447} time 3 easein 0 easeout 0
+		wait until read
+
+		send good spirit home
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		set fade in time 1
+
+		set camera position to {1306.515,212.303,584.781}
+		set camera focus to {1383.273,154.080,611.569}
+
+	end cinema
+
+end script SS_Intro
+
+//-----------------------------------------------------------------------------
+// Outro
+//-----------------------------------------------------------------------------
+begin script SS_Outro
+
+	Samurai		= 0
+	Prism_Charge_Effect = 0	
+	RayLength=0
+	RayTarget = 0
+	count=0
+	ColourCount=0
+	//RayTarget=0
+	Halfway = 0
+	RelCamPos=0
+	RelCamFoc=0
+	NewDude=0
+
+FocusPos=0
+start
+
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds			
+
+		set game time 21.00
+		
+
+		// Delete, wait and recreate the rays
+		ColourCount = 0
+		force while ColourCount < SS_NUMBER_OF_STATUES
+			stop visual effect SS_StatueRayEffect[ColourCount]// target at {SS_StatueObject[ColourCount]} + {0.000,2.300,0.000}
+			stop visual effect SS_PrismColouredBallEffect[ColourCount]// target at {SS_Prism}
+			stop visual effect SS_StatueBallEffect[ColourCount]// target at {SS_StatueObject[ColourCount]}
+			//delete SS_StatueObject[ColourCount]
+			//SS_StatueObject[ColourCount] = create ROCK_OBJECT constant SS_StatueModel[ColourCount] at {SS_StatueStartPos[ColourCount]}
+			ColourCount++
+		end while
+		ColourCount = 0
+
+		Prism_Charge_Effect = create visual effect "gp_s_prism.ves" strength 1 scale 0.4 at {SS_Prism}+{0,0.2,0} time -1 
+		set visual effect Prism_Charge_Effect target {SS_Prism}+{0,2,0}
+
+		store camera details
+		play string sound "SCRIPT10_SAMURAILOOP1"
+
+		//pan round to show prism glow
+		set camera position to {1332.928, 191.758, 590.028}
+		set camera focus to {1393.157, 173.531, 512.306}
+
+		set fade in time 2
+		wait 2 seconds
+
+		move camera position to {1323.061, 193.496, 589.625} time 5
+		move camera focus to {1413.869, 169.343, 623.847} time 5
+		wait 2 seconds
+
+		set Prism_Charge_Effect colour red 255 green 255 blue 255
+
+		play string sound "SCRIPT10_SAMURAITHUNDER2"
+		play string sound "SCRIPT10_SAMURAIELECTRIC2"
+		wait 1 seconds
+		play string sound "SCRIPT10_SAMURAIELECTRIC1"
+		play string sound "SCRIPT10_SAMURAITHUNDER1"
+
+		wait until camera ready
+		wait 1.0 seconds
+
+		//jump cuts
+		wait 0.3 seconds
+		
+		run background script SS_Transforarion(0)
+
+		wait 0.5 seconds
+
+		play string sound "SCRIPT10_SAMURAISHOTBEAM1"
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		set camera lens 37.000
+		set camera position to {1324.595, 191.539, 597.082}
+		set camera focus to {1305.479, 194.194, 498.962}
+		run background script SS_Transforarion(1)
+		wait 0.2 seconds
+		run background script SS_Transforarion(2)
+		wait 0.3 seconds
+
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM2"
+		set camera position to {1335.146, 193.263, 600.257}
+		set camera focus to {1265.920, 172.999, 530.994}
+		wait 0.1 seconds
+		run background script SS_Transforarion(3)
+		run background script SS_Transforarion(4)
+
+		wait 0.4 seconds
+
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM3"
+		set camera position to {1327.263, 193.112, 592.853}
+		set camera focus to {1421.550, 174.628, 565.149}
+		wait 0.2 seconds
+		wait 0.2 seconds
+
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM4"
+		set camera position to {1340.738, 197.253, 594.876}
+		set camera focus to {1387.247, 109.170, 586.038}
+
+		wait 0.2 seconds
+		wait 0.2 seconds
+
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM5"
+		set camera position to {1330.474, 192.482, 600.516}
+		set camera focus to {1424.652, 181.540, 568.705}
+
+		wait 0.2 seconds
+		wait 0.2 seconds
+
+		play string sound "SCRIPT10_SAMURAIGENERALBEAM"
+		play string sound "SCRIPT10_SAMURAISHOTBEAM6"
+
+		set camera position to {1347.710, 191.839, 588.002}
+		set camera focus to {1291.656, 188.097, 670.729}
+
+		wait 0.4 seconds
+		run background script SS_Transforarion(5)
+		run background script SS_Transforarion(6)
+            
+		play string sound "SCRIPT10_SAMURAIEXPLOSION"
+		wait 2 seconds
+		start music "creaturefightmain_02" with fadetime 7
+
+		//wide overhead
+		set camera lens 60.000
+		set camera position to {1327.432, 196.804, 614.909}
+		set camera focus to {1369.522, 171.533, 527.787}
+
+		ALTITUDE of Dude[0] = 1.0
+		ALTITUDE of Dude[1] = 1.0
+		ALTITUDE of Dude[2] = 1.0
+		ALTITUDE of Dude[3] = 1.0
+		ALTITUDE of Dude[4] = 1.0
+		ALTITUDE of Dude[5] = 1.0
+		ALTITUDE of Dude[6] = 1.0
+
+		//close reactions
+
+		//hand
+
+		play string sound "SCRIPT10_SAMURAITHUNDER3"
+		wait 2 seconds
+		play anim "a_p_l7sevensamurai_soldier_stretch_back" on Dude[3] blend time 0
+		wait 0.2 seconds
+
+		//head
+		set camera lens 40.000
+		set camera position to {1338.027, 191.245, 590.605}
+		set camera focus to {1430.788, 205.083, 555.919}
+
+		play string sound "SCRIPT10_SAMURAITHUNDER4"
+		wait 2.8 seconds
+		play anim "a_p_l7sevensamurai_soldier_grip_sword" on Dude[4] blend time 0
+		wait 0.2 seconds
+
+		//weapon
+		set camera lens 40.000
+		set camera position to {1343.175, 191.251, 592.888}
+		set camera focus to {1415.880, 199.259, 661.076}
+		
+		play string sound "SCRIPT10_SAMURAITHUNDER1"
+		wait 2.8 seconds
+		play anim "a_p_l7sevensamurai_soldier_stamp_foot" on Dude[2] blend time 0
+		wait 0.2 seconds
+		//move Dude[4] position to {SSFormationPos[4]}
+
+		//fall
+		set camera position to {1333.769, 190.484, 589.511}
+		set camera focus to {1366.813, 192.360, 495.145}
+		wait 2.6 seconds
+
+		//wack
+		ALTITUDE of Dude[3] = 0
+		play anim "a_p_l7sevensamurai_soldier_jumpoff_plinth" on Dude[3] disable stand blend time 0
+		wait 0.2 seconds
+
+		set camera lens 40.000
+		set camera position to {1336.034, 190.131, 592.485}
+		set camera focus to {1426.854, 205.055, 553.386}
+		stop visual effect Prism_Charge_Effect
+		wait 1 seconds
+		move camera position to {1336.034, 190.131, 592.485} time 0.5
+		move camera focus to {1427.464, 197.423, 552.648} time 0.5
+		wait 1.5 seconds
+
+		count=0
+		while count < 7
+			if count !=3
+				run background script Outro_MoveMeAndAnimateMe(count)
+			end if			
+					
+			count++
+
+		end while
+
+		NewDude = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_2 at {1332.893, 190.175, 602.430}
+		play anim "a_p_stand" on NewDude disable stand blend time 0
+		wait 0.2 seconds
+		set NewDude focus to {1330.576, 190.200, 607.616}
+		set camera lens 70.000
+		set camera position to {1331.535, 190.507, 604.651}
+		set camera focus to {1365.592, 194.866, 510.730}
+		play anim "a_p_stand" on Dude[3] disable stand blend time 0
+
+
+		//set Dude[3] position to {Dude[3]}
+		//set Dude[3] position to {1333.624, 190.156, 600.761}
+		SPEED of NewDude = 0.1
+		move NewDude position to {1330.576, 190.200, 607.616}
+		delete SS_Prism
+		wait 0.2 seconds
+
+		override NewDude anim "a_p_l7sevensamurai_soldier_walk"
+		delete Dude[3]
+
+		move camera position to {1329.675, 190.353, 609.830} time 6
+		move camera focus to {1367.212, 192.115, 517.160} time 6
+		wait 2 seconds
+
+		wait until {NewDude} at {1330.576, 190.200, 607.616}
+		play anim "a_p_l7sevensamurai_soldier_finishmove03" on NewDude
+				
+		wait 2 seconds
+		Dude[3] = NewDude
+
+		set Dude[3] focus to camera position
+		wait 2.3 seconds
+		//wait 2.3 seconds
+		set fade red 0 green 0 blue 0 time 2
+
+		stop sound "SAMURAILOOP1"
+
+		//restore camera details
+
+		wait 1 seconds		
+		wait 1 seconds		
+		stop sound "SCRIPT10_SAMURAILOOP1"
+
+		delete Dude[0]
+		delete Dude[1]
+		delete Dude[2]
+		delete Dude[3]
+		delete Dude[4]
+		delete Dude[5]
+		delete Dude[6]
+
+		Samurai = create platoon PLATOON_INFO_SEVEN_SAMURAI at {SS_Prism_Pos} with 7 men and 0 women
+		PLAYER of Samurai = 0
+		release Samurai
+
+		set camera position to {1312.543,201.291,607.917}
+		set camera focus to {1391.510,147.807,577.851}
+		set fade in time 2
+
+		
+
+		wait 2 seconds
+
+	end cinema
+
+	begin dialogue
+
+		eject evil spirit		
+
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_290"
+		wait until read
+		send evil spirit home
+
+	end dialogue
+
+end script SS_Outro
+
+begin script SS_AdvisorComments_Control
+	StatueFound[SS_NUMBER_OF_STATUES]
+	StatueIter = 0
+	TotalStatuesFound = 0
+	NumDialogSpoken = 0
+	MarkerAtCamera = 0
+start
+	wait until SS_TeleportCutscene == SS_TRUE
+
+	while TotalStatuesFound < 7
+		StatueIter = 0
+		while StatueIter < SS_NUMBER_OF_STATUES
+			if StatueFound[StatueIter] == SS_FALSE and SS_StatueObject[StatueIter] exists
+				MarkerAtCamera = marker at camera position
+				if ({SS_StatueObject[StatueIter]} viewed and get distance from {MarkerAtCamera} to {SS_StatueObject[StatueIter]} < 40 and ALTITUDE of MarkerAtCamera < 40) or (SS_StatueObject[StatueIter] is HELD_ANY and SS_TELEPORT_STATUES == SS_FALSE) or (SS_StatueObject[StatueIter] right clicked and SS_TELEPORT_STATUES == SS_TRUE)
+					TotalStatuesFound++
+					StatueFound[StatueIter] = SS_TRUE
+
+					if StatueIter == SS_RED
+						run background script SS_AdvisorComments_FoundRedStatue
+					elsif NumDialogSpoken == 0
+						if TotalStatuesFound >= 1
+							run background script SS_AdvisorComments_FoundStatue1
+							NumDialogSpoken++
+						end if
+					elsif NumDialogSpoken == 1
+						if TotalStatuesFound >= 2
+							run background script SS_AdvisorComments_FoundStatue2
+							NumDialogSpoken++
+						end if
+					elsif NumDialogSpoken == 2
+						if TotalStatuesFound >= 4
+							run background script SS_AdvisorComments_FoundStatue3
+							NumDialogSpoken++
+						end if
+					elsif NumDialogSpoken == 3
+						if TotalStatuesFound >= 5
+							run background script SS_AdvisorComments_FoundStatue4
+							NumDialogSpoken++
+						end if
+					end if
+				elsif get distance from {SS_Prism_Pos} to {SS_StatueObject[StatueIter]} <= 50
+					TotalStatuesFound++
+					StatueFound[StatueIter] = SS_TRUE
+				end if
+			end if
+			StatueIter++
+		end while
+	end while
+
+	begin dialogue
+		eject good spirit
+
+		// Good: Excellent. You've collected all the statues.
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_90"
+		wait until read
+
+		eject evil spirit
+
+		// Evil: Now, how do we get them to light up?
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_100"
+		wait until read
+		// Good: Patience. Good things come to those who wait.
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_110"
+		wait until read
+
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+	wait until SS_NumStatuesOnAnyStands == 7
+
+	if SS_StatuesPlaced != 7
+		begin dialogue
+			eject evil spirit
+
+			// Evil: Very nice that they're all lit, but something doesn't look right.
+			say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_120"
+			wait until read
+
+			eject good spirit
+
+			// Good: Yes, these colours seem familiar.
+			say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_130"
+			wait until read
+			// Evil: Having flashbacks to your magic mushroom days?
+			say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_140"
+			wait until read
+
+			send evil spirit home
+			send good spirit home
+		end dialogue
+	end if
+
+	wait until SS_StatuesPlaced == 7
+
+	// call the outro?
+
+end script SS_AdvisorComments_Control
+
+begin script SS_AdvisorComments_FoundRedStatue
+start
+	begin dialogue
+		eject evil spirit
+		// evil: Red is my favourite colour.
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_40"
+		wait until read
+
+		eject good spirit
+		// good: I never would have guessed.
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_50"
+		wait until read
+
+		send good spirit home
+		send good spirit home
+	end dialogue
+end script SS_AdvisorComments_FoundRedStatue
+
+begin script SS_AdvisorComments_FoundStatue1
+start
+	begin dialogue
+		eject good spirit
+
+		// Hmm. That's an interesting statue. It seems a bit, well, lonely.
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_60"
+		wait until read
+
+		send good spirit home
+	end dialogue
+end script SS_AdvisorComments_FoundStatue1
+
+begin script SS_AdvisorComments_FoundStatue2
+start
+	begin dialogue
+		eject good spirit
+
+		// Pretty. I wonder if it does that every day?
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_30"
+		wait until read
+
+		send good spirit home
+	end dialogue
+end script SS_AdvisorComments_FoundStatue2
+
+begin script SS_AdvisorComments_FoundStatue3
+start
+	begin dialogue
+		eject good spirit
+
+		// Ah. you found another statue.
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_70"
+		wait until read
+
+		send good spirit home
+	end dialogue
+end script SS_AdvisorComments_FoundStatue3
+
+begin script SS_AdvisorComments_FoundStatue4
+start
+	begin dialogue
+		eject good spirit
+
+		// Well done, Leader.
+		say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_80"
+		wait until read
+
+		send good spirit home
+	end dialogue
+end script SS_AdvisorComments_FoundStatue4
+
+begin script SS_AdvisorComments_TeleportStatueBack
+start
+	begin dialogue
+		eject good spirit
+			say "BW2T_SCRIPT_07FINAL_CHALLENGE_SEVEN_SAMURAI_300"
+			wait until read
+		send good spirit home
+	end dialogue
+end script SS_AdvisorComments_TeleportStatueBack
+
+begin script SS_CreateStatueRay(Colour)
+	StatueLoc = 0
+	PrismLoc = 0
+	RayTarget = 0
+	RayLocation = 0
+start
+	StatueLoc = marker at {SS_StatueObject[Colour]} + {0.000,1.300,0.000}
+	PrismLoc = marker at {SS_Prism_Pos} + {0.000,0.500,0.000}
+/*
+	RayTarget = marker at get target from {SS_Prism_Pos} to {SS_StatueObject[Colour]} + {0.000,2.300,0.000} distance SS_STATUE_TO_PRISM_DISTANCE angle 0
+	SS_StatueRayEffect[Colour] = create visual effect "gp_s_rayfxreversethin.ves" strength 3 scale 0.3 at {SS_StatueObject[Colour]} + {0.000,2.300,0.000} time -1
+	set SS_StatueRayEffect[Colour] focus to {RayTarget}
+	set SS_StatueRayEffect[Colour] colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+*/
+	RayLocation = marker at get target from {PrismLoc} to {StatueLoc} distance -SS_STATUE_TO_PRISM_DISTANCE/2 angle 0
+	SS_StatueRayEffect[Colour] = create visual effect "gp_s_rayfxreversethin.ves" strength 1 scale 0.8 at {RayLocation} time -1
+	set SS_StatueRayEffect[Colour] focus to {PrismLoc}
+	set SS_StatueRayEffect[Colour] colour red SS_StatueEffectColourRed[Colour] green SS_StatueEffectColourGreen[Colour] blue SS_StatueEffectColourBlue[Colour]
+	play sound "SCRIPT10_SAMURAIGENERALBEAM" at {RayLocation}
+end script SS_CreateStatueRay
+
+begin script SS_PJsCheatScript
+
+
+start 
+
+	set SS_StatueObject[SS_RED] position to {SS_StatueHome[SS_RED]}
+
+	set SS_StatueObject[SS_ORANGE] position to {SS_StatueHome[SS_ORANGE]}
+
+	set SS_StatueObject[SS_YELLOW] position to {SS_StatueHome[SS_YELLOW]}
+
+	set SS_StatueObject[SS_GREEN] position to {SS_StatueHome[SS_GREEN]}
+
+	set SS_StatueObject[SS_BLUE] position to {SS_StatueHome[SS_BLUE]}
+
+	set SS_StatueObject[SS_INDIGO] position to {SS_StatueHome[SS_INDIGO]}
+
+	set SS_StatueObject[SS_VIOLET] position to {SS_StatueHome[SS_VIOLET]}
+
+end script SS_PJsCheatScript
+
+begin script SS_Transforarion(statuex)
+
+Halfway=0
+markdat=0
+
+start
+
+	Halfway = get distance from {SS_StatueObject[statuex]} to {SS_Prism_Pos}
+	Halfway /= 2
+	markdat=marker at get target from {SS_Prism_Pos}-{0,0,0} to {SS_StatueObject[statuex]} distance Halfway angle 180 //{SS_StatueObject[ColourCount]} + {0.000,1.000,0.000} time -1
+
+	Dude[statuex] = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_2 at {1361.064, 189.312, 584.018}
+	move Dude[statuex] position to {Dude[statuex]}
+	delete SS_StatueObject[statuex]
+
+	set Dude[statuex] position to {SS_StatueHome[statuex]}
+	ALTITUDE of Dude[statuex] = 1.2
+	set Dude[statuex] focus to {SS_Prism}
+
+	play anim "a_p_l7sevensamurai_soldier_react_to_beam" on Dude[statuex] blend time 0
+	wait 0.5 seconds
+
+	if statuex != 6
+		SS_StatueRayEffect[statuex] = create visual effect "gp_s_rayfxreversethin.ves" strength 1 scale 1.5 at {markdat}//get target from {SS_Prism_Pos}-{0,0,0} to {SS_StatueObject[statuex]} distance Halfway angle 180 //{SS_StatueObject[ColourCount]} + {0.000,1.000,0.000} time -1
+		set SS_StatueRayEffect[statuex] colour red 255 green 255 blue 255
+		set SS_StatueRayEffect[statuex] focus to {Dude[statuex]} + {0.000,1.200,0.000}
+	end if
+
+	SS_EffectssStatues[statuex] = create visual effect "gp_s_samurai.ves" strength 1 scale 1 at {Dude[statuex]} time 3 
+	set SS_EffectssStatues[statuex] colour red 255 green 255 blue 255
+	wait until Dude[statuex] played
+	play anim "a_p_l7sevensamurai_soldier_stand" on Dude[statuex] loop -1 blend time 0
+	wait 10 seconds
+
+end script SS_Transforarion
+
+begin script Outro_MoveMeAndAnimateMe(whoami)
+
+SSFormationPos[7]
+
+start
+
+	SSFormationPos[3] = marker at {1331.411, 190.109, 605.801}
+
+	SSFormationPos[4] = marker at {1334.370, 190.309, 606.196}
+	SSFormationPos[5] = marker at {1333.320, 190.109, 606.093}
+	SSFormationPos[6] = marker at {1332.319, 190.109, 605.983}
+
+	SSFormationPos[0] = marker at {1330.491, 190.309, 605.101}	
+	SSFormationPos[1] = marker at {1329.551, 190.309, 604.267}
+	SSFormationPos[2] = marker at {1328.767, 190.309, 603.508}
+
+	ALTITUDE of Dude[whoami] = 0
+			SPEED of Dude[whoami] = 0.1
+			if whoami != 3
+				set Dude[whoami] position to get target from {1327.008, 191.302, 617.274} to {SSFormationPos[whoami]} distance 4 angle 0
+				set Dude[whoami] focus to {SSFormationPos[whoami]}
+			end if
+
+	move Dude[whoami] position to {SSFormationPos[whoami]}
+
+	override Dude[whoami] anim "a_p_l7sevensamurai_soldier_walk"
+	
+	wait until {Dude[whoami]} at {SSFormationPos[whoami]}
+
+	if whoami == 3
+		play anim "a_p_l7sevensamurai_soldier_finishmove03" on Dude[whoami]
+	elsif whoami == 0
+		play anim "a_p_l7sevensamurai_soldier_finishmove01" on Dude[whoami]
+	elsif whoami == 6
+		play anim "a_p_l7sevensamurai_soldier_finishmove01" on Dude[whoami]
+	else
+		play anim "a_p_l7sevensamurai_soldier_finishmove02" on Dude[whoami]
+	end if
+
+
+end script Outro_MoveMeAndAnimateMe
+

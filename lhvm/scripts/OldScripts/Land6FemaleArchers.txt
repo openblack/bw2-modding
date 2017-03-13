@@ -1,0 +1,272 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	Land6FemaleArchers.txt
+//	~~~~~~~~~~~~~~~~~~~~~~
+//
+// Wait for Matthew's new army commands coming soon. Feb 20th?
+// + Can get the gender and experience of the platoon now... use that.
+// Make them guard both sides of the top? They need to defend the entrance and themselves + retreat
+//
+//	Cutscenes
+//	- Intro
+//	- New Leader
+//	- Wiped out.
+//
+//	Rewards:		Tech 2 archer blueprint
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+/*
+get player expression most experienced platoon
+(which returns the most experienced platoon belonging to the given player)
+get army object most experienced platoon
+(which returns the most experienced platoon within an army container)
+get number of men in platoon object
+(returns how many blokes are in the given platoon)
+get number of women in platoon object
+(returns how many birds are in the given platoon)
+
+PLATOON_AGENDA_ACTION_RETREAT
+PLATOON_AGENDA_ACTION_MOVE_TO_NEAREST_BUILDING (?)
+PLATOON_AGENDA_ACTION_MOVE_TO_POS
+PLATOON_AGENDA_ACTION_RANGED_ATTACK
+PLATOON_AGENDA_ACTION_DEFEND_OBJECT
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FA_FALSE			= 0
+define FA_TRUE			= 1
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FA_Initial_Scroll_Used	= FA_FALSE
+global FA_Archers_Converted		= FA_FALSE
+global FA_All_Archers_Dead		= FA_FALSE
+global FA_PlatoonSize_1			= 0
+global FA_PlatoonSize_2			= 0
+global FA_PlatoonSize_3			= 0
+global FA_Archer_Squad			= 0
+global FA_Archer_Squad_2		= 0
+global FA_Archer_Squad_3		= 0
+global FA_Scroll				= 0
+global FA_Female_Hero_Squad		= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FA_Intro_Cutscene
+define script FA_Wiped_Out_Cutscene
+define script FA_New_Leader_Cutscene
+define script FA_Check_Health_Of_Platoons
+define script FA_Check_For_Conversion
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land6FemaleArchers
+
+	FA_Attacking_Waypoints[4]
+	FA_Run_This_Already			= FA_FALSE
+	FA_First_Time_Clicked		= FA_TRUE
+	FA_Players_Town				= 0
+	FA_Camp_Pos					= 0
+	FA_Defensive_Pos_A			= 0
+	FA_Defensive_Pos_B			= 0
+	FA_Aztec_Spawn_Pos			= 0
+    FA_Egyptian_Spawn_Pos		= 0
+	FA_Centre_Building			= 0
+	FA_FH_Spawn_Pos				= 0
+
+start
+
+	FA_Players_Town				= get TOWN at {1048.430, 89.361, 1167.457} radius 100
+	FA_Camp_Pos					= marker at {1423.025, 158.742, 1517.865}
+	FA_Defensive_Pos_A			= marker at {1355.776, 139.906, 1488.486}
+	FA_Defensive_Pos_B			= marker at {1355.435, 145.030, 1469.993}
+	FA_Attacking_Waypoints[0]	= marker at {1773.085, 162.663, 1813.716}
+	FA_Attacking_Waypoints[1]	= marker at {1463.869, 83.056, 1738.740}
+	FA_Attacking_Waypoints[2]	= marker at {1252.642, 82.142, 1470.892}
+	FA_Attacking_Waypoints[3]	= marker at {1404.174, 157.900, 1495.529}
+	FA_Aztec_Spawn_Pos			= marker at {1830.042, 169.713, 1796.248}
+    FA_Egyptian_Spawn_Pos		= marker at {1856.026, 173.176, 1831.447}
+	FA_FH_Spawn_Pos				= marker at {1048.430, 89.361, 1167.457}
+
+	//...Create Archer's hut. From here one will speak in cutscenes; and also we can spawn more from here.
+	FA_Centre_Building = create HOUSE ABODE_INFO_NORSE_HUT at {FA_Camp_Pos}
+
+	//...Create the Female Archer squads
+	FA_Archer_Squad = create platoon PLATOON_INFO_EGYPTIAN_RANGED_2 at {FA_Camp_Pos} with 0 men and 32 women
+	set FA_Archer_Squad player 4
+	FA_Archer_Squad_2 = create platoon PLATOON_INFO_EGYPTIAN_RANGED_2 at {FA_Defensive_Pos_A} with 0 men and 24 women
+	set FA_Archer_Squad_2 player 4
+	FA_Archer_Squad_3 = create platoon PLATOON_INFO_EGYPTIAN_RANGED_1 at {FA_Defensive_Pos_B} with 0 men and 24 women
+	set FA_Archer_Squad_3 player 4
+
+	FA_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Camp_Pos} 
+	ALTITUDE of FA_Scroll = 10
+
+	FA_Female_Hero_Squad = create platoon PLATOON_INFO_GREEK_RANGED_1 at {FA_FH_Spawn_Pos} with 0 men and 20 women
+	set FA_Female_Hero_Squad player 0
+
+	//... Run a background script that checks to see if all the archers are alive.
+	run background script FA_Check_Health_Of_Platoons
+
+	//... Run a background script to check to see if the Female Archers have been converted.
+	run background script FA_Check_For_Conversion
+
+	//------------------------
+	begin loop
+		if FA_Scroll right clicked
+			clear right clicked object
+			if FA_First_Time_Clicked == FA_TRUE
+				run script FA_Intro_Cutscene
+				FA_First_Time_Clicked = FA_FALSE
+			elsif FA_First_Time_Clicked == FA_FALSE
+				say "Reminder: Female Archers 'ere, can you find a way of getting them to support you?"
+			end if
+		end if
+
+		if FA_Archers_Converted == FA_TRUE
+			if FA_Run_This_Already == FA_FALSE
+				//...Run the New leader cutscene
+				run script FA_New_Leader_Cutscene
+				//... Create the blueprint for level 2 archers.
+				// - NEED!
+				FA_Run_This_Already = FA_TRUE
+			end if
+		end if
+
+		until FA_All_Archers_Dead == FA_TRUE
+	end loop
+	//------------------------
+
+	//... Run the "Archers weren't converted but were all killed cutscene."
+	run script FA_Wiped_Out_Cutscene
+
+	say "Female Archer script over in 10 seconds"
+	wait 10 seconds
+
+end script Land6FemaleArchers
+//===========================
+
+
+//-----------------------------------------------------------------------------
+//	FA_Intro_Cutscene
+//-----------------------------------------------------------------------------
+begin script FA_Intro_Cutscene
+
+start
+
+	//... Explaining cutscene. Check to see first that neither are they all dead or have been converted.
+	if FA_All_Archers_Dead != FA_TRUE and FA_Archers_Converted != FA_TRUE
+		begin cinema
+			set camera position to {1535.952,109.090,1025.421}
+			set camera focus to {1550.240,98.900,1013.296}
+			eject good spirit
+			say "These are a proud people; very strong with a bow."
+			wait until read
+			clear dialogue
+			say "Nobody seems to be in charge though; interesting..."
+			wait until read
+			clear dialogue
+			send good spirit home
+			wait 10 seconds
+		end cinema
+	elsif FA_All_Archers_Dead == FA_TRUE
+		say "All those archers are dead. Shame."
+	elsif FA_Archers_Converted == FA_TRUE
+		say "The archers were converted to your cause by you taking a female leader to them."
+	end if
+
+end script FA_Intro_Cutscene
+
+
+//-----------------------------------------------------------------------------
+//	 FA_New_Leader_Cutscene
+//-----------------------------------------------------------------------------
+begin script FA_New_Leader_Cutscene
+
+start
+
+	//wait until the player has brought over a female hero.
+	wait until FA_Archers_Converted == FA_TRUE
+
+	begin dialogue
+		eject good spirit
+		say "The female archers will now join your army. Command them as you would a normal platoon."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait 3 seconds
+
+end script FA_New_Leader_Cutscene
+
+
+//-----------------------------------------------------------------------------
+//	FA_Wiped_Out_Cutscene
+//-----------------------------------------------------------------------------
+begin script FA_Wiped_Out_Cutscene
+
+start
+
+	//... Initial check to see if you had converted the Female Archers; because if so you don't want this scene.
+	if FA_Archers_Converted == FA_FALSE
+		begin dialogue
+			eject good spirit
+			say "The female archers are all dead - cutscene here."
+			wait until read
+			clear dialogue
+		end dialogue		
+	end if
+
+end script FA_Wiped_Out_Cutscene
+
+
+//-----------------------------------------------------------------------------
+//	FA_Check_Health_Of_Platoons
+//-----------------------------------------------------------------------------
+begin script FA_Check_Health_Of_Platoons
+
+start
+
+	begin loop
+		wait 2 seconds
+		//...Check to see if all the female archers are dead
+		FA_PlatoonSize_1 = get soldiers of tribe TRIBE_TYPE_EGYPTIAN nearest {FA_Archer_Squad} radius 50
+		FA_PlatoonSize_2 = get soldiers of tribe TRIBE_TYPE_EGYPTIAN nearest {FA_Archer_Squad_2} radius 50
+		FA_PlatoonSize_3 = get soldiers of tribe TRIBE_TYPE_EGYPTIAN nearest {FA_Archer_Squad_3} radius 50
+		if FA_PlatoonSize_1 <= 0 and FA_PlatoonSize_2 <= 0 and FA_PlatoonSize_3 <= 0
+			FA_All_Archers_Dead = FA_TRUE
+		end if
+		until FA_All_Archers_Dead == FA_TRUE
+	end loop
+
+end script FA_Check_Health_Of_Platoons
+
+
+//-----------------------------------------------------------------------------
+//	FA_Check_For_Conversion
+//-----------------------------------------------------------------------------
+begin script FA_Check_For_Conversion
+
+start
+	begin loop
+		wait 2 seconds
+		//... If the player gets a platoon of females to the archers... experienced too?
+		if {FA_Female_Hero_Squad} near {FA_Archer_Squad} radius 70 or {FA_Female_Hero_Squad} near {FA_Archer_Squad_2} radius 70 or {FA_Female_Hero_Squad} near {FA_Archer_Squad_3} radius 70 
+			set FA_Archer_Squad player 0
+			set FA_Archer_Squad_2 player 0
+			set FA_Archer_Squad_3 player 0
+			FA_Archers_Converted = FA_TRUE
+		end if
+		until FA_Archers_Converted == FA_TRUE
+	end loop
+
+end script FA_Check_For_Conversion

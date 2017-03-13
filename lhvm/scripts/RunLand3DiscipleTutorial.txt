@@ -1,0 +1,6 @@
+run script RunLand3DiscipleTutorial
+
+begin script RunLand3DiscipleTutorial
+start
+	run script Land3DiscipleTutorial
+end script RunLand3DiscipleTutorial

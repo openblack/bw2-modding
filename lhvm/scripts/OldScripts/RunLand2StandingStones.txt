@@ -1,0 +1,9 @@
+run script RunLand2StandingStones
+
+begin script RunLand2StandingStones
+
+start
+	
+	run script Land2StandingStones
+
+end script RunLand2StandingStones

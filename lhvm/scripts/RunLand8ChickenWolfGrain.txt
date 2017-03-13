@@ -1,0 +1,8 @@
+run script RunLand8ChickenWolfGrain
+
+begin script RunLand8ChickenWolfGrain
+start
+
+	run script Land8ChickenWolfGrain
+
+end script RunLand8ChickenWolfGrain

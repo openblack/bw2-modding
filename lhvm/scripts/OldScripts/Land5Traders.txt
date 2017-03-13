@@ -1,0 +1,354 @@
+/*
+Land 5 Traders
+By: Matthew Leonard
+
+Periodically traders will land on the players coastline and offer to trade resources with them
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define GT_FALSE = 0
+define GT_TRUE = 1
+
+define GT_START_WAIT = 60
+define GT_RETURN_WAIT = 1000
+define GT_OFFER_WAIT = 120 //Wait 2 minutes after the trade offer has  been made before returning
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global GT_Waypoints[6]
+global GT_Traders[5]
+
+global GT_StoragePit = 0
+
+global GT_Resource_Remove = 0
+global GT_Resource_Add = 0
+
+global GT_RandomResource = 0
+global GT_DepartReady = 0
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script GT_GetStoragePit
+
+define script SetupWaypoints(Land)
+define script TraderControl(ID, DockPos)
+
+//-----------------------------------------------------------------------------
+//	Greek Traders
+//-----------------------------------------------------------------------------
+begin script Land5Traders
+	TraderShip = 0
+	TraderScroll = 0
+
+	TraderID = 0
+	
+	ScrollPos = marker at {830.637, 46.633, 608.301}	
+	TradeAgreed = GT_FALSE
+		
+	ResourceFood = 0
+	ResourceWood = 0
+	ResourceOre = 0
+
+	OfferTimer = create timer for 0 seconds
+start
+	
+	begin loop
+
+		//Storage Pit stuff
+		run script GT_GetStoragePit
+
+		begin loop
+			wait GT_START_WAIT seconds
+
+			//Wait until there's plenty of resources in the storage pit
+			wait until get resource RESOURCE_TYPE_FOOD in GT_StoragePit > 5000 and get resource RESOURCE_TYPE_WOOD in GT_StoragePit > 5000 and get resource RESOURCE_TYPE_ORE in GT_StoragePit > 2000
+
+			//I'm on Land 5
+			run script SetupWaypoints(5)
+			
+			TraderShip = create SHIP GREEK_SHIP at {GT_Waypoints[0]}
+			add {GT_Waypoints[1]} to TraderShip waypoint schedule
+			add {GT_Waypoints[2]} to TraderShip waypoint schedule
+			add {GT_Waypoints[3]} to TraderShip waypoint schedule
+			add {GT_Waypoints[4]} to TraderShip waypoint schedule
+			add {GT_Waypoints[5]} to TraderShip waypoint schedule
+
+			SPEED of TraderShip = 3.0
+			enable TraderShip waypoint schedule
+
+			wait until TraderShip at final destination
+			ANGLE of TraderShip = 15
+
+			TraderScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {ScrollPos}
+
+			//run script Turn(TraderShip)
+
+			wait until TraderScroll right clicked
+
+			begin cinema
+			
+				GT_RandomResource = number from 1 to 3
+
+				//Food amounts
+				ResourceFood = get resource RESOURCE_TYPE_FOOD in GT_StoragePit
+				ResourceWood = get resource RESOURCE_TYPE_WOOD in GT_StoragePit
+				ResourceOre = get resource RESOURCE_TYPE_ORE in GT_StoragePit
+				
+				//Dialogue
+				if GT_RandomResource == 1
+
+					GT_Resource_Remove = (ResourceWood/6)
+					GT_Resource_Add = (ResourceWood/6) - ((ResourceWood/6)/4)
+
+					say "Do you want to trade $d food" with number GT_Resource_Add
+					wait until read
+
+					say "For $d wood?" with number GT_Resource_Remove
+					wait until read
+
+					say "If your interested, and have the food then click my scroll again."
+					wait until read
+
+				elsif GT_RandomResource == 2
+
+					GT_Resource_Remove = (ResourceWood/6)
+					GT_Resource_Add = (ResourceWood/6) - ((ResourceWood/6)/4)
+
+					say "Do you want to trade $d wood" with number GT_Resource_Add
+					wait until read
+
+					say "For $d ore?" with number GT_Resource_Remove
+					wait until read
+
+					say "If your interested, and have the wood then click my scroll again."
+					wait until read
+
+				else
+
+					GT_Resource_Remove = (ResourceWood/6)
+					GT_Resource_Add = (ResourceWood/6) - ((ResourceWood/6)/4)
+
+					say "Do you want to trade $d ore" with number GT_Resource_Add
+					wait until read
+
+					say "For $d food?" with number GT_Resource_Remove
+					wait until read
+
+					say "If your interested, and have the ore then click my scroll again."
+					wait until read
+
+				end if
+
+			end cinema
+
+			OfferTimer = create timer for GT_OFFER_WAIT seconds
+
+			begin loop
+				clear right clicked object
+				wait until TraderScroll right clicked
+
+				begin cinema
+
+					//Now check to see if the player has the rellevant payment
+					//Check for food
+					
+					if GT_RandomResource == 1 and get resource RESOURCE_TYPE_WOOD in GT_StoragePit >= GT_Resource_Remove
+						TradeAgreed = GT_TRUE
+
+					elsif GT_RandomResource == 2 and get resource RESOURCE_TYPE_ORE in GT_StoragePit >= GT_Resource_Remove
+						TradeAgreed = GT_TRUE
+
+					elsif GT_RandomResource == 3 and get resource RESOURCE_TYPE_FOOD in GT_StoragePit >= GT_Resource_Remove
+						TradeAgreed = GT_TRUE
+
+					else
+						say "Go away and come back when you have the required funds"
+						wait until read
+
+						//Remind the player of the funds
+						if GT_RandomResource == 1
+							say "I'll give you $d wood when you have" with number GT_Resource_Add
+							wait until read
+
+							say "$d food in your village store" with number GT_Resource_Remove
+							wait until read
+
+						elsif GT_RandomResource == 2
+							say "I'll give you $d ore when you have" with number GT_Resource_Add
+							
+							say "$d wood in your village store" with number GT_Resource_Remove
+							wait until read
+
+						else
+							say "I'll give you $d food when you have" with number GT_Resource_Add
+							wait until read
+
+							say "$d ore in your village store" with number GT_Resource_Remove
+							wait until read
+
+						end if
+
+					end if
+				
+					wait until read
+
+				end cinema
+
+			until TradeAgreed == GT_TRUE or get OfferTimer time remaining == 0
+			end loop
+
+			delete TraderScroll
+
+			if not get OfferTimer time remaining == 0
+				begin cinema
+					set fade red 0 green 0 blue 0 time 1
+					wait 1 seconds
+
+					set camera position to {854.917, 64.695, 573.165}
+					set camera focus to {855.102, 64.564, 574.139}
+					
+					set fade in time 1
+					wait 0.5 seconds
+
+					move camera focus to {830.936, 48.710, 598.146} time 8
+					move camera position to {830.414, 48.678, 597.294} time 8
+
+					say "Excellent, my shipmates will begin offloading."
+					wait until read
+
+					begin loop
+
+						run background script TraderControl(TraderID, marker at {829.196, 45.977, 602.393})
+						wait 1 seconds
+
+						TraderID++
+
+					until TraderID == 5
+					end loop
+
+				end cinema
+
+				wait until GT_DepartReady == 5
+			end if
+
+			clear TraderShip waypoint schedule
+
+			add {GT_Waypoints[4]} to TraderShip waypoint schedule
+			add {GT_Waypoints[3]} to TraderShip waypoint schedule
+			add {GT_Waypoints[2]} to TraderShip waypoint schedule
+			add {GT_Waypoints[1]} to TraderShip waypoint schedule
+			add {GT_Waypoints[0]} to TraderShip waypoint schedule
+
+			SPEED of TraderShip = 3.0
+			enable TraderShip waypoint schedule
+
+			wait until TraderShip at final destination
+
+			wait 4 seconds
+			delete TraderShip
+
+		until not GT_StoragePit exists
+		end loop
+
+		wait GT_RETURN_WAIT seconds
+
+	end loop
+
+end script Land5Traders
+
+//-----------------------------------------------------------------------------
+//	Setup Waypoints
+//-----------------------------------------------------------------------------
+begin script TraderControl(ID, DockPos)
+start
+
+	GT_Traders[ID] = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {DockPos}
+	//SPEED of GT_Traders[ID] = 1.0
+
+	//Set the carried object
+	//Food bag
+	if GT_RandomResource == 1
+		set GT_Traders[ID] carrying CARRIED_OBJECT_BAG
+	//Wood
+	elsif GT_RandomResource == 2
+		set GT_Traders[ID] carrying CARRIED_OBJECT_TREE_1
+	//Ore
+	elsif GT_RandomResource == 3
+		set GT_Traders[ID] carrying CARRIED_OBJECT_BUCKET
+	end if
+
+	move GT_Traders[ID] position to extra position 1 of GT_StoragePit
+	
+	wait until {GT_Traders[ID]} at extra position 1 of GT_StoragePit
+	
+	set GT_Traders[ID] carrying CARRIED_OBJECT_NONE
+
+	//Divide resource amounts by 5, as there are five traders
+	if GT_RandomResource == 1 and get resource RESOURCE_TYPE_WOOD in GT_StoragePit >= GT_Resource_Remove
+		add resource RESOURCE_TYPE_FOOD (GT_Resource_Add/5) to GT_StoragePit
+		remove resource RESOURCE_TYPE_WOOD (GT_Resource_Remove/5) from GT_StoragePit
+		set GT_Traders[ID] carrying CARRIED_OBJECT_TREE_1
+
+	elsif GT_RandomResource == 2 and get resource RESOURCE_TYPE_ORE in GT_StoragePit >= GT_Resource_Remove
+		add resource RESOURCE_TYPE_WOOD (GT_Resource_Add/5) to GT_StoragePit
+		remove resource RESOURCE_TYPE_ORE (GT_Resource_Remove/5) from GT_StoragePit
+		set GT_Traders[ID] carrying CARRIED_OBJECT_BUCKET
+
+	elsif GT_RandomResource == 3 and get resource RESOURCE_TYPE_FOOD in GT_StoragePit >= GT_Resource_Remove
+		add resource RESOURCE_TYPE_ORE (GT_Resource_Add/5) to GT_StoragePit
+		remove resource RESOURCE_TYPE_FOOD (GT_Resource_Remove/5) from GT_StoragePit
+		set GT_Traders[ID] carrying CARRIED_OBJECT_BAG
+
+	else
+		say "The resources have been removed, you thief!"	
+		wait 2000 seconds
+	end if
+
+	wait 2 seconds
+	move GT_Traders[ID] position to {DockPos}
+
+	wait until {GT_Traders[ID]} at {DockPos}
+	delete GT_Traders[ID]
+
+	GT_DepartReady++
+
+end script TraderControl
+
+//-----------------------------------------------------------------------------
+//	Get Storage Pit
+//-----------------------------------------------------------------------------
+begin script GT_GetStoragePit
+	Town = 0
+	SearchRadius = 0
+start
+	Town = get TOWN at {883.082, 85.790, 740.660} radius 200
+
+	begin loop
+		GT_StoragePit = get HOUSE ABODE_INFO_GREEK_STORAGE_PIT in Town
+		//wait 10 seconds
+	until GT_StoragePit exists and BUILT of GT_StoragePit == 1.0
+	end loop
+
+end script GT_GetStoragePit
+
+//-----------------------------------------------------------------------------
+//	Setup Waypoints
+//-----------------------------------------------------------------------------
+begin script SetupWaypoints(Land)
+	ID = 0
+start
+
+	if Land == 5
+		GT_Waypoints[0] = marker at {87.410, 3.798, 2492.883}
+		GT_Waypoints[1] = marker at {233.557, 37.592, 1660.594}
+		GT_Waypoints[2] = marker at {214.089, 31.693, 324.332}
+		GT_Waypoints[3] = marker at {583.367, 32.692, 206.038}
+		GT_Waypoints[4] = marker at {877.160, 31.438, 408.436}
+		GT_Waypoints[5] = marker at {844.457, 39.221, 596.287}
+	end if
+
+end script SetupWaypoints

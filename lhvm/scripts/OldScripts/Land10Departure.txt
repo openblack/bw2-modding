@@ -1,0 +1,72 @@
+begin script Land10Departure
+
+DepartureScrollPos = marker at {913.680, 192.000, 747.634}
+
+DepartureScroll = 0
+
+start
+
+	run script Land10Outro
+	
+	///TA: DEAL WITH TICKING THE OBJECTIVE
+	if PLAYER of L10GreekTown == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment -0.2		
+	else
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment 0.2				
+	end if
+	//Either way we have completed the land.
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+
+
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_10FINAL_DEPARTURE_10" remind "BW2T_SCRIPT_10FINAL_DEPARTURE_20" at {DepartureScrollPos}
+	ALTITUDE of DepartureScroll = 3
+	
+	begin dialogue
+		eject good spirit
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_OUTRO_10"
+		wait until read
+		send good spirit home
+
+	end dialogue
+	
+	wait until DepartureScroll right clicked
+
+	
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_LAND_DONE_10"	//EVIL_ADVISOR	We won! We showed that nothing beats Greek know-how, skill and violence!		
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_LAND_DONE_20"	//GOOD_ADVISOR	We did rise to the occasion, I must say! It was a decisive victory, Leader! Well done!		
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_LAND_DONE_40"	//GOOD_ADVISOR	We've struck a mighty blow, Leader, but I fear we have not yet vanquished the Aztecs.		
+		wait until read
+		say "BW2T_SCRIPT_10FINAL_ADVISORS_LAND_DONE_50"	//EVIL_ADVISOR	So what are we waiting for? Let's hunt them down and finish them for good!		
+		wait until read
+		send good spirit home
+		send evil spirit home
+	end dialogue
+	
+
+	clear right clicked object
+
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+	
+	
+	////
+	//TRIGGER processing of land end objectives
+	process land end objectives
+	wait until land end objectives processed
+
+		
+	if MyCreature exists
+		save my_creature
+	end if
+
+	L10Complete = 1
+	disable game can be lost
+	load map "./Data/Landscape/BW2/Land11.bwe"
+
+
+end script Land10Departure

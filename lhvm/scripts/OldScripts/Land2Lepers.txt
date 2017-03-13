@@ -1,0 +1,929 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	Lepers Event - Land 2
+//	~~~~~~~~~~~~~~~~~~~~~
+//
+// ADD TO DIALOGUE???
+//say "Congratulations! The refugees will now join your town."
+//say "We are disappointed with your decision to send us away. Farewell."
+//say "You healed all of the Lepers!"
+//say "Sacrifices! Good work boss!"
+//say "The lepers have reached our walls. I do hope you decide to let them in. Lower scroll allows them to join."
+
+//- Improve the ship - is that really the furthest out that a ship can be spawned
+//- Add sacrifice checking code
+//- Add pilgrimmage stuff.
+//- Ask Adam about getting two lines for Poison - one for the effect; one for the rate of decay...
+//- ZZ - doesn't work section - search for ZZ. This is the vilagers not being attacked by the Norse.
+//- Get message “lets see what the norse do with the lepers” after you have declined them, nothing happens after.
+//- If the creature eats a leper then his poo should become infected. (Code required?)
+//- Make the boat leave after the lepers have been dropped off
+//
+//	A group of Aztec lepers approach the land mass by ship.
+//	Aztec lepers depart the vessel, and slowly make their way towards your town.
+//	Once arrived, they ask to enter and join your town.
+//	If rejected, they flee towards the opposing base; some are killed by the creature
+//	on the island; and those that make it to the enemy base are then slaughtered.
+//	If welcomed in, they join the population but this has a negative impact on 
+//  the lifespan levels of your villagers.
+//
+//	Rewards:			Population boost.
+//	Drawbacks:			Lowering of lifespan of your villagers.
+//
+//	Start date:			06-03-03			By:	Phil
+//	Last Update:		19-03-03			By: Phil
+//
+//	Requires:		Boat object, Floating anim?, Docking ship anim, 
+//					Leper version of Aztec men/women.
+//					Whatever the drawback is ???
+//
+//	Work Needed:	More checking of exists and error messaging.
+//					Fleeing anim and/or screams from the lepers whilst fleeing.
+//					The Lepers, once fleeing, need to be slaughtered by opposition.
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L_FALSE					= 0
+define L_TRUE					= 1
+define L_LEPER_GROUP_SIZE		= 15
+define L_WAYPOINT_RADIUS		= 20
+define L_START_HEALTH			= 0.7
+define L_HEALTH_LIMIT			= 0.6
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global L_Waypoints[4]				//... Waypoint array
+global L_Leper[15]					//... Leper array
+global L_Lepers_At_Creature			= L_FALSE
+global L_Lepers_At_Opposing_Town	= L_FALSE
+global L_Lepers_Released_Into_Town	= L_FALSE
+global L_Got_Leper_In_Hand			= L_FALSE
+global L_Leader_In_Hand				= L_FALSE
+global L_Stopped					= L_FALSE
+global L_Leper_Picked_Up			= L_FALSE
+global L_Lepers_Accepted			= L_FALSE //L_TRUE
+global L_Ship_Sunk					= L_FALSE
+global L_Player_Healed_The_Lepers	= L_FALSE
+global L_Player_Is_Hurting_Lepers	= L_FALSE
+global L_Lepers_Declined			= L_FALSE
+global L_Leper_Leader				= 0
+global L_Leper_Ship					= 0
+global L_Leper_Flock				= 0
+global L_Leper_Counter				= 0
+global L_Players_Town				= 0
+global L_Norse_Creature_Position	= 0
+global L_Norse_Town_Outskirts		= 0
+global L_Dead_Leper_Counter			= 0
+global L_Counter_G					= 0
+global L_Counter_M					= 0
+global L_Counter_L					= 0
+global L_Held_Object				= 0
+global L_Boat_Timer					= 0
+global L_Leper_To_Kill				= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script L_Create_Leper_Flock
+define script L_Lepers_Accepted_In
+define script L_Spirits_Discuss_Lepers
+define script L_Are_Lepers_Within_Radius_1
+define script L_Are_Lepers_Within_Radius_2
+define script L_Evil_Spirit_Explains_Impact_On_Age
+define script L_Have_Fleeing_Lepers_Reached_Opposing_Town
+define script L_Have_Fleeing_Lepers_Reached_Creature
+define script L_Spirits_Show_Leper_Deaths
+define script L_Are_The_Lepers_Being_Hurt
+define script L_Move_Lepers_Via_Waypoints
+define script L_Check_If_Leper_Picked_Up
+define script L_Lepers_Watch_The_Hand
+define script L_Check_For_Any_Dead_Lepers
+define script L_Detect_Heal_Spell
+define script L_Run_Sacrifice_Pit
+define script L_Run_Migration_Scrolls
+define script L_Is_A_Leper_In_Physics
+
+//... Run the main script not required.
+//run script Lepers
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=======================
+begin script Land2Lepers
+
+	L_Ship_Start_Position	= 0
+	L_Ship_Dest1			= 0
+	L_Ship_Dest2			= 0
+	L_Ship_Dest3			= 0
+	L_Ship_Docking_Position = 0
+	
+start
+
+	L_Players_Town				= get TOWN at {1124.433, 78.273, 1965.938} radius 100
+	L_Norse_Creature_Position	= marker at {1495.618, 160.591, 1143.250}//marker at {1300.072,279.053,1239.600}// Needs to be updated? Or not needed now?
+	L_Norse_Town_Outskirts		= marker at {1186.011, 104.764, 710.143}//marker at {1141.354,111.907,719.775}
+	L_Ship_Start_Position		= marker at {566.918, 0.000, 1615.000}//marker at {75.101, 0.000, 1440.697}
+	L_Ship_Dest1				= marker at {379.920, 0.000, 1486.872}//marker at {553.746, 0.000, 1544.325}
+	L_Ship_Dest2				= marker at {759.183, 10.731, 1570.246}//marker at {807.749, 13.293, 1566.425}
+	L_Ship_Dest3				= marker at {831.191, 24.727, 1548.015}//marker at {847.067, 36.571, 1547.020}
+	L_Ship_Docking_Position		= marker at {882.071, 44.831, 1570.362}//marker at {872.490, 49.647, 1558.365}
+
+	// This is a pause between the level starting and this event triggering. (15 minutes)
+//	wait 900 seconds
+
+	//... wait until ship's start position isn't visible
+	wait until {L_Ship_Start_Position} not viewed
+	
+	//... create leper's ship
+	L_Leper_Ship = create SHIP AZTEC_SHIP at {L_Ship_Start_Position}
+	
+	begin dialogue
+		eject good spirit
+		//I say. There's a ship on the horizon to the West. I wonder who it is?
+		say "BW2T_SCRIPT_02C_05LEPERS_10" //by good spirit
+		wait until read
+		clear dialogue
+	end dialogue
+
+	clear L_Leper_Ship waypoint schedule
+	disable L_Leper_Ship waypoint schedule
+	add {L_Ship_Dest1} to L_Leper_Ship waypoint schedule
+	add {L_Ship_Dest2} to L_Leper_Ship waypoint schedule
+	add {L_Ship_Dest3} to L_Leper_Ship waypoint schedule
+	add {L_Ship_Docking_Position} to L_Leper_Ship waypoint schedule
+
+	SPEED of L_Leper_Ship = 2.0
+	enable L_Leper_Ship waypoint schedule
+
+	wait 15 seconds
+	begin dialogue
+		eject good spirit
+		//There's the boat! It seems to be an Aztec boat; but they don't seem armed at all.
+		say "BW2T_SCRIPT_02C_05LEPERS_20" //by good spirit
+		wait until read
+		clear dialogue
+	end dialogue
+
+	wait until L_Leper_Ship at final destination or L_Leper_Ship not exists
+
+	if L_Leper_Ship not exists
+		L_Ship_Sunk = L_TRUE
+		begin dialogue
+			eject evil spirit
+			//say "Nice one boss! That ship didn't stand a chance!"
+			say "BW2T_SCRIPT_02C_05LEPERS_250" //by evil spirit
+			wait until read
+			clear dialogue
+			send evil spirit home
+		end dialogue
+	else 
+		begin dialogue
+			eject good spirit
+			//That Aztec ship has docked. Let's see who emerges.
+			say "BW2T_SCRIPT_02C_05LEPERS_40" //by good spirit
+			wait until read
+			clear dialogue
+			send good spirit home
+		end dialogue
+
+		run script L_Create_Leper_Flock
+		//run background script L_Is_A_Leper_In_Physics
+		run background script L_Are_Lepers_Within_Radius_1
+		run background script L_Are_Lepers_Within_Radius_2
+		run background script L_Check_If_Leper_Picked_Up
+		run background script L_Are_The_Lepers_Being_Hurt
+		run background script L_Lepers_Watch_The_Hand
+		run background script L_Check_For_Any_Dead_Lepers
+		run background script L_Lepers_Accepted_In
+		run background script L_Detect_Heal_Spell
+		run background script L_Run_Sacrifice_Pit
+		run script L_Move_Lepers_Via_Waypoints
+		run script L_Run_Migration_Scrolls
+
+		//... Have the lepers reached the final waypoint without the player killing any?
+		wait until L_Player_Is_Hurting_Lepers == L_TRUE or L_Lepers_Accepted == L_TRUE
+
+		if L_Lepers_Accepted == L_TRUE
+			run script L_Evil_Spirit_Explains_Impact_On_Age
+		elsif L_Lepers_Accepted == L_FALSE
+			run background script L_Have_Fleeing_Lepers_Reached_Creature
+			run background script L_Have_Fleeing_Lepers_Reached_Opposing_Town
+			run script L_Spirits_Show_Leper_Deaths
+		end if
+	end if
+
+end script Land2Lepers
+//=======================
+
+
+//-----------------------------------------------------------------------------
+//	L_Create_Leper_Flock
+//-----------------------------------------------------------------------------
+begin script L_Create_Leper_Flock
+	
+	L_Leper_Leader_Spawn_Position	= marker at {885.168, 58.764, 1561.311}//marker at {1249.097,50.353,1722.890}
+	L_Leader_Flocking_Position		= marker at {900.792, 77.399, 1550.167}//marker at {1244.650,52.276,1719.118}
+	L_Counter_A						= 0
+	L_Delay							= 2
+	L_Temp_Var						= 0
+	L_Delay_B						= 0
+	L_Said_Already					= 0
+
+start
+
+	L_Temp_Var = number from 4000 to 9000
+	//... Integers only
+	L_Delay_B = L_Temp_Var / 10000 
+
+	//... define flock properties
+	L_Leper_Flock = flock at {L_Leader_Flocking_Position}
+	set L_Leper_Flock properties inner 5 outer 15
+	
+	//... Create all lepers, place them into a flock
+	while L_Counter_A < L_LEPER_GROUP_SIZE
+		L_Leper[L_Counter_A] = create VILLAGER VILLAGER_INFO_AZTEC_SHEPHERD_MALE at {L_Leper_Leader_Spawn_Position}
+		HEALTH of L_Leper[L_Counter_A] = L_START_HEALTH
+		set L_Leper[L_Counter_A] decay 0.1 //0.3 USED TO BE CORRECT - now goes down to quick! (No visual effect though now)
+		move L_Leper[L_Counter_A] position to {L_Leader_Flocking_Position} + {number from -5 to 5, number from 1 to 7}
+		wait L_Delay_B seconds
+		attach L_Leper[L_Counter_A] to L_Leper_Flock
+		L_Leper_Counter++
+		L_Counter_A++
+		if L_Counter_A == 4 and L_Said_Already == 0
+			run background script L_Spirits_Discuss_Lepers //... Run background Spirits dialogue
+			L_Said_Already = 1
+		end if
+	end while
+
+	wait 1 second
+		
+	//... Make the Leper Leader the leader of the flock
+	//attach L_Leper_Leader to L_Leper_Flock as leader
+	//wait 1 seconds
+	//L_Leper_Counter++
+
+	state L_Leper_Flock LIVING_MOVE_IN_FLOCK
+
+	wait 1 second
+		
+end script L_Create_Leper_Flock
+
+
+//-----------------------------------------------------------------------------
+//	L_Spirits_Discuss_Lepers
+//-----------------------------------------------------------------------------
+begin script L_Spirits_Discuss_Lepers
+
+start
+
+	begin dialogue
+		eject evil spirit
+		//"Urgh! Those people coming out of the ship are lepers or something!"
+		say "BW2T_SCRIPT_02C_05LEPERS_80" //by evil spirit
+		wait until read
+		clear dialogue
+		make evil spirit disappear
+		eject good spirit
+		//"Some of them do look ill; they seem to be refugees."
+		say "BW2T_SCRIPT_02C_05LEPERS_90" //by good spirit
+		wait until read
+		clear dialogue
+		//"Maybe we can heal them. Lets see what they are up to at least!"
+		say "BW2T_SCRIPT_02C_05LEPERS_100" //by good spirit
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+end script L_Spirits_Discuss_Lepers
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Are_Lepers_Within_Radius_1
+//-----------------------------------------------------------------------------
+begin script L_Are_Lepers_Within_Radius_1
+
+start
+
+	//... Wait until the lepers have completed about 70% of their journey towards the player's base.
+	wait until {L_Leper_Flock} near {L_Waypoints[1]} radius L_WAYPOINT_RADIUS
+
+	if L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+		//Do nowt
+	else
+		begin dialogue
+			eject evil spirit
+			//"Those lepers are closing in! Kill em now Boss!"
+			say "BW2T_SCRIPT_02C_05LEPERS_110" //by evil spirit
+			wait until read
+			clear dialogue
+			make evil spirit disappear
+			eject good spirit
+			//"Why hurt them? They're 'armless!"
+			say "BW2T_SCRIPT_02C_05LEPERS_120" //by good spirit
+			wait until read
+			clear dialogue
+			send good spirit home
+		end dialogue
+	end if
+
+end script L_Are_Lepers_Within_Radius_1
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Are_Lepers_Within_Radius_2
+//-----------------------------------------------------------------------------
+begin script L_Are_Lepers_Within_Radius_2
+
+start
+
+	//... Wait until the Lepers have got fairly close to the player's town
+	//wait until {L_Leper_Flock} near {L_Waypoint_D} radius 30 //L_WAYPOINT_RADIUS
+	wait until {L_Leper_Flock} near {L_Waypoints[2]} radius L_WAYPOINT_RADIUS
+
+	if L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+		//Do nowt
+	else
+		begin dialogue
+			eject evil spirit
+			//say "Last chance to kill those lepers Boss; they're nearly at our town!"
+			say "BW2T_SCRIPT_02C_05LEPERS_130" //by evil spirit
+			wait until read
+			clear dialogue
+			make evil spirit disappear
+		end dialogue
+	end if
+
+end script L_Are_Lepers_Within_Radius_2
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Lepers_Accepted_In
+//-----------------------------------------------------------------------------
+begin script L_Lepers_Accepted_In
+
+	L_Accepted_Town_Dest		= marker at {1181.928, 73.546, 1963.777}//marker at {1073.267,83.170,1820.105}
+	//L_House_Position			= marker at {1248.970,51.674,1718.145}
+	L_Counter_D					= 0
+
+start
+	
+	wait until L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+	
+	if L_Player_Is_Hurting_Lepers == L_TRUE
+		//Do nowt
+	else
+		//... Attach the lepers to the player's town. 
+		//L_Lepers_Accepted = L_TRUE
+		move L_Leper_Flock position to {L_Accepted_Town_Dest}
+		begin dialogue
+			// ADD TO DIALOGUE???
+			say "Congratulations! The refugees will now join your town."
+			wait until read
+			clear dialogue
+		end dialogue
+		wait until {L_Leper_Flock} near {L_Accepted_Town_Dest} radius L_WAYPOINT_RADIUS
+		
+		while L_Counter_D < L_LEPER_GROUP_SIZE
+			attach L_Leper[L_Counter_D] to L_Players_Town
+			release L_Leper[L_Counter_D]
+			L_Counter_D++
+		end while
+		L_Lepers_Released_Into_Town = L_TRUE
+	end if
+
+end script L_Lepers_Accepted_In
+
+
+//-----------------------------------------------------------------------------
+//	L_Are_The_Lepers_Being_Hurt
+//-----------------------------------------------------------------------------
+begin script L_Are_The_Lepers_Being_Hurt
+
+	L_Counter_H		= 0
+	L_Array3[15]
+
+start
+
+	begin loop
+		if HEALTH of L_Leper[L_Counter_H] < L_HEALTH_LIMIT and L_Array3[L_Counter_H] != 1
+			L_Dead_Leper_Counter++
+			L_Array3[L_Counter_H] = 1
+		elsif HEALTH of L_Leper[L_Counter_H] > L_HEALTH_LIMIT and HEALTH of L_Leper[L_Counter_H] < L_START_HEALTH
+			HEALTH of L_Leper[L_Counter_H] = L_START_HEALTH
+		end if
+		L_Counter_H++
+		if L_Counter_H > 14
+			L_Counter_H = 0
+		end if
+		wait 0.3 seconds
+		if L_Dead_Leper_Counter > 1
+			L_Player_Is_Hurting_Lepers = L_TRUE
+		end if
+		until L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+	end loop
+
+end script L_Are_The_Lepers_Being_Hurt
+
+
+//-----------------------------------------------------------------------------
+//	L_Evil_Spirit_Explains_Impact_On_Age
+//-----------------------------------------------------------------------------
+begin script L_Evil_Spirit_Explains_Impact_On_Age
+
+start
+
+	wait until L_Lepers_Released_Into_Town == L_TRUE
+	wait 10 seconds	
+
+	// If not yet healed by the player then say:
+	// Need more dialogue for if healed...
+	
+	begin dialogue
+		eject evil spirit
+    	//"Hey Boss! Those refugees might spread disease!"
+		say "BW2T_SCRIPT_02C_05LEPERS_190" //by evil spirit
+		wait until read
+		clear dialogue
+		make evil spirit disappear
+		eject good spirit
+		//"They helped boost our population though didn't they! Perhaps healing them will have some effect."
+		say "BW2T_SCRIPT_02C_05LEPERS_200" //by good spirit
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+end script L_Evil_Spirit_Explains_Impact_On_Age
+
+
+//-----------------------------------------------------------------------------
+//	L_Have_Fleeing_Lepers_Reached_Creature
+//-----------------------------------------------------------------------------
+begin script L_Have_Fleeing_Lepers_Reached_Creature
+
+start
+
+	//... Wait until the fleeing flock is within striking range of the Norse creature.
+	wait until {L_Leper_Flock} near {L_Norse_Creature_Position} radius 30
+	L_Lepers_At_Creature = L_TRUE
+
+end script L_Have_Fleeing_Lepers_Reached_Creature
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Have_Fleeing_Lepers_Reached_Opposing_Town
+//-----------------------------------------------------------------------------
+begin script L_Have_Fleeing_Lepers_Reached_Opposing_Town
+
+start
+
+	wait until {L_Leper_Flock} near {L_Norse_Town_Outskirts} radius 30
+	L_Lepers_At_Opposing_Town = L_TRUE
+
+end script L_Have_Fleeing_Lepers_Reached_Opposing_Town
+
+
+//-----------------------------------------------------------------------------
+//	L_Spirits_Show_Leper_Deaths
+//-----------------------------------------------------------------------------
+begin script L_Spirits_Show_Leper_Deaths
+
+	L_Shown_Creature_Killing_Lepers			= L_FALSE
+	L_Shown_Norse_Village_Killing_Lepers	= L_FALSE
+	Counter_J = 0
+
+start
+
+	wait 8 seconds	
+
+	begin dialogue
+		eject evil spirit
+    	//"Nice work Boss! Look at those lepers scurrying off. Hehe!"
+		say "BW2T_SCRIPT_02C_05LEPERS_210" //by evil spirit
+		wait until read
+		clear dialogue
+		send evil spirit home
+	end dialogue
+
+	//... Wait until the fleeing lepers have reached either the creature or the opposing town.
+	wait until L_Lepers_At_Creature == L_TRUE or L_Lepers_At_Opposing_Town == L_TRUE
+
+	//... Show both the creature and the opposing village killing the lepers.
+	begin loop
+		
+		//... If some of the lepers make it to the Norse creature a horrible fate awaits them.
+		if L_Lepers_At_Creature == L_TRUE and L_Shown_Creature_Killing_Lepers == L_FALSE
+			begin dialogue
+				eject evil spirit
+				//"Haha look! Some of the lepers are trying to get past that huge creature."
+				say "BW2T_SCRIPT_02C_05LEPERS_220" //by evil spirit
+				wait until read
+				clear dialogue
+				send evil spirit home
+			end dialogue
+
+			// Maybe check to see if the creature is close to the lepers before saying this lot...
+			//... Norse creature grabs a leper and eats him.
+			//... Norse creature grabs another and throws him out to sea.
+			//... RELYING on creature AI to do the eating etc.
+			L_Shown_Creature_Killing_Lepers = L_TRUE
+		end if
+
+		//... A worse fate? awaits the lepers that reach the Norse Village - burnt alive?
+		if L_Lepers_At_Opposing_Town == L_TRUE and L_Shown_Norse_Village_Killing_Lepers == L_FALSE
+			begin dialogue
+				eject evil spirit
+		 		//"Hehe! Those lepers have got to the Norse town; let's see the carnage."
+				say "BW2T_SCRIPT_02C_05LEPERS_230" //by evil spirit
+				wait until read
+				clear dialogue
+				send evil spirit home
+			end dialogue
+		
+			//... Norse soldiers slaughter the remaining lepers who have made it to the Norse village.
+			set L_Leper_Flock player 5
+			set player 1 ENEMY to player 5
+			set player 5 ENEMY to player 1
+			// DOES THIS WORK? Probably not. Setting the player of the Leper Flock.
+			//zz
+
+			L_Shown_Norse_Village_Killing_Lepers = L_TRUE
+		end if
+
+		until L_Shown_Norse_Village_Killing_Lepers == L_TRUE or L_Shown_Creature_Killing_Lepers == L_TRUE
+
+	end loop
+
+end script L_Spirits_Show_Leper_Deaths
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Move_Lepers_Via_Waypoints
+//-----------------------------------------------------------------------------
+begin script L_Move_Lepers_Via_Waypoints
+	
+start
+
+	L_Waypoints[0]	= marker at {992.197, 100.400, 1649.703}//marker at {1221.524,63.694,1710.712}
+	L_Waypoints[1]	= marker at {1042.537, 99.488, 1656.080}//marker at {1176.107,73.308,1729.071}
+	L_Waypoints[2]	= marker at {1066.029, 83.408, 1733.939}//marker at {1109.563,79.132,1760.469}
+	L_Waypoints[3]	= marker at {1095.927, 108.266, 1841.598}//marker at {1077.811,83.042,1818.689}
+
+	begin loop
+		wait until L_Leper_Picked_Up == L_FALSE
+		move L_Leper_Flock position to {L_Waypoints[L_Counter_M]}
+		wait until {L_Leper_Flock} near {L_Waypoints[L_Counter_M]} radius L_WAYPOINT_RADIUS or L_Leper_Picked_Up == L_TRUE
+
+		if L_Leper_Picked_Up == L_TRUE
+			wait until L_Leper_Picked_Up == L_FALSE
+			L_Counter_M--
+		end if
+		L_Counter_M++
+		until L_Counter_M == 4 or L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+	end loop
+
+end script L_Move_Lepers_Via_Waypoints
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Check_If_Leper_Picked_Up
+//-----------------------------------------------------------------------------
+begin script L_Check_If_Leper_Picked_Up
+
+start
+	
+	begin loop
+		L_Counter_L = 0
+		while L_Counter_L < L_LEPER_GROUP_SIZE //and L_Leper_Picked_Up == L_FALSE
+			if L_Leper[L_Counter_L] is HELD
+				L_Leper_Picked_Up = L_TRUE
+				L_Leper_To_Kill = L_Leper[L_Counter_L]
+				wait until L_Leper[L_Counter_L] is not HELD
+			else
+				L_Leper_Picked_Up = L_FALSE
+			end if
+			L_Counter_L++
+		end while
+		until L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+	end loop
+
+end script L_Check_If_Leper_Picked_Up
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Lepers_Watch_The_Hand
+//-----------------------------------------------------------------------------
+begin script L_Lepers_Watch_The_Hand
+
+	L_Speech_Variable		= 0
+
+start
+
+	begin loop
+		wait until L_Leper_Picked_Up == L_TRUE
+		move L_Leper_Flock position to {L_Leper_Flock}
+		L_Speech_Variable++
+		wait 0.3 seconds
+
+		begin dialogue
+			if L_Speech_Variable == 1
+				//"Woah! Hey, please don't hurt us! We mean you no harm."
+				say "BW2T_SCRIPT_02C_05LEPERS_150"
+			elsif L_Speech_Variable == 2
+				//"Argh! Stop picking us up please!"
+				say "BW2T_SCRIPT_02C_05LEPERS_160"
+			elsif L_Speech_Variable == 3
+				//"This picking people up has become a bit of a bad habit for you hasn't it."
+				say "BW2T_SCRIPT_02C_05LEPERS_170"
+			elsif L_Speech_Variable > 3
+				//"Please stop grabbing us!"
+				say "BW2T_SCRIPT_02C_05LEPERS_180"
+			end if
+			wait until read
+			clear dialogue
+		end dialogue
+
+		//wait until L_Leper[L_Counter_L] is not HELD //... DOESN'T WORK - why? I don't rightly know :)
+		begin loop
+			L_Held_Object = get object held
+			until L_Held_Object == 0
+		end loop
+		
+		L_Leper_Picked_Up = L_FALSE	
+		wait 0.3 seconds
+		until L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+	end loop
+
+end script L_Lepers_Watch_The_Hand
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Check_For_Any_Dead_Lepers
+//-----------------------------------------------------------------------------
+begin script L_Check_For_Any_Dead_Lepers
+
+	L_Not_Accepted_Waypoint_1	= marker at {1122.258, 195.236, 1183.502}
+	L_Not_Accepted_Dest			= marker at {1143.182, 94.338, 660.174}
+	L_Lepers_Current_Position	= 0
+	L_Counter_N					= 0
+
+start
+
+	//wait until L_Dead_Leper_Counter > 0
+	wait until L_Lepers_Accepted == L_TRUE or L_Player_Healed_The_Lepers == L_TRUE or L_Player_Is_Hurting_Lepers == L_TRUE
+	
+	if L_Player_Is_Hurting_Lepers == L_TRUE
+
+		//... The lepers are fleeing, so set Accepted to False.
+		L_Lepers_Accepted = L_FALSE
+
+		if L_Lepers_Declined == L_FALSE
+
+			SPEED of L_Leper_Flock = 1.05
+			move L_Leper_Flock position to {L_Norse_Town_Outskirts}
+
+			// Start to flee in groups (in terror)
+			begin dialogue
+				//"Arghhh! He's killing us! Run everyone!!"
+				say "BW2T_SCRIPT_02C_05LEPERS_240"
+				wait until read
+				clear dialogue
+			end dialogue
+
+		elsif L_Lepers_Declined == L_TRUE
+
+			begin dialogue
+				say "We are disappointed with your decision to send us away. Farewell."
+				//say "BW2T_SCRIPT_02C_05LEPERS_260"
+				wait until read
+				clear dialogue
+			end dialogue
+
+			move L_Leper_Flock position to {L_Norse_Town_Outskirts}
+
+		end if
+
+		//... These aren't required.
+		wait until {L_Leper_Flock} near {L_Norse_Town_Outskirts} radius L_WAYPOINT_RADIUS
+	end if
+
+end script L_Check_For_Any_Dead_Lepers
+
+
+//-----------------------------------------------------------------------------
+//	L_Detect_Heal_Spell
+//-----------------------------------------------------------------------------
+begin script L_Detect_Heal_Spell
+
+	L_Test_Spawn_Position		= 0
+	L_Test_Leper				= 0
+	L_Healed_Leper_Counter		= 0
+	L_Counter_J					= 0
+	L_Counter_K					= 0
+	L_Damaged_Lepers_Counter	= 0
+	L_Array[15]
+	L_Array2[15]
+
+start
+
+	//Wait until all the leper's healthbars are back to 1.
+	while L_Healed_Leper_Counter < 15
+		if HEALTH of L_Leper[L_Counter_K] == 1 and L_Array[L_Counter_K] != 1
+			L_Healed_Leper_Counter++
+			set L_Leper[L_Counter_K] decay 0.00 //Reverse the decay???? Needed????
+			wait 0.3 seconds
+			L_Array[L_Counter_K] = 1
+		end if
+		L_Counter_K++
+		if L_Counter_K > 14
+			L_Counter_K = 0
+		end if
+	end while
+
+	begin dialogue
+		eject good spirit
+        //say "You healed all of the Lepers!"
+		//say "BW2T_SCRIPT_02C_05LEPERS_260" //by good spirit
+        say "You healed all of the Lepers!"
+		wait until read
+		clear dialogue
+		send good spirit home
+	end dialogue
+
+	L_Player_Healed_The_Lepers = L_TRUE
+    
+	wait 1 second
+
+end script L_Detect_Heal_Spell
+
+
+
+//-----------------------------------------------------------------------------
+//	L_Run_Sacrifice_Pit
+//-----------------------------------------------------------------------------
+begin script L_Run_Sacrifice_Pit
+
+	L_Pit_Location		= 0
+	L_Counter_X			= 0
+
+start
+
+	L_Pit_Location = marker at {1110.122, 81.393, 1962.707}//marker at {1068.812,83.740,1865.505}
+
+	begin loop
+
+		if hand position near {L_Pit_Location} radius 5 and L_Leper_Picked_Up == L_TRUE
+			
+			//TEMP
+			say "Hand with leper detected near sacrifice pit..."
+			
+			wait until L_Leper_Picked_Up == L_FALSE
+			if hand position near {L_Pit_Location} radius 10
+				//L_Counter_L-- // required as the counter has moved on one past the leper held.
+				
+				//HEALTH of L_Leper[L_Counter_L] = 0
+				HEALTH of L_Leper_To_Kill = 0
+				begin dialogue
+					eject evil spirit
+					say "Sacrifices! Good work boss!"
+					//say "BW2T_SCRIPT_02C_05LEPERS_260" //by evil spirit
+					wait until read
+					clear dialogue
+					send evil spirit home
+				end dialogue
+				if L_Player_Is_Hurting_Lepers == L_FALSE
+					L_Player_Is_Hurting_Lepers = L_TRUE
+				end if
+			end if
+		end if
+
+		wait until L_Leper_Picked_Up == L_TRUE
+
+	end loop
+
+end script L_Run_Sacrifice_Pit
+
+
+//-----------------------------------------------------------------------------
+//	L_Run_Migration_Scrolls
+//-----------------------------------------------------------------------------
+begin script L_Run_Migration_Scrolls
+
+	L_AcceptScroll		= 0
+	L_DeclineScroll		= 0
+	L_NearWallsLocation	= 0
+
+start
+	
+	wait until {L_Leper_Flock} near {L_Waypoints[3]} radius 30
+
+	if L_Player_Healed_The_Lepers == L_FALSE
+
+		L_NearWallsLocation = marker at {1164.569, 78.870, 1917.791}//marker at {1071.979, 108.758, 1846.600}
+
+		L_AcceptScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {L_NearWallsLocation}
+		L_DeclineScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {L_NearWallsLocation}
+
+		ALTITUDE of L_AcceptScroll = 10
+		ALTITUDE of L_DeclineScroll = 30
+
+		begin dialogue
+			eject good spirit
+			say "The lepers have reached our walls. I do hope you decide to let them in. Lower scroll allows them to join."
+			//say "BW2T_SCRIPT_02C_05LEPERS_260" //by good spirit
+			wait until read
+			clear dialogue
+		end dialogue
+
+		wait until L_AcceptScroll right clicked or L_DeclineScroll right clicked
+
+		if L_AcceptScroll right clicked
+			// TEMP
+			say "Accept scroll clicked"
+			wait 3 seconds
+			L_Lepers_Accepted = L_TRUE
+			L_Counter_M++
+		else
+			// TEMP
+			say "Decline scroll clicked"
+			wait 3 seconds
+			L_Counter_M-- // just in case...
+			//make them flee to the other town.
+			L_Lepers_Declined = L_TRUE
+			L_Player_Is_Hurting_Lepers = L_TRUE
+		end if
+
+		wait 10 seconds
+
+	end if
+
+end script L_Run_Migration_Scrolls
+
+//-----------------------------------------------------------------------------
+//	L_Is_A_Leper_In_Physics
+//-----------------------------------------------------------------------------
+begin script L_Is_A_Leper_In_Physics
+
+	//xx
+	L_Counter_Q = 0
+
+start
+
+	begin loop
+		if not L_Leper[L_Counter_Q] is FLYING and not L_Leper[L_Counter_Q] is HELD //and not L_Leper[L_Counter_Q] is MOVING
+			L_Counter_Q++
+		else
+			//say "A leper is currently in physics..."
+			wait 3 seconds
+		end if
+		if L_Counter_Q > 14
+			L_Counter_Q = 0
+		end if
+		wait 1 second
+		until L_Player_Is_Hurting_Lepers == L_TRUE
+	end loop
+
+end script L_Is_A_Leper_In_Physics
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+	//Timer stuff
+	//L_Boat_Timer = create timer for 120 seconds
+	//get L_Boat_Timer time remaining <= 60
+
+	/*
+	L_Rock_Pos = marker at {1184.444,74.138,1721.319}
+	PLACEHOLDER_BODGE = create ROCK_OBJECT MOBILE_STATIC_INFO_MEDIUM_NORSE_ROCK at {L_Rock_Pos}
+	
+	begin loop
+		if hand position near {PLACEHOLDER_BODGE} radius 15 and not PLACEHOLDER_BODGE is HELD
+			begin dialogue
+				//PLACEHOLDER DIALOGUE temp
+				say "This rock will sink the Refugee ship if held."
+				wait until read //1 second
+				clear dialogue
+			end dialogue
+		end if
+		until PLACEHOLDER_BODGE is HELD
+	end loop
+	*/

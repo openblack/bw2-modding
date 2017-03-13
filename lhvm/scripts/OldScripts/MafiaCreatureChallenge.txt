@@ -1,0 +1,383 @@
+//===========================================================================
+// File: CreatureMazeChallenge
+// Author: Tid
+// Date: 4/03/03
+// Description:	This script deals with a challenge that involves the
+//				player helping out a character called Fain. Fain is 
+//				the son of Fell, the outlaw encountered on the next
+//				level. Fain asks the player to help him get through
+//				the maze that is the Valley of the Beast. This is a
+//				series of canyons wherein lives the creature. The
+//				player must help Fain get to the lair of the creature
+//				by distracting the creature.
+// Notes:		Variables in this script are preceded by CMC
+//===========================================================================
+
+//======================================================================
+//Defines
+define CMC_TRUE			= 1
+define CMC_FALSE		= 0
+
+//Globals
+global CMC_GotQuest		= CMC_FALSE	//has the player got the Quest?
+global CMC_FainAtPos1	= CMC_FALSE	//has Fain started running to the first pos?
+global CMC_FainAtPos2	= CMC_FALSE	//has Fain started running to the fourth pos?
+
+global CMC_Timer		= 0
+global CMC_FainPos1		= 0
+global CMC_FainPos2		= 0
+
+global CMC_FainFinished = CMC_FALSE	//has Fain reached the boat?
+
+//Actor Variables
+global CMC_ACFain		= 0
+global CMC_FainStartPosition = 0
+
+global CMC_Creature		= 0
+global CMC_CreatureStartPosition = 0
+global CMC_CreaturePos	= 0
+
+global CMC_Scroll		= 0
+global CMC_ScrollPos	= 0
+global CMC_Radius		= 1
+global CMC_Count		= 0
+global CMC_Villager[10]
+global CMC_VillagerPos[10]
+global CMC_Town = 0
+global CMC_GotCreature = 0
+global CMC_FailedOnce = 0
+global CMC_FailedTwice = 0
+global CMC_GotVillagers = 0
+
+
+//Script defines
+define script FainSetup
+define script CreatureSetup
+define script ClickScroll
+define script ClickScrollAgain
+define script MakeFainMove1
+define script MakeFainMove2
+define script MafiaCreatureChallenge
+define script ReturnToStart
+
+//run script RunScript
+
+//=======================================================
+begin script MafiaCreatureChallenge
+
+start
+
+CMC_FainPos1 = marker at {1004.146,3.350,1336.978}
+CMC_FainPos2 = marker at {1104.507,3.049,1291.421}
+CMC_Town = marker at {998.159,3.134,1307.658}
+
+CMC_VillagerPos[0] = marker at {1006.052,3.350,1337.370}
+CMC_VillagerPos[1] = marker at {1005.782,3.350,1336.494}
+CMC_VillagerPos[2] = marker at {1005.859,3.350,1335.520}
+CMC_VillagerPos[3] = marker at {1005.495,3.350,1335.175}
+CMC_VillagerPos[4] = marker at {1004.402,3.350,1334.858}
+CMC_VillagerPos[5] = marker at {1003.603,3.350,1334.697}
+CMC_VillagerPos[6] = marker at {1003.521,3.350,1335.185}
+CMC_VillagerPos[7] = marker at {1003.042,3.350,1335.972}
+CMC_VillagerPos[8] = marker at {1005.964,3.350,1336.297}
+CMC_VillagerPos[9] = marker at {1006.017,3.350,1337.170}
+
+run script FainSetup
+run script CreatureSetup
+run script ClickScroll
+
+end script MafiaCreatureChallenge
+
+// FainSetup==========================================================
+// Function:	This will setup Fain in the correct position
+//				and give him the correct model =======================
+
+begin script FainSetup
+
+start
+
+	CMC_FainStartPosition = marker at {1006.901,3.432,1351.884}
+	CMC_ACFain = create VILLAGER VILLAGER_INFO_NORSE_FARMER_MALE at {CMC_FainStartPosition}
+
+end script FainSetup
+//====================================================================
+
+// CreatureSetup======================================================
+// Function: Places the creature in the level=========================
+begin script CreatureSetup
+
+start
+
+	CMC_CreatureStartPosition = marker at {1139.049,4.821,1394.013}
+	CMC_Creature = create CREATURE CREATURE_TYPE_WOLF at {CMC_CreatureStartPosition}
+
+	release CMC_Creature //releases the creature from script control
+
+end script CreatureSetup
+//====================================================================
+
+// ClickScroll========================================================
+// Function:	Creates the challenge scroll and runs the cinematic
+//				when the player right clicks on it
+
+begin script ClickScroll
+
+start
+
+	CMC_ScrollPos = marker at {1006.901,3.432,1351.884} // this is the position for our scroll
+
+	CMC_Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {CMC_ScrollPos} //creates the scroll at the position of the highlight
+	ALTITUDE of CMC_Scroll = 3 //sets the altitude of the scroll
+
+	wait until CMC_Scroll right clicked //tells the script to wait until the scroll is right clicked on
+	if CMC_GotQuest == CMC_FALSE
+		begin cinema
+
+			move camera position to {1005.987,5.185,1350.662} time 2
+			move camera focus to {1006.835,3.773,1351.733} time 2
+
+			CMC_GotQuest = CMC_TRUE
+
+			set CMC_ACFain focus to camera position
+
+	/*		say "O, great and noble entity"
+			wait until read
+			say "My name is Fain, son of Fell, true lord of Midgard"
+			wait until read
+			say "I have come to this land to reclaim my heritage"
+			wait until read
+			say "Long ago, my ancestors were able to control the great beast that resides on this island"
+			wait until read
+			say "I intend to prove to the people of this land that I can control it"
+			wait until read
+			say "But I can't. The knowledge is lost forever"
+			play anim "M_P_STAND_DESPAIR_2" on CMC_ACFain loop -1
+			wait until read
+			say "However, the gift of oration has not left this blood"
+			wait until read
+			say "And if you can somehow bring the beast to the edges of this village within five minutes"
+			wait until read*/
+			say "I will be able to convince the people of my claim"
+			wait until read
+	
+		end cinema
+		run background script ClickScrollAgain
+		run script MakeFainMove1
+	end if
+
+end script ClickScroll
+//====================================================================
+
+// ClickScrollAgain(CMC_ScrollPos)====================================
+// Function: 
+
+begin script ClickScrollAgain
+
+start
+	while CMC_FainFinished != CMC_TRUE
+		CMC_Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {CMC_ScrollPos} //creates the scroll at the position of the highlight
+		ALTITUDE of CMC_Scroll = 3
+
+		wait until CMC_Scroll right clicked //tells the script to wait until the scroll is right clicked on
+
+		if CMC_FailedOnce == CMC_TRUE
+			begin dialogue
+				say "Shall we try it one more time"
+				wait until read
+			end dialogue
+			run script MakeFainMove1
+		else
+			begin dialogue
+				say "Bring the beast to Fain"
+				wait until read
+			end dialogue
+		end if
+				
+		if CMC_GotQuest == CMC_TRUE //if the player has already received the quest
+
+		end if
+	end while
+
+end script ClickScrollAgain
+//====================================================================
+
+// MakeFainMove1======================================================
+// Function: 
+
+begin script MakeFainMove1
+
+start
+
+	move CMC_ACFain position to {CMC_FainPos1}
+	
+	wait until {CMC_ACFain} near {CMC_FainPos1} radius 2
+	CMC_FainAtPos1 = CMC_TRUE
+
+	run script GetVillagers
+		
+	while {CMC_Creature} not near {CMC_FainPos1} radius 40 and CMC_Timer < 100
+		wait 1 second
+
+		if CMC_Timer == 1
+			begin dialogue
+			say "Hear ye! Hear ye!"
+			wait until read
+			end dialogue
+		end if
+
+		if CMC_Timer == 15
+			begin dialogue
+			say "To me, my people!"
+			wait until read
+			end dialogue
+			end if
+
+		if CMC_Timer == 35
+			begin dialogue
+			say "I am Fell, son of Fain, and I command the Beast!"
+			wait until read
+			end dialogue
+		end if
+
+		if CMC_Timer == 65
+			begin dialogue
+			say "You will bow before me!"
+			wait until read
+			end dialogue
+		end if
+
+		if CMC_Timer == 90
+			begin dialogue
+			say "Fear me! For I am fearsome!"
+			wait until read
+			end dialogue
+		end if
+		CMC_Timer++
+	end while
+
+	if {CMC_Creature} near {CMC_FainPos1} radius 40
+		begin dialogue
+			say "Behold the beast! I am all powerful"
+			wait until read
+		end dialogue
+		CMC_GotCreature = CMC_TRUE
+		CMC_Timer = 100
+	end if
+
+	if CMC_Timer == 100
+		CMC_Timer = 0
+		run script MakeFainMove2
+	end if
+
+end script MakeFainMove1
+//========================================================================
+
+// MakeFainMove2==========================================================
+// Function: 
+
+begin script MakeFainMove2
+
+TempCount = 0
+
+start
+//	CMC_FainFinished = CMC_TRUE
+	begin dialogue
+		say "MakeFainMove2"
+		wait until read
+	end dialogue
+
+	if CMC_FailedOnce == CMC_TRUE
+		if CMC_GotCreature == CMC_FALSE
+			begin dialogue
+				say "Well, thanks a friggin' bunch! You're useless! I'm outta here"
+				wait until read
+				TempCount = 0
+			end dialogue
+
+			CMC_FainAtPos2 = CMC_TRUE
+
+			while TempCount != 10
+				release CMC_Villager[TempCount]
+				TempCount++
+			end while
+
+			move CMC_ACFain position to {CMC_FainPos2}
+
+			wait until {CMC_ACFain} near {CMC_FainPos2} radius 2
+
+			CMC_FailedTwice = CMC_TRUE
+
+			delete CMC_Scroll
+		end if
+	else
+		if CMC_GotCreature == CMC_TRUE
+			begin dialogue
+				say "Nice one chief!"
+				wait until read
+			end dialogue
+		end if
+	end if
+
+	if CMC_FailedOnce == CMC_FALSE and CMC_GotCreature == CMC_FALSE
+			begin dialogue
+				say "I would have had them if you kept up your end"
+				wait until read
+				say "Let's try it again shall we"
+				wait until read
+			end dialogue
+
+			while TempCount != 10
+				release CMC_Villager[TempCount]
+				TempCount++
+			end while
+
+			TempCount = 0
+			CMC_FailedOnce = CMC_TRUE
+			CMC_GotVillagers = 1
+			run script ReturnToStart
+	end if
+
+end script MakeFainMove2
+//====================================================================
+
+// GetVillagers=======================================================
+begin script GetVillagers
+
+TempCount = 0
+start
+
+	begin dialogue
+		say "Get villagers script"
+		wait until read
+	end dialogue
+
+	if CMC_GotVillagers == 0
+		while CMC_Villager[CMC_Count] not exists
+			CMC_Radius = CMC_Count*10
+			CMC_Villager[CMC_Count] = get VILLAGER at {CMC_Town} radius CMC_Radius excluding scripted
+			move CMC_Villager[CMC_Count] position to {CMC_VillagerPos[CMC_Count]}
+			set CMC_Villager[CMC_Count] focus to {CMC_ACFain}
+			CMC_Count++
+		end while
+	end if
+
+	if CMC_GotVillagers == 1
+		while TempCount != 10
+			move CMC_Villager[TempCount] position to {CMC_VillagerPos[TempCount]}
+			set CMC_Villager[TempCount] focus to {CMC_ACFain}
+			TempCount++
+		end while
+	end if
+
+
+end script GetVillagers
+//====================================================================
+
+begin script ReturnToStart
+
+start
+	move CMC_ACFain position to {CMC_FainStartPosition}
+
+end script ReturnToStart
+
+//====================================================================

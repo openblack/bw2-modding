@@ -1,0 +1,18 @@
+//
+//This file contains all the scripts to compile in Land 1
+//
+
+// -Globals-
+Land1Globals.txt
+
+Land1CreatureSelectionNew.txt
+Land1Tutorial.txt
+Land1Waterfall.txt
+Land1Eloi.txt
+Land1RockMan.txt
+Land1PickupTutorial.txt
+Land1VillagerTutorial.txt
+Land1Scrolls.txt
+Land1DYK.txt
+
+Land1Control.txt

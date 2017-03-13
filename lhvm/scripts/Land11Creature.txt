@@ -1,0 +1,69 @@
+begin script Land11Creature
+	StartPos = marker at {2028.158,218.376,659.219}
+	WaitTime = 2000
+	RandNum = 0
+	TownsToAttack		= 0
+	EnemyTown[AC_TOWN_LAST]
+	EnemyTownToAttack = 0
+	AttackedAttackers = 0
+	Gatehouse = 0
+	PlayerPlatoon = 0
+	GatehouseLocation = marker at {1416.727,287.212,1684.795}
+	LeadPlatoonHere = marker at {1754.346,218.528,907.439}
+start
+	run script GCAI_InitCreature(StartPos,variable CREATURE_TYPE_GORILLA,8.0,-1,1)
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_HEAL available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_FIREBALL available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_MAGIC_TYPE_LIGHTNING available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_BUILDER_2 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_GATHERER_3 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+	set research ARTEFACT_CREATURE_ROLE_SOLDIER_3 available to RESEARCH_AVAILABILITY_RESEARCHED player 1
+
+	run script GCAI_SetTask_PerformRole(StartPos,100,variable CR_GATHERER)
+
+	wait until Town2ToAttackNow == AC_TRUE
+
+	begin loop
+		//wait until AC_GameStage = AC_GAME_STAGE_SIEGE
+
+		if PLAYER of L11AztecTown1 == 0
+			EnemyTown[TownsToAttack] = L11AztecTown1
+			TownsToAttack++
+		end if
+
+		if PLAYER of L11AztecTown2 == 0
+			EnemyTown[TownsToAttack] = L11AztecTown2
+			TownsToAttack++
+		end if
+
+		if PLAYER of L11AztecCapital == 0
+			EnemyTown[TownsToAttack] = L11AztecCapital
+			TownsToAttack++
+		end if
+
+		if PLAYER of L11GreekTown == 0
+			EnemyTown[TownsToAttack] = L11GreekTown
+			TownsToAttack++
+		end if
+
+		EnemyTownToAttack = number from 0 to (TownsToAttack - 1)
+
+		run script GCAI_SetTask_PerformRole(EnemyTown[EnemyTownToAttack],250,variable CR_SOLDIER)
+		
+		begin loop
+			if AC_EnteredCapital == AC_TRUE and AttackedAttackers == 0
+				PlayerPlatoon = get platoon of player 0 nearest {CheckForPlatoonNearHere} radius 300
+				run script GCAI_SetTask_PerformRole(PlayerPlatoon,100,variable CR_SOLDIER)
+				AttackedAttackers = AC_TRUE
+			end if
+
+			until AC_GameStage == AC_GAME_STAGE_WITHDRAW or PLAYER of EnemyTown[EnemyTownToAttack] != 0
+		end loop
+
+		run script GCAI_SetTask_PerformRole(L11AztecCapital,100,variable CR_GATHERER)
+
+		wait 300 seconds
+
+		TownsToAttack = 0
+	end loop
+end script Land11Creature

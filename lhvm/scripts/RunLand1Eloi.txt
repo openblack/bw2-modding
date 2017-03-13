@@ -1,0 +1,9 @@
+run script RunLand1Eloi
+
+begin script RunLand1Eloi
+start
+	L1_ShowEloi	= 1
+	L1_FollowCreatureComplete = 1
+	L1_EloiDebug = 1
+	run script Land1Eloi
+end script RunLand1Eloi

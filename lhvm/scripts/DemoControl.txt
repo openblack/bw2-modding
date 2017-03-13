@@ -1,0 +1,1174 @@
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 5 control script
+//------------------------------------------------------------------------------------------------------------------------
+
+define script Land5PaddyFields
+define script Land5IntroCutscene
+define script Land5OutroCutscene
+define script Land5AdvisorAnalysis
+define script Cutscene_YouSpinMeRightRound(whichdude)
+
+// Dialogue Scripts
+define script EmergencyEADemoDialogues
+define script IntroDialogue
+define script Paddy1JTakesNDialogue
+define script Paddy1GTakesNDialogue
+define script Paddy1JTakesGDialogue
+define script Paddy1GTakesJDialogue
+define script Paddy2JTakesNDialogue
+define script Paddy2GTakesNDialogue
+define script Paddy2JTakesGDialogue
+define script Paddy2GTakesJDialogue
+define script Paddy3JTakesGDialogue
+define script Paddy3GTakesJDialogue
+define script Paddy4JTakesGDialogue
+define script Paddy4GTakesJDialogue
+define script Paddy5JTakesGDialogue
+define script Paddy5GTakesJDialogue
+define script Paddy6JTakesGDialogue
+define script Paddy6GTakesJDialogue
+
+global TCSelected = 0
+global CutsceneReactTrigger = 0
+
+//--------------------------------------------------------------------------
+// LAND 5 CONTROL MAIN
+//--------------------------------------------------------------------------
+begin script DemoControl
+	BlackAnnisTriggered = 0
+	BlackAnnisTimer = create timer for 0 seconds
+start
+
+	set player 0 ENEMY to player 1
+	set player 1 ENEMY to player 0
+
+	set BlackAnnisTimer time to 320 seconds
+
+	run background script DemoGlobals
+	//run script Land5IntroCutscene
+	//run background script Land5Gardens
+	//run background script Land5WreckingGround
+	//run background script Land5Wanted
+
+	run background script Land5PaternitySuit
+
+	//Land stuff
+	run background script L5JapanCapitol
+	run background script Land5Outpost1
+	run background script Land5PaddyFields
+	run background script EmergencyEADemoDialogues
+
+	//Town event scripts
+	//run background script TownEventKnockADoorRun		//Slowing down at the moment
+	//run background script TownEventPotter
+	run background script WindowCleanerControl
+	run background script TownEventChimneySweep
+
+	//Challenge scripts
+	//run background script Land5ThiefGuardOre
+	//run background script Land5Traders
+	run background script Land5SevenSamurai
+
+	begin loop
+		if get BlackAnnisTimer time remaining <= 0 and BlackAnnisTriggered == 0
+			run background script Land5BlackAnnis
+			BlackAnnisTriggered = 1
+		end if
+
+		if L5CapitolConverted == 2 and L5Outpost1Converted == 2
+			///run script Land5IslandComplete
+			///run background script Land5IslandDeparture
+			run script Land5OutroCutscene
+			L5CapitolConverted++
+			L5Outpost1Converted++
+		end if
+
+		wait 1 seconds
+
+	until PLAYER of L5GreekTown != 0
+	end loop
+
+	begin cinema
+		set camera position to {916.167, 93.533, 677.676}
+		set camera focus to {915.810, 93.510, 678.609}
+		say "GREEK SETTLEMENT LOST - GAME OVER."
+		wait until read
+		eject evil spirit
+		say "Arrrgh! Those sneaky Japanese bastards have stolen our Greek Settlement!"
+		wait until read
+		say "Without our followers we are nothing..."
+		wait until read
+		set fade red 0 green 0 blue 0 time 3
+		wait 5 seconds
+		set fade in time 2
+		wait 2 seconds
+	end cinema
+	
+end script DemoControl
+
+//--------------------------------------------------------------------------
+// LAND 5 INTRO - Now with added PJ placeholderyness!
+//--------------------------------------------------------------------------
+
+begin script Land5IntroCutscene
+
+standpos[17]
+AudioLevels=0
+l5jtownc=0
+FocusPos=0
+l5introcrowd[17]
+count=0
+l5introHiroku=0
+EyeCandyBoat=0
+RelCamPos=0
+RelCamFoc=0
+DimOnBoat=0
+FakeBoat=0
+FakeBoat2=0
+StartDim=0
+JapWallDude=0
+
+start
+
+begin cinema
+
+	store camera details
+	set fade red 0 green 0 blue 0 time 0
+
+	AudioLevels = create mixer
+	set mixer AudioLevels channel AUDIO_MIXER_CHANNEL_MUSIC to 0.5
+	start music "creaturefightmain_01" with fadetime 10
+
+	//establish
+	set camera position to {875.721, 301.310, 2214.984}
+	set camera focus to {874.806, 300.925, 2215.105}
+	move camera position to {870.350, 299.156, 2213.478} time 7
+	move camera focus to {869.460, 298.766, 2213.717} time 7
+
+	l5jtownc = get HOUSE at {853.030, 289.250, 2215.640}
+
+	FocusPos = marker at get world position from l5jtownc to {-4.832, 2.646, 0.247}
+	l5introHiroku = create VILLAGER TARANAGA at {FocusPos}
+
+	ALTITUDE of l5introHiroku = ALTITUDE of FocusPos
+	set l5introHiroku focus to {860.439, 289.250, 2219.924}
+
+	play anim "a_p_dimilives_shouting_out_commands" on l5introHiroku
+
+	standpos[0] = marker at {859.625, 291.999, 2220.230}
+	standpos[1] = marker at {860.225, 292.334, 2219.760}
+	standpos[2] = marker at {859.955, 292.334, 2218.643}
+	standpos[3] = marker at {861.075, 292.334, 2218.094}
+	standpos[4] = marker at {861.067, 292.334, 2219.209}
+	standpos[5] = marker at {861.056, 292.334, 2220.603}
+	standpos[6] = marker at {861.908, 292.334, 2218.658}
+	standpos[7] = marker at {859.968, 291.137, 2216.860}
+	standpos[8] = marker at {860.850, 291.387, 2216.159}
+	standpos[9] = marker at {861.551, 291.887, 2217.042}
+	standpos[10] = marker at {862.103, 294.887, 2215.696}
+	standpos[11] = marker at {862.959, 294.887, 2216.845}
+	standpos[12] = marker at {862.927, 292.887, 2214.828}
+	standpos[13] = marker at {860.407, 291.387, 2214.227}
+	standpos[14] = marker at {859.734, 294.887, 2221.649}
+	standpos[15] = marker at {862.256, 294.887, 2221.362}
+	standpos[16] = marker at {862.773, 294.887, 2219.663}
+	standpos[17] = marker at {863.924, 294.887, 2218.168}
+
+	while count < 17
+		l5introcrowd[count] = create VILLAGER JAPANESE_FARMER at {standpos[count]}
+		set l5introcrowd[count] focus to {l5introHiroku}
+		play anim "a_p_look_up" on l5introcrowd[count] loop -1
+		count++
+	end while
+	set fade in time 2
+	wait 2 seconds
+	//play string sound "crowdmafia3"
+
+	if alignment of player < 0
+
+			say "Our land has been destroyed but we still have our Honour."
+			wait until read//wait 4 seconds
+
+			set camera position to {857.899, 292.934, 2218.890}
+			set camera focus to {856.971, 292.973, 2219.262}
+
+			say "And this is where we make our stand."
+			wait until read//wait 4 seconds
+
+			set camera position to {855.558, 293.738, 2217.357}
+			set camera focus to {856.292, 293.330, 2217.900}
+
+			say "Our fortress has withstood the might of the Aztecs and we will not fall."
+			wait until read//wait 4 seconds
+			set camera position to {857.899, 292.934, 2218.890}
+			set camera focus to {856.971, 292.973, 2219.262}
+
+			say "We have our mighty protector with us and here we will defend our homeland to the last man."
+			wait until read//wait 7 seconds
+	else
+			say "My people have been weakened and my foes have shown honour and strength."
+			wait until read//wait 4 seconds
+			set camera position to {857.899, 292.934, 2218.890}
+			set camera focus to {856.971, 292.973, 2219.262}
+			say "But this is where it stops. No more will we bow to the Greeks!"
+			wait until read//wait 4 seconds
+			set camera position to {855.558, 293.738, 2217.357}
+			set camera focus to {856.292, 293.330, 2217.900}
+			say "Here, in this mighty fortress, with the power of our mighty Creature, we make our stand."
+			wait 3 seconds
+			set camera position to {857.899, 292.934, 2218.890}
+			set camera focus to {856.971, 292.973, 2219.262}
+			wait until read//wait 6 seconds
+
+		end if
+		play string sound "cutsceneroar1"
+		//stop sound "crowdmafia3"
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	stop music
+	delete l5introHiroku
+
+	count = 0
+	while count < 17
+		delete l5introcrowd[count]
+		count++
+	end while
+	restore camera details
+	set fade in time 2
+	wait 2 seconds
+
+end cinema
+
+/*
+	AudioLevels = create mixer
+	set mixer AudioLevels channel AUDIO_MIXER_CHANNEL_MUSIC to 0.7
+	start music "creaturefightmain_02" with fadetime 18
+
+	FakeBoat = create SHIP GREEK_SHIP at {865.635, 30.214, 277.230}
+	add {865.635, 30.214, 277.230} to FakeBoat waypoint schedule // optional en route waypoint
+	add {885.635, 30.214, 297.230} to FakeBoat waypoint schedule // optional en route waypoint
+	SPEED of FakeBoat = 1//SPEED of EyeCandyBoat
+	enable FakeBoat waypoint schedule
+
+	EyeCandyBoat = create SHIP GREEK_SHIP at {809.077, 31.295, 244.304}
+	add {869.318, 38.270, 451.952} to EyeCandyBoat waypoint schedule // optional en route waypoint
+	add {869.318, 38.270, 451.952} to EyeCandyBoat waypoint schedule // optional en route waypoint
+	SPEED of EyeCandyBoat = 0.5//SPEED of EyeCandyBoat
+	enable EyeCandyBoat waypoint schedule
+
+begin cinema
+
+	store camera details
+
+	standpos[0] = marker at {-8.376, 4.038, 4.193}
+	standpos[1] = marker at {-9.786, 5.788, 3.412}
+	standpos[2] = marker at {-7.280, 9.288, 5.046}
+	standpos[3] = marker at {-7.836, 9.288, 6.188}
+	standpos[4] = marker at {-8.364, 9.288, 5.844}
+	standpos[5] = marker at {-9.603, 9.288, 4.284}
+	standpos[6] = marker at {-7.161, 9.288, 6.192}
+	standpos[7] = marker at {-9.855, 2.404, 5.608}
+	standpos[8] = marker at {-8.307, 2.404, 7.280}
+	standpos[9] = marker at {-6.524, 2.288, 7.264}
+	standpos[10] = marker at {-10.516, 2.431, 4.369}
+	standpos[11] = marker at {-6.911, 2.613, 8.745}
+	standpos[12] = marker at {-9.970, 2.663, 7.182}
+	standpos[13] = marker at {-11.985, 0.123, 2.407}
+	standpos[14] = marker at {-11.592, 0.073, 5.154}
+	standpos[15] = marker at {-7.873, 0.000, 8.264}
+	standpos[16] = marker at {-4.766, 0.000, 7.442}
+	standpos[17] = marker at {-13.918, 0.147, 4.602}
+
+	l5jtownc = get HOUSE at {724.451, 125.281, 2131.276}
+	FocusPos = marker at get world position from l5jtownc to {-6.581, 4.155, 0.849}//{-6.782, 4.349, 1.070}//{-6.447, 3.274, 0.691}
+	l5introHiroku = create VILLAGER TARANAGA at {FocusPos}
+	ALTITUDE of l5introHiroku = ALTITUDE of FocusPos
+	set l5introHiroku focus to {740.901, 125.022, 2120.424}
+
+	while count < 17
+		l5introcrowd[count] = create VILLAGER JAPANESE_FISHERMAN at get world position from l5jtownc to {standpos[count]}
+		set l5introcrowd[count] focus to {l5introHiroku}
+		if count < 7
+			play anim "a_l5intro_villagerlisten_01" on l5introcrowd[count] loop -1
+		elsif count < 13
+			play anim "a_l5intro_villagerlisten_02" on l5introcrowd[count] loop -1			
+		else
+			play anim "a_l5intro_villagerlisten_03" on l5introcrowd[count] loop -1
+		end if
+
+		run background script Cutscene_YouSpinMeRightRound(l5introcrowd[count])			
+		count++
+	end while
+	count = 0
+
+	set fade red 0 green 0 blue 0 time 0
+	//shot 2
+	set camera position to {826.856, 47.343, 283.926}
+	set camera focus to {825.954, 47.547, 283.545}
+	wait 1 seconds
+	set fade in time 2
+
+	say "We have suffered great loss in the past. But our strength and honour remain."
+
+	play anim "a_p_dimilives_shouting_out_commands" on l5introHiroku
+
+	wait 5 seconds
+	play string sound "crowdmafia3"
+
+			say "The deceitful Greeks can throw themselves against us."
+			//wait 4 seconds
+			
+			//shot 3
+			RelCamPos = marker at get world position from l5jtownc to {-14.638, 5.318, 9.322}
+  			RelCamFoc = marker at get world position from l5jtownc to {-13.941, 4.995, 8.683}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			RelCamPos = marker at get world position from l5jtownc to {-10.264, 4.836, 5.269}
+  			RelCamFoc = marker at get world position from l5jtownc to {-9.558, 4.675, 4.579}
+			move camera position to {RelCamPos} time 7 easein 0 easeout 0
+			move camera focus to {RelCamFoc} time 7 easein 0 easeout 0
+
+			FakeBoat2 = marker at focus position of FakeBoat
+
+			FakeBoat= get FakeBoat physics to rock
+			set FakeBoat focus to {855.306, 49.669, 259.176}
+
+			StartDim =marker at {872.858, 47.924, 273.247}
+			DimOnBoat = create VILLAGER DIMITRIOUS at {StartDim}
+			set DimOnBoat focus to {865.609, 49.057, 276.928}
+			ALTITUDE of DimOnBoat = ALTITUDE of StartDim
+
+			wait until read
+			say "But this is our homeland."
+			wait 2 seconds
+			//shot 4
+			
+			//play anim "a_p_mafiacreature_preaching_to_the_people" on DimOnBoat
+			//wait 1 seconds
+
+			RelCamPos = marker at get world position from FakeBoat to {-0.304, 3.709, -5.263}
+  			RelCamFoc = marker at get world position from FakeBoat to {-0.310, 3.641, -6.261}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			RelCamPos = marker at get world position from FakeBoat to {-0.275, 4.050, -0.267}
+  			RelCamFoc = marker at get world position from FakeBoat to {-0.281, 3.982, -1.265}
+			move camera position to {RelCamPos} time 5 easein 0 easeout 0
+			move camera focus to {RelCamFoc} time 5 easein 0 easeout 0
+
+			set camera position to {831.623, 46.238, 297.831}
+			set camera focus to {831.000, 46.567, 297.121}
+			wait 3 seconds
+
+			// shot 5
+			RelCamPos = marker at get world position from l5jtownc to {-7.318, 5.157, 1.421}
+  			RelCamFoc = marker at get world position from l5jtownc to {-6.399, 5.384, 1.097}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 2 seconds
+
+			// shot 6
+			RelCamPos = marker at get world position from l5jtownc to {-9.671, 3.030, 1.454}
+  			RelCamFoc = marker at get world position from l5jtownc to {-9.465, 2.547, 2.305}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 1 seconds
+          
+			// shot 7
+			RelCamPos = marker at get world position from l5jtownc to {-9.039, 4.293, 2.257}
+  			RelCamFoc = marker at get world position from l5jtownc to {-8.096, 4.496, 1.995}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "Here we will make our stand!"
+			wait until read
+			clear dialogue
+            SPEED of EyeCandyBoat = 1
+			//shot 8
+			RelCamPos = marker at get world position from EyeCandyBoat to {14.578, 5.173, -4.386}
+  			RelCamFoc = marker at get world position from EyeCandyBoat to {14.022, 5.311, -3.567}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 0.2 seconds
+            set camera position to camera position
+			set camera focus to camera focus
+			move camera position to {892.228, 89.203, 303.196} time 5
+			move camera focus to {891.947, 88.954, 304.122} time 5
+			JapWallDude = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_1 at {800.777, 138.519, 2045.362}
+			set JapWallDude carrying CARRIED_OBJECT_NONE
+			set JapWallDude focus to {798.255, 120.112, 2034.699}
+			ALTITUDE of JapWallDude = 17
+			wait 4 seconds
+
+			//shot 9
+			set camera position to {805.092, 140.568, 2039.940}
+			set camera focus to {804.453, 140.388, 2040.688}
+			
+			wait 0.5 seconds
+			play anim "a_p_mafiadeal_shocked" on JapWallDude
+			wait 0.5 seconds
+			set camera position to {801.062, 139.593, 2044.134}
+			set camera focus to {800.716, 139.479, 2045.065}
+			wait 0.5 seconds//until JapWallDude played
+			set anim speed of l5introHiroku to 1.5
+
+			wait 0.4 seconds
+			set anim speed of JapWallDude to 1.5
+			play anim "a_p_turn_180" on JapWallDude
+			wait 0.5 seconds
+			play anim "a_p_look_up" on l5introHiroku
+			play string sound "CHURCHBELL"
+
+			// shot 10
+			RelCamPos = marker at get world position from l5jtownc to {-12.599, 2.469, 6.394}
+  			RelCamFoc = marker at get world position from l5jtownc to {-11.724, 2.080, 6.105}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			CutsceneReactTrigger = 1
+			set anim speed of l5introHiroku to 1
+			wait 1.3 seconds
+
+			// shot 11
+			RelCamPos = marker at get world position from l5jtownc to {-7.547, 5.327, 1.305}
+  			RelCamFoc = marker at get world position from l5jtownc to {-6.575, 5.311, 1.073}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 4 seconds
+			//play anim "a_p_talk1_male" on l5introHiroku
+			say "To the death!"
+			wait until read
+			clear dialogue			
+			play string sound "cutsceneroar1"
+			wait 1 seconds
+
+		//stop sound "crowdmafia3"
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	stop music
+	delete l5introHiroku
+	delete JapWallDude
+	delete EyeCandyBoat
+	delete FakeBoat
+
+	count = 0
+	while count < 17
+		delete l5introcrowd[count]
+		count++
+	end while
+	restore camera details
+	set fade in time 2
+	wait 2 seconds
+
+end cinema
+*/
+run script IntroDialogue
+
+end script Land5IntroCutscene
+
+//--------------------------------------------------------------------------
+// LAND 5 OUTRO
+//--------------------------------------------------------------------------
+
+begin script Land5OutroCutscene
+
+ NewViewPos = marker at {798.509, 358.326, 2286.198}
+ NewViewFoc = marker at {798.923, 357.915, 2285.386}
+ BeginPos = 0
+ BeginFoc = 0
+
+start
+
+	begin cinema
+		BeginPos = marker at camera position
+		BeginFoc = marker at camera focus
+		set camera position to {NewViewPos}
+		set camera focus to {NewViewFoc}
+		wait 3 seconds
+		if alignment of player < 0
+			say "We have been defeated by a greater force."
+			wait until read
+			say "We both fought with honour but the Greeks fought with greater strength."
+			wait until read
+			say "I accept our defeat and now we must join forces with them against the Aztecs."
+			wait until read
+			say "To reach the Aztecs though we must cross the Egyptian heartlands."
+			wait until read
+		else
+			say "I can do no more. The power of the Greek faith has overcome my people."
+			wait until read
+			say "We have been defeated by a race with honour and we must kneel before them."
+			wait until read
+			say "I never thought this day would come but now we must ally against the Aztecs."
+			wait until read
+			say "Only the Egyptians lands lie between us and the Aztec Hordes."
+			wait until read
+		end if
+		set camera position to {BeginPos}
+		set camera focus to {BeginFoc}
+	end cinema
+
+end script Land5OutroCutscene
+
+
+//--------------------------------------------------------------------------
+// PADDY FIELDS
+//--------------------------------------------------------------------------
+
+begin script Land5PaddyFields
+
+ PaddyOwner[6]
+ NewGreekPaddyField = 0
+ Count = 0
+
+start
+	PaddyOwner[0] = 2
+	PaddyOwner[1] = 2
+	PaddyOwner[2] = 1
+	PaddyOwner[3] = 1
+	PaddyOwner[4] = 1
+	PaddyOwner[5] = 1
+
+	begin loop
+		wait 1 seconds
+// PADDY FIELD 1
+		if PLAYER of L5_PaddyField1 == 1 and PaddyOwner[0] == 2
+			run script Paddy1JTakesNDialogue
+			PaddyOwner[0] = 1
+		elsif PLAYER of L5_PaddyField1 == 0 and PaddyOwner[0] == 2
+			run script Paddy1GTakesNDialogue
+			PaddyOwner[0] = 0
+		elsif PLAYER of L5_PaddyField1 == 1 and PaddyOwner[0] == 0
+			run script Paddy1JTakesGDialogue
+			PaddyOwner[0] = 1
+		elsif PLAYER of L5_PaddyField1 == 0 and PaddyOwner[0] == 1
+			run script Paddy1GTakesJDialogue
+			PaddyOwner[0] = 0
+		end if
+
+// PADDY FIELD 2
+		if PLAYER of L5_PaddyField2 == 1 and PaddyOwner[1] == 2
+			run script Paddy2JTakesNDialogue
+			PaddyOwner[1] = 1
+		elsif PLAYER of L5_PaddyField2 == 0 and PaddyOwner[1] == 2
+			run script Paddy2GTakesNDialogue
+			PaddyOwner[1] = 0
+		elsif PLAYER of L5_PaddyField2 == 1 and PaddyOwner[1] == 0
+			run script Paddy2JTakesGDialogue
+			PaddyOwner[1] = 1
+		elsif PLAYER of L5_PaddyField2 == 0 and PaddyOwner[1] == 1
+			run script Paddy2GTakesJDialogue
+			PaddyOwner[1] = 0
+		end if
+
+// PADDY FIELD 3
+		if PLAYER of L5_PaddyField3 == 1 and PaddyOwner[2] == 0
+			run script Paddy3JTakesGDialogue
+			PaddyOwner[2] = 1
+		elsif PLAYER of L5_PaddyField3 == 0 and PaddyOwner[2] == 1
+			run script Paddy3GTakesJDialogue
+			PaddyOwner[2] = 0
+		end if
+
+// PADDY FIELD 4
+		if PLAYER of L5_PaddyField4 == 1 and PaddyOwner[3] == 0
+			run script Paddy4JTakesGDialogue
+			PaddyOwner[3] = 1
+		elsif PLAYER of L5_PaddyField4 == 0 and PaddyOwner[3] == 1
+			run script Paddy4GTakesJDialogue
+			PaddyOwner[3] = 0
+		end if
+
+// PADDY FIELD 5
+		if PLAYER of L5_PaddyField5 == 1 and PaddyOwner[4] == 0
+			run script Paddy5JTakesGDialogue
+			PaddyOwner[4] = 1
+		elsif PLAYER of L5_PaddyField5 == 0 and PaddyOwner[4] == 1
+			run script Paddy5GTakesJDialogue
+			PaddyOwner[4] = 0
+		end if
+
+// PADDY FIELD 6
+		if PLAYER of L5_PaddyField6 == 1 and PaddyOwner[5] == 0
+			run script Paddy6JTakesGDialogue
+			PaddyOwner[5] = 1
+		elsif PLAYER of L5_PaddyField6 == 0 and PaddyOwner[5] == 1
+			run script Paddy6GTakesJDialogue
+			PaddyOwner[5] = 0
+		end if
+
+		Count = 0
+		NewGreekPaddyField = 0
+		while Count < 6
+			if PaddyOwner[Count] == 0
+				NewGreekPaddyField++
+			end if
+			Count++
+		end while
+		GreekPaddyFields = NewGreekPaddyField
+	until PLAYER of L5GreekTown != 0
+	end loop
+
+end script Land5PaddyFields
+
+//--------------------------------------------------------------------------
+// ADVISOR ANALYSIS
+//--------------------------------------------------------------------------
+
+begin script Land5AdvisorAnalysis
+start
+
+///begin loop
+	/// Breeders not made
+	/// Population > Housing (also add Breeder comment if > 1)
+	/// Foresters not made
+	/// Farmers not made
+	/// No Altar
+	/// Altar but no worshippers
+	/// No Walls
+	/// Archers but not on wall
+	/// Loads of Buildings under construction, do challenges
+	/// All Males trained into Army
+	/// No Embellishments
+	/// Cathedral in hand. placing advice
+	/// University in Hand, placing advice
+	/// Mana > X - Advise fireballing Outpost
+///until PLAYER of L5GreekTown != 0
+///end loop
+
+end script Land5AdvisorAnalysis
+
+//--------------------------------------------------------------------------
+// EMERGENCY EA DEMO DIALOGUES
+//--------------------------------------------------------------------------
+
+begin script EmergencyEADemoDialogues
+
+ CommentCounter = 0
+ CommentDelay = 10
+ StopComments = 0
+ MinimumPopulationForTown = 120
+ EALevelTimer = create timer for 30 seconds
+ RepeatTimer = create timer for 0 seconds
+ OverworkedComment = 0
+ OverworkedCommentTimer = create timer for 0 seconds
+ TrainTroopsComment = 0
+ TrainTroopsTimer = create timer for 0 seconds
+ AdvisorHouseComment = 0
+
+start
+/*
+ begin loop
+	if CommentCounter == 0 and get EALevelTimer time remaining <= 0
+		if get RepeatTimer time remaining <= 0 and (get number of type HOUSE ABODE_INFO_GREEK_HOUSE_A in L5GreekTown < 10 or get number of type HOUSE ABODE_INFO_GREEK_HOUSE_B in L5GreekTown < 10) // C1 = 10 houses of each type in town
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_10"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_20"
+				wait until read
+				if AdvisorHouseComment == 0
+					eject evil spirit
+					say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_30"
+					wait until read
+					AdvisorHouseComment = 1
+				end if
+			end dialogue
+			set RepeatTimer time to 360 seconds
+		elsif get number of type HOUSE ABODE_INFO_GREEK_HOUSE_A in L5GreekTown min built 1.0 >= 10 and get number of type HOUSE ABODE_INFO_GREEK_HOUSE_B in L5GreekTown min built 1.0 >= 10
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+		end if
+	elsif CommentCounter == 1
+		if get number of type HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L5GreekTown <= 0 and get RepeatTimer time remaining <= 0 // C2 = Storage Pit in town
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_40"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_50"
+				wait until read
+			end dialogue
+			set RepeatTimer time to 360 seconds
+		elsif get number of type HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L5GreekTown min built 1.0 > 0
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+		end if
+	elsif CommentCounter == 2
+		if get number of type SCRIPT_OBJECT_TYPE_FIELD in L5GreekTown <= 0 and get RepeatTimer time remaining <= 0 // C3 = Field in town
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_60"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_70"
+				wait until read
+				set RepeatTimer time to 360 seconds
+			end dialogue
+		elsif get number of type SCRIPT_OBJECT_TYPE_FIELD in L5GreekTown min built 1.0 > 0
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+		end if
+	elsif CommentCounter == 3
+		if get RepeatTimer time remaining <= 0 and get number of type HOUSE ABODE_INFO_GREEK_MELEE_ARMOURY in L5GreekTown <= 0 and get number of type HOUSE ABODE_INFO_GREEK_RANGED_ARMOURY in L5GreekTown <= 0// C5 = Armoury in town
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_80"
+				wait until read
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_90"
+				wait until read
+				set RepeatTimer time to 360 seconds
+			end dialogue
+		elsif get number of type HOUSE ABODE_INFO_GREEK_MELEE_ARMOURY in L5GreekTown min built 1.0 > 0 or get number of type HOUSE ABODE_INFO_GREEK_RANGED_ARMOURY in L5GreekTown min built 1.0 > 0
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+			TrainTroopsComment = 1
+			set TrainTroopsTimer time to 15 seconds
+		end if
+	elsif CommentCounter == 4
+		if get number of type HOUSE WORSHIP in L5GreekTown <= 0 and get RepeatTimer time remaining <= 0 // C4 = Altar in town
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_100"
+				wait until read
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_110"
+				wait until read
+				set RepeatTimer time to 360 seconds
+			end dialogue
+		elsif get number of type HOUSE WORSHIP in L5GreekTown min built 1.0 > 0
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+		end if
+	elsif CommentCounter == 5
+		if get number of type HOUSE PUB in L5GreekTown <= 0 and get RepeatTimer time remaining <= 0 // C6 = Tavern in town
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_120"
+				wait until read
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_130"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_140"
+				wait until read
+				set RepeatTimer time to 360 seconds
+			end dialogue
+		elsif get number of type HOUSE PUB in L5GreekTown min built 1.0 > 0
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+		end if
+	elsif CommentCounter == 6
+		if get number of type HOUSE ABODE_INFO_GREEK_STUDY in L5GreekTown <= 0 and get RepeatTimer time remaining <= 0 // C7 = Research in town
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_150"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_160"
+				wait until read
+				set RepeatTimer time to 360 seconds
+			end dialogue
+		elsif get number of type HOUSE ABODE_INFO_GREEK_STUDY in L5GreekTown > 0
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+		end if
+	elsif CommentCounter == 7
+		if get number of type HOUSE ABODE_INFO_GREEK_SHRINE in L5GreekTown <= 0 and get RepeatTimer time remaining <= 0 // C8 = Cathedral in town
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_170"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_180"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_190"
+				wait until read
+				if get number of type HOUSE ABODE_INFO_GREEK_STUDY in L5GreekTown min built 1.0 <= 0 and OverworkedComment == 0
+					eject good spirit
+					say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_200"
+					wait until read
+					say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_210"
+					wait until read
+					say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_220"
+					wait until read
+					OverworkedComment = 1
+					set OverworkedCommentTimer time to 30 seconds
+				end if
+				set RepeatTimer time to 360 seconds
+			end dialogue
+		elsif get number of type HOUSE ABODE_INFO_GREEK_SHRINE in L5GreekTown min built 1.0 > 0
+			CommentCounter++
+			set RepeatTimer time to 0 seconds
+			if get OverworkedCommentTimer time remaining > 0
+				begin dialogue
+					eject evil spirit
+					say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_230"
+					wait until read
+					say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_240"
+					wait until read
+					wait 1 second
+					send evil spirit home
+					make good spirit cling across 0.2 down 1.0
+					say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_250"
+					wait until read
+				end dialogue
+			end if
+		end if
+	elsif CommentCounter == 8
+		if size of L5GreekTown < MinimumPopulationForTown and get RepeatTimer time remaining <= 0
+			begin dialogue
+				eject good spirit
+				//say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_260"
+				//wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_270"
+				wait until read
+				send good spirit home
+				eject evil spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_280"
+				wait until read
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_290"
+				wait until read
+			end dialogue
+			set RepeatTimer time to 360 seconds
+		elsif size of L5GreekTown >= MinimumPopulationForTown
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_300"
+				wait until read
+			end dialogue
+			StopComments = 1
+		end if
+	end if
+
+	if TrainTroopsComment == 1 and get TrainTroopsTimer time remaining <= 0 and get army size in town L5GreekTown <= 0
+		wait CommentDelay seconds
+		begin dialogue
+			eject evil spirit
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_310"
+			wait until read
+			say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_320"
+			wait until read
+		end dialogue
+		TrainTroopsComment = 2
+	end if
+
+ until StopComments == 1 or PLAYER of L5GreekTown != 0
+ end loop
+
+if PLAYER of L5GreekTown == 0
+	wait CommentDelay seconds
+	begin dialogue
+		eject good spirit
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_330"
+		wait until read
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_340"
+		wait until read
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_350"
+		wait until read
+		send good spirit home
+		eject evil spirit
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_360"
+		wait until read
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_BUILDINGS_370"
+		wait until read
+	end dialogue
+end if
+*/
+end script EmergencyEADemoDialogues
+//-------------------------------------------------------------------------------
+begin script Cutscene_YouSpinMeRightRound(whichdude)
+DelayMe=0
+WhoAmI=0
+WhereAmi=0
+WhereShouldILook=0
+
+start
+
+WhoAmI = variable get whichdude sub type
+WhereAmi = marker at {whichdude}
+WhereShouldILook = marker at get target from focus position of whichdude to {whichdude} distance 1 angle 0
+
+wait until CutsceneReactTrigger == 1
+DelayMe = number from 0 to 50
+wait DelayMe/100 seconds
+play anim "a_l5intro_villager_turn_02" on whichdude
+wait until whichdude played
+
+delete whichdude
+
+whichdude = create VILLAGER constant WhoAmI at {WhereAmi}
+
+if villager whichdude using alternative mesh
+	enable whichdude alternative mesh
+else
+	disable whichdude alternative mesh	
+end if
+set whichdude focus to {WhereShouldILook}
+wait 5 seconds
+delete whichdude
+
+
+end script Cutscene_YouSpinMeRightRound
+
+//------------------------------------------
+// IntroDialogue
+//------------------------------------------
+begin help script IntroDialogue
+start
+	begin dialogue
+		eject good spirit
+		say "BW2T_SCRIPT_05NEW_INTRO_ADVISORS_10"
+		wait until read
+		eject evil spirit
+		say "BW2T_SCRIPT_05NEW_INTRO_ADVISORS_20"
+		wait until read
+		say "BW2T_SCRIPT_05NEW_INTRO_ADVISORS_30"
+		wait until read
+	//	say "BW2T_SCRIPT_05NEW_INTRO_ADVISORS_40"
+	//	wait until read
+	//	say "BW2T_SCRIPT_05NEW_INTRO_ADVISORS_50"
+	//	wait until read
+	end dialogue
+end script IntroDialogue
+
+//------------------------------------------
+// Paddy1JTakesNDialogue
+//------------------------------------------
+begin help script Paddy1JTakesNDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - The Japanese are moving troops south."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_10"
+		wait until read
+		eject good spirit
+		make good spirit point at {L5_PaddyField1}
+		//say "DIMITRIOS - They have claimed control of another farm settlement."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_20"
+		wait until read
+	end dialogue
+end script Paddy1JTakesNDialogue
+
+//------------------------------------------
+// Paddy1GTakesNDialogue
+//------------------------------------------
+begin help script Paddy1GTakesNDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Mighty one, the news is good. We have captured a farm."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_50"
+		wait until read
+		eject good spirit
+		make good spirit point at {L5_PaddyField1}
+		//say "DIMITRIOS - Hiroku won't be pleased about that."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_60"
+		wait until read
+	end dialogue
+end script Paddy1GTakesNDialogue
+
+//------------------------------------------
+// Paddy1JTakesGDialogue
+//------------------------------------------
+begin help script Paddy1JTakesGDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Hiroku has retaken a farm. His forces took us by suprise."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_90"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField1}
+		wait until read
+	end dialogue
+end script Paddy1JTakesGDialogue
+
+//------------------------------------------
+// Paddy1GTakesJDialogue
+//------------------------------------------
+begin help script Paddy1GTakesJDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - We have taken control over a farm, Wise One!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_150"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField1}
+		wait until read
+	end dialogue
+end script Paddy1GTakesJDialogue
+
+//------------------------------------------
+// Paddy2JTakesNDialogue
+//------------------------------------------
+begin help script Paddy2JTakesNDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - The Japanese have taken control of another farm."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_30"
+		wait until read
+		eject good spirit
+		make good spirit point at {L5_PaddyField2}
+		//say "DIMITRIOS - They are building up troops near our city."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_40"
+		wait until read
+	end dialogue
+end script Paddy2JTakesNDialogue
+
+//------------------------------------------
+// Paddy2GTakesNDialogue
+//------------------------------------------
+begin help script Paddy2GTakesNDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Our brave warriors have taken more territory from the Japanese."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_70"
+		wait until read
+		eject good spirit
+		make good spirit point at {L5_PaddyField2}
+		//say "DIMITRIOS - They will be surely aiming..."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_80"
+		wait until read
+	end dialogue
+end script Paddy2GTakesNDialogue
+
+//------------------------------------------
+// Paddy2JTakesGDialogue
+//------------------------------------------
+begin help script Paddy2JTakesGDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - The Japanese have claimed a farm from us!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_100"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField2}
+		wait until read
+	end dialogue
+end script Paddy2JTakesGDialogue
+
+//------------------------------------------
+// Paddy2GTakesJDialogue
+//------------------------------------------
+begin help script Paddy2GTakesJDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - We have gained control of a farm!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_160"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField2}
+		wait until read
+	end dialogue
+end script Paddy2GTakesJDialogue
+
+//------------------------------------------
+// Paddy3JTakesGDialogue
+//------------------------------------------
+begin help script Paddy3JTakesGDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - We've lost a farm to the Japanese warriors."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_110"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField3}
+		wait until read
+	end dialogue
+end script Paddy3JTakesGDialogue
+
+//------------------------------------------
+// Paddy3GTakesJDialogue
+//------------------------------------------
+begin help script Paddy3GTakesJDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Mighty One! We have taken a farm from the Japanese!"
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_170"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField3}
+		wait until read
+	end dialogue
+end script Paddy3GTakesJDialogue
+
+//------------------------------------------
+// Paddy4JTakesGDialogue
+//------------------------------------------
+begin help script Paddy4JTakesGDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - The Japanese have attacked and taken a farm from us."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_120"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField4}
+		wait until read
+	end dialogue
+end script Paddy4JTakesGDialogue
+
+//------------------------------------------
+// Paddy4GTakesJDialogue
+//------------------------------------------
+begin help script Paddy4GTakesJDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Our forces have claimed more territory to the north."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_180"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField4}
+		wait until read
+	end dialogue
+end script Paddy4GTakesJDialogue
+
+//------------------------------------------
+// Paddy5JTakesGDialogue
+//------------------------------------------
+begin help script Paddy5JTakesGDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Hiroku's forces have overrun another farm and now control it."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_130"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField5}
+		wait until read
+	end dialogue
+end script Paddy5JTakesGDialogue
+
+//------------------------------------------
+// Paddy5GTakesJDialogue
+//------------------------------------------
+begin help script Paddy5GTakesJDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Yes! Our forces have siezed a farm."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_190"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField5}
+		wait until read
+	end dialogue
+end script Paddy5GTakesJDialogue
+
+//------------------------------------------
+// Paddy6JTakesGDialogue
+//------------------------------------------
+begin help script Paddy6JTakesGDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - The Japanese have successfully attacked one of our farms."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_140"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField6}
+		wait until read
+	end dialogue
+end script Paddy6JTakesGDialogue
+
+//------------------------------------------
+// Paddy6GTakesJDialogue
+//------------------------------------------
+begin help script Paddy6GTakesJDialogue
+start
+	begin dialogue
+		//say "DIMITRIOS - Our troops have gained control of more land in the north."
+		say "BW2T_SCRIPT_05NEW_ANALYSIS_PADDYDIMITRIOS_200"
+		wait 1 second
+		eject good spirit
+		make good spirit point at {L5_PaddyField6}
+		wait until read
+	end dialogue
+end script Paddy6GTakesJDialogue

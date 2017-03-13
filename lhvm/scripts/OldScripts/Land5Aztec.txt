@@ -1,0 +1,194 @@
+//------------------------------------------------
+//  LAND 5 AZTEC TOWN AI
+//------------------------------------------------
+
+define script L5AztecTownManagement
+define script L5AztecArmyManagement
+
+begin script Land5Aztec
+ 
+ MisfireTimer = create timer for 0 seconds
+ MisfireDelay = 900
+ ObjectInHand = 0
+ 
+start
+run background script L5AztecTownManagement
+run background script L5AztecArmyManagement
+set MisfireTimer time to MisfireDelay seconds
+
+	begin loop
+		if PLAYER of L5AztecTown == 0
+			L5AztecConverted = 1
+		end if
+
+		if get MisfireTimer time remaining <= 0 and MisfireTriggered == 0
+			ObjectInHand = get object held
+			if ObjectInHand exists or MyCreature locked interaction or MyCreature leashed ///or platoon leashed to hand
+			else
+				run script Land5WoMDMisfire
+				MisfireTriggered = 1
+			end if
+		end if
+	until L5AztecConverted == 1
+	end loop
+
+	/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+	begin cinema
+		say "The Aztec Submission scripts have not been implemented yet."
+		wait until read
+		say "It will show simple shots of the villagers reacting to the change."
+		wait until read
+	end cinema
+
+	L5AztecConverted = 2
+
+end script Land5Aztec
+
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script L5AztecTownManagement
+
+ InitialAztecReligiousTolerance = 0.6
+ InitialAztecAggression = 0.20
+ AngeredAztecAggression = 0.50
+ InitialJapaneseTolerance = 0.6
+ NewJapaneseTolerance = 0
+ InitialGreekTolerance = 0.6
+ NewGreekTolerance = 0
+ FeudValue = 0
+ GreekConvertReaction = 0
+ LastTotalEldersKilled = 0
+
+start
+	// Initial army setup
+	set town L5AztecTown platoon type ARMY_UNIT_TYPE_MELEE_GRUNT at ratio 0.3
+	set town L5AztecTown army type ARMY_UNIT_TYPE_MELEE_GRUNT platoon ratio on wall to 0.3
+	set town L5AztecTown platoon type ARMY_UNIT_TYPE_RANGED_SHORT at ratio 0.2
+	set town L5AztecTown army type ARMY_UNIT_TYPE_RANGED_SHORT platoon ratio on wall to 0.6
+
+	// Initial villager setup
+	set town L5AztecTown desire for GATHER_FOOD to 0.50
+	set town L5AztecTown desire for GROW_FOOD to 0.50
+	set town L5AztecTown desire for GATHER_WOOD to 0.50
+	set town L5AztecTown desire for GATHER_ORE to 0.50
+	set town L5AztecTown desire for BREED to 0.80
+	set town L5AztecTown desire for ATTACK to 0.70
+	set town L5AztecTown desire for DEFENCE to 0.40
+	set town L5AztecTown desire for FUN to 0.10
+
+	// Initial feud status
+	set town L5AztecTown interracial tolerance with town L5JapaneseTown to InitialJapaneseTolerance
+	set town L5AztecTown interracial tolerance with town L5GreekTown to InitialGreekTolerance // they hate the norse 3 times more than you
+	set town L5AztecTown racial aggression with town L5JapaneseTown to InitialAztecAggression
+	set town L5AztecTown racial aggression with town L5GreekTown to InitialAztecAggression
+	set town L5AztecTown religious tolerance with town L5JapaneseTown to InitialAztecReligiousTolerance
+	set town L5AztecTown religious tolerance with town L5GreekTown to InitialAztecReligiousTolerance
+
+	set town L5AztecTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5JapaneseTown to 0
+	set town L5AztecTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5GreekTown to 0
+
+	set town L5AztecTown impressive threshold for town L5JapaneseTown to 0.6
+	set town L5AztecTown impressive threshold for town L5GreekTown to 0.9
+
+	begin loop
+		// reactionary changes to town variables
+
+		if L5GreekConverted > 0 and GreekConvertReaction == 0
+			set town L5AztecTown platoon type ARMY_UNIT_TYPE_MELEE_GRUNT at ratio 0.35
+			set town L5AztecTown army type ARMY_UNIT_TYPE_MELEE_GRUNT platoon ratio on wall to 0.4
+			set town L5AztecTown platoon type ARMY_UNIT_TYPE_RANGED_SHORT at ratio 0.35
+			set town L5AztecTown army type ARMY_UNIT_TYPE_RANGED_SHORT platoon ratio on wall to 0.6
+			set town L5AztecTown racial aggression with town L5JapaneseTown to AngeredAztecAggression
+			set town L5AztecTown racial aggression with town L5GreekTown to AngeredAztecAggression
+
+			NewJapaneseTolerance = InitialJapaneseTolerance/2
+			set town L5AztecTown interracial tolerance with town L5JapaneseTown to NewJapaneseTolerance
+			NewGreekTolerance = InitialGreekTolerance/2
+			set town L5AztecTown interracial tolerance with town L5GreekTown to NewGreekTolerance
+
+			FeudValue = get town L5AztecTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5JapaneseTown
+			FeudValue += 20
+			set town L5AztecTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5JapaneseTown to FeudValue
+
+			FeudValue = get town L5AztecTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5GreekTown
+			FeudValue += 50
+			set town L5AztecTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L5GreekTown to FeudValue
+
+			set town L5AztecTown desire for GATHER_FOOD to 0.30
+			set town L5AztecTown desire for GROW_FOOD to 0.30
+			set town L5AztecTown desire for GATHER_WOOD to 0.40
+			set town L5AztecTown desire for GATHER_ORE to 0.60
+			set town L5AztecTown desire for BREED to 0.40
+			set town L5AztecTown desire for ATTACK to 0.60
+			set town L5AztecTown desire for DEFENCE to 0.60
+			set town L5AztecTown desire for FUN to 0.10
+
+			GreekConvertReaction = 1
+		end if
+
+		if MonkEldersDeadCount > LastTotalEldersKilled
+			LastTotalEldersKilled = MonkEldersDeadCount
+			/// DO WHATEVER CHANGES OCCUR WHEN AN ELDER IS SACRIFICED, IF ANY
+
+		end if
+
+	until L5AztecConverted == 1
+	end loop
+
+end script L5AztecTownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script L5AztecArmyManagement
+
+AztecAttackTimer = create timer for 0 seconds
+AztecHordeDelay = 600 // time between horde attacks
+
+start
+	set AztecAttackTimer time to AztecHordeDelay seconds
+
+	begin loop
+		if town L5AztecTown feud threshold with town L5GreekTown passed ///and no attacks active
+			if L5GreekConverted == 0 // Greek not conquered by player
+				// check if there's enough platoons idle to create a respectable army compared to Greek defences
+				/// get number of idle platoons
+				/// get size of Greek Army
+				/// if numbers are favourable (compare two values)
+				/// send an army to assault Greek town
+				set AztecAttackTimer time to AztecHordeDelay seconds
+			elsif L5GreekConverted > 0
+				/// check if there's enough platoons idle to create two massive armies
+				/// if so send one to the Greek Town and one to the Japanese
+				set AztecAttackTimer time to AztecHordeDelay seconds
+			end if
+		end if
+
+		if town L5AztecTown feud threshold with town L5JapaneseTown passed ///and no attacks active
+			if L5GreekConverted == 0
+				/// check if there's enough platoons idle to create a respectable army
+				/// if so send an army to raid Japanese town
+				set AztecAttackTimer time to AztecHordeDelay seconds
+			elsif L5GreekConverted > 0
+				/// check if there's enough platoons idle to create a respectable army and still defend the town from the Greeks
+				/// if so send an army to raid Japanese town
+				set AztecAttackTimer time to AztecHordeDelay seconds
+			end if
+		end if
+
+/*
+		if get AztecAttackTimer time remaining <= 0 and no attacks active
+			///if number of idle warrriors enough to attack compared to Japanese Defences
+				/// send a horde attack to Japanese town
+				set AztecAttackTimer time to AztecHordeDelay seconds
+			///end if
+		end if
+*/
+	until L5AztecConverted == 1
+	end loop
+end script L5AztecArmyManagement
+

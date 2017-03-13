@@ -1,0 +1,180 @@
+/*
+Throw My Nut Oil Challenge
+
+By: Tid and Matt
+*/
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NU_FALSE = 0
+define NU_TRUE = 1
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script NU_Intro
+define script NU_Ships
+
+//-----------------------------------------------------------------------------
+//	Land 2 Nut Oil
+//-----------------------------------------------------------------------------
+begin script Land2NutOil
+	BrotherStart = 0
+	Barrel = 0
+	CurrentBarrel = 0
+	Timer = 0
+	Scroll = 0
+	MarkerFX = 0
+
+	BarrelPos[5]
+	TargetPos[5]
+	BrotherStartPos = marker at {946.196777,103.438538,348.914032}
+start
+	
+	BrotherStart = create VILLAGER FELL at {BrotherStartPos}
+
+	BarrelPos[0] = marker at {902.236938,101.228081,326.865997}
+	BarrelPos[1] = marker at {1191.286743,15.434009,276.927338}
+	BarrelPos[2] = marker at {1606.302612,10.022109,548.179626}
+	BarrelPos[3] = marker at {2236.199951,18.900528,440.981140}
+	BarrelPos[4] = marker at {2296.234619,44.473232,866.571960}
+
+	TargetPos[0] = marker at {1173.660889,61.682957,204.722137}
+	TargetPos[1] = marker at {1570.776978,85.981247,638.499146}
+	TargetPos[2] = marker at {2088.194824,39.141109,375.543060}
+	TargetPos[3] = marker at {2365.229248,26.556623,913.638794}
+	TargetPos[4] = marker at {2010.184082,212.285645,1708.778320}
+/*
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {BrotherStart}
+	ALTITUDE of Scroll = 3
+	wait until Scroll right clicked
+
+	delete Scroll
+
+	run script NU_Intro
+*/
+
+	//run background script NU_Ships
+
+	while CurrentBarrel < 5
+		if Barrel == 0
+			Barrel = create OBJECT NORSE_BARREL_01 at {BarrelPos[CurrentBarrel]}
+			SCALE of Barrel = 3.0
+
+			//Marker effects stuff
+			delete MarkerFX
+			MarkerFX = create visual effect "gp_s_rayfx.ves" strength 1 scale 1.5 at {TargetPos[CurrentBarrel]} + {0.000000,8.000000,0.000000} time -1
+		end if
+
+		if {Barrel} not near {BarrelPos[CurrentBarrel]}
+
+			wait until not Barrel is HELD
+
+			if {Barrel} near {TargetPos[CurrentBarrel]} radius 20 and {Barrel} on land and ALTITUDE of Barrel < 20
+				CurrentBarrel++
+				delete Barrel with explode
+				Barrel = 0
+				begin dialogue
+					say "You got the barrel to the next brother"
+					wait until read
+				end dialogue
+			end if
+
+			if Barrel is not FLYING
+				delete Barrel
+				Barrel = 0
+			end if
+
+		end if
+
+	end while
+
+	delete MarkerFX
+
+	begin cinema
+
+		say "You made the sleeping potion"
+		wait until read
+
+	end cinema
+
+end script Land2NutOil
+
+//-----------------------------------------------------------------------------
+//	Nut Oil Intro
+//-----------------------------------------------------------------------------
+begin script NU_Intro
+start
+	begin cinema		
+
+		say "The Norse trashed my boat and now I cant get to see my brothers on the other islands"
+		wait until read
+
+		say "We were concocting a sleeping potion to settle the great creature"
+		wait until read
+
+		say "Please throw the barrel to my brother Alf on the next island so he can carry on the brew"
+		wait until read
+
+	end cinema
+end script NU_Intro
+
+//-----------------------------------------------------------------------------
+//	Land 2 Nut Oil Ships
+//-----------------------------------------------------------------------------
+begin script NU_Ships
+	Ship = 0
+	ShipWaypoints[8]
+	ShipCreate = marker at {10.455933,1.250600,1140.345947}
+start
+
+	ShipWaypoints[0] = marker at {204.076996,1.250700,1042.857056}
+	ShipWaypoints[1] = marker at {784.742920,1.250400,997.565002}
+	ShipWaypoints[2] = marker at {204.076996,1.250700,1042.857056}
+	ShipWaypoints[3] = marker at {784.742920,1.250400,997.565002}
+	ShipWaypoints[4] = marker at {204.076996,1.250700,1042.857056}
+	ShipWaypoints[5] = marker at {784.742920,1.250400,997.565002}
+	ShipWaypoints[6] = marker at {204.076996,1.250700,1042.857056}
+	ShipWaypoints[7] = marker at {784.742920,1.250400,997.565002}
+
+	Ship = create SHIP NORSE_SHIP at {ShipCreate}
+	add {ShipWaypoints[0]} to Ship waypoint schedule
+	add {ShipWaypoints[1]} to Ship waypoint schedule
+	add {ShipWaypoints[2]} to Ship waypoint schedule
+	add {ShipWaypoints[3]} to Ship waypoint schedule
+	add {ShipWaypoints[4]} to Ship waypoint schedule
+	add {ShipWaypoints[5]} to Ship waypoint schedule
+	add {ShipWaypoints[6]} to Ship waypoint schedule
+	add {ShipWaypoints[7]} to Ship waypoint schedule
+
+
+	SPEED of Ship = 2.0
+	enable Ship waypoint schedule
+	
+	wait 2 seconds
+
+	//wait until HEALTH of Ship < 1
+	
+	disable Ship waypoint schedule
+
+	begin dialogue
+		say "Kill that ship!"
+		wait until read
+	end dialogue
+
+	begin loop
+		ALTITUDE of Ship -= 0.2
+		XANGLE of Ship -= 8
+	until ALTITUDE of Ship < -15
+	end loop
+
+	delete Ship
+
+	wait 5000000 seconds
+end script NU_Ships

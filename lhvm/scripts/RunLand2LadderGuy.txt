@@ -1,0 +1,6 @@
+run script RunLand2LadderGuy
+
+begin script RunLand2LadderGuy
+start
+	run script Land2LadderGuy
+end script RunLand2LadderGuy

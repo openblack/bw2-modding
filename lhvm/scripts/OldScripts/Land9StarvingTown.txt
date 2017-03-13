@@ -1,0 +1,82 @@
+
+define script Land9StarvingTownIntro(TownLeader)
+
+
+begin script Land9StarvingTown
+
+FoodInTown = 0
+StarvingVillagers[20]
+TownLeader = 0
+TownLeaderPos = marker at {1811.377, 91.508, 1036.471}
+Scroll = 0
+ClickedScroll = 0
+SetupScroll = 0
+
+start
+
+	disable town LC9_MinorSettlement[8] job VILLAGER_JOB_FISHERMAN
+	disable town LC9_MinorSettlement[8] job VILLAGER_JOB_FARMER
+
+	TownLeader = create VILLAGER EURONYMOUS at {TownLeaderPos}
+
+	while ClickedScroll == 0
+			if SetupScroll == 0
+				Scroll = create highlight SILVER name "BW2T_SCRIPT_09FINAL_STARVINGTOWN_10" remind "BW2T_SCRIPT_09FINAL_STARVINGTOWN_20" at {TownLeaderPos}
+				ALTITUDE of Scroll = 5
+				SetupScroll = 1
+			end if
+
+			if Scroll right clicked
+				ClickedScroll = 1
+				delete Scroll
+				if LC9_Marauders exists
+					begin dialogue
+					say "BW2T_SCRIPT_09FINAL_MARAUDERS_10"
+					wait until read
+					end dialogue
+				elsif not LC9_Marauders exists
+					begin dialogue
+					say "BW2T_SCRIPT_09FINAL_MARAUDERS_20"
+					wait until read
+					end dialogue
+				end if
+			end if
+	end while
+
+begin loop
+
+	FoodInTown = get STORE FOODSTORE at {LC9_MinorSettlement[8]} radius 100
+
+	if FoodInTown >= 4000
+		LC9_HelpedFishTown = 1
+		if LC9_Marauders exists
+
+		elsif not LC9_Marauders exists
+			
+		end if
+	end if
+
+until LC9_HelpedFishTown == 1
+end loop
+
+end script Land9StarvingTown
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+begin script Land9StarvingTownIntro(TownLeader)
+
+start
+
+if LC9_Marauders != 0
+	begin dialogue
+	say "BW2T_SCRIPT_09FINAL_ADVISORS_AZTEC_ANGER_10"
+	wait until read
+	end dialogue
+elsif LC9_Marauders == 0
+	begin dialogue
+	say "BW2T_SCRIPT_09FINAL_ADVISORS_AZTEC_ANGER_20"
+	wait until read
+	end dialogue
+end if
+
+end script Land9StarvingTownIntro

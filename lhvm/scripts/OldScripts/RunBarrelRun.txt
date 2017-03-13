@@ -1,0 +1,21 @@
+//-----------------------------------------------------------------------------
+run script RunBarrelRun
+//-----------------------------------------------------------------------------
+begin script RunBarrelRun
+
+ CamPos = marker at {1305.249,11.424,1693.009}
+ CamFoc = marker at {1304.559,10.597,1666.915}
+
+start
+
+	// Setup the camera position
+	begin cinema
+		set camera position to {CamPos}
+		set camera focus to {CamFoc}
+	end cinema
+
+	run script BarrelRun
+	
+end script RunBarrelRun
+
+//-----------------------------------------------------------------------------

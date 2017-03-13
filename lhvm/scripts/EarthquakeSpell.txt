@@ -1,0 +1,330 @@
+//--------------------------------------------------------------------------------------------------------------
+begin script EarthquakeSpell(EnemyWonder, Earthquake)
+
+RelCamPos = 0
+RelCamFoc = 0
+MeOldMateDave = 0
+MyDance = 0
+Dancer = 0
+Wonder = 0
+Count = 0
+AboveV=0
+BeamPlace=0
+Beam=0
+Beam2=0
+lastEarthquakepos=0
+MyPos=0
+MyFoc=0
+MusicEventTimer=0
+MusicEvent1=0
+MusicEvent2=0
+MusicEvent3=0
+MusicEvent4=0
+MusicEvent5=0
+MusicEvent6=0
+MusicEvent7=0
+MusicEvent8=0
+MusicEvent9=0
+MusicEvent10=0
+BadboyBuilding=0
+FuturePos=0
+FutureFoc=0
+StarDude=0
+FutureEarthQ=0
+EarthquakeMixer=0
+
+start
+
+	WhiChEpicSpellIsBeingCast = Earthquake
+
+
+	EarthquakeMixer = create mixer
+	//set mixer EarthquakeMixer channel AUDIO_MIXER_CHANNEL_PHYSICS_SFX to 0.0
+	
+	set mixer EarthquakeMixer channel AUDIO_MIXER_CHANNEL_SCRIPT_SFX to 1.0
+	set mixer EarthquakeMixer channel AUDIO_MIXER_CHANNEL_ANIMATION_VILLAGER to 0.0	
+	set mixer EarthquakeMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+
+	begin interruptible cinema
+
+	disable influence
+
+	Wonder = get Earthquake creator
+	if Wonder not exists
+		Wonder = EnemyWonder
+	end if
+
+		run script SetupDancerPositions(2)
+		MyDance=get Wonder dance
+
+		//say "Set The Dancers to hands in pockets"
+		//wait until read
+		Dancer=get first in MyDance
+	                        
+		while Dancer exists and Count <= 19
+			detach Dancer from MyDance     
+			run background script DancerLookAtWonder(Dancer, Wonder, Count, 2)
+			Count++
+			Dancer=get first in MyDance
+		end while
+
+		RelCamPos=marker at get world position from Earthquake to {0.122,1.985,-0.669}
+		RelCamFoc=marker at get world position from Earthquake to {3.113,-21.538,32.278}
+		AboveV = marker at {Earthquake}+{0.000,3.000,0.000}
+		move camera focus to {AboveV} time 3
+		move camera position to {AboveV} time 3
+		wait 1.5 seconds
+
+		set fade red 255 green 255 blue 255 time 1
+		wait 1 seconds
+		disable simulation sound
+		start music "norse_chant_vocal"
+        detach sound "SCULLFIRE" from Earthquake
+
+		set fade in time 1
+		set camera lens 60.000
+		RelCamPos = marker at get world position from Wonder to {-5.927, 7.351, 22.054}
+		RelCamFoc = marker at get world position from Wonder to {27.203, 47.326, -63.407}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		
+		RelCamPos = marker at get world position from Wonder to {-5.927, 7.351, 22.054}
+		RelCamFoc = marker at get world position from Wonder to {31.232, -20.926, -66.374}
+		move camera position to {RelCamPos} time 4 easein 0 easeout 0
+		move camera focus to {RelCamFoc} time 4 easein 0 easeout 0
+		wait 1 seconds
+		//play string sound "SCRIPT2_EEPIC_SYNTH2"
+		wait 2 seconds
+		wait 1 seconds
+
+		set camera lens 60.000
+		RelCamPos = marker at get world position from Wonder to {-7.780, 5.023, 10.385}
+		RelCamFoc = marker at get world position from Wonder to {76.882, -35.925, 44.376}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		RelCamPos = marker at get world position from Wonder to {-7.780, 5.023, 10.385}
+		RelCamFoc = marker at get world position from Wonder to {73.549, -39.320, 48.056}
+		move camera position to {RelCamPos} time 2.5
+		move camera focus to {RelCamFoc} time 2.5
+		wait 2.5 seconds
+
+		set camera lens 70.000
+		RelCamPos = marker at get world position from Wonder to {-0.104, 5.006, 21.700}
+  		RelCamFoc = marker at get world position from Wonder to {0.799, 11.970, -78.056}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+			
+		RelCamPos = marker at get world position from Wonder to {-0.104, 27.502, 21.700}
+		RelCamFoc = marker at get world position from Wonder to {0.848, 40.298, -77.470}
+		move camera position to {RelCamPos} time 10
+		move camera focus to {RelCamFoc} time 10
+		//set sky colour red 201 green 243 blue 29 time 10
+		enable predefined sky "EARTHQUAKE" time 10
+
+		
+		invoke Wonder EPIC_WONDER_STAGE_1
+		play string sound "SCRIPT2_EEPIC_SYNTH3"
+		//play string sound "SCRIPT2_EEPIC_EPICTOWERELECTRIC2"
+		wait 4 seconds
+		invoke Wonder EPIC_WONDER_STAGE_2
+		play string sound "SCRIPT2_EEPIC_BEAMOFLIGHTLOOP7"
+		wait 4 seconds
+		invoke Wonder EPIC_WONDER_STAGE_3
+		play string sound "SCRIPT2_EEPIC_HURRICANELIGHTNING6"
+		wait 2 seconds		
+		stop sound "SCRIPT2_EEPIC_SCULLFIRE"
+
+		BeamPlace = marker at get world position from Wonder to {-0.680, 81.780, 0.719}
+		Beam = create visual effect VISUAL_EFFECT_EARTHQUAKE_BEAM at {BeamPlace}
+		Beam2 = create visual effect "ev_s_beam.ves" strength 0.3 scale 1.0 at {BeamPlace}
+		invoke Earthquake EPIC_PULSE_UP
+		//play string sound "SCRIPT2_EEPIC_BEAMOFLIGHT11"
+		play string sound "SCRIPT2_EEPIC_HURRICANELIGHTNING1"
+		RelCamPos = marker at get world position from Wonder to {-0.104, 27.502, 21.700}
+		RelCamFoc = marker at get world position from Wonder to {-1.545, 124.713, -1.701}
+		move camera position to {RelCamPos} time 0.6
+		move camera focus to {RelCamFoc} time 0.6
+
+		play string sound "SCRIPT2_EEPIC_DECAYCHARGESPELL"
+
+		wait 0.6 seconds
+		wait 0.6 seconds
+		play string sound "SCRIPT2_EEPIC_DECAYCHARGESPELL"
+		stop sound "SCRIPT2_EEPIC_BEAMOFLIGHTLOOP7"
+
+		stop sound "SCRIPT2_EEPIC_FLAMETHROWERWHOOSH4"
+		stop sound "SCRIPT2_EEPIC_CASTPSELLFREEZE1"
+		stop sound "SCRIPT2_EEPIC_EPICTOWERELECTRIC2"
+		stop sound "SCRIPT2_EEPIC_EPICTOWERLOOP2"
+		stop sound "SCRIPT2_EEPIC_EPICTOWERLOOP3"
+		stop sound "SCRIPT2_EEPIC_SYNTH3"
+		stop sound "SCRIPT2_EEPIC_HURRICANELIGHTNING6"
+		stop sound "SCRIPT2_EEPIC_HURRICANELIGHTNING1"
+			
+		set fade red 255 green 255 blue 255 time 1.5
+		wait 1.5 seconds	
+
+		set camera lens 48.000
+		RelCamPos = marker at get world position from Earthquake to {-0.111, 42.124, -36.109}
+		RelCamFoc = marker at get world position from Earthquake to {-0.126, 41.717, -35.196}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set fade in time 1
+		wait 1 seconds
+		
+		RelCamPos = marker at get world position from Earthquake to {-0.111, 42.124, -36.109}
+		RelCamFoc = marker at get world position from Earthquake to {-0.126, 41.503, -35.325}
+		move camera position to {RelCamPos} time 1
+		move camera focus to {RelCamFoc} time 1
+		invoke Earthquake EPIC_PULSE_DOWN
+		invoke Earthquake EPIC_BEAM_DOWN
+		play string sound "SCRIPT2_EEPIC_BEAMOFLIGHTSTART1"
+		set mixer EarthquakeMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+
+		start music "earthquake_music"
+		MusicEventTimer=create timer for 0 seconds
+		MusicEvent1=get music "earthquake_music" event "1" time
+		MusicEvent2=get music "earthquake_music" event "2" time
+		MusicEvent3=get music "earthquake_music" event "3" time
+		MusicEvent4=get music "earthquake_music" event "4" time
+		MusicEvent5=get music "earthquake_music" event "5" time
+		MusicEvent6=get music "earthquake_music" event "6" time
+		MusicEvent7=get music "earthquake_music" event "7" time
+		MusicEvent8=get music "earthquake_music" event "8" time
+		MusicEvent9=get music "earthquake_music" event "9" time
+		MusicEvent10=get music "earthquake_music" event "10" time
+
+		attach atmos "spells" to Earthquake// range 500
+		set Earthquake atmos group 5 time 1 seconds
+		
+		shake camera strength 8.0
+		wait 2 seconds
+		
+		/*invoke Earthquake EPIC_START_CASTING//         - the majic thing
+		set camera position to get world position from Earthquake to {-32.161, 43.996, 16.926}
+		set camera focus to get world position from Earthquake to {-31.581, 43.188, 17.029}
+		move camera position to get world position from Earthquake to {-32.161, 43.996, 16.926} time 1
+		move camera focus to get world position from Earthquake to {-31.527, 43.282, 17.223} time 1
+		wait 2 seconds*/
+
+		FutureEarthQ = marker at future position of epic miracle Earthquake with time 3 seconds
+		BadboyBuilding = get HOUSE at {FutureEarthQ} radius 10
+		///BODGE
+		//BadboyBuilding = get HOUSE at {1196.710, 256.250, 1323.100}
+
+		if BadboyBuilding exists
+			StarDude = get star villager near {BadboyBuilding}
+
+			if StarDude not exists
+				StarDude = create VILLAGER NORSE_FARMER at get world position from BadboyBuilding to {-0.199, -0.002, 3.702}
+			end if
+			set StarDude position to get world position from BadboyBuilding to {-0.199, -0.002, 3.702}
+			set StarDude focus to {Earthquake}
+			play anim "a_p_farm_shouting_to_god_desperately" on StarDude
+			set camera position to get world position from BadboyBuilding to {3.795, 4.817, 10.401}
+			set camera focus to get world position from BadboyBuilding to {3.320, 4.475, 9.590}
+		
+		
+		play string sound "SCRIPT2_EEPIC_EARTHQSCREAM2"
+		
+			wait 1.5 seconds
+			set camera position to get world position from BadboyBuilding to {0.174, 1.062, 2.318}
+			set camera focus to get world position from BadboyBuilding to {0.230, 1.159, 3.311}
+		end if
+		invoke Earthquake EPIC_CRUMBLE_BUILDINGS
+		invoke Earthquake EPIC_START_SINKING//              - land goes diown
+		wait 1.5 seconds
+		//wait until get MusicEventTimer time since set >= MusicEvent1
+		invoke Earthquake EPIC_SHUT_DOWN_BEAM
+		set camera position to get world position from Earthquake to {-53.692, 57.391, 88.497}
+		set camera focus to get world position from Earthquake to {-53.101, 56.951, 87.821}
+		invoke Earthquake EPIC_START_EXPLOSION
+		invoke Earthquake EPIC_START_CRACKING
+		play string sound "SCRIPT2_EEPIC_EARTHQUAKECRACK"
+		set Earthquake atmos group 6 time 1 seconds	
+		wait 2 seconds
+		play string sound "SCRIPT2_EEPIC_EARTHQSCREAM1"
+
+		invoke Earthquake EPIC_START_SHIFTING
+		set camera position follow Earthquake offset {-2.258, 18.980, -24.717}
+		set camera focus follow Earthquake offset {-2.195, 18.724, -23.753}
+		//set camera focus follow Earthquake
+		wait until get MusicEventTimer time since set >= MusicEvent2
+		play string sound "SCRIPT2_EEPIC_EARTHQSCREAM1"
+		set camera lens 60.000
+		set camera position follow Earthquake offset {-23.190, 38.531, 1.065}
+		set camera focus follow Earthquake offset {-22.596, 37.745, 0.894}
+		set camera focus follow Earthquake
+		wait until get MusicEventTimer time since set >= MusicEvent3
+		set camera lens 45.000
+		play string sound "SCRIPT2_EEPIC_EARTHQSCREAM3"
+
+		set camera position follow Earthquake offset {-0.428, 46.166, -18.751}
+		set camera focus follow Earthquake offset {-0.403, 45.248, -18.356}
+		wait until get MusicEventTimer time since set >= MusicEvent4
+		shake camera strength 3.0
+
+		set camera lens 45.000
+		set camera position to get world position from Earthquake to {10.379, 75.760, -25.401}
+		set camera focus to get world position from Earthquake to {10.422, 74.761, -25.386}
+		play string sound "SCRIPT2_EEPIC_EARTHQSCREAM1"
+
+		wait until get MusicEventTimer time since set >= MusicEvent5
+		shake camera strength 8.0
+		set camera lens 45.000
+		set camera position follow Earthquake offset {-14.648, 21.964, -43.821}
+		set camera focus follow Earthquake offset {-14.256, 21.850, -42.908}
+		set camera focus follow Earthquake
+		wait until get MusicEventTimer time since set >= MusicEvent6
+		stop sound "SCRIPT2_EEPIC_EARTHQSCREAM2"		
+		stop sound "SCRIPT2_EEPIC_EARTHQSCREAM3"		
+		stop sound "SCRIPT2_EEPIC_EARTHQSCREAM1"		
+		stop sound "SCRIPT2_EEPIC_EARTHQSCREAM2"		
+		stop sound "SCRIPT2_EEPIC_EARTHQSCREAM3"		
+		stop sound "SCRIPT2_EEPIC_EARTHQSCREAM1"	
+		stop sound "SCRIPT2_EEPIC_EARTHQSCREAM1"	
+		
+		set Earthquake atmos group 5 time 1 seconds
+		invoke Earthquake EPIC_START_STEAM
+		stop camera shake
+		wait 0.2 seconds
+		set camera lens 70.000
+		
+		set camera position to get world position from Earthquake to {2.700, 48.974, -40.473}
+		set camera focus to get world position from Earthquake to {2.254, -28.710, 22.490}
+		move camera position to get world position from Earthquake to {-42.577, 185.139, -85.401} time 15
+		move camera focus to get world position from Earthquake to {0.042, 95.097, -76.659} time 15
+		//wait until camera ready	
+		wait 15 seconds
+
+		detach atmos from Earthquake
+		stop sound "SCRIPT2_EEPIC_EARTHQUAKECRACK"
+		enable simulation sound
+		//reset sky colour 3 seconds
+		enable predefined sky "DEFAULT" time 3
+
+		wait 3 seconds
+		enable influence
+		stop music
+		invoke Wonder EPIC_WONDER_STAGE_LAST
+		
+		invoke Earthquake EPIC_ADD_NAVIGATION
+		
+		ATIEndFlag=0
+
+	end cinema//exit widescreen
+
+	destroy mixer EarthquakeMixer with fadetime 2
+
+	wait GLOBAL_VALUE_EARTHQUAKE_RESEAL_TIME_PLAYER seconds
+	
+	invoke Earthquake EPIC_START_CLOSING
+	
+	wait 20 seconds
+	
+	invoke Earthquake EPIC_END_SPELL
+
+	WhiChEpicSpellIsBeingCast = 0
+
+	
+end script EarthquakeSpell

@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Assassins script
+//-----------------------------------------------------------------------------
+run script RunAssassins
+
+begin script RunAssassins
+
+start
+
+	run script Land9Assassins
+
+end script RunAssassins

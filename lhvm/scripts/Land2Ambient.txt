@@ -1,0 +1,692 @@
+//================================================================
+// Land 2 Ambient
+//================================================================
+
+// This script contains lots of cool ambient stuff, mainly visuals. Other ambient scripts 
+// todo with platoons are in AztecAttacks.txt
+
+//-------------------------------------------
+// Constants
+//-------------------------------------------
+define SV_MAX_NUM_VILLAGERS		= 35	//The maximum number of villagers
+define SV_WAIT_TIME				= 35			//Time before the villagers are deleted
+define SV_MAX_UBER_VILLAGERS	= 50
+
+//-------------------------------------------
+// Script Defines
+//-------------------------------------------
+define script Land2ChaosSection(House)
+
+//-------------------------------------------
+// Small Explosion
+//-------------------------------------------
+begin script Land2_SmallExplosion(Position)
+	FX = 0
+start
+
+	FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 0.3 at {Position} - {0, 40, 0} time 5
+
+	play string sound "SCRIPT29_EXPLOSION4"
+	wait 0.2 seconds
+	FX = create visual effect "fr_s_bounce.ves" strength 1 scale 1 at {Position} time 5
+
+end script Land2_SmallExplosion
+
+//-------------------------------------------
+// Awesome Explosion
+//-------------------------------------------
+begin script Land2_AwesomeExplosion(Pos, Dir, FireOn)
+	Fire = 0
+	Stuff[7]
+start
+
+	Stuff[0] = create VILLAGER GREEK_FARMER at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+	Stuff[1] = create VILLAGER GREEK_FARMER at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+	Stuff[2] = create VILLAGER GREEK_HOUSEWIFE at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+	Stuff[3] = create VILLAGER GREEK_FARMER at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+	Stuff[4] = create OBJECT GREEK_URN_01 at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+	Stuff[5] = create OBJECT GREEK_BARREL_01 at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+	Stuff[6] = create OBJECT GREEK_URN_02 at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+
+	if FireOn == 1
+		Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on Stuff[0] time 7
+		Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on Stuff[1] time 7
+		Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on Stuff[2] time 7
+		Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on Stuff[3] time 7
+		Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on Stuff[4] time 7
+		Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on Stuff[5] time 7
+		Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on Stuff[6] time 7
+	end if
+
+	set physics at position {Pos} with strength {Dir} radius 5 random 1
+
+	wait 5 seconds
+
+	delete Stuff[0]
+	delete Stuff[1]
+	delete Stuff[2]
+	delete Stuff[3]
+	delete Stuff[4]
+	delete Stuff[5]
+
+end script Land2_AwesomeExplosion
+
+//-----------------------------------------------------------------
+// Land2 Scared Villagers
+// Create some scared, running villagers who do not nav
+//-----------------------------------------------------------------
+begin script Land2ScaredVillagers(Start, End, Num, Speed, Radius)
+	Villagers[SV_MAX_NUM_VILLAGERS]
+	CreatePos		= marker at {0, 0, 0} //Generated
+	MovePos			= marker at {0, 0, 0} //Generated
+	VillagerLoop	= 0
+	VillagerType	= 0
+	FirstMovePos	= 0
+start
+
+	//Don't go ot of bounds on the villager array
+	if Num >= SV_MAX_NUM_VILLAGERS
+		Num = (SV_MAX_NUM_VILLAGERS-1)	//arrays
+	end if
+
+	//create the villagers ad move them to the position
+	force while VillagerLoop < Num
+		//Set create position
+		CreatePos = marker at {Start} + {number from -5 to 5, 0, number from -5 to 5}
+
+		VillagerType = number from 1 to 2
+
+		if VillagerType == 1
+			Villagers[VillagerLoop] = create VILLAGER GREEK_TRADER at {CreatePos}
+		elsif VillagerType == 2
+			Villagers[VillagerLoop] = create VILLAGER GREEK_HOUSEWIFE at {CreatePos}
+		end if
+
+		disable Villagers[VillagerLoop] reactable		
+		disable Villagers[VillagerLoop] pickup
+
+		//Move the villagers
+		MovePos = marker at {End} + {number from -(Radius/3) to (Radius/3), 0, number from -(Radius/3) to (Radius/3)}
+
+		if VillagerLoop == 0
+			FirstMovePos = marker at {MovePos}
+		end if
+
+		move Villagers[VillagerLoop] position to {MovePos}
+		SPEED of Villagers[VillagerLoop] = Speed
+
+		VillagerLoop++
+	end while
+
+	wait until {Villagers[0]} at {FirstMovePos}
+
+	wait 3 seconds
+
+	VillagerLoop = 0
+	while VillagerLoop < Num
+		delete Villagers[VillagerLoop]
+		VillagerLoop++
+	end while
+
+end script Land2ScaredVillagers
+
+
+//-----------------------------------------------------------------
+// Land2 Scared Villagers
+// Create some scared, running villagers who do not nav
+//-----------------------------------------------------------------
+begin script Land2ScaredVillagersWithCreateRadius(Start, End, Num, Speed, Radius)
+	Villagers[SV_MAX_NUM_VILLAGERS]
+	CreatePos		= marker at {0, 0, 0} //Generated
+	MovePos			= marker at {0, 0, 0} //Generated
+	VillagerLoop	= 0
+	VillagerType	= 0
+	FirstMovePos	= 0
+start
+
+	//Don't go ot of bounds on the villager array
+	if Num >= SV_MAX_NUM_VILLAGERS
+		Num = (SV_MAX_NUM_VILLAGERS-1)	//arrays
+	end if
+
+	//create the villagers ad move them to the position
+	force while VillagerLoop < Num
+		//Set create position
+		CreatePos = marker at {Start} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius}
+
+		VillagerType = number from 1 to 2
+
+		if VillagerType == 1
+			Villagers[VillagerLoop] = create VILLAGER GREEK_TRADER at {CreatePos}
+		elsif VillagerType == 2
+			Villagers[VillagerLoop] = create VILLAGER GREEK_HOUSEWIFE at {CreatePos}
+		end if
+
+		disable Villagers[VillagerLoop] reactable		
+		disable Villagers[VillagerLoop] pickup
+
+		//Move the villagers
+		MovePos = marker at {End} + {number from -(Radius/3) to (Radius/3), 0, number from -(Radius/3) to (Radius/3)}
+
+		if VillagerLoop == 0
+			FirstMovePos = marker at {MovePos}
+		end if
+
+		move Villagers[VillagerLoop] position to {MovePos}
+		SPEED of Villagers[VillagerLoop] = Speed
+
+		VillagerLoop++
+	end while
+
+	wait until {Villagers[0]} at {FirstMovePos}
+
+	wait 3 seconds
+
+	VillagerLoop = 0
+	while VillagerLoop < Num
+		delete Villagers[VillagerLoop]
+		VillagerLoop++
+	end while
+
+end script Land2ScaredVillagersWithCreateRadius
+
+//-----------------------------------------------------------------
+// Land2 Scared Villagers
+// Create some scared, running villagers who do not nav
+//-----------------------------------------------------------------
+begin script Land2ScaredVillagersWithCreateRadiusAndNavAndSmallEndPos(Start, End, Num, Speed, Radius)
+	Villagers[SV_MAX_NUM_VILLAGERS]
+	CreatePos		= marker at {0, 0, 0} //Generated
+	VillagerLoop	= 0
+	VillagerType	= 0
+	FirstMovePos	= 0
+start
+
+	//Don't go ot of bounds on the villager array
+	if Num >= SV_MAX_NUM_VILLAGERS
+		Num = (SV_MAX_NUM_VILLAGERS-1)	//arrays
+	end if
+
+	//create the villagers ad move them to the position
+	force while VillagerLoop < Num
+		//Set create position
+		CreatePos = marker at {Start} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius}
+
+		VillagerType = number from 1 to 2
+
+		if VillagerType == 1
+			Villagers[VillagerLoop] = create VILLAGER GREEK_TRADER at {CreatePos}
+		elsif VillagerType == 2
+			Villagers[VillagerLoop] = create VILLAGER GREEK_HOUSEWIFE at {CreatePos}
+		end if
+
+		disable Villagers[VillagerLoop] reactable		
+		disable Villagers[VillagerLoop] pickup
+
+		if VillagerLoop == 0
+			FirstMovePos = marker at {End}
+		end if
+
+		move Villagers[VillagerLoop] position to {End} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		SPEED of Villagers[VillagerLoop] = Speed
+
+		VillagerLoop++
+	end while
+
+	wait until {Villagers[0]} at {FirstMovePos}
+
+	wait 3 seconds
+
+	VillagerLoop = 0
+	while VillagerLoop < Num
+		delete Villagers[VillagerLoop]
+		VillagerLoop++
+	end while
+
+end script Land2ScaredVillagersWithCreateRadiusAndNavAndSmallEndPos
+
+//-----------------------------------------------------------------
+// Land2 Uber Scared Villagers
+// Creates villagers form houses in the given area and uses nav to take them somewhere
+//-----------------------------------------------------------------
+begin script Land2UberScaredVillagers(Num, Pos, Radius)
+	AbodeFrom	= 0
+	AbodeTo		= 0
+	CreateLoop	= 0
+	Type		= 0
+	UberVillager[SV_MAX_UBER_VILLAGERS]
+start
+
+	if Num >= SV_MAX_UBER_VILLAGERS
+		Num = (SV_MAX_UBER_VILLAGERS-1)
+	end if
+
+	if not L2GreekTown exists
+		run script Land2Globals
+	end if
+
+	while CreateLoop < Num
+		AbodeFrom = get HOUSE at {Pos} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius}
+		AbodeTo =	get HOUSE at {Pos} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius}
+
+		if AbodeFrom exists
+			Type = number from 1 to 2
+
+			if Type == 1
+				UberVillager[CreateLoop] = create VILLAGER GREEK_FARMER at extra position 0 of AbodeFrom
+			else
+				UberVillager[CreateLoop] = create VILLAGER GREEK_HOUSEWIFE at extra position 0 of AbodeFrom
+			end if
+
+			SPEED of UberVillager[CreateLoop] = 0.4
+			if AbodeTo exists
+				move UberVillager[CreateLoop] position to extra position 0 of AbodeTo using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+			end if
+		end if
+
+		CreateLoop++
+	end while
+
+	wait until L2DeleteUberVillagers == 1
+
+	CreateLoop = 0
+	while CreateLoop < Num
+		if UberVillager[CreateLoop] exists
+			delete UberVillager[CreateLoop]
+		end if
+		CreateLoop++
+	end while
+
+end script Land2UberScaredVillagers
+
+//-------------------------------------------------------------------------
+// Land2 Background chaos
+//-------------------------------------------------------------------------
+begin script Land2BackgroundChaos(Position, Radius, Num)
+	SearchHouse		= 0
+	GotHouses		= 0
+start
+
+	begin loop
+		SearchHouse = get HOUSE at {Position} + {number from -(Radius) to Radius, 0, number from -(Radius) to Radius} excluding scripted
+		if SearchHouse exists
+			run background script Land2ChaosSection(SearchHouse)
+			GotHouses++
+			wait ((number from 5 to 15) / 10) seconds
+		end if
+	until GotHouses >= Num
+	end loop
+
+end script Land2BackgroundChaos
+
+//-------------------------------------------------------------------------
+// Chaos Section
+//-------------------------------------------------------------------------
+begin script Land2ChaosSection(House)
+	FX				= 0
+	SmokeFX			= 0
+	FireCracker		= 0
+	Scaler			= 0
+	RandSoundString = 0
+start
+
+	while FireCracker < 5
+		Scaler = (number from 15 to 40) / 10
+		FX = create visual effect "eh_s_lsflash.ves" strength 1 scale (Scaler/10) at {House} - {0, 55, 0} time 5
+		wait ((number from 5 to 15 )/10) seconds
+		FX = create visual effect "fr_s_bounce.ves" strength 1 scale Scaler at {House} + {number from -10 to 10, number from -10 to 10} time 5
+
+		play string sound "SCRIPT29_EXPLOSION4"
+
+		FireCracker++
+	end while
+
+end script Land2ChaosSection
+
+//---------------------------------------------------------
+// Create Crap
+//---------------------------------------------------------
+begin script Land2FlyingCrap(Pos, Time)
+	Loop		= 0
+	Rand		= 0
+	RandomObjects[10]
+	FireFX[10]
+	FX			= 0		
+start
+
+	force while Loop < 10
+
+	Rand = number from 1 to 4
+
+		if Rand == 1
+			RandomObjects[Loop] = create OBJECT GREEK_URN_01 at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+		elsif Rand == 2
+			RandomObjects[Loop] = create OBJECT GREEK_URN_03 at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+		elsif Rand == 3
+			RandomObjects[Loop] = create OBJECT GREEK_BARREL_01 at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+		elsif Rand == 4
+			RandomObjects[Loop] = create OBJECT GREEK_URN_04 at {Pos} + {number from -2 to 2, 0, number from -2 to 2}
+		end if
+
+		disable RandomObjects[Loop] pickup
+		enable RandomObjects[Loop] indestructible
+
+		Loop++
+
+	end while
+
+	wait Time seconds
+
+	FX = create visual effect "eh_s_lsflash.ves" strength 1 scale 0.5 at {Pos} - {0, 40, 0} time 5	
+
+	Loop = 0
+	force while Loop < 10
+		set RandomObjects[Loop] velocity heading {Pos} + {number from -15 to 5, 15, number from -15 to 15} speed 65
+		FireFX[Loop] = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL on RandomObjects[Loop] time 7
+		SCALE of FireFX[Loop] = 0.2
+		Loop++
+	end while
+
+	play string sound "SCRIPT29_EXPLOSION4"
+	wait 0.2 seconds
+	FX = create visual effect "fr_s_bounce.ves" strength 1 scale 1 at {Pos} time 5
+
+	wait 3 seconds
+
+	Loop = 0
+	while Loop < 10
+		remove visual effect FireFX[Loop] target at {RandomObjects[Loop]}
+		Loop++
+	end while
+
+	wait 1 seconds
+
+	Loop = 0
+	while Loop < 10
+		delete RandomObjects[Loop]
+		Loop++
+	end while
+
+end script Land2FlyingCrap
+
+//---------------------------------------------------------
+// Wall Villagers House Fires
+//---------------------------------------------------------
+begin script Land2_HouseFire(Pos, Time)
+	FX_Fire		= 0
+	FX_Explode	= 0
+	FX_Flash	= 0
+	FX_Smoke	= 0
+start
+
+	wait until L2_Trigger_Wall_Villagers == 1
+	wait Time seconds
+
+	FX_Explode = create visual effect "fr_s_bounce.ves" strength 1 scale 3 at {Pos} time 3
+	wait 0.1 seconds
+
+	FX_Fire = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMALL at {Pos} time -1
+	FX_Smoke = create visual effect VISUAL_EFFECT_SPREAD_FIRE_SMOKE at {Pos} time -1
+
+	wait 0.4 seconds
+	FX_Explode = create visual effect "fr_s_bounce.ves" strength 1 scale 3 at {Pos} time 3
+
+	wait until L2_Trigger_Wall_Villagers == 2
+
+	remove visual effect FX_Fire target at {Pos}
+	remove visual effect FX_Smoke target at {Pos}
+
+end script Land2_HouseFire
+
+//---------------------------------------------------------
+// Disable Objects
+//---------------------------------------------------------
+begin script Land2_DisableObjects(Pos, Radius)
+	Object[150]
+	Items = 0
+start
+
+	Object[0] = get OBJECT at {Pos} radius Radius
+	force while Object[Items] exists
+		disable Object[Items] pickup
+		disable Object[Items] moveable
+		Items++
+		Object[Items] = get OBJECT at {Pos} radius Radius excluding scripted		
+	end while
+
+	Object[Items] = get FEATURE at {Pos} radius Radius
+	force while Object[Items] exists
+		disable Object[Items] pickup
+		disable Object[Items] moveable
+		Items++
+		Object[Items] = get FEATURE at {Pos} radius Radius excluding scripted
+	end while
+
+	Object[Items] = get ROCK_OBJECT at {Pos} radius Radius
+	force while Object[Items] exists
+		disable Object[Items] pickup
+		disable Object[Items] moveable
+		Items++
+		Object[Items] = get ROCK_OBJECT at {Pos} radius Radius excluding scripted
+	end while
+
+	Object[Items] = get MOBILE_OBJECT at {Pos} radius Radius
+	force while Object[Items] exists
+		disable Object[Items] pickup
+		disable Object[Items] moveable
+		Items++
+		Object[Items] = get MOBILE_OBJECT at {Pos} radius Radius
+	end while
+
+end script Land2_DisableObjects
+
+//---------------------------------------------------------
+// Intro Villagers
+//---------------------------------------------------------
+begin script Land2_IntroVllagers(Pos, MovePos)
+	Carrier[20]
+	SetRun[20]
+	Pot[20]
+	Villagers[20]
+	Loop		= 0
+	Rand		= 0
+	RunTimer	= 0
+	LookPos		= marker at {1581.985, 144.411, 1844.062}
+start
+
+	force while Loop < 20
+		Rand = number from 1 to 2
+		if Rand == 1
+			Villagers[Loop] = create VILLAGER GREEK_FARMER at {Pos} + {number from -8 to 8, number from -8 to 8}
+		else
+			Villagers[Loop] = create VILLAGER GREEK_HOUSEWIFE at {Pos} + {number from -8 to 8, number from -8 to 8}
+		end if
+
+		disable Villagers[Loop] moveable
+		disable Villagers[Loop] reactable
+		enable Villagers[Loop] indestructible
+
+		Rand = number from 1 to 4
+		if Rand == 1
+			Carrier[Loop] = 1
+			set Villagers[Loop] carrying CARRIED_OBJECT_POT			
+		end if
+
+		move Villagers[Loop] position to {MovePos} + {number from -8 to 8, number from -8 to 8}
+		Loop++
+	end while
+	
+	wait 0.3 seconds
+
+	wait until L2_Trigger_IntroVillagersLook == 1
+
+	Loop = 0
+	while Loop < 20
+
+		Rand = number from 1 to 2
+		if Carrier[Loop] == 0 and Rand == 1
+			
+			stop Villagers[Loop] moving
+			set Villagers[Loop] position to {Villagers[Loop]}
+			move villager Villagers[Loop] focus to {LookPos}
+
+			Rand = number from 1 to 2
+
+			if Rand == 1
+				play anim "a_p_looking_for_something" on Villagers[Loop]
+			elsif Rand == 2
+				play anim "a_p_look_up" on Villagers[Loop]
+			end if
+
+		end if
+
+		Loop++
+	end while
+
+
+	wait 2 seconds
+
+	RunTimer  = create timer for 3 seconds
+
+	Loop = 0
+	begin loop
+		while Loop < 20
+			if SetRun[Loop] == 0
+				if Carrier[Loop] == 1
+					set Villagers[Loop] carrying CARRIED_OBJECT_NONE
+					Pot[Loop] = create OBJECT MOBILE_STATIC_INFO_GREEK_URN_03 at {Villagers[Loop]}
+					ALTITUDE of Pot[Loop] = 1
+					set Pot[Loop] velocity heading {Pot[Loop]} speed 0
+				end if
+				move Villagers[Loop] position to {MovePos} + {number from -10 to 10, number from -10 to 10}
+				SPEED of Villagers[Loop] = (number from 33 to 45) / 50
+				SetRun[Loop] = 1
+			end if
+			Loop++
+		end while
+	until get RunTimer time remaining == 0
+	end loop
+
+	//Wait then delete these villagers!
+	wait 10 seconds
+	Loop = 0
+	while Loop < 20
+		delete Villagers[Loop]
+		if Pot[Loop] exists
+			delete Pot[Loop]
+		end if
+		Loop++
+	end while
+
+end script Land2_IntroVllagers
+
+//---------------------------------------------------------
+// Mass Scared Villagers
+//---------------------------------------------------------
+begin script Land2_MassScaredVillagers(Start, MovePos)
+	Villagers[90]
+	Loop = 0
+	Rand = 0
+start
+
+	force while Loop < 90
+
+		Rand = number from 1 to 2
+		if Rand == 1
+			Villagers[Loop] = create VILLAGER GREEK_FARMER at {Start} + {number from -50 to 50, number from -50 to 50}
+		else
+			Villagers[Loop] = create VILLAGER GREEK_HOUSEWIFE at {Start} + {number from -50 to 50, number from -50 to 50}
+		end if
+
+		move Villagers[Loop] position to {MovePos} + {number from -20 to 20, number from -20 to 20}
+		SPEED of Villagers[Loop] = (number from 35 to 45) / 70
+
+		Loop++
+	end while
+
+	wait until L2_Trigger_DeleteIntroStuff == 1
+
+	Loop = 0
+	while Loop < 90
+		if Villagers[Loop] exists
+			delete Villagers[Loop]
+		end if
+		Loop++
+	end while
+
+end script Land2_MassScaredVillagers
+
+//---------------------------------------------------------
+// City villagers
+//---------------------------------------------------------
+begin script Land2_CityVillagers(Start, MovePos)
+	Villagers[90]
+	Loop = 0
+	Rand = 0
+start
+
+	force while Loop < 90
+
+		Rand = number from 1 to 2
+		if Rand == 1
+			Villagers[Loop] = create VILLAGER GREEK_FARMER at {Start} + {number from -50 to 50, number from -50 to 50}
+		else
+			Villagers[Loop] = create VILLAGER GREEK_HOUSEWIFE at {Start} + {number from -50 to 50, number from -50 to 50}
+		end if
+
+		move Villagers[Loop] position to {MovePos} + {number from -20 to 20, number from -20 to 20}
+
+		Loop++
+	end while
+
+	wait until L2_Trigger_DeleteIntroStuff == 1
+
+	Loop = 0
+	while Loop < 90
+		if Villagers[Loop] exists
+			delete Villagers[Loop]
+		end if
+		Loop++
+	end while
+
+end script Land2_CityVillagers
+
+//---------------------------------------------------------
+// Intro Expolde Crap
+//---------------------------------------------------------
+begin script Land2_IntroExplodeCrap(Pos, Time)
+	Obj[10]
+	Loop		= 0
+	RandType	= 0
+start
+	
+	force while Loop < 10
+		RandType = number from 1 to 4
+
+		if RandType == 1
+			Obj[Loop] = create OBJECT GREEK_URN_01 at {Pos} + {number from -4 to 4, 0, number from -4 to 4}
+		elsif RandType == 2
+			Obj[Loop] = create OBJECT GREEK_URN_03 at {Pos} + {number from -4 to 4, 0, number from -4 to 4}
+		elsif RandType == 3
+			Obj[Loop] = create OBJECT GREEK_BARREL_01 at {Pos} + {number from -4 to 4, 0, number from -4 to 4}
+		elsif RandType == 4
+			Obj[Loop] = create OBJECT GREEK_URN_04 at {Pos} + {number from -4 to 4, 0, number from -4 to 4}
+		end if
+
+		Loop++
+	end while
+
+	wait Time seconds
+
+	set physics at position {Pos} with strength {1, 1, 1} radius 7 random 1
+
+	wait until L2_Trigger_DeleteIntroStuff == 1
+
+	while Loop < 10
+		if Obj[Loop] exists
+			delete Obj[Loop]
+		end if
+		Loop++
+	end while
+
+end script Land2_IntroExplodeCrap

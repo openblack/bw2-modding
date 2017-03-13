@@ -1,0 +1,107 @@
+//================================================================
+// Land 2 Volcano
+// Matt.L
+//================================================================
+define VOLCANO_STAND_TIME		= 25
+define VOLCANO_STOP_LAVA_TIME	= 10
+
+//-------------------------------------------------------------
+// Constants
+//-------------------------------------------------------------
+begin script Land2Volcano(Position)
+	Volcano = 0
+	VolcanoTimer = create timer for 0 seconds
+	LavaTimer = create timer for 0 seconds
+start
+
+	L2ActiveVolcanos++
+
+	invoke Volcano EPIC_BEAM_DOWN
+
+	Volcano = create volcano at {Position} player 1
+	attach atmos "spells" to Volcano
+	set Volcano atmos group 10 time 1 seconds
+	//invoke Volcano EPIC_BEAM_DOWN
+	wait 2 seconds
+
+	invoke Volcano EPIC_START_SHOCKWAVE
+	wait 2 seconds
+
+	//invoke Volcano EPIC_START_SHOCKWAVE
+	set Volcano atmos group 11 time 1 seconds
+
+	invoke Volcano EPIC_START_RISING
+	invoke Volcano EPIC_START_PLUME
+	wait 3 seconds
+
+	invoke Volcano EPIC_SHUT_DOWN_BEAM
+
+	wait 5 seconds
+	invoke Volcano EPIC_START_LAVA
+	set Volcano atmos group 12 time 1 seconds
+
+	play string sound "SCRIPT17_EXPLOSION3"
+	invoke Volcano EPIC_START_EXPLOSION
+	invoke Volcano EPIC_START_ROCK_SHOWER
+	play string sound "SCRIPT17_VOLCANOSHOCKWAVHIGHPITCHED"
+	wait 2 seconds
+
+	//play string sound "SCRIPT17_EXPLOSION2"
+	//invoke Volcano EPIC_ADD_NAVIGATION
+	invoke Volcano EPIC_START_BUBBLING_LAVA
+
+	set VolcanoTimer time to VOLCANO_STAND_TIME seconds
+	set LavaTimer time to VOLCANO_STOP_LAVA_TIME seconds
+
+	invoke Volcano EPIC_FLASH
+
+	begin loop
+
+		play sound "SCRIPT17_VOLCANOWHOOSH1" at {Position} + {number from -10 to 10, number from -10 to 10}
+		wait 0.3 seconds
+
+		play sound "SCRIPT17_VOLCANOWHOOSH5" at {Position} + {number from -10 to 10, number from -10 to 10}
+		play sound "SCRIPT17_VOLCANOWHOOSH6" at {Position} + {number from -10 to 10, number from -10 to 10}
+		wait 0.3 seconds
+			
+		play sound "SCRIPT17_VOLCANOWHOOSH3" at {Position} + {number from -10 to 10, number from -10 to 10}
+		wait 0.4 seconds
+
+		play sound "SCRIPT17_EXPLOSION3" at {Volcano}
+		play sound "SCRIPT17_VOLCANOWHOOSH8" at {Position} + {number from -10 to 10, number from -10 to 10}
+		play sound "SCRIPT17_VOLCANOWHOOSH1" at {Position} + {number from -10 to 10, number from -10 to 10}
+
+		play sound "SCRIPT17_EXPLOSION1" at {Volcano}
+		
+
+		play sound "SCRIPT17_VOLCANOWHOOSH3" at {Position} + {number from -10 to 10, number from -10 to 10}
+		wait 0.5 seconds
+		play sound "SCRIPT17_VOLCANOWHOOSH10" at {Position} + {number from -10 to 10, number from -10 to 10}
+		wait 0.5 seconds
+
+		play sound "SCRIPT17_EXPLOSION2" at {Volcano}
+		wait 0.2 seconds
+		play sound "SCRIPT17_VOLCANOWHOOSH3" at {Position} + {number from -10 to 10, number from -10 to 10}
+		wait 0.3 seconds
+		play sound "SCRIPT17_VOLCANOWHOOSH8" at {Position} + {number from -10 to 10, number from -10 to 10}
+		play sound "SCRIPT17_VOLCANOWHOOSH1" at {Position} + {number from -10 to 10, number from -10 to 10}
+		wait 0.4 seconds
+		play sound "SCRIPT17_EXPLOSION3" at {Volcano}	
+
+		if get LavaTimer time remaining == 0
+			invoke Volcano EPIC_STOP_BUBBLING_LAVA
+			invoke Volcano EPIC_END_ROCK_SHOWER
+			//set LavaTimer time to 20 seconds
+		end if
+
+	until get VolcanoTimer time remaining <= 0 or L2ActiveVolcanos != 1
+	end loop
+	
+	invoke Volcano EPIC_STOP_EXPLOSION
+	invoke Volcano EPIC_STOP_ASH
+	invoke Volcano EPIC_END_SPELL	
+
+	detach atmos from Volcano
+
+	L2ActiveVolcanos--
+end script Land2Volcano

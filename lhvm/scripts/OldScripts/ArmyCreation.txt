@@ -1,0 +1,218 @@
+//ArmyCreation
+//This script is used as the base for creating armies for the text lands.
+
+//-----------------------------------------------------------------------------
+
+global TechLevelMelee = 0
+global TechLevelArchers = 0
+global MeleeLevels[3]
+global ArcherLevels[2]
+
+//-----------------------------------------------------------------------------
+
+run script CreateAllScenarios
+
+//-----------------------------------------------------------------------------
+
+begin script KeepTownsInResources
+start
+end script KeepTownsInResources
+
+//-----------------------------------------------------------------------------
+
+
+begin script DeleteArmy(the_army)
+ArmyGuy = 0
+start
+	while (get number of villagers in platoon the_army > 0)
+		ArmyGuy = get villager from platoon the_army nearest {0, 0, 0} excluding scripted	
+		remove villager ArmyGuy from platoon
+		delete ArmyGuy
+	end while
+	delete the_army
+end script DeleteArmy
+
+//-----------------------------------------------------------------------------
+
+begin script ArmyCreation(army_one, army_two, army_one_pos, army_two_pos, army_one_type, army_two_type, army_one_pop, army_two_pop)
+
+start
+	
+	run script DeleteArmy(army_one)
+	run script DeleteArmy(army_two)
+	
+	
+	army_one = create platoon constant army_one_type at {army_one_pos} with army_one_pop men and 0 women
+	army_two = create platoon constant army_two_type at {army_two_pos} with army_two_pop men and 0 women	
+	set army_one player 0
+	set army_two player 1
+	
+end script ArmyCreation
+
+//-----------------------------------------------------------------------------
+
+begin script CreatureCreation(creature_one_pos, creature_two_pos, creature_one_type, creature_two_type)
+Creature1 = 0
+Creature2 = 0
+start
+	
+	Creature1 = create CREATURE constant creature_one_type at {creature_one_pos}
+	Creature2 = create CREATURE constant creature_one_type at {creature_two_pos}
+	set player 0 creature to Creature1
+	set player 1 creature to Creature2
+	
+end script CreatureCreation
+
+//-----------------------------------------------------------------------------
+
+begin script CreateArmyWithScrolls(scroll_pos, army_one_pos, army_two_pos)
+MeleeOnlyScroll = 0
+MeleeVsArchers = 0
+ArchersOnlyScroll = 0
+
+MeleeOnlyScrollC = 0
+MeleeVsArchersC = 0
+ArchersOnlyScrollC = 0
+
+Army1 = 0
+Army2 = 0
+
+Army1Population = 20
+Army2Population = 20
+
+start
+	//Create the scrolls.
+	MeleeOnlyScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {scroll_pos}
+	MeleeVsArchers = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {scroll_pos} + {0, 0, 10}
+	ArchersOnlyScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {scroll_pos} + {0, 0, 20}
+	MeleeOnlyScrollC = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {scroll_pos} + {10, 0, 0}
+	MeleeVsArchersC = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {scroll_pos} + {10, 0, 10}
+	ArchersOnlyScrollC = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {scroll_pos} + {10, 0, 20}
+	
+	begin loop
+	
+		if MeleeOnlyScroll right clicked
+			clear right clicked object
+			run script ArmyCreation(Army1, Army2, army_one_pos, army_two_pos, MeleeLevels[TechLevelMelee], MeleeLevels[TechLevelMelee], Army1Population, Army2Population)
+		end if 
+		
+		if MeleeVsArchers right clicked
+			clear right clicked object
+			run script ArmyCreation(Army1, Army2, army_one_pos, army_two_pos, MeleeLevels[TechLevelMelee], ArcherLevels[TechLevelArchers], Army1Population, Army2Population)
+		end if
+		
+		if ArchersOnlyScroll right clicked
+			clear right clicked object
+			run script ArmyCreation(Army1, Army2, army_one_pos, army_two_pos, ArcherLevels[TechLevelArchers], ArcherLevels[TechLevelArchers], Army1Population, Army2Population)
+		end if
+		
+		if MeleeOnlyScrollC right clicked
+			clear right clicked object
+			run script ArmyCreation(Army1, Army2, army_one_pos, army_two_pos, variable PLATOON_INFO_GREEK_MELEE_1, variable PLATOON_INFO_EGYPTIAN_MELEE_1, Army1Population, Army2Population)
+			run script CreatureCreation(army_one_pos, army_two_pos, variable CREATURE_TYPE_APE, variable CREATURE_TYPE_APE)
+		end if 
+		
+		if MeleeVsArchersC right clicked
+			clear right clicked object
+			run script ArmyCreation(Army1, Army2, army_one_pos, army_two_pos, variable PLATOON_INFO_GREEK_MELEE_1, variable PLATOON_INFO_EGYPTIAN_RANGED_2, Army1Population, Army2Population)
+			run script CreatureCreation(army_one_pos, army_two_pos, variable CREATURE_TYPE_APE, variable CREATURE_TYPE_APE)
+		end if
+		
+		if ArchersOnlyScrollC right clicked
+			clear right clicked object
+			run script ArmyCreation(Army1, Army2, army_one_pos, army_two_pos, variable PLATOON_INFO_GREEK_RANGED_2, variable PLATOON_INFO_EGYPTIAN_RANGED_2, Army1Population, Army2Population)
+			run script CreatureCreation(army_one_pos, army_two_pos, variable CREATURE_TYPE_APE, variable CREATURE_TYPE_APE)
+		end if
+		
+	end loop 
+end script CreateArmyWithScrolls
+
+//-----------------------------------------------------------------------------
+
+begin script CreateAllScenarios
+Level1ScrollM = 0
+Level2ScrollM = 0
+Level3ScrollM = 0
+Level1ScrollA = 0
+Level2ScrollA = 0
+
+LevelPos = marker at {65.628, 16.175, 2357.111}
+
+start
+	set player 0 ENEMY to player 1
+	set player 1 ENEMY to player 0
+	
+	MeleeLevels[0] = variable PLATOON_INFO_GREEK_MELEE_1
+	MeleeLevels[1] = variable PLATOON_INFO_GREEK_MELEE_3
+	MeleeLevels[2] = variable PLATOON_INFO_GREEK_MELEE_2
+	ArcherLevels[0] = variable PLATOON_INFO_GREEK_RANGED_1
+	ArcherLevels[1] = variable PLATOON_INFO_GREEK_RANGED_2
+	
+	run background script CreateArmyWithScrolls(marker at {208.869, 19.938, 2233.030}, marker at {229.933, 19.938, 2175.171}, marker at {330.795, 19.938, 2186.533})
+	run background script CreateArmyWithScrolls(marker at {631.392, 25.927, 2248.472}, marker at {688.735, 34.264, 2190.650}, marker at {754.726, 43.865, 2186.344})
+	run background script CreateArmyWithScrolls(marker at {1030.822, 19.938, 2223.055}, marker at {1143.524, 19.938, 2188.701}, marker at {1313.268, 58.438, 2193.575})
+	run background script CreateArmyWithScrolls(marker at {1557.852, 19.938, 2292.339}, marker at {1598.274, 19.938, 2225.180}, marker at {1811.874, 19.938, 2239.281})
+	run background script CreateArmyWithScrolls(marker at {2006.428, 19.938, 2293.580}, marker at {2058.544, 19.938, 2240.883}, marker at {2274.869, 19.938, 2238.246})
+	
+	run background script CreateArmyWithScrolls(marker at {230.251, 19.938, 1925.502}, marker at {275.615, 19.938, 1861.187}, marker at {426.050, 19.938, 1879.512})
+	run background script CreateArmyWithScrolls(marker at {610.577, 19.938, 1926.745}, marker at {705.316, 19.938, 1884.272}, marker at {788.723, 19.938, 1883.281})
+	run background script CreateArmyWithScrolls(marker at {1048.533, 19.938, 1931.323}, marker at {1174.675, 19.938, 1875.648}, marker at {1281.626, 58.438, 1882.423})
+	run background script CreateArmyWithScrolls(marker at {1555.776, 19.938, 1951.387}, marker at {1641.562, 19.938, 1901.345}, marker at {1747.492, 29.750, 1900.342})
+	run background script CreateArmyWithScrolls(marker at {2014.990, 19.938, 1949.404}, marker at {2096.909, 19.938, 1880.421}, marker at {2187.657, 58.438, 1899.161})
+	
+	run background script CreateArmyWithScrolls(marker at {188.843, 19.938, 1630.245}, marker at {292.918, 19.938, 1601.149}, marker at {360.028, 58.438, 1598.628})
+	run background script CreateArmyWithScrolls(marker at {634.042, 19.938, 1636.206}, marker at {707.643, 19.938, 1590.193}, marker at {827.043, 19.938, 1595.782})
+	run background script CreateArmyWithScrolls(marker at {1028.182, 19.938, 1642.866}, marker at {1163.306, 19.938, 1588.479}, marker at {1308.209, 19.938, 1593.608})
+	run background script CreateArmyWithScrolls(marker at {1595.900, 22.947, 1665.907}, marker at {1693.386, 37.122, 1591.842}, marker at {1799.411, 52.537, 1610.039})
+	run background script CreateArmyWithScrolls(marker at {2032.587, 22.481, 1670.486}, marker at {2123.748, 35.718, 1605.133}, marker at {2198.674, 46.614, 1610.821})
+	
+	run background script CreateArmyWithScrolls(marker at {209.020, 21.603, 1387.440}, marker at {275.261, 31.223, 1327.079}, marker at {378.820, 46.261, 1331.878})
+	run background script CreateArmyWithScrolls(marker at {616.970, 19.938, 1350.299}, marker at {742.047, 19.938, 1324.462}, marker at {861.355, 58.438, 1333.473})
+	run background script CreateArmyWithScrolls(marker at {1025.947, 19.938, 1346.498}, marker at {1183.600, 19.938, 1318.561}, marker at {1321.957, 58.438, 1322.048})
+	run background script CreateArmyWithScrolls(marker at {1578.805, 19.938, 1366.028}, marker at {1680.402, 19.938, 1311.667}, marker at {1823.169, 58.438, 1312.536})
+	run background script CreateArmyWithScrolls(marker at {2030.967, 19.938, 1387.379}, marker at {2162.429, 19.938, 1292.833}, marker at {2261.108, 29.750, 1296.872})
+	
+	run background script CreateArmyWithScrolls(marker at {193.703, 19.938, 1090.876}, marker at {2050.997, 19.938, 1088.573}, marker at {356.041, 29.750, 1047.180})
+	run background script CreateArmyWithScrolls(marker at {630.221, 19.938, 1109.103}, marker at {766.678, 19.938, 1061.155}, marker at {834.542, 58.438, 1074.696})
+	run background script CreateArmyWithScrolls(marker at {1075.639, 19.938, 1106.202}, marker at {1240.198, 19.938, 1067.844}, marker at {1317.401, 58.438, 1070.674})
+	run background script CreateArmyWithScrolls(marker at {1585.468, 19.938, 1104.163}, marker at {1717.187, 19.938, 1049.396}, marker at {1785.662, 19.938, 1048.397})
+	run background script CreateArmyWithScrolls(marker at {2050.997, 19.938, 1088.573}, marker at {2171.003, 19.938, 1047.002}, marker at {2241.543, 19.938, 1041.283})
+
+	//Create the tech level scrolls
+	Level1ScrollM = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {LevelPos}
+	Level2ScrollM = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {LevelPos} + {10, 0, 0}
+	Level3ScrollM = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {LevelPos} + {20, 0, 0}
+	Level1ScrollA = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {LevelPos} + {0, 0, 10}
+	Level2ScrollA = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {LevelPos} + {10, 0, 10}
+	
+	begin loop
+		if Level1ScrollM right clicked
+			clear right clicked object
+			TechLevelMelee = 0
+			say "Melee Level 0"
+		end if 
+		if Level2ScrollM right clicked
+			clear right clicked object
+			TechLevelMelee = 1
+			say "Melee Level 1"
+		end if 
+		if Level3ScrollM right clicked
+			clear right clicked object
+			TechLevelMelee = 2
+			say "Melee Level 2"
+		end if 
+		if Level1ScrollA right clicked
+			clear right clicked object
+			TechLevelArchers = 0
+			say "Archer Level 0"
+		end if 
+		if Level2ScrollA right clicked
+			clear right clicked object
+			TechLevelArchers = 1
+			say "Archer Level 1"
+		end if 
+	end loop
+	
+end script CreateAllScenarios
+
+//-----------------------------------------------------------------------------

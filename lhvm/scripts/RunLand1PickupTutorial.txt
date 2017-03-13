@@ -1,0 +1,6 @@
+run script RunLand1PickupTutorial
+
+begin script RunLand1PickupTutorial
+start
+	run script Land1PickupTutorial
+end script RunLand1PickupTutorial

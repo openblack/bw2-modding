@@ -1,0 +1,9 @@
+//-------------------------------------------------------------------
+// Universal globals
+//-------------------------------------------------------------------
+global TownPilgrimageStatus[13]
+global MyCreature = 0
+
+begin script UniversalGlobals
+start
+end script UniversalGlobals

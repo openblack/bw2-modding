@@ -1,0 +1,73 @@
+//Land7DecayChallenge.txt
+
+define script Level1
+define script Level2
+
+global Land7DecayComplete = 0
+global BlueprintPos = 0
+global BluePrint = 0
+global StreamPos[4]
+
+begin script Land7DecayChallenge
+
+start
+
+BlueprintPos = marker at {1037.785,70.819,1242.271}
+BluePrint = create ROCK_OBJECT MOBILE_STATIC_INFO_BOULDER1_SAND at {BlueprintPos}
+
+run background script Level1
+run background script Level2
+
+end script Land7DecayChallenge
+
+//=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+
+begin script Level1
+
+v_effect1 = 0
+ExplosionPos[4]
+CTR1 = 0
+
+start
+
+ExplosionPos[0] = marker at {1029.948,69.240,1251.698}
+ExplosionPos[1] = marker at {1028.244,68.323,1244.865}
+ExplosionPos[2] = marker at {1027.487,68.698,1236.641}
+ExplosionPos[3] = marker at {1030.894,70.707,1229.854}
+
+while CTR1 != 4
+		v_effect1 = create visual effect "ws_s_explosion.ves" strength 1.0 at {ExplosionPos[CTR1]} time 10
+		wait 3 seconds
+		CTR1++
+		if CTR1==4
+			CTR1 = 0
+		end if
+end while
+
+end script Level1
+
+//=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+
+begin script Level2
+
+v_effect1 = 0
+ExplosionPos[4]
+CTR1 = 0
+
+start
+
+ExplosionPos[3] = marker at {1028.995,67.757,1258.249}
+ExplosionPos[2] = marker at {1020.632,69.035,1248.329}
+ExplosionPos[1] = marker at {1019.594,69.173,1241.156}
+ExplosionPos[0] = marker at {1020.515,69.713,1230.598}
+
+while CTR1 != 4
+	v_effect1 = create visual effect "vf_s_shot.ves" strength 1.0 at {ExplosionPos[CTR1]} time 5
+	wait 2 seconds
+	CTR1++
+	if CTR1==4
+		CTR1 = 0
+	end if
+end while
+
+end script Level2

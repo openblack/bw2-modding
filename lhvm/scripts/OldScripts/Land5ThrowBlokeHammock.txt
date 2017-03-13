@@ -1,0 +1,4 @@
+//Land5ThrowBlokeHammock.txt
+begin script Land5ThrowBlokeHammock
+start
+end script Land5ThrowBlokeHammock

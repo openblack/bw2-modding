@@ -1,0 +1,100 @@
+
+define script Land6MoveMontyToTown
+define script Land6GetBuildings
+
+global L6Monty = 0
+global L6PlayerTC = 0
+global L6PlayerTemple = 0
+global L6PlayerStoragePit = 0
+global L6Smelter = 0
+global L6Amoury = 0
+global L6Graveyard = 0
+global L6AnyHouse = 0
+
+
+begin script Land6TheManWhoCameToDinner
+
+MontyStartPos = marker at {1105.851, 248.512, 864.656}
+GetBuildings = 0
+
+start
+
+//while Land6Complete == 0
+	if GetBuildings == 0
+		run background script Land6GetBuildings
+		GetBuildings = 1
+	end if
+
+	wait 5 seconds
+
+//	if size of L6GreekTown > 100
+		L6Monty = create VILLAGER EURONYMOUS at {MontyStartPos}
+		SPEED of L6Monty = 2.0
+		run background script Land6MoveMontyToTown
+//	end if
+//end while
+
+end script Land6TheManWhoCameToDinner
+
+//***********************************************************
+
+begin script Land6MoveMontyToTown
+
+MontyTownPos = 0
+
+
+start
+
+
+
+MontyTownPos = marker at get world position from L6PlayerTC to {-3.317, 0.045, -13.572}
+
+move L6Monty position to {MontyTownPos}
+
+end script Land6MoveMontyToTown
+
+//***********************************************************
+
+begin script Land6GetBuildings
+
+MyGreekTown = 0
+
+start
+
+MyGreekTown = get TOWN at {854.022, 224.747, 648.773}
+
+while Land6ManComplete != 1
+
+	if L6AnyHouse == 0
+		L6AnyHouse = get HOUSE at {L6Monty} radius 200
+	elsif L6AnyHouse != 0
+		say "Got a house!"
+		wait until read
+	end if
+	
+	if L6PlayerTC == 0
+		L6PlayerTC = get building ABODE_NUMBER_TOWN_CENTRE in MyGreekTown min built 1
+	end if 
+
+	if L6PlayerTemple == 0
+		L6PlayerTemple = get building ABODE_NUMBER_TEMPLE in MyGreekTown min built 1
+	end if 
+
+	if L6PlayerStoragePit == 0
+		L6PlayerStoragePit = get building ABODE_NUMBER_STORAGE_PIT in MyGreekTown min built 1
+	end if 
+
+	if L6Smelter == 0
+		L6Smelter = get building ABODE_NUMBER_PUB in MyGreekTown min built 1
+	end if
+
+	if L6Amoury == 0
+		L6Amoury = get building ABODE_NUMBER_MELEE_ARMOURY in MyGreekTown min built 1
+	end if
+
+	if L6Graveyard == 0
+		L6Graveyard = get building ABODE_NUMBER_GRAVEYARD in MyGreekTown min built 1
+	end if
+end while
+
+end script Land6GetBuildings

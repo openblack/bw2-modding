@@ -1,0 +1,6 @@
+run script RunLand2AztecAttacks
+
+begin script RunLand2AztecAttacks
+start
+	run script Land2AztecAttacks
+end script RunLand2AztecAttacks

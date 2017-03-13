@@ -1,0 +1,304 @@
+//challenge ChallengeNotify
+
+global NotifyDistance = 100
+
+/*************************************************************************************************
+	ScriptLockedHighlight(Highlight)
+
+	Used when trial scroll clicked and MyCreature already in script control of another trial.
+	Ejects advisor and tells player to cancel current trial before starting another
+*************************************************************************************************/
+
+/*begin script ScriptLockedHighlight( Highlight )
+
+	//RandomSay				= variable constant from HELP_TEXT_QUIT_TRIAL_BEFORE_NEW_ONE_01 to HELP_TEXT_QUIT_TRIAL_BEFORE_NEW_ONE_03
+	RandomSay				= 0
+
+start
+	RandomSay=variable get text id from "HELP_TEXT_QUIT_TRIAL_BEFORE_NEW_ONE_01"
+	clear right clicked object
+	begin cinema
+	enable highlight draw
+	store camera details
+		move camera position to {Highlight} + {10.000,10.000,10.000} time 2
+		move camera focus to {Highlight} time 2
+		if MyCreatureInFight == 0
+			eject good spirit
+			make good spirit point at {Highlight}
+			say single line constant RandomSay
+			wait until read
+			send good spirit home
+
+*//*			if {CurrentCancelScrollPos} not at {0.000,0.000,0.000} or CurrentCancelScrollPos != 0
+ 				move camera position to {CancelHighlightViewPos} time 2
+				move camera focus to {CurrentCancelScrollPos} time 2
+				wait until camera ready
+				wait 2 seconds
+				restore camera details			
+				wait until camera ready
+			end if
+*/
+/*		elsif MyCreatureInFight == 1
+			eject evil spirit
+			make evil spirit point at {Highlight}
+			say "HELP_TEXT_BATTLE_ALERT_EA_14"
+			wait until read
+			send evil spirit home
+		end if
+
+	end cinema
+end script ScriptLockedHighlight
+*/
+
+//------------------------------------------------------------------------------------------------------------------------
+// **** CHALLENGE NOTIFY ****
+//		This is a generic script which we can run at the beginning of any challenge.  We simply
+//		give it an object and a radius.  It does a little loop of a spirit coming out and pointing
+//		at the object whenever the player gets close to it, and occasionally saying something,
+//		until the object is clicked.
+//------------------------------------------------------------------------------------------------------------------------
+begin challenge help script ChallengeHighlightNotify(Highlight, Location, AdvisorSpeakEnum) 
+	Count = time-31
+start
+	begin loop
+		if camera position near {Highlight} radius NotifyDistance and Highlight viewed
+			//wait until cameramode
+			if time-Count>30
+				if not in widescreen
+					begin dialogue
+						if good spirit speaks constant AdvisorSpeakEnum
+							eject good spirit
+							make good spirit point at {Highlight} //in world
+						else
+							eject evil spirit
+							make evil spirit point at {Highlight} //in world
+						end if
+						say single line constant AdvisorSpeakEnum
+						wait until read
+					end dialogue
+				end if
+				Count=time
+			end if
+		end if
+	 
+	until Highlight right clicked or Location right clicked
+	end loop
+	enable Highlight active
+end script ChallengeHighlightNotify
+
+//------------------------------------------------------------------------------------------------------------------------
+// **** CHALLENGE NOTIFY WITH SCRIPTLOCKEDCREATURE****
+//		This is a generic script which we can run at the beginning of any challenge.  We simply
+//		give it an object and a radius.  It does a little loop of a spirit coming out and pointing
+//		at the object whenever the player gets close to it, and occasionally saying something,
+//		until the object is clicked.
+//		Differs from ChallengeNotify as it will check if ScriptLockedCreature is true, and if so will not
+//		activate the highlight but will call ScriptLockedHighlight.
+//------------------------------------------------------------------------------------------------------------------------
+/*begin challenge help script ChallengeHighlightNotifyWithScriptLockedCreature(Highlight, Location, AdvisorSpeakEnum) 
+	Count = time-31
+start
+	begin loop
+		if camera position near {Highlight} radius NotifyDistance and Highlight viewed
+			//wait until cameramode
+			if time-Count>30
+				if not in widescreen
+					begin dialogue
+						if good spirit speaks constant AdvisorSpeakEnum
+							eject good spirit
+							make good spirit point at {Highlight} //in world
+						else
+							eject evil spirit
+							make evil spirit point at {Highlight} //in world
+						end if
+						say single line constant AdvisorSpeakEnum
+						wait until read
+					end dialogue
+				end if
+				Count=time
+			end if
+		end if
+		
+		if (Highlight right clicked or Location right clicked) and ScriptLockedCreature == 1
+			run script ScriptLockedHighlight( Highlight)
+		end if
+
+	until (Highlight right clicked or Location right clicked) and ScriptLockedCreature == 0
+	end loop
+	enable Highlight active
+end script ChallengeHighlightNotifyWithScriptLockedCreature
+*/
+
+//------------------------------------------------------------------------------------------------------------------------
+// **** CHALLENGE NOTIFY ACTIVE ONLY AT CERTAIN TIMES ****
+//		This is a generic script which we can run at the beginning of any challenge.  We simply
+//		give it an object and a radius.  It does a little loop of a spirit coming out and pointing
+//		at the object whenever the player gets close to it, and occasionally saying something,
+//		until the object is clicked.
+//		This version also exits when the game time is not valid (between starttime and endtime)
+//------------------------------------------------------------------------------------------------------------------------
+begin challenge help script ChallengeHighlightNotifyBetweenTimes(Highlight, Location, AdvisorSpeakEnum, StartTime, EndTime) 
+	Count = time-31
+	Time = 0
+	Exit = 0
+
+start
+	begin loop
+		if camera position near {Highlight} radius NotifyDistance and Highlight viewed
+			//wait until cameramode
+			if time-Count>30
+				if not in widescreen
+					begin dialogue
+						if good spirit speaks constant AdvisorSpeakEnum
+							eject good spirit
+							make good spirit point at {Highlight} //in world
+						else
+							eject evil spirit
+							make evil spirit point at {Highlight} //in world
+						end if
+						say single line constant AdvisorSpeakEnum
+						wait until read
+					end dialogue
+				end if
+				Count=time
+			end if
+		end if
+		Time = get game time
+		if (StartTime > EndTime)
+			if Time < StartTime and Time > EndTime
+				Exit = 1
+			end if
+		else
+			if Time < StartTime or Time > EndTime
+				Exit = 1
+			end if
+		end if
+		
+	until Highlight right clicked or Location right clicked
+		enable Highlight active
+	until Exit == 1
+	end loop
+
+end script ChallengeHighlightNotifyBetweenTimes
+
+//------------------------------------------------------------------------------------------------------------------------
+// **** TRIAL NOTIFY ****
+//		This is a generic script which we can run at the beginning of any Brotherhood Trial.  We simply
+//		give it an object.  It does a little loop of a spirit coming out and pointing
+//		at the object whenever the player gets close to it, and occasionally saying one of the enums,
+//		until the object is clicked.
+//------------------------------------------------------------------------------------------------------------------------
+/*begin challenge help script TrialNotify(Highlight) 
+
+HighlightClicked	= 0
+RandomNotify		= 0
+RemindTimer			= create timer for 0 seconds
+
+start
+
+	// Enums to choose from:
+	// EA: HELP_TEXT_GENERAL_TRIAL_STARTS_01 - "Hey! A Trial. Let's do it and show these hotshot Creatures how good we are."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_02 - "Another Trial. Let's see how much fun it is."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_03 - "A Trial. Which I think we should attempt, Leader."
+	// EA: HELP_TEXT_GENERAL_TRIAL_STARTS_04 - "Let's have a go at this Trial, Boss."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_05 - "Down here! A Trial seems to be beckoning."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_06 - "Oh, l think I spotted another Creature Trial. Can we do it? Oh please?"
+	// EA: HELP_TEXT_GENERAL_TRIAL_STARTS_07 - "Huh. A Trial. Let's get it over with. Looks a cinch, too."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_08 - "We should investigate this lovely Trial here."
+	
+	while HighlightClicked == 0
+//		RandomNotify = variable constant from HELP_TEXT_GENERAL_TRIAL_STARTS_01 to HELP_TEXT_GENERAL_TRIAL_STARTS_08
+		RandomNotify = variable get text id from "HELP_TEXT_GENERAL_TRIAL_STARTS_01"
+		if camera position near {Highlight} radius NotifyDistance and Highlight viewed
+			if get RemindTimer time remaining == 0
+				if not in widescreen
+					begin dialogue
+						if good spirit speaks constant RandomNotify
+							eject good spirit
+							make good spirit point at {Highlight} //in world
+						else
+							eject evil spirit
+							make evil spirit point at {Highlight} //in world
+						end if
+
+						say single line constant RandomNotify
+						wait until read or Highlight right clicked
+					end dialogue
+					set RemindTimer time to 30 seconds
+				end if
+			end if
+		end if
+
+		if Highlight right clicked or {Highlight} right clicked radius 5
+			HighlightClicked = 1
+		end if
+	end while
+
+	enable Highlight active
+
+end script TrialNotify
+*/
+//------------------------------------------------------------------------------------------------------------------------
+// **** TRIAL NOTIFY WITH SCRIPTLOCKEDCREATURE ****
+//		This is a generic script which we can run at the beginning of any Brotherhood Trial.  We simply
+//		give it an object.  It does a little loop of a spirit coming out and pointing
+//		at the object whenever the player gets close to it, and occasionally saying one of the enums,
+//		until the object is clicked.
+//		Differs from TrialNotify as it will check if ScriptLockedCreature is true, and if so will not
+//		activate the highlight but will call ScriptLockedHighlight.
+//------------------------------------------------------------------------------------------------------------------------
+/*begin challenge help script TrialNotifyWithScriptLockedCreature(Highlight) 
+
+HighlightClicked	= 0
+RandomNotify		= 0
+RemindTimer			= create timer for 0 seconds
+
+start
+
+	// Enums to choose from:
+	// EA: HELP_TEXT_GENERAL_TRIAL_STARTS_01 - "Hey! A Trial. Let's do it and show these hotshot Creatures how good we are."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_02 - "Another Trial. Let's see how much fun it is."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_03 - "A Trial. Which I think we should attempt, Leader."
+	// EA: HELP_TEXT_GENERAL_TRIAL_STARTS_04 - "Let's have a go at this Trial, Boss."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_05 - "Down here! A Trial seems to be beckoning."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_06 - "Oh, l think I spotted another Creature Trial. Can we do it? Oh please?"
+	// EA: HELP_TEXT_GENERAL_TRIAL_STARTS_07 - "Huh. A Trial. Let's get it over with. Looks a cinch, too."
+	// GA: HELP_TEXT_GENERAL_TRIAL_STARTS_08 - "We should investigate this lovely Trial here."
+	
+	while HighlightClicked == 0
+		//RandomNotify = variable constant from HELP_TEXT_GENERAL_TRIAL_STARTS_01 to HELP_TEXT_GENERAL_TRIAL_STARTS_08
+		RandomNotify = variable get text id from "HELP_TEXT_GENERAL_TRIAL_STARTS_01"
+		if camera position near {Highlight} radius NotifyDistance and Highlight viewed
+			if get RemindTimer time remaining == 0
+				if not in widescreen
+					begin dialogue
+						if good spirit speaks constant RandomNotify
+							eject good spirit
+							make good spirit point at {Highlight} //in world
+						else
+							eject evil spirit
+							make evil spirit point at {Highlight} //in world
+						end if
+
+						say single line constant RandomNotify
+						wait until read or Highlight right clicked
+					end dialogue
+					set RemindTimer time to 30 seconds
+				end if
+			end if
+		end if
+
+		if Highlight right clicked or {Highlight} right clicked radius 5
+			//Matthew: If creature is already in scripted trial, don't activate.
+			if ScriptLockedCreature == 1
+				clear right clicked object
+				run script ScriptLockedHighlight( Highlight)
+			else
+				HighlightClicked = 1
+			end if
+		end if
+	end while
+
+	enable Highlight active
+
+end script TrialNotifyWithScriptLockedCreature*/

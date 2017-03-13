@@ -1,0 +1,12 @@
+run script RunLand1Waterfall
+
+begin script RunLand1Waterfall
+start
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_20"
+
+	L1_DiscipleTutorialComplete = 1
+	run background script EL_MountainWaterfalls
+	run script EL_ThrowChallenge
+end script RunLand1Waterfall

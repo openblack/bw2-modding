@@ -1,0 +1,6 @@
+run script RunLand4BuildWall
+
+begin script RunLand4BuildWall
+start
+	run script Land4BuildWall
+end script RunLand4BuildWall

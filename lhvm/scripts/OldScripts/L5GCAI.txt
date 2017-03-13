@@ -1,0 +1,80 @@
+
+
+//------------------------------------------------
+//  LAND 5 GREEK CREATURE AI
+//------------------------------------------------
+
+begin script L5GCAI
+
+ ElderSnatchTimer = create timer for 0 seconds
+ TotalNumberofElders = 5
+ RandomShrine = 0
+ ShrineFound = 0
+ ElderFound = 0
+ Count = 0
+ L5CreaturePos = marker at {1537.766,72.446,1738.571}
+
+start
+
+ // create L5GCAI_GreekCreature
+	L5GCAI_GreekCreature = create CREATURE CREATURE_TYPE_LION at {L5CreaturePos}
+	SCALE of L5GCAI_GreekCreature = 0.8
+	ALIGNMENT of L5GCAI_GreekCreature = -0.5
+
+	set player 2 creature to L5GCAI_GreekCreature
+
+// Let the creature roam around but don't wander too far from Greek City
+// Occassionally take 'request' script control of creature to go on kidnapping runs
+// when L5GreekConverted > 0 release to standard behaviour
+
+
+set ElderSnatchTimer time to 30 seconds /// BODGED TO LOWER VALUE FOR TESTING
+begin loop
+	if get ElderSnatchTimer time remaining <= 0 and MonkEldersDeadCount < TotalNumberofElders and HEALTH of L5GCAI_GreekCreature > 0
+		while ShrineFound == 0
+			RandomShrine = number from 1 to TotalNumberofElders
+			RandomShrine--
+			RandomShrine = L5ElderPos[RandomShrine]
+			while Count < 5
+				if {L5Elder[Count]} near {RandomShrine} radius 10
+					ElderFound = Count
+					ShrineFound = 1
+				end if
+				Count++
+			end while
+			Count = 0
+		end while
+		ShrineFound = 0
+
+		begin dialogue /// BODGE TEST
+			say "CREATURE SNATCH INITIATED"
+			wait until read
+		end dialogue
+
+		move L5GCAI_GreekCreature position to {L5Elder[ElderFound]}
+		/// REPLACE ALL UNNECESSARY FORCE COMMANDS WITH REQUESTS
+		///request creature L5GCAI_GreekCreature move to {L5Elder[ElderFound]} distance 5
+		wait until {L5GCAI_GreekCreature} near {L5Elder[ElderFound]} radius 50 or 300 seconds /// NEED BETTER BREAK OUT CONDITIONS
+			if {L5GCAI_GreekCreature} near {L5Elder[ElderFound]} radius 20
+				force L5GCAI_GreekCreature CREATURE_HOLD_OBJECT L5Elder[ElderFound]
+				wait until L5Elder[ElderFound] is HELD_ANY or 20 seconds
+				if L5Elder[ElderFound] is HELD_ANY
+					move L5GCAI_GreekCreature position to {L5GreekSacrificePitPos}
+					///request creature L5GCAI_GreekCreature move to {L5GreekSacrificePitPos} distance 5
+					wait until {L5GCAI_GreekCreature} near {L5GreekSacrificePitPos} radius 20 or L5Elder[ElderFound] is not HELD_ANY or 300 seconds /// NEED BETTER BREAK OUT CONDITIONS
+					if {L5GCAI_GreekCreature} near {L5GreekSacrificePitPos} radius 20 and L5Elder[ElderFound] is HELD_ANY
+						force L5GCAI_GreekCreature CREATURE_THROW_OBJECT_IN_HAND L5Elder[ElderFound] at {L5GreekSacrificePitPos}
+						wait until L5Elder[ElderFound] is not HELD_ANY or 10 seconds
+						/// ROAR VICTORIOUSLY
+					end if
+				end if
+			end if
+		release L5GCAI_GreekCreature
+		set ElderSnatchTimer time to 60 seconds /// BODGE TO LOWER VALUE FOR TESTING
+	end if
+until L5GreekConverted > 0
+end loop
+
+release L5GCAI_GreekCreature
+
+end script L5GCAI

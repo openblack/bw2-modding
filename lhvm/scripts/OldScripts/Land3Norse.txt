@@ -1,0 +1,643 @@
+//------------------------------------------------
+//  LAND 3 NORSE TOWN AI
+//------------------------------------------------
+
+/////Cooney! You must insert the script to deal with the Norse sending troops to the cave,
+/////and the city riot!
+
+define script L3NorseTownManagement
+define script L3NorseArmyManagement
+define script BuildSiegeArmy
+define script BuildSiegeEngines
+define script SetPatrol1(PatrolPoint, Patrol)
+define script SetPatrol2(PatrolPoint, Patrol)
+define script SetPatrol3(PatrolPoint, Patrol)
+define script SetPatrol4(PatrolPoint)
+define script NorseBodgeOre
+
+global ImpressiveValue = 0
+
+begin script Land3Norse
+
+Eternity = 0
+
+RelCamPos=0
+RelCamFoc=0
+
+TownCentrePos = 0
+TownCentre = 0
+
+TakenByForce = 0
+
+start
+
+run background script L3NorseTownManagement
+run background script L3NorseArmyManagement
+run background script NorseBodgeOre
+
+begin loop
+	if PLAYER of L3NorseTown == 0
+		L3NorseConverted = 1
+	end if
+
+	until L3NorseConverted == 1
+end loop
+
+/// CHECK HOW TOWN WAS CONVERTED AND SHOW RELEVANT CUT-SCENE
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+TakenByForce= get platoon of player 0 nearest {1252.079, 295.531, 1508.613} radius 200
+
+if TakenByForce exists
+
+	begin cinema
+		start music "big_battle_01"
+
+			set camera position to {1307.501, 337.386, 1409.405}
+			set camera focus to {1307.057, 337.075, 1410.245}
+			move camera position to {1323.245, 325.010, 1415.988} time 10
+			move camera focus to {1322.659, 324.800, 1416.770} time 10
+
+			eject good spirit
+			eject evil spirit
+
+			say "GA: It appears these people are quite scared of you now we've taken over their town"
+			say "GA: It appears these people are quite scared of you now we've taken over their town"
+			wait until read
+			say "EA: Yeah! Way to go god! Good old fashioned belief through fear!"
+			wait until read
+
+			send good spirit home
+			send evil spirit home
+			stop music
+
+	end cinema
+else
+	begin cinema
+
+	start music "cut_scene_happy_02"
+
+			set camera position to {1307.501, 337.386, 1409.405}
+			set camera focus to {1307.057, 337.075, 1410.245}
+			move camera position to {1323.245, 325.010, 1415.988} time 10
+			move camera focus to {1322.659, 324.800, 1416.770} time 10
+
+			eject good spirit
+			eject evil spirit
+
+			say "GA: Excellent! We've converted the Norse through impressiveness"
+			say "GA: Excellent! We've converted the Norse through impressiveness"
+			wait until read
+			say "EA: Bah! Woulda been quicker to send our army in!"
+			wait until read
+
+			send good spirit home
+			send evil spirit home
+			stop music
+	end cinema
+
+end if
+
+L3NorseConverted = 2
+
+/// IF PLAYER CONVERTS NORSE TOWN THEN TRIGGER THE L3NORSESUBMISSION CUT-SCENE
+
+/// REMEMBER TO SET L3NORSEConverted = 2 when script completed (used in L3Control to trigger L3IslandComplete cut-scene)
+
+end script Land3Norse
+
+// *********************
+// ** TOWN MANAGEMENT **
+// *********************
+
+begin script L3NorseTownManagement
+
+InitialNorseAggression = 40
+AngeredNorseAggression = 70
+InitialGreekTolerance = 200
+NewGreekTolerance = 0
+InitialJapanTolerance = 100
+NewJapanTolerance = 0
+ToleranceDecayRate = 10
+AngerCounter = 0
+AngerTimer = create timer for 0 seconds
+AngerKickDelay = 180
+FleetReturnedNorseAggression = 0
+FeudValue = 0
+NorsePit = 0
+Pilgrim_Ctr = 0
+NorseImpressivePoints = 0
+NorsePilgrims = 0
+NorseIdlePlatoons = 0
+
+//InitialTrainingTimer = create timer for 0 seconds
+//InitialValuesSet = 1
+
+start
+
+set town L3NorseTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.3
+set town L3NorseTown army type ARMY_UNIT_TYPE_MELEE_1 platoon ratio on wall to 0.0
+
+// Initial villager setup
+set town L3NorseTown desire for GATHER_FOOD to 0.60
+set town L3NorseTown desire for GROW_FOOD to 0.30
+set town L3NorseTown desire for GATHER_WOOD to 0.20
+set town L3NorseTown desire for GATHER_ORE to 0.20
+set town L3NorseTown desire for BREED to 0.70
+set town L3NorseTown desire for ATTACK to 0.70
+set town L3NorseTown desire for FUN to 0.50
+
+// Initial feud status
+set town L3NorseTown interracial tolerance with town L3GreekTown to InitialGreekTolerance
+set town L3NorseTown interracial tolerance with town L3JapanTown to InitialJapanTolerance // they hate the norse 3 times more than you
+set town L3NorseTown racial aggression with town L3GreekTown to InitialNorseAggression
+set town L3NorseTown racial aggression with town L3JapanTown to InitialNorseAggression
+
+//set town L3NorseTown FEUD_TYPE_A feud stat for town L3GreekTown to 0
+//set town L3NorseTown FEUD_TYPE_A feud stat for town L3JapanTown to 0
+//set town L3NorseTown FEUD_TYPE_B feud stat for town L3GreekTown to 0
+//set town L3NorseTown FEUD_TYPE_B feud stat for town L3JapanTown to 0
+
+set town L3NorseTown impressive threshold for town L3GreekTown to 1.0
+set town L3NorseTown impressive threshold for town L3JapanTown to 1.0
+
+reset town L3NorseTown impressive value for town L3GreekTown
+
+begin loop
+// reactionary changes to town variables
+
+//if get InitialTrainingTimer time remaining <= 0 and InitialValuesSet == 0
+//	InitialValuesSet = 1
+//end if
+//NorseIdlePlatoons = get idle platoons in town L3NorseTown
+
+// if Norse fleet returns to the island
+if  KCVikingsReturned == 1
+	//------ALEX S: "Min built would not compile"-------
+	//NorsePit = get HOUSE ABODE_INFO_NORSE_STORAGE_PIT in L3NorseTown min built 1.0 excluding scripted 
+	NorsePit = get HOUSE ABODE_INFO_NORSE_STORAGE_PIT in L3NorseTown excluding scripted
+	///possible script the army from the boats moving to the storage pit
+	add resource RESOURCE_TYPE_FOOD 20000 to NorsePit
+	add resource RESOURCE_TYPE_ORE 10000 to NorsePit
+
+	//slightly reduce number of troops in town because of large force arriving
+
+//-----  SET ARMY RATIOS -------------------------------------------------------------------
+//	set town L3NorseTown platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.5
+//	set town L3NorseTown army type ARMY_UNIT_TYPE_MELEE_1 platoon ratio on wall to 0.2
+//------------------------------------------------------------------------------------------
+
+	set town L3NorseTown racial aggression with town L3GreekTown to FleetReturnedNorseAggression
+	set town L3NorseTown racial aggression with town L3JapanTown to FleetReturnedNorseAggression
+
+	NewGreekTolerance = InitialGreekTolerance/2
+	set town L3NorseTown interracial tolerance with town L3GreekTown to NewGreekTolerance
+	NewJapanTolerance = InitialJapanTolerance/2
+	set town L3NorseTown interracial tolerance with town L3JapanTown to NewJapanTolerance
+
+	FeudValue = get town L3NorseTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3GreekTown
+	FeudValue += 20
+	set town L3NorseTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3GreekTown to FeudValue
+
+	FeudValue = get town L3NorseTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3JapanTown
+	FeudValue += 50
+	set town L3NorseTown FEUD_SYSTEM_FEUD_ACTION_STEALING feud value for town L3JapanTown to FeudValue
+end if
+
+// if Yuka's head is delivered to the Norse and Fain fails to get to the Japanese they become more and more aggressive over time as they have not heard from her
+if MD_FainFails == 1
+	if AngerCounter < 10 and get AngerTimer time remaining <= 0
+		NewJapanTolerance = InitialJapanTolerance-(AngerCounter*ToleranceDecayRate)
+		set town L3NorseTown interracial tolerance with town L3JapanTown to NewJapanTolerance
+		NewGreekTolerance = InitialGreekTolerance-(AngerCounter*ToleranceDecayRate)
+		set town L3NorseTown interracial tolerance with town L3GreekTown to NewGreekTolerance
+		AngerCounter++
+		set AngerTimer time to AngerKickDelay seconds
+		elsif AngerCounter >= 10
+		MD_FainFails = 2
+	end if
+end if
+
+	ImpressiveValue = get town L3NorseTown impressive value for town L3GreekTown
+
+	if Pilgrim_Ctr <= 3
+		if town L3NorseTown impressive threshold with town L3GreekTown passed and Land3GreekImpressiveness >= (Land3GreekImpressivenessMinimum + 3000)
+			//say "Norse pay homage"
+			//wait until read
+			Pilgrim_Ctr++
+			NorsePilgrims = L3NorseTown pilgrimage PAY_HOMAGE to town L3GreekTown with 4 pilgrims
+			reset town L3NorseTown impressive value for town L3GreekTown
+		end if
+	end if
+
+	if Pilgrim_Ctr >= 4 and Pilgrim_Ctr <= 7
+		if town L3NorseTown impressive threshold with town L3GreekTown passed and Land3GreekImpressiveness >= (Land3GreekImpressivenessMinimum + 5000)
+			//say "Norse pay tribute"
+			//wait until read
+			Pilgrim_Ctr++
+			NorsePilgrims = L3NorseTown pilgrimage PAY_TRIBUTE to town L3GreekTown with 4 pilgrims
+			reset town L3NorseTown impressive value for town L3GreekTown
+		end if
+	end if
+
+	if Pilgrim_Ctr == 8
+		if town L3NorseTown impressive threshold with town L3GreekTown passed and Land3GreekImpressiveness >= (Land3GreekImpressivenessMinimum + 7000)
+			//say "Norse do pilgrimage"
+			//wait until read
+			Pilgrim_Ctr++
+			NorsePilgrims = L3NorseTown pilgrimage PAY_PILGRIMAGE to town L3GreekTown with 4 pilgrims
+			run background script ManagePilgrims (NorsePilgrims, 2)
+			reset town L3NorseTown impressive value for town L3GreekTown
+		end if
+	end if
+
+until L3NorseConverted == 1
+
+end loop
+
+
+end script L3NorseTownManagement
+
+// *********************
+// ** ARMY MANAGEMENT **
+// *********************
+
+begin script L3NorseArmyManagement
+
+JapanFeudBreach = 0
+GreekFeudBreach = 0
+IdlePlatoons	= 0
+NorseIdle = 0
+L3_NorseAssault = 0
+NorseAssaultWaypoint = marker at {1394.955, 129.550, 843.308}
+AssaultRandSecs = 0
+RandPlatoonNumber = 0
+NorseBoredAttackers = 0
+NorseBoredomTime = 600
+NorseBoredomAttackTimer = create timer for NorseBoredomTime seconds
+
+start
+
+run background script BuildSiegeArmy
+run background script BuildSiegeEngines
+
+begin loop
+NorseIdle = get idle platoons in town L3NorseTown
+
+L3MineSettlementOwner = get L3MineSettlement player
+//NorseBoredomAttackTimer = NorseBoredomTime
+	if get NorseBoredomAttackTimer time remaining <= 0
+		// Boredom Attack - send an army to raid Greek suburbs
+		if NorseBoredAttackers not exists
+			NorseBoredAttackers = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L3NorseTown} radius 200
+			add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L3GreekTown to NorseBoredAttackers action queue
+			set NorseBoredomAttackTimer time to 300 seconds
+		end if
+	end if
+
+	if L3MineSettlementOwner != 1 //if someone else owns the mine
+		if L3MineGuards1 not exists
+			L3MineGuards1 = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L3NorseTown} radius 200
+		end if
+
+		if  L3MineGuards2 not exists
+			L3MineGuards2 = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L3NorseTown} radius 200
+		end if
+
+		add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L3MineSettlement to L3MineGuards1 action queue
+		add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using L3MineSettlement to L3MineGuards2 action queue
+	end if
+
+	if L3_LemmingsReady == 1
+		if L3_ChasingLemmings != 1
+			if L3_SamuraiLemmings exists
+				if L3_AfterLemmings not exists
+					if NorseIdle > 1
+						L3_AfterLemmings = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L3NorseTown} radius 100
+						add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {L3_SamuraiLemmings} to front of L3_AfterLemmings action queue
+					//	add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using L3_SamuraiLemmings to L3_AfterLemmings action queue
+						L3_ChasingLemmings = 1
+					end if
+				end if
+			end if
+		end if
+	end if
+
+	//this attack occurs if the Norse idle platoons exceed a certain number
+	if L3_InitialAssault == 1
+		if NorseIdle > 6
+			// send an army to assault Greek town
+			L3_NorseAssault = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L3NorseTown} radius 100
+			IdlePlatoons = get idle platoon of tribe TRIBE_TYPE_NORSE nearest {L3NorseTown} radius 100
+			attach IdlePlatoons to L3_NorseAssault
+
+			//wait 120 seconds
+			add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {NorseAssaultWaypoint} to L3_NorseAssault action queue
+			add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using L3GreekTown to L3_NorseAssault action queue
+		end if
+	end if
+
+	if town L3NorseTown feud threshold with town L3JapanTown passed
+		if JapanFeudBreach == 1
+			if L3YukaHeadDeliveredToJapanese == 2 or MD_FainToJaps == 2 or MD_FainFails == 3 // Japanese go on a warpath. Assaulting the Norse and raiding the greeks
+				//move a sizeable army to meet the Japanese?
+				//assume defensive positons?
+				//form all idle platoons into defence?
+				set town L3NorseTown desire for GATHER_FOOD to 0.90
+				set town L3NorseTown desire for GROW_FOOD to 0.10
+				set town L3NorseTown desire for GATHER_WOOD to 0.60
+				set town L3NorseTown desire for GATHER_ORE to 0.50
+				set town L3NorseTown desire for BREED to 0.40
+				set town L3NorseTown desire for ATTACK to 0.40
+				set town L3NorseTown desire for DEFENCE to 0.40
+				set town L3NorseTown desire for FUN to 0.10
+			end if
+		end if
+	end if
+
+	if town L3NorseTown feud threshold with town L3GreekTown passed
+		if GreekFeudBreach == 1
+	//		if L3YukaHeadDeliveredToJapanese == 2 or MD_FainToJaps == 2 or MD_FainFails == 3 // Japanese go on a warpath. Assaulting the Norse and raiding the greeks
+	//		/// check if there's enough platoons idle to create a respectable army
+	//		IdlePlatoons = get idle platoons in town L3NorseTown
+			say "got the idle platoons"
+			wait until read
+				if IdlePlatoons >= 3
+					//make an army
+				end if
+		end if
+		/// if so send an army to raid Greek town
+		if MD_FainFails == 2	// Japanese finish slowly building up in army size and aggression and now decide Yuka has been slain. They unleash a massive archer raiding force against both enemy towns
+		// do nothing, the NorseFeudBreach section above will deal with the Greek aspect of this unique two pronged attack
+		else // carry on oblivious to the fate of Yuka
+		/// check if there are enough platoons idle to mount a small raid
+		end if
+	end if
+
+	//if mine settlement is owned and undefended
+//	if L3MineSettlement = 
+
+	until L3NorseConverted == 1
+end loop
+
+end script L3NorseArmyManagement
+
+
+//-------------------------------------------------------------------
+// Build Siege Engines
+//-------------------------------------------------------------------
+
+begin script BuildSiegeArmy
+
+PatrolPoint[4]
+Patrol[4]
+RandSecs = 0
+PatrolRidge = 0
+PatrolRidge2 = 0
+L3_NorseAssault1Pos = 0
+AssaultCounter = 0
+StartAssault = 0
+temptown = 0
+
+CTR = 0
+
+start
+PatrolPoint[0] = marker at {1201.099, 171.665, 1001.425}//by mine
+PatrolPoint[1] = marker at {1276.764, 167.996, 1000.251}//jap edge of forest
+PatrolPoint[2] = marker at {1346.070, 165.628, 1057.915}//norse edge of forest
+PatrolPoint[3] = marker at {1392.343, 150.315, 960.849}//greek edge of forest
+
+L3_NorseAssault1Pos = marker at {1382.343, 150.315, 960.849}
+
+StartAssault = marker at {1469.335, 122.718, 790.398}
+
+
+L3_NorseAssault2 = create platoon PLATOON_INFO_NORSE_MELEE_1 at {PatrolPoint[3]} with 24 men and 0 women
+attach L3_NorseAssault2 to L3NorseTown
+
+	CTR = 0
+
+	while CTR != 3
+		Patrol[CTR] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {PatrolPoint[CTR]} with 12 men and 0 women
+		set Patrol[CTR] player 1
+		attach Patrol[CTR] to L3NorseTown
+		CTR++
+	end while
+
+//	L3_NorseAssault2 = Patrol[3]
+
+	run background script SetPatrol1(PatrolPoint[0], Patrol[0])
+	run background script SetPatrol2(PatrolPoint[1], Patrol[1])
+	run background script SetPatrol3(PatrolPoint[2], Patrol[2])
+	run background script SetPatrol4(PatrolPoint[3])
+
+	CTR = 0
+
+end script BuildSiegeArmy
+
+//---------------------------------------------------------------------
+
+begin script BuildSiegeEngines
+
+StartSiegeEngines = 0
+SiegeEnginePos[4]
+SiegeCTR = 0
+
+start
+
+SiegeEnginePos[0] = marker at {1263.644, 253.528, 1327.983}
+SiegeEnginePos[1] = marker at {1273.011, 252.549, 1318.361}
+SiegeEnginePos[2] = marker at {1288.914, 222.215, 1246.960}
+SiegeEnginePos[3] = marker at {1242.878, 254.967, 1335.176}
+
+while StartSiegeEngines != 4
+
+	//create planned siege weapon SIEGE_BALANCE_TYPE_BATTERING_RAM at {SiegeEnginePos[SiegeCTR]} belonging to town L3NorseTown
+	wait 90 seconds
+	StartSiegeEngines++
+	SiegeCTR++
+end while
+
+end script BuildSiegeEngines
+
+//---------------------------------------------------------------------
+
+begin script SetPatrol1(PatrolPoint, Patrol) //platoon near minor settlement
+
+RandSecs = 0
+CentrePoint = PatrolPoint
+
+start
+
+	while Patrol exists
+		RandSecs = number from 60 to 80
+		add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PatrolPoint} to front of Patrol action queue
+		wait RandSecs seconds
+		clear Patrol action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PatrolPoint} to front of Patrol action queue
+		PatrolPoint = marker at {CentrePoint} + {number from -30 to 30, number from -30 to 30}
+	end while
+
+end script SetPatrol1
+
+//---------------------------------------------------------------------
+
+begin script SetPatrol2(PatrolPoint, Patrol) //south west  platoon
+
+RandSecs = 0
+CentrePoint = PatrolPoint
+
+start
+
+	while Patrol exists
+		RandSecs = number from 60 to 80
+		add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PatrolPoint} to front of Patrol action queue
+		wait RandSecs seconds
+		clear Patrol action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PatrolPoint} to front of Patrol action queue
+		PatrolPoint = marker at {CentrePoint} + {number from -30 to 30, number from -30 to 30}
+	end while
+
+end script SetPatrol2
+
+//---------------------------------------------------------------------
+
+begin script SetPatrol3(PatrolPoint, Patrol) //north east platoon
+
+RandSecs = 0
+CentrePoint = PatrolPoint
+
+start
+
+	while Patrol exists
+		RandSecs = number from 60 to 80
+		add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {PatrolPoint} to front of Patrol action queue
+		wait RandSecs seconds
+		clear Patrol action queue
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS using {PatrolPoint} to front of Patrol action queue
+		PatrolPoint = marker at {CentrePoint} + {number from -30 to 30, number from -30 to 30}
+	end while
+
+end script SetPatrol3
+
+//---------------------------------------------------------------------
+
+begin script SetPatrol4(PatrolPoint)
+
+PatrolRidge = 0
+PatrolRidge2 = 0
+
+StartAssault = 0
+RandSecs = 0
+attacktarget = 0
+town_abodes[5]
+CTR = 0
+//PlayerHasPlatoon = 0
+IdlePlatoon = 0
+StillCheck = 1
+GreekSoldiers = 0
+NorseStartAttackTimer = create timer for 300 seconds
+L3_NorseAssault1 = 0
+
+start
+
+PatrolRidge = marker at {1366.079, 145.587, 877.370}
+PatrolRidge2 = marker at {1356.079, 145.587, 877.370}
+
+while CTR != 5
+	town_abodes[CTR] = get random abode in town L3GreekTown
+	CTR++
+end while
+
+while L3_NorseAssault2 exists
+	if IdlePlatoon not exists
+//		PlayerHasPlatoon = get idle platoons in town L3GreekTown
+		GreekSoldiers = get number of soldiers in town L3GreekTown
+		StillCheck = 1
+	end if
+
+	if GreekSoldiers >= 1
+		if StillCheck == 1
+			IdlePlatoon = get platoon of player 0 nearest {L3_NorseAssault2} radius 500 ///kc - changed L3_NorseAssault1 to L3_NorseAssault2 for E3 demo
+			StillCheck = 0
+		end if
+	end if
+
+	if GreekSoldiers == 0
+		IdlePlatoon = 0
+	end if
+
+	if GreekSoldiers == 0
+		RandSecs = number from 30 to 60
+		if {L3_NorseAssault2} near {PatrolRidge} radius 10
+			move L3_NorseAssault2 position to {PatrolPoint}
+///			if GreekSoldiers == 0
+///				move L3_NorseAssault1 position to {PatrolPoint} + {number from -10 to 10, number from -10 to 10}
+///			end if
+			wait RandSecs seconds
+		else
+			move L3_NorseAssault2 position to {PatrolRidge}
+			//if GreekSoldiers == 0
+			//	move L3_NorseAssault1 position to {PatrolRidge} + {number from -10 to 10, number from -10 to 10}
+			//end if
+			wait RandSecs seconds
+		end if
+	end if
+
+	if GreekSoldiers != 0
+		if get NorseStartAttackTimer time remaining <= 0
+			if L3_NorseAssault1 == 0
+				attacktarget = number from 0 to 5
+	///KC!			remove platoon L3_NorseAssault1 from platoon Patrol
+				enable platoon L3_NorseAssault2 split
+				L3_NorseAssault1 = split 12 soldiers from platoon L3_NorseAssault2
+	//			add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using town_abodes[attacktarget] to L3_NorseAssault1 action queue
+				move L3_NorseAssault1 position to {StartAssault}
+				say "Hey, some of those Norse guys have broken off from the main group - they're headed this way."
+				wait until read
+			end if
+			if {L3_NorseAssault1} near {StartAssault} radius 10
+				wait 30 seconds
+				add action PLATOON_AGENDA_ACTION_MELEE_ATTACK_THING using IdlePlatoon to L3_NorseAssault1 action queue
+				say "Oh no! Here they come!"
+				wait until read
+				release L3_NorseAssault1
+				L3_InitialAssault = 1
+			end if
+		end if
+	else
+		wait RandSecs seconds
+	end if
+
+end while
+
+end script SetPatrol4
+
+//-----------------------------------
+/// BODGE ORE SCRIPT !
+//-----------------------------------
+begin script NorseBodgeOre /// !
+
+NorseBodgeOrePit = get STORE at {1182.595, 296.256, 1550.445} radius 50 /// !
+OreAmount = 0
+FoodAmount = 0
+
+start
+begin loop
+	OreAmount = get resource RESOURCE_TYPE_ORE in NorseBodgeOrePit
+	FoodAmount = get resource RESOURCE_TYPE_FOOD in NorseBodgeOrePit
+
+	if OreAmount < 10000
+		add resource RESOURCE_TYPE_ORE 10000 to NorseBodgeOrePit /// !
+	end if
+
+	if FoodAmount < 10000
+		add resource RESOURCE_TYPE_FOOD 10000 to NorseBodgeOrePit /// !
+	end if
+
+	wait 10 seconds
+	until L3NorseConverted == 1
+end loop
+
+end script NorseBodgeOre /// !

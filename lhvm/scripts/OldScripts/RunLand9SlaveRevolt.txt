@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land 9 Slave Revolt script
+//-----------------------------------------------------------------------------
+run script RunLand9SlaveRevolt
+
+begin script RunLand9SlaveRevolt
+
+start
+
+	run script Land9SlaveRevolt
+
+end script RunLand9SlaveRevolt

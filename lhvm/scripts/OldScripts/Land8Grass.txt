@@ -1,0 +1,111 @@
+define RESOLUTION		=	10
+define RESOLUTION_SQ	=	100
+define SCALER			=	3
+
+global grasses_states[RESOLUTION_SQ] 
+
+begin script LookAfterBitOfGrass(GrassObject, Offset)
+start
+	while grasses_states[Offset] < 1
+		ALTITUDE of GrassObject = grasses_states[Offset]
+		grasses_states[Offset]+=0.1
+		wait 0.5 seconds
+	end while
+end script LookAfterBitOfGrass
+
+begin script LookAfterBloke(start_pos)
+bloke = 0
+destination_pos = marker at {0.000,0.000,0.000}
+start
+	bloke = create VILLAGER VILLAGER_INFO_NORSE_TRADER_MALE at {start_pos}
+	SPEED of bloke = 1
+	begin loop
+		SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of destination_pos=number from SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of start_pos to SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of start_pos + (SCALER*RESOLUTION)
+		SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of destination_pos=number from SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of start_pos to SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of start_pos + (SCALER*RESOLUTION)
+		move bloke position to {destination_pos}
+		wait until {bloke} near {destination_pos} radius 0.1
+	end loop
+end script LookAfterBloke
+
+begin script Land8Grass
+start_pos = marker at {1822.856,90.750,647.063}
+y_start_pos = marker at {0.000,0.000,0.000}
+creation_pos = marker at {0.000,0.000,0.000}
+
+x_counter = 0
+y_counter = 0
+
+x_pos = 0
+z_pos = 0
+
+grasses[RESOLUTION_SQ] 
+
+arrayoffset = 0
+rock = 0
+diff_marker = marker at {0.000,0.000,0.000}
+start
+	y_counter=0
+	SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of y_start_pos = SCRIPT_OBJECT_PROPERTY_TYPE_YPOS of start_pos
+	
+	rock = create OBJECT ROCK at {start_pos}
+	SCALE of rock = 0.8
+	
+	while y_counter < RESOLUTION
+		SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of y_start_pos = SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of start_pos + (y_counter * SCALER)
+		SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of y_start_pos = SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of start_pos 
+		
+		x_counter=0
+		while x_counter < RESOLUTION
+		
+			SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of creation_pos = SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of y_start_pos
+			SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of creation_pos = SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of y_start_pos + (x_counter * SCALER)
+	
+			//grasses[x_counter+(y_counter*RESOLUTION)] = create special effect SPOT_VISUAL_MAGIC_BEAM on creation_pos time -1
+			grasses[x_counter+(y_counter*RESOLUTION)] = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {creation_pos}
+			ALTITUDE of grasses[x_counter+(y_counter*RESOLUTION)] = 1
+			grasses_states[x_counter+(y_counter*RESOLUTION)] = 1
+			
+			x_counter++	
+		end while
+		y_counter++
+	end while
+	
+	run background script LookAfterBloke(start_pos)
+	run background script LookAfterBloke(start_pos)
+	run background script LookAfterBloke(start_pos)
+	run background script LookAfterBloke(start_pos)
+	run background script LookAfterBloke(start_pos)
+	run background script LookAfterBloke(start_pos)
+	run background script LookAfterBloke(start_pos)
+	run background script LookAfterBloke(start_pos)
+	
+	begin loop
+		diff_marker = marker at {rock} - {start_pos}
+		
+		x_pos = SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of diff_marker
+		z_pos = SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of diff_marker
+		
+		x_pos/=SCALER
+		z_pos/=SCALER
+		
+		x_pos-=x_pos%1 
+		z_pos-=z_pos%1 
+		//Get rid of the grass
+		
+		if (x_pos >= 0 and x_pos < 10 and z_pos >= 0 and z_pos < 10)
+			arrayoffset=(z_pos)+((x_pos)*RESOLUTION)
+			if rock != get object held and ALTITUDE of rock < 5
+				//run background script delete grasses[(z_pos)+((x_pos)*RESOLUTION)]
+				if grasses_states[arrayoffset] < 1
+					grasses_states[arrayoffset] = -3
+				else
+					grasses_states[arrayoffset] = -3
+					run background script LookAfterBitOfGrass(grasses[arrayoffset], arrayoffset)
+				end if
+			end if
+		end if 
+	
+		
+	end loop
+	
+end script Land8Grass

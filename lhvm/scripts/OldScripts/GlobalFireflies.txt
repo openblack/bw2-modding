@@ -1,0 +1,17 @@
+// Global Fireflies
+
+begin script GF_SetObjectFirefly(Object,FireflyScale,Tribute)
+	HeldObject = 0
+	FireflyEffect = 0
+start
+	FireflyEffect = create visual effect "gp_s_fireflies.ves" strength 0 scale FireflyScale on Object time -1
+
+	while HeldObject != Object
+		wait 0.2 seconds
+		HeldObject = get object held
+	end while
+	
+	delete FireflyEffect
+
+	increment tribute by Tribute
+end script GF_SetObjectFirefly

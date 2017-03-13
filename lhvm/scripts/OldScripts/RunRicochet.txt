@@ -1,0 +1,21 @@
+//-----------------------------------------------------------------------------
+run script RunRicochet
+//-----------------------------------------------------------------------------
+begin script RunRicochet
+
+CamPos = marker at {1414.856,10.025,1305.223}
+CamFoc = marker at {1407.356,5.025,1297.723}
+
+start
+
+	// Setup the camera position
+	begin cinema
+		set camera position to {CamPos}
+		set camera focus to {CamFoc}
+	end cinema
+
+	run script Ricochet
+	
+end script RunRicochet
+
+//-----------------------------------------------------------------------------

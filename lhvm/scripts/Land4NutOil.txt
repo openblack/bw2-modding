@@ -1,0 +1,1054 @@
+
+//================================================================
+
+// Nut Oil
+
+// Driley
+
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+
+define NO_FALSE = 0
+define NO_TRUE = 1
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+global NO_Barrel = 0
+global NO_BarrelFX = 0
+global NO_BarrelOffset = 0
+global NO_CurrentTarget = 0
+global NO_NewCamPos= 0
+global NO_HitWater = 0
+global NO_AntiInfluence = 0
+global NO_LevelCompleate = 0
+global NO_ThrowPos = 0
+global NO_Influence = 0
+global NO_NumShots = 0
+global NO_OutOfBounds = 0
+global NO_HighLight = 0
+global NO_DoneIntro = 0
+global NO_VerseSung = 0
+global NO_ReminderScroll = 0
+
+global NO_CamDistance = 15
+global NO_CamAngle = 0
+
+global NO_TargetPos[5]
+global NO_Brother[5]
+global NO_BrotherPos[3]
+global NO_ReminderScrollPos[3]
+global NO_Stockpile
+global NO_Stockpile2
+global NO_Stockpile3
+global NO_Stockpile4
+
+global NO_Barrels
+global NO_Barrels2
+global NO_Barrels3
+global NO_Barrels4
+
+global NO_GivenBonus = 0
+global InfluenceFX = 0
+global NO_GivenAlignment = 0
+global NO_FirstThrowFromNewIsland = NO_FALSE	//if it's the first throw don't reset the position after dead time
+global NO_BrotherAntiInfluence[4] 
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+
+define script Land4NutOil
+define script NO_Setup
+define script NO_NutOil
+define script NO_CamMoveToTarget(Target,Offset,Face)
+define script NO_ThrowBarrel
+define script NO_PickUpBarrel
+define script NO_Intro
+define script NO_GoToBarrel
+define script NO_SetAntiInfluence
+define script NO_tributeSytem
+define script NO_CreateBrothers
+define script NO_BoundsCheck
+define script NO_SingSong
+define script MidLevelCutScenes(Stage, Brother, Barrel)
+define script NO_SuccessfulShot
+define script NO_UnsuccessfulShot
+
+begin script Land4NutOil
+Extra1 = 0
+Extra2 = 0
+Extra3 = 0
+start
+
+	
+
+	
+	run script NO_Setup
+
+end script Land4NutOil
+
+//-----------------------------------------------------------------
+// Setup
+//-----------------------------------------------------------------
+
+begin script NO_Setup
+
+	StartScroll = 0
+
+start
+
+	NO_TargetPos[0] = marker at {362.289,152.127,1979.343}
+	NO_TargetPos[1] = marker at {523.608,156.114,1926.584}
+	NO_TargetPos[2] = marker at {857.570,163.289,2060.457}
+	NO_TargetPos[3] = marker at {721.744,164.108,2215.419}
+	NO_TargetPos[4] = NO_TargetPos[3]
+
+	NO_BrotherPos[0] = marker at {528.362,158.045,1916.842}
+	NO_BrotherPos[1] = marker at {907.969,165.067,2096.262}
+	NO_BrotherPos[2] = marker at {732.189,168.797,2224.420}
+
+	NO_ReminderScrollPos[0] = marker at {376.325,154.761,1992.199}
+	NO_ReminderScrollPos[1] = marker at {517.907,158.744,1942.958}
+	NO_ReminderScrollPos[2] = marker at {840.490,164.827,2057.924}
+
+	NO_Stockpile = create OBJECT NORSE_BARREL_02 at {331.435,153.856,1970.984}
+	NO_Stockpile2 = create OBJECT NORSE_BARREL_02 at {545.201,158.623,1912.624}
+	NO_Stockpile3 = create OBJECT NORSE_BARREL_02 at {902.992,165.385,2083.417}
+	NO_Stockpile4 = create OBJECT NORSE_BARREL_02 at {754.469,165.909,2185.657}
+	
+	
+	override mesh for NO_Stockpile with "m_norseabodeb"
+	override mesh for NO_Stockpile2 with "m_norseabodeb"
+	override mesh for NO_Stockpile3 with "m_norseabodeb"
+	override mesh for NO_Stockpile4 with "m_norseabodeb"
+
+
+	set NO_Stockpile focus to {317.168,160.840,1976.978}
+	set NO_Stockpile2 focus to {529.490,158.577,1907.706}
+	set NO_Stockpile3 focus to {518.971,156.118,1925.761}
+	set NO_Stockpile4 focus to {742.254,168.734,2171.021}
+
+	disable NO_Stockpile pickup
+	disable NO_Stockpile moveable
+	disable NO_Stockpile2 pickup
+	disable NO_Stockpile2 moveable
+	disable NO_Stockpile3 pickup
+	disable NO_Stockpile3 moveable
+	disable NO_Stockpile4 pickup
+	disable NO_Stockpile4 moveable
+
+	StartScroll = create highlight SILVER name "BW2T_SCRIPT_04FINAL_NUT_OIL_MISC_10" remind "BW2T_SCRIPT_04FINAL_NUT_OIL_REMINDER" at {NO_TargetPos[0]}
+    ALTITUDE of StartScroll = 3
+
+	wait until StartScroll right clicked
+	delete StartScroll
+
+	run background script NO_NutOil
+
+end script NO_Setup
+
+//-----------------------------------------------------------------
+// Create Brothers and the Barrel
+//-----------------------------------------------------------------
+
+begin script NO_CreateBrothers 
+	BarrelCreate = marker at {355.321,151.493,1947.239}
+	FirstBrotherStart = marker at {355.082,151.465,1946.133}
+	StockpileMarker = marker at {354.600, 151.434, 1944.749}
+
+start
+
+	NO_LevelCompleate = 0
+	NO_HitWater = 0
+	NO_NumShots = 0
+	NO_OutOfBounds = 0
+	NO_HighLight = 0
+	
+	NO_BarrelOffset = marker at {0.000,5.000,0.000}
+	
+	if NO_Brother[0] exists
+	
+		delete NO_Brother[0]
+		delete NO_Brother[1]
+		delete NO_Brother[2]
+		delete NO_Brother[3]
+		delete NO_Brother[4]
+		delete NO_Barrel
+		
+	end if
+	
+	NO_Brother[0] = create VILLAGER MERRYMAN1 at {FirstBrotherStart}
+	NO_Brother[1] = create VILLAGER MERRYMAN6 at {NO_BrotherPos[0]}
+	NO_Brother[2] = create VILLAGER MERRYMAN7 at {NO_BrotherPos[1]}
+	NO_Brother[3] = create VILLAGER MERRYMAN8 at {NO_BrotherPos[2]}
+	
+	set NO_Brother[1] carrying CARRIED_OBJECT_BEERMUG
+	set NO_Brother[2] carrying CARRIED_OBJECT_BEERMUG
+	set NO_Brother[3] carrying CARRIED_OBJECT_BEERMUG
+	
+	
+	NO_Brother[4] = NO_Brother[0]
+	NO_Barrel = create OBJECT MOBILE_STATIC_INFO_NUTOIL_BARREL at {BarrelCreate}
+	NO_BarrelFX = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 on NO_Barrel time -1
+
+	
+	NO_Barrels = create OBJECT NORSE_BARREL_02 at {StockpileMarker}
+  	NO_Barrels2 = create OBJECT NORSE_BARREL_02 at {520.185, 156.066, 1917.978}
+  	NO_Barrels3 = create OBJECT NORSE_BARREL_02 at {521.060, 156.101, 1923.072}
+  	NO_Barrels4 = create OBJECT NORSE_BARREL_02 at {903.620, 162.516, 2095.594}
+  	
+  	
+  	override mesh for NO_Barrels with "m_nutoilbarrelstack01"
+  	override mesh for NO_Barrels2 with "m_nutoilbarrelstack01"
+  	override mesh for NO_Barrels3 with "m_nutoilbarrelstack01"
+  	override mesh for NO_Barrels4 with "m_nutoilbarrelstack01"
+  
+  
+  	set NO_Barrels2 focus to {523.940, 156.115, 1920.156}
+  	set NO_Barrels3 focus to {518.971, 156.118, 1925.761}
+  	set NO_Barrels4 focus to {904.439, 162.438, 2092.788}
+  
+  	disable NO_Barrels pickup
+  	disable NO_Barrels moveable
+  	disable NO_Barrels2 pickup
+  	disable NO_Barrels2 moveable
+  	disable NO_Barrels3 pickup
+  	disable NO_Barrels3 moveable
+  	disable NO_Barrels4 pickup
+  	disable NO_Barrels4 moveable
+
+	
+	
+	enable NO_Brother[0] indestructible
+	enable NO_Brother[1] indestructible
+	enable NO_Brother[2] indestructible
+	enable NO_Brother[3] indestructible
+
+	disable NO_Brother[0] pickup
+	disable NO_Brother[1] pickup
+	disable NO_Brother[2] pickup
+	disable NO_Brother[3] pickup
+	
+	disable NO_Brother[0] reactable
+	disable NO_Brother[1] reactable
+	disable NO_Brother[2] reactable
+	disable NO_Brother[3] reactable
+
+NO_BrotherAntiInfluence[0] = create anti influence on NO_Brother[0] radius 2
+NO_BrotherAntiInfluence[1] = create anti influence on NO_Brother[0] radius 2 
+NO_BrotherAntiInfluence[2] = create anti influence on NO_Brother[0] radius 2
+NO_BrotherAntiInfluence[3] = create anti influence on NO_Brother[0] radius 2
+
+end script NO_CreateBrothers
+
+//-----------------------------------------------------------------
+// NutOil
+//-----------------------------------------------------------------
+
+begin script NO_NutOil
+	FX = 0
+	NewAlignment = 0
+	
+start
+
+	NO_CurrentTarget = 1
+    
+	run script NO_Intro
+	run script NO_CreateBrothers
+	
+	//TO RUN TH EOUTRO uncomment and get rid ofthe intro
+	//run script MidLevelCutScenes(NO_CurrentTarget, NO_Brother[NO_CurrentTarget], NO_Barrel)			
+	//wait 5000 seconds
+	
+	//standard amount given 
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 with amount 1 text "BW2T_SCRIPT_04FINAL_CHALLENGENAME_NUTOIL" amount 1 description "BW2T_SCRIPT_04FINAL_NUT_OIL_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_4_NUTOIL_HIGH
+	L4ShowingNutOil = 1
+	
+	//run background script NO_SetAntiInfluence
+	run background script NO_BoundsCheck
+
+	NO_ReminderScroll = create highlight SILVER name "BW2T_SCRIPT_04FINAL_CHALLENGENAME_NUTOIL" remind "BW2T_SCRIPT_04FINAL_NUT_OIL_REMINDER" at {NO_ReminderScrollPos[NO_CurrentTarget-1]}
+	ALTITUDE of NO_ReminderScroll = 3
+    attach music "nutoilsong" to NO_Brother[1] range 30
+
+	NO_FirstThrowFromNewIsland = NO_TRUE
+
+	while NO_CurrentTarget <= 3
+
+		enable NO_Barrel pickup
+		enable NO_Barrel cylindar override
+		NO_OutOfBounds= 0
+		NO_HitWater = 0
+		NO_ThrowPos = marker at {NO_Barrel}
+		
+		if NO_Influence exists
+			delete NO_Influence
+		end if 
+		
+		if InfluenceFX exists
+			delete InfluenceFX
+		end if
+
+		InfluenceFX = create visual effect "gp_s_area.ves" strength 0.6 scale 5 at {NO_Barrel} time -1 
+		set InfluenceFX colour red 200 green 200 blue 230
+		//set Highlight alpha 0.7
+
+		NO_Influence = create influence at {NO_Barrel} radius 26
+		
+		run script NO_PickUpBarrel
+		NO_FirstThrowFromNewIsland = NO_FALSE
+		run script NO_ThrowBarrel
+		/*
+			if NO_HitWater == 1
+				begin fullscreen cinema
+					say "Hit Water.. "
+					wait until read
+				end cinema
+			elsif  NO_OutOfBounds == 1
+				begin fullscreen cinema
+					say "Too Far.. "
+					wait until read
+				end cinema
+			end if
+		*/
+	end while
+
+	wait 2 seconds	
+
+
+	if NO_GivenAlignment == 0
+		// helping the brothers out is worth good points the first time
+		NewAlignment = get player 0 alignment + GLOBAL_VALUE_ALIGNMENT_LAND_4_NUTOIL
+		set player 0 alignment NewAlignment
+		NO_GivenAlignment = 1
+	end if
+
+	// say it's complete first to avoid script asserts
+	NO_LevelCompleate = 1
+
+	run script NO_tributeSytem
+
+	if NO_HighLight exists
+		delete NO_HighLight
+		wait 1 seconds
+	end if
+
+	disable NO_Brother[0] indestructible
+	disable NO_Brother[1] indestructible
+	disable NO_Brother[2] indestructible
+	disable NO_Brother[3] indestructible
+
+	enable NO_Brother[0] pickup
+	enable NO_Brother[1] pickup
+	enable NO_Brother[2] pickup
+	enable NO_Brother[3] pickup
+	
+	delete NO_BrotherAntiInfluence[0] 
+	delete NO_BrotherAntiInfluence[1]  
+	delete NO_BrotherAntiInfluence[2] 
+	delete NO_BrotherAntiInfluence[3]
+	
+	//run background script NO_Setup
+
+end script NO_NutOil
+
+//-----------------------------------------------------------------
+// NO_SingSong
+//-----------------------------------------------------------------
+
+begin script NO_SingSong
+
+start
+	attach music "nutoilsong" to NO_Brother[NO_CurrentTarget-1]
+
+	begin known dialogue  
+	if NO_CurrentTarget == 1 and NO_VerseSung < 1
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE1_01"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE1_02"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE1_03"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE1_04"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE1_05"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE1_06"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE1_07"
+		wait until read
+		NO_VerseSung++
+	elsif NO_CurrentTarget == 2 and NO_VerseSung < 2
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE2_01"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE2_02"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE2_03"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE2_04"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE2_05"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE2_06"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE2_07"
+		wait until read
+		NO_VerseSung++
+	elsif NO_CurrentTarget == 3 and NO_VerseSung < 3
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE3_01"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE3_02"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE3_03"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE3_04"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE3_05"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE3_06"
+		wait until read
+		say "BW2T_SCRIPT_04FINAL_NUT_OIL_SONG_VERSE3_07"
+		wait until read
+		NO_VerseSung++
+	end if
+	end known dialogue
+
+	detach music from NO_Brother[NO_CurrentTarget-1]
+	
+end script NO_SingSong
+
+
+//-----------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------
+
+begin script NO_Intro
+	FirstPos = 0
+	SecondPos = 0
+	CamOffset = 0
+	
+	
+start 
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	begin cinema
+		
+		
+		if NO_DoneIntro == 0	
+			wait 2 seconds		
+			
+			run script NO_CreateBrothers
+			
+			//run script NO_CamMoveToTarget(NO_Barrel ,marker at {5.000,5.000,5.000},NO_TargetPos[NO_CurrentTarget])
+			//set camera position to {NO_NewCamPos}
+			//set camera focus to {NO_Barrel}
+			
+			//run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+			//move camera position to {NO_NewCamPos} time 2
+			//move camera focus to {NO_Barrel} time 2
+			
+			FirstPos = marker at get target from {NO_Brother[NO_CurrentTarget-1]} to {NO_Barrel} distance 1 angle 180
+			SecondPos = marker at get target from {NO_Brother[NO_CurrentTarget-1]} to {NO_Barrel} distance 5 angle 180
+			wait 0.8 seconds
+			
+			set NO_Brother[NO_CurrentTarget-1] position to {355.082,151.465,1946.133}
+			move NO_Brother[NO_CurrentTarget-1] position to {355.082,151.465,1946.133}
+			set NO_Brother[NO_CurrentTarget-1] focus to {350.908,151.537,1948.216}
+			set camera position to {350.036,152.730,1948.215}
+			set camera focus to {442.797,146.623,1911.362}
+			set camera lens 50
+			set camera lens 40 time 14
+			set fade in time 3
+				
+	
+			
+			play anim "A_p_L4Nutoil_brother_talk1" on NO_Brother[NO_CurrentTarget-1] loop 10000
+			say "BW2T_SCRIPT_04FINAL_NUT_OIL_10"
+			wait 2 seconds
+			move camera position to {350.186,152.719,1948.152} time 14
+			move camera focus to {448.773,148.471,1931.954} time 14
+			
+			start music "nutoilsongchorus1"
+			wait 2 seconds
+			//set camera position to {348.013,159.689,1953.571}
+			//set camera focus to {432.718,125.740,1912.666}
+			//set camera lens 70
+			//move camera position to {348.013,159.689,1953.571} time 8
+			//move camera focus to {434.506,128.181,1914.509} time 8
+			wait until read
+			
+			say "BW2T_SCRIPT_04FINAL_NUT_OIL_20"
+			wait until read
+			//move camera position to {339.328,156.577,1954.034} time 12
+			//move camera focus to {433.716,127.555,1938.262} time 12
+			play anim "A_p_L4Nutoil_brother_dance1" on NO_Brother[NO_CurrentTarget-1] loop 10000
+			wait 4 seconds
+			say "BW2T_SCRIPT_NUTOILSONG_CHORUS_1"
+			
+			set camera position to {353.631,152.217,1949.727}
+			set camera focus to {382.064,156.381,1853.950}
+			move camera position to {353.686,152.225,1949.539} time 20
+			move camera focus to {382.120,156.389,1853.763} time 20
+			set camera lens 40
+			
+			wait 7.25 seconds
+			
+			set camera position to {351.500, 152.360, 1945.402}
+			set camera focus to {445.272, 153.789, 1980.107}
+			move camera position to {351.530, 152.360, 1945.322} time 10
+			move camera focus to {445.301, 153.789, 1980.026} time 10
+			
+			wait 4 seconds
+			
+			//set camera position to {351.336, 152.368, 1945.685}
+			//set camera focus to {449.468, 151.805, 1964.911}
+			
+			set camera position to {350.833,152.367,1949.193}
+			set camera focus to {427.246,151.865,1884.213}
+			move camera position to {350.833,152.367,1949.193} time 10
+			move camera focus to {427.014,151.867,1884.411} time 10
+			
+			wait 4 seconds
+			set camera position to {344.631,159.334,1949.807}
+			set camera focus to {432.223,118.025,1924.880}
+			set camera lens 70
+			wait 2 seconds
+			
+			NO_DoneIntro = 1
+		else
+			wait 2 seconds
+			run script NO_CreateBrothers
+			set fade in time 3
+		end if
+		
+		//run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+		//move camera position to {NO_NewCamPos} time 2
+		//move camera focus to {NO_Barrel} time 2
+		stop music with fadetime 4
+	end cinema
+
+end script NO_Intro
+
+//-----------------------------------------------------------------
+// PickUpBarrel
+//-----------------------------------------------------------------
+
+begin script NO_PickUpBarrel
+	DeadTimer = create timer for 0 seconds
+	ResetBarrel = NO_FALSE
+	BarrelCtr = 0
+start
+
+	//begin interactive camera
+	set DeadTimer time to 100 seconds
+		
+		if NO_HighLight == 0 
+			NO_HighLight = create visual effect VISUAL_EFFECT_TOWN_BEAM at {NO_TargetPos[NO_CurrentTarget]} time -1
+		end if
+		
+		begin loop
+			if NO_FirstThrowFromNewIsland == NO_FALSE and ResetBarrel == NO_FALSE and get DeadTimer time remaining == 0 and not {NO_Barrel} near {NO_TargetPos[NO_CurrentTarget-1]} radius 15
+				delete NO_Barrel
+				NO_Barrel = create OBJECT MOBILE_STATIC_INFO_NUTOIL_BARREL at {NO_TargetPos[NO_CurrentTarget-1]}
+				enable NO_Barrel cylindar override
+				NO_BarrelFX = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 on NO_Barrel time -1
+
+				if NO_Influence exists
+					delete NO_Influence
+				end if 
+				
+				if InfluenceFX exists
+					delete InfluenceFX
+				end if
+
+				InfluenceFX = create visual effect "gp_s_area.ves" strength 0.6 scale 5 at {NO_Barrel} time -1 
+				set InfluenceFX colour red 200 green 200 blue 230
+				//set Highlight alpha 0.7
+
+				NO_Influence = create influence at {NO_Barrel} radius 26
+
+				ResetBarrel = NO_TRUE
+			end if
+
+			while BarrelCtr != 4
+				if {NO_Barrel} near {NO_Brother[BarrelCtr]} radius 1
+					move NO_Brother[BarrelCtr] position to {NO_Brother[BarrelCtr]} + {2,0,0}
+				end if
+				BarrelCtr++
+			end while
+
+			BarrelCtr = 0
+
+		until NO_Barrel is HELD or NO_OutOfBounds == 2 
+		end loop
+
+		if NO_HighLight == 0 
+			begin interactive camera
+				move camera focus to {NO_TargetPos[NO_CurrentTarget]} time 2
+				//NO_HighLight = create visual effect VISUAL_EFFECT_TOWN_BEAM at {NO_TargetPos[NO_CurrentTarget]} time 20
+			end interactive camera
+		end if
+	//end interactive camera
+
+end script NO_PickUpBarrel
+
+//-----------------------------------------------------------------
+// Throw Barrel
+//-----------------------------------------------------------------
+
+begin script NO_ThrowBarrel
+NewBarelPos = 0
+start
+	
+	//begin interactive camera
+		wait until not NO_Barrel is HELD or NO_OutOfBounds == 2 
+		if InfluenceFX exists
+			delete InfluenceFX
+		end if
+		NO_NumShots++
+		disable NO_Barrel pickup
+
+	//end interactive camera
+	
+	begin fullscreen cinema
+
+		begin loop 
+			wait 0.5 seconds
+			run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+			move camera position to {NO_NewCamPos} time 1
+			move camera focus to {NO_Barrel} time 1			
+			until not NO_Barrel is FLYING or {NO_Barrel} under water or NO_OutOfBounds != 0 
+		end loop
+	
+		
+	//begin fullscreen cinema
+		if not {NO_Barrel} under water and NO_OutOfBounds == 0
+
+			if {NO_Barrel} near {NO_TargetPos[NO_CurrentTarget]} radius GLOBAL_VALUE_LAND_4_NUTOIL_RADIUS_AROUND_HOLE
+				NewBarelPos = marker at {NO_HighLight}
+				delete NO_HighLight
+				NO_HighLight = 0
+				run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_Brother[NO_CurrentTarget])
+				//move camera position to {NO_NewCamPos} time 2
+				//move camera focus to {NO_Barrel} time 2
+				//wait until camera ready
+				
+				run script NO_SuccessfulShot
+				
+				//run script NO_GoToBarrel
+				run script MidLevelCutScenes(NO_CurrentTarget, NO_Brother[NO_CurrentTarget], NO_Barrel)
+				NO_CurrentTarget++
+				NO_FirstThrowFromNewIsland = NO_TRUE
+
+				delete NO_ReminderScroll
+				if NO_CurrentTarget <= 3
+					NO_ReminderScroll = create highlight SILVER name "BW2T_SCRIPT_04FINAL_NUT_OIL_REMINDER" remind "BW2T_SCRIPT_04FINAL_NUT_OIL_REMINDER" at {NO_ReminderScrollPos[NO_CurrentTarget-1]}
+				end if
+				ALTITUDE of NO_ReminderScroll = 3
+				detach music from NO_Brother[NO_CurrentTarget-1]
+				if NO_CurrentTarget <= 3
+					attach music "nutoilsong" to NO_Brother[NO_CurrentTarget] range 30
+				end if
+				
+				run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+				//move camera position to {NO_NewCamPos} time 2
+				//move camera focus to {NO_Barrel} time 2
+				wait until camera ready
+			else
+				run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+				move camera position to {NO_NewCamPos} time 2
+				move camera focus to {NO_Barrel} time 2
+				wait until camera ready
+			end if
+		elsif NO_OutOfBounds == 0
+			run script NO_UnsuccessfulShot
+			delete NO_Barrel
+			NO_Barrel = create OBJECT MOBILE_STATIC_INFO_NUTOIL_BARREL at {NO_TargetPos[NO_CurrentTarget-1]}
+			NO_BarrelFX = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 on NO_Barrel time -1
+			run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+			move camera position to {NO_NewCamPos} time 2
+			move camera focus to {NO_Barrel} time 2
+			wait until camera ready
+			NO_HitWater = 1
+		elsif NO_OutOfBounds == 1
+			run script NO_UnsuccessfulShot
+			delete NO_Barrel
+			NO_Barrel = create OBJECT MOBILE_STATIC_INFO_NUTOIL_BARREL at {NO_TargetPos[NO_CurrentTarget-1]}
+			NO_BarrelFX = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 on NO_Barrel time -1
+			run script NO_CamMoveToTarget(NO_Barrel ,NO_BarrelOffset,NO_TargetPos[NO_CurrentTarget])
+			move camera position to {NO_NewCamPos} time 2
+			move camera focus to {NO_Barrel} time 2
+			wait until camera ready
+		end if 
+		//wait 1 seconds
+	end cinema
+
+end script NO_ThrowBarrel
+
+//-----------------------------------------------------------------
+// CamMoveToTarget
+//-----------------------------------------------------------------
+
+begin script NO_CamMoveToTarget(Target,Offset,Face)
+	
+	
+start
+	NO_NewCamPos = 0
+	NO_NewCamPos = marker at get target from {Face} to {Target} distance NO_CamDistance angle NO_CamAngle
+	NO_NewCamPos = marker at get world position from {NO_NewCamPos} facing {Target} to {Offset}
+
+end script NO_CamMoveToTarget
+
+//-----------------------------------------------------------------
+
+begin script MidLevelCutScenes(Stage, Brother, Barrel)
+Extra1 = 0
+Extra2 = 0
+Extra3 = 0
+start	
+
+	set fade red 0 green 0 blue 0 time 1
+	wait 1 seconds
+	begin cinema
+		
+		
+		wait 1.5 seconds
+		if Stage == 1
+			start music "nutoilsongchorus2"
+			set Barrel position to {518.310,156.041,1919.341}
+			delete NO_BarrelFX
+			NO_BarrelFX = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 on NO_Barrel time -1
+			set Brother position to {518.191,156.039,1920.728}
+			move Brother position to {518.191,156.039,1920.728}
+			set Brother focus to {514.310,155.988,1920.408}
+			
+			play anim "A_p_L4Nutoil_brother_dance2" on Brother loop 10000
+			set camera position to {486.099,174.675,1931.400}
+			set camera focus to {568.261,127.124,1899.966}
+			move camera position to {495.774,169.075,1927.698} time 12
+			move camera focus to {577.937,121.524,1896.265} time 12
+			set fade in time 3
+			wait 7 seconds
+			
+			
+			
+			
+			set camera position to {515.038,157.041,1921.073}
+			set camera focus to {614.068,149.881,1909.159}
+			set camera lens 50
+			move camera position to {515.185,157.030,1921.055} time 12
+			move camera focus to {614.215,149.871,1909.141} time 12
+			wait 2 seconds
+			say "BW2T_SCRIPT_NUTOILSONG_CHORUS_2"
+			wait 5 seconds
+			
+			set camera position to {512.493,157.429,1923.871}
+			set camera focus to {594.664,146.287,1867.975}
+			set camera lens 40
+			move camera position to {512.782,157.390,1923.675} time 12
+			move camera focus to {594.953,146.248,1867.779} time 12
+			wait 7 seconds
+			
+			set camera position to {502.848,163.356,1918.440}
+			set camera focus to {598.490,135.483,1927.156}
+			set camera lens 70
+			move camera position to {500.894,163.926,1918.262} time 12
+			move camera focus to {596.536,136.053,1926.978} time 12
+			wait 7 seconds
+		elsif Stage == 2
+			start music "nutoilsongchorus3"
+			set Barrel position to {909.193,163.202,2091.270}
+			delete NO_BarrelFX
+			NO_BarrelFX = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 on NO_Barrel time -1
+			set Brother position to {908.150,163.009,2093.427}
+			move Brother position to {908.150,163.009,2093.427}
+			set Brother focus to {910.445,163.262,2094.077}
+			
+			play anim "A_p_L4Nutoil_brother_dance3" on Brother loop 10000
+			set camera position to {918.380,177.811,2082.574}
+			set camera focus to {865.084,107.807,2130.109}
+			move camera position to {918.018,177.337,2082.897} time 12
+			move camera focus to {864.722,107.333,2130.431} time 12
+			set fade in time 3
+			wait 7 seconds
+			
+			set camera position to {913.791,169.062,2100.691}
+			set camera focus to {868.405,118.989,2026.985}
+			set camera lens 50
+			move camera position to {913.501,168.743,2100.224} time 12
+			move camera focus to {868.115,118.670,2026.518} time 12
+			wait 2 seconds
+			say "BW2T_SCRIPT_NUTOILSONG_CHORUS_3"
+			wait 5 seconds
+			
+			set camera position to {911.690,164.297,2095.405} 
+			set camera focus to {819.271,153.939,2058.637} 
+			set camera lens 50
+			move camera position to {912.300,164.297,2093.877} time 12
+			move camera focus to {819.881,153.939,2057.110} time 12
+			wait 7 seconds
+			
+			set camera position to {918.310,170.440,2089.445}
+			set camera focus to {842.938,119.869,2131.413}
+			set camera lens 70
+			move camera position to {920.744,172.074,2088.090} time 12
+			move camera focus to {845.372,121.503,2130.057} time 12
+			wait 7 seconds
+		elsif Stage == 3
+			start music "nutoilsong"
+			//Final one...
+			set Barrel position to {889.388,196.810,2217.749}
+			delete NO_BarrelFX
+			NO_BarrelFX = create visual effect "gp_s_rayfxglow.ves" strength 0.1 scale 0.1 on NO_Barrel time -1
+			set NO_Brother[3] position to {890.608,196.820,2217.794}
+			set NO_Brother[1] position to {890.121,196.783,2216.850}
+			set NO_Brother[2] position to {888.094,196.690,2216.290}
+			set NO_Brother[0] position to {889.156,196.855,2218.299}
+			move NO_Brother[3] position to {890.608,196.820,2217.794}
+			move NO_Brother[1] position to {890.121,196.783,2216.850}
+			move NO_Brother[2] position to {888.094,196.690,2216.290}
+			move NO_Brother[0] position to {889.156,196.855,2218.299}
+			set NO_Brother[3] focus to {887.761,196.867,2230.173}
+			set NO_Brother[1] focus to {889.915,196.843,2220.445}
+			set NO_Brother[2] focus to {887.761,196.867,2230.173}
+			set NO_Brother[0] focus to {889.374,196.371,2213.925}
+			play anim "a_p_singing" on NO_Brother[3] loop 10000
+			play anim "A_P_CELEBRATION3" on NO_Brother[1] loop 10000
+			play anim "A_P_EXCITED_2" on NO_Brother[2] loop 10000
+			play anim "a_p_sit_clap_loop_1" on NO_Brother[0] loop 10000
+			ALTITUDE of NO_Brother[0] = 0.55
+			
+			set NO_Brother[1] carrying CARRIED_OBJECT_NONE
+			set NO_Brother[2] carrying CARRIED_OBJECT_NONE
+				
+	
+			
+			Extra1 = create VILLAGER NORSE_FARMER at {896.545, 197.885, 2225.949}
+			Extra2 = create VILLAGER NORSE_FARMER at {896.851, 197.850, 2224.960}
+			Extra3 = create VILLAGER NORSE_FARMER at {894.796, 198.060, 2230.069}
+
+			set Extra1 focus to {Extra2}
+			set Extra2 focus to {Extra1}
+			set Extra3 focus to {891.562, 198.202, 2228.418}
+
+			play anim "a_p_ambient2" on Extra1 loop -1
+			play anim "a_p_dance_celebrate01" on Extra2 loop -1
+			play anim "a_p_dance_celebrate05" on Extra3 loop -1
+
+			set camera position to {878.290,213.438,2234.343}
+			set camera focus to {922.638,151.902,2169.182}
+			move camera position to {879.441,211.840,2232.651} time 12
+			move camera focus to {923.789,150.305,2167.490} time 12
+			
+			//Praise be! The brew is finished! Lets drink it lads! Here's some tribute!
+			say "BW2T_SCRIPT_04FINAL_NUT_OIL_30"
+			wait until read
+			set fade in time 3
+
+
+			wait 7 seconds
+			
+			
+			set camera position to {896.785,208.850,2232.371}
+			set camera focus to {860.829,151.400,2158.836}
+			set camera lens 40
+			move camera position to {896.655,208.643,2232.107} time 12
+			move camera focus to {860.699,151.194,2158.572} time 12
+			wait 7 seconds
+			
+			set camera position to {890.557,198.843,2223.199}
+			set camera focus to {894.121,178.555,2125.347}
+			set camera lens 40
+			move camera position to {888.461,198.843,2223.121} time 16
+			move camera focus to {892.025,178.555,2125.270} time 16
+			wait 12 seconds
+			set fade red 0 green 0 blue 0 time 2
+			wait 2 seconds
+			
+			set camera position to {737.941,462.776,2404.335}
+			set camera focus to {721.724,391.921,2335.658}
+			set camera lens 70
+			wait 0.5 seconds
+			
+			delete Extra1 
+			delete Extra2
+			delete Extra3 
+			
+			set fade in time 2
+			wait 2 seconds
+			eject good spirit
+			say "BW2T_SCRIPT_07FINAL_CHALLENGE_SICK_TOWN_160"
+			wait until read
+			send good spirit home
+		end if
+		stop music with fadetime 4
+	end cinema
+	
+end script MidLevelCutScenes
+
+//-----------------------------------------------------------------
+// GoToBarrel
+//-----------------------------------------------------------------
+
+begin script NO_GoToBarrel
+
+	FirstPos = marker at get target from {NO_Brother[NO_CurrentTarget-1]} to {NO_Barrel} distance 1 angle 180
+	SecondPos = marker at get target from {NO_TargetPos[NO_CurrentTarget]} to {NO_TargetPos[NO_CurrentTarget-1]} distance 5 angle 270
+		
+start
+	// do dialogue/singing in background
+	run background script NO_SingSong
+	
+	// move brother close to the barrel
+	SPEED of NO_Brother[NO_CurrentTarget-1] = 0.8
+	move NO_Brother[NO_CurrentTarget-1] position to {FirstPos}
+	wait until {NO_Brother[NO_CurrentTarget-1]} near {FirstPos} radius 1
+
+	play anim "A_P_DANCE_WORSHIP1" on NO_Brother[NO_CurrentTarget-1]
+	wait until NO_Brother[NO_CurrentTarget-1] played
+
+	// move away from the barrel
+	//wait 2 seconds
+	move NO_Brother[NO_CurrentTarget-1] position to {SecondPos}
+	wait until {NO_Brother[NO_CurrentTarget-1]} near {SecondPos} radius 1
+	move villager NO_Brother[NO_CurrentTarget-1] focus to {FirstPos}
+
+	play anim "A_P_DANCE_WORSHIP1" on NO_Brother[NO_CurrentTarget-1]
+	wait until NO_Brother[NO_CurrentTarget-1] played
+	play anim "A_P_DANCE_WORSHIP2" on NO_Brother[NO_CurrentTarget-1]
+	wait until NO_Brother[NO_CurrentTarget-1] played
+	play anim "A_P_DANCE_WORSHIP3" on NO_Brother[NO_CurrentTarget-1]
+	wait until NO_Brother[NO_CurrentTarget-1] played
+	
+end script NO_GoToBarrel
+
+
+//-----------------------------------------------------------------
+// SetAntiInfluence
+//-----------------------------------------------------------------
+
+begin script NO_SetAntiInfluence
+	ThrowRadius = 60
+start
+	
+	while NO_LevelCompleate == 0
+		
+		if not {NO_Barrel} near {NO_ThrowPos} radius ThrowRadius and NO_Barrel is HELD
+			if not NO_AntiInfluence exists
+				NO_AntiInfluence = create anti influence on NO_Barrel radius 15
+			end if
+		else
+			if NO_AntiInfluence exists
+				delete NO_AntiInfluence
+			end if	
+		end if 
+	
+	end while
+	
+end script NO_SetAntiInfluence
+
+//-----------------------------------------------------------------
+// tributeSytem
+//-----------------------------------------------------------------
+
+begin script NO_tributeSytem
+	MyRubble = 0
+start
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	wait 2.5 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_13 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+	
+end script NO_tributeSytem
+
+//-----------------------------------------------------------------
+// BoundsCheck
+//-----------------------------------------------------------------
+
+begin script NO_BoundsCheck
+start
+	while NO_LevelCompleate == 0
+	
+		if not {NO_Barrel} near {NO_TargetPos[NO_CurrentTarget]} radius 130 and not NO_Barrel is HELD and not {NO_Barrel} near {NO_TargetPos[NO_CurrentTarget-1]} radius 100 and not NO_Barrel is FLYING
+			NO_OutOfBounds = 1
+		elsif not camera position near {NO_TargetPos[NO_CurrentTarget -1 ]} radius 3000
+			//NO_OutOfBounds = 2
+		end if
+	end while
+end script NO_BoundsCheck
+
+//-----------------------------------------------------------------
+// SuccessfulShot
+//-----------------------------------------------------------------
+
+begin script NO_SuccessfulShot
+start
+	begin dialogue
+
+	if NO_NumShots % 4 == 1
+		//GA: thats it
+		eject evil spirit
+		say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_02"
+		wait until read
+		send evil spirit home
+	elsif NO_NumShots % 4 == 2
+		//EA: Yes!
+		eject evil spirit
+		say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_15"
+		wait until read
+		send evil spirit home
+	elsif NO_NumShots % 4 == 3
+		//EA: that is sweet
+		eject evil spirit
+		say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_16"
+		wait until read
+		send evil spirit home
+	elsif NO_NumShots % 4 == 4
+		//GA: nice
+		eject evil spirit
+		say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_17"
+		wait until read
+		send evil spirit home
+	end if
+
+	end dialogue
+
+end script NO_SuccessfulShot
+
+
+//-----------------------------------------------------------------
+// UnsuccessfulShot
+//-----------------------------------------------------------------
+
+begin script NO_UnsuccessfulShot
+start
+	begin dialogue
+	
+	if NO_NumShots % 3 == 1
+		//EA: no
+		eject evil spirit
+		say "BW2T_SCRIPT_GENERIC_12"
+		wait until read
+		send evil spirit home
+	elsif NO_NumShots % 3 == 2
+		//EA: too bad
+		eject evil spirit
+		say "BW2T_SCRIPT_GENERIC_13"
+		wait until read
+		send evil spirit home
+	elsif NO_NumShots % 3 == 0
+		//EA: tough luck
+		eject evil spirit
+		say "BW2T_SCRIPT_GENERIC_14"
+		wait until read
+		send evil spirit home
+	end if
+
+	end dialogue
+
+end script NO_UnsuccessfulShot
+

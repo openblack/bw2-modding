@@ -1,0 +1,6 @@
+run script RunLand7SickTown
+
+begin script RunLand7SickTown
+start
+	run script Land7SickTown
+end script RunLand7SickTown

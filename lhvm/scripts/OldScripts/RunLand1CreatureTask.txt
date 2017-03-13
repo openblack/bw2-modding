@@ -1,0 +1,9 @@
+run script RunLand1CreatureTask
+
+begin script RunLand1CreatureTask
+
+start
+
+run script Land1CreatureTask
+
+end script RunLand1CreatureTask

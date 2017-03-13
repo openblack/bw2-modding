@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run MafiaDeal script
+//-----------------------------------------------------------------------------
+run script RunMafiaDeal
+
+begin script RunMafiaDeal
+
+start
+
+run script Land3MafiaDeal
+
+end script RunMafiaDeal

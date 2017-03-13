@@ -1,0 +1,81 @@
+///////////////////////////////////////////////////////////////////////////////
+//	ARCHERY CHALLENGE
+//	~~~~~~~~~~~~~~~~~
+//
+//	There is a Japanese outpost on this land that is supplying one of the other
+//	towns with food. This outpost has it's fields outside of the walls (if they do have walls)
+//	and they get raided each night by all manner of beasts. The archer who is
+//	watching the fields cannot see the beasts when they strike because he
+//	has poor eyesight. Also the beasts only strike at night.
+//	The player can help the archer get rid of the beasts by clicking in the path of the beasts
+//	allowing the archer take a shot. The difficulty comes from the random
+//	patterns the targets take.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			12-03-03			By:	Steve
+//	Update date:		12-03-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define AC_TRUE						= 1
+define AC_FALSE						= 0
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+	
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script AC_CreateArcher(*Archer, Pos)
+define script AS_ClearUp(*Archer)
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land4ArcheryChallenge
+
+	Archer[1]
+	ArcherPos		= marker at {1078.845,3.272,1350.177}
+
+start
+
+	run script AC_CreateArcher(&Archer[0], ArcherPos)
+	wait 10 seconds
+	run script AS_ClearUp(&Archer[0])
+
+end script Land4ArcheryChallenge
+
+
+//-----------------------------------------------------------------------------
+//	Create the archer that the player directs
+//-----------------------------------------------------------------------------
+begin script AC_CreateArcher(*Archer, Pos)
+start
+
+	Archer[0] = create VILLAGER VILLAGER_INFO_GREEK_FISHERMAN_MALE at {Pos}
+	set Archer[0] ranged tech level 0											// tech level is from 0 - 2
+	ALTITUDE of Archer[0] = 20
+	
+end script AC_CreateArcher
+
+
+//-----------------------------------------------------------------------------
+//	Clear up script objects
+//-----------------------------------------------------------------------------
+begin script AS_ClearUp(*Archer)
+start
+
+	// Delete the archer at the moment - need to attach him to his town eventually
+	if Archer[0] exists
+		delete Archer[0]
+	end if
+
+end script AS_ClearUp

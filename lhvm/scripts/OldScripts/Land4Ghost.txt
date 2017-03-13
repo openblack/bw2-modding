@@ -1,0 +1,264 @@
+//Land4Ghost.txt
+
+global GhostSamuraiStage = 0
+global GSamReleased = 0
+global GSam = 0
+global GWom = 0
+global GMar = 0
+global GSamArrived = 0
+global GMarArrived = 0
+global GMarAttackingGWom = 0
+global GReset = 0
+
+define script HandleGSam
+define script HandleGWom (GWomStartPos)
+define script HandleGMar
+
+//--------------------------------------
+// MAIN
+//--------------------------------------
+begin script Land4Ghost
+
+ GSamStartPos = marker at {1136.936,26.990,596.492}
+ GWomStartPos = marker at {1150.071,40.530,540.952}
+ GMarStartPos = marker at {1257.358,32.074,492.957}
+
+start
+
+	begin loop
+		// wait until correct time of night
+		///wait until get game time > 21 and get game time < 22
+		wait 10 seconds
+		GSamArrived = 0
+		GReset = 0
+
+		// create ghosts
+		GSam = create VILLAGER MALE at {GSamStartPos}
+		/// ghost GSam
+		///enable GSam indestructible
+		disable GSam pickup
+		disable GSam moveable
+		GWom = create VILLAGER FEMALE at {GWomStartPos}
+		/// ghost GWom
+		///enable GWom indestructible
+		disable GWom pickup
+		disable GWom moveable
+		GMar = create VILLAGER MALE at {GMarStartPos}
+		/// ghost GMar
+		///enable GMar indestructible
+		disable GMar pickup
+		disable GMar moveable
+
+		run background script HandleGSam // handles Samurai
+		run background script HandleGWom (GWomStartPos) // handles Woman until the final scene
+		run background script HandleGMar // handles marauder
+
+		while GReset == 0 and GSamReleased == 0  // wait until final scene resolved
+		end while
+
+	until GSamReleased == 1
+	end loop
+
+	delete GSam with fade /// preferably do an ascending to heaven effect
+	delete GWom with fade
+
+end script Land4Ghost
+
+//-----------------------------------------
+// HANDLE GHOST SAMURAI
+//-----------------------------------------
+
+begin script HandleGSam
+
+ GSamRoutePos[4]
+ Flowers = 0
+ FlowerPos = marker at {1183.911,29.933,607.320}
+ FlowerPickingPos = marker at {1182.411,29.933,607.320}
+
+start
+	/// BODGE FLOWERS
+	Flowers = create OBJECT ROCK at {FlowerPos}
+	SCALE of Flowers = 0.3
+
+	GSamRoutePos[0] = marker at {1152.287,26.303,605.287}
+	GSamRoutePos[1] = marker at {1173.195,31.132,594.459}
+	GSamRoutePos[2] = marker at {1165.873,36.060,573.445}
+	GSamRoutePos[3] = marker at {1145.922,43.742,552.808}
+
+	move GSam position to {GSamRoutePos[0]}
+	wait until {GSam} near {GSamRoutePos[0]} radius 1
+	move GSam position to {GSamRoutePos[1]}
+	wait until {GSam} near {GSamRoutePos[1]} radius 1
+
+	/// ADD DISTRACTION OBJECT AND ANIMS
+	/// gather a bunch of flowers
+	/// IF ALTERED THEN MOVE STRAIGHT ON TO NEXT POS
+	/// TEMP BODGE !
+	if {Flowers} near {FlowerPos} radius 5
+		move GSam position to {FlowerPickingPos}
+		wait until {GSam} at {FlowerPickingPos}
+		play anim "A_P_pick_up_bag" on GSam loop 4
+		wait until GSam played
+		///make flower bunch appear in hand?
+	end if
+
+	move GSam position to {GSamRoutePos[2]}
+	wait until {GSam} near {GSamRoutePos[2]} radius 1
+	move GSam position to {GSamRoutePos[3]}
+	wait until {GSam} near {GSamRoutePos[3]} radius 1
+
+	GSamArrived = 1
+
+	if HEALTH of GWom > 0 and GMarArrived == 0
+		///wait until GWom not frozen or invisible etc
+		///move over and hug her BODGE BELOW
+		move GWom position to {GWom}
+		move GSam position to {GWom}+{0,0.3}
+		wait until {GSam} at {GWom}+{0,0.3}
+		set GWom focus to {GSam}
+		set GSam focus to {GWom}
+		play anim "a_p_couple_kiss_man" on GSam loop 1
+		play anim "a_p_couple_kiss_woman" on GWom loop 1
+		wait until GSam played and GWom played
+	end if
+
+	// keep hugging her if the Marauder is yet to arrive until he shows up
+	while GMarArrived == 0 and HEALTH of GWom > 0
+		///hug GWom BODGE BELOW
+		play anim "a_p_couple_kiss_man" on GSam loop 1
+		play anim "a_p_couple_kiss_woman" on GWom loop 1
+		wait until GSam played and GWom played
+	end while
+
+	if HEALTH of GWom > 0
+		/// Possibly put this scene into a Cut-Scene? begin cinema
+		/// attack GMar
+		/// wait until Marauder killed
+		move GMar position to {GSam}+{1,-1} /// BODGE
+		wait until {GMar} at {GSam}+{1,-1} /// BODGE
+		set GMar focus to {GSam} /// BODGE
+		set GSam focus to {GMar} /// BODGE
+		play anim "a_P_pick_up_bag" on GSam loop 1 /// BODGE
+		wait until GSam played /// BODGE
+		HEALTH of GMar = 0 /// BODGE
+
+		/// run over and hug again BODGE BELOW
+		move GWom position to {GWom}
+		move GSam position to {GWom}+{0,0.3}
+		wait until {GSam} at {GWom}+{0,0.3}
+		set GWom focus to {GSam}
+		set GSam focus to {GWom}
+		play anim "a_p_couple_kiss_man" on GSam loop 1
+		play anim "a_p_couple_kiss_woman" on GWom loop 1
+		wait until GSam played and GWom played
+
+		begin dialogue /// TEMP TEXT
+			say "The Ghost Samurai has saved his sweetheart. He is at peace now."
+			wait until read
+		end dialogue
+		/// CHA-CHING reward and reward sounds
+		GSamReleased = 1
+		/// end cinema ?
+	else
+		// move over, mourn her and then commit suicide
+		move GSam position to {GWom}
+		wait until {GSam} near {GWom} radius 2
+		move GSam position to {GSam}
+		set GSam focus to {GWom}
+		play anim "a_P_Mourning" on GSam loop 2
+		wait until GSam played
+		/// commit suicide
+		HEALTH of GSam = 0 /// BODGE
+		wait 2 seconds /// BODGE
+		delete GSam with fade
+		delete GWom with fade
+		GReset = 1
+	end if
+
+end script HandleGSam
+
+//-----------------------------------------
+// HANDLE GHOST WOMAN
+//-----------------------------------------
+
+begin script HandleGWom (GWomStartPos)
+
+ RndLoc = 0
+
+start
+
+while GSamArrived == 0 and GMarArrived == 0
+	// loitering anims
+	RndLoc = marker at {GWomStartPos}+{number from -5 to 5, number from -5 to 5}
+	move GWom position to {RndLoc}
+	wait until {GWom} at {RndLoc}
+	wait 1 second
+	play anim "a_P_looking_for_something" on GWom loop 1
+	wait until GWom played
+end while
+
+end script HandleGWom
+
+//-----------------------------------------
+// HANDLE GHOST MARAUDER
+//-----------------------------------------
+
+begin script HandleGMar
+
+GMarRoutePos[4]
+Count = 0
+
+start
+
+	GMarRoutePos[0] = marker at {1225.313,32.615,494.601}
+	GMarRoutePos[1] = marker at {1210.623,33.555,500.628}
+	GMarRoutePos[2] = marker at {1178.406,35.286,512.425}
+	GMarRoutePos[3] = marker at {1149.937,40.965,521.606}
+
+	// move through waypoints
+	while Count < 4
+		move GMar position to {GMarRoutePos[Count]}
+		wait until {GMar} near {GMarRoutePos[Count]} radius 1
+		Count++
+	end while
+
+	GMarArrived = 1
+
+	///while GWom invisible and GSamArrived == 0
+	///	play anim "M_P_looking_for_something" on GMar loop 1
+	///	wait until GMar played
+	///end while
+
+	if GSamArrived == 0
+		/// attack GWom
+		move GMar position to {GWom} /// BODGE to replicate attack command
+		GMarAttackingGWom = 1
+
+		while HEALTH of GWom > 0 and GMarAttackingGWom == 1
+			if GSamArrived == 1
+				move GMar position to {GMar}
+				GMarAttackingGWom = 0
+			end if
+			if {GMar} near {GWom} radius 2 /// BODGE to replicate attack command
+				HEALTH of GWom = 0 /// BODGE
+			end if /// BODGE
+		end while
+		GMarAttackingGWom = 0
+
+		if HEALTH of GWom <= 0
+			// celebration anim
+			play anim "a_P_rallyingcrowd" on GMar loop 1
+			wait until GMar played
+			delete GMar with fade
+		end if
+	end if
+
+	if HEALTH of GWom > 0 and GSamArrived == 1
+		// get attacked by GSam
+		wait until HEALTH of GMar <= 0
+		delete GMar with fade
+	end if
+	
+
+end script HandleGMar
+

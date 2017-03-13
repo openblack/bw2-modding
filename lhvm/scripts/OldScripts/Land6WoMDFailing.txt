@@ -1,0 +1,99 @@
+///////////////////////////////////////////////////////////////////////////////
+//	WEAPON of MASS DESTRUCTION FAILING
+//	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//	Description:
+//
+//	Rewards:			None
+//
+//	Start date:			28-10-03			By:	Steve
+//	Update date:		19-11-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+//	Will need to base the successful firing based off the percentage completeness of the wonder
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define WoMDF_TRUE					= 1
+define WoMDF_FALSE					= 0
+define WoMDF_TIME_TO_BUILD_WONDER	= 600
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script WoMDF_WonderFiring
+define script WoMDF_WonderFailing
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land6WoMDFailing
+
+	AztecTown				= get TOWN at {1152.297,47.924,754.203} radius 100
+	WonderBuildTimer		= create timer for WoMDF_TIME_TO_BUILD_WONDER seconds
+	WonderBuilt				= WoMDF_FALSE
+	TownTaken				= WoMDF_FALSE
+
+start
+
+	// Check to see if the Aztec wonder has been completed or if the Aztec town has been taken over
+	while WonderBuilt == WoMDF_FALSE and TownTaken == WoMDF_FALSE
+		if get WonderBuildTimer time remaining <= 0
+			WonderBuilt = WoMDF_TRUE
+		else
+			if PLAYER of AztecTown == WoMDF_TRUE
+				TownTaken = WoMDF_TRUE
+			end if
+		end if
+	end while
+
+	// Get the correct resolution depending on whether the wonder was built or the town taken over
+	if WonderBuilt == WoMDF_TRUE
+		run script WoMDF_WonderFiring
+	else
+		run script WoMDF_WonderFailing
+	end if
+
+end script Land6WoMDFailing
+
+
+//-----------------------------------------------------------------------------
+//	Do the wonder firing sequence
+//-----------------------------------------------------------------------------
+begin script WoMDF_WonderFiring
+start
+
+	// Fire the wonder here, then prompt the player to reload
+	say "Wonder should fire here..."
+	wait until read
+	say "The player will be prompted to reload here..."
+	wait until read
+
+end script WoMDF_WonderFiring
+
+
+//-----------------------------------------------------------------------------
+//	Do the wonder failing sequence
+//-----------------------------------------------------------------------------
+begin script WoMDF_WonderFailing
+start
+
+	// Have the building of the wonder halted here
+	say "Wonder should fail to fire here..."
+	wait until read
+
+end script WoMDF_WonderFailing
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

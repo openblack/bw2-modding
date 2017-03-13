@@ -1,0 +1,6 @@
+run script RunLand8DarkDisciples
+
+begin script RunLand8DarkDisciples
+start
+	run script Land8DarkDisciples
+end script RunLand8DarkDisciples

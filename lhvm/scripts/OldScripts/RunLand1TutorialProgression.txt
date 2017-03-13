@@ -1,0 +1,8 @@
+run script RunLand1TutorialProgression
+
+begin script RunLand1TutorialProgression
+start
+	
+	run script Land1TutorialProgression
+
+end script RunLand1TutorialProgression

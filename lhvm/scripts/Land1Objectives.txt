@@ -1,0 +1,49 @@
+//*************************************************************
+//
+//	Land1Objectives
+//
+//*************************************************************
+
+begin script Land1Objectives
+
+Objective1 = 0 // Camera Tutorial
+Objective2 = 0 
+Objective3 = 0 
+Objective4 = 0 
+Objective5 = 0
+Objective6 = 0
+
+start
+
+begin loop
+	if Objective1 == 0 and L1_HandComplete == 1
+		Objective1 = 1
+		play string sound "SCRIPT13_REWARDSTING"
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_HANDTUTORIAL
+	end if
+
+	if Objective2 == 1 and L1_FollowCreatureComplete == 1
+		Objective2 = 1
+		play string sound "SCRIPT13_REWARDSTING"
+		increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_FOLLOWCREATURE
+	end if
+
+	//if Objective3 == 01
+	//	Objective3 = 1
+	//	play string sound "SCRIPT13_REWARDSTING"
+	//	say "Well done! Your town has developed to a city"
+	//	wait until read
+	//	increment reward by 10
+	//end if
+
+	//if Objective4 == 0
+	//	Objective4 = 1
+	//	play string sound "SCRIPT13_REWARDSTING"
+	//	say "Well done! You have harvested over 1000 food"
+	//	wait until read
+	//	increment reward by 5
+	//end if
+
+end loop
+
+end script Land1Objectives

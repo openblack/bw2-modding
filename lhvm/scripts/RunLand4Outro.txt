@@ -1,0 +1,6 @@
+run script RunLand4Outro
+
+begin script RunLand4Outro
+start
+	run script Land4Outro
+end script RunLand4Outro

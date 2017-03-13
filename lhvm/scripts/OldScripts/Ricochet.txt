@@ -1,0 +1,355 @@
+
+global QuitRicochet
+global FailRicochet
+global RicochetComplete
+global TargetNailed
+global RicochetDifficulty
+global BoulderInFlight
+global PriestsAlive
+global LastImpactPoint
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** BOULDER SCRIPT **
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleBoulder (Boulder)
+
+ Smoke = 0
+ Explosive = 0
+ ExplodeBoulder = 0
+ 
+start
+	BoulderInFlight++
+	while Boulder exists and Boulder is not HELD_ANY and Boulder is FLYING and ExplodeBoulder == 0
+		//THE TIME AT THE END OF THIS LINE GIVES THE LENGTH OF THE FLUME
+		Smoke = create special effect SPOT_VISUAL_BONFIRE at {Boulder} time 0.1
+		SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of Smoke = 8.0
+		if ALTITUDE of Boulder < 2
+			ExplodeBoulder = 1
+		end if
+	end while
+
+	LastImpactPoint = marker at {Boulder}
+	Explosive = cast SPELL_FIREBALL_LEVEL_1 spell at {Boulder} + {number from -2 to 2,2,number from -2 to 2} from {Boulder} radius 1.0 time 2 curl 0
+	play sound "LH_SAMPLE_G_CITADELEXPLODE_01_C2"
+	delete Boulder with explosion
+	BoulderInFlight--
+	
+end script HandleBoulder
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** CATAPULT SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script GodsCatapult (CatapultPos)
+ 
+ Catapult = 0
+ TriggerMan = 0
+ TotalPower = 0
+ TargettingRock = 0
+ AimFocus = 0
+ ShotsLeft = 0
+ FieryBoulder = 0
+ RicochetShotsFired = 0
+ ShotsLeftBoard = 0
+ RockFX = 0
+ 
+start
+ Catapult =  create with angle 0 and scale 1 ROCK_OBJECT ROCK at {CatapultPos}
+ enable Catapult indestructible
+ disable Catapult hurt by fire
+ disable Catapult set on fire
+ disable Catapult pickup
+ disable Catapult moveable
+
+ TriggerMan = create VILLAGER VILLAGER_INFO_CRUSADER at {CatapultPos}+{10,0}
+ enable TriggerMan indestructible
+ disable TriggerMan hurt by fire
+ disable TriggerMan set on fire
+ disable TriggerMan moveable
+ disable TriggerMan pickup
+ 
+ TargettingRock = create with angle 0 and scale 0.3 ROCK_OBJECT ROCK at {CatapultPos}+{0,-15}
+ enable TargettingRock indestructible
+ RockFX = create special effect SPOT_VISUAL_HIGHLIGHT_ON_OBJECT on TargettingRock time -1
+ 
+ ShotsLeftBoard = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {CatapultPos}+{0,5}
+ enable ShotsLeftBoard indestructible
+ set ShotsLeftBoard score RicochetDifficulty
+	
+ begin loop
+	wait 0.3 seconds
+	if TargettingRock not exists
+		TargettingRock = create with angle 0 and scale 0.3 ROCK_OBJECT ROCK at {CatapultPos}+{0,-15}
+		enable TargettingRock indestructible
+		RockFX = create special effect SPOT_VISUAL_HIGHLIGHT_ON_OBJECT on TargettingRock time -1
+	elsif {TargettingRock} not near {CatapultPos} radius 40
+		set TargettingRock position to {CatapultPos}+{0,-15}
+	elsif TriggerMan right clicked and TargettingRock is not HELD_ANY and TargettingRock is not FLYING
+		clear right clicked object
+		// move catapult
+		AimFocus = marker at get target from {TargettingRock} to {CatapultPos} distance 10 angle 0
+		set Catapult focus to {AimFocus}
+		// Fire Catapult
+		AimFocus = marker at {AimFocus}+{0.000,5.000,0.000} // fires at 1:1 gradient
+		TotalPower = get distance from {TargettingRock} to {CatapultPos}
+		TotalPower = TotalPower*2
+		if TotalPower > 60
+			TotalPower = 60
+		end if
+		FieryBoulder = create with angle 0 and scale 0.3 ROCK_OBJECT ROCK at {CatapultPos}+{0.000,4.000,0.000}
+		enable FieryBoulder on fire 1
+		disable FieryBoulder affected by wind
+		set FieryBoulder temperature 2000
+		set FieryBoulder velocity heading {AimFocus} speed TotalPower angular x number from 1 to 10 y 10 z number from 1 to 10
+		run background script HandleBoulder (FieryBoulder)
+		ShotsLeft = RicochetDifficulty - RicochetShotsFired - 1
+		set ShotsLeftBoard score ShotsLeft
+		RicochetShotsFired++		
+		wait 3 seconds
+		clear right clicked object		
+	end if
+ until QuitRicochet == 1 or RicochetShotsFired >= RicochetDifficulty or RicochetComplete == 1
+ end loop
+ 
+ if RicochetShotsFired >= RicochetDifficulty
+	wait until BoulderInFlight > 0 or 2 seconds
+ end if
+ 
+ wait until BoulderInFlight == 0 or RicochetComplete == 1 or QuitRicochet == 1
+ if QuitRicochet == 0 and RicochetComplete == 0
+	FailRicochet = 1
+ end if
+ 
+ delete Catapult with fade
+ delete ShotsLeftBoard with fade
+ delete TriggerMan with fade
+ delete RockFX
+ delete TargettingRock with fade
+
+end script GodsCatapult
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** CANCEL GAME SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script CancelRicochet (HighlightPos)
+
+ CancelScroll = 0
+ 
+start
+	CancelScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CANCEL_QUEST at {HighlightPos}
+	ALTITUDE of CancelScroll = 15
+	
+	while QuitRicochet == 0 and RicochetComplete == 0 and FailRicochet == 0
+		if CancelScroll right clicked
+			QuitRicochet = 1
+		end if
+	end while
+	delete CancelScroll
+	
+end script CancelRicochet
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** INDIVIDUAL PRIEST SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandlePriest (Priest, PriestPos, TargetPos)
+
+ FlingAim = 0
+ PriestRay = 0
+ DistanceAway = 0
+ KillLoop = 0
+ KillTimer = create timer for 0 seconds
+ Smoke = 0
+
+start
+	set Priest focus to {TargetPos}
+	Priest play ANM_P_PRAY loop -1
+	PriestRay = create special effect SPOT_VISUAL_MAGIC_BEAM on Priest time -1
+	add PriestRay target on TargetPos
+
+	while QuitRicochet == 0 and FailRicochet == 0 and RicochetComplete == 0 and KillLoop == 0
+		if {LastImpactPoint} near {Priest} radius 20
+			// find launch target
+			DistanceAway = get distance from {LastImpactPoint} to {Priest}
+			FlingAim = marker at get target from {LastImpactPoint} to {Priest} distance DistanceAway angle 0
+			FlingAim = marker at {FlingAim} + {0.000,5.000,0.000}
+			// ignite and launch priest
+			enable Priest moveable
+			enable Priest on fire 1
+			disable Priest affected by wind
+			set Priest temperature 2000
+			set Priest velocity heading {FlingAim} speed 20 angular x number from 1 to 10 y 10 z number from 1 to 10
+			KillLoop = 1
+		end if
+	end while
+
+	if QuitRicochet == 0 and FailRicochet == 0 and RicochetComplete == 0
+		set KillTimer time to 5 seconds
+		while Priest is FLYING and get KillTimer time remaining > 0 and Priest exists
+			//THE TIME AT THE END OF THIS LINE GIVES THE LENGTH OF THE FLUME
+			Smoke = create special effect SPOT_VISUAL_BONFIRE at {Priest} time 0.1
+			SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of Smoke = 8.0
+		end while
+		PriestsAlive--
+	end if
+	
+	delete Priest
+	delete PriestRay
+	
+end script HandlePriest
+
+//-------------------------------------------------------------------------------------------------------
+// ** TARGET SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script HandleTarget (TargetPos, CatapultPos)
+
+ NumberOfPriests = 4
+ Priest = 0
+ PriestPos = 0
+ Idol = 0
+ Count = 1
+ CurrentDegrees = 0
+ DegreesEach = 0
+
+start
+	Idol = create special effect SPOT_VISUAL_STEAM at {TargetPos} time -1
+	SCRIPT_OBJECT_PROPERTY_TYPE_SCALE of Idol = 4.0
+	enable Idol indestructible
+	disable Idol pickup
+	disable Idol moveable
+	DegreesEach = 360/NumberOfPriests
+	PriestsAlive = NumberOfPriests
+	while Count <= NumberOfPriests
+		CurrentDegrees = CurrentDegrees + DegreesEach
+		PriestPos = marker at get target from {CatapultPos} to {TargetPos} distance 5 angle CurrentDegrees
+		Priest = create VILLAGER MALE at {PriestPos}
+		disable Priest pickup
+		run background script HandlePriest (Priest, PriestPos, TargetPos)
+		Count++
+	end while
+	wait until RicochetComplete == 1 or QuitRicochet == 1 or FailRicochet == 1 or PriestsAlive == 0
+	
+	delete Idol
+	if RicochetComplete == 0 and QuitRicochet == 0 and FailRicochet == 0 and PriestsAlive == 0
+		TargetNailed = 1
+	end if
+	
+end script HandleTarget
+
+
+//-------------------------------------------------------------------------------------------------------
+// ** MAIN SCRIPT**
+//-------------------------------------------------------------------------------------------------------
+
+begin script Ricochet
+
+ Highlight = 0
+ HighlightPos = marker at {1407.356,5.025,1297.723}
+ Eternity = 0
+ 
+ HitCount = 0 
+ NumberOfTargets = 5
+ CatapultPos = marker at {1407.356,5.025,1297.723}
+ TargetPos[5]
+  
+start
+RicochetDifficulty = 15 // starting difficulty, drops by 3 per win
+TargetPos[0] = marker at {1316.965,6.365,1341.126}
+TargetPos[1] = marker at {1317.573,26.329,1394.052}
+TargetPos[2] = marker at {1400.020,26.850,1365.277}
+TargetPos[3] = marker at {1540.867,3.083,1317.594}
+TargetPos[4] = marker at {1394.697,5.360,1305.807}
+
+begin loop // main game loop
+
+	Highlight = create highlight CHALLENGE_DOLPHIN_SHOOT HIGHLIGHT_CHALLENGE at {HighlightPos}
+	ALTITUDE of Highlight = 15	
+	
+	wait until Highlight right clicked
+	QuitRicochet = 0
+	FailRicochet = 0
+	RicochetComplete = 0
+	LastImpactPoint = marker at {1439.723,0.000,1097.252} // out at sea
+	delete Highlight
+	run background script CancelRicochet (HighlightPos)
+
+	begin cinema
+		move camera position to {CatapultPos} + {7.500,5.000,7.500} time 3
+		move camera focus to {CatapultPos} time 3
+		say "Move the glowing marker to aim the catapult."
+		wait until read
+		say "The further the marker is away from the catapult..."
+		wait until read
+		say "The more power the shot will have."
+		wait until read
+		wait until camera ready
+	end cinema
+
+	// run catapult until Win, lose or quit
+	run background script GodsCatapult (CatapultPos)
+	HitCount = 0
+
+	while HitCount < NumberOfTargets and QuitRicochet == 0 and FailRicochet == 0
+		
+		TargetNailed = 0
+		run background script HandleTarget (TargetPos[HitCount], CatapultPos)
+		wait until TargetNailed == 1 or QuitRicochet == 1 or FailRicochet == 1
+		wait 0.2 seconds
+		if QuitRicochet == 0 and FailRicochet == 0
+			HitCount++
+			if HitCount < NumberOfTargets
+				begin dialogue
+					say "Target Destroyed!"
+					wait until read
+					say "On to the next..."
+					wait until read
+				end dialogue
+			end if
+		end if
+		
+	end while
+	
+	if QuitRicochet == 0 and FailRicochet == 0
+		RicochetComplete = 1
+		if RicochetDifficulty > 6
+			RicochetDifficulty = RicochetDifficulty - 3
+			begin dialogue
+				say "RICOCHET COMPLETE! CONGRATULATIONS!"
+				wait until read
+				say "Increasing Difficulty..."
+				wait until read
+			end dialogue
+		else
+			begin dialogue
+				say "RICOCHET COMPLETE! CONGRATULATIONS!"
+				wait until read
+				say "You've completed this challenge on it's toughest level."
+				wait until read
+			end dialogue		
+		end if		
+	elsif QuitRicochet == 0
+		begin dialogue
+			say "OUT OF AMMO - YOU FAILED."
+			wait until read
+			say "Click the scroll to play again."
+			wait until read
+		end dialogue
+	else
+		begin dialogue
+			say "YOU QUIT"
+			wait until read
+		end dialogue
+	end if
+
+until Eternity == 1
+end loop
+
+
+end script Ricochet

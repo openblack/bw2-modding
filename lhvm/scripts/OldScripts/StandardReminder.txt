@@ -1,0 +1,18 @@
+//challenge StandardReminder
+
+/*begin help script StandardReminder(AdvisorSpeak) 
+
+start
+
+	begin dialogue
+		if good spirit speaks constant AdvisorSpeak
+			eject good spirit
+		elsif evil spirit speaks constant AdvisorSpeak
+			eject evil spirit
+		end if		
+		
+		say single line constant AdvisorSpeak
+		wait until read
+	end dialogue
+
+end script StandardReminder*/

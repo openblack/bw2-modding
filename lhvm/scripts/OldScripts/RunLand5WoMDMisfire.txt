@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Weapon of mass destruction script
+//-----------------------------------------------------------------------------
+run script RunLand5WoMDMisfire
+
+begin script RunLand5WoMDMisfire
+
+start
+
+	run script Land5WoMDMisfire
+
+end script RunLand5WoMDMisfire

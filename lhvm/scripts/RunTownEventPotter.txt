@@ -1,0 +1,8 @@
+run script RunTownEventPotter
+
+begin script RunTownEventPotter
+start
+
+	run script TownEventPotter
+
+end script RunTownEventPotter

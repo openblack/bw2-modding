@@ -1,0 +1,86 @@
+//-----------------------------------------------------------------------------
+//	Cosntants
+//-----------------------------------------------------------------------------
+define MS_SPY_INTERVAL = 50		//the time betwene spying attampts
+
+//Constants for villages
+define MS_GREEK_TOWN = 0
+define MS_FISHING_VILLAGE = 1
+define MS_FARMING_VILLAGE = 2
+define MS_FORREST_VILLAGE = 3
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global MS_Spy = 0
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script MS_Advisors
+define script MarauderAttack(AttackTown)
+
+//-----------------------------------------------------------------------------
+//	Marauder Spy
+//-----------------------------------------------------------------------------
+begin script Land1MarauderSpy
+	BrowsePos[4]
+	SpyTown = 0
+	SpyTownID = 0
+	SpyCreatePos = marker at {1043.580, 145.539, 1584.266}
+start
+
+
+	run script Land1Globals
+
+	MS_Spy = create VILLAGER NORSE_FARMER at {SpyCreatePos}
+
+	BrowsePos[MS_GREEK_TOWN] = marker at {1213.048, 170.150, 1203.601}	//Players town
+	BrowsePos[MS_FARMING_VILLAGE] = marker at {1011.191, 195.007, 1399.909}	//Farming village		
+	BrowsePos[MS_FISHING_VILLAGE] = marker at {1095.918, 127.015, 1602.672}	//Fishing village
+	BrowsePos[MS_FORREST_VILLAGE] = marker at {1549.275, 174.020, 1139.142}	//Forester village
+
+	begin loop
+
+		//Attack Fishing village first
+		if PLAYER of L1NorseFisherSettlement == 0
+			SpyTown = L1NorseFisherSettlement
+			SpyTownID = MS_FISHING_VILLAGE
+		elsif PLAYER of L1NorseForesterSettlement == 0	
+			SpyTown = L1NorseForesterSettlement
+			SpyTownID = MS_FORREST_VILLAGE
+		elsif PLAYER of L1NorseFarmSettlement == 0
+			SpyTown = MS_FARMING_VILLAGE
+			SpyTownID = MS_FISHING_VILLAGE
+		elsif PLAYER of L1GreekTown == 0
+			SpyTown = L1GreekTown
+			SpyTownID = MS_GREEK_TOWN
+		end if
+
+		//Move the spy to the spy position overlooking the town 
+		move MS_Spy position to {BrowsePos[SpyTownID]}
+		wait until {MS_Spy} at {BrowsePos[SpyTownID]}
+		
+		//If there isnt a platoon clsoe by then initiate an attack
+		if not get platoon of player 0 nearest {SpyTown} radius 50 exists
+			run script MarauderAttack(SpyTownID)
+		end if
+		
+		//Wait a bit before doing it again
+		wait MS_SPY_INTERVAL seconds
+	end loop
+
+end script Land1MarauderSpy
+
+begin script MS_Advisors
+start
+end script MS_Advisors
+
+//-----------------------------------------------------------------------------
+//	Marauder Attack ---- FOR ALEX!!!
+//-----------------------------------------------------------------------------
+begin script MarauderAttack(AttackTown)
+start
+	say "Attacking"
+	wait until read
+end script MarauderAttack

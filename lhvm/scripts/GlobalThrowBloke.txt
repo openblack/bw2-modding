@@ -1,0 +1,974 @@
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+define TB_FALSE = 0
+define TB_TRUE = 1
+define TB_NUM_TRIBUTE_LEVELS = 3
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+
+global TB_Bloke = 0
+global TB_NextTributeLevel = 0
+global TB_Stopped = 0
+global GlobalWait = 0
+global GlobalWait2 = 0
+global TB_HitByRock = 0
+global TB_HitByOre = 0
+global TB_underwater = 0
+global BlokeEaten = 0
+global CreatingNewBloke = TB_FALSE
+global NearAltar = TB_FALSE
+
+//-----------------------------------------------------------------
+// Bloke Sacrifice checks.
+//-----------------------------------------------------------------
+
+global Sacrificed = 0
+global Sacri = 0
+global HasBlokeBeenSacrificed = TB_FALSE
+
+//-----------------------------------------------------------------
+// Audio Checks, so that Bloke doesn't say things until he has been thrown at least once
+//-----------------------------------------------------------------
+
+global KneeCheck = TB_FALSE
+global ThrownBefore = TB_FALSE
+
+//-----------------------------------------------------------------
+// Init Globals: please initialised these before calling TB_GlobalThrowBloke
+//-----------------------------------------------------------------
+
+global TB_TributeLevel[TB_NUM_TRIBUTE_LEVELS]
+global TB_TributeAmount[TB_NUM_TRIBUTE_LEVELS]
+global TB_PlayerTown = 0
+global TB_BlokeCreate = 0
+global TB_BlokeCamp = 0
+global TB_LandNumber = 0
+global TB_InHand = 0
+global TB_LastRandomNum = 0
+global Campfire = 0
+
+//-----------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------
+
+define script TB_ShowTT(CurrentThrow,PrevRecordThrow)
+define script RandomLandedAudio
+define script RandomLandedAudio2
+define script RandomInHandAudio
+define script CheckWhatsThrown
+define script FollowCam2
+define script CreateNewThrowBloke(BlokePos)
+define script SubLoop
+
+//-----------------------------------------------------------------
+// Throw Bloke
+//-----------------------------------------------------------------
+begin script TB_GlobalThrowBloke
+
+	CampfireSitPos = marker at {TB_BlokeCamp} + {0.000,0.000,1.000}
+	LightFirePos = marker at {TB_BlokeCamp} + {-2,0,0}
+	RandomAction = 0
+	SitLoops = 0
+	Altar = 0
+	handpos = 0
+	BlokePos = 0
+	camerapos = 0
+	PainTimer = create timer for 0 seconds
+	Timer = 0
+	Pos = marker at {1185.421, 160.440, 704.460}
+	Waituntilrespawn = 0
+	OldTarget = 0
+	ThrowPos = 0
+	LandingPos = 0
+	CurrentThrowDist = 0
+	RecordThrowDist = 0
+
+start
+
+	// INITIAL SETUP
+	Campfire = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {TB_BlokeCamp}
+	Sacrificed = get total of stat STATS_EVT_SACRIFICES
+	disable Campfire pickup
+	ALTITUDE of Campfire = 0.1
+	run script CreateNewThrowBloke(TB_BlokeCreate)
+	run background script CheckWhatsThrown
+	run background script SubLoop
+	MyCreature = get player 0 creature
+
+	//********************************************************************
+	//MAIN SCRIPT
+	//********************************************************************
+	begin loop
+
+		Altar = get building ABODE_NUMBER_ALTAR in TB_PlayerTown min built 1
+
+			if not TB_Bloke exists and CreatingNewBloke == TB_FALSE
+				run script CreateNewThrowBloke(TB_BlokeCreate)
+			end if	
+			
+			if Altar exists
+				if TB_Bloke exists and {TB_Bloke} near {Altar} radius 10
+						Sacrificed = get total of stat STATS_EVT_SACRIFICES
+						NearAltar = TB_TRUE
+				else
+						NearAltar = TB_FALSE
+				end if				
+			end if
+
+			if TB_Bloke is HELD or TB_Bloke in MyCreature hand or TB_Bloke is FLYING or not TB_Bloke exists
+							Waituntilrespawn = TB_TRUE
+				else
+							Waituntilrespawn = TB_FALSE
+			end if
+			
+			if Waituntilrespawn == TB_FALSE
+					if not {TB_Bloke} near {Campfire} radius 2 and TB_Bloke exists
+							if variable get TB_Bloke navigation state != variable NAV_STATE_NAVIGATING 
+									move TB_Bloke position to {CampfireSitPos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+							end if
+							if TB_Bloke exists and not {TB_Bloke} near {CampfireSitPos} radius 10
+									set villager TB_Bloke default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_RUNNING
+							else 
+									set villager TB_Bloke default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_WALKING
+							end if
+                    else 
+						if TB_Bloke exists
+							set TB_Bloke carrying CARRIED_OBJECT_CROOK
+							move villager TB_Bloke focus to {Campfire}
+							play anim "a_p_prod_campfire" on TB_Bloke loop 3
+							wait until TB_Bloke played or TB_Bloke is HELD or TB_Bloke in MyCreature hand or TB_Bloke is FLYING or not TB_Bloke exists or not {TB_Bloke} near {Campfire} radius 2
+							set TB_Bloke carrying CARRIED_OBJECT_NONE
+							play anim "a_p_norse_sitting_into" on TB_Bloke
+							wait until TB_Bloke played or TB_Bloke is HELD or TB_Bloke in MyCreature hand or TB_Bloke is FLYING or not TB_Bloke exists or not {TB_Bloke} near {Campfire} radius 2
+							play anim "a_p_norse_sitting" on TB_Bloke loop 8
+							wait until TB_Bloke played or TB_Bloke is HELD or TB_Bloke in MyCreature hand or TB_Bloke is FLYING or not TB_Bloke exists or not {TB_Bloke} near {Campfire} radius 2
+							play anim "a_p_norse_sitting_outof" on TB_Bloke
+							wait until TB_Bloke played or TB_Bloke is HELD or TB_Bloke in MyCreature hand or TB_Bloke is FLYING or not TB_Bloke exists or not {TB_Bloke} near {Campfire} radius 2			
+						end if
+					end if
+			end if
+
+			if Waituntilrespawn == TB_TRUE
+
+					set TB_Bloke carrying CARRIED_OBJECT_NONE
+					if TB_Bloke exists and TB_Bloke is FLYING and {TB_Bloke} on land//and BlokeEaten == 0
+								OldTarget = marker at {TB_Bloke}
+								ThrowPos = OldTarget
+								LandingPos = 0
+								run script FollowCam2
+								if {TB_Bloke} on land
+										LandingPos = marker at {TB_Bloke}
+											//wait until not TB_Bloke is FLYING
+											if LandingPos != 0
+												CurrentThrowDist = get distance from {ThrowPos} to {LandingPos}
+												// start showing the tooltips before we update the record... so that the tt can work it out for themselves (and not congratulate the player if they exactly match the previous)
+												run background script TB_ShowTT(CurrentThrowDist,RecordThrowDist)
+												if CurrentThrowDist > RecordThrowDist
+													RecordThrowDist = CurrentThrowDist
+												end if
+											end if
+								end if
+						end if
+				end if
+	until HasBlokeBeenSacrificed == TB_TRUE
+	end loop
+
+end script TB_GlobalThrowBloke
+
+
+// PLACE DOWN ANOTHER THROW BLOKE AT THE SPECIFED POSITION
+begin script CreateNewThrowBloke(BlokePos)
+
+ArsePos = 0
+FlyPos = 0
+Poo1 = 0
+Poo2 = 0
+MyCreature2 = 0
+Influence = 0
+Effect = 0
+
+start
+	MyCreature = get player 0 creature
+	CreatingNewBloke = TB_TRUE
+	Sacri = get total of stat STATS_EVT_SACRIFICES
+	if Sacri > Sacrificed
+			begin dialogue
+					ThrowBlokeSacrificed = 1
+					say "BW2T_SCRIPT_04FINAL_THROWBLOKE_280"
+					wait until read
+					ThrowBlokeSacrificed = 3
+					//wait until read
+			end dialogue
+			HasBlokeBeenSacrificed = TB_TRUE
+	end if
+	if BlokeEaten == 0 and HasBlokeBeenSacrificed == TB_FALSE
+		TB_underwater = 0
+		TB_Bloke = create VILLAGER MERRYMAN1 at {BlokePos}
+		//move TB_Bloke position to {TB_BlokeCamp}
+		Influence = create influence on TB_Bloke radius 3
+		enable TB_Bloke indestructible
+		enable TB_Bloke pickup
+		disable TB_Bloke reactable
+		//disable TB_Bloke hurt by fire
+		wait 0.9 seconds
+	end if
+	if BlokeEaten == 1
+
+		wait 3 seconds
+
+		play anim C_INDIVIDUAL_NEED_A_POO on MyCreature
+		wait until MyCreature played
+		//wait until creature MyCreature finished script action
+
+		force MyCreature CREATURE_POO Campfire
+		wait until creature MyCreature finished script action
+
+		ArsePos = marker at arse position of MyCreature 
+		TB_Bloke = create VILLAGER MERRYMAN1 at {ArsePos} 
+		set TB_Bloke position to {ArsePos}
+		ALTITUDE of TB_Bloke = 3
+		FlyPos = marker at get world position from MyCreature to {0.020, 0.194, -3.249}
+		set TB_Bloke velocity heading {FlyPos} speed 5
+		Effect = create visual effect "gp_s_posion_cloud_wind.ves" strength 20.0 scale 1 on TB_Bloke time 10 //Gp_s_smoke_chimney.ves
+		set Effect colour red 100 green 50 blue 50
+		enable TB_Bloke indestructible
+		enable TB_Bloke pickup
+		disable TB_Bloke reactable
+		//disable TB_Bloke hurt by fire
+
+		//set TB_Bloke velocity heading {FlyPos} speed 1
+
+		release MyCreature
+		wait until not TB_Bloke is FLYING
+		//stop visual effect Effect
+		Influence = create influence on TB_Bloke radius 3
+		BlokeEaten = 0
+		//This Needs to move
+		begin dialogue
+			say "BW2T_SCRIPT_04FINAL_THROWBLOKE_210"
+			wait until read
+		end dialogue
+		//delete Effect
+	end if
+	CreatingNewBloke = TB_FALSE
+end script CreateNewThrowBloke
+
+
+//***************************
+// SHOW THROW DISTANCE SCRIPT
+//***************************
+begin script TB_ShowTT(CurrentThrow,PrevRecordThrow)
+	Tooltip = 0
+	WaitSeconds = 3
+	TributeAmount = 0
+start
+	wait WaitSeconds seconds
+	if CurrentThrow > PrevRecordThrow
+		Tooltip = create tooltip on hand with text "BW2T_SCRIPT_07FINAL_THROWBLOKE_TT_10" amount CurrentThrow
+		wait WaitSeconds seconds
+		delete Tooltip
+
+		while TB_NextTributeLevel < TB_NUM_TRIBUTE_LEVELS and TB_TributeLevel[TB_NextTributeLevel] <= CurrentThrow
+			TributeAmount += TB_TributeAmount[TB_NextTributeLevel]
+			TB_NextTributeLevel++
+		end while
+
+		if TributeAmount > 0
+			increment tribute by TributeAmount
+		end if
+	else
+		Tooltip = create tooltip on hand with text "BW2T_SCRIPT_07FINAL_THROWBLOKE_TT_20" amount CurrentThrow
+		wait WaitSeconds seconds
+		delete Tooltip
+
+		Tooltip = create tooltip on hand with text "BW2T_SCRIPT_07FINAL_THROWBLOKE_TT_30" amount PrevRecordThrow
+		wait WaitSeconds seconds
+		delete Tooltip
+	end if
+end script TB_ShowTT
+
+// Check whats in the players hand and detects if things are thrown at Throw bloke
+begin script CheckWhatsThrown
+
+ObjectInHand = 0
+ObjectHasHitSomething = 0
+
+start
+
+	begin loop
+		while TB_HitByRock == 0 and GlobalWait2 == 0
+			ObjectInHand = get object held
+			if ObjectInHand exists
+				if variable get ObjectInHand type == variable ROCK_OBJECT
+					wait until not ObjectInHand is HELD
+					enable ObjectInHand physics tracking
+							while ObjectInHand is FLYING
+								  ObjectHasHitSomething = ObjectInHand hit object
+							end while
+					if ObjectHasHitSomething == TB_Bloke
+							disable ObjectInHand physics tracking
+							set physics at position {ObjectInHand} with strength {5,0,5} radius 10 random 1
+							TB_HitByRock = 1
+					end if
+				end if
+				if variable get ObjectInHand type == variable ORE_ROCK
+					wait until not ObjectInHand is HELD
+					enable ObjectInHand physics tracking
+							while ObjectInHand is FLYING
+								  ObjectHasHitSomething = ObjectInHand hit object
+							end while
+					if ObjectHasHitSomething == TB_Bloke
+							disable ObjectInHand physics tracking
+							TB_HitByOre = 1
+					end if
+				end if
+			end if
+		end while
+		ObjectInHand = 0
+	until HasBlokeBeenSacrificed == TB_TRUE
+	end loop
+
+end script CheckWhatsThrown
+
+
+
+begin script FollowCam2
+
+Blokenotonland = TB_FALSE
+PainTimer = create timer for 0 seconds
+CamTimer = create timer for 0 seconds
+CamCounter = 0
+CamCounter2 = 0
+FallTimer = create timer for 0 seconds
+FallDialog = 0
+
+start
+
+		set FallTimer time to 2 seconds
+
+		begin cinema
+			CamCounter2 = number from 1 to 2
+			set game speed to 0.2
+				while TB_Bloke is FLYING and Blokenotonland == TB_FALSE
+
+					if not {TB_Bloke} on land or {TB_Bloke} under water
+						Blokenotonland = TB_TRUE
+					end if
+
+					if ALTITUDE of TB_Bloke < 0.4 and get PainTimer time remaining <= 0
+						if TB_LandNumber == 4
+							run background script RandomLandedAudio
+							set PainTimer time to 2 seconds
+						elsif TB_LandNumber == 8
+							run background script RandomLandedAudio2
+							set PainTimer time to 2 seconds
+						end if
+					end if
+
+					if get FallTimer time remaining <= 0 //and FallDialog == 0
+							if ALTITUDE of TB_Bloke > 100 and FallDialog == 1
+									say "BW2T_SCRIPT_08FINAL_THROWBLOKE_BEINGTHROWN_20"
+									wait until read
+								FallDialog = 2
+							end if
+							if ALTITUDE of TB_Bloke > 200 and not FallDialog >= 1
+								say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_80"
+								wait until read
+								FallDialog = 1
+								set FallTimer time to 1 seconds
+							end if
+					end if
+
+					if CamCounter2 == 1
+							if get CamTimer time remaining <= 0
+								CamCounter = number from 0 to 6
+									if CamCounter == 0
+										set camera focus to {TB_Bloke}
+										set camera position to get world position from TB_Bloke to {-0.640, 2.191, -6.096}
+										//set camera position follow TB_Bloke offset {10,2,0}
+									end if
+									if CamCounter == 1
+										set camera lens 40
+										set camera focus to {TB_Bloke}
+										set camera position to get world position from TB_Bloke to {-0.584, 1.483, 2.967}
+									end if
+									if CamCounter == 2
+										set camera lens 70
+										set camera focus to {TB_Bloke}
+										set camera position to get world position from TB_Bloke to {-2.863, 5.250, 2.029}
+									end if
+									if CamCounter == 3
+										//set camera roll 15 time 0.001
+										set camera lens 50
+										set camera focus to {TB_Bloke}
+										set camera position to get world position from TB_Bloke to {0.962, 4.162, -4.323}
+									end if
+									if CamCounter == 4
+										set camera focus to {TB_Bloke}
+										set camera position to get world position from TB_Bloke to {0.962, 10.162, 4.323}
+									end if
+									if CamCounter == 5
+										set camera focus to {TB_Bloke}
+										set camera position to get world position from TB_Bloke to {20.962, -5.162, 0.323}
+									end if
+									if CamCounter == 6
+										//set camera roll -15 time 0.001
+										set camera focus to {TB_Bloke}
+										set camera position to get world position from TB_Bloke to {0.962, -10.162, 20.323}
+									end if
+									set CamTimer time to 0.3 seconds
+							end if
+						end if
+					if CamCounter2 == 2
+							move camera focus to {TB_Bloke} time 1
+							set camera lens 30 time 3
+							move camera position to {TB_Bloke} time 1 easein 0 easeout 0
+					end if
+					//move camera position follow TB_Bloke(GOLFCAM)
+				end while
+			move camera to face TB_Bloke distance 10 time 2
+			set camera lens 70 time 2
+			wait 1 seconds
+			TB_Stopped = 1
+			set game speed to 1
+			end cinema
+			Blokenotonland = TB_FALSE
+end script FollowCam2
+
+
+
+begin script SubLoop
+
+RandomAction = 0
+NotonFire = TB_FALSE
+PainTimer = create timer for 0 seconds
+Countdown = 0
+EvilAdvisorComments = 0
+AdvisorTimer = create timer for 0 seconds
+ThrowBlokeTalking = 0
+
+start
+
+	begin loop
+	// *******************************************************************
+	// Throw Bloke in CREATURES HAND
+		if TB_Bloke exists and TB_Bloke in MyCreature hand
+
+			 wait until not TB_Bloke in MyCreature hand
+				if TB_Bloke in limbo
+					BlokeEaten = 1
+					delete TB_Bloke
+					wait 1 second
+				end if
+		end if
+	
+	//********************************************
+	// If Throw bloke is HELD
+	if TB_Bloke exists and TB_Bloke is HELD //or TB_Bloke in MyCreature hand
+			TB_underwater = 0
+			if number from 1 to 40 == 1
+					if TB_LandNumber == 4
+							ThrowBlokeTalking = 1
+							//begin dialogue
+								if TB_InHand == 0 and dialogue ready
+									run background script RandomInHandAudio
+									TB_InHand = 1
+								end if
+							//end dialogue
+					elsif TB_LandNumber == 8
+							ThrowBlokeTalking = 1
+							//begin dialogue
+								if TB_InHand == 0 and dialogue ready
+										run background script RandomInHandAudio
+										TB_InHand = 1
+								end if
+							//end dialogue
+					end if
+			end if
+			//Evil Advisor comments
+			if number from 1 to 40 == 1 and EvilAdvisorComments < 4 and get AdvisorTimer time remaining <= 0 and ThrowBlokeTalking == 0
+				if dialogue ready
+				begin dialogue
+						if EvilAdvisorComments == 0 and get AdvisorTimer time remaining <= 0
+										eject evil spirit
+											say "BW2T_SCRIPT_04FINAL_THROWBLOKE_320"
+											wait 2 seconds
+										send evil spirit home
+						end if
+						if EvilAdvisorComments == 1 and get AdvisorTimer time remaining <= 0
+										eject evil spirit
+											say "BW2T_SCRIPT_04FINAL_THROWBLOKE_330"
+											wait 2 seconds
+										send evil spirit home
+						end if
+						if EvilAdvisorComments == 2 and get AdvisorTimer time remaining <= 0
+										eject evil spirit
+											say "BW2T_SCRIPT_04FINAL_THROWBLOKE_340"
+											wait 2 seconds
+										send evil spirit home
+						end if
+						if EvilAdvisorComments == 3 and get AdvisorTimer time remaining <= 0
+										eject evil spirit
+											say "BW2T_SCRIPT_04FINAL_THROWBLOKE_350"
+											wait 2 seconds
+										send evil spirit home	
+						end if
+				end dialogue
+				end if
+				set AdvisorTimer time to 25 seconds
+				EvilAdvisorComments ++
+			end if
+
+			ThrowBlokeTalking = 0
+
+	end if
+
+	if TB_Bloke exists and TB_Bloke is HELD and {TB_Bloke} near {Campfire} radius 0.5
+		wait 1 second
+				if TB_Bloke is HELD and {TB_Bloke} near {Campfire} radius 0.5
+					enable TB_Bloke on fire 1.0
+				end if
+	end if
+
+	if TB_Bloke exists
+		if TB_Bloke on fire and NotonFire == TB_FALSE
+			NotonFire = TB_TRUE
+			release TB_Bloke
+			if dialogue ready
+			begin dialogue
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_150"
+				wait until read
+			end dialogue
+			end if
+		end if
+	end if
+
+	if TB_Bloke exists and not TB_Bloke on fire
+		NotonFire = TB_FALSE
+	end if
+
+
+	//**************************************************
+	// Is Throw Bloke DROWNING?
+
+	if not {TB_Bloke} on land and not TB_Bloke is HELD and not TB_Bloke is FLYING and TB_Bloke is DROWNING//and ThrowBlokeSacrificed == 0 and NearAltar == TB_FALSE
+			if TB_underwater == 0 and CreatingNewBloke == TB_FALSE and not {TB_Bloke} on land
+					if dialogue ready and HasBlokeBeenSacrificed == TB_FALSE
+					begin dialogue
+						wait 1 second
+						if not HasBlokeBeenSacrificed == TB_TRUE
+							RandomAction = number from 1 to 2
+							if RandomAction == 1
+									say "BW2T_SCRIPT_04FINAL_THROWBLOKE_220"
+									wait until read
+									//wait until read
+							end if
+							if RandomAction == 2
+									say "BW2T_SCRIPT_04FINAL_THROWBLOKE_160"
+									wait until read
+									//wait until read
+							end if
+							TB_underwater = 1
+						end if
+					end dialogue
+					end if
+			end if
+	end if
+
+				if not camera position near {TB_Bloke} radius 100 and TB_underwater == 1 and not TB_Bloke is FLYING and Countdown == 0
+					set PainTimer time to 60 seconds
+					Countdown = 1
+				end if
+
+				if Countdown == 1 and get PainTimer time remaining <= 0 and not camera position near {TB_Bloke} radius 100
+					delete TB_Bloke
+					wait 2 seconds
+					Countdown = 0
+				end if
+		until HasBlokeBeenSacrificed == TB_TRUE
+		end loop
+
+end script SubLoop
+
+//************************************************************************************
+//***********************************************************************************
+// AUDIO SCRIPTS BELOW
+// **********************************************************************************
+//************************************************************************************
+
+begin script RandomLandedAudio
+
+RandomNum = 0
+ThrowBlokeTalking = 0
+
+start
+	wait 0.2 seconds
+	// If he's hit by a Rock
+	if TB_HitByRock == 1 and ThrowBlokeTalking == 0
+			RandomNum = number from 1 to 2
+			if RandomNum == 1
+					begin known dialogue
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_230"
+						wait until read
+					end known dialogue
+			elsif RandomNum == 2
+					begin known dialogue
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_180"
+						wait until read
+					end known dialogue
+			end if
+			ThrowBlokeTalking = 1
+			GlobalWait2 = 1
+			TB_HitByRock = 0
+	end if
+	// If hes hit by Ore
+		if TB_HitByOre == 1 and ThrowBlokeTalking == 0
+					begin known dialogue
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_250"
+						wait until read
+					end known dialogue
+			ThrowBlokeTalking = 1
+			GlobalWait2 = 1
+			TB_HitByOre = 0
+		end if
+
+	//Main Audio Branch
+if ThrowBlokeTalking == 0
+	RandomNum = number from 1 to 31
+	// Check to make sure Throw Bloke doesn't repeat the same line twice in a row.
+		while RandomNum == TB_LastRandomNum
+				RandomNum = number from 1 to 31
+		end while
+		if ThrownBefore == TB_FALSE
+			while RandomNum == 11 or RandomNum == 14 or RandomNum == 16 or RandomNum == 17 or RandomNum == 19 or RandomNum == 22 or RandomNum == 23
+					RandomNum = number from 1 to 31
+			end while
+		end if
+	TB_LastRandomNum = RandomNum
+	//if dialogue ready
+	begin known dialogue
+		if RandomNum == 1
+			//Ouch!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_10"
+				wait until read
+		elsif RandomNum == 2
+			//Ow! My knee!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_20"
+				KneeCheck = TB_TRUE //Means we can now say the next line (My Other Knee)
+				wait until read
+		elsif RandomNum == 3 and KneeCheck == TB_TRUE
+			//Argh! My other knee!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_30"
+				wait until read
+		elsif RandomNum == 4
+			//No, not my elbow!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_40"
+				wait until read
+		elsif RandomNum == 5
+			//My back! My poor back!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_50"
+				wait until read
+		elsif RandomNum == 6
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_60"
+				wait until read
+		elsif RandomNum == 7
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_70"
+				wait until read
+		elsif RandomNum == 8
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_80"
+				wait until read
+		elsif RandomNum == 9
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_90"
+				wait until read
+		elsif RandomNum == 10
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_100"
+				wait until read
+		elsif RandomNum == 11 and ThrownBefore == TB_TRUE
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_110"
+				wait until read
+		elsif RandomNum == 12
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_120"
+				wait until read
+		elsif RandomNum == 13
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_130"
+				wait until read
+		elsif RandomNum == 14 and ThrownBefore == TB_TRUE
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_140"
+				wait until read
+		elsif RandomNum == 15
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_150"
+				wait until read
+		elsif RandomNum == 16 and ThrownBefore == TB_TRUE
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_160"
+				wait until read
+		elsif RandomNum == 17 and ThrownBefore == TB_TRUE
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_170"
+				wait until read
+				wait 1 seconds
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_180"
+				wait until read
+		elsif RandomNum == 18
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_190"
+				wait until read
+		elsif RandomNum == 19 and ThrownBefore == TB_TRUE
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_200"
+				wait until read
+		elsif RandomNum == 20
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_210"
+				wait until read
+		elsif RandomNum == 21
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_220"
+				wait until read
+		elsif RandomNum == 22 and ThrownBefore == TB_TRUE
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_230"
+				wait until read
+		elsif RandomNum == 23 and ThrownBefore == TB_TRUE
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_240"
+				wait until read
+		elsif RandomNum == 24
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_250"
+				wait until read
+		elsif RandomNum == 25
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_260"
+				wait until read
+		elsif RandomNum == 26
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_BEINGTHROWN_270"
+				wait until read
+		elsif RandomNum == 27
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_70"
+				wait until read
+		elsif RandomNum == 28
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_80"
+				wait until read
+		elsif RandomNum == 30
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_01"
+				wait until read
+		elsif RandomNum == 31
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_02"
+				wait until read
+		end if
+	end known dialogue
+	//end if
+	ThrownBefore = TB_TRUE
+end if
+
+end script RandomLandedAudio
+
+//---------------------------------------------------------------------------
+// Audio for when throw bloke is in hand
+//---------------------------------------------------------------------------
+
+begin script RandomInHandAudio
+
+RandomNum = 0
+HandPos = 0
+
+start
+
+	RandomNum = number from 1 to 14
+		begin dialogue
+				if RandomNum == 1
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_10"
+						wait until read
+				elsif RandomNum == 2
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_20"
+						wait until read
+				elsif RandomNum == 3
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_30"
+						wait until read
+				elsif RandomNum == 4
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_40"
+						wait until read
+				elsif RandomNum == 5
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_50"
+						wait until read
+				elsif RandomNum == 6
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_60"
+						wait until read
+				elsif RandomNum == 7
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_70"
+						wait until read
+				elsif RandomNum == 8
+					HandPos = land height at {TB_Bloke}
+					if HandPos > 400	
+							say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_80"
+							wait until read
+					end if
+					wait until read
+				elsif RandomNum == 9
+					say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_90"
+					wait until read
+				elsif RandomNum == 10
+					say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_100"
+					wait until read
+				elsif RandomNum == 11
+					say "BW2T_SCRIPT_04FINAL_THROWBLOKE_INHAND_110"
+					wait until read
+				elsif RandomNum == 12
+					say "BW2T_SCRIPT_08FINAL_THROWBLOKE_INHAND_10"
+					wait until read
+				elsif RandomNum == 13
+					say "BW2T_SCRIPT_08FINAL_THROWBLOKE_INHAND_20"
+					wait until read
+				elsif RandomNum == 14
+					say "BW2T_SCRIPT_08FINAL_THROWBLOKE_INHAND_30"
+					wait until read
+				end if
+		end dialogue
+		RandomNum = number from 5 to 15
+		wait RandomNum seconds
+		TB_InHand = 0
+
+end script RandomInHandAudio
+
+
+
+// Additional Audio for Land 8?
+
+begin script RandomLandedAudio2
+
+RandomNum = 0
+ThrowBlokeTalking = 0
+
+start
+	wait 0.2 seconds
+	// If he's hit by a Rock
+	if TB_HitByRock == 1 and ThrowBlokeTalking == 0
+			RandomNum = number from 1 to 2
+			if dialogue ready
+			begin known dialogue
+				if RandomNum == 1
+							say "BW2T_SCRIPT_04FINAL_THROWBLOKE_230"
+							wait until read
+				elsif RandomNum == 2
+							say "BW2T_SCRIPT_04FINAL_THROWBLOKE_180"
+							wait until read
+				end if
+			end known dialogue
+			end if
+			ThrowBlokeTalking = 1
+			GlobalWait2 = 1
+			TB_HitByRock = 0
+	end if
+	// If hes hit by Ore
+		if TB_HitByOre == 1 and ThrowBlokeTalking == 0
+					begin known dialogue
+						say "BW2T_SCRIPT_04FINAL_THROWBLOKE_250"
+						wait until read
+					end known dialogue
+			ThrowBlokeTalking = 1
+			GlobalWait2 = 1
+			TB_HitByOre = 0
+		end if
+
+	//Main Audio Branch
+if ThrowBlokeTalking == 0
+	RandomNum = number from 1 to 29
+	// Check to make sure Throw Bloke doesn't repeat the same line twice in a row.
+		while RandomNum == TB_LastRandomNum
+				RandomNum = number from 1 to 29
+		end while
+	TB_LastRandomNum = RandomNum
+	begin known dialogue
+	//begin dialogue
+		if RandomNum == 1
+			//Ouch!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_10"
+				wait until read
+		elsif RandomNum == 2
+			//Ow! My knee!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_20"
+				wait until read
+		elsif RandomNum == 3
+			//Argh! My other knee!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_30"
+				wait until read
+		elsif RandomNum == 4
+			//No, not my elbow!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_40"
+				wait until read
+		elsif RandomNum == 5
+			//My back! My poor back!
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_50"
+				wait until read
+		elsif RandomNum == 6
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_60"
+				wait until read
+		elsif RandomNum == 7
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_70"
+				wait until read
+		elsif RandomNum == 8
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_80"
+				wait until read
+		elsif RandomNum == 9
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_90"
+				wait until read
+		elsif RandomNum == 10
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_100"
+				wait until read
+		elsif RandomNum == 11
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_110"
+				wait until read
+		elsif RandomNum == 12
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_130"
+				wait until read
+		elsif RandomNum == 13
+				say "BW2T_SCRIPT_04FINAL_THROWBLOKE_140"
+				wait until read
+		elsif RandomNum == 14
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_01"
+				wait until read
+		elsif RandomNum == 15
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_02"
+				wait until read
+		elsif RandomNum == 16
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_03"
+				wait until read
+		elsif RandomNum == 17
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_04"
+				wait until read
+		elsif RandomNum == 18
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_05"
+				wait until read
+		elsif RandomNum == 19
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_06"
+				wait until read
+		elsif RandomNum == 20
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_07"
+				wait until read
+		elsif RandomNum == 21
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_08"
+				wait until read
+		elsif RandomNum == 22
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_09"
+				wait until read
+		elsif RandomNum == 23
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_10"
+				wait until read
+		elsif RandomNum == 24
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_11"
+				wait until read
+		elsif RandomNum == 25
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_12"
+				wait until read
+		elsif RandomNum == 26
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_13"
+				wait until read
+		elsif RandomNum == 27
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_14"
+				wait until read
+		elsif RandomNum == 28
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_15"
+				wait until read
+		elsif RandomNum == 29
+				say "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_16"
+				wait until read
+				//wait until not sound "BW2T_SCRIPT_03FINAL_CHALLENGE_THROWBLOKE_16" playing
+		end if
+	end known dialogue
+end if
+
+end script RandomLandedAudio2

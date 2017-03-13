@@ -1,0 +1,34 @@
+//================================================================
+// Land 8 Nymphs
+// Lenny
+//================================================================
+
+//-----------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------
+define IN_TRIBUTE_MULTIPLIER		= 100
+
+//-----------------------------------------------------------------
+// Land 8 Nymphs
+//-----------------------------------------------------------------
+begin script Land8Nymphs
+	Villager	= 0
+start
+/*
+
+	begin loop
+		
+		Villager = get VILLAGER near {CapturePos} radius 40
+		if Villager exists
+			if AGE of Villager == 21
+				increment tribute by 50000
+			elsif AGE of Villager < 21
+				increment tribute by (AGE of Villager * IN_TRIBUTE_MULTIPLIER)
+			elsif AGE of Villager > 21
+				increment tribute by 10000
+			end if
+		end if
+
+	end loop
+*/
+end script Land8Nymphs

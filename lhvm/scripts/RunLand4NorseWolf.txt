@@ -1,0 +1,6 @@
+run script RunLand4NorseWolf
+
+begin script RunLand4NorseWolf
+start
+	run script Land4NorseWolf
+end script RunLand4NorseWolf

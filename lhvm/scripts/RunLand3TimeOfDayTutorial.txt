@@ -1,0 +1,6 @@
+run script RunLand3TimeOfDayTutorial
+
+begin script RunLand3TimeOfDayTutorial
+start
+	run script Land3TimeOfDayTutorial
+end script RunLand3TimeOfDayTutorial

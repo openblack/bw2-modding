@@ -1,0 +1,63 @@
+run script PJTest
+
+begin script PJTest
+
+WhichVillager[100]
+
+firstpos=0
+secondpos=0
+Focuss = 0
+count=0
+
+start	
+begin dialogue
+say "right click roughly where you're gonna put the people"
+wait until mouse right button clicked
+
+firstpos = marker at hand position
+
+clear right clicked object
+clear right clicked position
+
+say "now right click where you're gonna want them to look"
+wait until mouse right button clicked
+
+secondpos = marker at hand position
+clear right clicked object
+clear right clicked position
+
+Focuss = marker at get target from {firstpos} to {secondpos} distance 100 angle 0
+
+say "now move the hand around to create villagers"
+wait 5 seconds
+
+clear dialogue
+end dialogue
+
+while count < 100
+
+	//////////////////////////////////////////////////////////////////////////////
+	//change the villager to the type you want from challengeheaders
+	WhichVillager[count] = create VILLAGER GREEK_FORESTER at hand position
+	set WhichVillager[count] focus to {Focuss}
+	//////////////////////////////////////////////////////////////////////////////
+	
+	//////////////////////////////////////////////////////////////////////////////
+	//change this animation name to whatever you want
+	play anim "a_p_scared_stiff_2" on WhichVillager[count] loop -1
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	//change this value to create them clicker or slower
+	wait 0.5 seconds
+	//////////////////////////////////////////////////////////////////////////////
+
+	count++
+end while
+
+
+wait 100000 seconds
+	
+
+
+end script PJTest

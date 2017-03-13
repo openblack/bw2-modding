@@ -1,0 +1,17 @@
+begin script L4_ThrowBloke
+start
+	TB_BlokeCreate = marker at {1188.685, 152.689, 704.892}
+	TB_BlokeCamp = marker at {1193.337, 152.568, 694.962}
+
+	TB_TributeLevel[0] = 50
+	TB_TributeAmount[0] = GLOBAL_VALUE_TRIBUTE_LAND_4_THROWBLOKE_1
+	TB_TributeLevel[1] = 100
+	TB_TributeAmount[1] = GLOBAL_VALUE_TRIBUTE_LAND_4_THROWBLOKE_2
+	TB_TributeLevel[2] = 150
+	TB_TributeAmount[2] = GLOBAL_VALUE_TRIBUTE_LAND_4_THROWBLOKE_3
+
+	TB_LandNumber = 4
+	TB_PlayerTown = L4GreekTown
+
+	run script TB_GlobalThrowBloke
+end script L4_ThrowBloke

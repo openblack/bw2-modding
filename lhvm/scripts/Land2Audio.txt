@@ -1,0 +1,122 @@
+//-------------------------------------------
+// Constants
+//-------------------------------------------
+define MIN_WAIT = 0.1
+define MAX_WAIT = 1
+
+//-------------------------------------------
+// Script defines
+//-------------------------------------------
+define script Land2AudioCameraScreams(Time)
+define script Land2AudioDistantScreams(Time)
+define script Land2AudioDistantExplosions(Time)
+
+//-------------------------------------------
+// Audio Camea Screams
+//-------------------------------------------
+begin script Land2AudioCameraScreams(Time)
+	AudioTimer = create timer for 0 seconds
+	Volume = 0
+	RandSoundString = 0
+	Position = marker at {0, 0, 0} //Generated
+	WaitTime = 0
+start
+/*
+	AudioTimer = create timer for Time seconds
+
+	begin loop			
+		Volume = (number from 5 to 50) / 10		
+
+		Position = marker at camera position + {number from -50 to 50, 0, number from -50 to 50}
+
+		RandSoundString = number from 0 to 8
+		if RandSoundString < 4
+			play sound "SCRIPT29_ARMYMANLOUDSCREAM" at {Position} 
+		elsif RandSoundString == 6
+			play sound "SCRIPT29_ARMYMANHITHARD" at {Position} 
+		elsif RandSoundString == 7
+			play sound "SCRIPT29_ARMYMANVOCALHIT" at {Position}
+		elsif RandSoundString == 8
+			play sound "SCRIPT29_ARMYWOMANVOCALHIT" at {Position} 
+		end if
+
+		WaitTime = (number from (MIN_WAIT*10) to (MAX_WAIT*10)) / 10
+		wait WaitTime seconds
+
+	until get AudioTimer time remaining == 0
+	end loop
+*/
+end script Land2AudioCameraScreams
+
+//-------------------------------------------
+// Audio Distant Screams
+//-------------------------------------------
+begin script Land2AudioDistantScreams(Time)
+	AudioTimer = create timer for 0 seconds
+	Volume = 0
+	RandSoundString = 0
+	WaitTime = 0
+start
+/*
+	AudioTimer = create timer for Time seconds
+
+	begin loop			
+		Volume = (number from 5 to 50) / 10		
+
+		RandSoundString = number from 0 to 8
+		if RandSoundString < 4
+			play sound "SCRIPT29_ARMYMANLOUDSCREAM" at camera position 
+		elsif RandSoundString == 6
+			play sound "SCRIPT29_ARMYMANHITHARD" at camera position 
+		elsif RandSoundString == 7
+			play sound "SCRIPT29_ARMYMANVOCALHIT" at camera position 
+		elsif RandSoundString == 8
+			play sound "SCRIPT29_ARMYWOMANVOCALHIT" at camera position 
+		end if
+
+		WaitTime = (number from (MIN_WAIT*10) to (MAX_WAIT*10)) / 10
+		wait WaitTime seconds
+
+	until get AudioTimer time remaining == 0
+	end loop
+*/
+end script Land2AudioDistantScreams
+
+//-------------------------------------------
+// Audio Camea Screams
+//-------------------------------------------
+begin script Land2AudioDistantExplosions(Time)
+	AudioTimer = create timer for 0 seconds
+	Volume = 0
+	RandSoundString = 0
+	Position = marker at {0, 0, 0} //Generated
+	WaitTime = 0
+start
+
+	AudioTimer = create timer for Time seconds
+
+	begin loop			
+		Volume = (number from 5 to 50) / 10		
+
+		RandSoundString = number from 1 to 8  //anything above 4 means no sound
+		Position = marker at camera position + {number from -50 to 50, 0, number from -50 to 50}
+/*
+		if RandSoundString == 1
+			//play sound "SCRIPT29_SIEGEWEAPONHITOBJECT" at {Position} 
+		elsif RandSoundString == 2
+			//play sound "SCRIPT29_EXPLOSION1" at {Position} 
+		elsif RandSoundString == 3
+			//play sound "SCRIPT29_EXPLOSION2" at {Position} 
+		elsif RandSoundString == 4
+			//play sound "SCRIPT29_EXPLOSION3" at {Position} 
+		end if
+*/
+//		play sound "SCRIPT29_EXPLOSION5" at {Position} 
+		
+		WaitTime = (number from (MIN_WAIT*10) to (MAX_WAIT*10)) / 10
+		wait WaitTime seconds
+
+	until get AudioTimer time remaining == 0
+	end loop
+
+end script Land2AudioDistantExplosions

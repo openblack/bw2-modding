@@ -1,0 +1,135 @@
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script LookAfterTime(NewTime)
+start
+	begin loop
+		set game time NewTime 
+	end loop
+end script LookAfterTime
+
+//------------------------------------------------------------------------------------------------------------------------
+
+begin script GameOver
+LandNumber = 0
+Creature = 0
+CreaturePos = 0
+CreatureFocus = 0
+CameraPos = 0
+CameraFoc = 0
+CameraLens = 0
+GameTime = 0
+RandomRestart = -1
+FirstLine = -1
+Count = 0
+start
+	//Creature = create DUMB_CREATURE CREATURE_TYPE_COW at {1575.928, 111.473, 838.692}
+	//set creature Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 1.0 time 0
+	
+	//set fade red 0 green 0 blue 0 time 8
+	wait 120 seconds
+	//begin cinema
+	FirstLine = -1
+	while Count < 2
+		while RandomRestart == FirstLine
+			RandomRestart = number from 1 to 5
+		end while
+		FirstLine = RandomRestart
+		if RandomRestart == 1
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_GENERIC_ADVISORS_SUGGEST_RESTART_10"
+				wait until read
+				send good spirit home 
+			end dialogue
+		elsif RandomRestart == 2
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_GENERIC_ADVISORS_SUGGEST_RESTART_20"
+				wait until read
+				send evil spirit home 
+			end dialogue
+		elsif RandomRestart == 3
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_GENERIC_ADVISORS_SUGGEST_RESTART_30"
+				wait until read
+				send good spirit home 
+			end dialogue
+		elsif RandomRestart == 4
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_GENERIC_ADVISORS_SUGGEST_RESTART_40"
+				wait until read
+				send evil spirit home 
+			end dialogue
+		else //if RandomRestart == 5
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_GENERIC_ADVISORS_SUGGEST_RESTART_50"
+				wait until read
+				send evil spirit home 
+			end dialogue
+		end if
+		Count++
+		wait 240 seconds
+	end while
+	
+end script GameOver
+
+//------------------------------------------------------------------------------------------------------------------------
+begin script RecalculatePlatoonExperienceLevels
+	MeleeExperience = 0		
+	RangedExperience = 0	
+	SiegeExperience = 0
+	MeleePlatoon = 0
+	RangedPlatoon = 0
+	SiegePlatoon = 0
+start
+	//Store the best platoon experience the player has.
+	MeleePlatoon = get player 0 most experienced melee platoon 
+	RangedPlatoon = get player 0 most experienced ranged platoon
+	SiegePlatoon = get player 0 most experienced siege weapon
+
+	if MeleePlatoon exists
+		MeleeExperience = get platoon MeleePlatoon experience
+		if MeleeExperience > persistent data "MELEE_EXPERIENCE"
+			set persistent data "MELEE_EXPERIENCE" to MeleeExperience
+		end if
+	end if
+
+	if RangedPlatoon exists
+		RangedExperience = get platoon RangedPlatoon experience
+		if RangedExperience > persistent data "RANGED_EXPERIENCE"
+			set persistent data "RANGED_EXPERIENCE" to RangedExperience
+		end if
+	end if
+
+	if SiegePlatoon exists
+		SiegeExperience = get platoon SiegePlatoon experience
+		if SiegeExperience > persistent data "SIEGE_EXPERIENCE"
+			set persistent data "SIEGE_EXPERIENCE" to SiegeExperience
+		end if
+	end if
+end script RecalculatePlatoonExperienceLevels
+
+//------------------------------------------------------------------------------------------------------------------------
+begin script LandExit
+start
+	run script RecalculatePlatoonExperienceLevels
+end script LandExit
+
+//------------------------------------------------------------------------------------------------------------------------
+begin script LandOver(MainTown)
+start
+	set town MainTown capture all enemy towns
+	disable dialogue manager
+	enable global influence
+	disable game can be lost
+end script LandOver
+
+//------------------------------------------------------------------------------------------------------------------------
+begin script LandStart
+start
+	disable load screen
+end script LandStart

@@ -1,0 +1,6 @@
+run script RunLand8MonsterMine
+
+begin script RunLand8MonsterMine
+start
+	run script Land8MonsterMine
+end script RunLand8MonsterMine

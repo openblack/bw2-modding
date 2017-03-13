@@ -1,0 +1,55 @@
+define L4_NUM_FIREFLIES = 12
+
+begin script Land4Fireflies
+	Location[L4_NUM_FIREFLIES]
+	Scale[L4_NUM_FIREFLIES]
+	Tribute[L4_NUM_FIREFLIES]
+	Object = 0
+	Count = 0
+start
+	Location[0]		= marker at {980.037,183.840,515.144}
+	Location[1]		= marker at {750.177,202.351,604.234}
+	Location[2]		= marker at {878.887,184.811,505.009}
+	Location[3]		= marker at {845.925,187.857,818.193}
+	Location[4]		= marker at {973.074,189.580,878.125}
+	Location[5]		= marker at {1049.145,177.123,540.601}
+	Location[6]		= marker at {994.379,230.970,494.569}
+	Location[7]		= marker at {1060.000,181.095,682.658}
+	Location[8]		= marker at {887.457,184.974,549.818}
+	Location[9]		= marker at {1112.439,176.130,656.020}
+	Location[10]	= marker at {724.947,175.382,758.951}
+	Location[11]	= marker at {873.478,255.160,887.707}
+
+	Scale[0]		= 3
+	Scale[1]		= 3
+	Scale[2]		= 3
+	Scale[3]		= 2.5
+	Scale[4]		= 2.5
+	Scale[5]		= 2
+	Scale[6]		= 2
+	Scale[7]		= 1.5
+	Scale[8]		= 1.5
+	Scale[9]		= 1.5
+	Scale[10]		= 1
+	Scale[11]		= 1
+
+	Tribute[0]		= 50
+	Tribute[1]		= 50
+	Tribute[2]		= 75
+	Tribute[3]		= 100
+	Tribute[4]		= 125
+	Tribute[5]		= 150
+	Tribute[6]		= 175
+	Tribute[7]		= 200
+	Tribute[8]		= 250
+	Tribute[9]		= 300
+	Tribute[10]		= 500
+	Tribute[11]		= 1000
+
+	force while Count < L4_NUM_FIREFLIES
+		Object = create ROCK_OBJECT ROUND_ROCK_SMALL at {Location[Count]}
+		run background script GF_SetObjectFirefly(Object,Scale[Count],Tribute[Count])
+		Count++
+	end while
+
+end script Land4Fireflies

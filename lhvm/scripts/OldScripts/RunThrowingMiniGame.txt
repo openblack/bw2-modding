@@ -1,0 +1,29 @@
+//-----------------------------------------------------------------------------
+run script RunThrowingMiniGame
+
+//-----------------------------------------------------------------------------
+begin script RunThrowingMiniGame
+
+//GamePos	= marker at {1332.325,15.050,571.216}
+//GameFoc	= marker at {1346.249,10.179,582.859}
+
+GamePos	= marker at {946.878,16.080,1264.358}
+GameFoc	= marker at {965.567,7.443,1246.620}
+
+start
+
+	// Setup the camera position
+	begin cinema
+		set camera position to {GamePos}
+		set camera focus to {GameFoc}
+	end cinema
+
+	run background script ThrowingMiniGame
+	
+	// Run the Firecatcher script if the 3 throwing games have been completed
+	wait until TriggerFirecatcherActive == 1	
+	run script Firecatcher
+	
+end script RunThrowingMiniGame
+
+//-----------------------------------------------------------------------------

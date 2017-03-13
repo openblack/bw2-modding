@@ -1,0 +1,266 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Female archers – Land 7
+//	-----------------------
+//
+//	The Amazonian women were known to be excellent archers; however they were also known not to be sympathetic to men. 
+//	They do not need to be Amazonian however; they can just be disaffected women from the opposing tribe on this land.
+//	They are tech 2 level archers and so hold the key to you producing this upgraded version of an archer.
+//	They hang around a fairly remote part of the land; protecting any nearby female workers if they are ever under threat.
+//	Voices such as: "Leave these women alone!"
+//	However, any male workers nearby will be shot at and given vocal threats such as: 
+//	"Keep away from us you men!"...  "Men - they're all bar-stewards"...
+//	They live on a high plateau that is a strong defensive position. The path up to them is a bit of a zigzag and narrow.
+//	This means that anyone attacking will have a hard time of it to not be shot by the archers on the way up.
+//	The Archers will occasionally send a raiding party down to nearby areas to protect any females and harass/shoot any 
+//	males in the vicinity. They will then retreat to the safety of their plateau.
+//	The Archers will hang around lamenting the loss of their female leader and that they have no willingness to fight 
+//	anyone without her. They will agree to give you the tech 2 archer blueprint if you find a strong warrior or hero to 
+//	lead them; but they will not directly ask for a female leader to follow. 
+//	They will simply have a scroll above their camp that will explain their situation. 
+//	The player will have to work out that they require this “hero” to lead them and that they must be female.
+//	The player must create a female warrior/archer and use her to win a small battle. She will then become a female 
+//	leader/hero; with much reaction and delight/surprise from the advisors.
+//	Whilst not part of your army they will re-gather if many of them are killed by either side; i.e. they will 
+//	re-spawn nearby out of sight and then join the group. However, if you slaughter them all they will die out;
+//	though this will be tough to do due to their strong defensive position. If you raid the camp in this way and destroy
+//	their buildings you will find the archer tech 2 level blueprint in one of the buildings.
+//	
+//	Note: The Amazonian squad will refuse to leave the land if you try to take them at the end of the level. 
+//		  However you will have the tech 2 archer blueprint…
+//
+//	Rewards:			Tech level 2 archers blueprint.
+//						If good, the archer squad will support you for the rest of the level.
+//						If by evil means, they will send out 
+//	Drawbacks:			
+//
+//	Start date:			4/4/03		By:	Phil
+//	Last Update:		4/4/03		By: Phil
+//
+//	Requires:			Norse creature in and AI created so it attacks the farm now and again.
+//						All onto Level 2 rather than on 3 which is where I'm creating this (all waypoints etc)
+//						Ability to increase the speed of food production of the player's town
+//
+//	Work Needed:		Changeover to land 7 once created.
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FA_FALSE					= 0
+define FA_TRUE					= 1
+define FA_WAYPOINT_RADIUS		= 20
+
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FA_Initial_Scroll_Used					= FA_FALSE
+global FA_Archers_Recruited						= FA_FALSE
+global FA_Players_Town							= 0
+global FA_Scroll								= 0
+global FA_Reminder_Scroll						= 0
+
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FA_Create_Archer_Camp
+define script FA_Create_Archers
+define script FA_Defend_The_Camp
+define script FA_Initial_Scroll
+define script FA_Cutscene_Archers_Lament
+define script FA_Raiding_Party
+define script FA_Archers_Respawn
+
+
+//... Run the main script not required.
+//run script Female_Archers
+
+
+
+//========================================================================================
+//	MAIN script
+//========================================================================================
+
+//==========================
+begin script Female_Archers
+
+start
+
+	FA_Players_Town						= get town with id 0
+
+	run script FA_Create_Archer_Camp
+	run script FA_Create_Archers
+	run background script FA_Defend_The_Camp
+	run background script FA_Raiding_Party
+	run background script FA_Initial_Scroll
+	
+	wait until FA_Scroll right clicked
+	delete FA_Scroll
+
+	run script FA_Cutscene_Archers_Lament
+	run background script FA_Archers_Respawn
+
+end script Female_Archers
+//==========================
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Create_Archer_Camp
+//-----------------------------------------------------------------------------
+begin script FA_Create_Archer_Camp
+
+start
+
+	//... Create buildings.
+
+	//... Create hidden blueprint inside one of the buildings.
+
+
+end script FA_Create_Archer_Camp
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Create_Archers
+//-----------------------------------------------------------------------------
+begin script FA_Create_Archers
+
+start
+
+	//... Create initial squad of archers
+
+	//Creates a platoon from tribe, of type (ArmyUnitTypeEnum.h) and formation 
+	//(FormationTypeEnum.h) at a position facing a position with x villagers in it.
+
+	//create platoon ARMY_UNIT_TYPE_RANGED tribe TRIBE_TYPE_GREEK formation FORMATION_TYPE_CRESCENT at [MyPos] facing [Target] with 12 villagers
+
+end script FA_Create_Archers
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Initial_Scroll
+//-----------------------------------------------------------------------------
+begin script FA_Initial_Scroll
+
+	FA_Scroll_Position			= 0
+		
+start
+
+	//... Create scroll creation position above the main building belonging to the Archers.
+	FA_Scroll_Position = marker at {1042.576,3.015,1329.986}
+
+
+	//------------
+	begin loop
+
+		if FA_Initial_Scroll_Used == FA_FALSE	//...If not started this event/challenge
+			if FA_Scroll not exists
+				FA_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Scroll_Position}
+			end if
+		end if
+		
+		wait 0.6 seconds
+
+		//... Until Archers recruited.
+		until FA_Initial_Scroll_Used == FA_TRUE 
+
+	end loop
+	//------------
+
+
+	if FA_Scroll exists
+		delete FA_Scroll
+	end if
+
+			//... Already used the main scroll, so create a reminder.
+			if FA_Reminder_Scroll not exists
+				FA_Reminder_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Scroll_Position}
+			end if	
+
+	if FA_Reminder_Scroll exists
+		delete FA_Reminder_Scroll
+	end if
+
+end script FA_Initial_Scroll
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Cutscene_Archers_Lament
+//-----------------------------------------------------------------------------
+begin script FA_Cutscene_Archers_Lament
+
+start
+
+	//... Archers lament their loss of a leader.
+
+end script FA_Cutscene_Archers_Lament
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Raiding_Party
+//-----------------------------------------------------------------------------
+begin script FA_Raiding_Party
+
+start
+
+	//... Archers send out a raiding party.
+
+end script FA_Raiding_Party
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Archers_Respawn
+//-----------------------------------------------------------------------------
+begin script FA_Archers_Respawn
+
+start
+
+	//... If archers haven't been recruited; and are being killed, spawn a few...
+
+end script FA_Archers_Respawn
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Defend_The_Camp
+//-----------------------------------------------------------------------------
+begin script FA_Defend_The_Camp
+
+start
+
+	//... Take up defensive positions against attack.
+	//... Set to defend camp against all males.
+
+end script FA_Defend_The_Camp
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+/*
+
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+
+
+*/

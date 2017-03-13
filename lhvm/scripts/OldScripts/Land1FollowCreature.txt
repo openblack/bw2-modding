@@ -1,0 +1,788 @@
+//============================================================================
+// Land 1 Follow Creature
+// By. Lenny
+//============================================================================
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FC_TRUE	= 1
+define FC_FALSE = 0
+
+define FC_NUMBER_OF_NAV_MARKERS	= 10
+
+define FC_ZOOM_MIN				= 20
+define FC_ZOOM_MAX				= 40
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FC_LeaveFC			= 0
+global FC_MarkerRelease		= 0
+global FC_LastGateDialogue	= 0
+global FC_CurrentPoint		= 0	//Current waypoint, this is a marker
+
+global FC_Heads[20]
+global FC_GatePos[10]
+global FC_GateFoc[10]
+
+global FC_NoIconDraw		= FC_FALSE
+global FC_GateDrawn[FC_NUMBER_OF_NAV_MARKERS]
+global FC_ClearHeadVisuals[FC_NUMBER_OF_NAV_MARKERS]
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FC_Intro
+define script FC_CreatureRunToMarkers
+define script FC_NextMarkerDialogue
+define script FC_ArrowGuides
+define script FC_IconHelper
+define script TeleportCreature(Pos)
+define script FC_SetupHeads
+define script FC_EjectHead(ID, Gate)
+
+//-----------------------------------------------------------------------------
+// FollowCreature
+//-----------------------------------------------------------------------------
+begin script Land1FollowCreature
+	Scroll				= 0
+	ScrollPos			= marker at {1051.919, 58.570, 949.569}
+	RandomCreatureAnim	= 0
+	CreaturePos			= marker at {1540.189, 109.463, 864.137}
+start
+
+	run script FC_SetupHeads
+
+
+	//run background script FC_EjectHead(0, 0)
+	//run background script FC_EjectHead(1, 0)
+	//wait until 1 == 0
+
+	//For test purposes
+	if not MyCreature exists
+		MyCreature = create DUMB_CREATURE CREATURE_TYPE_WOLF at {CreaturePos}
+		set creature MyCreature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0		
+	end if
+
+	set player 0 creature to MyCreature
+
+	run background script FC_CreatureRunToMarkers
+	run script FC_Intro 
+
+	//Disable "go here", "pick up", etc...
+	disable tooltip on creature MyCreature
+	disable leash on MyCreature
+
+	//Objectives
+	reset all objectives for player 0
+	
+	enable objective window
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_FOLLOWCREATURE_10"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_FOLLOWCREATURE_20" amount FC_NUMBER_OF_NAV_MARKERS
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 parent objective TRIBUTE_OBJECTIVE_LAND_1
+
+	run background script FC_ArrowGuides
+	run background script FC_IconHelper
+	attach MyCreature leash to hand
+
+	wait until FC_LeaveFC == 1
+
+end script Land1FollowCreature
+
+//-----------------------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------------------
+begin script FC_Intro
+start
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		set camera position to {1595.671, 129.556, 815.121}
+		set camera focus to {1531.548, 89.101, 880.325}
+
+		set fade in time 1
+		start music "cut_scene_mystery_01"		
+
+		set MyCreature position to {1495.998, 116.868, 899.445}
+		snap creature MyCreature focus to camera position
+		force MyCreature finish
+		play anim C_CONCURRENT_YAWN on MyCreature loop 3
+
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_10"
+
+		move camera position to {1511.599, 128.325, 885.463} time 5
+		move camera focus to {1444.778, 83.828, 945.083} time 5
+		wait until camera ready and read
+
+		play anim C_INDIVIDUAL_TIRED2 on MyCreature loop 2
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_PROGRESS_05"
+		wait until read		
+
+		move camera position to {1522.460, 130.245, 880.300} time 4
+		move camera focus to {1521.739, 129.786, 880.819} time 4
+
+		wait until camera ready and read
+
+		stop music with fadetime 2
+		send good spirit home
+		
+	end cinema
+
+end script FC_Intro
+
+//-----------------------------------------------------------------------------
+// Creature Runs to Markers (Well, follows hand in todays design)
+//-----------------------------------------------------------------------------
+begin script FC_CreatureRunToMarkers
+	Ejected[FC_NUMBER_OF_NAV_MARKERS]
+
+	Counter			= 0
+	CreatureTimer	= create timer for 0 seconds
+	Comment			= 0
+	CreaturePen		= 0
+
+	CreaturePos		= marker at {1086.796,73.780,1981.790}
+	CreatureEndPos	= marker at {1080.187, 68.681, 1979.904}
+	ReminderTimer2	= 0
+	PitchLevel			= 1
+	
+start	
+
+	ReminderTimer2 = create timer for 45 seconds
+	enable script creature MyCreature run
+
+	begin loop
+	
+		if Ejected[Counter] == FC_FALSE			
+			if Counter > 0
+				FC_ClearHeadVisuals[Counter-1] = FC_TRUE
+				run background script FC_NextMarkerDialogue
+			end if			
+			run background script FC_EjectHead(Counter*2, Counter)
+			run background script FC_EjectHead((Counter*2)+1, Counter)
+			FC_CurrentPoint = marker at {FC_GatePos[Counter]}
+			Ejected[Counter] = FC_TRUE
+		end if
+
+		if get CreatureTimer time remaining == 0 or not hand position near {MyCreature} radius 15
+			move MyCreature position to hand position			
+			set CreatureTimer time to 1.5 seconds
+		end if
+
+		/*
+		//Creature Teleporting is Shit
+		if not {MyCreature} viewed and not {MyCreature} near camera position radius 75 and {FC_CurrentPoint} viewed
+			set MyCreature position to camera position
+			move MyCreature position to hand position
+		end if
+		*/
+
+		if {FC_GatePos[Counter]} near camera position radius 10 and get camera altitude < 70
+			//Teleport creature
+			//run background script TeleportCreature(marker at {FC_GatePos[Counter]})
+
+			play string sound "GATETUT1" pitch PitchLevel
+			PitchLevel += 0.15
+			Counter++
+
+			//Reset reminder timer
+			ReminderTimer2 = create timer for 45 seconds
+
+			//Update objective
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_FOLLOWCREATURE_20" amount (FC_NUMBER_OF_NAV_MARKERS-Counter)			
+
+			FC_MarkerRelease++
+		end if
+		
+		//Check that the leash is the players hand
+		if not leash is in hand
+			attach MyCreature leash to hand
+		end if
+
+		//Remind the player to get a shuftie on
+		if get ReminderTimer2 time remaining <= 0
+			ReminderTimer2 = create timer for 45 seconds
+			begin dialogue
+				eject good spirit
+				say "BW2T_SCRIPT_01FINAL_PDMRON_PICKUP113"
+				wait until read
+				send good spirit home
+			end dialogue
+		end if
+
+	until Counter == FC_NUMBER_OF_NAV_MARKERS
+	end loop
+
+	L1_FollowCreatureComplete = 1
+	FC_NoIconDraw = FC_TRUE
+
+	FC_ClearHeadVisuals[FC_NUMBER_OF_NAV_MARKERS-1] = FC_TRUE
+
+	disable hand icon draw
+	disable hand text draw
+	begin fullscreen cinema		
+
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		disable hand icon draw
+		disable hand text draw		
+
+		set MyCreature position to {1075.045, 61.436, 2029.657}
+		snap creature MyCreature focus to {1056.531, 60.626, 2026.636}
+		play anim C_INDIVIDUAL_HAPPY on MyCreature
+		wait until creature MyCreature finished script action
+
+		set camera position to {1085.894, 83.322, 2000.621}
+		set camera focus to {1029.790, 38.391, 2070.140}
+		set fade in time 1
+
+		move camera position to {1078.580, 73.819, 2030.760} time 9 easein 0 easeout 0
+		move camera focus to {984.647, 44.207, 2013.475} time 9 easein 0 easeout 0
+
+		wait 0.25 seconds
+		move MyCreature position to {1060.471, 60.811, 2025.255}
+		wait 2.5 seconds
+		eject evil spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_90"
+		wait until read	
+
+		wait until creature MyCreature finished script action
+
+		//snap creature MyCreature focus to {1077.632, 61.686, 2029.855}
+		eject good spirit
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_100"
+
+		play anim C_MOVE_WALK_TURN180 on MyCreature
+		wait until creature MyCreature finished script action
+
+		play anim C_STATIC_START_SLEEP on MyCreature
+		wait until creature MyCreature finished script action
+		
+		play anim C_STATIC_SLEEP on MyCreature loop 20
+		wait until read
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_110"
+		wait until read
+
+		send good spirit home
+		send evil spirit home
+		
+	end cinema 
+
+	wait 1 seconds
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_1_FOLLOWCREATURE
+
+	FC_LeaveFC = 1
+	CreaturePen = get HOUSE at {MyCreature} radius 15
+	wait until creature MyCreature finished script action
+
+	//Now force the creature to sleep
+	begin loop
+
+		if MyCreature right clicked or CreaturePen right clicked
+		
+			clear right clicked object
+
+			begin dialogue
+				eject evil spirit
+				say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_120"
+				wait until read
+			end dialogue
+						
+		end if
+
+		if creature MyCreature finished script action
+			play anim C_STATIC_SLEEP on MyCreature loop 5
+		end if
+
+	end loop
+
+end script FC_CreatureRunToMarkers
+
+//-----------------------------------------------------------------------------
+// End Dialogue
+//-----------------------------------------------------------------------------
+begin script FC_NextMarkerDialogue
+	Rand = 0
+start
+	begin dialogue		
+
+		Rand = FC_LastGateDialogue
+		while Rand == FC_LastGateDialogue
+			Rand = number from 1 to 9
+		end while
+
+		FC_LastGateDialogue = Rand
+
+		eject good spirit
+
+		if Rand == 1
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_40"
+		elsif Rand == 2
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_50"
+		elsif Rand == 3
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_60"
+		elsif Rand == 4
+			say "BW2T_SCRIPT_01FINAL_ADVISORS_FOLLOWCREATURE_70"
+		elsif Rand == 5			
+			say "BW2T_SCRIPT_GENERIC_07"
+		elsif Rand == 6
+			say "BW2T_SCRIPT_GENERIC_08"
+		elsif Rand == 7
+			say "BW2T_SCRIPT_GENERIC_09"
+		elsif Rand == 8
+			say "BW2T_SCRIPT_GENERIC_10"
+		elsif Rand == 9
+			say "BW2T_SCRIPT_GENERIC_11"
+		end if		
+
+		wait until read
+		send good spirit home
+
+	end dialogue
+end script FC_NextMarkerDialogue
+
+//-----------------------------------------------------------------------------
+// Arrow Guides
+//-----------------------------------------------------------------------------
+begin script FC_ArrowGuides
+	Block	= 0
+	Loop	= 0
+	Curr	= 0
+	MiniLp	= 0
+	LastLp	= -1
+	ArrowMarker[13]
+	Arrows[13]
+start
+
+	while Block < 10
+
+		if Block == 0
+			ArrowMarker[0] = marker at {1516.1196, 117.898, 885.867}
+			ArrowMarker[1] = marker at {1497.0389, 118.913, 899.521}
+			ArrowMarker[2] = -1
+		elsif Block == 1
+			ArrowMarker[0] = marker at {1475.2001, 117.974, 913.658}
+			ArrowMarker[1] = marker at {1453.8252, 113.015, 924.440}
+			ArrowMarker[2] = marker at {1434.2694, 108.486, 936.000}
+			ArrowMarker[3] = marker at {1414.0763, 102.734, 949.954}
+			ArrowMarker[4] = marker at {1396.0649, 96.9236, 964.413}
+			ArrowMarker[5] = marker at {1377.3544, 92.6874, 979.888}
+			ArrowMarker[6] = marker at {1359.2911, 90.0318, 995.561}
+			ArrowMarker[7] = marker at {1339.5375, 87.0116, 1014.01}
+			ArrowMarker[8] = marker at {1321.8527, 83.6534, 1030.33}
+			ArrowMarker[9] = marker at {1305.6089, 80.9020, 1045.22}
+			ArrowMarker[10] = marker at {1288.8071, 80.1334, 1060.06}
+			ArrowMarker[11] = marker at {1270.2698, 78.0861, 1077.42}
+			ArrowMarker[12] = -1
+		elsif Block == 2
+			ArrowMarker[0] = marker at {1256.7716, 72.4868, 1094.63}
+			ArrowMarker[1] = marker at {1244.4099, 71.4783, 1114.90}
+			ArrowMarker[2] = marker at {1234.1381, 68.7019, 1137.09}
+			ArrowMarker[3] = marker at {1226.0244, 69.7533, 1161.36}
+			ArrowMarker[4] = marker at {1218.3510, 74.2405, 1183.36}
+			ArrowMarker[5] = marker at {1205.3496, 75.2535, 1200.02}
+			ArrowMarker[6] = marker at {1187.4359, 76.6966, 1216.66}
+			ArrowMarker[7] = marker at {1176.3640, 78.6012, 1236.61}
+			ArrowMarker[8] = marker at {1164.3529, 79.0448, 1259.58}
+			ArrowMarker[9] = marker at {1162.2695, 82.3289, 1280.87}
+			ArrowMarker[10] = marker at {1162.4927, 84.3796, 1304.42}
+			ArrowMarker[11] = marker at {1163.3739, 85.0111, 1328.26}
+			ArrowMarker[12] = -1
+		elsif Block == 3
+			ArrowMarker[0] = marker at {1143.5969, 85.3838, 1339.93}
+			ArrowMarker[1] = marker at {1118.9141, 85.3447, 1345.85}
+			ArrowMarker[2] = marker at {1095.9822, 84.0159, 1349.59}
+			ArrowMarker[3] = marker at {1074.0524, 82.8348, 1356.52}
+			ArrowMarker[4] = marker at {1053.3038, 80.5953, 1366.63}
+			ArrowMarker[5] = marker at {1032.3409, 78.7021, 1377.19}
+			ArrowMarker[6] = marker at {1017.6668, 77.6679, 1397.07}
+			ArrowMarker[7] = marker at {1008.1523, 75.4995, 1416.96}
+			ArrowMarker[8] = marker at {1000.4988, 75.7743, 1438.62}
+			ArrowMarker[9] = marker at {992.87207, 75.3198, 1461.10}
+			ArrowMarker[10] = marker at {986.22717, 76.1950, 1483.98}
+			ArrowMarker[11] = -1
+		elsif Block == 4
+			ArrowMarker[0] = marker at {979.41895, 78.3438, 1506.56}
+			ArrowMarker[1] = marker at {975.72845, 81.8836, 1529.34}
+			ArrowMarker[2] = marker at {979.14191, 88.1013, 1556.09}
+			ArrowMarker[3] = marker at {985.62323, 95.4996, 1578.26}
+			ArrowMarker[4] = marker at {994.26013, 102.131, 1603.55}
+			ArrowMarker[5] = marker at {999.02539, 110.617, 1626.36}
+			ArrowMarker[6] = marker at {1004.4255, 112.722, 1647.80}
+			ArrowMarker[7] = marker at {1010.1079, 120.111, 1671.17}
+			ArrowMarker[8] = marker at {1015.1318, 123.196, 1695.00}
+			ArrowMarker[9] = marker at {1024.4237, 127.089, 1715.58}
+			ArrowMarker[10] = marker at {1025.2795, 128.016, 1739.05}
+			ArrowMarker[11] = marker at {1016.9120, 127.928, 1765.44}
+			ArrowMarker[12] = -1
+		elsif Block == 5
+			ArrowMarker[0] = marker at {1003.8873, 127.456, 1782.81}
+			ArrowMarker[1] = marker at {991.22260, 127.693, 1801.26}
+			ArrowMarker[2] = marker at {975.94415, 126.086, 1819.42}
+			ArrowMarker[3] = marker at {956.70618, 121.068, 1831.16}
+			ArrowMarker[4] = marker at {931.77472, 115.806, 1832.30}
+			ArrowMarker[5] = marker at {910.06091, 111.555, 1831.90}
+			ArrowMarker[6] = marker at {885.79193, 104.990, 1833.34}
+			ArrowMarker[7] = marker at {863.86292, 99.1686, 1834.53}
+			ArrowMarker[8] = marker at {851.84821, 96.6734, 1854.33}	// Might need to move this one to next block
+			ArrowMarker[9] = -1
+		elsif Block == 6
+			ArrowMarker[0] = marker at {867.70868, 96.4636, 1873.77}
+			ArrowMarker[1] = marker at {892.38464, 95.1130, 1876.27}
+			ArrowMarker[2] = marker at {916.33893, 95.4792, 1876.67}
+			ArrowMarker[3] = marker at {942.12866, 94.6356, 1878.95}
+			ArrowMarker[4] = marker at {959.34369, 94.1740, 1893.90}
+			ArrowMarker[5] = -1
+		elsif Block == 7
+			ArrowMarker[0] = marker at {970.12677, 91.4181, 1913.79}
+			ArrowMarker[1] = marker at {968.34979, 90.7091, 1938.28}
+			ArrowMarker[2] = marker at {961.94824, 91.1495, 1961.39}
+			ArrowMarker[3] = marker at {958.38422, 91.8898, 1984.95}
+			ArrowMarker[4] = -1
+		elsif Block == 8
+			ArrowMarker[0] = marker at {969.66449, 92.0077, 2005.05}
+			ArrowMarker[1] = marker at {994.67816, 89.7346, 2005.85}
+			ArrowMarker[2] = marker at {1016.8709, 84.2518, 1995.62}
+			ArrowMarker[3] = marker at {1042.3323, 77.8398, 1986.07}
+			ArrowMarker[4] = marker at {1066.3276, 73.6257, 1982.36}
+			ArrowMarker[5] = -1
+		elsif Block == 9
+			ArrowMarker[0] = marker at {1085.8794, 71.660, 1987.65}
+			ArrowMarker[1] = marker at {1105.4041, 68.388, 2001.71}
+			ArrowMarker[2] = marker at {1113.4594, 65.781, 2023.62}
+			ArrowMarker[3] = marker at {1091.9020, 64.546, 2034.83}
+			ArrowMarker[4] = marker at {1069.4539, 64.066, 2028.35}
+			ArrowMarker[5] = -1
+		end if
+
+		LastLp = -1
+
+		//Arrow positions are set, clear old arrows
+		if Block != 0
+			Loop = 0
+			force while Arrows[Loop] exists
+				stop visual effect Arrows[Loop]
+				Loop++
+			end while
+		end if
+		
+		//Now create the new arrows
+		Block++
+		Loop = 0
+		force while ArrowMarker[Loop] != -1
+			if ArrowMarker[Loop+1] == -1
+				Arrows[Loop] = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.7 at {ArrowMarker[Loop]} time -1
+				set Arrows[Loop] colour red 255 green 0 blue 0
+			else
+				Arrows[Loop] = create visual effect "gp_s_arrow.ves" strength 1 scale 0.7 at {ArrowMarker[Loop]} time -1
+				set Arrows[Loop] colour red 255 green 0 blue 0
+				set Arrows[Loop] focus to {ArrowMarker[Loop+1]}
+			end if
+			Loop++
+		end while
+
+		Curr = 0
+		begin loop
+
+			if camera position near {ArrowMarker[Curr]} radius 30
+			//if not {ArrowMarker[Curr]} viewed
+
+				if Curr > LastLp
+					play string sound "REWARD6" pitch (Curr/3) + 1
+				
+					LastLp = Curr
+					MiniLp = Curr
+
+					force while MiniLp >= 0
+						set Arrows[MiniLp] colour red 0 green 255 blue 0
+						MiniLp--
+					end while
+
+				end if
+
+				//wait until not camera position near {Arrows[Curr]} radius 20
+
+			end if
+
+			Curr++
+			if ArrowMarker[Curr] == -1
+				Curr = 0
+			end if
+
+		until FC_MarkerRelease == Block
+		end loop
+
+	end while
+
+	//Clean up old arrows
+	Loop = 0
+	force while Arrows[Loop] exists
+		stop visual effect Arrows[Loop]
+		Loop++
+	end while
+
+end script FC_ArrowGuides
+
+//-----------------------------------------------------------------------------
+// Hand Icon Helper
+//-----------------------------------------------------------------------------
+begin script FC_IconHelper
+	Across						= 0
+	Down						= 0
+	IconReminderTimer			= create timer for 0 seconds
+	LastCamPos					= marker at {0,0,0} //generated
+start
+
+	clear right button clicked
+	disable hand text draw
+	
+	begin loop
+
+		Across			= {FC_CurrentPoint} position across
+		Down			= {FC_CurrentPoint} position down 
+		LastCamPos		= marker at camera position
+
+		wait until not camera position near {LastCamPos} radius 15
+		enable hand icon draw
+
+		//Check the mouse icon is'nt being drawn as the other help should not override this
+		if get IconReminderTimer time remaining == 0
+			
+			if not {FC_CurrentPoint} is ahead of camera
+
+				//set hand icon HAND_ICON_MMB
+				if {FC_CurrentPoint} position across < 0.0
+					
+					set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_LEFT
+				else
+					set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_RIGHT
+				end if
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_80"
+
+			elsif {FC_CurrentPoint} position across >= 1.0
+			
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_RIGHT
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_10"
+
+			elsif {FC_CurrentPoint} position across <= 0.0
+			
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_LEFT
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_20"
+
+			elsif {FC_CurrentPoint} position across <= 0.25
+			
+				//Left a bit
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_LEFT
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_90"
+				
+			elsif {FC_CurrentPoint} position across >= 0.75
+			
+				//Right a bit
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_RIGHT
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_100"
+				
+			elsif {FC_CurrentPoint} position down <= 0.0
+				
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_UP
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_60"
+
+			elsif {FC_CurrentPoint} position down >= 1.0
+				
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_DOWN
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_70"
+			
+			elsif {FC_CurrentPoint} position down <= 0.25
+				
+				//Down a bit
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_UP
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_110"
+
+			elsif {FC_CurrentPoint} position down >= 0.75
+				
+				//Up a bit
+				//set hand icon HAND_ICON_MMB
+				set bindable hand icon BINDABLE_ACTION_TYPE_TILT_ROTATE_AROUND_MOUSE with arrow ARROW_TYPE_DOWN
+				set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_120"
+				
+			else
+				//Rotation is fine, check zooms
+				//max zoom distance check
+				if get camera altitude > FC_ZOOM_MAX and camera position on land
+					set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_40"
+					set bindable hand icon BINDABLE_ACTION_TYPE_ZOOM_OUT 
+				//min zoom distance check
+				elsif get camera altitude > FC_ZOOM_MIN and camera position on land
+					set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_30"
+					set bindable hand icon BINDABLE_ACTION_TYPE_ZOOM_OUT 
+				else
+					//set hand icon HAND_ICON_NONE
+					set bindable hand icon BINDABLE_ACTION_TYPE_MOVE with arrow ARROW_TYPE_NONE
+					set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_130"
+				end if
+
+			end if
+		end if
+
+		
+		//Check for mouse right clicked
+		if mouse right button double clicked
+			//Show hand icon left
+			set bindable hand icon BINDABLE_ACTION_TYPE_MOVE
+			set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_50"
+			set IconReminderTimer time to 3 seconds
+			clear right button double clicked
+		elsif mouse right button clicked
+			//Show hand icon left
+			set bindable hand icon BINDABLE_ACTION_TYPE_MOVE
+			set hand icon text "BW2T_SCRIPT_01FINAL_CREATUREHELP_50"
+			set IconReminderTimer time to 3 seconds
+			clear right button clicked
+		end if
+
+	until FC_NoIconDraw == FC_TRUE
+	end loop
+	
+	disable hand icon draw
+	disable hand text draw
+	
+	if leash is in hand
+		toggle player 0 leash
+	end if
+
+end script FC_IconHelper
+
+//-----------------------------------------------------------------------------
+// Teleport Creature
+//-----------------------------------------------------------------------------
+begin script TeleportCreature(Pos)
+start
+
+	wait until not {MyCreature} viewed and not camera position near {Pos} radius 50
+
+	if not {MyCreature} viewed
+		set MyCreature position to {Pos}
+	end if
+
+end script TeleportCreature
+
+//-----------------------------------------------------------------------------
+// Get Heads
+//-----------------------------------------------------------------------------
+begin script FC_SetupHeads
+	Loop	= 0
+start
+
+	FC_Heads[0] = get ROCK_OBJECT at {1487.857, 116.931, 890.854} radius 5
+	FC_Heads[1] = get ROCK_OBJECT at {1502.690, 116.547, 912.162} radius 5
+	FC_Heads[2] = get ROCK_OBJECT at {1252.462, 72.025, 1073.541} radius 5
+	FC_Heads[3] = get ROCK_OBJECT at {1280.181, 75.100, 1089.012} radius 5
+	FC_Heads[4] = get ROCK_OBJECT at {1150.723, 81.733, 1317.946} radius 5
+	FC_Heads[5] = get ROCK_OBJECT at {1174.371, 83.910, 1339.487} radius 5
+	FC_Heads[6] = get ROCK_OBJECT at {971.545, 72.449, 1481.498} radius 5
+	FC_Heads[7] = get ROCK_OBJECT at {998.267, 75.152, 1490.929} radius 5
+	FC_Heads[8] = get ROCK_OBJECT at {1000.582, 125.975, 1762.536} radius 5
+	FC_Heads[9] = get ROCK_OBJECT at {1023.035, 126.679, 1778.506} radius 5
+	FC_Heads[10] = get ROCK_OBJECT at {840.140, 93.429, 1852.501} radius 5
+	FC_Heads[11] = get ROCK_OBJECT at {867.664, 95.148, 1850.343} radius 5
+	FC_Heads[12] = get ROCK_OBJECT at {939.483, 91.507, 1890.855} radius 5
+	FC_Heads[13] = get ROCK_OBJECT at {957.384, 91.214, 1872.119} radius 5
+	FC_Heads[14] = get ROCK_OBJECT at {950.831, 89.775, 1991.610} radius 5
+	FC_Heads[15] = get ROCK_OBJECT at {974.583, 93.237, 1977.907} radius 5
+	FC_Heads[16] = get ROCK_OBJECT at {1069.495, 69.492, 1994.875} radius 5
+	FC_Heads[17] = get ROCK_OBJECT at {1061.829, 70.911, 1970.678} radius 5
+	FC_Heads[18] = get ROCK_OBJECT at {1087.352, 61.935, 2019.364} radius 5
+	FC_Heads[19] = get ROCK_OBJECT at {1085.415, 60.238, 2047.911} radius 5
+
+	FC_GatePos[0] = marker at {1494.00, 125.00, 902.000}
+	FC_GatePos[1] = marker at {1266.60, 83.000, 1082.646}
+	FC_GatePos[2] = marker at {1162.68, 90.00, 1328.720}
+	FC_GatePos[3] = marker at {985.250, 83.00, 1487.121}
+	FC_GatePos[4] = marker at {1011.38, 132.00, 1771.064}
+	FC_GatePos[5] = marker at {854.477, 102.00, 1852.150}
+	FC_GatePos[6] = marker at {950.336, 97.500, 1882.703}
+	FC_GatePos[7] = marker at {960.040, 95.00, 1985.637}
+	FC_GatePos[8] = marker at {1066.51, 77.00, 1982.741}
+	FC_GatePos[9] = marker at {1086.02, 68.00, 2029.892}
+
+	FC_GateFoc[0] = marker at {1506.100, 125.00, 890.865}
+	FC_GateFoc[1] = marker at {1273.460, 83.00, 1070.998}
+	FC_GateFoc[2] = marker at {1173.317, 90.000, 1320.815}
+	FC_GateFoc[3] = marker at {987.895, 83.00, 1481.501}
+	FC_GateFoc[4] = marker at {1018.599, 132.00, 1759.208}
+	FC_GateFoc[5] = marker at {854.466, 102.00, 1845.256}
+	FC_GateFoc[6] = marker at {945.192, 97.500, 1877.648}
+	FC_GateFoc[7] = marker at {957.031, 95.00, 1977.373}
+	FC_GateFoc[8] = marker at {1059.747, 77.00, 1980.665}
+	FC_GateFoc[9] = marker at {1092.563, 68.00, 2031.225}
+
+
+	force while Loop < 20
+		ALTITUDE of FC_Heads[Loop] = -10
+		disable FC_Heads[Loop] pickup
+		disable FC_Heads[Loop] moveable
+		enable FC_Heads[Loop] indestructible
+		Loop++
+	end while
+
+end script FC_SetupHeads
+
+//-----------------------------------------------------------------------------
+// Eject Head
+//-----------------------------------------------------------------------------
+begin script FC_EjectHead(ID, Gate)
+	EjectFX		= 0
+	GateFX		= 0
+	DustFX		= 0
+	Alt			= 0.3
+start
+
+	PITCH of FC_Heads[ID]	= 0
+	XANGLE of FC_Heads[ID]	 = 0
+
+	if FC_GateDrawn[Gate] == FC_FALSE
+		GateFX = create visual effect "gp_s_gateway.ves" strength 1 scale 1 at {FC_GatePos[Gate]} time -1 direction {1495.00,125.000,902.000}
+		set GateFX focus to {FC_GateFoc[Gate]}
+		FC_GateDrawn[Gate] = FC_TRUE
+	end if	
+
+	EjectFX = create visual effect "gp_s_maoi.ves" strength 1 scale 2 at {FC_Heads[ID]} + {0, 13, 0} time -1
+	DustFX = create visual effect "gp_s_physdust.ves" strength 10 scale 4 on FC_Heads[ID] time -1 vertical offset 13
+	set DustFX colour red 105 green 79 blue 41
+
+	while ALTITUDE of FC_Heads[ID] < -0.5
+		ALTITUDE of FC_Heads[ID]	+= Alt
+		PITCH of FC_Heads[ID]		+= (number from -6 to 6) / 5
+		XANGLE of FC_Heads[ID]		+= (number from -6 to 6) / 10
+
+		if ALTITUDE of FC_Heads[ID] > -3
+			if Alt > 0.1
+				Alt -= 0.02
+			end if
+		end if
+	end while
+
+	stop visual effect EjectFX
+	stop visual effect DustFX
+
+	wait until FC_ClearHeadVisuals[Gate] == FC_TRUE
+
+	delete GateFX
+
+end script FC_EjectHead

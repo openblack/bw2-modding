@@ -1,0 +1,595 @@
+///////////////////////////////////////////////////////////////////////////////
+//	ASSASSINS
+//	~~~~~~~~~
+//
+//	Your high priest has been targeted for execution by an enemy tribe.
+//	They hav sent out a number of assassins to kill him. The idea is the player
+//	needs to prevent this by killing or persuading them to change their ways.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			26-02-03			By:	Steve
+//	Update date:		06-03-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define AS_TRUE						= 1
+define AS_FALSE						= 0
+define AS_NUMBER_OF_ASSASSINS		= 5
+define AS_NUMBER_OF_SAFEHOUSES		= 10
+define AS_LOWER_TIME_DELAY			= 10				// was 30
+define AS_UPPER_TIME_DELAY			= 30				// was 120
+
+define AS_ASSASSIN_STATE_DEAD		= 0
+define AS_ASSASSIN_STATE_WAITING	= 1
+define AS_ASSASSIN_STATE_MOVING		= 2
+define AS_ASSASSIN_STATE_HELD		= 3
+define AS_ASSASSIN_STATE_CONVERTED	= 4
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global AS_Assassin[AS_NUMBER_OF_ASSASSINS]
+global AS_AssassinConverted[AS_NUMBER_OF_ASSASSINS]
+global AS_AssassinState[AS_NUMBER_OF_ASSASSINS]
+global AS_AssassinWaitTimer[AS_NUMBER_OF_ASSASSINS]
+global AS_AssassinSafeHouse[AS_NUMBER_OF_SAFEHOUSES]
+global AS_AssassinSafeHouseOccupied[AS_NUMBER_OF_SAFEHOUSES]
+
+global AS_AssassinsDealtWith			= AS_FALSE
+global AS_AssassinsUltimateTarget
+	
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script AS_CreateAssassins
+define script AS_CreateAssassinsWaitTimers
+define script AS_CreateAssassinsUltimateTarget
+define script AS_SetupAssassinSafeHouses(Town)
+define script AS_HandleAssassinActions(Assassin, ID, PlayersTown)
+define script AS_SetAssassinWaitTimer(ID)
+define script AS_FindTargetForAssassin(Assassin, *Target, *TargetID)
+define script AS_MoveAssassinToTarget(Assassin, ID)
+define script AS_CheckIfTargetIsFree(AssassinID, Target, Radius, *WhoIsHere)
+define script AS_GetAssassinsCurrentSafeHouse(Assassin, *SafeHouseIndex)
+define script AS_SetSafeHouseOccupiedFlag(SafeHouseIndex, TrueOrFalse)
+define script AS_HasAssassinEnteredTown(Assassin, ID, PlayersTown)
+define script AS_UpdateAssassinState(Assassin, ID)
+define script AS_CleanUp(PlayersTown)
+
+
+
+define script AS_UpdateOccupiedSafeHouseFlag
+
+
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Assassins
+
+//	PlayersTown					= get town with id 0
+	PlayersTown					= get TOWN at {971.615,2.260,1311.286} radius 100
+	Counter						= 0
+
+start
+
+	// Get the players creature just in case he picks up an Assassin
+	MyCreature = get player 1 creature
+
+	// Create the assassins at their individual start positions, their wait timers, their safehouses and their ultimate target
+	run script AS_CreateAssassins
+	run script AS_CreateAssassinsWaitTimers
+	run script AS_CreateAssassinsUltimateTarget
+	run script AS_SetupAssassinSafeHouses(PlayersTown)
+
+
+
+
+//	run background script AS_UpdateOccupiedSafeHouseFlag
+
+
+
+
+
+	// Keep running while there are Assassins still active
+	while AS_AssassinsDealtWith == AS_FALSE
+		// Handle Assassin actions for each Assassin seperatley
+		while Counter < AS_NUMBER_OF_ASSASSINS
+			run background script AS_HandleAssassinActions(AS_Assassin[Counter], Counter, PlayersTown)
+			Counter++
+		end while
+	end while
+
+	// Clean up the actors of the script	
+	run script AS_CleanUp(PlayersTown)
+	
+end script Assassins
+
+
+//-----------------------------------------------------------------------------
+//	Create the Assassins at their start points out of town and out of sight
+//-----------------------------------------------------------------------------
+begin script AS_CreateAssassins
+
+	AssassinPos[AS_NUMBER_OF_ASSASSINS]
+	Counter		= 0
+
+start
+
+	// Setup the Assassins start positions
+	AssassinPos[0] = marker at {1078.845,3.272,1350.177}
+	AssassinPos[1] = marker at {1078.845,3.272,1350.177} + {2, 2}
+	AssassinPos[2] = marker at {1078.845,3.272,1350.177} + {4, 4}
+	AssassinPos[3] = marker at {1078.845,3.272,1350.177} + {6, 6}
+	AssassinPos[4] = marker at {1078.845,3.272,1350.177} + {8, 8}
+//	AssassinPos[5] = marker at {1078.845,3.272,1350.177} + {10, 10}
+//	AssassinPos[6] = marker at {1078.845,3.272,1350.177} + {12, 12}
+//	AssassinPos[7] = marker at {1078.845,3.272,1350.177} + {14, 14}
+//	AssassinPos[8] = marker at {1078.845,3.272,1350.177} + {16, 16}
+//	AssassinPos[9] = marker at {1078.845,3.272,1350.177} + {18, 18}
+
+	// Create the Assassins
+	while Counter < AS_NUMBER_OF_ASSASSINS
+		AS_Assassin[Counter] = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {AssassinPos[Counter]}
+		AS_AssassinConverted[Counter] = AS_FALSE
+		AS_AssassinState[Counter] = AS_ASSASSIN_STATE_WAITING
+		HEALTH of AS_Assassin[Counter] = 1
+		SCALE of AS_Assassin[Counter] = 4								// TEMP: Just to show Assassin out from crowd
+		enable jc special SJC_ALWAYS_VISIBLE on AS_Assassin[Counter]
+		Counter++
+	end while
+
+end script AS_CreateAssassins
+
+
+//-----------------------------------------------------------------------------
+//	Create the wait timers for the Assassins
+//-----------------------------------------------------------------------------
+begin script AS_CreateAssassinsWaitTimers
+
+	Counter		= 0
+	Delay		= 0
+
+start
+
+	// Create the wait timers for the Assassins
+	while Counter < AS_NUMBER_OF_ASSASSINS
+		Delay = number from AS_LOWER_TIME_DELAY to AS_UPPER_TIME_DELAY
+		AS_AssassinWaitTimer[Counter] = create timer for Delay seconds
+		Counter++
+	end while
+
+end script AS_CreateAssassinsWaitTimers
+
+
+//-----------------------------------------------------------------------------
+//	Create the person the Assassins are after
+//-----------------------------------------------------------------------------
+begin script AS_CreateAssassinsUltimateTarget
+
+	Pos		= marker at {989.095,2.680,1310.528}
+
+start
+
+	AS_AssassinsUltimateTarget = create VILLAGER VILLAGER_INFO_NORSE_SHEPHERD_MALE at {Pos}
+	HEALTH of AS_AssassinsUltimateTarget = 1
+	SCALE of AS_AssassinsUltimateTarget = 4												// TEMP: Just to show he's special
+	
+end script AS_CreateAssassinsUltimateTarget
+
+
+//-----------------------------------------------------------------------------
+//	Set up the positions of the safe houses for the Assassins (waypoints)
+//-----------------------------------------------------------------------------
+begin script AS_SetupAssassinSafeHouses(Town)
+
+	House[3]																			// TEMP: Remove this array
+	SafeHousePos[AS_NUMBER_OF_SAFEHOUSES]												// TEMP: Remove this array as you need to get the houses
+
+	Counter		= 0
+	
+start
+
+	// TEMP: Setup the safehouses positions
+	House[0] = create HOUSE ABODE_INFO_GREEK_TENT at {1039.113,3.118,1316.548}		// TEMP: Remove this create
+	House[1] = create HOUSE ABODE_INFO_GREEK_TENT at {1029.291,3.063,1330.832}		// TEMP: Remove this create
+	House[2] = create HOUSE ABODE_INFO_GREEK_TENT at {1024.641,3.350,1347.119}		// TEMP: Remove this create
+	
+	// TEMP: Get the houses at certain positions
+	SafeHousePos[0] = marker at {1006.885,2.914,1313.387}								// TEMP: Remove this marker
+	SafeHousePos[1] = marker at {1003.419,2.716,1322.110}								// TEMP: Remove this marker
+	SafeHousePos[2] = marker at {1000.161,3.313,1329.900}								// TEMP: Remove this marker
+	SafeHousePos[3] = marker at {1021.653,3.350,1317.639}								// TEMP: Remove this marker
+	SafeHousePos[4] = marker at {1018.102,3.350,1324.118}								// TEMP: Remove this marker
+	SafeHousePos[5] = marker at {1015.501,3.350,1330.098}								// TEMP: Remove this marker
+	SafeHousePos[6] = marker at {1012.288,3.350,1335.067}								// TEMP: Remove this marker
+	SafeHousePos[7] = marker at {1039.302,3.070,1315.824}								// TEMP: Remove this marker
+	SafeHousePos[8] = marker at {1027.668,3.172,1330.535}								// TEMP: Remove this marker
+	SafeHousePos[9] = marker at {1024.531,3.350,1347.348}								// TEMP: Remove this marker
+
+	// TEMP: Get the temporary houses
+	while Counter < AS_NUMBER_OF_SAFEHOUSES												// TEMP: Remove
+		AS_AssassinSafeHouse[Counter] = get HOUSE at {SafeHousePos[Counter]} radius 5	// TEMP: Remove
+		run script AS_SetSafeHouseOccupiedFlag(Counter, AS_FALSE)						// TEMP: Remove
+		Counter++																		// TEMP: Remove
+	end while																			// TEMP: Remove
+/*
+	// Get the safehouses
+	while Counter < AS_NUMBER_OF_SAFEHOUSES
+		//AS_AssassinSafeHouse[Counter] = get HOUSE in Town excluding scripted
+		AS_AssassinSafeHouse[Counter] = get HOUSE ABODE_INFO_GREEK_TENT in Town excluding scripted
+		run script AS_SetSafeHouseOccupiedFlag(Counter, AS_FALSE)
+		Counter++
+	end while
+*/
+end script AS_SetupAssassinSafeHouses
+
+
+//-----------------------------------------------------------------------------
+//	Set the timer that makes the Assassin wait where he is
+//-----------------------------------------------------------------------------
+begin script AS_SetAssassinWaitTimer(ID)
+
+	Delay = number from AS_LOWER_TIME_DELAY to AS_UPPER_TIME_DELAY
+	
+start
+
+	set AS_AssassinWaitTimer[ID] time to Delay seconds
+
+end script AS_SetAssassinWaitTimer
+
+
+//-----------------------------------------------------------------------------
+//	Do the Assassin actions
+//-----------------------------------------------------------------------------
+begin script AS_HandleAssassinActions(Assassin, ID, PlayersTown)
+
+//	Target[1]
+
+start
+
+	run background script AS_UpdateAssassinState(Assassin, ID)
+//	run background script AS_HasAssassinEnteredTown(Assassin, ID, PlayersTown)
+
+	// Process Assassin if he is not dead or converted
+	while (not AS_AssassinState[ID] == AS_ASSASSIN_STATE_DEAD) and (not AS_AssassinState[ID] == AS_ASSASSIN_STATE_CONVERTED)
+		if AS_AssassinState[ID] == AS_ASSASSIN_STATE_WAITING
+			if get AS_AssassinWaitTimer[ID] time remaining <= 0
+				// Get the Assassins next target
+				run script AS_MoveAssassinToTarget(Assassin, ID)
+				run script AS_SetAssassinWaitTimer(ID)
+			end if
+		end if
+	end while
+
+end script AS_HandleAssassinActions
+
+
+//-----------------------------------------------------------------------------
+//	Move the Assassin from where he is to his next position
+//-----------------------------------------------------------------------------
+begin script AS_MoveAssassinToTarget(Assassin, ID)
+
+	Target[1]
+	TargetID[1]
+	SafeHouseID[1]
+	WhoIsHere[1]
+	RADIUS					= 2
+	FindDestination			= AS_TRUE
+	AssassinActive			= AS_TRUE
+	DestinationReached		= AS_FALSE
+	MoveBecauseOccupied		= AS_FALSE
+	ReadyToMoveAssassin		= AS_FALSE
+
+start
+
+	// Make sure the index is not automatically 0 as this is a valid index
+	SafeHouseID[0] = -1
+
+	// Find a destination for the Assassin and move him there, then make sure no other Assassin has also gone there
+	while DestinationReached == AS_FALSE and AssassinActive == AS_TRUE
+		// Get a destination for the Assassin
+		if FindDestination == AS_TRUE
+			run script AS_FindTargetForAssassin(Assassin, &Target[0], &TargetID[0])
+			FindDestination = AS_FALSE
+			ReadyToMoveAssassin = AS_TRUE
+		end if
+
+		// Move the Assassin to his destination
+		if (not AS_AssassinState[ID] == AS_ASSASSIN_STATE_DEAD) and (not AS_Assassin[ID] == AS_ASSASSIN_STATE_CONVERTED)
+			if ReadyToMoveAssassin == AS_TRUE
+				// Don't reset the occupied flag if moving because it's already occupied
+				if MoveBecauseOccupied == AS_FALSE
+					// Find out if the Assassin is currently in a safehouse
+					run script AS_GetAssassinsCurrentSafeHouse(Assassin, &SafeHouseID[0])
+					// If he is in a safehouse reset the occupied flag to false
+					if SafeHouseID[0] >= 0
+						run script AS_SetSafeHouseOccupiedFlag(SafeHouseID[0], AS_FALSE)
+//begin dialogue
+//say "Setting safehoue occupation to FALSE"
+//wait until read
+//end dialogue
+					end if
+				end if
+				move Assassin position to {Target[0]}
+				SPEED of Assassin = 1.0
+				ReadyToMoveAssassin = AS_FALSE
+//begin dialogue
+//say "Moving Assassin $d" with number ID
+//wait until read
+//end dialogue
+			end if
+		else
+			AssassinActive = AS_FALSE
+		end if
+
+		// Check to see if the Assassin has made his destination
+		if AssassinActive == AS_TRUE
+			if {Assassin} near {Target[0]} radius RADIUS
+				// Make sure there are no other Assassins here. If there are move one of them.
+				run script AS_CheckIfTargetIsFree(ID, Target[0], RADIUS, &WhoIsHere[0])
+				if WhoIsHere[0] >= 0
+					// Move the Assassin that has the higher array index
+					if WhoIsHere[0] < ID
+						FindDestination = AS_TRUE
+						MoveBecauseOccupied = AS_TRUE
+					else
+						DestinationReached = AS_TRUE
+					end if
+				else
+					DestinationReached = AS_TRUE
+				end if
+			end if
+		end if
+	end while
+
+//	// Set the occupied flag
+//	if DestinationReached == AS_TRUE
+//		run script AS_SetSafeHouseOccupiedFlag(TargetID[0], AS_TRUE)
+//	end if
+
+end script AS_MoveAssassinToTarget
+
+
+//-----------------------------------------------------------------------------
+//	Find a target for the Assassin whether it's a safehouse or the ultimate target
+//-----------------------------------------------------------------------------
+begin script AS_FindTargetForAssassin(Assassin, *Target, *TargetID)
+
+	NewTarget					= 0
+	NewTargetID					= -1
+	ShortestDistanceToTarget	= 500
+	DistanceToTarget			= 0
+	Counter						= 0
+
+start
+
+	// Check the available targets for the Assassin to find the best choice
+	while Counter < AS_NUMBER_OF_SAFEHOUSES
+		// Find the nearest target to the Assassin that is unoccupied
+		if AS_AssassinSafeHouseOccupied[Counter] == AS_FALSE
+			DistanceToTarget = get distance from {Assassin} to {AS_AssassinSafeHouse[Counter]}
+			// See if the new target is closer than the previous target
+			if DistanceToTarget < ShortestDistanceToTarget
+				ShortestDistanceToTarget = DistanceToTarget
+				NewTarget = marker at {AS_AssassinSafeHouse[Counter]}
+				NewTargetID = Counter
+			end if
+		end if
+
+		Counter++
+	end while
+
+	// Flag the target safehouse as occupied
+	run script AS_SetSafeHouseOccupiedFlag(NewTargetID, AS_TRUE)
+
+	// Return the Assassins target and the ID number of the target
+	Target[0] = NewTarget
+	TargetID[0] = NewTargetID
+
+end script AS_FindTargetForAssassin
+
+
+//-----------------------------------------------------------------------------
+//	Checks the target to see if there is space for the Assassin.
+//	If there is someone else there his index is returned in WhoIsHere otherwise -1 is returned
+//-----------------------------------------------------------------------------
+begin script AS_CheckIfTargetIsFree(AssassinID, Target, Radius, *WhoIsHere)
+
+	FoundAssassin		= AS_FALSE
+	Counter				= 0
+
+start
+
+	// Check to see if another Assassin is at the same destination
+	while Counter < AS_NUMBER_OF_ASSASSINS and FoundAssassin == AS_FALSE
+		// Make sure you don't check if the Assassin who just arrived there is there (cause he obviously is :)
+		if not AssassinID == Counter
+			if {AS_Assassin[Counter]} near {Target} radius Radius
+				WhoIsHere[0] = Counter
+				FoundAssassin = AS_TRUE
+			end if
+		end if
+		Counter++
+	end while
+
+	// There is no Assassin at the destination (other than the one that just arrived :)
+	if FoundAssassin == AS_FALSE
+		WhoIsHere[0] = -1
+	end if
+
+end script AS_CheckIfTargetIsFree
+
+
+//-----------------------------------------------------------------------------
+//	Alert the player when the Assassin has entered the town (create tension - hopefully!)
+//-----------------------------------------------------------------------------
+begin script AS_HasAssassinEnteredTown(Assassin, ID, PlayersTown)
+
+	TOWN_WALL		= 150
+	TownBreached	= AS_FALSE
+
+start
+
+	// Check to see if the Assassin has entered the players town while not being held
+	while TownBreached == AS_FALSE
+		if ((not AS_AssassinState[ID] == AS_ASSASSIN_STATE_DEAD) and (not AS_AssassinState[ID] == AS_ASSASSIN_STATE_CONVERTED))
+			if {Assassin} near {PlayersTown} radius TOWN_WALL and not AS_AssassinState[ID] == AS_ASSASSIN_STATE_HELD
+				begin dialogue
+					say "Assassin $d has entered your town." with number ID
+					wait until read
+				end dialogue
+				TownBreached = AS_TRUE
+			end if
+		end if
+	end while
+
+end script AS_HasAssassinEnteredTown
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the Assassin is still actively searching for the target
+//-----------------------------------------------------------------------------
+begin script AS_UpdateAssassinState(Assassin, ID)
+start
+
+	// Store the state of the Assassin while the Assassin is alive and active (NOTE: should not be dead to start with)
+	while (not AS_AssassinState[ID] == AS_ASSASSIN_STATE_DEAD) and (not AS_AssassinState[ID] == AS_ASSASSIN_STATE_CONVERTED)
+		if Assassin not exists or HEALTH of Assassin <= 0
+			AS_AssassinState[ID] = AS_ASSASSIN_STATE_DEAD
+		elsif Assassin is HELD
+			AS_AssassinState[ID] = AS_ASSASSIN_STATE_HELD
+		elsif Assassin in MyCreature hand
+			AS_AssassinState[ID] = AS_ASSASSIN_STATE_HELD
+		elsif Assassin is MOVING
+			AS_AssassinState[ID] = AS_ASSASSIN_STATE_MOVING
+		elsif Assassin is not MOVING
+			AS_AssassinState[ID] = AS_ASSASSIN_STATE_WAITING
+		else
+			AS_AssassinState[ID] = AS_ASSASSIN_STATE_CONVERTED
+		end if
+	end while
+
+end script AS_UpdateAssassinState
+
+
+//-----------------------------------------------------------------------------
+//	Return the index of the safehouse that the Assassin is currently in
+//-----------------------------------------------------------------------------
+begin script AS_GetAssassinsCurrentSafeHouse(Assassin, *SafeHouseIndex)
+
+	RADIUS			= 5
+	FoundSafeHouse	= AS_FALSE
+	Counter			= 0
+
+start
+
+	// Find the safehouse the Assassin is in
+	while Counter < AS_NUMBER_OF_SAFEHOUSES and FoundSafeHouse == AS_FALSE
+		if {Assassin} near {AS_AssassinSafeHouse[Counter]} radius RADIUS
+			SafeHouseIndex[0] = Counter
+			FoundSafeHouse = AS_TRUE
+		end if
+
+		Counter++
+	end while
+
+	// The Assassin is not in a safehouse
+	if FoundSafeHouse == AS_FALSE
+		SafeHouseIndex[0] = -1
+	end if
+
+end script AS_GetAssassinsCurrentSafeHouse
+
+
+//-----------------------------------------------------------------------------
+//	Set the flag that says whether a safehouse is occupied or not
+//-----------------------------------------------------------------------------
+begin script AS_SetSafeHouseOccupiedFlag(SafeHouseIndex, TrueOrFalse)
+start
+
+	AS_AssassinSafeHouseOccupied[SafeHouseIndex] = TrueOrFalse
+
+end script AS_SetSafeHouseOccupiedFlag
+
+
+//-----------------------------------------------------------------------------
+//	Handle the deleteing or releasing of the Assassins
+//-----------------------------------------------------------------------------
+begin script AS_CleanUp(PlayersTown)
+
+	Counter		= 0
+
+start
+
+	// Delete the Assassins if they exist
+	while Counter < AS_NUMBER_OF_ASSASSINS
+		if AS_Assassin[Counter] exists
+			if AS_AssassinState[Counter] == AS_ASSASSIN_STATE_DEAD
+				// Delete any remaining Assassins (they should be dead anyway)
+				delete AS_Assassin[Counter]
+			elsif AS_AssassinState[Counter] == AS_ASSASSIN_STATE_CONVERTED
+				// Release the converted Assassins into the players town
+				attach AS_Assassin[Counter] to PlayersTown
+				release AS_Assassin[Counter]
+			else
+				say "Something went wrong with Assassin $d's state." with number Counter
+				wait until read
+			end if
+		end if
+		Counter++
+	end while
+
+end script AS_CleanUp
+
+
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+//	Continually update the state of the safehouses occupied status
+//-----------------------------------------------------------------------------
+begin script AS_UpdateOccupiedSafeHouseFlag
+
+	RADIUS				= 5
+	AssassinCounter		= 0
+	SafeHouseCounter	= 0
+	SafeHouseIsOccupied	= AS_FALSE
+
+start
+
+	while AS_AssassinsDealtWith == AS_FALSE
+		AssassinCounter		= 0
+		SafeHouseCounter	= 0
+		while SafeHouseCounter < AS_NUMBER_OF_SAFEHOUSES
+			while AssassinCounter < AS_NUMBER_OF_ASSASSINS and SafeHouseIsOccupied == AS_FALSE
+				if {AS_Assassin[AssassinCounter]} near {AS_AssassinSafeHouse[SafeHouseCounter]} radius RADIUS
+					SafeHouseIsOccupied = AS_TRUE
+				end if
+				AssassinCounter++
+			end while
+
+			// Set the occupied status of the safehouse
+			if SafeHouseIsOccupied == AS_TRUE
+				AS_AssassinSafeHouseOccupied[SafeHouseCounter] = AS_TRUE
+			else
+				AS_AssassinSafeHouseOccupied[SafeHouseCounter] = AS_FALSE				
+			end if
+			
+			SafeHouseIsOccupied	= AS_FALSE
+			SafeHouseCounter++
+		end while
+	end while
+
+end script AS_UpdateOccupiedSafeHouseFlag

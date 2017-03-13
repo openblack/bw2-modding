@@ -1,0 +1,333 @@
+//==================================================================
+// Land 2 Aztec Attacks
+// Matt.L
+//==================================================================
+
+//---------------------------------------------------------
+// Cosntants
+//---------------------------------------------------------
+define AA_FALSE = 0
+define AA_TRUE = 1
+
+define AA_MAX_PLATOONS = 25
+
+//---------------------------------------------------------
+// Globals
+//---------------------------------------------------------
+
+//---------------------------------------------------------
+// Script defines
+//---------------------------------------------------------
+define script AA_MajorBattle
+define script AA_SmallVillageAttack
+define script AA_CreateBattle(NumPlatoons, Position, Radius, WaitTime)
+define script AA_CityBattle
+define script AA_IntroFight
+define script AA_MoveToFields
+
+//---------------------------------------------------------
+// Aztec Attacks
+//---------------------------------------------------------
+begin script Land2AztecAttacks
+start
+
+	//run background script AA_IntroFight
+	//run background script AA_SmallVillageAttack	
+	//run background script AA_MoveToFields
+
+	//old
+	//run background script AA_MajorBattle
+	//run background script AA_CityBattle
+
+									//num platoons, position,		create radius, seconds before deletion
+	//run background script AA_CreateBattle(6, marker at {1323.868, 143.908, 1896.046}, 18, 5)
+
+end script Land2AztecAttacks
+
+//---------------------------------------------------------
+// Aztec Attacks
+//---------------------------------------------------------
+begin script AA_SmallVillageAttack
+	CreatePos[3]
+	AttackPlatoon[3]
+	AttackArea = marker at {785.968,144.410,1934.501}
+	House = 0
+start
+
+	CreatePos[0] = marker at {785.526,143.631,1919.566}
+	CreatePos[1] = marker at {829.275,132.516,1869.170}
+	CreatePos[2] = marker at {857.404,143.626,1914.845}
+
+	House = get HOUSE at {791.104,143.599,1929.119} radius 20
+
+	AttackPlatoon[0] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {CreatePos[0]} with 15 men and 0 women
+	PLAYER of AttackPlatoon[0] = 1
+	set AttackPlatoon[1] attack buildings near {AttackArea} radius 50
+
+	AttackPlatoon[1] = create platoon PLATOON_INFO_AZTEC_RANGED_9 at {CreatePos[1]} with 25 men and 0 women
+	PLAYER of AttackPlatoon[1] = 1
+	set AttackPlatoon[1] attack buildings near {AttackArea} radius 50
+
+	AttackPlatoon[2] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {CreatePos[2]} with 15 men and 0 women
+	PLAYER of AttackPlatoon[2] = 1
+	set AttackPlatoon[2] attack buildings near {AttackArea} radius 50
+
+	wait 5000000 seconds
+
+end script AA_SmallVillageAttack
+
+//---------------------------------------------------------
+// Aztec Attacks
+//---------------------------------------------------------
+begin script AA_MajorBattle
+	AztecPositions[5]
+	AztecPlatoon[5]
+	GreekPositions[5]
+	GreekPlatoon[5]	
+	Looper = 0
+	RandomMovePos = 0
+start
+	
+	AztecPositions[0] = marker at {1177.031,145.602,1957.127}
+	AztecPositions[1] = marker at {1216.360,123.946,2045.201}
+	AztecPositions[2] = marker at {1244.923,114.119,2116.257}
+	AztecPositions[3] = marker at {1223.058,115.305,2093.095}
+	AztecPositions[4] = marker at {1181.022,139.183,1978.507}
+
+	GreekPositions[0] = marker at {1346.511,119.293,2010.213}
+	GreekPositions[1] = marker at {1352.630,109.386,2048.938}
+	GreekPositions[2] = marker at {1345.234,131.236,1984.330}
+	GreekPositions[3] = marker at {1362.081,103.842,2081.862}
+	GreekPositions[4] = marker at {1334.017,140.650,1951.053}
+
+	//Deal with these funky Aztecs first
+	force while Looper < 5
+		AztecPlatoon[Looper] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {AztecPositions[Looper]} with (number from 15 to 35) men and 0 women
+		PLAYER of AztecPlatoon[Looper] = 1		
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {GreekPositions[Looper]} to front of AztecPlatoon[Looper] action queue
+		Looper++
+	end while
+
+	Looper = 0
+
+	//Deal with the looser Greeks
+	force while Looper < 5
+		GreekPlatoon[Looper] = create platoon PLATOON_INFO_GREEK_MELEE_5 at {GreekPositions[Looper]} with (number from 15 to 35) men and 0 women
+		PLAYER of GreekPlatoon[Looper] = 0
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {AztecPositions[Looper]} to front of GreekPlatoon[Looper] action queue
+		Looper++
+	end while
+
+	//wait for a while
+	wait 500000000 seconds
+
+end script AA_MajorBattle
+
+//---------------------------------------------------------
+// Create Battle
+//---------------------------------------------------------
+begin script AA_CreateBattle(NumPlatoons, Position, Radius, WaitTime)
+	Fighters[AA_MAX_PLATOONS]
+	CreateLoop = 0
+	GreekType = AA_FALSE
+	CreatePos = marker at {0,0, 0} // genrated
+start
+
+	force while CreateLoop < NumPlatoons
+		CreatePos = marker at {Position} + {number from -(Radius) to Radius, number from -(Radius) to Radius}
+
+		if GreekType == AA_FALSE
+			Fighters[CreateLoop] = create platoon PLATOON_INFO_AZTEC_MELEE_5 at {CreatePos} with 15 men and 0 women
+			PLAYER of Fighters[CreateLoop] = 0
+			GreekType = AA_TRUE
+		else
+			Fighters[CreateLoop] = create platoon PLATOON_INFO_GREEK_MELEE_5 at {CreatePos} with 15 men and 0 women
+			PLAYER of Fighters[CreateLoop] = 1
+			GreekType = AA_FALSE
+		end if
+		
+		CreateLoop++
+	end while
+
+	wait WaitTime seconds
+
+	CreateLoop = 0
+	while CreateLoop < NumPlatoons
+		delete Fighters[CreateLoop]
+		CreateLoop++
+	end while
+
+end script AA_CreateBattle
+
+//---------------------------------------------------------
+// City Battle
+//---------------------------------------------------------
+begin script AA_CityBattle
+	Greeks[5]
+	Aztecs[5]
+	Positions[10]
+	CreateLoop = 0
+start
+
+	Positions[0] = marker at {1732.257, 160.097, 1111.926}
+	Positions[1] = marker at {1747.035, 155.357, 909.273}
+	Positions[2] = marker at {1772.319, 160.912, 1039.888}
+	Positions[3] = marker at {1695.070, 155.548, 831.347}
+	Positions[4] = marker at {1749.903, 159.608, 1024.471}
+	Positions[5] = marker at {1737.001, 148.289, 788.765}
+	Positions[6] = marker at {1722.752, 157.805, 982.182}
+	Positions[7] = marker at {1674.398, 145.217, 743.798}
+	Positions[8] = marker at {1791.099, 157.008, 940.134}
+	Positions[9] = marker at {1623.071, 155.970, 792.567}
+
+	force while CreateLoop < 5
+		Aztecs[CreateLoop] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {Positions[CreateLoop]} with 15 men and 0 women
+		PLAYER of Aztecs[CreateLoop] = 1
+		set Aztecs[CreateLoop] attack buildings near {Positions[CreateLoop]} radius 10
+		CreateLoop++
+	end while
+
+	CreateLoop = 0
+
+	force while CreateLoop < 5
+		Greeks[CreateLoop] = create platoon PLATOON_INFO_GREEK_MELEE_9 at {Positions[CreateLoop+5]} with 15 men and 0 women
+		PLAYER of Greeks[CreateLoop] = 0
+		add action PLATOON_AGENDA_ACTION_ATTACK using Aztecs[CreateLoop] to front of Greeks[CreateLoop] action queue
+		CreateLoop++
+	end while
+
+	wait until L2DeleteCityArmies == 1
+
+	CreateLoop = 0
+	while CreateLoop < 5
+		delete Aztecs[CreateLoop]
+		CreateLoop++
+	end while
+
+	CreateLoop = 0
+	while CreateLoop < 5
+		delete Greeks[CreateLoop]
+		CreateLoop++
+	end while
+
+end script AA_CityBattle
+
+//---------------------------------------------------------
+// City Battle
+//---------------------------------------------------------
+begin script AA_IntroFight
+	GreeksCreate[5]
+	AztecCreate[3]
+	CreatureCreate = marker at {1121.330, 143.643, 1896.215}
+	Greeks[3]
+	Aztecs[3]
+	Creator = 0
+start
+
+	GreeksCreate[0] = marker at {1125.321, 143.763, 1891.019}
+	GreeksCreate[1] = marker at {1103.769, 143.698, 1889.057}
+	GreeksCreate[2] = marker at {1127.607, 143.681, 1916.917}
+	AztecCreate[0] = marker at {1084.160, 157.920, 1903.926}
+	AztecCreate[1] = marker at {1116.224, 143.723, 1906.277}
+	AztecCreate[2] = marker at {1133.148, 144.308, 1889.375}
+
+	while Creator < 2
+		Aztecs[Creator] = create platoon PLATOON_INFO_AZTEC_MELEE_9 at {AztecCreate[Creator]} with 35 men and 0 women
+		PLAYER of Aztecs[Creator] = 1
+		Creator++
+	end while
+
+	Aztecs[2] = create platoon PLATOON_INFO_AZTEC_RANGED_9 at {AztecCreate[Creator]} with 35 men and 0 women
+	PLAYER of Aztecs[2] = 1	
+
+	Creator = 0
+	while Creator < 2
+		Greeks[Creator] = create platoon PLATOON_INFO_GREEK_MELEE_9 at {GreeksCreate[Creator]} with 20 men and 0 women
+		PLAYER of Greeks[Creator] = 0
+		Creator++
+	end while
+
+	while Creator < 3
+		Greeks[Creator] = create platoon PLATOON_INFO_GREEK_RANGED_9 at {GreeksCreate[Creator]} with 30 men and 0 women
+		PLAYER of Greeks[Creator] = 0
+		Creator++
+	end while
+
+	L2Creature = create CREATURE CREATURE_TYPE_LION at {CreatureCreate}
+	set player 1 creature to L2Creature
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 1 time 0
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_STRENGTH 0.7 time 0	
+	set creature L2Creature CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT -1 time 5
+
+	set creature L2Creature role to CR_SOLDIER radius 50
+
+	release L2Creature
+
+	wait 20 seconds
+
+	Creator = 0
+	while Creator < 5
+		delete Greeks[Creator]
+		Creator++
+	end while
+
+	Creator = 0
+	while Creator < 3
+		delete Aztecs[Creator]
+		Creator++
+	end while
+
+end script AA_IntroFight
+
+//---------------------------------------------------------
+// Move to Fields
+//---------------------------------------------------------
+begin script AA_MoveToFields
+	Archers[3]
+	ArcherPos[3]
+	ArcherMovePos[3]
+	Catapults[2]
+	CatapultPos[2]
+	CatapultMove[2]
+	Looper = 0
+start
+
+	if not L2GreekTown exists
+		run script Land2Globals
+	end if
+
+	ArcherPos[0] = marker at {1214.263, 132.937, 2003.664}
+	ArcherPos[1] = marker at {1208.660, 136.589, 1987.943}
+	ArcherPos[2] = marker at {1198.937, 143.298, 1953.660}
+	ArcherMovePos[0] = marker at {1348.722, 136.433, 1954.719}
+	ArcherMovePos[1] = marker at {1339.527, 143.274, 1924.844}
+	ArcherMovePos[2] = marker at {1336.820, 143.624, 1894.903}
+
+	CatapultPos[0] = marker at {1217.948, 139.008, 1972.439}
+	CatapultPos[1] = marker at {1206.922, 141.336, 1962.497}
+	CatapultMove[0] = marker at {1314.783, 142.130, 1947.566}
+	CatapultMove[1] = marker at {1309.748, 142.809, 1924.258}
+
+	force while Looper < 3
+		Archers[Looper] = create platoon PLATOON_INFO_AZTEC_RANGED_5 at {ArcherPos[Looper]} with (number from 15 to 35) men and 0 women
+		PLAYER of Archers[Looper] = 1
+		add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {ArcherMovePos[Looper]} to front of Archers[Looper] action queue
+		Looper++
+	end while
+
+	Looper = 0
+	force while Looper < 2
+		Catapults[Looper] = create siege weapon CATAPULT_1 belonging to L2GreekTown at {CatapultPos[Looper]} 
+		add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {CatapultMove[Looper]} to siege weapon Catapults[Looper] action queue
+		Looper++
+	end while
+
+	wait 30 seconds
+
+	delete Archers[0]
+	delete Archers[1]
+	delete Archers[2]
+	delete Catapults[0]
+	delete Catapults[1]
+
+end script AA_MoveToFields

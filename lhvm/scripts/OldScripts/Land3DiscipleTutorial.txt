@@ -1,0 +1,444 @@
+//==========================================================================
+// Disciple tutorial
+// Matt. L
+//==========================================================================
+
+//--------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------
+define DT_FALSE = 0
+define DT_TRUE = 1
+
+//--------------------------------------------------------------------------
+// Globals
+//--------------------------------------------------------------------------
+global DT_CurrentAdvisorComment = 0
+
+global DT_AdvisorFlag_PlaceVillagerOverField = DT_FALSE
+
+//--------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------
+define DT_ADVISOR_NONE = 0
+define DT_ADVISOR_VILLAGER_IN_HAND = 1
+define DT_ADVISOR_VILLAGER_OVER_FIELD = 2
+define DT_ADVISOR_MADE_ONE_FARMER = 3
+define DT_ADVISOR_NOT_A_DISCIPLE = 4
+define DT_ADVISOR_MADE_3_FARMERS = 5
+define DT_ADVISOR_MADE_ONE_BREEDER = 6
+define DT_ADVISOR_MADE_3_BREEDERS = 7
+define DT_ADVISOR_CHILD = 8
+define DT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES = 9
+define DT_ADVISOR_ALREADY_CREATED_A_DISCIPLE = 10
+define DT_REMINDER_CREATE_FARMER = 11
+define DT_REMINDER_CREATE_BREEDER = 12
+define DT_REMINDER_DROP_NEXT_TO_FIELD = 13
+
+define DT_NUM_FARMERS_NEEDED = 3
+define DT_NUM_BREEDERS_NEEDED = 3
+define DT_NUM_DISCIPLES_TO_CREATE = 3
+
+
+//--------------------------------------------------------------------------
+// Script defines
+//--------------------------------------------------------------------------
+define script DT_Advisors(ID)
+define script DT_Reminder(ID)
+define script DT_Intro
+
+//--------------------------------------------------------------------------
+// Disciple tutorial
+//--------------------------------------------------------------------------
+begin script Land3DiscipleTutorial
+
+	Object = 0
+	Type = 0
+	Villager = 0
+	Disciple = 0
+	
+	FieldPos = marker at {1087.877,363.594,1645.760}
+	NumFarmers = 0
+	PrevNumFarmers = 0
+
+	NumBreeders = 0
+	PrevNumBreeders = 0
+	
+	NumDisciples = 0
+	ExampleVideo = 0
+	PlayedBreederVideo = DT_FALSE
+	
+	Stage = 0
+	Delay = 30
+	ReminderTimer = create timer for Delay seconds
+	RanIntro = DT_FALSE
+	CheckForDisciplesAlreadyCreated = DT_FALSE
+	
+start
+
+	//Get the town if we don't already have it
+	if not L3GreekTown exists
+		run script Land3Globals
+	end if
+
+	//Ill villagers
+	if L3RunningIllVillagers == 0
+		run background script Land3IllVillagers
+	end if		
+
+	begin loop
+		if CheckForDisciplesAlreadyCreated == DT_FALSE
+			CheckForDisciplesAlreadyCreated = DT_TRUE
+			
+			NumDisciples = get number of disciples SCRIPT_FIND_TYPE_ANY in town L3GreekTown
+			
+			if NumDisciples > 0
+				if NumDisciples >= DT_NUM_DISCIPLES_TO_CREATE
+					run script DT_Advisors(DT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES)
+				elsif NumDisciples >= 1
+					run script DT_Advisors(DT_ADVISOR_ALREADY_CREATED_A_DISCIPLE)
+				end if
+				
+				set ReminderTimer time to Delay seconds
+				Stage = 2
+			end if
+			
+		else
+			// Run the intro once!
+			if RanIntro == DT_FALSE
+				run script DT_Intro
+				
+				// Play the video
+				ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+				set ExampleVideo clipping window left 0 top 0 width 1 height 1
+				play video "Land3 Make Disciple Farmer"		
+				wait until not video is playing
+				
+				set ReminderTimer time to Delay seconds
+				RanIntro = DT_TRUE
+			end if
+
+			Object = get object held	
+			Type = variable get Object type
+
+			if Stage == 0
+				if Object exists
+					if Type == variable CHILD
+						run background script DT_Advisors(DT_ADVISOR_CHILD)
+						set ReminderTimer time to Delay seconds
+
+					//Looking for farmer positions
+					elsif Type == variable VILLAGER
+						run background script DT_Advisors(DT_ADVISOR_VILLAGER_IN_HAND)
+						set ReminderTimer time to Delay seconds
+						
+						begin loop					
+							if {Object} near {FieldPos} radius 30
+								attach Object to L3GreekTown
+								release Object
+							else
+								Object = get object held
+							end if
+							
+							if get ReminderTimer time remaining <= 0						
+								run background script DT_Reminder(DT_REMINDER_DROP_NEXT_TO_FIELD)								
+								set ReminderTimer time to Delay seconds
+							end if
+							
+						until not Object is HELD
+						end loop
+
+						Disciple = variable get Object disciple type
+						if Disciple != variable VILLAGER_DISCIPLE_FARMER
+							run background script DT_Advisors(DT_ADVISOR_NOT_A_DISCIPLE)						
+							run background script DT_Reminder(DT_REMINDER_DROP_NEXT_TO_FIELD)								
+							set ReminderTimer time to Delay seconds
+						end if
+					end if
+				end if
+
+				//Get the number of farmers
+				NumFarmers = get number of disciples VILLAGER_DISCIPLE_FARMER in town L3GreekTown
+				
+				if NumFarmers >= DT_NUM_FARMERS_NEEDED
+					run script DT_Advisors(DT_ADVISOR_MADE_3_FARMERS)
+					set ReminderTimer time to Delay seconds
+					Stage++
+				elsif NumFarmers > PrevNumFarmers
+					if NumFarmers == 1
+						run background script DT_Advisors(DT_ADVISOR_MADE_ONE_FARMER)
+					else
+						// say that you made another disciple here???
+					end if
+					
+					// Record the previous amount of farmers
+					PrevNumFarmers = NumFarmers
+					set ReminderTimer time to Delay seconds
+				end if
+
+			elsif Stage == 1
+				if PlayedBreederVideo == DT_FALSE
+					// Play the video
+					ExampleVideo = create video window with left 0.55 top 0.30 width 0.4 height 0.35 with border
+					set ExampleVideo clipping window left 0 top 0 width 1 height 1
+					play video "Land3 Breeder"		
+					wait until not video is playing
+					PlayedBreederVideo = DT_TRUE
+				end if
+			
+				if Object exists
+					if Type == variable CHILD					
+						run background script DT_Advisors(DT_ADVISOR_CHILD)
+						set ReminderTimer time to Delay seconds
+						wait until not Object is HELD
+
+					elsif Type == variable VILLAGER
+						// We need to make sure the object in hand is not a disciple breeder as we need to drop them
+						// before they become a breeder
+						wait until not Object is HELD
+						
+						// Get the number of breeders					
+						NumBreeders = get number of disciples VILLAGER_DISCIPLE_BREEDER in town L3GreekTown
+										
+						if NumBreeders >= DT_NUM_BREEDERS_NEEDED
+							run script DT_Advisors(DT_ADVISOR_MADE_3_BREEDERS)
+							set ReminderTimer time to Delay seconds
+							Stage++
+						elsif NumBreeders > PrevNumBreeders
+							if NumBreeders == 1
+								run background script DT_Advisors(DT_ADVISOR_MADE_ONE_BREEDER)
+							else
+								// say that you made another disciple here???
+							end if
+							
+							// Record the previous amount of farmers
+							PrevNumBreeders = NumBreeders
+							set ReminderTimer time to Delay seconds
+						end if				
+					end if //type
+				end if //object exists
+			end if
+		end if
+		
+		// Remind the player what they need to do
+		if get ReminderTimer time remaining <= 0
+			if Stage == 0			
+				run background script DT_Reminder(DT_REMINDER_CREATE_FARMER)
+			else			
+				run background script DT_Reminder(DT_REMINDER_CREATE_BREEDER)
+			end if
+			set ReminderTimer time to Delay seconds
+		end if
+	
+	until Stage == 2
+	end loop
+	
+	//Release the scripted villagers
+	L3VillagerRelease = 1
+	
+	// Enable the villager jobs
+	enable town L3GreekTown job VILLAGER_JOB_FORESTER
+	enable town L3GreekTown job VILLAGER_JOB_FARMER
+	enable town L3GreekTown job VILLAGER_JOB_MINER
+	begin dialogue	
+	wait until dialogue ready
+		//say "Well done you've finished the land 3 tutorials"
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_869"
+		wait until read
+	end dialogue
+	L3VillagersCanFeedThemselves = DT_TRUE
+
+end script Land3DiscipleTutorial
+
+//--------------------------------------------------------------------------
+// Advisors
+//--------------------------------------------------------------------------
+begin script DT_Advisors(ID)
+	Quitter = 0
+start
+
+	DT_CurrentAdvisorComment = ID
+
+	begin loop
+		begin dialogue
+			if ID == DT_ADVISOR_VILLAGER_IN_HAND and DT_AdvisorFlag_PlaceVillagerOverField == DT_FALSE
+				DT_AdvisorFlag_PlaceVillagerOverField = DT_TRUE
+				// GA: Now place the villager down over the field.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_VILLAGERINHAND_10"
+				wait until read
+			
+			elsif ID == DT_ADVISOR_MADE_ONE_FARMER
+				eject evil spirit
+				// EA: Yeah. Looks like  your new disciple has started to work the field.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADEONEFARMER_10"
+				wait until read
+
+				eject good spirit
+				// GA: Another two farmers should satisfy the village's food requirements for now.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADEONEFARMER_20"
+				wait until read
+
+			elsif ID == DT_ADVISOR_NOT_A_DISCIPLE
+				eject good spirit
+				// GA: No, that's not a farmer disciple.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_NOTAFARMER_10"
+				wait until read
+
+			elsif ID == DT_ADVISOR_MADE_3_FARMERS
+				eject evil spirit
+				// EA: Those farmers can handle that small field with  no problem, Boss.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_10"
+				wait until read
+
+				// EA: What we need now is more people.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_20"
+				wait until read
+
+				eject good spirit
+				// GA: Creating breeder disciples will expand your population.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_30"
+				wait until read
+
+				// GA: Simply pick up a villager then place them down to another village of the opposite sex
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_40"
+				wait until read
+
+				// GA: We need three breeder disciples to satisfy the village's needs.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEFARMERS_50"
+				wait until read
+
+			elsif ID == DT_ADVISOR_MADE_ONE_BREEDER
+				eject good spirit
+				// GA: Excellent. We need two more to satisfy the villages needs.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADEONEBREEDER_10"
+				wait until read
+
+			elsif ID == DT_ADVISOR_MADE_3_BREEDERS
+				eject good spirit
+				// GA: Marvellous. You've now created enough breeders.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_MADETHREEBREEDERS_10"
+				wait until read
+
+			elsif ID == DT_ADVISOR_CHILD
+				eject evil spirit
+				// EA: Children aren't old enough to work! It's rather a shame.
+				say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_CHILD_10"
+				wait until read
+				
+			elsif ID == DT_ADVISOR_ALREADY_CREATED_ENOUGH_DISCIPLES
+				eject good spirit
+				//say "Wow it looks like you've got the hang of creating disciples leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_868"
+				wait until read
+			
+			elsif ID == DT_ADVISOR_ALREADY_CREATED_A_DISCIPLE
+				eject good spirit
+				//say "Excellent leader you've created a number of disciples. Why not create some more."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_867"
+				wait until read
+
+			end if
+		end dialogue
+		Quitter = 1
+	until Quitter == 1 or DT_CurrentAdvisorComment != ID
+	end loop
+
+end script DT_Advisors
+
+
+//--------------------------------------------------------------------------
+// Remind the player what they are supposed to be doing
+//--------------------------------------------------------------------------
+begin script DT_Reminder(ID)
+
+	Timer		= create timer for 15 seconds
+
+start
+
+	wait until dialogue ready or get Timer time remaining <= 0
+	
+	// Only remind the player if we haven't waited for too long
+	if get Timer time remaining > 0
+		begin dialogue
+			eject good spirit
+			
+			if ID == DT_REMINDER_CREATE_FARMER
+				//say "You need to create a disciple farmer leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_857"
+			elsif ID == DT_REMINDER_CREATE_BREEDER
+				//say "You need to create a disciple breeder leader."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_856"
+			elsif ID == DT_REMINDER_DROP_NEXT_TO_FIELD
+				//say "You need to drop the villager near a field to make them a disciple farmer leader."	
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_855"
+			end if
+						
+			wait until read
+			send good spirit home
+		end dialogue
+	end if
+
+end script DT_Reminder
+
+
+//--------------------------------------------------------------------------
+// Intro
+//--------------------------------------------------------------------------
+begin script DT_Intro
+start
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+
+		set camera position to {1108.657, 379.933, 1647.579}
+		set camera focus to {1031.289, 316.945, 1640.743}
+		set fade in time 1
+
+		move camera position to {1107.177, 378.532, 1655.758} time 12
+		move camera focus to {1031.103, 322.929, 1622.274} time 12
+
+		eject evil spirit
+		// EA: We need to get our people working if we want to rebuild., Boss.
+		say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_10"
+		wait until read
+
+		eject good spirit
+		// GA: Villagers can be turned into Disciples who will work at the job you assign them.
+		say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_20"
+		wait until read
+
+		// EA: We need to get a good supply of food going or we won't be able to create enemy-crushing armies.
+		say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_30"
+		wait until read
+
+		//move camera position to {1107.682, 385.214, 1644.501} time 8
+		//move camera focus to {1043.046, 311.630, 1664.667} time 8
+
+		// GA: Farmer Disciples plant crops in fields and nurture them until they are ready to harvest.
+		say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_40"
+		wait until read
+
+		// GA: When the crops are ready  they'll take them to the Storehouse.
+		say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_50"
+		wait until read
+
+		//move camera position to {1107.682, 385.214, 1644.501} time 5
+		//move camera focus to {1043.046, 311.630, 1664.667} time 5
+
+		// GA: Pick up a villager, then put them down on a field.
+		say "BW2T_SCRIPT_03FINAL_DISCIPLETUTORIAL_INTRO_60"
+		wait until read
+
+		set fade red 255 green 255 blue 255 time 1.5
+		wait 1.5 seconds
+
+//		set camera position to {889.977,224.507,1853.218}
+//		set camera focus to {845.573,165.248,1920.430}
+
+		set fade in time 2
+
+		send good spirit home
+		send evil spirit home
+	end cinema
+
+end script DT_Intro

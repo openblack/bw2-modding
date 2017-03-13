@@ -1,0 +1,6 @@
+run script RunLand1Scrolls
+
+begin script RunLand1Scrolls
+start
+	run script Land1Scrolls
+end script RunLand1Scrolls

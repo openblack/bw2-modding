@@ -1,0 +1,123 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CH_True = 1
+define CH_False = 0
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CH_Hag = 0
+global CH_End_Of_Challenge = CH_False
+global CH_Hag_Scared = CH_False
+global CH_Creature = 0
+global CH_Cover_Pos[4]
+global CH_Platoon = 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+//define script CH_Coast_Clear
+define script CH_Create_Hag
+define script CH_Hag_Runs_Away
+define script CH_Hag_Runs_Into_Army
+define script CH_Hag_Runs_For_Cover
+//-----------------------------------------------------------------------------
+run script Land1ChaseHag // Main function, calls other scripts
+//-----------------------------------------------------------------------------
+begin script Land1ChaseHag
+start
+	while CH_Creature not exists
+		CH_Creature = get player 0 creature
+	end while
+	run background script CH_Create_Hag
+	run background script CH_Hag_Runs_Away
+	run background script CH_Hag_Runs_Into_Army
+	run background script CH_Hag_Runs_For_Cover
+end script Land1ChaseHag
+//-----------------------------------------------------------------------------
+// CH_Create_Hag - Creates The Hag Character
+//-----------------------------------------------------------------------------
+begin script CH_Create_Hag
+CH_Hag_Spawn_Pos = marker at {1249.641, 126.254, 1280.219}
+start
+	if CH_Hag not exists
+		CH_Hag = create VILLAGER VILLAGER_INFO_SANURA at {CH_Hag_Spawn_Pos}
+		disable CH_Hag reactable
+		SPEED of CH_Hag = 0.8
+	end if
+end script CH_Create_Hag
+//-----------------------------------------------------------------------------
+// CH_Hag_Runs_Away - Makes the Hag Run away from the Creature to the nearest Cover 
+//-----------------------------------------------------------------------------
+begin script CH_Hag_Runs_Away
+start
+	begin loop
+		begin loop
+			while CH_Platoon not exists
+				CH_Platoon = get platoon nearest {CH_Hag} radius 30
+			end while
+			if get distance from {CH_Hag} to {CH_Platoon} < 30
+				move CH_Hag position to {CH_Hag} + ({CH_Hag} - {CH_Platoon})
+				wait until get distance from {CH_Hag} to {CH_Platoon} > 35
+					CH_Hag_Scared = CH_True
+			end if
+		until get distance from {CH_Hag} to {CH_Creature} < 30
+		end loop
+		move CH_Hag position to {CH_Hag} + ({CH_Hag} - {CH_Creature})
+			wait until get distance from {CH_Hag} to {CH_Creature} > 35
+				CH_Hag_Scared = CH_True
+	until CH_End_Of_Challenge == CH_True
+	end loop
+end script CH_Hag_Runs_Away
+//-----------------------------------------------------------------------------
+// CH_Hag_Runs_Into_Army - Checks If The Hag Has Run Into An Ambush 
+//-----------------------------------------------------------------------------
+begin script CH_Hag_Runs_Into_Army
+start
+	begin loop
+		wait until CH_Platoon exists
+			if get distance from {CH_Hag} to {CH_Platoon} <= 10
+				say "Ambush"
+				wait until read
+				delete CH_Hag
+				CH_End_Of_Challenge = CH_True
+			elsif {CH_Hag} at {CH_Cover_Pos[0]} or {CH_Hag} at {CH_Cover_Pos[1]} or {CH_Hag} at {CH_Cover_Pos[2]} or {CH_Hag} at {CH_Cover_Pos[3]}
+				say "Safe"
+				wait until read
+				delete CH_Hag
+				CH_End_Of_Challenge = CH_True
+			end if	
+	until CH_End_Of_Challenge == CH_True
+	end loop	
+end script CH_Hag_Runs_Into_Army
+//-----------------------------------------------------------------------------
+// CH_Hag_Runs_Into_Army - Directs Hag To Safety
+//-----------------------------------------------------------------------------
+begin script CH_Hag_Runs_For_Cover
+CH_Cover_Distance = 0
+CH_Temp = 0
+i = 0
+j = 0
+start
+	CH_Cover_Pos[0] = marker at {1132.304, 132.639, 1388.730}
+	CH_Cover_Pos[1] = marker at {1269.711, 126.242, 1378.038}
+	CH_Cover_Pos[2] = marker at {1142.604, 125.204, 1257.058}
+	CH_Cover_Pos[3] = marker at {1268.230, 124.312, 1209.384}
+	begin loop
+		wait until CH_Hag_Scared == CH_True
+		CH_Cover_Distance = get distance from {CH_Hag} to {CH_Cover_Pos[0]}
+		i = 0
+		j = 0
+		while i < 4
+			CH_Temp = get distance from {CH_Hag} to {CH_Cover_Pos[i]}
+			if CH_Temp < CH_Cover_Distance and get distance from {CH_Creature} to {CH_Cover_Pos[i]} > 30
+				CH_Cover_Distance = CH_Temp
+				j = i
+			end if
+			i++
+		end while
+		move CH_Hag position to {CH_Cover_Pos[j]}
+		CH_Hag_Scared = CH_False
+	until CH_End_Of_Challenge == CH_True
+	end loop
+end script CH_Hag_Runs_For_Cover
+

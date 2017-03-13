@@ -1,0 +1,31 @@
+//------------------------------------------------
+//  LAND 3 ISLAND DEPARTURE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land3IslandDeparture
+
+ IslandDepartureScroll = 0
+ IslandDepartureScrollPos = marker at {1717.162,52.171,388.164}
+ Eternity = 0
+
+start
+	IslandDepartureScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {IslandDepartureScrollPos}
+
+	begin loop
+		if IslandDepartureScroll right clicked
+			clear right clicked object
+			begin cinema
+				say "The L3 Island Departure Cut-Scene has not been implemented yet."
+				wait until read
+				say "It will ask you to check you have filled your boats for the trip..."
+				wait until read
+				say "and the click the scroll again to confirm departure."
+				wait until read
+				say "It will then show your fleet sailing off into the sunset."
+				wait until read
+			end cinema
+		end if
+	end loop
+
+end script Land3IslandDeparture

@@ -1,0 +1,96 @@
+define number_of_attractors = 4
+global	attracters[number_of_attractors]
+global	attractor_state[number_of_attractors]
+
+begin script LookAfterMan(bloke)
+destination_pos = marker at {0, 0 ,0}
+temp = 0
+counter = 0
+distance_to_attractor = 0
+t_distance = 0
+final_dest=0
+start
+	SPEED of bloke = 1.6 
+	disable bloke pickup
+	begin loop
+		//Get the closest thing with the correct colour...
+		
+		counter = 0
+		distance_to_attractor = 100000 // really big number
+		while counter < number_of_attractors
+			t_distance = get distance from {bloke} to {attracters[counter]} 
+			if t_distance < distance_to_attractor and attractor_state[counter] == 0
+				//destination_pos = marker at  {attracters[counter]} - {bloke}
+				distance_to_attractor = t_distance
+				final_dest=counter
+			end if 
+			counter++
+		end while
+		
+		destination_pos = marker at  {attracters[final_dest]} - {bloke}
+		temp = SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of destination_pos
+		SCRIPT_OBJECT_PROPERTY_TYPE_XPOS of destination_pos = (SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of destination_pos) / 2.0
+		SCRIPT_OBJECT_PROPERTY_TYPE_ZPOS of destination_pos = -temp / 2.0
+		destination_pos = marker at {destination_pos} + {attracters[final_dest]}
+		destination_pos = marker at {destination_pos} + {number from -2 to 2, 0, number from -2 to 2}
+		move bloke position to {destination_pos} 
+		//wait 1 seconds
+		wait until {bloke} near {destination_pos} radius 0.1 or 1 seconds
+	end loop
+end script LookAfterMan
+
+begin script LookAfterAttractor(attractor, array_offset)
+scroll = 0
+start
+	attractor_state[array_offset] = number from 0 to 1
+	scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {attractor} 
+	begin loop
+		wait until (key KB_M down)
+		if attractor_state[array_offset] == 1
+			ALTITUDE of scroll = 2
+			attractor_state[array_offset] = 0
+		else
+			ALTITUDE of scroll = -1
+			attractor_state[array_offset] = 1
+		end if 
+		wait 1 seconds
+	end loop
+	
+	begin loop
+		scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {attractor} 
+		attractor_state[array_offset] = 0
+		wait until scroll right clicked
+		//clear right click object
+		delete scroll 
+		
+		scroll = create highlight CHALLENGE_NONE HIGHLIGHT_QUEST at {attractor} 
+		attractor_state[array_offset] = 1
+		wait until scroll right clicked
+		//clear right click object
+		delete scroll 
+	end loop
+end script LookAfterAttractor
+
+begin script Land8Attract
+bloke = 0
+counter = 0
+
+start
+	attracters[0]=marker at {1812.586,91.381,623.032}
+	attracters[1]=marker at {1820.843,90.837,622.742}
+	attracters[2]=marker at {1823.824,90.172,612.506}
+	attracters[3]=marker at {1833.922,90.824,613.190}
+	
+	run background script LookAfterAttractor(attracters[0], 0)
+	run background script LookAfterAttractor(attracters[1], 1)
+	run background script LookAfterAttractor(attracters[2], 2)
+	run background script LookAfterAttractor(attracters[3], 3)
+	
+	while counter < 100
+		bloke = create VILLAGER MALE at {1795.847,91.438,628.963} + {number from -20 to 20, 0, number from -20 to 20}
+		run background script LookAfterMan(bloke)
+		counter ++
+	end while
+	wait 5000 seconds
+
+end script Land8Attract

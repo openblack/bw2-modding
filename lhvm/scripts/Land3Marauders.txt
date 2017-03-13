@@ -1,0 +1,243 @@
+
+define script MoveMarauder1(Marauder1, Waypoint)
+define script MoveMarauder2(Marauder2, Waypoint2)
+define script MoveMarauder3(Marauder3, Waypoint3)
+define script WatchMarauders(Marauder1, Marauder2, Marauder3)
+
+global PatrolPos[14]
+
+begin script Land3Marauders
+
+Marauder1 = marker at {1729.156,270.792,1014.527}
+Marauder2 = marker at {1490.760,272.515,1108.748}
+Marauder3 = marker at {1786.443,269.728,1018.527}
+
+TargetPos = marker at {1623.752,275.657,1124.595}
+
+Waypoint = 0
+Waypoint2 = 0
+Waypoint3 = 0
+
+start
+
+PatrolPos[0] = marker at {1715.966,270.080,1020.711}
+PatrolPos[1] = marker at {1620.531,270.275,1079.208}
+PatrolPos[2] = marker at {1555.799,278.033,1204.836}
+PatrolPos[3] = marker at {1645.147,276.168,939.963}
+PatrolPos[4] = marker at {1514.724,281.654,1004.161}
+
+PatrolPos[5] = marker at {1479.351,272.609,1106.364}
+PatrolPos[6] = marker at {1377.901,274.518,1187.528}
+PatrolPos[7] = marker at {1521.799,276.032,1274.475}
+PatrolPos[8] = marker at {1551.268,280.854,1248.514}
+PatrolPos[9] = marker at {1558.574,278.347,991.105}
+
+PatrolPos[10] = marker at {1763.689,272.121,1039.213}
+PatrolPos[11] = marker at {1790.580,270.584,1009.497}
+PatrolPos[12] = marker at {1736.371,270.989,1011.317}
+PatrolPos[13] = marker at {1704.977,268.616,1055.828}
+
+Marauder1 = create platoon PLATOON_INFO_MARAUDER at {Marauder1} with 12 men and 0 women
+Marauder2 = create platoon PLATOON_INFO_MARAUDER at {Marauder2} with 12 men and 0 women
+Marauder3 = create platoon PLATOON_INFO_MARAUDER at {Marauder3} with 12 men and 0 women
+
+PLAYER of Marauder1 = 1
+PLAYER of Marauder2 = 1
+PLAYER of Marauder3 = 1
+
+Waypoint = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {Marauder1}
+Waypoint2 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {Marauder2}
+Waypoint3 = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {Marauder3}
+
+add {PatrolPos[0]} to waypoint list Waypoint
+add {PatrolPos[1]} to waypoint list Waypoint
+add {PatrolPos[2]} to waypoint list Waypoint
+add {PatrolPos[3]} to waypoint list Waypoint
+add {PatrolPos[4]} to waypoint list Waypoint
+
+add {PatrolPos[5]} to waypoint list Waypoint2
+add {PatrolPos[6]} to waypoint list Waypoint2
+add {PatrolPos[7]} to waypoint list Waypoint2
+add {PatrolPos[8]} to waypoint list Waypoint2
+add {PatrolPos[9]} to waypoint list Waypoint2
+
+add {PatrolPos[10]} to waypoint list Waypoint3
+add {PatrolPos[11]} to waypoint list Waypoint3
+add {PatrolPos[12]} to waypoint list Waypoint3
+add {PatrolPos[13]} to waypoint list Waypoint3
+
+run background script MoveMarauder1(Marauder1, Waypoint)
+run background script MoveMarauder2(Marauder2, Waypoint2)
+run background script MoveMarauder3(Marauder3, Waypoint3)
+run background script WatchMarauders(Marauder1, Marauder2, Marauder3)
+
+
+end script Land3Marauders
+
+//***************************************
+
+begin script MoveMarauder1(Marauder1, Waypoint)
+
+start
+
+	while Marauder1 exists
+		if get size of Marauder1 action queue == 0
+			move Marauder1 along Waypoint with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		end if
+	end while
+
+end script MoveMarauder1
+
+//***************************************
+
+begin script MoveMarauder2(Marauder2, Waypoint2)
+
+start
+
+	while Marauder2 exists
+		if get size of Marauder2 action queue == 0
+			move Marauder2 along Waypoint2 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		end if
+	end while
+
+end script MoveMarauder2
+
+//***************************************************************
+
+begin script MoveMarauder3(Marauder3, Waypoint3)
+start
+	while Marauder3 exists
+		if get size of Marauder3 action queue == 0 
+			move Marauder3 along Waypoint3 with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+		end if
+	end while
+end script MoveMarauder3
+
+//***************************************************************
+
+begin script WatchMarauders(Marauder1, Marauder2, Marauder3)
+
+SeenMarauder1 = 0
+SeenMarauder2 = 0
+SeenMarauder3 = 0
+FightHappened = 0
+Fighter = 0
+Comment = 0
+CommentTimer = create timer for 0 seconds
+start 
+
+while SeenMarauder1 == 0 or SeenMarauder2 == 0 or SeenMarauder3 == 0 or FightHappened == 0
+	if get CommentTimer time remaining == 0
+		if get distance from camera position to {Marauder1} <= 35 and {Marauder1} viewed and SeenMarauder1 == 0 
+			begin dialogue
+				if Comment == 0
+					eject good spirit
+					//GA: "I don't like the look of those fellows."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_MARAUDERS_10"
+						wait until read
+					send good spirit home
+				elsif Comment == 1
+					eject good spirit 
+					//GA: "Those people look a little desperate."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_MARAUDERS_20"
+						wait until read
+					send good spirit home
+				elsif Comment == 2
+					eject evil spirit
+					//GA: "You want some? And you?"
+						say "BW2T_HELP_TEXT_GUIDANCE_BATTLE_ALERT_WINNING_EA_06"
+						wait until read
+					send evil spirit home
+				end if
+			end dialogue
+			Comment++
+			SeenMarauder1 = 1
+			set CommentTimer time to 20 seconds
+		end if
+
+		if get distance from camera position to {Marauder2} <= 35 and {Marauder2} viewed and SeenMarauder2 == 0
+			begin dialogue
+				if Comment == 0
+					eject good spirit
+					//GA: "I don't like the look of those fellows."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_MARAUDERS_10"
+						wait until read
+					send good spirit home
+				elsif Comment == 1
+					eject good spirit 
+					//GA: "Those people look a little desperate."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_MARAUDERS_20"
+						wait until read
+					send good spirit home
+				elsif Comment == 2
+					eject evil spirit
+					//GA: "You want some? And you?"
+						say "BW2T_HELP_TEXT_GUIDANCE_BATTLE_ALERT_WINNING_EA_06"
+						wait until read
+					send evil spirit home
+				end if
+			end dialogue
+			Comment++
+			SeenMarauder2 = 1
+			set CommentTimer time to 20 seconds
+		end if
+
+		if get distance from camera position to {Marauder3} <= 35 and {Marauder3} viewed and SeenMarauder3 == 0
+			begin dialogue
+				if Comment == 0
+					eject good spirit
+					//GA: "I don't like the look of those fellows."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_MARAUDERS_10"
+						wait until read
+					send good spirit home
+				elsif Comment == 1
+					eject good spirit 
+					//GA: "Those people look a little desperate."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_MARAUDERS_20"
+						wait until read
+					send good spirit home
+				elsif Comment == 2
+					eject evil spirit
+					//GA: "You want some? And you?"
+						say "BW2T_HELP_TEXT_GUIDANCE_BATTLE_ALERT_WINNING_EA_06"
+						wait until read
+					send evil spirit home
+				end if
+			end dialogue
+			Comment++
+			SeenMarauder3 = 1
+			set CommentTimer time to 20 seconds
+		end if
+	end if
+	
+	if FightHappened == 0 
+		if platoon Marauder1 fighting 
+			Fighter = Marauder1
+		elsif platoon Marauder2 fighting
+			Fighter = Marauder2
+		elsif platoon Marauder3 fighting
+			Fighter = Marauder3
+		end if
+		
+		if Fighter exists
+			begin dialogue
+				eject evil spirit 
+				if {Fighter} viewed
+				//EA: "Look at that. Combat stirs the blood, don't it?"
+					say "BW2T_SCRIPT_GENERIC_MELEE_UNIT_HAS_FIRST_FIGHT"
+					wait until read
+				else
+				//EA: "We're getting attacked, Boss!"
+					say "BW2T_HELP_TEXT_GUIDANCE_BATTLE_ALERT_EA_01"
+					wait until read
+				end if
+				//EA: "Kill 'em and grill 'em."
+					say "BW2T_HELP_TEXT_GUIDANCE_KILLING_EA_09"
+					wait until read
+				send evil spirit home
+			end dialogue
+			FightHappened = 1
+		end if
+	end if
+end while 
+end script WatchMarauders

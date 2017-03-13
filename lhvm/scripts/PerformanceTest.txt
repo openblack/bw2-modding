@@ -1,0 +1,42 @@
+run script PerformanceTest
+
+begin script PerformanceTest
+	TestLion = 0
+	TestWolf = 0
+	TestApe = 0
+	TestCow = 0
+start
+	enable performance checking
+	begin cinema
+
+		set camera position to {1016.230, 353.501, 1825.471}
+		set camera focus to {1033.716, 296.045, 1745.515}
+
+		wait 10 seconds
+		add performance stats called "Land 1: Between mountains"
+
+		set camera position to {770.356, 894.973, 1219.836}
+		set camera focus to {814.942, 808.199, 1241.797}
+
+		wait 10 seconds
+		add performance stats called "Land 1: Far above land"
+
+		TestLion = create DUMB_CREATURE CREATURE_TYPE_LION at {1575.928, 111.473, 838.692} using only alignment good neutral
+		TestWolf = create DUMB_CREATURE CREATURE_TYPE_WOLF at {1573.192, 111.470, 835.167} using only alignment neutral evil
+		TestApe = create DUMB_CREATURE CREATURE_TYPE_APE at {1576.496, 111.441, 843.982}
+		TestCow = create DUMB_CREATURE CREATURE_TYPE_COW at {1569.293, 111.469, 834.635}
+
+		set creature TestLion CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature TestWolf CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature TestApe CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature TestCow CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+
+		set camera position to {1566.054, 116.043, 843.902} 
+ 		set camera focus to {1645.876, 92.784, 788.336}
+
+		wait 10 seconds
+		add performance stats called "Land 1: Creature selection"
+
+	end cinema
+	disable performance checking
+end script PerformanceTest

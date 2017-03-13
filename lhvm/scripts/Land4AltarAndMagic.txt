@@ -1,0 +1,387 @@
+//***********************************************************************
+//
+//	Altar and Magic tutorial
+//
+//***********************************************************************
+define script Land4AltarTutorial(Altar)
+define script Land4MakeWorshipper(Altar)
+define script Land4AltarSacrificeCheck
+
+global Worshipper = 0
+global ReadyForScroll = 0
+global ToldToCastMiracle = 0
+global WaterStat = 0
+
+define AM_True = 1
+define AM_False = 0
+
+begin script Land4AltarAndMagic
+
+AltarComment = 0
+Altar = 0
+Scroll = 0
+AltarMana = 0
+RunTTScript = 0
+MentionedBuildingAltar = 0
+AltarCreated = 0
+WorshipperDialogue = 0
+MadeIndestructible = AM_False
+
+start
+
+set research ARTEFACT_MAGIC_TYPE_WATER_RAIN available to RESEARCH_AVAILABILITY_RESEARCHED
+
+if L4GreekTown not exists
+	run script Land4Globals
+end if
+
+	begin loop
+		Altar = get building ABODE_NUMBER_ALTAR in L4GreekTown min built 0
+		if Altar exists  
+			if MadeIndestructible == AM_False
+				enable Altar indestructible
+				WaterStat = get total of stat STATS_EVT_PLAYER_CAST_WATER_POUR	
+				WaterStat += get total of stat STATS_EVT_PLAYER_CAST_WATER_THROW
+				WaterStat += 1
+				MadeIndestructible = AM_True
+			end if
+			if HEALTH of Altar == 1 and BUILT of Altar == 1
+				if AltarComment == 0
+					play string sound "SCRIPT19_REWARDSTING"
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_BUILDALTARTUTORIAL
+					begin dialogue
+						eject good spirit
+					//GA: "Well done, Leader! You have built an Altar."
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_10"
+						wait until read
+						send good spirit home
+					end dialogue
+					AltarComment++
+				elsif AltarComment == 1 
+					if Scroll not exists
+						Scroll = create highlight BRONZE name "BW2T_SCRIPT_04FINAL_ALTERMAGIC_10" remind "BW2T_SCRIPT_04FINAL_ALTERMAGIC_20" at {Altar}
+						ALTITUDE of Scroll = 15
+					end if
+				end if
+			else
+				if Scroll exists
+					delete Scroll
+				end if
+			end if
+		else
+			if Scroll exists
+				delete Scroll
+			end if
+
+			if MentionedBuildingAltar == 0 and variable get L4GreekTown desired building == variable ABODE_NUMBER_ALTAR
+				wait 1 seconds
+				begin dialogue
+					eject good spirit
+				//GA: "Look! The people have remembered all about Altars."
+					say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_530"
+					wait until read
+				//GA: "Altars are where you can focus your godly Miracles. Let's build one as soon as possible."
+					say "BW2T_SCRIPT_03FINAL_PLAYTHROUGH29_540"
+					wait until read
+					send good spirit home
+				end dialogue
+				MentionedBuildingAltar = 1
+			end if
+		end if
+	until Scroll right clicked
+	end loop
+	
+	if Scroll exists
+		delete Scroll
+	end if	
+	
+	Worshipper = get total of stat STATS_ACC_TOTAL_DISCIPLES_WORSHIP
+	if Worshipper == 0
+		run script Land4MakeWorshipper(Altar)
+	else
+		run background script Land4AltarTutorial(Altar)
+	end if
+	run background script Land4AltarSacrificeCheck
+end script Land4AltarAndMagic
+
+//*****************************************************
+
+begin script Land4AltarTutorial(Altar)
+
+	SpellInHand = 0
+	ObjectInHand = 0
+	SpellCounter = 0
+	ReadyToCast = 0
+	WaterInHand = 0
+	WaterSpell = 0
+	WaterComment1 = 0
+	WaterComment2 = 0
+	WaterComment3 = 0
+	WaterCast = 0
+	GotAField = 0 
+	WaterStat2 = 0
+start
+	//set player 0 mana GLOBAL_VALUE_MANA_LAND4_ALTAR_AND_MAGIC_TUTORIAL
+	
+	WaterCast = 0	
+	if ToldToCastMiracle == 0
+		begin dialogue
+			eject good spirit
+			//GA: "You've already made a worshipper. Clever old Leader!"
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_69"
+				wait until read
+				wait 0.5 seconds
+			//GA: "Miracles are a very powerful force, which can be used for good or for..."
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_110"
+				wait until read
+			eject evil spirit
+			//EA "Senseless, mindless and glorious evil!"
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_120"
+				wait until read
+			//GA: "This Altar already has a Water Miracle."
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_30"
+				wait until read
+
+			if get number of type FIELD_OBJECT in L4GreekTown min built 1.0 > 0
+			//GA: "Try it on that field over there. Grab the Miracle and just drop it on the field to water it."
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_40"
+				wait until read
+			//EA: "Watering? I was hoping for something more, well, fiery. Still, give it a try, Boss."
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_50"
+				wait until read
+			else
+			//GA: "Try casting a few Water Miracles. They work particularly well on fields."
+				say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_130"
+				wait until read
+			end if
+			send good spirit home
+			send evil spirit home
+		end dialogue
+	end if
+	
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_ALTAR_10"
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_ALTAR_30" //Cast a Water Miracle.
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 parent objective TRIBUTE_OBJECTIVE_LAND_5
+	enable objective window	
+	
+	while WaterCast < 3
+		if get player 0 mana < get mana for spell MIRACLE_TYPE_WATER and WaterCast == 0
+			set player 0 mana get mana for spell MIRACLE_TYPE_WATER
+		end if
+		WaterStat2 = get total of stat STATS_EVT_PLAYER_CAST_WATER_POUR	
+		WaterStat2 += get total of stat STATS_EVT_PLAYER_CAST_WATER_THROW
+		
+		if WaterStat <= WaterStat2
+			WaterStat += 1
+			WaterCast++
+		end if
+		
+		if WaterCast == 1 and WaterComment1 == 0
+			begin dialogue
+				eject good spirit
+					enable objective window
+					set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 value 1
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_CASTWATERTUTORIAL
+				//GA: "You cast a Water Miracle! Well done, Great One!"
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_140"
+					wait until read
+				send good spirit home
+			end dialogue
+			WaterStat = get total of stat STATS_EVT_PLAYER_CAST_WATER_POUR	
+			WaterStat += get total of stat STATS_EVT_PLAYER_CAST_WATER_THROW
+			WaterStat += 1
+			disable Altar indestructible
+			
+			set research ARTEFACT_MAGIC_TYPE_LIFE_HEAL available to RESEARCH_AVAILABILITY_AVAILABLE
+			set research ARTEFACT_MAGIC_TYPE_FIRE_FIRE available to RESEARCH_AVAILABILITY_AVAILABLE
+			set research ARTEFACT_MAGIC_TYPE_AIR_TEMPEST available to RESEARCH_AVAILABILITY_AVAILABLE
+			set research ARTEFACT_MAGIC_TYPE_EARTH_METEOR available to RESEARCH_AVAILABILITY_AVAILABLE
+			set research ARTEFACT_MAGIC_TYPE_WATER_STORM available to RESEARCH_AVAILABILITY_AVAILABLE
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+			disable objective window
+			WaterComment1 = 1
+		elsif WaterCast == 2 and WaterComment2 == 0
+			begin dialogue
+				eject good spirit
+				//GA: "Water, water everywhere! How wonderful!"
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_150"
+					wait until read
+				send good spirit home
+			end dialogue
+			WaterComment2 = 1
+		elsif WaterCast == 3 and WaterComment3 == 0
+			begin dialogue
+				eject good spirit
+				//GA: "Marvellous."
+					say "BW2T_SCRIPT_02FINAL_GENERIC_108"
+					wait until read
+				eject evil spirit
+				//EA: "Hey, Boss, I think our friend has just wet himself!"
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_160"
+					wait until read
+				send evil spirit home
+				send good spirit home
+			end dialogue
+			WaterComment3 = 1
+		end if
+
+	end while
+end script Land4AltarTutorial
+
+
+//*********************************************************************************
+
+begin script Land4MakeWorshipper(Altar)
+
+	RelCamPos = 0
+	RelCamFoc = 0
+	WorshipperCount = 0
+	MadeWorshipper = 0
+	WorshipperTemp = 0
+	SacrificeTotal = 0
+	WorshipperComment = 0
+	WorshipperStartPos = 0
+	WorshipperEndPos = 0
+	CurrentWorshippers = 0
+	WorshipperAtPos = 0
+	SacrificeComment = 0
+	Worshippers = 0
+	CheckDist = 30
+	AltarTT = 0
+
+start
+
+	begin dialogue
+		eject good spirit
+		//GA: "Altars work on a power called Mana. You can generate Mana by creating worshippers."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_60"
+			wait until read
+		//GA: "Go on. Create a worshipper. Show us you can do it."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_70"
+			wait until read
+		send good spirit home
+	end dialogue
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_5 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_ALTAR_10"
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 text "BW2T_SCRIPT_04FINAL_OBJECTIVES_ALTAR_20"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 parent objective TRIBUTE_OBJECTIVE_LAND_5
+	enable objective window
+
+	while MadeWorshipper != 1
+		Worshippers = get number of disciples VILLAGER_DISCIPLE_WORSHIP in town L4GreekTown
+		if Worshippers == 0 
+			if hand position near {Altar} radius CheckDist
+				if AltarTT not exists
+					AltarTT = create tooltip on Altar with text "BW2T_SCRIPT_04FINAL_TOOLTIPS_10"
+				end if
+			elsif AltarTT exists
+				delete AltarTT
+			end if
+		end if
+
+		MadeWorshipper = get number of disciples VILLAGER_DISCIPLE_WORSHIP in town L4GreekTown//get total of stat STATS_ACC_TOTAL_DISCIPLES_WORSHIP
+		
+		//	if WorshipperCount != 0 and WorshipperComment == 0
+		if MadeWorshipper != 0 and WorshipperComment == 0
+			if AltarTT exists
+				delete AltarTT
+			end if
+
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_6 value 1
+			wait 2 seconds
+			disable objective window
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_6
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_5
+			
+			begin dialogue
+				eject good spirit
+				//GA: "Now that we have a worshipper, the Altar will generate Mana. Of course, more worshippers means more mana."
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_230"
+					wait until read
+					eject evil spirit
+					WorshipperComment = 1
+					MadeWorshipper = 1
+				//EA: "Remember, Miracles cost Mana and you need worshippers to generate Mana. Simple."
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_80"
+					wait until read
+				//EA: "And get this - you can drop people straight into the Altar to create Mana too. You won’t ever seen them again, though."
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_90"
+					wait until read
+					send evil spirit home
+				//GA: "Oh yes. You can also use your Tribute to buy Miracles."
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_100"
+					wait until read
+					wait 0.5 seconds
+					ToldToCastMiracle = 1
+				//GA: "Miracles are a very powerful force, which can be used for good or for..."
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_110"
+					wait until read
+				eject evil spirit
+				//EA "Senseless, mindless and glorious evil!"
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_120"
+					wait until read
+				//GA: "This Altar already has a Water Miracle."
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_30"
+					wait until read
+
+					if get number of type FIELD_OBJECT in L4GreekTown min built 1.0 > 0
+					//GA: "Try it on that field over there. Grab the Miracle and just drop it on the field to water it."
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_40"
+						wait until read
+					//EA: "Watering? I was hoping for something more, well, fiery. Still, give it a try, Boss."
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_50"
+						wait until read
+					else
+					//GA: "Try casting a few Water Miracles. They work particularly well on fields."
+						say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_130"
+						wait until read
+					end if
+				send good spirit home
+				send evil spirit home
+			end dialogue
+		end if
+	end while
+	
+	run background script Land4AltarTutorial(Altar)
+
+
+
+end script Land4MakeWorshipper
+
+//=======================================================
+
+begin script Land4AltarSacrificeCheck
+SacrificeTotal = 0
+SacrificeComment = 0
+start
+
+	SacrificeTotal = get total of stat STATS_EVT_SACRIFICES
+	while SacrificeComment == 0
+		if SacrificeTotal < get total of stat STATS_EVT_SACRIFICES
+				wait 1 seconds
+				if ThrowBlokeSacrificed == 1
+						wait until ThrowBlokeSacrificed == 3
+						wait 1 second
+				end if
+			begin dialogue
+				eject evil spirit
+				//EA: "You did it, Boss. You sacrificed a person. Now didn't that feel good?"
+					say "BW2T_SCRIPT_04FINAL_ADVISORS_MANA_TUT_180"
+					wait until read
+					//play string sound "REWARDSTING"
+					increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_SACRIFICETUTORIAL
+					SacrificeComment = 1
+				send good spirit home
+			end dialogue
+		end if
+	end while
+
+end script Land4AltarSacrificeCheck

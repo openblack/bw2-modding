@@ -1,0 +1,23 @@
+//
+//This file contains all the scripts to compile in Land 5
+//
+// -Globals-
+DemoGlobals.txt
+
+// -Challenges-
+Land5ShootMessenger.txt
+Land5SevenSamurai.txt
+Land5BlackAnnis.txt
+//Land5ThiefGuardOre.txt
+//Land5Traders.txt
+Land5PaternitySuit.txt
+
+//-- Gods playground and misc
+GenericControl.txt
+TownEventWindowCleaner.txt
+TownEventChimneySweep.txt
+
+// -Land Script-
+Land5Japanese.txt
+Land5Outpost1.txt
+//Land5Control.txt

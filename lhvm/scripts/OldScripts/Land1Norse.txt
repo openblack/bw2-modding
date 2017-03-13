@@ -1,0 +1,136 @@
+//------------------------------------------------
+//  LAND 1 NORSE TOWN AI
+//------------------------------------------------
+
+define script Land1NorseFarm
+define script Land1NorseFisher
+define script Land1NorseForester
+
+begin script Land1Norse
+
+ Eternity = 0
+
+start
+
+	run background script Land1NorseFarm
+	run background script Land1NorseFisher
+	run background script Land1NorseForester
+
+	begin loop
+	until Eternity == 1
+	end loop
+
+end script Land1Norse
+
+//-------------------------------------------------------------
+// NORSE FARM MINOR SETTLEMENT
+//-------------------------------------------------------------
+
+begin script Land1NorseFarm
+
+ L1GreekStore = 0
+ FarmTimer = create timer for 0 seconds
+
+start
+
+	begin loop
+		if PLAYER of L1NorseFarmSettlement == 0
+			L1NorseFarmSettlementConverted = 1
+			L1AllNorseConverted++
+		end if
+
+	until L1NorseFarmSettlementConverted == 1
+	end loop
+
+	/// run background script with scroll triggering 'submission' cut-scene
+
+	while PLAYER of L1NorseFarmSettlement == 0
+
+		set FarmTimer time to 10 seconds
+		wait until get FarmTimer time remaining <= 0
+
+		L1GreekStore = get STORAGE_PIT in L1GreekTown
+		if L1GreekStore exists
+			add resource RESOURCE_TYPE_FOOD 100 to L1GreekStore
+			/// trigger food gained effects
+		end if
+
+	end while
+
+end script Land1NorseFarm
+
+
+//-------------------------------------------------------------
+// NORSE FISHER MINOR SETTLEMENT
+//-------------------------------------------------------------
+
+begin script Land1NorseFisher
+
+ L1GreekStore = 0
+ FishTimer = create timer for 0 seconds
+
+start
+
+	begin loop
+		if PLAYER of L1NorseFisherSettlement == 0
+			L1NorseFisherSettlementConverted = 1
+			L1AllNorseConverted++
+		end if
+
+	until L1NorseFisherSettlementConverted == 1
+	end loop
+
+	/// run background script with scroll triggering 'submission' cut-scene
+
+	while PLAYER of L1NorseFisherSettlement == 0
+
+		set FishTimer time to 10 seconds
+		wait until get FishTimer time remaining <= 0
+
+		L1GreekStore = get STORAGE_PIT in L1GreekTown
+		if L1GreekStore exists
+			add resource RESOURCE_TYPE_FOOD 100 to L1GreekStore
+			/// trigger food gained effects
+		end if
+
+	end while
+
+end script Land1NorseFisher
+
+
+//-------------------------------------------------------------
+// NORSE FORESTER MINOR SETTLEMENT
+//-------------------------------------------------------------
+
+begin script Land1NorseForester
+
+ L1GreekStore = 0
+ WoodTimer = create timer for 0 seconds
+
+start
+
+	begin loop
+		if PLAYER of L1NorseForesterSettlement == 0
+			L1NorseForesterSettlementConverted = 1
+			L1AllNorseConverted++
+		end if
+
+	until L1NorseForesterSettlementConverted == 1
+	end loop
+
+	/// run background script with scroll triggering 'submission' cut-scene
+
+	while PLAYER of L1NorseForesterSettlement == 0
+
+		set WoodTimer time to 10 seconds
+		wait until get WoodTimer time remaining <= 0
+
+		L1GreekStore = get STORAGE_PIT in L1GreekTown
+		if L1GreekStore exists
+			add resource RESOURCE_TYPE_WOOD 100 to L1GreekStore
+			/// trigger wood gained effects
+		end if
+
+	end while
+
+end script Land1NorseForester

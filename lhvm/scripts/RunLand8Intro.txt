@@ -1,0 +1,6 @@
+run script RunLand8Intro
+
+begin script RunLand8Intro
+start
+	run script Land8Intro
+end script RunLand8Intro

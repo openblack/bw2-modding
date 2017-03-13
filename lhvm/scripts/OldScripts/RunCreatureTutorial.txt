@@ -1,0 +1,23 @@
+//-----------------------------------------------------------------------------
+// RunCreatureTutorial
+//
+// Paul Nettleton
+//
+// This script runs the disciple tutorial script
+//
+//-----------------------------------------------------------------------------
+
+run script RunCreatureTutorial
+
+//-----------------------------------------------------------------------------
+
+begin script RunCreatureTutorial
+start
+	
+	run script CreatureTutorial
+	
+end script RunCreatureTutorial
+
+
+//-----------------------------------------------------------------------------
+

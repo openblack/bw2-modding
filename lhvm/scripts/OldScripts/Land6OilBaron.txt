@@ -1,0 +1,727 @@
+///////////////////////////////////////////////////////////////////////////////
+//	OIL BARON
+//	~~~~~~~~~
+//	Description:
+//	A hermit type character is able to produce barrels of oil (“Greek Fire”) has run into some problems
+//	and cannot create any for you. He is located on the top of a hill to the side of your city.
+//	A serious oil fire has broken out at the top of his Oil Well and must be put out.
+//	The player will have to get help from the creature as the player needs to cast a water miracle
+//	and a freeze miracle on the fire simultaneously.  Once out the Oil Baron starts to produce more barrels
+//	at a predefined rate, no disciples can be added to the task. When the land is ripped apart later
+//	by the WoMD activity the fire will restart and needs quenching again. The Greek Fire Oil Barrels
+//	that he produces explode when thrown or heated.
+//	They act as a poor man’s fireball (and actually create scaled down fireballs in their place when deleted
+//	with explosion and also release projectiles that dissipate before landing).
+//	The enemy tribes will try and send forces to attack this production facility, blowing up any barrels
+//	present and setting the Oil Well alight again.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			28-10-03			By:	Steve
+//	Update date:		02-12-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define OB_TRUE					= 1
+define OB_FALSE					= 0
+define OB_MAX_AMOUNT_OF_BARRELS	= 25
+define OB_NUM_BARRELS_PER_STORE	= 5
+define OB_INITIAL_NUM_BARRELS	= 3
+define OB_CRITICAL_TEMP			= 1000
+define OB_AMOUNT_OF_GUSHERS		= 5
+define OB_MAX_GUSHER_PRESSURE	= 10
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global OB_OilBarrel[OB_MAX_AMOUNT_OF_BARRELS]
+global OB_OilBarrelPos[OB_MAX_AMOUNT_OF_BARRELS]
+global OB_OilGusherPos[OB_AMOUNT_OF_GUSHERS]
+global OB_OilGusherCap[OB_AMOUNT_OF_GUSHERS]
+global OB_OilGusherPressure[OB_AMOUNT_OF_GUSHERS]
+
+global OB_OilBaronHelper			= 0
+global OB_OilBaronHelperJob			= 0
+global OB_OilBaron					= 0
+global OB_OilRefinery				= 0
+global OB_OilFiresPutOut			= OB_FALSE
+
+global OB_NumberOfGushersCapped		= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script OB_SetupOilRefinery
+define script OB_MaintainOilFires
+define script OB_MaintainOilBarrels
+define script OB_CheckForStateOfOilBarrel(BarrelID)
+define script OB_CreateOilBarrel(BarrelID)
+define script OB_AskPlayerForLittleHelpers
+define script OB_AcceptLittleHelpers
+define script OB_HandleLittleHelperActions
+define script OB_HandleGusherGame
+define script OB_CreateGusherCap(Cap, Pos)
+define script OB_HandleGusherActions(Gusher)
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land6OilBaron
+Baron = 0
+start
+	// commented out cut scenes, as we do not have the logic working.
+	begin cinema
+		Baron = create VILLAGER VILLAGER_INFO_JAPANESE_LEADER_MALE at {1199.909, 28.870, 681.441}
+		set Baron focus to {1190.607, 27.878, 689.941}
+		play animation "a_p_ambient1" on Baron loop 1000 disable stand
+		set anim speed of Baron to 0.2
+		
+		set camera lens 48
+		set camera position to {1210.146, 42.558, 613.251}
+		set camera focus to {1190.347, 40.022, 629.934}
+		move camera position to {1210.680, 42.558, 613.884}	time 4
+		move camera focus to {1191.049, 39.074, 630.594} time 4
+		wait 4 seconds
+		
+		set camera lens 48
+		set camera position to {1158.704, 65.942, 686.177}	
+		set camera focus to {1142.678, 52.468, 702.292}
+		move camera position to {1160.963, 65.942, 688.717} time 4
+		move camera focus to {1142.949, 52.364, 702.861} time 4
+		wait 4 seconds
+
+		set camera lens 70
+		set camera position to {1224.670, 63.674, 656.808}
+		set camera focus to {1208.795, 30.398, 685.430}
+		move camera position to {1222.379, 58.872, 660.939} time 4
+		move camera focus to {1206.504, 25.596, 689.561} time 4
+		wait 4 seconds
+		
+		set camera lens 38
+		set camera position to {1200.137, 29.039, 678.655}
+		set camera focus to {1183.488, 48.623, 717.614}
+		move camera position to {1200.297, 29.169, 679.033} time 12
+		move camera focus to {1182.779, 47.295, 718.316} time 12
+		
+		
+		
+		wait 1 seconds
+		say "Brill! My pumps are now working!"
+		wait 3 seconds
+		say "Only i am gettinng old."
+		wait 3 seconds
+		
+		set camera lens 20
+		set camera position to {1193.594, 29.696, 685.437}
+		set camera focus to {1233.532, 31.021, 661.307}
+		move camera position to {1190.752, 29.602, 687.154} time 5
+		move camera focus to {1230.690, 30.927, 663.024} time 5
+		say "If only i had some help!"
+		wait 3 seconds
+		say "I could produce a lot of barrels of oil."
+		wait 3 seconds
+		
+		set camera lens 70
+		set camera position to {1224.670, 63.674, 656.808}
+		set camera focus to {1208.795, 30.398, 685.430}
+		delete Baron
+		
+		wait 1 seconds
+		
+		
+		
+	end cinema
+	wait 4000 seconds
+	// Create the oil baron refinery and the oil barrels
+	begin cinema
+		Baron = create VILLAGER VILLAGER_INFO_JAPANESE_LEADER_MALE at {1214.457, 29.878, 679.496}
+		set Baron focus to {1213.490, 29.777, 673.300}		
+		
+		play animation "a_p_mourning" on Baron loop 1000 disable stand
+		
+		
+		set camera lens 38
+		set camera position to {1214.288, 30.210, 677.491}
+		set camera focus to {1215.000, 36.402, 711.302}
+		say "Boo hoo hoo!"
+		wait 3 seconds
+		say "My poor, poor oil pumps!"
+		wait 3 seconds
+		
+		set camera position to {1172.581, 73.981, 707.609}
+		set camera focus to {1147.305, 52.526, 698.507}
+		move camera position to {1180.137, 80.395, 710.330} time 6
+		move camera focus to {1154.861, 58.940, 701.228} time 6
+		say "They are all on fire!"
+		wait 3 seconds //wait until read does not work...
+		say "What can i do!?"
+		wait 3 seconds
+		
+		play animation "a_p_clap1" on Baron loop 1000 disable stand
+		set anim speed of Baron to 0.01
+		set camera position to {1214.418, 30.496, 678.167}
+		set camera focus to {1213.366, 46.649, 708.498}
+		move camera position to {1214.418, 30.489, 678.154} time 4
+		move camera focus to {1213.366, 46.642, 708.485} time 4
+		
+		say "Help! Somebody help me!"
+		wait 3 seconds
+		
+		set camera lens 70
+		set camera position to {1224.535, 240.451, 497.771}
+		set camera focus to {1216.447, 213.915, 518.079}
+		
+		wait 1 seconds
+		delete Baron
+	end cinema
+	
+	run script OB_SetupOilRefinery
+	run background script OB_MaintainOilFires
+	run script OB_MaintainOilBarrels
+
+end script Land6OilBaron
+
+
+//-----------------------------------------------------------------------------
+//	Setup the oil refinary with it's barrels
+//-----------------------------------------------------------------------------
+begin script OB_SetupOilRefinery
+
+	StorePoints[OB_NUM_BARRELS_PER_STORE]
+	DIST					= 30
+	ANGLE					= 0
+	Counter					= 0
+	Store					= 0
+	RefineryPos				= marker at {1474.703,64.293,1362.925}
+
+start
+
+	// These are where the oil gushers that are on fire are located
+//	OB_OilGusherPos[0] = marker at {0.000,0.000,0.000}
+//	OB_OilGusherPos[1] = marker at {0.000,0.000,0.000}
+//	OB_OilGusherPos[2] = marker at {0.000,0.000,0.000}
+//	OB_OilGusherPos[3] = marker at {0.000,0.000,0.000}
+//	OB_OilGusherPos[4] = marker at {0.000,0.000,0.000}
+
+	// Get / Create the oil refinery
+	OB_OilRefinery = create HOUSE ABODE_INFO_GREEK_PUB at {RefineryPos}
+
+	// These are the markers for the storage points for the oil barrels
+	while Counter < OB_NUM_BARRELS_PER_STORE
+		StorePoints[Counter] = marker at get target from {RefineryPos} + {5.000,0.000,0.000} to {RefineryPos} distance DIST angle ANGLE
+		ANGLE += 360 / OB_NUM_BARRELS_PER_STORE
+		Counter++
+	end while
+
+	DIST = 4
+	ANGLE = 0
+	Counter = 0
+
+	// Setup the positions of the barrels at each of the storage points
+	while Counter < OB_MAX_AMOUNT_OF_BARRELS
+		// Reset the angle counter if we are going onto the next store
+		if Counter % OB_NUM_BARRELS_PER_STORE == 0
+			Store = marker at {StorePoints[Counter / OB_NUM_BARRELS_PER_STORE]}
+			ANGLE = 0
+
+			// Store the gusher position
+			OB_OilGusherPos[Counter] = marker at get target from {RefineryPos} to {Store} distance 0 angle 0
+		end if
+
+		// Set the position of the next barrel
+		OB_OilBarrelPos[Counter] = marker at get target from {RefineryPos} to {Store} distance DIST angle ANGLE
+		ANGLE += 360 / OB_NUM_BARRELS_PER_STORE
+		Counter++
+	end while
+
+	Counter = 0
+
+	// Create a few of barrels of oil initially here
+	while Counter < OB_MAX_AMOUNT_OF_BARRELS
+		run background script OB_CreateOilBarrel(Counter)
+		Counter++
+	end while
+
+	// Make sure the barrels are created before continuing
+	wait 2 seconds
+
+end script OB_SetupOilRefinery
+
+
+//-----------------------------------------------------------------------------
+//	Keep the oil fires burning until the player puts them out
+//-----------------------------------------------------------------------------
+begin script OB_MaintainOilFires
+
+	DoneIntro		= OB_FALSE
+
+start
+
+	begin loop
+		// Do we need to kick off the oil gushers?
+		if OB_OilFiresPutOut == OB_FALSE
+			run script OB_HandleGusherGame
+		end if
+
+
+		// Should we run the intro?
+		if OB_OilFiresPutOut == OB_TRUE and DoneIntro == OB_FALSE
+			run script OB_AskPlayerForLittleHelpers
+			run background script OB_AcceptLittleHelpers
+			run background script OB_HandleLittleHelperActions
+			DoneIntro = OB_TRUE
+		end if
+	end loop
+
+end script OB_MaintainOilFires
+
+
+//-----------------------------------------------------------------------------
+//	Handle the oil barrels
+//-----------------------------------------------------------------------------
+begin script OB_MaintainOilBarrels
+
+	Counter		= 0
+
+start
+
+	// Setup the maintenance of the barrels
+	while Counter < OB_MAX_AMOUNT_OF_BARRELS
+		run background script OB_CheckForStateOfOilBarrel(Counter)
+		Counter++
+	end while
+
+end script OB_MaintainOilBarrels
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the barrel temeprature is high enough to explode it
+//-----------------------------------------------------------------------------
+begin script OB_CheckForStateOfOilBarrel(BarrelID)
+
+	BARREL_LIFESPAN			= 120
+	BarrelExploded			= OB_FALSE
+	BarrelIsFlying			= OB_FALSE
+	LifespanTimerStarted	= OB_FALSE
+	BarrelLifespanTimer		= create timer for 0 seconds
+
+start
+
+	begin loop
+		if OB_OilBarrel[BarrelID] exists
+			// Get the temperature of the barrel to see if the barrel should explode
+			if get OB_OilBarrel[BarrelID] temperature >= OB_CRITICAL_TEMP
+				BarrelExploded = OB_TRUE
+say "Barrel $d is too hot." with number BarrelID
+			end if
+
+			// Check to see if the barrel has gone into physics
+			if BarrelIsFlying == OB_FALSE and not OB_OilBarrel[BarrelID] is HELD
+				if ALTITUDE of OB_OilBarrel[BarrelID] > 3
+say "Barrel $d is flying." with number BarrelID
+					BarrelIsFlying = OB_TRUE
+				end if
+			end if
+
+			// Check to see if the barrel has hit something after it has been flying
+			if BarrelIsFlying == OB_TRUE
+				if get object which hit land == OB_OilBarrel[BarrelID] or get object which hit == OB_OilBarrel[BarrelID]
+					BarrelExploded = OB_TRUE
+					clear hit land object
+					clear hit object
+say "Barrel $d has hit ground after flying." with number BarrelID
+				end if
+			end if
+
+			// Make sure the barrel is not in physics and is not being held before starting the timer
+			if not OB_OilBarrel[BarrelID] is FLYING and not OB_OilBarrel[BarrelID] is MOVING and not OB_OilBarrel[BarrelID] is HELD
+				// Check for the lifespan of a barrel being exceeded when it is away from it's home pos
+				if not {OB_OilBarrel[BarrelID]} near {OB_OilBarrelPos[BarrelID]} radius 5
+					if LifespanTimerStarted == OB_FALSE
+						// Reset the lifespan timer to zero so we can make sure the barrel has a full lifespan
+						set BarrelLifespanTimer time to 0 seconds
+						LifespanTimerStarted = OB_TRUE
+say "Barrel $d has stopped moving so starting lifepsan check." with number BarrelID
+					else
+						// Check to see if the barrel has used up it's lifespan
+						if get BarrelLifespanTimer time since set > BARREL_LIFESPAN
+							BarrelExploded = OB_TRUE
+say "Barrel $d has run out of life." with number BarrelID
+						end if
+					end if
+				end if
+			end if
+
+			// Make all the snazzy explode effects happen here :)
+			if BarrelExploded == OB_TRUE
+				// Explode that barrel
+				delete OB_OilBarrel[BarrelID] with explosion
+				//delete OB_OilBarrel[BarrelID]
+				BarrelExploded = OB_FALSE
+				BarrelIsFlying = OB_FALSE
+				LifespanTimerStarted = OB_FALSE
+say "Barrel $d exploded." with number BarrelID
+			end if
+		end if
+	end loop
+
+end script OB_CheckForStateOfOilBarrel
+
+
+//-----------------------------------------------------------------------------
+//	Create a single barrel
+//-----------------------------------------------------------------------------
+begin script OB_CreateOilBarrel(BarrelID)
+start
+
+	// Create the missing barrel
+	if not OB_OilBarrel[BarrelID] exists
+		OB_OilBarrel[BarrelID] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {OB_OilBarrelPos[BarrelID]}
+		SCALE of OB_OilBarrel[BarrelID] = 0.5
+		ALTITUDE of OB_OilBarrel[BarrelID] = 0
+	end if
+
+end script OB_CreateOilBarrel
+
+
+//-----------------------------------------------------------------------------
+//	Get the thanks from the oil baron guy and ask for some helpers
+//-----------------------------------------------------------------------------
+begin script OB_AskPlayerForLittleHelpers
+
+	BaronCreatePos	= marker at {1470.990,64.493,1361.944}
+	BaronTalkPos	= marker at {1469.146,64.593,1362.307}
+	InitCamPos		= marker at {1466.796,66.262,1359.440}
+	InitCamFoc		= marker at {1476.528,64.243,1365.094}
+	LookAtPitPos	= marker at {1458.522,73.209,1351.083}
+	LookAtPitFoc	= marker at {1467.189,64.594,1358.135}
+	Scroll			= 0
+	ReminderTimer	= create timer for 0 seconds
+
+start
+
+	// Create a scroll for the player to click on
+	Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {OB_OilRefinery}
+	ALTITUDE of Scroll = 10
+
+	// Handle the scroll reminder
+	begin loop
+		if get ReminderTimer time remaining <= 0
+			begin dialogue
+				eject good spirit
+				make good spirit point at {Scroll}
+				say "GA: Leader something requires your attention at the oil refinery."
+				wait until read
+				stop good spirit pointing
+				send good spirit home
+			end dialogue
+			set ReminderTimer time to 30 seconds
+		end if
+	until Scroll right clicked
+	end loop
+	delete Scroll
+
+	// Get the thanks from the oil baron
+	begin cinema
+		OB_OilBaron = create VILLAGER VILLAGER_INFO_GREEK_TRADER_MALE at {BaronCreatePos}
+		move camera position to {InitCamPos} time 3
+		move camera focus to {InitCamFoc} time 3
+		move OB_OilBaron position to {BaronTalkPos}
+		wait until camera ready
+		wait until {OB_OilBaron} near {BaronTalkPos} radius 1
+		set OB_OilBaron focus to camera position
+
+		say "BARON: Thanks for putting those fires out God."
+		wait until read
+		say "BARON: I would like to supply you with oil barrels, but my workers have left."
+		wait until read
+		say "BARON: I cannot do the work as my legs are knackered."
+		wait until read
+		set camera position to {LookAtPitPos}
+		set camera focus to {LookAtPitFoc}
+		say "BARON: You could always supply me with a helper."
+		wait until read
+
+		move OB_OilBaron position to {BaronCreatePos}
+	end cinema
+
+	// Get responses from the advisors
+	begin dialogue
+		eject evil spirit
+		eject good spirit
+		say "EA: Hey boss we really need those napalm bombs hehe :)"
+		wait until read
+		say "EA: Give him that slave he wants."
+		wait until read
+		say "GA: No leader! It's against the Geneva convention."
+		wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+	wait until {OB_OilBaron} near {BaronCreatePos} radius 1 or 10 seconds
+	delete OB_OilBaron
+
+end script OB_AskPlayerForLittleHelpers
+
+
+//-----------------------------------------------------------------------------
+//	Accept any helpers sent to the baron if there is rrom for them otherwise send them back home 
+//-----------------------------------------------------------------------------
+begin script OB_AcceptLittleHelpers
+
+	AssignHelperPos			= marker at {1467.979,64.549,1362.161}
+	InHand					= 0
+	InHandType				= 0
+
+start
+
+	// Check to see if we have attempted to assign a helper
+	begin loop
+		// Get the object in the players hand
+		InHand = get object held
+
+		// Make sure the object exists
+		if InHand exists
+			// Make sure the object has been dropped
+			wait until InHand is not HELD
+			// Make sure the object is dropped in the correct place
+			if {InHand} near {AssignHelperPos} radius 20
+				// Get the type of the object dropped
+				InHandType = variable get InHand type
+				// Make sure it is a villager
+				if InHandType == variable VILLAGER
+					// Assign the villager as a new helper if one doesn't already exist
+					if not OB_OilBaronHelper exists or HEALTH of OB_OilBaronHelper <= 0
+						OB_OilBaronHelper = InHand
+					end if
+				end if
+			end if
+		end if
+	end loop
+
+end script OB_AcceptLittleHelpers
+
+
+//-----------------------------------------------------------------------------
+//	Make the helpers fill up barrels when there are free slots
+//-----------------------------------------------------------------------------
+begin script OB_HandleLittleHelperActions
+
+	DELAY				= 30
+	HelperHomePos		= marker at {1470.990,64.493,1361.944}
+	DoingJob			= OB_FALSE
+	GotJob				= OB_FALSE
+	BarrelID			= 0
+	HelperDestination	= 0
+	Counter				= 0
+	RemindTimer			= create timer for DELAY seconds
+
+start
+
+	begin loop
+		// Only do actions if the helper is alive
+		if OB_OilBaronHelper exists and HEALTH of OB_OilBaronHelper > 0
+			// Check to see if the fires have started while the helper was working
+			if OB_OilFiresPutOut == OB_FALSE and DoingJob == OB_TRUE
+				// Make the helper run back home
+				move OB_OilBaronHelper position to {HelperHomePos}
+				SPEED of OB_OilBaronHelper = 0.5
+				DoingJob = OB_FALSE
+			end if
+
+			// Check to see if we need to send the helper back home as no other jobs are available
+			if DoingJob == OB_FALSE
+				if not {OB_OilBaronHelper} near {HelperHomePos} radius 2
+					move OB_OilBaronHelper position to {HelperHomePos}
+				end if
+			end if
+
+			// Make sure there are no fires before the helper does anything
+			if OB_OilFiresPutOut == OB_TRUE and DoingJob == OB_FALSE
+				// Check to see if there are any jobs to do
+				Counter = 0
+				while Counter < OB_MAX_AMOUNT_OF_BARRELS and GotJob == OB_FALSE
+					if not OB_OilBarrel[Counter] exists
+						OB_OilBaronHelperJob = OB_OilBarrelPos[Counter]
+						HelperDestination = marker at {OB_OilBarrelPos[Counter]}
+						BarrelID = Counter
+						GotJob = OB_TRUE
+					end if
+					Counter++
+				end while
+
+				// Move the helper to the job
+				if GotJob == OB_TRUE and DoingJob == OB_FALSE
+					move OB_OilBaronHelper position to {HelperDestination}
+					DoingJob = OB_TRUE
+				end if
+			end if
+
+			// Get the helper doing the job
+			if DoingJob == OB_TRUE
+				if {OB_OilBaronHelper} near {HelperDestination} radius 2
+					// Get the helper to play some maintenance anims here...
+					OB_OilBaronHelperJob = OB_FALSE
+say "Helper is filling a barrel here."
+wait until read
+					run script OB_CreateOilBarrel(BarrelID)
+					GotJob = OB_FALSE
+					DoingJob = OB_FALSE
+				end if
+			end if
+		else
+			GotJob = OB_FALSE
+			DoingJob = OB_FALSE
+
+			// Get a reminder from the advisors
+			if camera position near {HelperHomePos} radius 100 and HelperHomePos viewed
+				if get RemindTimer time remaining <= 0
+					begin dialogue
+						eject good spirit
+						say "The oil baron needs a worker to help him leader."
+						wait until read
+						send good spirit home
+					end dialogue
+					set RemindTimer time to DELAY seconds
+				end if
+			end if
+		end if
+	end loop
+
+end script OB_HandleLittleHelperActions
+
+
+//-----------------------------------------------------------------------------
+//	Handle the mechanics of the gusher mini game
+//-----------------------------------------------------------------------------
+begin script OB_HandleGusherGame
+
+	CapPos[OB_AMOUNT_OF_GUSHERS]
+	Counter			= 0
+	CapStore		= marker at {1453.361,65.407,1355.214}
+
+start
+
+	// Handle the gusher actions if the fires are burning
+	if OB_OilFiresPutOut == OB_FALSE
+		// Setup the oil gushers cap positions
+		CapPos[0] = marker at {CapStore} + {1, 1}
+		CapPos[1] = marker at {CapStore} + {-1, -1}
+		CapPos[2] = marker at {CapStore} + {3, 3}
+		CapPos[3] = marker at {CapStore} + {-3, -3}
+		CapPos[4] = marker at {CapStore} + {5, 5}
+
+		// Create any cap that doesn't exist
+		while Counter < OB_AMOUNT_OF_GUSHERS
+			run background script OB_CreateGusherCap(Counter, CapPos[Counter])
+			Counter++
+		end while
+
+		// Set the starting pressures and handle the mechanics of the oil gushers
+		Counter = 0
+		while Counter < OB_AMOUNT_OF_GUSHERS
+			OB_OilGusherPressure[Counter] = 0
+			run background script OB_HandleGusherActions(Counter)
+			Counter++
+		end while
+
+		// Have the fires been put out?
+		while OB_OilFiresPutOut == OB_FALSE
+			if OB_NumberOfGushersCapped == OB_AMOUNT_OF_GUSHERS
+				OB_OilFiresPutOut = OB_TRUE
+			end if
+		end while
+	end if
+
+end script OB_HandleGusherGame
+
+
+//-----------------------------------------------------------------------------
+//	These are the caps that are used to lock the gushers down
+//-----------------------------------------------------------------------------
+begin script OB_CreateGusherCap(Cap, Pos)
+start
+
+	// Create the cap if it doesn't exist
+//	if not OB_OilGusherCap[Cap] exists
+		OB_OilGusherCap[Cap] = create ROCK_OBJECT MOBILE_STATIC_INFO_SMALL_NORSE_ROCK at {Pos}
+		SCALE of OB_OilGusherCap[Cap] = 0.5
+		ALTITUDE of OB_OilGusherCap[Cap] = 0
+//	end if
+
+end script OB_CreateGusherCap
+
+
+//-----------------------------------------------------------------------------
+//	Handle the actions of the gusher
+//-----------------------------------------------------------------------------
+begin script OB_HandleGusherActions(Gusher)
+
+	Counter				= 0
+	TossTarget			= 0
+	CapOnGusher			= 0
+	ThisGusherCapped	= OB_FALSE
+	JustBeenCapped		= OB_FALSE
+	GusherCappedTime	= create timer for 0 seconds
+
+start
+
+	while OB_NumberOfGushersCapped < OB_AMOUNT_OF_GUSHERS
+		// Has this gusher been capped
+		if ThisGusherCapped == OB_FALSE
+			// Check each cap to see if it's on this gusher
+			Counter = 0
+			while Counter < OB_AMOUNT_OF_GUSHERS
+				if {OB_OilGusherCap[Counter]} near {OB_OilGusherPos[Gusher]} radius 1 and not OB_OilGusherCap[Counter] is HELD and not OB_OilGusherCap[Counter] is MOVING and not OB_OilGusherCap[Counter] is FLYING
+					OB_NumberOfGushersCapped++
+					CapOnGusher = OB_OilGusherCap[Counter]
+					JustBeenCapped = OB_TRUE
+					ThisGusherCapped = OB_TRUE
+				end if
+				Counter++
+			end while
+		else
+			// if this is the first time through the loop after covering the gusher - do the setup stuff
+			if JustBeenCapped == OB_TRUE
+				// Reset the timer as we've just had the gusher capped
+				set GusherCappedTime time to 0 seconds
+				JustBeenCapped = OB_FALSE
+			end if
+
+			// Update the pressure for every second that passes
+			if get GusherCappedTime time since set % 1 == 0
+				OB_OilGusherPressure[Gusher]++
+say "Pressure for Gusher: $d." with number OB_OilGusherPressure[Gusher]
+			end if
+
+			// Have we got too great a pressure on the gusher?
+			if OB_OilGusherPressure[Gusher] >= OB_MAX_GUSHER_PRESSURE
+				OB_NumberOfGushersCapped--
+				ThisGusherCapped = OB_FALSE
+say "Gusher $d has blown it's cap :)" with number Gusher
+wait until read
+
+				// Throw that cap off the gusher...
+				// Get a random position to toss the oil cap to
+				TossTarget = marker at get target from {OB_OilGusherPos[Gusher]} to {OB_OilGusherPos[Gusher]} + {10, 10} distance number from 20 + 20 to 80 angle number from 0 to 360
+				// Give the shot some altitude
+				TossTarget = marker at {TossTarget} + {0.000,25.000,0.000}
+				// Toss that thing :)
+				set CapOnGusher velocity heading {TossTarget} speed number from 100 to 150
+			end if
+		end if
+	end while
+
+end script OB_HandleGusherActions
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------

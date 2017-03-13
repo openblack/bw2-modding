@@ -1,0 +1,103 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Land 9 - Ghost script
+// ~~~~~~~~~~~~~~~~~~~~~
+//
+//Roadrunner's Acme kit:
+//
+//The only way I can envisage this working is if two characters are trying to kill each other but keep killing themselves.
+//Neither know that the other died; so neither soul can rest.
+//Both ghosts have several trap devices such as a gunpowder trail and a boulder trap that they try and start off.
+//One guy is up a hill (he has the boulder trap); and another is down the hill (gunpowder trail).
+//Should they have more than one trap each? Hmm... possibly because it might be to easy/quick to solve otherwise.
+//
+//Boulder Trap - He tries to push a rock off it's starting position so it will roll down the hill and kill the other guy.
+//	Unfortunately it won't budge; so he goes around the front and tries to remove a small rock that he thinks is blocking it.
+//	Now it moves and squashes him.
+//	How to help him so he doesn't get squashed? Move the small rock out from underneath so it rolls down the hill.
+//
+//Gunpowder trail - Several barrels of gunpowder are piled near the man with the boulder trap above; a trail has been
+//	laid that leads down to the man below who lights it. However; it also leads around behind him to another barrel that
+//	kills him first. Again; this is very simple and quick to fix. Putting out the fire of the wrong part of the trail.
+//
+//Do I need a minimum of two more traps? One more each? It sounds too quick and easy to solve both...
+//Are all the items "ghost-like"? Ghost rocks? Or are they real? Hmm.
+///////////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define G9_FALSE			= 0
+define G9_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global G9_SomeThing		= G9_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script G9_Create_Characters
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land9Ghost
+
+start
+
+	run script G9_Create_Characters
+
+	wait 100 seconds
+
+	begin dialogue
+		say "Well done! Land 9 Ghost Script complete..."
+		wait until read
+		clear dialogue
+	end dialogue
+	
+	wait 10 seconds
+
+end script Land9Ghost
+//=============================
+
+
+
+//-----------------------------------------------------------------------------
+//	G9_Create_Characters
+//-----------------------------------------------------------------------------
+begin script G9_Create_Characters
+
+start
+
+end script G9_Create_Characters
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+/*
+	begin dialogue
+		eject good spirit
+		say "."
+		wait until read
+		clear dialogue
+	end dialogue
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

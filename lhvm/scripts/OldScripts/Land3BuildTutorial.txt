@@ -1,0 +1,391 @@
+//=========================================================
+// Land 3 building
+// Matt. L
+//=========================================================
+
+
+//-----------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------
+
+
+//-----------------------------------------------------------------
+// Defines
+//-----------------------------------------------------------------
+define BT_TRUE = 1
+define BT_FALSE = 0
+define BT_NUM_HOUSES_TO_BUILD = 3
+define BT_ADVISOR_BUILDING_IN_HAND = 1
+define BT_ADVISOR_VILLAGERS_BUILDING = 2
+define BT_ADVISOR_DROP_THE_TREE = 3
+define BT_ADVISOR_TREE_DROPPED = 4
+define BT_ADVISOR_BUILD_MORE_HOUSES = 5
+define BT_ADVISOR_ALREADY_BUILT_ALL_HOUSES = 6
+define BT_ADVISOR_ALREADY_BUILT_A_HOUSE = 7
+define BT_REMINDER_PULL_BUILDING_OFF_CENTRE = 8
+define BT_REMINDER_DROP_TREE_ON_FOUNDATION = 9
+define BT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD = 10
+define BT_REMINDER_NEED_TO_BUILD_ANOTHER_HOUSE = 11
+define BT_ERROR_DONT_SHAKE_OUT_OF_HAND = 12
+
+//-----------------------------------------------------------------
+// Script defines
+//-----------------------------------------------------------------
+define script BT_Advisors(ID)
+define script BT_Reminder(ID)
+define script BT_Intro
+
+//-----------------------------------------------------------------
+// Land 3 Building Tutorial
+//-----------------------------------------------------------------
+begin script Land3BuildTutorial
+
+	// Valid houses
+	HUT_A						= variable ABODE_NUMBER_A
+	HUT_B						= variable ABODE_NUMBER_B
+	HUT_C						= variable ABODE_NUMBER_C
+	HUT_D						= variable ABODE_NUMBER_D
+	HUT_E						= variable ABODE_NUMBER_E
+	
+	Object = 0
+	Type = 0
+	SubT = 0
+	Stage = 0
+	House = 0
+	Wood = 0
+	BuiltHouses = 0
+	HousesBeingBuilt = 0
+	WoodPile = 0
+	Ctr = 0
+	Delay = 30
+	ReminderTimer = create timer for Delay seconds
+	RanIntro = BT_FALSE
+	CheckForHousesAlreadyBuilt = BT_FALSE
+	
+start	
+
+	//Debug stuff
+	if L3GreekTown == 0
+		run script Land3Globals
+	end if
+	
+	if L3RunningIllVillagers == 0
+		run background script Land3IllVillagers
+	end if
+	
+	begin loop
+		if CheckForHousesAlreadyBuilt == BT_FALSE
+			CheckForHousesAlreadyBuilt = BT_TRUE
+			
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+			BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+			
+			// Only advance to the next tutorial if they've already fully built at least 1 house
+			if BuiltHouses > 0
+				if BuiltHouses >= BT_NUM_HOUSES_TO_BUILD
+					run script BT_Advisors(BT_ADVISOR_ALREADY_BUILT_ALL_HOUSES)				
+				elsif BuiltHouses >= 1
+					run script BT_Advisors(BT_ADVISOR_ALREADY_BUILT_A_HOUSE)
+				end if
+				
+				set ReminderTimer time to Delay seconds
+				Stage = 5			
+			end if			
+		else
+			// Run the intro once!
+			if RanIntro == BT_FALSE
+				run script BT_Intro
+				set ReminderTimer time to Delay seconds
+				RanIntro = BT_TRUE
+			end if
+
+			Object = get object held
+			Type = variable get Object type
+
+			//Looking for building in hand
+			if Stage == 0			
+				if Type == variable HOUSE
+					// Get the sub type of the object
+					SubT = variable get Object sub type
+
+					// Check to see if the sun type of the object is a valid building (house)
+					if SubT == HUT_A or SubT == HUT_B or SubT == HUT_C or SubT == HUT_D or SubT == HUT_E					
+						run background script BT_Advisors(BT_ADVISOR_BUILDING_IN_HAND)
+						set ReminderTimer time to Delay seconds
+						wait until not Object is HELD
+//						wait until variable get Object sub type != SubT
+						wait 0.1 seconds
+						House = get HOUSE at hand position
+						if House exists
+							run background script BT_Advisors(BT_ADVISOR_VILLAGERS_BUILDING)
+							Stage++
+						else					// They may have shaked the house out of their hand
+							run background script BT_Reminder(BT_ERROR_DONT_SHAKE_OUT_OF_HAND)
+						end if
+						set ReminderTimer time to Delay seconds
+					end if
+				end if
+
+			//Pick up a tree
+			elsif Stage == 1
+				if Type == 22
+					run background script BT_Advisors(BT_ADVISOR_DROP_THE_TREE)
+					set ReminderTimer time to Delay seconds					
+					Stage++
+				elsif get BUILT of House == 1.0
+					// The house has been god built so skip onto stage 3
+					Stage = 3
+				end if
+
+			//Detect wood at house
+			elsif Stage == 2
+				WoodPile = get building resource RESOURCE_TYPE_WOOD in House
+				Wood = get resource RESOURCE_TYPE_WOOD in WoodPile
+				if Wood > 1
+					run background script BT_Advisors(BT_ADVISOR_TREE_DROPPED)
+					set ReminderTimer time to Delay seconds
+					Stage++
+					
+				elsif get BUILT of House == 1.0
+					// The house has been god built so move onto the next stage
+					Stage++
+				end if
+
+			//House is built
+			elsif Stage == 3
+				if get BUILT of House == 1.0
+					run background script BT_Advisors(BT_ADVISOR_BUILD_MORE_HOUSES)
+					set ReminderTimer time to Delay seconds
+					Stage++
+				end if
+
+			//Three houses
+			elsif Stage == 4
+				BuiltHouses = 0
+				HousesBeingBuilt = 0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 1.0
+				BuiltHouses += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 1.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_A in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_B in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_C in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_D in L3GreekTown min built 0.0
+				HousesBeingBuilt += get number of type HOUSE ABODE_NUMBER_E in L3GreekTown min built 0.0
+				
+				// Have we built enough houses?
+				if BuiltHouses >= BT_NUM_HOUSES_TO_BUILD
+					//Quit
+					Stage = 5
+				end if
+			end if
+		end if
+		
+		// Remind the player what they need to do
+		if get ReminderTimer time remaining <= 0
+			if Stage == 0
+				run background script BT_Reminder(BT_REMINDER_PULL_BUILDING_OFF_CENTRE)
+			elsif Stage == 1
+				run background script BT_Reminder(BT_REMINDER_DROP_TREE_ON_FOUNDATION)
+			elsif Stage == 2
+				run background script BT_Reminder(BT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD)
+			elsif Stage == 3
+				run background script BT_Reminder(BT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD)
+			elsif Stage == 4
+				if BuiltHouses < BT_NUM_HOUSES_TO_BUILD
+					if BuiltHouses >= HousesBeingBuilt
+						run background script BT_Reminder(BT_REMINDER_NEED_TO_BUILD_ANOTHER_HOUSE)
+					else
+						run background script BT_Reminder(BT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD)
+					end if
+				end if
+			end if
+				
+			set ReminderTimer time to Delay seconds
+		end if
+
+	until Stage == 5
+	end loop
+	
+	// We've done the building part so make the storage pit available to buy
+	set research ARTEFACT_ABODE_NUMBER_STORAGE_PIT available to RESEARCH_AVAILABILITY_AVAILABLE
+
+end script Land3BuildTutorial
+
+//-----------------------------------------------------------------
+// Advisors
+//-----------------------------------------------------------------
+begin script BT_Advisors(ID)
+start
+
+	begin dialogue
+		if ID == BT_ADVISOR_BUILDING_IN_HAND
+			eject good spirit
+			// GA: Moving the house near a road will make the door stick to it like a magnet
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGINHAND_10"
+			wait until read
+
+			eject evil spirit
+			// EA: Right click again to place or right click and hold to rotate
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGINHAND_20"
+			wait until read
+
+		//Villagers are building the house
+		elsif ID == BT_ADVISOR_VILLAGERS_BUILDING
+			eject evil spirit
+			// EA: Cool your minions will now build the building for you
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGHOUSE_10"
+			wait until read
+
+			// EA: We can speed it up though by picking up a tree and dropping it on the building
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_BUILDINGHOUSE_20"
+			wait until read
+
+		//Giving wood to the building foundations
+		elsif ID == BT_ADVISOR_DROP_THE_TREE
+			eject evil spirit
+			// EA: Now drop the tree over the house foundation.
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_PICKEDUPTREE_10"
+			wait until read
+
+		//Villagers move to the house and build it
+		elsif ID == BT_ADVISOR_TREE_DROPPED
+			eject good spirit
+			// GA: Look at the pile of wood. Your villagers will use that to build the house with
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_DROPPEDTREE_10"
+			wait until read
+
+		//Build more houses
+		elsif ID == BT_ADVISOR_BUILD_MORE_HOUSES
+			eject good spirit
+
+			// GA The house is finished, look how happy the villagers are
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_10"
+			wait until read
+
+			eject evil spirit
+			// EA: Yea happy people whatever
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_20"
+			wait until read
+
+			// EA: If we're to rebuild the Greek race then we need mroe houses. Two more will satisfy this lot
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_30"
+			wait until read
+
+			// GA: Move your hand over the existing house, hold down your right mosue button and drag to get the blueprint
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_40"
+			wait until read
+
+			// EA: Placing houses close together will save space and over time create a wicked slum
+			say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_HOUSEFINISHED_50"
+			wait until read
+			
+		elsif ID == BT_ADVISOR_ALREADY_BUILT_ALL_HOUSES
+			eject good spirit
+			//say "Wow you've already built enough houses leader. Amazing!"
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_854"
+			wait until read
+		
+		elsif ID == BT_ADVISOR_ALREADY_BUILT_A_HOUSE
+			eject good spirit
+			//say "Well done leader you've already built a house. Maybe you could build a couple more to house all our villagers."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_853"
+			wait until read
+		end if
+
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script BT_Advisors
+
+//--------------------------------------------------------------------------
+// Remind the player what they are supposed to be doing
+//--------------------------------------------------------------------------
+begin script BT_Reminder(ID)
+
+	Timer		= create timer for 15 seconds
+
+start
+
+	wait until dialogue ready or get Timer time remaining <= 0
+	
+	// Only remind the player if we haven't waited for too long
+	if get Timer time remaining > 0
+		begin dialogue
+			eject good spirit
+			
+			if ID == BT_REMINDER_PULL_BUILDING_OFF_CENTRE
+				//say "Pull a building off the town centre and right click to place it."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_851"
+			elsif ID == BT_REMINDER_DROP_TREE_ON_FOUNDATION
+				//say "Drop a tree onto the building foundation."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_850"
+			elsif ID == BT_REMINDER_WAITING_FOR_VILLAGERS_TO_BUILD
+				//say "Your villagers are building away."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_849"
+			elsif ID == BT_REMINDER_NEED_TO_BUILD_ANOTHER_HOUSE
+				//say "You need to build another house."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_848"
+			elsif ID == BT_ERROR_DONT_SHAKE_OUT_OF_HAND
+				//say "Ooopps. Looks liked you shaked the building out of your hand. Try again."
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_847"
+			end if
+						
+			wait until read
+			send good spirit home
+		end dialogue
+	end if
+
+end script BT_Reminder
+
+//-----------------------------------------------------------------
+// Intro
+//-----------------------------------------------------------------
+begin script BT_Intro
+start
+
+
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set camera position to {1113.942, 380.088, 1613.589}
+		set camera focus to {1033.901, 321.696, 1627.114}
+		move camera position to {1084.315, 380.257, 1590.927} time 12
+		move camera focus to {1089.734, 322.417, 1672.324} time 12
+		set fade in time 1
+
+		eject good spirit
+		// GA: This is the town centre, the single most impotrant building in your town
+		say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_10"
+		wait until read
+		
+		// GA: The statues show what your people desire, resources, people
+		say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_20"
+		wait until read
+		
+		eject evil spirit
+
+		// EA: Don't forget Military
+		say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_30"
+		wait until read
+
+		// GA: and Buildings
+		say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_40"
+		wait until read
+
+		// GA: Your people desire houses. Move your hand over the rotating building then right click and hold to drag it off
+		say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_50"
+		wait until read
+
+		// EA: We'll need the right buildings and food if we're going to support a powerful army.
+		say "BW2T_SCRIPT_03FINAL_BUILDTUTORIAL_INTRO_60"
+		wait until read
+
+	end cinema
+
+end script BT_Intro

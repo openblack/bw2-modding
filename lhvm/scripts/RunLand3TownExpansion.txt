@@ -1,0 +1,6 @@
+run script RunLand3TownExpansion
+
+begin script RunLand3TownExpansion
+start
+	run script Land3TownExpansion
+end script RunLand3TownExpansion

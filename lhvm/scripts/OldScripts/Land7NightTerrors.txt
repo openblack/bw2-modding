@@ -1,0 +1,137 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NT_True = 1
+define NT_False = 0
+define NUMBER_OF_BUSY_VILLAGERS = 1
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global NT_Town = 0
+global NT_House = 0
+global NT_Wife = 0
+global NT_Husband = 0
+global NT_Shell = 0
+global NT_Challenge_Over = NT_False
+global NT_Busy_Villagers[NUMBER_OF_BUSY_VILLAGERS]
+global NT_Digging_Sound = NT_False
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script NT_Intro
+define script NT_Create_Shell
+define script NT_Busy_Villagers
+define script NT_Gardner
+define script NT_Reminder
+//-----------------------------------------------------------------------------
+run script Land7NightTerrors // Main function, calls other scripts
+//-----------------------------------------------------------------------------
+begin script Land7NightTerrors
+NT_Scroll = 0
+start
+	NT_Town = get TOWN at {512.244, 92.902, 1044.749} radius 30
+	NT_House =  get HOUSE at {527.760, 85.932, 1140.375}
+	NT_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {NT_House}
+	wait until NT_Scroll right clicked
+		delete NT_Scroll
+		ALTITUDE of NT_Scroll = 8
+		run script NT_Intro
+		run background script NT_Create_Shell
+		run background script NT_Busy_Villagers
+		begin loop
+			NT_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {NT_House}
+			wait until NT_Scroll right clicked
+				delete NT_Scroll
+				run script NT_Reminder
+				run background script NT_Busy_Villagers
+		until NT_Challenge_Over == NT_True	
+		end loop
+end script Land7NightTerrors
+//-----------------------------------------------------------------------------
+// NT_Intro - NT_Wife Prays For Help
+//-----------------------------------------------------------------------------
+begin script NT_Intro
+NT_Wife_Spawn_Pos = marker at get world position from NT_House to {-2.700, 0.3, 0.200}
+NT_Wife_Look_Pos = marker at get world position from NT_House to {-4.941, -0.008, -0.185}
+NT_Camera_Pos = marker at get world position from NT_House to {-8.140, 2.0, 2.539}
+start
+	NT_Wife = create VILLAGER VILLAGER_INFO_JAPANESE_HOUSEWIFE_FEMALE at {NT_Wife_Spawn_Pos}
+	set NT_Wife focus to {NT_Wife_Look_Pos}
+	ALTITUDE of NT_Wife = 0.39
+	begin cinema
+		set camera position to {NT_Camera_Pos}
+		set camera focus to {NT_Wife}
+		play anim "a_P_japan_prayer_loop" on NT_Wife loop 3
+		say "I pray to the heavens that my husband sleeps."
+		wait until read
+		say "If your listening mighty one make his Night Terrors stop."
+		wait until read
+		wait until NT_Wife played
+	end cinema
+	delete NT_Wife
+end script NT_Intro
+//-----------------------------------------------------------------------------
+// NT_Create_Shell - Creates And Controls The Recording Shell
+//-----------------------------------------------------------------------------
+begin script NT_Create_Shell
+NT_Shell_Spawn_Pos = marker at {526.525, 85.984, 1134.216}
+start
+	begin loop
+		if NT_Shell not exists
+			NT_Shell = create OBJECT GREEK_URN_01 at {NT_Shell_Spawn_Pos}
+			SCALE of NT_Shell = 2
+		end if
+		if {NT_Shell} near {NT_Busy_Villagers[0]} radius 10 and NT_Digging_Sound == NT_False
+			say "Digging Sound Captured"
+			wait until read
+			NT_Digging_Sound = NT_True 
+		end if
+	until NT_Challenge_Over == NT_True
+	end loop
+end script NT_Create_Shell
+//-----------------------------------------------------------------------------
+// NT_Busy_Villagers - Creates And Controls The Villagers That Are Associated With The Sounds
+//-----------------------------------------------------------------------------
+begin script NT_Busy_Villagers
+NT_Busy_Villagers_Spawn_Pos[NUMBER_OF_BUSY_VILLAGERS]
+i = 0
+start
+	NT_Busy_Villagers_Spawn_Pos[0] = marker at {621.029, 115.683, 1085.974}
+	while i < NUMBER_OF_BUSY_VILLAGERS
+		if NT_Busy_Villagers[i] not exists
+			NT_Busy_Villagers[i] = create VILLAGER VILLAGER_INFO_JAPANESE_FARMER_MALE at {NT_Busy_Villagers_Spawn_Pos[i]}
+			i++
+		end if
+	end while
+	run background script NT_Gardner
+end script NT_Busy_Villagers
+//-----------------------------------------------------------------------------
+// NT_Gardner - Creates And Controls The Digging Villager
+//-----------------------------------------------------------------------------
+begin script NT_Gardner
+NT_Gardner_Move_Pos1 = marker at {620.002, 115.541, 1087.345}
+NT_Gardner_Move_Pos2 = marker at {623.791, 115.865, 1085.028}
+start
+	set NT_Busy_Villagers[0] carrying CARRIED_OBJECT_SPADE
+	begin loop
+		move NT_Busy_Villagers[0] position to {NT_Gardner_Move_Pos1}
+		wait until {NT_Busy_Villagers[0]} at {NT_Gardner_Move_Pos1}
+		play anim "A_p_farmer" on NT_Busy_Villagers[0]
+		wait until NT_Busy_Villagers[0] played
+		move NT_Busy_Villagers[0] position to {NT_Gardner_Move_Pos2}
+		wait until {NT_Busy_Villagers[0]} at {NT_Gardner_Move_Pos2}
+		play anim "A_p_farmer" on NT_Busy_Villagers[0]
+		wait until NT_Busy_Villagers[0] played
+	until HEALTH of NT_Busy_Villagers[0] == 0 or NT_Busy_Villagers[0] not exists
+	end loop
+end script NT_Gardner
+//-----------------------------------------------------------------------------
+// NT_Reminder - A Reminder For The Player Of What To Do
+//-----------------------------------------------------------------------------
+begin script NT_Reminder
+start
+	say "I pray to the heavens that my husband sleeps."
+	wait until read
+	say "If your listening mighty one make his Night Terrors stop."
+	wait until read
+end script NT_Reminder

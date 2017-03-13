@@ -1,0 +1,487 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CT_False = 0
+define CT_True = 1
+
+
+define GRAB_CREATURE_FLAG_FIELD = 0
+define GRAB_CREATURE_FLAG_BUILDING = 1
+define BUILDING_CHEATED = 2
+define GRAB_CREATURE_FLAG_ENTERTAIN = 3
+define GRAB_CREATURE_LEASH = 4
+define CLICK_CREATURE_LEASH_HIGHLIGHT = 5
+define CLICK_CREATURE_LEASH_GOOD = 6
+define MOVE_CREATURE_LEASH_HIGHLIGHT = 7
+define CLICK_CREATURE_LEASH_TREE = 8
+define CREATURE_LEASH_PLANT_TREE = 9
+define CREATURE_DROPPED_TREE = 10
+define LEASH_CREATURE_TREE = 11
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CreatureTutorialPartOne
+define script CreatureTutorialPartTwo
+define script CreatureTutorialPartThree
+define script CreatureTutorialPartFour
+define script CT_AdvisorDialogue(Comment)
+//-----------------------------------------------------------------------------
+//----Land4CreatureTutorial----// Master script that activates all the others. 
+//-----------------------------------------------------------------------------
+begin script Land4CreatureTutorial
+	GatheringTutorialScroll = 0
+	CreaturePen = 0
+	Field = 0
+start
+	if L4GreekTown not exists
+		run script Land4Globals
+	end if
+	
+	begin loop
+		Field = get building ABODE_NUMBER_FIELD in L4GreekTown min built 1.0
+		while CreaturePen not exists
+			CreaturePen = get building ABODE_NUMBER_CREATURE_PEN in L4GreekTown min built 1.0 
+		end while
+		until Field exists and get number of type HOUSE ABODE_NUMBER_STORAGE_PIT in get town with id 0 min built 1 > 0 and CreaturePen exists//and get number of type FIELD_OBJECT ABODE_NUMBER_FIELD in get town with id 0 min built 1 > 0
+	end loop
+
+	GatheringTutorialScroll = create highlight BRONZE name "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_MISC_70" remind "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_MISC_20" at get world position from CreaturePen to {-4.007, 0.322, 5.228}
+	ALTITUDE of GatheringTutorialScroll = 8
+	
+	wait until GatheringTutorialScroll right clicked
+	clear right clicked object
+	delete GatheringTutorialScroll
+
+	// Setup the primary objective
+	// Use Creature Roles
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 with amount 1 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_CREATURE_ROLES_PRIMARY_10" amount 1 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_CREATURE_ROLES_PRIMARY_10" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_4_CREATUREGATHERTUTORIAL1
+
+	// Gathering Role
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_CREATURE_ROLES_GATHERING_10"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 value 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 parent objective TRIBUTE_OBJECTIVE_LAND_11
+
+	// Explain the menu
+	run script CreatureTutorialPartOne
+	// Gather tutorial
+	run script CreatureTutorialPartTwo
+	// Explain other roles briefly
+	// Mention upgrading them with tribute
+	// Free will vs Robot
+	run script CreatureTutorialPartThree
+	//run script CreatureTutorialPartFour
+
+end script Land4CreatureTutorial
+
+//-----------------------------------------------------------------------------
+//----CreatureTutorialPartOne - Explain the menu
+//-----------------------------------------------------------------------------
+begin script CreatureTutorialPartOne
+	
+start
+
+end script CreatureTutorialPartOne
+
+//-----------------------------------------------------------------------------
+//----CreatureTutorialPartTwo - Gather Tutorial
+//-----------------------------------------------------------------------------
+begin script CreatureTutorialPartTwo
+	Food = 0
+	FoodField = 0
+	StoragePit = 0
+	ReminderTimer = create timer for 0 seconds
+	PlayersField = 0
+	ExampleVideo = 0
+	CreatureHasGathered = 0
+	LastButton = 0 
+	LeashedObject = 0
+	FieldUnderLeash = 0
+	Highlight = 0
+start
+
+	PlayersField = get building ABODE_NUMBER_FIELD in L4GreekTown min built 1.0
+
+	begin dialogue
+		eject good spirit
+		//say "If you want your Town to grow quickly, it'll need lots of food.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_10"
+		wait until read
+
+		wait 1 seconds
+
+		//say "Our Creature can help with this, by gathering crops."
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_20"
+		wait until read
+		
+		ExampleVideo = create video window with left 0.1 top 0.30 width 0.4 height 0.35 with border
+		set ExampleVideo clipping window left 0 top 0 width 1 height 1
+		play video "creature gather role"
+
+		wait 2 seconds
+		
+		//say "All you have to do is assign him the role of Gatherer near a field."
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_30"
+		wait until read
+
+		wait 1 seconds
+
+		//say "To assign the Creature a role, open the Creature Roles interface."
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_40"
+		wait until read
+
+		wait 1 seconds
+
+		enable toolbar
+		set toolbar menu to MENU_TOOLBAR_CREATURE_ROLE
+		set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+		disable toolbar locked
+
+		set ReminderTimer time to 30 seconds
+
+		//say "Select the green Gather Role button.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_80"
+		wait until read
+
+		highlight toolbar item variable MENU_HIGHLIGHT_ICON_3
+			
+		//say "This changes the Creature's role and puts the Leash in your Hand.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_70"
+		wait until read
+
+		wait 1 seconds
+
+		//highlight toolbar item variable MENU_HIGHLIGHT_ICON_2 // needs right mode
+		send good spirit home
+
+		clear toolbar highlight
+		enable toolbar locked
+		
+	end dialogue
+
+	set ReminderTimer time to 60 seconds
+	
+	begin loop
+		if get ReminderTimer time remaining == 0
+			begin dialogue
+				//say "Select the green Gather Role button.
+				say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_80"
+				wait until read
+				set ReminderTimer time to 180 seconds
+			end dialogue
+		end if
+
+		if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+			highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+		//	wait until get toolbar state != variable MENU_TOOLBAR_STATE_CLOSED 
+		//	clear toolbar highlight
+		elsif get toolbar menu != variable MENU_TOOLBAR_CREATURE_ROLE
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_2 
+		//	wait until get toolbar menu == variable MENU_TOOLBAR_CREATURE_ROLE or get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED
+		//	clear toolbar highlight
+		elsif variable get last toolbar button clicked != variable MENU_HIGHLIGHT_ICON_3 and get time since last toolbar button clicked > 1 
+			highlight toolbar item variable MENU_HIGHLIGHT_ICON_3
+		//	wait until variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_3 or get toolbar menu != variable MENU_TOOLBAR_CREATURE_ROLE or get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED
+		//	clear toolbar highlight
+		else
+			clear toolbar highlight
+		end if
+
+	until variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_3 and get toolbar state == variable MENU_TOOLBAR_STATE_OPEN_FULL and get toolbar menu == variable MENU_TOOLBAR_CREATURE_ROLE
+	end loop
+
+	clear toolbar highlight
+
+	begin dialogue
+		eject good spirit
+		//say "Excellent! Now just double-click the Action Button where you want the Creature to perform the role.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_90"
+		wait until read
+		send good spirit home
+	end dialogue
+
+	set ReminderTimer time to 60 seconds
+
+	PlayersField = get building ABODE_NUMBER_FIELD in L4GreekTown min built 1.0
+	Highlight = create visual effect "gp_s_rayfxball.ves" strength 1 scale 0.8 at {PlayersField} + {0,3,0} time -1 
+	set Highlight colour red 192 green 128 blue 0
+	set Highlight alpha 0.7
+	
+	// loop until the creature is leashed to a field
+	while not LeashedObject exists or variable get last toolbar button clicked != variable MENU_HIGHLIGHT_ICON_3
+		LeashedObject = get object MyCreature leashed to
+		/*if LeashedObject exists
+			FieldUnderLeash = get FIELD_OBJECT at {LeashedObject}
+		end if*/
+
+		if get ReminderTimer time remaining == 0
+			begin dialogue
+				//say "Excellent! Now just double-click the Action Button where you want the Creature to perform the role.
+				say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_90"
+				wait until read
+				set ReminderTimer time to 180 seconds
+			end dialogue
+		end if
+
+		if get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED 
+			highlight toolbar item variable MENU_HIGHLIGHT_HANDLE
+		//	wait until get toolbar state != variable MENU_TOOLBAR_STATE_CLOSED 
+		//	clear toolbar highlight
+		elsif get toolbar menu != variable MENU_TOOLBAR_CREATURE_ROLE
+			highlight toolbar item variable MENU_HIGHLIGHT_MODE_2 
+		//	wait until get toolbar menu == variable MENU_TOOLBAR_CREATURE_ROLE or get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED
+		//	clear toolbar highlight
+		elsif variable get last toolbar button clicked != variable MENU_HIGHLIGHT_ICON_3 and get time since last toolbar button clicked > 1 
+			highlight toolbar item variable MENU_HIGHLIGHT_ICON_3
+		//	wait until variable get last toolbar button clicked == variable MENU_HIGHLIGHT_ICON_3 or get toolbar menu != variable MENU_TOOLBAR_CREATURE_ROLE or get toolbar state == variable MENU_TOOLBAR_STATE_CLOSED
+		//	clear toolbar highlight
+		else
+			clear toolbar highlight
+		end if
+		
+		if variable get last toolbar button clicked != variable MENU_HIGHLIGHT_ICON_3
+			LeashedObject = 0
+		end if
+	end while
+
+	stop visual effect Highlight
+	delete Highlight
+
+	run script CreatureTutorialPartFour
+
+	begin dialogue
+		enable toolbar
+		set toolbar menu to MENU_TOOLBAR_CREATURE_ROLE
+		set toolbar state to MENU_TOOLBAR_STATE_OPEN_FULL
+		disable toolbar locked
+		
+		eject good spirit
+		//say "See the radius around the flag? The Creature will gather resources from within that.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_110"
+		wait until read
+		//say "He'll then put them in your Storehouse
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_120"
+		wait until read
+
+		wait 1 seconds
+	
+		if get research ARTEFACT_CREATURE_ROLE_GATHERER_2 available  != variable RESEARCH_AVAILABILITY_RESEARCHED 
+
+			//say "At the moment your Creature isn't a very good collector. He's not gathering much grain each time.
+			say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_130"
+			wait until read
+
+			wait 1 seconds
+
+			//say "This is because he's a level 1 Gatherer. When you have enough Tribute you can upgrade him.
+			say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_140"
+			wait until read
+			//say "That way he'll get much more efficient. Clever, eh?
+			say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_150"
+			wait until read
+
+			wait 1 seconds
+		end if
+
+		send good spirit home
+	end dialogue
+
+end script CreatureTutorialPartTwo
+
+//-----------------------------------------------------------------------------
+//----CreatureTutorialPartThree - Explain other roles briefly
+//-----------------------------------------------------------------------------
+begin script CreatureTutorialPartThree
+start
+	begin dialogue
+
+		eject good spirit
+		eject evil spirit
+
+		//say Your Creature can also be a Warrior, a Builder or an Entertainer to keep the people amused.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_160"
+		wait until read
+
+		wait 1 seconds
+
+		highlight toolbar item variable MENU_HIGHLIGHT_ICON_4
+
+		//Builder Creatures help with the construction of anything in the Town.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_170"
+		wait until read
+
+		wait 1 seconds
+
+		highlight toolbar item variable MENU_HIGHLIGHT_ICON_5
+
+		//EA:And being a Warrior will make him serve as an army unit.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_180"
+		wait until read
+
+		wait 1 seconds
+		clear toolbar highlight
+
+		//----CreatureTutorialPartFour - Mention upgrading them with tribute
+
+		//EA:Our Creature is still small, and not a skilled Warrior, though.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_290"
+		wait until read
+
+		//EA:You can use Tribute to upgrade his Warrior Role. And he'll get way more lethal!
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_300"
+		wait until read
+
+		wait 1 seconds
+
+		highlight toolbar item variable MENU_HIGHLIGHT_ICON_1
+
+		//GA: Er, yes. Or you can simply leave him in Free Will mode.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_190"
+		wait until read
+
+		//GA: He'll do whatever he wants and whatever you've taught him.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_200"
+		wait until read
+
+		clear toolbar highlight
+		wait 1 seconds
+
+		//----CreatureTutorialPartFour - Free will vs Robot
+
+		//The last thing you need to know about Roles is that they affect your Creature's free will.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_310"
+		wait until read
+		//Yes, the longer he remains in a Role, the less free will he'll have.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_320"
+		wait until read
+
+		wait 1 seconds
+
+		//Leave him in a role for too long and he'll become like a robot. No fun at all, in other words.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_330"
+		wait until read
+		//Using him in Roles for a while is fine.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_340"
+		wait until read
+		wait 2 seconds
+		highlight toolbar item variable MENU_HIGHLIGHT_CREATURE_WILL
+		//And you can see how much free will he has by looking at this bar on the Creature Interface.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_350"
+		wait until read
+		wait 2 seconds
+		highlight toolbar item variable MENU_HIGHLIGHT_ICON_1
+		//To remove your Creature from a Role, click on the Free Will button.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_360"
+		wait until read
+		wait 1 seconds
+		clear toolbar highlight
+		//Now, why not play around with Roles and stuff, Boss. See if you can get a bigger Town out of it.
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_370"
+		wait until read
+		//And remember. If you get attacked, make him a Warrior!
+		say "BW2T_SCRIPT_04FINAL_CREATURE_TUTORIALS_ROLE_380"
+		wait until read
+
+		enable toolbar locked
+		
+		send good spirit home
+		send evil spirit home
+
+	end dialogue
+
+end script CreatureTutorialPartThree
+
+
+begin script CreatureTutorialPartFour
+start
+
+	// Get rid of the gathering objective
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	// Get rid of the primary objective
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+	//increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_4_CREATUREGATHERTUTORIAL1
+	wait 2 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_12 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_11 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+end script CreatureTutorialPartFour
+
+//-----------------------------------------------------------------------------
+//----CT_AdvisorDialogue----//
+//-----------------------------------------------------------------------------
+begin script CT_AdvisorDialogue(Comment)
+start
+	begin dialogue
+		if Comment == GRAB_CREATURE_FLAG_FIELD
+			eject good spirit
+			//say "Grab the creature's flag and drop it onto the field."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_22"
+			wait until read
+		elsif Comment == GRAB_CREATURE_FLAG_BUILDING
+			eject good spirit
+			//say "Grab the creature's flag and drop it onto the unbuilt building."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_21"
+			wait until read
+		elsif Comment == BUILDING_CHEATED
+			eject good spirit
+			//say "Naughty leader you cheated."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_20"
+			wait until read
+		elsif Comment == GRAB_CREATURE_FLAG_ENTERTAIN
+			eject good spirit
+			//say "Grab the creature's flag and drop it onto a villager."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_19"
+			wait until read
+		elsif Comment == GRAB_CREATURE_LEASH
+			eject good spirit
+			//say "Double right click on the creature or press the L key to grab the leash."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_18"
+			wait until read
+		elsif Comment == CLICK_CREATURE_LEASH_HIGHLIGHT
+			eject good spirit
+			//say "Right click in the highlighted area to get the creature to move there."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_17"
+			wait until read
+		elsif Comment == CLICK_CREATURE_LEASH_GOOD
+			eject good spirit
+			//say "Good."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_16"
+			wait until read
+		elsif Comment == MOVE_CREATURE_LEASH_HIGHLIGHT
+			eject good spirit
+			//say "Move the creature to the highlighted area."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_15"
+			wait until read
+		elsif Comment == CLICK_CREATURE_LEASH_TREE
+			eject good spirit
+			//say "Use the leash to get the creature to pick up the tree."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_14"
+			wait until read
+		elsif Comment == CREATURE_LEASH_PLANT_TREE
+			eject good spirit
+			//say "Make the creature plant the tree inside your influence."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_13"
+			wait until read
+		elsif Comment == CREATURE_DROPPED_TREE
+			eject good spirit
+			//say "The Creature has dropped the Tree!"
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_12"
+			wait until read
+			//say "Make him pick it up again."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_11"
+			wait until read
+		elsif Comment == LEASH_CREATURE_TREE
+			eject good spirit
+			//say "Leash the creature to the tree."
+			say "BW2T_SCRIPT_04FINAL_ADVISORS_CREATURE_10"
+			wait until read
+		end if
+		
+		send good spirit home
+		send evil spirit home
+	end dialogue
+
+end script CT_AdvisorDialogue

@@ -1,0 +1,13 @@
+run script RunTownEventAmpitheatre
+begin script RunTownEventAmpitheatre
+	Theatre	= 0
+start
+
+	begin loop
+		Theatre = get HOUSE AMPITHEATRE at hand position
+	until Theatre exists
+	end loop
+
+	run script AmpitheatreBearFight(Theatre)
+
+end script RunTownEventAmpitheatre

@@ -1,0 +1,179 @@
+//-----------------------------------------------------------
+// LAND 6 GLOBALS
+//-----------------------------------------------------------
+define L6_NUM_OF_MINOR_SETTLEMENTS	= 11
+
+global L6GreekTown = 0
+global L6JapaneseCapital = 0
+global L6_MinorSettlement[L6_NUM_OF_MINOR_SETTLEMENTS]
+global L6_AlexsMinorSettlement[L6_NUM_OF_MINOR_SETTLEMENTS] //Do not Overwrite these!!!
+
+global L6CapitalConverted = 0
+global L6Complete = 0
+global Land6ManComplete = 0
+
+
+//-----------------------------------------------------------------------------
+//	Challenge Booleans
+//-----------------------------------------------------------------------------
+global L6ShowingForestAmbush = 0
+global L6ShowingChopSuey = 0
+global L6ShowingPaternityBirth = 0
+
+begin script Land6Globals
+
+	Threshold		= 0
+
+start
+
+	// Get the towns
+	L6GreekTown				= get town with id 0		//"Miko"
+	L6JapaneseCapital		= get town with id 14		//"Tonshu"
+	L6_MinorSettlement[0]	= get town with id 16		//"Oki"					// T1 - Player
+	L6_MinorSettlement[1]	= get town with id 8		//"Yuki"				// T2 - Player
+	L6_MinorSettlement[2]	= get town with id 6		//"Sekkio"				// T3 - FIGHT OVER
+	L6_MinorSettlement[3]	= get town with id 9		//"Mido"				// T4 - General
+	L6_MinorSettlement[4]	= get town with id 13		//"Sakato"				// T5 - General
+	L6_MinorSettlement[5]	= get town with id 7		//"Taranga"				// Settlement 3 - Player
+	L6_MinorSettlement[6]	= get town with id 15		//"Narun"				// Settlement 2 - Player
+	L6_MinorSettlement[7]	= get town with id 17		//"Danhai"				// Settlement 1 - Player
+	L6_MinorSettlement[8]	= get town with id 12		//"Sanaka"				// Settlement 6 - General
+	L6_MinorSettlement[9]	= get town with id 11		//"Dengaru"				// Settlement 5 - General
+	L6_MinorSettlement[10]	= get town with id 2		//"Fenseku"				// Settlement 4 - General
+
+	L6_AlexsMinorSettlement[0]	= get town with id 16		//"Oki"					// T1 - Player
+	L6_AlexsMinorSettlement[1]	= get town with id 8		//"Yuki"				// T2 - Player
+	L6_AlexsMinorSettlement[2]	= get town with id 6		//"Sekkio"				// T3 - FIGHT OVER
+	L6_AlexsMinorSettlement[3]	= get town with id 9		//"Mido"				// T4 - General
+	L6_AlexsMinorSettlement[4]	= get town with id 13		//"Sakato"				// T5 - General
+	L6_AlexsMinorSettlement[5]	= get town with id 7		//"Taranga"				// Settlement 3 - Player
+	L6_AlexsMinorSettlement[6]	= get town with id 15		//"Narun"				// Settlement 2 - Player
+	L6_AlexsMinorSettlement[7]	= get town with id 17		//"Danhai"				// Settlement 1 - Player
+	L6_AlexsMinorSettlement[8]	= get town with id 12		//"Sanaka"				// Settlement 6 - General
+	L6_AlexsMinorSettlement[9]	= get town with id 11		//"Dengaru"				// Settlement 5 - General
+	L6_AlexsMinorSettlement[10]	= get town with id 2		//"Fenseku"				// Settlement 4 - General
+
+//----Set Max Populations For Non-Player Towns----//
+
+	set town L6JapaneseCapital maximum population to 100
+	set town L6_AlexsMinorSettlement[0]	 maximum population to 20	//"Oki"		
+	set town L6_AlexsMinorSettlement[1]	 maximum population to 20	//"Yuki"	
+	set town L6_AlexsMinorSettlement[2]	 maximum population to 20	//"Sekkio"	
+	set town L6_AlexsMinorSettlement[3]	 maximum population to 15	//"Mido"	
+	set town L6_AlexsMinorSettlement[4]	 maximum population to 20	//"Sakato"	
+	set town L6_AlexsMinorSettlement[5]	 maximum population to 15	//"Taranga"	
+	set town L6_AlexsMinorSettlement[6]	 maximum population to 15	//"Narun"	
+	set town L6_AlexsMinorSettlement[7]	 maximum population to 15	//"Danhai"	
+	set town L6_AlexsMinorSettlement[8]	 maximum population to 15	//"Sanaka"	
+	set town L6_AlexsMinorSettlement[9]	 maximum population to 15	//"Dengaru"	
+	set town L6_AlexsMinorSettlement[10] maximum population to 20	//"Fenseku"	
+
+
+
+
+
+
+
+	// Setup the players migration values
+	// Japanese Capital
+	Threshold = get town L6JapaneseCapital impressiveness
+	set migration threshold from L6JapaneseCapital to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_CAPITAL_TO_GREEK - Threshold
+
+	// Settlement 1	- Player
+	Threshold = get town L6_MinorSettlement[7] impressiveness
+	set migration threshold from L6_MinorSettlement[7] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_DANHAI_TO_GREEK - Threshold
+
+	// Settlement 2	- Player
+	Threshold = get town L6_MinorSettlement[6] impressiveness
+	set migration threshold from L6_MinorSettlement[6] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_NARUN_TO_GREEK - Threshold
+
+	// Settlement 3	- Player
+	Threshold = get town L6_MinorSettlement[5] impressiveness
+	set migration threshold from L6_MinorSettlement[5] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_TARANGA_TO_GREEK - Threshold
+
+	// Settlement 4	- General
+	Threshold = get town L6_MinorSettlement[10] impressiveness
+	set migration threshold from L6_MinorSettlement[10] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_FENSEKU_TO_GREEK - Threshold
+	
+	// Settlement 5	- General
+	Threshold = get town L6_MinorSettlement[9] impressiveness
+	set migration threshold from L6_MinorSettlement[9] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_DENGARU_TO_GREEK - Threshold
+
+	// Settlement 6	- General
+	Threshold = get town L6_MinorSettlement[8] impressiveness
+	set migration threshold from L6_MinorSettlement[8] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_SANAKA_TO_GREEK - Threshold
+
+	// Town 1 - Player
+	Threshold = get town L6_MinorSettlement[0] impressiveness
+	set migration threshold from L6_MinorSettlement[0] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_OKI_TO_GREEK - Threshold
+
+	// Town 2 - Player
+	Threshold = get town L6_MinorSettlement[1] impressiveness
+	set migration threshold from L6_MinorSettlement[1] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_YUKI_TO_GREEK - Threshold
+
+	// Town 3 - FIGHT OVER
+	Threshold = get town L6_MinorSettlement[2] impressiveness
+	set migration threshold from L6_MinorSettlement[2] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_SEKKIO_TO_GREEK - Threshold
+
+	// Town 4 - General
+	Threshold = get town L6_MinorSettlement[3] impressiveness
+	set migration threshold from L6_MinorSettlement[3] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_MIDO_TO_GREEK - Threshold
+
+	// Town 5 - General
+	Threshold = get town L6_MinorSettlement[4] impressiveness
+	set migration threshold from L6_MinorSettlement[4] to L6GreekTown GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_SAKATO_TO_GREEK - Threshold
+
+
+	// Setup the generals migration values
+	// Players town
+	Threshold = get town L6GreekTown impressiveness
+	set migration threshold from L6GreekTown to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_GREEK_TO_CAPITAL - Threshold
+
+	// Settlement 1	- Player
+	Threshold = get town L6_MinorSettlement[7] impressiveness
+	set migration threshold from L6_MinorSettlement[7] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_DANHAI_TO_CAPITAL - Threshold
+
+	// Settlement 2	- Player
+	Threshold = get town L6_MinorSettlement[6] impressiveness
+	set migration threshold from L6_MinorSettlement[6] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_NARUN_TO_CAPITAL - Threshold
+
+	// Settlement 3	- Player
+	Threshold = get town L6_MinorSettlement[5] impressiveness
+	set migration threshold from L6_MinorSettlement[5] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_TARANGA_TO_CAPITAL - Threshold
+
+	// Settlement 4	- General
+	Threshold = get town L6_MinorSettlement[10] impressiveness
+	set migration threshold from L6_MinorSettlement[10] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_FENSEKU_TO_CAPITAL - Threshold
+
+	// Settlement 5	- General
+	Threshold = get town L6_MinorSettlement[9] impressiveness
+	set migration threshold from L6_MinorSettlement[9] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_DENGARU_TO_CAPITAL - Threshold
+
+	// Settlement 6	- General
+	Threshold = get town L6_MinorSettlement[8] impressiveness
+	set migration threshold from L6_MinorSettlement[8] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_SETTLEMENT_SANAKA_TO_CAPITAL - Threshold
+
+	// Town 1 - Player
+	Threshold = get town L6_MinorSettlement[0] impressiveness
+	set migration threshold from L6_MinorSettlement[0] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_OKI_TO_CAPITAL - Threshold
+
+	// Town 2 - Player
+	Threshold = get town L6_MinorSettlement[1] impressiveness
+	set migration threshold from L6_MinorSettlement[1] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_YUKI_TO_CAPITAL - Threshold
+
+	// Town 3 - FIGHT OVER
+	Threshold = get town L6_MinorSettlement[2] impressiveness
+	set migration threshold from L6_MinorSettlement[2] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_SEKKIO_TO_CAPITAL - Threshold
+
+	// Town 4 - General
+	Threshold = get town L6_MinorSettlement[3] impressiveness
+	set migration threshold from L6_MinorSettlement[3] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_MIDO_TO_CAPITAL - Threshold
+
+	// Town 5 - General
+	Threshold = get town L6_MinorSettlement[4] impressiveness
+	set migration threshold from L6_MinorSettlement[4] to L6JapaneseCapital GLOBAL_VALUE_THRESHOLD_LAND_6_TOWN_SAKATO_TO_CAPITAL - Threshold
+
+
+	L6CapitalConverted		= 0						// flag to control if major enemy town has been converted
+
+end script Land6Globals

@@ -1,0 +1,6 @@
+run script RunLand5ThiefGuardOre
+
+begin script RunLand5ThiefGuardOre
+start
+	run script Land5ThiefGuardOre
+end script RunLand5ThiefGuardOre

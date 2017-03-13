@@ -1,0 +1,90 @@
+//==================================================================
+// Land 2 Landslide
+// Matt.L
+//==================================================================
+
+//---------------------------------------------------------
+// Cosntants
+//---------------------------------------------------------
+define LS_FALSE = 0
+define LS_TRUE = 1
+
+define LS_NUM_ROCKS = 20
+
+//---------------------------------------------------------
+// Globals
+//---------------------------------------------------------
+global LS_LaunchRocks = LS_FALSE
+
+//---------------------------------------------------------
+// Script Defines
+//---------------------------------------------------------
+define script LS_Catapult(CreatePos, FirePos, Wait)
+define script LS_Landslide
+
+//---------------------------------------------------------
+// Land 2 Landslide
+//---------------------------------------------------------
+begin script Land2Landslide
+start
+	run background script LS_Catapult(marker at {1909.030, 67.925, 700.813}, marker at {1831.268, 160.270, 824.868}, 0)
+	run background script LS_Catapult(marker at {1936.228, 62.831, 706.689}, marker at {1848.009, 152.927, 823.967}, 3)
+
+	run background script LS_Landslide
+
+	wait 10 seconds
+	LS_LaunchRocks = LS_TRUE
+
+end script Land2Landslide
+
+//---------------------------------------------------------
+// Catapults
+//---------------------------------------------------------
+begin script LS_Catapult(CreatePos, FirePos, Wait)
+	GreekTown = 0
+	Catapult = 0
+start
+	
+	if not GreekTown exists
+		run script Land2Globals
+	end if
+
+	GreekTown = get town with id 0
+	Catapult = create siege weapon CATAPULT_1 belonging to GreekTown at {CreatePos} 
+
+	wait Wait seconds
+	add action SIEGEWEAPON_AGENDA_ACTION_ATTACK_POSITION using {FirePos} to siege weapon Catapult action queue	
+
+	wait 500000000000 seconds
+
+end script LS_Catapult
+
+//---------------------------------------------------------
+// Landslide
+//---------------------------------------------------------
+begin script LS_Landslide
+	CreateCentre = marker at {1847.333, 148.722, 820.636}
+	Rocks[LS_NUM_ROCKS]
+	RollPos = marker at {1867.399, 113.423, 767.815}
+	RockLoop = 0
+	Scale = 0
+start
+
+	force while RockLoop < LS_NUM_ROCKS
+		Scale = (number from 1 to 10) / 10
+		Rocks[RockLoop] = create ROCK_OBJECT ROUND_ROCK_LARGE at {CreateCentre} + {number from -35 to 35, 0, number from -35 to 35}
+		SCALE of Rocks[RockLoop] = Scale
+		RockLoop++
+	end while
+
+	wait until LS_LaunchRocks == LS_TRUE
+
+	//Now set the rocksrolling down the hill
+	RockLoop = 0
+	force while RockLoop < LS_NUM_ROCKS
+		set Rocks[RockLoop] velocity heading {RollPos} speed 10
+		RockLoop++
+	end while
+
+	wait 500000000000 seconds
+end script LS_Landslide

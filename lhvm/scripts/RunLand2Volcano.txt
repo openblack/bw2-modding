@@ -1,0 +1,6 @@
+run script RunLand2Volcano
+
+begin script RunLand2Volcano
+start
+	run script Land2Volcano(marker at {809.151, 143.599, 1927.902})
+end script RunLand2Volcano

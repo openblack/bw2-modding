@@ -1,0 +1,164 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define METEOR_DELAY = 10
+define METEOR_SHOWER_TIME = 200
+define NUMBER_OF_METEORS = 20
+define ME_True = 1
+define ME_False = 0
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global ME_SpawnArea[NUMBER_OF_METEORS]
+global ME_TargetArea[NUMBER_OF_METEORS] 
+global ME_Meteor[NUMBER_OF_METEORS]
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script ME_Meteor(MeteorNumber)
+//-----------------------------------------------------------------------------
+//----Land5Meteors----//
+//-----------------------------------------------------------------------------
+begin script Land5Meteors
+	MeteorNumber = 0
+	Offset = 0
+	randomTimer = 0
+start
+
+//----Initialise Variables----//
+	Offset =  marker at {-500.0,-100.0,600.0}
+	ME_Meteor[0] = ME_False
+	ME_SpawnArea[0] = marker at {1620.964, 54.701, 1262.502}
+
+	ME_Meteor[1] = ME_False
+	ME_SpawnArea[1] = marker at {1534.865, 70.974, 1096.712}
+
+	ME_Meteor[2] = ME_False
+	ME_SpawnArea[2] = marker at {1468.991, 66.666, 914.113}
+	
+	ME_Meteor[3] = ME_False
+	ME_SpawnArea[3] = marker at {816.672, 67.878, 937.104}
+
+	ME_Meteor[4] = ME_False
+	ME_SpawnArea[4] = marker at {861.204, 169.244, 1498.845}
+
+	ME_Meteor[5] = ME_False
+	ME_SpawnArea[5] = marker at {1020.949, 175.450, 1765.323}
+
+	ME_Meteor[6] = ME_False
+	ME_SpawnArea[6] = marker at {1049.837, 207.369, 1581.210}
+	
+	ME_Meteor[7] = ME_False
+	ME_SpawnArea[7] = marker at {1683.282, 99.976, 1734.691}
+
+	ME_Meteor[8] = ME_False
+	ME_SpawnArea[8] = marker at {1797.476, 101.095, 1905.703}
+
+	ME_Meteor[9] = ME_False
+	ME_SpawnArea[9] = marker at {693.530, 245.485, 1298.323}
+	
+	ME_Meteor[10] = ME_False
+	ME_SpawnArea[10] = marker at {847.699, 70.110, 704.826}
+
+	ME_Meteor[11] = ME_False
+	ME_SpawnArea[11] = marker at {1563.921, 69.425, 1115.596}
+
+	ME_Meteor[12] = ME_False
+	ME_SpawnArea[12] = marker at {1380.149, 50.111, 1462.466}
+
+	ME_Meteor[13] = ME_False
+	ME_SpawnArea[13] = marker at {1261.730, 21.461, 372.278}
+
+	ME_Meteor[14] = ME_False
+	ME_SpawnArea[14] = marker at {1516.428, 71.195, 1027.155}
+
+	ME_Meteor[15] = ME_False
+	ME_SpawnArea[15] = marker at {633.950, 228.010, 1664.405}
+
+	ME_Meteor[16] = ME_False
+	ME_SpawnArea[16] = marker at {639.271, 264.707, 1818.562}
+
+	ME_Meteor[17] = ME_False
+	ME_SpawnArea[17] = marker at {706.662, 239.642, 1766.202}
+
+	ME_Meteor[18] = ME_False
+	ME_SpawnArea[18] = marker at {1168.411, 153.820, 1753.566}
+
+	ME_Meteor[19] = ME_False
+	ME_SpawnArea[19] = marker at {1125.526, 205.610, 1109.159}
+
+	
+//----Event Behaviour----//
+	//L5MeteorShower = ME_True
+	while L5Complete == ME_False
+		while L5MeteorShower == ME_True
+		
+			if MeteorNumber == NUMBER_OF_METEORS
+				MeteorNumber = 0
+			end if
+				
+		//----Create Meteor----//	
+			
+			if ME_Meteor[MeteorNumber] == ME_False
+				run background script ME_Meteor(MeteorNumber)
+				ME_Meteor[MeteorNumber] = ME_True
+			end if	
+				
+			MeteorNumber++
+			randomTimer = number from 0.4 to 0.6
+			wait randomTimer second	
+		end while
+		//L5MeteorShower = ME_False
+	end while
+	
+	
+end script Land5Meteors
+//-----------------------------------------------------------------------------
+//----ME_Meteor----//
+//-----------------------------------------------------------------------------
+begin script ME_Meteor(MeteorNumber)
+	Offset = marker at {3699.849,800.000,2822.475}
+	RandomDistance = 0
+	RandomAngle = 0
+	FireTrail = 0
+	ImpactBlast = 0
+	MeteorSpawn = 0
+	MeteorTarget = 0
+	Meteor = 0
+	Ore = 0
+	RandOre = 0
+	Rand  = 0
+	Randforce = 0
+	RandSpeed = 0
+	RandSpawn = 0
+start
+	RandomDistance = number from 0 to 100
+	RandomAngle = number from 0 to 360
+	//MeteorSpawn = marker at get target ME_SpawnArea[MeteorNumber]
+	MeteorSpawn = marker at get target from {0.0,0.0,0.0} to {ME_SpawnArea[MeteorNumber]} distance RandomDistance angle RandomAngle
+	Meteor = create visual effect "mt_s_strike.ves" strength 1 scale 2 at {MeteorSpawn} 
+	//set Meteor focus to {0.0,0.0,0.0}
+	wait 1 second
+
+	Rand = number from 0 to 100
+	if Rand < 25
+		RandOre = number from 1 to 3
+		force while RandOre > 0
+			RandomDistance = number from 0 to 5
+			RandomAngle = number from 0 to 360
+			RandSpawn = marker at get target from {0.0,0.0,0.0} to {MeteorSpawn} distance RandomDistance angle RandomAngle 
+			Randforce = marker at get target from {RandSpawn} to {MeteorSpawn} distance 2 angle 180
+			RandSpeed = number from 20 to 30 
+			Ore = create ORE_ROCK at {RandSpawn}
+			set Ore velocity heading {Randforce} speed RandSpeed
+			add resource ORE (200 - get resource ORE in Ore) to Ore
+			RandOre--
+		end while 
+	end if
+	ImpactBlast = create visual effect "gp_s_expbarrel.ves" strength 1 scale 10 at {MeteorSpawn} time 1
+	//set physics at position {MeteorSpawn} with strength {20.000,30.000,20.000} radius 20 random 1
+	wait 1 second
+	ME_Meteor[MeteorNumber] = ME_False
+	
+end script ME_Meteor

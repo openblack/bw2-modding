@@ -1,0 +1,6 @@
+run script RunSaveLoadScript
+
+begin script RunSaveLoadScript
+start
+	run script SaveLoadScript
+end script RunSaveLoadScript

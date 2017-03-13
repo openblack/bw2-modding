@@ -1,0 +1,251 @@
+//------------------------------------------------------------------------------------------------
+//	Constants
+//------------------------------------------------------------------------------------------------
+define TD_True = 1
+define TD_False = 0
+
+define TD_NIGHT = 0
+define TD_DAY = 1
+
+//------------------------------------------------------------------------------------------------
+//	Globals
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+//	Script defines
+//------------------------------------------------------------------------------------------------
+define script TD_ShowOffSunset
+//------------------------------------------------------------------------------------------------
+//----Land3TimeOfDayTutorial----//
+//------------------------------------------------------------------------------------------------
+begin script Land3TimeOfDayTutorial
+	TD_Scroll = 0
+	TD_ScrollPos = marker at {789.487, 393.499, 1687.778}
+start
+	begin loop
+		if L3_InAScroll == 0
+			if not TD_Scroll exists
+				TD_Scroll = create highlight BRONZE name "BW2T_SCRIPT_03FINAL_TIMEOFDAY_10" remind "BW2T_SCRIPT_03FINAL_TIMEOFDAY_20" at {TD_ScrollPos}
+				ALTITUDE of TD_Scroll = 5
+			end if
+		elsif TD_Scroll exists
+			delete TD_Scroll
+		end if
+	until TD_Scroll right clicked
+	end loop
+	if TD_Scroll exists
+		delete TD_Scroll
+	end if
+	
+	L3_InAScroll = 1
+	enable game time
+	run background script TD_ShowOffSunset
+	
+end script Land3TimeOfDayTutorial
+//------------------------------------------------------------------------------------------------
+//----TD_ShowOffSunset----//
+//------------------------------------------------------------------------------------------------
+begin script TD_ShowOffSunset
+	PlayersChangedTime = 0
+	ReminderTimer = create timer for 0 seconds
+	TimeState = 0
+	TimeSuccessfullyChanged = TD_False
+start
+	begin cinema
+		set fade red 0 green 0 blue 0 time 1
+		wait 1 seconds
+		set game time 20.77
+		set camera position to {839.521, 427.537, 1663.383}
+		set camera focus to {740.418, 414.225, 1662.248}
+		wait until camera ready
+		wait until widescreen transition complete
+		set fade in time 1
+		wait 1 seconds
+		eject evil spirit
+		eject good spirit
+			//say "What a beautiful sunset."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_758"
+			wait until read
+			//say "Yeah, gotta love a big ball of fire."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_757"
+			wait until read
+			wait 3 seconds
+			//say "Lets see it again."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_747"
+			wait until read
+			start hand demo "ChangeTimeOfDay"
+			//disable game time
+			//say "By right clicking on the sky the hand will change to sun dial mode."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_746"
+			wait until read
+			//say "When the right mouse is released the sun will move in the heavens."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_745"
+			wait until hand demo played
+			move game time 20.75 time 1
+			wait until read
+			//wait 1 second
+			//enable game time
+			//say "Ahh power over the Sun."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_744"
+			wait until read
+			//say "But with great power comes great responsability."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_743"
+			wait until read
+			//say "Ok, boss show us how its done."
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_742"
+			wait until read
+		send good spirit home 
+		send evil spirit home
+	end cinema
+	
+	enable objective window
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TIMEOFDAY_10"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 value 0
+
+	
+	PlayersChangedTime = get total of stat STATS_ACC_TIME_OF_DAY_CHANGE
+	PlayersChangedTime += 1
+	set ReminderTimer time to 20 seconds
+
+	begin loop
+		if get ReminderTimer time remaining == 0
+			begin dialogue
+				eject good spirit 
+					//say "Right click on the sky to enter sun dial mode."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_741"
+					wait until read
+					//say "Then whilst holding down the right mouse button move the mouse to set the new time."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_740"
+					wait until read
+					//say "When you release the right mouse the time will change."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_739"
+					wait until read
+				send good spirit home
+			end dialogue
+			set ReminderTimer time to 60 seconds
+		end if
+
+		if hand over sky
+			//Set new hand icon
+			enable hand icon draw
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+		else
+			disable hand icon draw
+		end if
+
+	until get total of stat STATS_ACC_TIME_OF_DAY_CHANGE >= PlayersChangedTime
+	end loop
+
+	disable hand icon draw
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 value 1
+	
+	wait until not sky is in transition
+	disable game time
+	begin fullscreen cinema
+		eject good spirit
+		eject evil spirit
+			if get game time >= 21 or get game time <= 3
+				TimeState = TD_NIGHT
+			else
+				TimeState = TD_DAY
+			end if
+		
+			if TimeState == TD_DAY
+					//say "Well done leader.  Let there be light."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_738"
+					wait until read
+					//say "But all light needs it shadow."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_737"
+					wait until read
+					//say "Change the the time to night."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_736"
+					wait until read
+			elsif TimeState == TD_NIGHT
+					//say "Great, darkness i never was a day person."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_735"
+					wait until read
+					//say "But life cannot exists without sunlight."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_734"
+					wait until read
+					//say "Change the time to day."
+					say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_724"
+					wait until read
+			end if
+		send good spirit home
+		send evil spirit home
+	end cinema
+	
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_21
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 text "BW2T_SCRIPT_03FINAL_OBJECTIVES_TIMEOFDAY_20"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 value 0
+	
+	PlayersChangedTime = get total of stat STATS_ACC_TIME_OF_DAY_CHANGE
+	PlayersChangedTime += 1
+	
+	set ReminderTimer time to 20 seconds
+	
+	begin loop
+		if TimeState == TD_DAY 
+			if get ReminderTimer time remaining == 0
+				begin dialogue
+					eject evil spirit
+						//say "It's too bright, change the time to night."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_723"
+						wait until read
+						set ReminderTimer time to 20 seconds
+					send evil spirit home
+				end dialogue
+			end if 
+			if get game time > 20.5 or get game time < 3.5 and not sky is in transition and get total of stat STATS_ACC_TIME_OF_DAY_CHANGE >= PlayersChangedTime
+				TimeSuccessfullyChanged = TD_True
+			end if
+		else
+			if get ReminderTimer time remaining == 0
+				begin dialogue
+					eject good spirit
+						//say "Make the sun shine leader, change the time to day."
+						say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_722"
+						wait until read
+						set ReminderTimer time to 20 seconds
+					send good spirit home
+				end dialogue
+			end if 
+			if get game time > 3 and get game time < 21 and not sky is in transition and get total of stat STATS_ACC_TIME_OF_DAY_CHANGE >= PlayersChangedTime
+				TimeSuccessfullyChanged = TD_True
+			end if		
+		end if
+
+		if hand over sky
+			//Set new hand icon
+			enable hand icon draw
+			set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+		else
+			disable hand icon draw
+		end if
+
+	until TimeSuccessfullyChanged == TD_True
+	end loop
+
+	disable hand icon draw
+	
+	enable game time
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_21 value 1
+	wait 2 seconds
+	disable player 0 objective TRIBUTE_OBJECTIVE_LAND_21
+	
+	begin dialogue
+		eject good spirit
+		eject evil spirit
+			say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_721"
+			wait until read
+		send evil spirit home
+		send good spirit home
+	end dialogue
+
+	increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_3_TIMEOFDAYTUTORIAL
+	L3_InAScroll = 0
+	run background script Rooster
+end script TD_ShowOffSunset

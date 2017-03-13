@@ -1,0 +1,471 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	Land7FemaleArchers.txt
+//	~~~~~~~~~~~~~~~~~~~~~~
+//
+/*  
+// Story:
+The Amazonian women were known to be excellent archers; however they were also known not to be sympathetic to men. 
+In this case; they do not need to be Amazonian; they can just be disaffected women from the opposing tribe on this land.
+They are tech 2 level archers and so hold the key to you producing this upgraded version of an archer.
+They hang around a fairly remote part of the land; protecting any nearby female workers if they are ever under
+threat. Voices such as: “Leave these women alone!” 
+However, any male workers nearby will be shot at and given vocal threats such as: “Keep away from us you men!”
+They live on a high plateau that is a strong defensive position. The path up to them is a bit of a zigzag and narrow. 
+This means that anyone attacking will have a hard time of it to not be shot by the archers on the way up.
+The Archers will occasionally send a raiding party down to nearby areas to protect any females and harass/shoot
+any males in the vicinity. They will then retreat to the safety of their plateau.
+The Archers will hang around lamenting the loss of their female leader and that they have no willingness to fight
+anyone without her. They will agree to give you the tech 2 archer blueprint if you find a strong warrior or hero
+to lead them; but they will not directly ask for a female leader to follow. They will simply have a scroll above
+their camp that will explain their situation. The player will have to work out that they require this “hero” to lead
+them and that they must be female.
+The player must create a female warrior/archer and use her to win a small battle. She will then become a female 
+leader/hero; with much reaction and delight/surprise from the advisors.
+Whilst not part of your army they will re-gather if many of them are killed by either side; i.e. they will
+re-spawn nearby out of sight and then join the group. However, if you slaughter them all they will die out 
+– though this will be tough to do due to their strong defensive position. If you raid the camp in this way and
+destroy their buildings you will find the archer tech 2 level blueprint in one of the buildings.
+Note: The Amazonian squad will refuse to leave the land if you try to take them at the end of the level. 
+*/
+//
+//	Rewards:		Tech 2 archer blueprint
+//	Drawbacks:		Death to a multitude of villagers when they run amok.
+//
+//	Start date:		31-10-03			By:	Phil
+//	Last Update:	31-10-03			By: Phil
+//	Date Update:	Could be anything now.
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FA_FALSE			= 0
+define FA_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global FA_Waypoints[4]				//... Waypoint array
+global FA_Attacking_Waypoints[4]	//... Waypoint array
+global FA_Archers_Converted			= FA_FALSE
+global FA_Initial_Scroll_Used		= FA_FALSE
+global FA_Cutscene_Complete			= FA_FALSE
+global FA_All_Aztecs_Dead			= FA_FALSE
+global FA_All_Egyptians_Dead		= FA_FALSE
+global FA_All_Archers_Dead			= FA_FALSE
+global FA_Players_Town				= 0
+global FA_Archer_Squad				= 0
+global FA_Archer_Squad_2			= 0
+global FA_Archer_Squad_3			= 0
+global FA_Defensive_Pos_A			= 0
+global FA_Defensive_Pos_B			= 0
+global FA_Camp_Pos					= 0
+global FA_Aztec_Spawn_Point			= 0
+global FA_Egyptian_Spawn_Point		= 0
+global FA_Scroll					= 0
+global FA_AztecPlatoon				= 0
+global FA_EgyptianPlatoon			= 0
+global FA_P1						= 0
+global FA_P2						= 0
+global FA_P3						= 0
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script FA_Create_Female_Archer_Camp
+define script FA_Create_Female_Archers
+define script FA_Defend_Territory
+define script FA_Create_Scroll
+define script FA_Explanation_Cutscene
+define script FA_Raiding_Party
+define script FA_Aztec_Attack
+define script FA_Egyptian_Attack
+define script FA_Give_Player_Tech_2_Archers
+define script FA_Wait_For_Female_Leader
+define script FA_Number_Of_Archers
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land7FemaleArchers
+
+start
+
+	FA_Players_Town				= get TOWN at {1428.577,61.469,1255.795} radius 100
+	FA_Camp_Pos					= marker at {1547.649,97.761,1015.013}
+	FA_Defensive_Pos_A			= marker at {1534.634,81.326,1080.438}
+	FA_Defensive_Pos_B			= marker at {1551.567,92.757,1040.240}
+	FA_Attacking_Waypoints[0]	= marker at {1513.733,63.130,1113.824}
+	FA_Attacking_Waypoints[1]	= marker at {1559.024,72.451,1093.635}
+	FA_Attacking_Waypoints[2]	= marker at {1538.323,89.112,1041.267}
+	FA_Attacking_Waypoints[3]	= marker at {1548.568,96.666,1019.721}
+	FA_Aztec_Spawn_Point		= marker at {1231.437,55.719,814.815}
+	FA_Egyptian_Spawn_Point		= marker at {1364.588,71.730,1864.224}
+
+	run script FA_Create_Female_Archer_Camp
+	run script FA_Create_Female_Archers
+
+	run background script FA_Create_Scroll
+	run background script FA_Explanation_Cutscene
+	run background script FA_Raiding_Party
+	run background script FA_Aztec_Attack
+	run background script FA_Egyptian_Attack
+	run background script FA_Wait_For_Female_Leader
+	run background script FA_Number_Of_Archers
+	run script FA_Defend_Territory
+
+	wait until FA_Archers_Converted == FA_TRUE or FA_All_Archers_Dead == FA_TRUE
+
+	if FA_Archers_Converted == FA_TRUE
+		begin dialogue
+			eject good spirit
+			say "The female archers will now join your army. Command them as you would a normal platoon."
+			wait until read
+			clear dialogue
+		end dialogue
+		run script FA_Give_Player_Tech_2_Archers	// Give the player the blueprint for level 2 archers.
+	elsif FA_All_Archers_Dead == FA_TRUE
+		begin dialogue
+			eject good spirit
+			say "The female archers are all dead."
+			wait until read
+			clear dialogue
+		end dialogue		
+	end if
+
+	wait 300 seconds
+
+	say "Time over - script ending in 10 seconds"
+	wait 10 seconds
+
+end script Land7FemaleArchers
+//===========================
+
+
+//-----------------------------------------------------------------------------
+//	FA_Create_Female_Archer_Camp
+//-----------------------------------------------------------------------------
+begin script FA_Create_Female_Archer_Camp
+
+	FA_Centre_Building = 0
+
+start
+
+	FA_Centre_Building = create HOUSE ABODE_INFO_NORSE_HUT at {FA_Camp_Pos}
+	// Do we need more buildings?
+	// Or at least some campfires etc? Fields?
+
+end script FA_Create_Female_Archer_Camp
+
+
+//-----------------------------------------------------------------------------
+//	FA_Create_Female_Archers
+//-----------------------------------------------------------------------------
+begin script FA_Create_Female_Archers
+
+	FA_Num_Archers	= 0
+
+start
+
+	FA_Num_Archers = 24
+
+	//... Create the main platoon of female archers
+	//TRIBE_TYPE_AZTEC
+	FA_Archer_Squad = create platoon ARMY_UNIT_TYPE_RANGED tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_CRESCENT_RABBLE at {FA_Camp_Pos} facing camera position with FA_Num_Archers villagers
+	set FA_Archer_Squad player 4
+
+	FA_Num_Archers = 16
+
+	// Defensive Position A
+	// AZTECS !!!!
+	FA_Archer_Squad_2 = create platoon ARMY_UNIT_TYPE_RANGED tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_CRESCENT_RABBLE at {FA_Defensive_Pos_A} facing camera position with FA_Num_Archers villagers
+	set FA_Archer_Squad_2 player 4
+
+	// Defensive Position B
+	// AZTECS !!!!
+	FA_Archer_Squad_3 = create platoon ARMY_UNIT_TYPE_RANGED tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_CRESCENT_RABBLE at {FA_Defensive_Pos_B} facing camera position with FA_Num_Archers villagers
+	set FA_Archer_Squad_3 player 4
+
+end script FA_Create_Female_Archers
+
+
+//-----------------------------------------------------------------------------
+//	FA_Defend_Territory
+//-----------------------------------------------------------------------------
+begin script FA_Defend_Territory
+
+start
+
+/*
+Possible:
+Have each FA assigned a main defensive position and a retreat position.
+If dies then spawn another within the building, then go to the main position if not attacked on the way.
+Else go to the fallback position and try again later?
+
+Could use this routine to rather check how many archers are at each post;
+then if not enough then check for enemy troops; if none nearby; spawn more from the hut and move them to the position.
+*/
+
+end script FA_Defend_Territory
+
+
+//-----------------------------------------------------------------------------
+//	FA_Create_Scroll
+//-----------------------------------------------------------------------------
+begin script FA_Create_Scroll
+
+	FA_Scroll_Position	= 0
+	FA_Reminder_Scroll	= 0
+
+start
+
+	//... Create scroll creation position just above the FA's building.
+	FA_Scroll_Position = marker at {1547.649,97.761,1015.013}
+
+	//... Initial scroll for the cutscene
+	begin loop
+		if FA_Scroll not exists
+			FA_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Scroll_Position}
+		end if
+		wait 1.6 seconds
+		until FA_Initial_Scroll_Used == FA_TRUE
+	end loop
+
+	delete FA_Scroll
+	wait until FA_Cutscene_Complete == FA_TRUE
+
+	//... Already used the main scroll, so create a reminder.
+	begin loop
+		if FA_Reminder_Scroll not exists
+			FA_Reminder_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Scroll_Position}
+		end if		
+		wait 1.6 seconds
+		until FA_Archers_Converted == FA_TRUE
+	end loop	
+
+	// Check neither scroll still exists - delete if so...
+	if FA_Scroll exists
+		delete FA_Scroll
+	end if
+	if FA_Reminder_Scroll exists
+		delete FA_Reminder_Scroll
+	end if
+	
+end script FA_Create_Scroll
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Explanation_Cutscene
+//-----------------------------------------------------------------------------
+begin script FA_Explanation_Cutscene
+
+start
+
+	// Explaining cutscene played once the scroll is clicked.
+	wait until FA_Scroll right clicked
+	FA_Initial_Scroll_Used = FA_TRUE
+
+	begin cinema
+		set camera position to {1535.952,109.090,1025.421}
+		set camera focus to {1550.240,98.900,1013.296}
+		eject good spirit
+		say "These are a proud people; very strong with a bow."
+		wait until read
+		clear dialogue
+		say "Leaderless though... It seems they aren't sure what to do without a leader."
+		wait until read
+		clear dialogue
+		send good spirit home
+		wait 10 seconds
+	end cinema
+
+	FA_Cutscene_Complete = FA_TRUE
+
+end script FA_Explanation_Cutscene
+
+
+
+//-----------------------------------------------------------------------------
+//	FA_Raiding_Party
+//-----------------------------------------------------------------------------
+begin script FA_Raiding_Party
+
+start
+
+	// Create a small group of archers from the building.
+	// Send the group to raid or protect some women farming villagers.
+	// Do they need to do this?
+	// Might be best for them to remain up on the hill...
+
+end script FA_Raiding_Party
+
+
+//-----------------------------------------------------------------------------
+//	FA_Aztec_Attack
+//-----------------------------------------------------------------------------
+begin script FA_Aztec_Attack
+
+	FA_Aztec_Spawn_Pos	= 0
+	FA_MoveCounter		= 0
+
+start
+
+	FA_P1 = get FA_Archer_Squad player
+
+	// Create a platoon of Aztec troops
+	FA_Aztec_Spawn_Pos = marker at {1231.437,55.719,814.815}
+	FA_AztecPlatoon = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_RABBLE at {FA_Aztec_Spawn_Pos} facing {FA_Attacking_Waypoints[0]} with 12 villagers
+	set FA_AztecPlatoon player 5
+	FA_P2 = get FA_AztecPlatoon player
+
+	set player FA_P2 ENEMY to player FA_P1
+
+	// Send the platoon to the Female Archers and try to get up the hill.
+	begin loop
+		move FA_AztecPlatoon position to {FA_Attacking_Waypoints[FA_MoveCounter]}
+		wait until {FA_AztecPlatoon} near {FA_Attacking_Waypoints[FA_MoveCounter]} radius 5.0
+		FA_MoveCounter++
+		until FA_MoveCounter == 4
+	end loop
+
+	wait until FA_All_Aztecs_Dead == FA_TRUE
+
+end script FA_Aztec_Attack
+
+
+//-----------------------------------------------------------------------------
+//	FA_Egyptian_Attack
+//-----------------------------------------------------------------------------
+begin script FA_Egyptian_Attack
+
+	FA_Egyptian_Spawn_Pos	= 0
+	FA_MoveCounter2			= 0
+
+start
+
+	// Create a platoon of Egyptian troops
+    FA_Egyptian_Spawn_Pos = marker at {1364.588,71.730,1864.224}
+	FA_EgyptianPlatoon = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_RABBLE at {FA_Egyptian_Spawn_Pos} facing {FA_Attacking_Waypoints[0]} with 10 villagers
+	set FA_EgyptianPlatoon player 5
+	FA_P3 = get FA_EgyptianPlatoon player
+	set player FA_P3 ENEMY to player FA_P1
+
+	// Send the platoon to the Female Archers and try to get up the hill.
+	begin loop
+		move FA_EgyptianPlatoon position to {FA_Attacking_Waypoints[FA_MoveCounter2]}
+		wait until {FA_EgyptianPlatoon} near {FA_Attacking_Waypoints[FA_MoveCounter2]} radius 5.0
+		FA_MoveCounter2++
+		until FA_MoveCounter2 == 4
+	end loop
+
+	wait until FA_All_Egyptians_Dead == FA_TRUE
+
+end script FA_Egyptian_Attack
+
+
+//-----------------------------------------------------------------------------
+//	FA_Give_Player_Tech_2_Archers
+//-----------------------------------------------------------------------------
+begin script FA_Give_Player_Tech_2_Archers
+
+start
+
+	// Give the player tech level 2 archers. Or is it level 1 (from 0)
+	begin dialogue
+		say "Player gets the tech level 2 archer blueprint."
+		wait until read
+		clear dialogue
+	end dialogue
+
+end script FA_Give_Player_Tech_2_Archers
+
+
+//-----------------------------------------------------------------------------
+//	FA_Wait_For_Female_Leader
+//-----------------------------------------------------------------------------
+begin script FA_Wait_For_Female_Leader
+
+	FA_Female_Hero_Squad	= 0
+	FA_FH_Spawn_Pos			= 0
+	FA_Temp_Scroll_Pos		= 0
+	FA_Temp_Scroll			= 0
+
+start
+
+	// TEMP - Part of this is temporary; creating a female hero so the player can test it out...
+
+
+	FA_FH_Spawn_Pos = marker at {1370.828,63.657,1250.833}
+	FA_Temp_Scroll_Pos = marker at {1370.828,63.657,1250.833} + {0.000,-50.000,0.000} //marker at {1370.828,0.000,1250.833}
+
+	//create a fake female hero for now so the player can move her over there and test it.
+	//FA_Female_Hero_Squad = create VILLAGER GREEK_HOUSEWIFE at {FA_FH_Spawn_Pos} //{FA_Players_Town} + {50.000,0.000,25.000}
+	//SCALE of FA_Female_Hero = 5
+	FA_Female_Hero_Squad = create platoon ARMY_UNIT_TYPE_RANGED tribe TRIBE_TYPE_GREEK formation FORMATION_TYPE_CRESCENT_RABBLE at {FA_FH_Spawn_Pos} facing camera position with 9 villagers
+	set FA_Female_Hero_Squad player 0
+
+	FA_Temp_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {FA_Temp_Scroll_Pos}
+	wait until FA_Temp_Scroll right clicked
+	clear right clicked object
+
+	begin dialogue
+		//temp
+		say "This is one of your squads; led by a female hero. Move them to the female archer camp to persuade them to join."
+		wait until read
+		clear dialogue
+	end dialogue
+
+	//xx
+	//Scroll is temp.
+
+	delete FA_Temp_Scroll
+
+	//wait until FA_Temp_Scroll right clicked
+    //move FA_Female_Hero_Squad position to {FA_Archer_Squad} radius 40
+	//say "Female Hero squad moving out..."
+
+	//wait until a female leader character is within range and without male troops with her.
+	wait until {FA_Female_Hero_Squad} near {FA_Archer_Squad} radius 60 or {FA_Female_Hero_Squad} near {FA_Archer_Squad_2} radius 60 or {FA_Female_Hero_Squad} near {FA_Archer_Squad_3} radius 60
+	FA_Archers_Converted = FA_TRUE
+
+	set FA_Archer_Squad player 0
+	set FA_Archer_Squad_2 player 0
+	set FA_Archer_Squad_3 player 0
+	
+	wait 30 seconds
+
+end script FA_Wait_For_Female_Leader
+
+
+//-----------------------------------------------------------------------------
+//	FA_Number_Of_Archers
+//-----------------------------------------------------------------------------
+begin script FA_Number_Of_Archers
+
+start
+
+	begin loop
+		//Calculate how many archers are still alive. Could check if platoons exist?
+		if FA_Archer_Squad not exists and FA_Archer_Squad_2 not exists and FA_Archer_Squad_3 not exists
+			FA_All_Archers_Dead = FA_TRUE
+		end if
+		wait 3 seconds
+		until FA_All_Archers_Dead == FA_TRUE
+	end loop
+
+end script FA_Number_Of_Archers
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================

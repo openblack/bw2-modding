@@ -1,0 +1,6 @@
+run script RunLand9FireWall
+
+begin script RunLand9FireWall
+start
+	run script Land9FireWall
+end script RunLand9FireWall

@@ -1,0 +1,32 @@
+//-----------------------------------------------------------------------------
+//	Run Archery script
+//-----------------------------------------------------------------------------
+///run script RunArcheryChallenge
+
+//begin script RunArcheryChallenge
+
+//start
+
+//	run script Land4ArcheryChallenge
+
+//end script RunArcheryChallenge
+
+//------------------------------------------------
+//  LAND 4 JAPANESE TOWN AI
+//------------------------------------------------
+
+
+global TidtempL4JapanTown		= 0
+global TidtempL4JapanOutpost	= 0
+global TidtempL4JapanOutpost	= 0
+global TidtempL4GreekTown		= 0
+
+begin script Land4Japanese
+start
+
+TidtempL4JapanTown = get TOWN at {613.880,28.531,1403.416}
+TidtempL4JapanOutpost = get TOWN at {1400.752,60.594,560.820}
+TidtempL4JapanOutpost = get TOWN at {2159.284,28.938,1467.662}
+TidtempL4GreekTown = get TOWN at {1697.294,26.781,1734.585}
+
+end script Land4Japanese

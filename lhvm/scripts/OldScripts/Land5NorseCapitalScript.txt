@@ -1,0 +1,1001 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NC_True = 1
+define NC_False = 0
+
+define NUMBER_OF_PLATOONS = 7
+define NUMBER_OF_CATAPAULTS = 2
+define NUMBER_OF_MINOR_SETTLEMENTS = 4
+
+define NC_RoutePoints = 100
+define NC_NumWayPoints = 7
+
+define STATE_AT_PEACE = 0
+define STATE_AT_WAR = 1
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+
+global NC_NorsePlatoon[NUMBER_OF_PLATOONS]
+
+global NC_PatrolRoute[NC_RoutePoints]
+global NC_RouteWaypoints[NC_NumWayPoints]
+global NC_RouteIndex[NC_NumWayPoints]
+
+global NC_NorseCatapults[NUMBER_OF_CATAPAULTS]
+
+global L5NorseCity = 0
+
+global NC_MSTakenByForce[NUMBER_OF_MINOR_SETTLEMENTS]
+global NC_NumTakenByForce = 0
+
+global NC_MinorSettlements[NUMBER_OF_MINOR_SETTLEMENTS]
+
+global 	NC_BuildUp = 0
+global	NC_MeteorStrike = 1
+global	NC_AttackPT = 3
+global	NC_Ready = 5
+global	NC_PreStrike = 6
+global	NC_PostStrike = 7
+global	NC_DefendResources = 8
+global	NC_TakeBackMS = 9
+global	NC_RaidPT = 10
+global  NC_Attack = 11
+global	NC_DoneBuildingUp = 12
+global	NC_AttackMinorTown = 13
+global	NC_AttackPlayerTown = 14
+
+global	NC_PostAttackMinorTown = 15
+global	NC_PostAttackPlayerTown = 16
+
+global NC_RaidPlayerTown = 17
+global NC_PostRaidPlayerTown = 18
+
+global	NC_PatrolPhase = 0
+global	NC_ArmyPhase = 0
+global	NC_MainPhase = 0
+
+global NC_AreaStart[4]
+global NC_AreaEnd[4]
+
+global NC_ArmyReady = NC_False
+
+global TimeBetweenShowers = 120
+
+global NC_Patrol = 1
+global NC_RespondToArmy = 1
+global NC_AllOutWar = 0
+global NC_TakeNorseTown5 = 1
+global NC_SendingAnArmyAtGate = 0
+global NC_TakingOverATown = 0
+global NC_AttackPlayersFlank = 0
+
+
+global NC_NumberOfTownsPlayerHasTaken = 0
+
+global NC_Wolf = 0
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+
+//----AI Structure----//
+
+define script Land5NC_NorseArmyManagement
+define script Land5NC_NorseGeneralManagement
+define script Land5NC_NorseCreatureManagement
+define script Land5NC_NorseCityManagement
+
+//----Assisting function----//
+
+define script NC_TakeBackTown(Town)
+define script NC_AttackPlayersTown
+define script NC_DefendAITown
+define script NC_BuildWallAttack
+define script NC_SetUpWaypointRoutes
+define script Land5NC_DoRaidAttack
+define script NC_CastEpic(Area)
+
+//-----------------------------------------------------------------------------
+//----Land5NorseCapitalScript----// 
+//-----------------------------------------------------------------------------
+
+begin script Land5NorseCapitalScript
+	CatapultSpawn1 = marker at {458.999, 256.422, 1859.502}
+	CatapultSpawn2 = marker at {662.866, 270.230, 1972.538}
+	PlatoonSpawn[NUMBER_OF_PLATOONS]
+	Counter = 0
+	Inc = 0
+	WInc = 0
+	PlayerPlatoon = 0
+	BuildingToBuild	= 0
+start
+	//NC_MainPhase = NC_RaidPlayerTown
+	L5NorseCity = get town with id 1
+	L5GreekTown= get town with id 0
+	
+	PlatoonSpawn[0] = marker at {466.668, 256.995, 1851.961}
+	PlatoonSpawn[1] = marker at {645.460, 270.048, 1985.005}
+	PlatoonSpawn[2] = marker at {506.359, 212.792, 1562.905}
+	PlatoonSpawn[3] = marker at {761.264, 182.816, 1568.131}
+	PlatoonSpawn[4] = marker at {788.323, 225.883, 1777.121}
+	PlatoonSpawn[5] = marker at {978.282, 82.042, 813.577}
+	PlatoonSpawn[6] = marker at {1574.917, 102.176, 1736.536}
+	
+	NC_AreaStart[1] = marker at {1460.376, 72.567, 998.938}
+	NC_AreaEnd[1] = marker at {1627.364, 74.391, 1128.330}
+	NC_AreaStart[2] = marker at {1652.656, 56.913, 1173.793}
+	NC_AreaEnd[2] = marker at {1461.012, 69.533, 1251.317}
+	NC_AreaStart[3] = marker at {1461.012, 69.533, 1251.317}
+	NC_AreaEnd[3] = marker at {1514.205, 62.286, 1250.024}
+	
+	
+	
+//----Create initial platoons----//
+
+	run script NC_SetUpWaypointRoutes
+
+	Counter = 0
+	while Counter < NUMBER_OF_PLATOONS
+		NC_NorsePlatoon[Counter] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {PlatoonSpawn[Counter]} with 5 men and 0 women 
+		attach NC_NorsePlatoon[Counter] to L5NorseCity	
+		Counter++		
+	end while
+	
+	//PlayerPlatoon = create platoon PLATOON_INFO_NORSE_MELEE_1 at {1206.654, 132.852, 1263.373} with 25 men and 0 women
+	//attach PlayerPlatoon to L5GreekTown	 
+	
+	move NC_NorsePlatoon[0] along NC_RouteWaypoints[0] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+	move NC_NorsePlatoon[1] along NC_RouteWaypoints[1] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+	move NC_NorsePlatoon[2] along NC_RouteWaypoints[2] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+	move NC_NorsePlatoon[3] along NC_RouteWaypoints[3] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+	move NC_NorsePlatoon[4] along NC_RouteWaypoints[4] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR
+	move NC_NorsePlatoon[5] along NC_RouteWaypoints[5] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+	move NC_NorsePlatoon[6] along NC_RouteWaypoints[6] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+		
+//----Initialise the town----//
+
+	set town L5NorseCity platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.0
+	set town L5NorseCity desire for GATHER_FOOD to 0.30
+	set town L5NorseCity desire for GROW_FOOD to 0.20
+	set town L5NorseCity desire for GATHER_WOOD to 0.30
+	set town L5NorseCity desire for GATHER_ORE to 0.10
+	set town L5NorseCity desire for BREED to 0.10
+	set town L5NorseCity desire for ATTACK to 0.10
+	set town L5NorseCity desire for FUN to 0.00
+
+//----Create initial catapult----//
+
+	NC_NorseCatapults[0] = create siege weapon CATAPULT_1 belonging to L5NorseCity at {CatapultSpawn1} 
+	NC_NorseCatapults[1] = create siege weapon CATAPULT_1 belonging to L5NorseCity at {CatapultSpawn2}   
+
+	run background script Land5NC_NorseArmyManagement
+	run background script Land5NC_NorseGeneralManagement
+	run background script Land5NC_NorseCreatureManagement
+	run background script Land5NC_NorseCityManagement
+	//run script Land5NC_DoRaidAttack
+	BuildingToBuild = build building at {446.652, 263.658, 1982.691} desire 0.8
+	//NC_MainPhase = NC_RaidPlayerTown
+	
+end script Land5NorseCapitalScript
+//-----------------------------------------------------------------------------
+//----Land5NC_NorseGeneralManagement----//
+//-----------------------------------------------------------------------------
+begin script Land5NC_NorseGeneralManagement
+	BuildWallCommentSaid = NC_False
+	Counter = 0
+	
+	NumberOfTownsPlayerOwns = 1
+	InitialCommentSaid = NC_False
+	SecondCommentSaid = NC_False
+	ShowerCommentSaid = NC_False
+	ShowerComentLoop = 0
+	AttackComment = NC_False
+	RaidComment = NC_False
+	TakeBackComment = NC_False
+	ProtectComment = NC_False
+	ReadyComment = NC_False
+	PlayerNearComent = NC_False
+	MeleeArmouryCommentSaid = NC_False
+	ArcherArmouryCommentSaid = NC_False
+	ArmyCommentSaid = NC_False
+	Army100CommentSaid = NC_False
+	Army200CommentSaid = NC_False
+	TownMigrated[NUMBER_OF_MINOR_SETTLEMENTS]
+	
+	OneSettlemmentTaken = NC_False
+	AllSettlemmentTaken = NC_False
+	EpicTime  = 600
+	EpicTimer = create timer for EpicTime seconds 
+	EpicComment = 0
+	RandEpicComment = 0 
+	
+	ADAMCRAPNESS = 0
+	
+	
+start
+	NC_MinorSettlements[0] = L5NorseTown1 
+	NC_MinorSettlements[1] = L5NorseTown2 
+	NC_MinorSettlements[2] = L5NorseTown3
+	NC_MinorSettlements[3] = L5NorseTown4
+	
+	TownMigrated[0] = NC_False
+	TownMigrated[1] = NC_False
+	TownMigrated[2] = NC_False
+	TownMigrated[3] = NC_False
+	
+	begin dialogue
+		
+		say "Gen: You've made a mistake by coming here.  If my might doesn't crush you the skies will!"
+		wait until read
+		eject good spirit
+		eject evil spirit
+			say "GA:  Wow.  I think he means business. I wonder if we can calm him down?"
+			wait until read
+			say "EA: A war eh?  Great stuff.  He doesn't scare me.  Lets build some armies!"
+			wait until read
+		send good spirit home
+		send evil spirit home
+		
+		wait 1 second
+		//if Good
+			say "You will not sway the peoples of this land with your wonder - I will destroy all you create! "
+			wait until read
+		//if Neutral
+			//say "Gen:  You lack the resolve to amaze or destroy I will use those weaknesses against you!"
+			//wait until read 
+		//if evil
+			//say "Gen: You're armies will not be able to defeat me in this place!"
+			//wait until read
+		
+		eject good spirit
+		eject evil spirit
+			say "GA:  Hmm.. Resources look very scarce on this land. "
+			wait until read
+			say "EA:  Yeah, so screw making pretty statues, lets use it to make weapons!"
+			wait until read
+			say "GA: What was that about the skies?"
+			wait until read
+			say "EA: Don't worry boss I'll keep an eye to the heaven's for  yah, just worry about kicking the shit out of that wanker. "
+			wait until read
+		send good spirit home
+		send evil spirit home
+		
+		begin loop
+
+		//-- check player has begun building--//
+			
+		if get number of type HOUSE ABODE_INFO_GREEK_FIELD in L5GreekTown min built 1 > 0 and InitialCommentSaid == NC_False 
+			InitialCommentSaid = NC_True
+			say "Gen: How dare these Greeks come to my land will be watching them closely."
+			wait until read
+		end if
+		
+		if get number of type HOUSE ABODE_INFO_GREEK_STORAGE_PIT in L5GreekTown min built 1 > 0 and InitialCommentSaid != NC_False and SecondCommentSaid == NC_False 
+			SecondCommentSaid = NC_True
+			say "Gen: They won’t survive the meteor strikes anyway! The fools should never have come here."
+			wait until read
+		end if
+	
+		//-- check first shower --//
+		
+		if NC_MainPhase == NC_PostStrike and ShowerCommentSaid == NC_False 
+			ShowerCommentSaid = NC_True
+			say "GA: Watch out for the meteor showers. They are deadly. This is a great time to buy the shield spell, you‘ll find it most useful."
+			wait until read
+			say "EA: A little death never hurt anyone. Besides, they leave behind all that lovely ore. You can build armies with it! But for once I agree a shield spell will help you a lot in this land."
+			wait until read
+			ShowerComentLoop = 1
+		end if
+		
+		// Loop through phase comments
+		
+		if NC_MainPhase == NC_MeteorStrike and ShowerComentLoop == 1
+			ShowerComentLoop = 2
+			say "Gen: Now you will taste the might of the heavens. <laughs>"
+			wait until read
+		end if
+
+		if NC_MainPhase == NC_PostStrike and ShowerComentLoop == 2
+			ShowerComentLoop = 3
+			say "Gen: gives thanks to the skies for supplying their races vital resource - ore  with which they are going to snuff out the greeks "
+			wait until read
+		end if
+		
+		if NC_MainPhase == NC_PostStrike and ShowerComentLoop == 3
+			ShowerComentLoop = 1
+			say "Gen: Time to reap the harvest!"
+			wait until read
+		end if
+		
+		//--- player steals ore ---//
+		
+		
+		//if NC_PlatoonNear == NC_True and PlayerNearComent == NC_False
+		//	PlayerNearComent = NC_True
+		//	say "Gen: Leave my resource collecting alone! Armies - get out there and crush any Greek that gets in your way."
+		//	wait until read
+		//end if
+		
+		//--- Check Army State -- // 
+		
+		// Enough resources.. or 3 days
+		if NC_MainPhase == NC_DoneBuildingUp and ReadyComment == NC_False
+			ReadyComment = NC_True
+			say "Gen: We have enough of what we need to take on the Greeks! Back to the city!"
+			wait until read
+		end if
+		
+		//  Protecting resources
+		if NC_PatrolPhase == NC_DefendResources and ProtectComment == NC_False
+			ProtectComment = NC_True
+			say "Gen: Protect the supplies!"
+			wait until read
+		end if
+	
+		// Take back town for first time
+		if PLAYER of L5NorseTown3 == 0 and TakeBackComment == NC_False and NC_MainPhase == NC_PostAttackMinorTown
+			TakeBackComment = NC_True
+			say "Gen: I will not tolerate you taking control of a settlement that close to my town!"
+			wait until read
+		end if
+		
+		// Raid Player city
+		if NC_ArmyPhase == NC_RaidPT and RaidComment == NC_False and NC_MainPhase == NC_PostRaidPlayerTown
+			RaidComment = NC_True
+			say "Harass the Greeks; don't give them a moment to rest!"
+			wait until read
+		end if
+		
+		// Attack Player city
+		if NC_ArmyPhase == NC_AttackPT and AttackComment == NC_False and NC_MainPhase == NC_PostAttackPlayerTown
+			AttackComment = NC_True
+			say "Charge my brave warriors!"
+			wait until read
+		end if
+	//----Check if the player takes a minor settlement by impressiveness----//	
+	/*
+		Counter = 0
+		while Counter < NUMBER_OF_MINOR_SETTLEMENTS
+			if get town NC_MinorSettlements[Counter] migrating == L5GreekTown and TownMigrated[Counter] == NC_False
+				TownMigrated[Counter] = NC_True
+				NC_NumberOfTownsPlayerHasTaken++
+				NC_MSTakenByForce[Counter] = NC_False
+			end if
+			Counter++
+		end while
+	*/		
+	//----Check if the player takes a minor settlement by armies----//	
+	
+		if NumberOfTownsPlayerOwns < get player 0 town total
+			NumberOfTownsPlayerOwns++
+			NC_NumberOfTownsPlayerHasTaken++
+			NC_NumTakenByForce++
+			NC_MSTakenByForce[Counter] = NC_True
+		end if
+	
+		if NC_NumberOfTownsPlayerHasTaken == 1 and OneSettlemmentTaken == NC_False  
+			OneSettlemmentTaken = NC_True
+			say "Gen: Taking those people won't help you."
+			wait until read
+		elsif NC_NumberOfTownsPlayerHasTaken == 4 and AllSettlemmentTaken == NC_False
+			AllSettlemmentTaken = NC_True
+			say "Gen: I don't know why you believe taking those people will help you; I shall crush you and them wherever they are once I've built up enough"
+			wait until read
+		end if
+	
+	//-- Check for undead leagion --//
+	
+	//-- Check for Epic --//
+		if get EpicTimer time remaining ==  0
+		
+			EpicTimer = create timer for EpicTime seconds 
+			EpicComment++
+			if  EpicComment == 1
+				say "Gen: I can hardly wait to unleash this on you"
+				wait until read
+			elsif EpicComment == 2
+				say "Gen: Half way there!"
+				wait until read
+			elsif EpicComment == 3
+				say "Gen: Almost time for you to taste my fury"
+				wait until read
+			elsif EpicComment == 4
+				say "Gen: Ah HAH!  It is READY! "
+				wait until read
+			elsif EpicComment >= 5
+				RandEpicComment++
+				if RandEpicComment == 1
+					say "Gen: FIRE! "
+					wait until read
+				elsif RandEpicComment == 2
+					say "Gen: You'll not escape this time! "
+					wait until read
+				elsif RandEpicComment == 3
+					say "Gen:  Goodbye!"
+					wait until read
+				end if
+				run background script NC_CastEpic(RandEpicComment)
+			end if 
+		end if
+		until PLAYER of L5NorseCity != 1
+		end loop
+
+	//----Check if player Wins Via armies----//
+
+		if variable get town L5NorseCity method of last conversion == variable LAST_CAPTURE_AGGRESSIVE
+			eject evil spirit
+			say "EA: We're really making a foothold!"
+			wait until read
+			send evil spirit home
+			L5CapitalConverted = NC_True
+			
+	//----Check if player Wins Via impressiveness----//
+	
+		elsif variable get town L5NorseCity method of last conversion == variable LAST_CAPTURE_PASSIVE
+			eject good spirit
+			say "GA: We're really making a foothold!"
+			wait until read
+			send good spirit home
+			L5CapitalConverted = NC_True
+		end if
+		
+		say "Gen: This isn't right! How can you have defeated me! But next you will face a real challenge - The Aztecs and Japanese are spreading."
+		say "Gen: The Japanese will face off honourably against you and defeat you!"
+		
+		eject good spirit
+		say "Gen: Let’s go to the next land and fight the Japanese. They are an advanced foe."
+		wait until read
+		send good spirit home
+		
+		
+	end dialogue
+end script Land5NC_NorseGeneralManagement
+
+
+
+//-----------------------------------------------------------------------------
+//----Land5NC_NorseArmyManagement----//
+//-----------------------------------------------------------------------------
+begin script Land5NC_NorseArmyManagement
+	Counter = 0
+	AttackGroups[NUMBER_OF_MINOR_SETTLEMENTS]
+	MainAttackGroups[4]
+	ArcherAttackGroups[2]
+	NumberOfSoldiers = 0
+	AttackWaypoints[2]
+	AttackWaypoint[10]
+	SettlementAttacked[NUMBER_OF_MINOR_SETTLEMENTS]
+	AreaCheck = 0
+	DefendTimer = create timer for 5 seconds
+	posseTimer = create timer for 5 seconds
+	PossePhase = 0
+	PossePlatoon[3]
+	PosseStart[3]
+	CampPos[3]
+	PosseArea = marker at {1541.631, 61.181, 1237.685}
+	PosseIn_Wpoints[3]
+	AmbushPlatoon[3]
+	
+	AmbushStart[3]
+	AmbushPhase = 0
+	AmbushArea = marker at {1041.605, 132.424, 1264.624}
+	AmbushTimer = create timer for 10 seconds
+	AmbushedPlayer = 0
+	
+	DefendPlatoon[3]
+start
+
+	
+	AttackWaypoint[0] = marker at {989.548, 141.601, 1281.808}
+	AttackWaypoint[1] = marker at {1129.264, 133.228, 1251.238}
+	AttackWaypoint[2] = marker at {1348.452, 92.781, 1244.055}
+	AttackWaypoint[3] = marker at {1491.386, 59.765, 1269.131}
+	
+	AttackWaypoint[4] = marker at {1573.680, 102.014, 1737.639}
+	AttackWaypoint[5] = marker at {1713.633, 101.772, 1729.249}
+	AttackWaypoint[6] = marker at {1737.549, 103.293, 1728.711}
+	AttackWaypoint[7] = marker at {1769.475, 60.985, 1370.049}
+	
+	add {AttackWaypoint[0]} to waypoint list AttackWaypoints[0]
+	add {AttackWaypoint[1]} to waypoint list AttackWaypoints[0]
+	add {AttackWaypoint[2]} to waypoint list AttackWaypoints[0]
+	add {AttackWaypoint[3]} to waypoint list AttackWaypoints[0]
+	
+	add {AttackWaypoint[4]} to waypoint list AttackWaypoints[1]
+	add {AttackWaypoint[5]} to waypoint list AttackWaypoints[1]
+	add {AttackWaypoint[6]} to waypoint list AttackWaypoints[1]
+	add {AttackWaypoint[7]} to waypoint list AttackWaypoints[1]
+	
+	//-- create Posse
+	
+	CampPos[0] = marker at {1344.087, 93.232, 1283.884}
+	CampPos[1] = marker at {1322.349, 101.566, 1289.278}
+	CampPos[2] = marker at {1759.945, 85.777, 1461.779} 
+	
+	PosseStart[0] = marker at {1046.080, 134.398, 1281.528}
+	PosseStart[1] = marker at {966.621, 141.207, 1280.517}
+	PosseStart[2] = marker at {1752.829, 105.804, 1587.433}
+	
+	add {CampPos[0]} to waypoint list PosseIn_Wpoints[0]
+	add {CampPos[1]} to waypoint list PosseIn_Wpoints[1]
+	add {CampPos[2]} to waypoint list PosseIn_Wpoints[2]
+	
+	PossePlatoon[0] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {PosseStart[0]} with 5 men and 0 women 
+	attach PossePlatoon[0] to L5NorseCity
+	PossePlatoon[1] = create platoon PLATOON_INFO_NORSE_RANGED_1 at {PosseStart[1]} with 5 men and 0 women 
+	attach PossePlatoon[1] to L5NorseCity	
+	PossePlatoon[2] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {PosseStart[2]} with 5 men and 0 women 
+	attach PossePlatoon[2] to L5NorseCity		
+		
+	Counter = 0
+	while Counter < 3
+		move PossePlatoon[Counter] along PosseIn_Wpoints[Counter] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS 
+		Counter++		
+	end while
+	
+	AmbushStart[0] = marker at {1000.491, 146.038, 1357.010}
+	AmbushStart[1] = marker at {848.935, 157.584, 1348.290}
+	AmbushStart[2] = marker at {1087.478, 153.500, 1173.455}
+	
+	AmbushPlatoon[0] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {AmbushStart[0]} with 5 men and 0 women 
+	attach AmbushPlatoon[0] to L5NorseCity
+	AmbushPlatoon[1] = create platoon PLATOON_INFO_NORSE_RANGED_1 at {AmbushStart[1]} with 5 men and 0 women 
+	attach AmbushPlatoon[1] to L5NorseCity	
+	AmbushPlatoon[2] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {AmbushStart[2]} with 5 men and 0 women 
+	attach AmbushPlatoon[2] to L5NorseCity
+	
+	begin loop
+	
+		//----Replace any casualties----//
+	
+		Counter = 0 
+		while Counter < NUMBER_OF_PLATOONS
+			if NC_NorsePlatoon[Counter] not exists and can town L5NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size 15
+				NC_NorsePlatoon[Counter] = recruit ARMY_UNIT_TYPE_MELEE_1 town L5NorseCity platoon of size 15
+				move NC_NorsePlatoon[Counter] along NC_RouteWaypoints[Counter] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+			end if
+			Counter++
+		end while
+		
+		if get DefendTimer time remaining == 0
+			AreaCheck = get VILLAGER at {734.928, 186.853, 1599.060} radius 50 
+			//AreaCheck = get villagers of tribe TRIBE_TYPE_GREEKS nearest {734.928, 186.853, 1599.060} radius 40
+			DefendTimer = create timer for 5 seconds
+			if AreaCheck exists and NC_PatrolPhase != NC_DefendResources
+				
+				Counter = 0 
+				while Counter < 4
+					if NC_NorsePlatoon[Counter] exists
+						clear NC_NorsePlatoon[Counter] action queue
+						move NC_NorsePlatoon[Counter] position to {734.928, 186.853, 1599.060}
+						set NC_NorsePlatoon[Counter] attack everything near {734.928, 186.853, 1599.060} radius 50
+						move NC_NorsePlatoon[Counter] along NC_RouteWaypoints[Counter] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+					end if
+					Counter++
+				end while
+				NC_PatrolPhase = NC_DefendResources
+				
+			end if
+		end if
+		if NC_MainPhase == NC_AttackMinorTown
+			//----Check if player Takes Town----//
+			Counter = 0
+			while Counter < NUMBER_OF_MINOR_SETTLEMENTS
+				if variable get town NC_MinorSettlements[Counter] method of last conversion == variable LAST_CAPTURE_AGGRESSIVE
+						if AttackGroups[Counter] not exists // check available
+							if SettlementAttacked[Counter] < 2
+								SettlementAttacked[Counter]++
+								AttackGroups[Counter] = recruit ARMY_UNIT_TYPE_MELEE_1 town L5NorseCity platoon of size 15
+								set AttackGroups[Counter] attack NC_MinorSettlements[Counter] with severity 1 for takeover
+								//add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using NC_MinorSettlements[Counter] to AttackGroups[Counter] action queue
+								//add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {AttackGroups[Counter]} to AttackGroups[Counter] action queue	
+							end if
+						end if
+				end if
+				Counter++
+			end while	
+			NC_MainPhase = NC_PostAttackMinorTown
+		end if
+		
+		if NC_MainPhase == NC_AttackPlayerTown
+			//----Check if player Takes Town----//
+			Counter = 0
+			NumberOfSoldiers = get army size in town L5GreekTown
+			if NumberOfSoldiers > 20
+				NumberOfSoldiers = NumberOfSoldiers/2
+			elsif NumberOfSoldiers < 10
+				NumberOfSoldiers  = 5
+			end if
+			while Counter < 2
+				if NumberOfSoldiers > 3 and NumberOfSoldiers < get army size in town L5GreekTown and can town L5NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size NumberOfSoldiers
+					if MainAttackGroups[Counter] not exists // check available
+						MainAttackGroups[Counter] = recruit ARMY_UNIT_TYPE_MELEE_1 town L5NorseCity platoon of size NumberOfSoldiers
+						
+						move MainAttackGroups[Counter] along AttackWaypoints[0] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+						set MainAttackGroups[Counter] attack L5GreekTown with severity 1
+					end if	
+					Counter++
+					NC_ArmyPhase = NC_AttackPT
+					// Send catapults in 
+				end if
+				NC_MainPhase = NC_PostAttackPlayerTown
+			end while		
+		end if
+		
+		if NC_MainPhase == NC_RaidPlayerTown
+			//----Check if player Takes Town----//
+			Counter = 0
+			NumberOfSoldiers = get army size in town L5GreekTown
+			if NumberOfSoldiers > 20
+				NumberOfSoldiers = NumberOfSoldiers/4
+			elsif NumberOfSoldiers < 10
+				NumberOfSoldiers  = 5
+			end if
+			while Counter < 2
+				if NumberOfSoldiers > 3 and NumberOfSoldiers < get army size in town L5GreekTown 
+				
+					if MainAttackGroups[Counter] not exists and can town L5NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size NumberOfSoldiers
+						MainAttackGroups[Counter] = recruit ARMY_UNIT_TYPE_MELEE_1 town L5NorseCity platoon of size NumberOfSoldiers
+						ArcherAttackGroups[Counter] = recruit ARMY_UNIT_TYPE_RANGED_1 town L5NorseCity platoon of size NumberOfSoldiers
+						
+						move MainAttackGroups[Counter] along AttackWaypoints[Counter] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+						set MainAttackGroups[Counter] attack L5GreekTown with severity 1
+						move ArcherAttackGroups[Counter] along AttackWaypoints[Counter] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_FORWARDS
+						set ArcherAttackGroups[Counter] attack L5GreekTown with severity 1
+					end if	
+					Counter++
+					NC_ArmyPhase = NC_RaidPT
+					
+					// Send catapults in 
+				end if
+				NC_MainPhase = NC_PostRaidPlayerTown
+			end while		
+		end if
+		
+		//-- posse camped near player, defending resourses
+		
+		if get posseTimer time remaining == 0
+			AreaCheck = get VILLAGER at {PosseArea} radius 50 
+			//AreaCheck = get villager of tribe TRIBE_TYPE_GREEKS nearest {PosseArea} radius 100
+			posseTimer = create timer for 5 seconds
+			if AreaCheck exists and PossePhase != NC_DefendResources
+				
+				Counter = 0 
+				while Counter < 3
+					if PossePlatoon[Counter] exists
+						clear PossePlatoon[Counter] action queue
+						move PossePlatoon[Counter] position to {PosseArea}
+						set PossePlatoon[Counter] attack everything near {PosseArea} radius 50
+						// move back to CampPos[Counter]
+					end if
+					Counter++
+				end while
+				PossePhase = NC_DefendResources
+				
+			end if
+			//if attacked and back home reset
+			//if dead
+		end if
+		
+		//-- Ambush the player on main path --//
+		
+		if get AmbushTimer time remaining == 0
+			AreaCheck = get platoon of player 0 nearest {AmbushArea} radius 100 
+			//AreaCheck = get villager of tribe TRIBE_TYPE_GREEKS nearest {AmbushArea} radius 100
+			AmbushTimer = create timer for 10 seconds
+			if AreaCheck exists and AmbushPhase != NC_DefendResources
+				
+				Counter = 0 
+				while Counter < 3
+					if AmbushPlatoon[Counter] exists
+						clear AmbushPlatoon[Counter] action queue
+						//move AmbushPlatoon[Counter] position to {AmbushArea}
+						set AmbushPlatoon[Counter] attack everything near {AmbushArea} radius 100
+						// move back to CampPos[Counter]
+					end if
+					Counter++
+				end while
+				AmbushedPlayer = 1
+				AmbushPhase = NC_DefendResources
+				
+			end if
+			//if attacked and back home reset
+			//if dead
+		end if
+		
+		if AmbushedPlayer == 1
+			
+			add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {545.725, 211.908, 1610.006} to siege weapon NC_NorseCatapults[0] action queue
+			add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {545.725, 211.908, 1610.006} to siege weapon NC_NorseCatapults[0] action queue
+			
+			add action SIEGEWEAPON_AGENDA_ACTION_MOVE_TO_POS using {771.899, 234.156, 1789.029} to siege weapon NC_NorseCatapults[1] action queue
+			add action SIEGEWEAPON_AGENDA_ACTION_DEFEND_POSITION using {771.899, 234.156, 1789.029} to siege weapon NC_NorseCatapults[1] action queue
+			
+			if DefendPlatoon[0] not exists and can town L5NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size 10
+				DefendPlatoon[0] = recruit ARMY_UNIT_TYPE_MELEE_1 town L5NorseCity platoon of size 10
+	
+				
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {780.629, 226.989, 1773.055} to DefendPlatoon[0] action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {780.629, 226.989, 1773.055} to DefendPlatoon[0] action queue
+			end if
+		
+			if DefendPlatoon[1] not exists and can town L5NorseCity recruit ARMY_UNIT_TYPE_RANGED_1 platoon of size 20
+				DefendPlatoon[1] = recruit ARMY_UNIT_TYPE_RANGED_1 town L5NorseCity platoon of size 20
+				
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {704.297, 232.433, 1684.514} to DefendPlatoon[1] action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {704.297, 232.433, 1684.514} to DefendPlatoon[1] action queue
+			end if
+			
+			if DefendPlatoon[2] not exists and can town L5NorseCity recruit ARMY_UNIT_TYPE_MELEE_1 platoon of size 10
+				DefendPlatoon[2] = recruit ARMY_UNIT_TYPE_MELEE_1 town L5NorseCity platoon of size 10
+				
+				add action PLATOON_AGENDA_ACTION_MOVE_TO_POS_AGGRESSIVE using {789.819, 213.018, 1723.336} to DefendPlatoon[2] action queue
+				add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {789.819, 213.018, 1723.336} to DefendPlatoon[2] action queue
+			end if	
+			AmbushedPlayer = 2						
+		end if
+		
+		
+	until PLAYER of L5NorseCity != 1
+	end loop
+end script Land5NC_NorseArmyManagement
+
+//-----------------------------------------------------------------------------
+//----Land5NC_DoRaidAttack----//
+//-----------------------------------------------------------------------------
+begin script Land5NC_DoRaidAttack
+	NumAttackPlatoons = 2
+	AttackPlatoons[2]
+	Counter = 0
+start
+		set town L5NorseCity platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.5
+		Counter = 0
+		while Counter < NumAttackPlatoons
+			if AttackPlatoons[Counter] not exists
+				if get platoons in town L5NorseCity idle only > 0
+					//AttackPlatoons[Counter] = get idle platoon of type ARMY_UNIT_TYPE_MELEE_1 of town L5NorseCity excluding scripted
+					Counter++
+				end if
+			end if
+		end while
+		
+		begin cinema
+			say "Got Some armies!"
+			wait 2 seconds
+		end cinema
+		
+		while Counter < NumAttackPlatoons
+			if AttackPlatoons[Counter] exists
+				//AttackPlatoons[Counter] attack L5GreekTown with severity 0.7
+				move AttackPlatoons[Counter] along NC_RouteWaypoints[0] with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_CIRCULAR 
+			end if 
+		end while
+
+		begin cinema
+			say "Given them orders!"
+			wait 2 seconds
+		end cinema
+		
+		
+		set town L5NorseCity platoon type ARMY_UNIT_TYPE_MELEE_1 at ratio 0.0
+		
+end script Land5NC_DoRaidAttack
+
+//-----------------------------------------------------------------------------
+//----Land5NC_NorseCreatureManagement----//
+//-----------------------------------------------------------------------------
+begin script Land5NC_NorseCreatureManagement
+	WolfPos =  marker at {436.668, 256.995, 1871.961}
+start
+	NC_Wolf = create CREATURE CREATURE_TYPE_WOLF at {WolfPos}
+	set creature NC_Wolf role to CR_GATHERER radius 20
+	begin loop
+	end loop
+end script Land5NC_NorseCreatureManagement
+//-----------------------------------------------------------------------------
+//----Land5NC_NorseCityManagement----//
+//-----------------------------------------------------------------------------
+begin script Land5NC_NorseCityManagement
+	ShowerTimer = create timer for 0 seconds
+	EndLevel = 0
+	MyWeather = 0
+	MyWeatherPos = marker at {1129.576, 133.213, 1258.565}
+	NumNights = 0
+	NumCycles = 0
+	DoneMainAttack = 0
+start
+	//SetUp shield spell
+	begin loop
+		if get game time >= 8.0 and get game time < 18.0
+			if NumNights > 0
+					NumNights = 0
+					NumCycles++
+					if NumCycles == 1
+						NC_MainPhase = NC_DoneBuildingUp
+					end if
+					if NumCycles == 2
+						if NC_NumTakenByForce < 1
+							NC_MainPhase = NC_AttackMinorTown
+						else 
+							NumCycles = 3
+						end if
+						
+					end if
+					if NumCycles == 3
+						if (NC_NumTakenByForce < 2 and NC_NumberOfTownsPlayerHasTaken < 3) or DoneMainAttack == 1  // and army size < big amount?
+							NC_MainPhase = NC_RaidPlayerTown
+							DoneMainAttack = 0
+						else
+							NC_MainPhase = NC_AttackPlayerTown
+							DoneMainAttack = 1 
+						end if
+						NumCycles = 1
+					end if
+			end if
+		end if
+	
+		//--- check ShowerTimer -- //
+		if get ShowerTimer time remaining == 0 and get game time >= 18.0
+				NumNights = 1
+				ShowerTimer = create timer for TimeBetweenShowers seconds
+				// sound horn
+				// Set everyone to go seek shelter Phase 1
+				set L5NorseCity emergency for 40 seconds
+				NC_MainPhase = NC_PreStrike
+				// wait for everyone to be ready
+				wait 10 seconds
+				// if creature exists
+					// Create a shield spell
+				
+				// start shower	Phase 2
+				NC_MainPhase = NC_MeteorStrike
+				L5MeteorShower = 1
+				wait 10 seconds
+				L5MeteorShower = 0
+				//create ore rocks
+				//rotate and increase angle 
+				//re-pos area hit
+				wait 2 seconds
+				NC_MainPhase = NC_PostStrike
+				
+				MyWeather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {MyWeatherPos}		
+				set cloud for MyWeather above {MyWeatherPos}
+				set cloud generation 4
+				set cloud MyWeather size to x 1000.2 y 100.8 z 1000.1
+				set cloud MyWeather points to 10
+				set MyWeather properties rainfall 1 snowfall 0 overcast 0.7
+				wait 30 seconds
+				//until get game time >= 6.0
+				delete MyWeather
+				//enable MyWeather affected by wind
+				// Set people to collect ore Phase 3
+		end if
+	until EndLevel == 1
+	end loop
+end script Land5NC_NorseCityManagement
+//-----------------------------------------------------------------------------
+//----NC_TakeBackTown----//
+//-----------------------------------------------------------------------------
+begin script NC_TakeBackTown(Town)
+	AttackPlatoon[1]
+start
+
+		if Town == get town with id 2
+			AttackPlatoon[0] = NC_NorsePlatoon[2]
+			NC_NorsePlatoon[2] = 0
+		elsif Town == get town with id 3
+			AttackPlatoon[0] = NC_NorsePlatoon[3]
+			NC_NorsePlatoon[3] = 0
+		elsif Town == get town with id 4
+			AttackPlatoon[0] = NC_NorsePlatoon[4]
+			NC_NorsePlatoon[4] = 0
+		elsif Town == get town with id 5
+			AttackPlatoon[0] = NC_NorsePlatoon[4]
+			NC_NorsePlatoon[4] = 0
+		end if
+
+		clear AttackPlatoon[0] action queue	
+		add action PLATOON_AGENDA_ACTION_ATTACK_TOWN_CENTRE_FOR_TAKE_OVER using Town to AttackPlatoon[0] action queue
+		add action PLATOON_AGENDA_ACTION_DEFEND_POSITION using {AttackPlatoon[0]} to AttackPlatoon[0] action queue
+		
+end script NC_TakeBackTown
+//-----------------------------------------------------------------------------
+//----NC_AttackPlayersTown----//
+//-----------------------------------------------------------------------------
+begin script NC_AttackPlayersTown
+start
+end script NC_AttackPlayersTown
+//-----------------------------------------------------------------------------
+//----NC_DefendAITown----//
+//-----------------------------------------------------------------------------
+begin script NC_DefendAITown
+start
+end script NC_DefendAITown
+//-----------------------------------------------------------------------------
+//----NC_BuildWallAttack----//
+//-----------------------------------------------------------------------------
+begin script NC_BuildWallAttack
+start
+end script NC_BuildWallAttack
+
+
+//-----------------------------------------------------------------------------
+//----NC_CastEpic----//
+//-----------------------------------------------------------------------------
+begin script NC_CastEpic(Area)
+	Equake = 0
+start
+	begin cinema
+		Equake = create earthquake start {NC_AreaStart[Area]} end {NC_AreaEnd[Area]} player 1
+		
+		invoke Equake EPIC_CRUMBLE_BUILDINGS
+        invoke Equake EPIC_START_SINKING
+        wait 1.5 seconds
+        invoke Equake EPIC_START_EXPLOSION
+        invoke Equake EPIC_START_CRACKING
+        invoke Equake EPIC_START_SHIFTING
+
+							
+		wait 1 second
+	end cinema
+end script NC_CastEpic
+
+
+
+//-----------------------------------------------------------------------------
+//----NC_SetUpWaypointRoutes----// 
+//-----------------------------------------------------------------------------
+begin script NC_SetUpWaypointRoutes
+	Inc = 0
+	WInc = 0
+start
+
+	NC_PatrolRoute[0] = marker at {419.033, 251.831, 1816.622}
+	NC_PatrolRoute[1] = marker at {492.853, 256.696, 1833.857}
+	NC_RouteIndex[0] = 2
+	
+	NC_PatrolRoute[2] = marker at {676.952, 260.900, 1846.296}
+	NC_PatrolRoute[3] = marker at {723.797, 269.390, 1954.406}
+	NC_RouteIndex[1] = 4
+	
+	NC_PatrolRoute[4] = marker at {476.859, 214.878, 1496.336}
+	NC_PatrolRoute[5] = marker at {507.537, 212.877, 1574.561}
+	NC_PatrolRoute[6] = marker at {625.525, 197.512, 1566.861}
+	NC_RouteIndex[2] = 7
+	
+	NC_PatrolRoute[7] = marker at {784.821, 172.732, 1487.797}
+	NC_PatrolRoute[8] = marker at {837.947, 175.258, 1544.141}
+	NC_RouteIndex[3] = 9
+	
+	NC_PatrolRoute[9] = marker at {1360.387, 126.172, 1783.778}
+	NC_PatrolRoute[10] = marker at {1374.735, 126.926, 1872.674}
+	NC_RouteIndex[4] = 11
+	
+	NC_PatrolRoute[11] = marker at {1060.499, 94.373, 861.456}
+	NC_PatrolRoute[12] = marker at {1334.561, 72.145, 856.983}
+	NC_PatrolRoute[13] = marker at {1411.200, 75.981, 1185.131}
+	NC_PatrolRoute[14] = marker at {1259.635, 122.084, 1267.294}
+	NC_PatrolRoute[15] = marker at {967.474, 141.291, 1281.037}
+	NC_RouteIndex[5] = 16
+	
+	NC_PatrolRoute[17] = marker at {1681.727, 101.228, 1713.401}
+	NC_PatrolRoute[18] = marker at {1745.884, 104.732, 1717.626}
+	NC_RouteIndex[6] = 19
+	
+	WInc = 0
+	while WInc < NC_NumWayPoints
+		NC_RouteWaypoints[WInc] = create SCRIPT_OBJECT_TYPE_WAYPOINTROUTE at {0.0,0.0,0.0}
+		while Inc < NC_RouteIndex[WInc]
+		
+			add {NC_PatrolRoute[Inc]} to waypoint list NC_RouteWaypoints[WInc]
+		
+			Inc++
+		end while 
+		WInc++
+	end while
+
+end script NC_SetUpWaypointRoutes
+

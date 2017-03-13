@@ -1,0 +1,644 @@
+//=============================================================================
+// Land 10 Women
+// Lenny
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
+define WC_FALSE		= 0
+define WC_TRUE		= 1
+
+//Woman Flocks
+define WC_FLOCK_SIZE		= 10
+define WC_NUM_FLOCKS		= 30
+
+define WC_ESCAPE_STAGE_NONE	= 0
+define WC_ESCAPE_STAGE_1	= 10		//The number of women to let go this escape stage
+define WC_ESCAPE_STAGE_2	= 20		//Including previous flocks
+define WC_ESCAPE_STAGE_3	= 30
+
+define WC_NUM_ESCAPE_WAYPOINTS	= 9
+
+//-----------------------------------------------------------------------------
+// Globals
+//-----------------------------------------------------------------------------
+global WC_CampPrisons[5]
+global WC_FlockPositions[WC_NUM_FLOCKS]
+
+global WC_PrisonerRelease		= WC_ESCAPE_STAGE_NONE
+global WC_Platoons[6]
+
+global WC_Gatehouse_1			= 0
+global WC_Gatehouse_2			= 0
+
+global WC_EscapedWomanFlocks	= 0
+global WC_PrisonWaypoints		= 0
+
+global WC_NavWatchVillager		= 0
+global WC_StartedControleldRelease	= WC_FALSE
+
+
+//Globals used in land10stealth - oh dear
+global Snipers					= 0
+global Platoons[4]
+global Attackers[5]
+
+//-----------------------------------------------------------------------------
+// Script Defines
+//-----------------------------------------------------------------------------
+define script WC_WomanFlock(Pos)
+define script WC_PrisonControl
+define script WC_PrisonPatrol(Me)
+define script WC_PatrolOutside(Me)
+define script WC_WallDuty(Me, Pos)
+define script WC_ChaseWomenHome(Me)
+define script WC_EscapeWatch
+
+define script WC_ControlledRelease
+
+//-----------------------------------------------------------------------------
+// Land 10 Women
+//-----------------------------------------------------------------------------
+begin script Land10Women
+	Looper			= 0
+	RandStartPos	= 0
+	Me				= 0
+start
+
+	//Globals
+	if not L10GreekTown exists
+		run script Land10Globals
+	end if
+
+	//Get the prisons
+	WC_CampPrisons[0] = get HOUSE PRISON at {1872.179,310.627,1880.338}
+	WC_CampPrisons[1] = get HOUSE PRISON at {1898.062,310.617,1889.498}
+	WC_CampPrisons[2] = get HOUSE PRISON at {1925.261,310.630,1889.591}
+	WC_CampPrisons[3] = get HOUSE PRISON at {1964.268,310.634,1869.910}
+	WC_CampPrisons[4] = get HOUSE PRISON at {1982.728,310.618,1851.301}
+
+	//Get the gatehouses
+	WC_Gatehouse_1 = get HOUSE GATEHOUSE at {1894.888,310.576,1783.958} radius 30
+	set gate WC_Gatehouse_1 close
+	disable gate WC_Gatehouse_1 can open for platoons
+
+	//WC_Gatehouse_2 = get HOUSE GATEHOUSE at {1758.821,310.257,1756.651} radius 10
+	//set gate WC_Gatehouse_2 close
+	//disable gate WC_Gatehouse_2 can open for platoons
+
+	//Setup flock positions	
+	WC_FlockPositions[0] = marker at {1954.045,349.022,1942.220}
+	WC_FlockPositions[1] = marker at {1895.656,312.492,1854.278}
+	WC_FlockPositions[2] = marker at {1879.181, 310.569, 1814.577} //marker at {1880.231,312.659,1807.876}
+	WC_FlockPositions[3] = marker at {1932.931,310.430,1864.524}
+	WC_FlockPositions[4] = marker at {1868.063, 310.861, 1816.390} //marker at {1886.714,310.633,1798.295}
+	WC_FlockPositions[5] = marker at {1879.459,312.761,1825.038}
+	WC_FlockPositions[6] = marker at {1958.622,312.725,1840.125}
+	WC_FlockPositions[7] = marker at {1902.458,313.169,1867.262}
+	WC_FlockPositions[8] = marker at {1872.771,312.725,1853.526}
+	WC_FlockPositions[9] = marker at {1948.296,312.798,1888.739}
+	WC_FlockPositions[10] = marker at {1873.949,312.725,1836.892}
+	WC_FlockPositions[11] = marker at {1886.155, 310.375, 1813.894} //marker at {1899.761,313.967,1793.443}
+	WC_FlockPositions[12] = marker at {1879.974,312.717,1844.214}
+	WC_FlockPositions[13] = marker at {1884.157,312.707,1854.648}
+	WC_FlockPositions[14] = marker at {1940.869,343.863,1941.833}
+	WC_FlockPositions[15] = marker at {1908.186,331.626,1951.182}
+	WC_FlockPositions[16] = marker at {1940.366,312.640,1859.907}
+	WC_FlockPositions[17] = marker at {1891.210, 310.499, 1855.724} //marker at {1916.608,312.110,1798.491}
+	WC_FlockPositions[18] = marker at {1926.482,324.314,1921.946}
+	WC_FlockPositions[19] = marker at {1916.211,312.752,1859.401}
+
+	//Create women flocks
+	while Looper < WC_NUM_FLOCKS
+		RandStartPos = number from 0 to 19
+		run background script WC_WomanFlock(RandStartPos)
+		Looper++
+	end while
+
+	//Start prison control
+	run background script WC_PrisonControl
+
+	Me = get VILLAGER at {WC_FlockPositions[0]} radius 30
+	run background script WC_EscapeWatch
+
+	wait until WC_PrisonerRelease == WC_ESCAPE_STAGE_1
+
+	enable gate WC_Gatehouse_1 can open for platoons
+	//enable gate WC_Gatehouse_2 can open for platoons
+
+	//set gate WC_Gatehouse_1 open
+	//set gate WC_Gatehouse_2 open
+
+end script Land10Women
+
+//-----------------------------------------------------------------------------
+// Woman Flock
+//-----------------------------------------------------------------------------
+begin script WC_WomanFlock(Pos)
+	Flock			= 0
+	Looper			= 0
+	Counter			= 0
+	Rand			= 0
+	RandType		= 0
+	Type			= 0
+	CurrentWaypoint	= 0
+	MyGroup			= 0
+	FX				= 0
+
+	CanEscape		= WC_FALSE
+	FlockIsDead		= WC_FALSE
+
+	FinishPos		= marker at {1345.199,228.072,753.792}
+
+	Woman[WC_FLOCK_SIZE]
+	Waypoints[WC_NUM_ESCAPE_WAYPOINTS]
+	
+start
+
+	//Create some women
+	Flock = create flock container
+	//set Flock properties inner 10 outer 10
+
+	Woman[0] = create VILLAGER GREEK_HOUSEWIFE at {WC_FlockPositions[Pos]}	
+	//enable Woman[0] indestructible
+	disable Woman[0] reactable
+	
+
+	if not WC_NavWatchVillager exists
+		WC_NavWatchVillager = Woman[0]
+	end if
+
+	Looper		= 1
+	while Looper < WC_FLOCK_SIZE
+		Rand = number from 0 to 4
+
+		RandType = number from 1 to 4
+
+		if RandType == 0
+			Type = variable GREEK_HOUSEWIFE
+		elsif RandType == 1
+			Type = variable NORSE_HOUSEWIFE
+		elsif RandType == 2
+			Type = variable JAPANESE_HOUSEWIFE
+		elsif RandType == 3
+			Type = variable INDIGENOUS_HOUSEWIFE
+		end if
+
+		Woman[Looper] = create VILLAGER constant Type at {WC_FlockPositions[Pos]} //extra position 0 of WC_CampPrisons[Rand]
+		//PLAYER of Woman[Looper] = 1
+		disable Woman[Looper] reactable
+
+		add Woman[Looper] to flock Flock
+
+		wait until Snipers exists
+		//CHECK
+		wait until Platoons[3] exists
+		wait until Attackers[4] exists
+
+		add Woman[Looper] to platoon Snipers attack list
+
+		Counter = 0
+		while Counter < 4
+			if Platoons[Counter] exists
+				add Woman[Looper] to platoon Platoons[Counter] attack list
+			end if
+			Counter++
+		end while
+		Counter = 0
+		while Counter < 5
+			if Attackers[Counter] exists
+				add Woman[Looper] to platoon Attackers[Counter] attack list
+			end if
+			Counter++
+		end while
+		Looper++
+	end while
+
+	//Add woman 0 to attack list
+	add Woman[0] to platoon Snipers attack list
+
+	Counter = 0
+	while Counter < 4
+		if Platoons[Counter] exists
+			add Woman[0] to platoon Platoons[Counter] attack list
+		end if
+		Counter++
+	end while
+	Counter = 0
+	while Counter < 5
+		if Attackers[Counter] exists
+			add Woman[0] to platoon Attackers[Counter] attack list
+		end if
+		Counter++
+	end while
+
+
+	nominate Woman[0] as leader for flock Flock
+	//move Woman[0] position to {Woman[0]} + {0.000,0.000,1.000}
+
+	Waypoints[0]	= 	marker at {1889.452,310.632,1708.808}
+	Waypoints[1]	= 	marker at {1455.737,260.486,1708.115}
+	Waypoints[2]	= 	marker at {1391.289,245.201,1613.007}
+	Waypoints[3]	= 	marker at {1480.870,225.046,1447.687}
+	Waypoints[4]	= 	marker at {1629.939,213.777,1389.009}
+	Waypoints[5]	= 	marker at {1826.306,214.227,1184.718}
+	Waypoints[6]	= 	marker at {1872.138,234.569,1091.964}
+	Waypoints[7]	= 	marker at {1870.102,212.888,966.774}
+	Waypoints[8]	= 	marker at {1512.583,230.761,735.405}
+
+	Rand = number from 0 to 19 //(WC_NUM_FLOCKS-1)
+	move Woman[0] position to {WC_FlockPositions[Rand]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+	//set flock Flock to {WC_FlockPositions[Rand]} with radius 50.0
+
+	//Move around the camp until it's time to escape
+	begin loop
+
+		if {Woman[0]} near {WC_FlockPositions[Rand]} radius 10
+			Rand = number from 0 to 19 //(WC_NUM_FLOCKS-1)
+			move Woman[0] position to {WC_FlockPositions[Rand]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation 
+		end if
+
+		//Check to see if the max number of flocks allowed to leave at this stage have already left
+		if WC_PrisonerRelease == WC_ESCAPE_STAGE_1 and WC_EscapedWomanFlocks < WC_ESCAPE_STAGE_1
+			WC_EscapedWomanFlocks++			
+			MyGroup = WC_ESCAPE_STAGE_1		//I belong to this group
+			CanEscape = WC_TRUE				//I can escape
+		elsif WC_PrisonerRelease == WC_ESCAPE_STAGE_2 and WC_EscapedWomanFlocks < WC_ESCAPE_STAGE_2
+			WC_EscapedWomanFlocks++
+			MyGroup = WC_ESCAPE_STAGE_2
+			CanEscape = WC_TRUE
+		elsif WC_PrisonerRelease == WC_ESCAPE_STAGE_3 and WC_EscapedWomanFlocks < WC_ESCAPE_STAGE_3
+			WC_EscapedWomanFlocks++
+			MyGroup = WC_ESCAPE_STAGE_3
+			CanEscape = WC_TRUE
+		end if
+
+		wait 1 seconds
+	
+	until CanEscape == WC_TRUE
+	end loop
+
+	set flock Flock to migration
+
+	FX = create visual effect VISUAL_EFFECT_SCROLL_BEAM on Woman[0] time -1
+	set FX colour red 0 green 0 blue 255
+
+	//Wait 5 secodns to allow the gatehouses to open
+	wait 5 seconds
+
+	//Set properties on all the women
+	Looper = 0
+	while Looper < WC_FLOCK_SIZE
+		cancel Woman[Looper] anim override
+		//SPEED of Woman[Looper] = 0.4
+		PLAYER of Woman[Looper] = 0
+		Looper++
+	end while
+
+	SPEED of Woman[0] = 0.4
+	//move Woman[0] position to {Waypoints[0]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation 
+	//wait until {Woman[0]} near  {Waypoints[0]}
+
+	CurrentWaypoint = 0
+	while CurrentWaypoint < WC_NUM_ESCAPE_WAYPOINTS		
+		
+		//begin loop
+			
+		//move Woman[0] position to {MyCreature} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+
+		//set Woman[0] to follow MyCreature at distance 5.0
+
+		move Woman[0] position to {Waypoints[CurrentWaypoint]} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+
+		//end loop
+
+		//If Women[0] dies then the rest of the flock will no longer mvoe home. This is very bad
+		
+		begin loop
+
+			if HEALTH of Woman[0] <= 0
+
+				
+				stop visual effect FX		
+
+				Looper = 0
+				while HEALTH of Woman[Looper] <= 0 and Looper < WC_FLOCK_SIZE
+					Looper++
+				end while
+
+				if Looper < WC_FLOCK_SIZE
+					Woman[0] = Woman[Looper]
+					detach Woman[0] from Flock
+					nominate Woman[0] as leader for flock Flock
+					FX = create visual effect VISUAL_EFFECT_SCROLL_BEAM on Woman[0] time -1
+					set FX colour red 0 green 0 blue 255
+				else
+					FlockIsDead = WC_TRUE
+				end if
+
+			end if
+		
+		until {Woman[0]} near {Waypoints[CurrentWaypoint]} radius 10 or FlockIsDead == WC_TRUE
+		end loop
+		
+
+		if WC_StartedControleldRelease == WC_FALSE
+			WC_StartedControleldRelease = WC_TRUE
+			run background script WC_ControlledRelease
+		end if
+
+		if FlockIsDead == WC_FALSE
+
+			//Check waypoints here to trigger certain events (The waypoint the flock is currently at)
+			
+			//Group 1 reaches the first ambush
+			if CurrentWaypoint == 2 and MyGroup == WC_ESCAPE_STAGE_1
+
+				//WC_PrisonerRelease = WC_ESCAPE_STAGE_3
+				L10_AztecGeneralCommentID = ST_GENERAL_ARCHERS_ATTACK
+
+			//Group 2 reaches the first ambush
+			elsif CurrentWaypoint >= 3 and MyGroup == WC_ESCAPE_STAGE_1
+
+				//WC_PrisonerRelease = WC_ESCAPE_STAGE_3
+
+				//Start the earthquake charging
+				if L10_TriggerEarthquakeCharge != 1
+					L10_TriggerEarthquakeCharge	= 1 
+					L10_AztecGeneralCommentID = ST_GENERAL_EARTHQUAKE_CHARGE
+				end if
+
+			//Group 2 reaches the rock roll section
+			elsif CurrentWaypoint == 5 and MyGroup == WC_ESCAPE_STAGE_3
+
+				//Set the stone torhter dudes state to (( unleash the rocks!! ))
+				L10_DropperState = ST_DROPPER_STATE_UNLEASH
+				L10_AztecGeneralCommentID = ST_GENERAL_STONES_ROLLED
+
+			//Group 2 reaches the last waypoint
+			elsif CurrentWaypoint >= 7 and MyGroup == WC_ESCAPE_STAGE_3
+
+				//Trying to catch a nasty and shitty bug
+
+				if L10_TriggerEarthquakeCharge == 0
+					L10_TriggerEarthquakeCharge = 1
+					wait 5 seconds
+				end if
+
+				L10_TriggerEarthquake		= 1
+
+				wait 25 seconds //Test
+				L10_AztecGeneralCommentID	= ST_GENERAL_EARTHQUAKE
+
+			end if
+
+		end if
+
+		CurrentWaypoint++
+
+	end while
+	
+	if FlockIsDead != WC_TRUE
+	
+		move Woman[0] position to {FinishPos} using NAV_FAILURE_MODE_GO_TO_CLOSEST_POINT navigation
+		wait until {Woman[0]} near {FinishPos} radius 10	
+
+		L10_AztecGeneralCommentID = ST_GENERAL_WOMEN_MADE_IT_BACK
+		L10_StealthSectionComplete	= 1		//New objectives appear in a time defined in objectives script
+
+		//Teleprot can run now
+		L10_ExitTeleport = 1
+
+		stop visual effect FX
+
+		//Reached end of waypoints, the women join the town
+		Looper = 0
+		while Looper < WC_FLOCK_SIZE
+			if Woman[Looper] exists
+				detach Woman[Looper] from Flock
+				attach Woman[Looper] to L10GreekTown
+				release Woman[Looper]
+
+				//Update objectives
+				L10_WomenSaved++
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_10FINAL_OBJECTIVES_160" amount L10_WomenSaved
+
+				remove Woman[Looper] from platoon Snipers attack list
+
+				Counter = 0
+				while Counter < 4
+					if Platoons[Counter] exists
+						remove Woman[Looper] from platoon Platoons[Counter] attack list
+					end if
+					Counter++
+				end while
+				Counter = 0
+				while Counter < 5
+					if Attackers[Counter] exists
+						remove Woman[Looper] from platoon Attackers[Counter] attack list
+					end if
+					Counter++
+				end while
+			
+			end if
+			Looper++
+		end while
+
+		delete Flock
+	end if
+	
+end script WC_WomanFlock
+
+//-----------------------------------------------------------------------------
+// Prison Control
+//-----------------------------------------------------------------------------
+begin script WC_PrisonControl
+	CreatePos		= marker at {1897.122,310.459,1857.076}
+	Looper			= 0
+	ArcherCreate_1	= marker at {1881.671,310.581,1846.744}
+	ArcherCreate_2	= marker at {1877.937,310.895,1822.428}
+
+	AttackPos		= marker at {1941.735,298.637,1685.536}
+start
+
+	WC_Platoons[0] = create platoon PLATOON_INFO_AZTEC_RANGED_3 at {CreatePos} with 10 men and 0 women
+	PLAYER of WC_Platoons[0] = 1
+	//run background script WC_PatrolOutside(WC_Platoons[0])
+	run background script WC_PrisonPatrol(WC_Platoons[0])
+
+	WC_Platoons[1] = create platoon PLATOON_INFO_AZTEC_MELEE_6 at {CreatePos} with 10 men and 0 women
+	PLAYER of WC_Platoons[1] = 1
+	//run background script WC_PatrolOutside(WC_Platoons[1])
+	run background script WC_PrisonPatrol(WC_Platoons[1])
+
+	WC_Platoons[2] = create platoon PLATOON_INFO_AZTEC_MELEE_6 at {CreatePos} with 10 men and 0 women
+	PLAYER of WC_Platoons[2] = 1
+	//run background script WC_PatrolOutside(WC_Platoons[2])
+	run background script WC_PrisonPatrol(WC_Platoons[2])
+
+	WC_Platoons[3] = create platoon PLATOON_INFO_AZTEC_MELEE_6 at {CreatePos} with 10 men and 0 women
+	PLAYER of WC_Platoons[3] = 1
+	run background script WC_PrisonPatrol(WC_Platoons[3])
+
+	WC_Platoons[4] = create platoon PLATOON_INFO_AZTEC_RANGED_3 at {ArcherCreate_1} with 10 men and 0 women
+	PLAYER of WC_Platoons[4] = 1
+	run background script WC_WallDuty(WC_Platoons[4], marker at {1867.395,310.624,1787.792})
+
+	WC_Platoons[5] = create platoon PLATOON_INFO_AZTEC_RANGED_3 at {ArcherCreate_1} with 10 men and 0 women
+	PLAYER of WC_Platoons[5] = 1
+	run background script WC_WallDuty(WC_Platoons[5], marker at {1924.305,310.810,1789.073})
+
+	wait until WC_PrisonerRelease == WC_ESCAPE_STAGE_1
+
+	while Looper < 4
+		set WC_Platoons[Looper] attack everything near {AttackPos} radius 50
+		Looper++
+	end while
+
+	/*
+	while Looper < 6
+		run background script WC_ChaseWomenHome(WC_Platoons[Looper])
+		Looper++
+	end while
+	*/
+
+end script WC_PrisonControl
+
+//-----------------------------------------------------------------------------
+// Prison Patrol
+//-----------------------------------------------------------------------------
+begin script WC_PrisonPatrol(Me)
+start
+	
+	if not WC_PrisonWaypoints exists
+
+		WC_PrisonWaypoints = create WAYPOINT_ROUTE at {0.000,0.000,0.000}
+		add {1882.029,310.631,1853.798} to waypoint list WC_PrisonWaypoints
+		add {1882.829,312.573,1835.674} to waypoint list WC_PrisonWaypoints
+		add {1880.442,312.651,1807.458} to waypoint list WC_PrisonWaypoints
+		add {1938.929,312.648,1864.716} to waypoint list WC_PrisonWaypoints
+		add {1941.125,343.740,1943.531} to waypoint list WC_PrisonWaypoints
+		add {1901.994,312.693,1864.726} to waypoint list WC_PrisonWaypoints
+
+	end if
+
+	move Me along WC_PrisonWaypoints with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+
+end script WC_PrisonPatrol
+
+//-----------------------------------------------------------------------------
+// Patrol Outside
+//-----------------------------------------------------------------------------
+begin script WC_PatrolOutside(Me)
+	WaypointRoute = 0
+start
+
+/*
+	Set this up properly, like prison patrol script
+
+	WaypointRoute = create WAYPOINT_ROUTE at {0.000,0.000,0.000}
+
+	add {2009.422,311.268,1765.959} to waypoint list WaypointRoute
+	add {1918.470,305.423,1706.879} to waypoint list WaypointRoute
+	add {1748.297,309.125,1719.984} to waypoint list WaypointRoute
+	add {1667.312,307.013,1770.631} to waypoint list WaypointRoute
+	add {1969.643,269.720,1533.682} to waypoint list WaypointRoute
+
+	move Me along WaypointRoute with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+*/
+
+end script WC_PatrolOutside
+
+//-----------------------------------------------------------------------------
+// Wall Duty
+//-----------------------------------------------------------------------------
+begin script WC_WallDuty(Me, Pos)
+	WallSeg		= 0
+start
+
+	WallSeg = get wall segment nearest {Pos} radius 15
+	add action PLATOON_AGENDA_ACTION_GET_ON_WALL using WallSeg to Me action queue
+	set Me attack everything near {Pos} radius 50
+	
+end script WC_WallDuty
+
+//-----------------------------------------------------------------------------
+// Chase the women home
+//-----------------------------------------------------------------------------
+begin script WC_ChaseWomenHome(Me)
+	WaypointRoute = 0
+start
+
+	WaypointRoute = create WAYPOINT_ROUTE at {0.000,0.000,0.000}
+
+	add {2002.620,266.959,1446.650} to waypoint list WaypointRoute
+	add {1665.577,212.209,1357.753} to waypoint list WaypointRoute
+	add {1873.818,220.486,1125.231} to waypoint list WaypointRoute
+	add {1954.966,278.740,1635.114} to waypoint list WaypointRoute
+	add {1615.956,293.462,1735.419} to waypoint list WaypointRoute
+
+	move Me along WaypointRoute with patrol WAYPOINTROUTE_TRAVERSAL_TYPE_RANDOM
+
+end script WC_ChaseWomenHome
+
+//-----------------------------------------------------------------------------
+// Chase the women home
+//-----------------------------------------------------------------------------
+begin script WC_EscapeWatch
+	CanNavPos		= marker at {1896.699,309.579,1713.505}
+	Wall			= 0
+	CheckWallPos	= marker at {1881.671,310.581,1846.744}
+start
+
+	begin loop
+
+		if {MyCreature} near {CheckWallPos} radius 100
+
+			//Can a vilager navigate through the wall?
+			if WC_NavWatchVillager can navigate to {CanNavPos}
+				WC_PrisonerRelease = WC_ESCAPE_STAGE_1
+			end if
+
+			//Health on wlal bodge until creatures breaking walls gets better
+			//Wall = get wall segment nearest {MyCreature} radius 10
+			//if Wall exists
+			//	if HEALTH of Wall < 1.00
+			//		WC_PrisonerRelease = WC_ESCAPE_STAGE_1
+			//	end if
+			//end if
+
+			wait 1 seconds
+
+		end if
+
+	until WC_PrisonerRelease == WC_ESCAPE_STAGE_1
+	end loop
+
+	//Aztec General will comment on the jail break
+	L10_AztecGeneralCommentID = ST_GENERAL_CREATURE_BREAKS_WALLS
+
+	//Aztec Gorilla will respond to the jail break
+	L10_GorillaAction = AC_ACTION_RESPOND_TO_JAILBREAK
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_10FINAL_OBJECTIVES_30"
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 parent objective TRIBUTE_OBJECTIVE_LAND_1	
+
+end script WC_EscapeWatch
+
+//-----------------------------------------------------------------------------
+// Controleld Release
+//-----------------------------------------------------------------------------
+begin script WC_ControlledRelease
+start
+
+	wait 15 seconds
+	WC_PrisonerRelease = WC_ESCAPE_STAGE_2
+
+	wait 15 seconds
+	WC_PrisonerRelease = WC_ESCAPE_STAGE_3
+
+end script WC_ControlledRelease

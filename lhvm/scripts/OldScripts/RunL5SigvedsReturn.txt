@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Sigved Return script
+//-----------------------------------------------------------------------------
+run script RunL5SigvedsReturn
+
+begin script RunL5SigvedsReturn
+
+start
+
+	run script Land5SigvedsReturn
+
+end script RunL5SigvedsReturn

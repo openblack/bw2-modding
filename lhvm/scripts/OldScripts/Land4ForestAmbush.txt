@@ -1,0 +1,476 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define FA_False = 0
+define FA_True = 1
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global Marker1 = 0
+global Marker2 = 0
+global Marker3 = 0
+global Marker4 = 0
+global Marker5 = 0
+global Marker1Turned  = FA_False
+global Marker2Turned  = FA_False
+global Marker3Turned  = FA_False
+global Marker5Turned  = FA_False
+global FA_ChallengeOver = FA_False
+global Scroll1 = 0
+global Scroll2 = 0
+global Hazard1 = FA_True
+global SpyScrollsCollected = 0
+global SoldierHasAScroll = FA_False
+global Spy = 0
+global Soldier1 = 0
+global Soldier2 = 0
+global Soldier3 = 0
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CreateMarkers
+define script GateLogic
+define script TurnMarker(MarkerNumber)
+define script CreateScrollsAndHazards
+define script SpyControl
+define script SoldierControl
+define script HaveIWon
+//-----------------------------------------------------------------------------
+run script ForestAmbush // Main function
+//-----------------------------------------------------------------------------
+begin script ForestAmbush
+	StartPos = marker at {952.213, 72.232, 1629.833}
+start
+	run script CreateMarkers
+	run background script GateLogic
+	run background script CreateScrollsAndHazards
+	run background script SpyControl
+	run background script SoldierControl
+	run script HaveIWon
+end script ForestAmbush
+//-----------------------------------------------------------------------------
+// CreateMarkers Create the path markers
+//-----------------------------------------------------------------------------
+begin script CreateMarkers
+	Marker1Pos = marker at {978.275, 72.838, 1635.730}
+	Marker2Pos = marker at {976.796, 82.965, 1687.267}
+	Marker3Pos = marker at {972.987, 88.324, 1730.380}
+	Marker4Pos = marker at {1016.848, 77.810, 1636.397}
+	Marker5Pos = marker at {1014.378, 81.558, 1688.927}
+start
+	Marker1 = create OBJECT MOBILE_STATIC_INFO_NORSE_STRAIGHT_WALL at {Marker1Pos} //Create Statue
+	SCALE of Marker1 = 0.2
+	enable Marker1 indestructible
+	disable Marker1 set on fire
+	disable Marker1 pickup
+	disable Marker1 moveable
+	
+	Marker2 = create OBJECT MOBILE_STATIC_INFO_NORSE_STRAIGHT_WALL at {Marker2Pos} //Create Statue
+	SCALE of Marker2 = 0.2
+	enable Marker2 indestructible
+	disable Marker2 set on fire
+	disable Marker2 pickup
+	disable Marker2 moveable
+	
+	Marker3 = create OBJECT MOBILE_STATIC_INFO_NORSE_STRAIGHT_WALL at {Marker3Pos} //Create Statue
+	SCALE of Marker3 = 0.2
+	enable Marker3 indestructible
+	disable Marker3 set on fire
+	disable Marker3 pickup
+	disable Marker3 moveable
+	
+	Marker4 = create OBJECT MOBILE_STATIC_INFO_NORSE_STRAIGHT_WALL at {Marker4Pos} //Create Statue
+	SCALE of Marker4 = 0.2
+	enable Marker4 indestructible
+	disable Marker4 set on fire
+	disable Marker4 pickup
+	disable Marker4 moveable
+	
+	Marker5 = create OBJECT MOBILE_STATIC_INFO_NORSE_STRAIGHT_WALL at {Marker5Pos} //Create Statue
+	SCALE of Marker5 = 0.2
+	enable Marker5 indestructible
+	disable Marker5 set on fire
+	disable Marker5 pickup
+	disable Marker5 moveable
+	
+end script CreateMarkers
+//-----------------------------------------------------------------------------
+// GateLogic Controls the logic for the gates
+//-----------------------------------------------------------------------------
+begin script GateLogic
+start
+//----Start Config----//
+	set Marker1 focus to {959.324, 75.952, 1611.992}
+	set Marker2 focus to {978.275, 72.838, 1635.730}
+	set Marker3 focus to {945.892, 82.450, 1727.787}
+	set Marker4 focus to {1004.763, 78.054, 1615.919}
+	set Marker5 focus to {1009.503, 85.926, 1714.260}
+//----Listen for player input----//	
+	while FA_ChallengeOver == FA_False
+		if Marker1 right clicked
+			clear right clicked object
+			run background script TurnMarker(1)
+		end if
+		if Marker2 right clicked
+			clear right clicked object
+			run background script TurnMarker(2)
+		end if
+		if Marker3 right clicked
+			clear right clicked object
+			run background script TurnMarker(3)
+		end if
+		if Marker5 right clicked
+			clear right clicked object
+			run background script TurnMarker(5)
+		end if
+	end while
+end script GateLogic
+//-----------------------------------------------------------------------------
+// TurnMarker turns the markers for 5 seconds then resets them
+//-----------------------------------------------------------------------------
+begin script TurnMarker(MarkerNumber)
+start
+	if MarkerNumber == 1 and Marker1Turned == FA_False
+		Marker1Turned = FA_True
+		set Marker1 focus to {947.726, 70.637, 1636.220}
+		wait 5 seconds
+		set Marker1 focus to {959.324, 75.952, 1611.992}
+		Marker1Turned = FA_False
+	elsif MarkerNumber == 2 and Marker2Turned == FA_False
+		Marker2Turned = FA_True
+		set Marker2 focus to {948.213, 76.178, 1687.291}
+		wait 5 seconds
+		set Marker2 focus to {978.275, 72.838, 1635.730}
+		Marker2Turned = FA_False	
+	elsif MarkerNumber == 3 and Marker3Turned == FA_False
+		Marker3Turned = FA_True
+		set Marker3 focus to {969.117, 97.555, 1755.284}
+		wait 5 seconds
+		set Marker3 focus to {945.892, 82.450, 1727.787}	
+		Marker3Turned = FA_False
+	elsif MarkerNumber == 5 and Marker5Turned == FA_False
+		Marker5Turned = FA_True
+		set Marker5 focus to {976.796, 82.965, 1687.267}
+		wait 5 seconds
+		set Marker5 focus to {1009.503, 85.926, 1714.260}
+		Marker5Turned = FA_False
+	end if
+end script TurnMarker
+//-----------------------------------------------------------------------------
+// CreateScrollsAndHazards Creates the scrolls and hazards around the course
+//-----------------------------------------------------------------------------
+begin script CreateScrollsAndHazards
+	Scroll1Pos = marker at {971.411, 74.277, 1661.597}
+	Scroll2Pos = marker at {991.287, 84.988, 1711.335}
+	Hazard1Pos = marker at {970.809, 84.784, 1712.504}
+start
+	Scroll1 = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {Scroll1Pos}
+	Scroll2 = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {Scroll2Pos}
+	while FA_ChallengeOver == FA_False
+		set lava puddle at {Hazard1Pos} radius 8 temperature 1
+		wait 20 seconds
+	end while
+end script CreateScrollsAndHazards
+//-----------------------------------------------------------------------------
+// SpyControl Creates and controls the spy
+//-----------------------------------------------------------------------------
+begin script SpyControl
+	SpySpawn = marker at {954.014, 71.623, 1632.516}
+	SpyPosition = 0
+	LastSpyPosition = 0
+	OnePos = marker at {977.473, 72.788, 1636.754}
+	TwoPos = marker at {971.625, 74.160, 1660.684}
+	ThreePos = marker at {975.241, 82.895, 1687.265}
+	FourPos = marker at {971.387, 84.757, 1712.783}
+	FivePos = marker at {973.418, 87.657, 1728.723}
+	SixPos = marker at {1015.903, 77.816, 1636.447}
+	SevenPos = marker at {1012.344, 81.186, 1688.230}
+	EightPos = marker at {991.988, 84.985, 1710.658}
+start
+	Spy = create VILLAGER VILLAGER_INFO_EGYPTIAN_ASSASSIN at {SpySpawn}
+	SPEED of Spy = 0.5
+	disable Spy pickup
+	
+	while FA_ChallengeOver == FA_False and Spy exists
+		if SpyPosition == 0
+			move Spy position to {OnePos}
+			wait until {Spy} at {OnePos}
+			SpyPosition = 1
+		elsif SpyPosition == 1
+			if Marker1Turned == FA_False
+				move Spy position to {TwoPos}
+				wait until {Spy} at {TwoPos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 2
+			else
+				move Spy position to {SixPos}
+				wait until {Spy} at {SixPos}
+				SpyPosition = 6
+			end if
+		elsif SpyPosition == 2
+			if Scroll1 exists
+				wait 5 seconds
+				delete Scroll1
+				SpyScrollsCollected++
+			end if
+			move Spy position to {ThreePos}
+			wait until {Spy} at {ThreePos}
+			LastSpyPosition = SpyPosition
+			SpyPosition = 3
+		elsif SpyPosition == 3
+			if Marker2Turned == FA_False
+				move Spy position to {FourPos}
+				wait until {Spy} at {FourPos}
+				if Hazard1 == FA_True
+					enable Spy on fire 1
+					HEALTH of Spy = 0
+					delete Spy
+				else
+					move Spy position to {FivePos}
+					wait until {Spy} at {FivePos}
+					LastSpyPosition = SpyPosition
+					SpyPosition = 5
+				end if
+			else
+				move Spy position to {SevenPos}
+				wait until {Spy} at {SevenPos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 7
+			end if
+		elsif SpyPosition == 5
+			if Marker3Turned == FA_False
+				move Spy position to {FourPos}
+				wait until {Spy} at {FourPos}
+				if Hazard1 == FA_True
+					enable Spy on fire 1
+					HEALTH of Spy = 0
+					delete Spy
+				else
+					move Spy position to {ThreePos}
+				end if
+			else
+				move Spy position to {EightPos}
+				wait until {Spy} at {EightPos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 8
+			end if
+		elsif SpyPosition == 6
+			if LastSpyPosition > SpyPosition
+				move Spy position to {OnePos}
+				wait until {Spy} at {OnePos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 1
+			else
+				move Spy position to {SevenPos}
+				wait until {Spy} at {SevenPos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 7
+			end if
+		elsif SpyPosition == 7
+			if Marker5Turned == FA_False
+				move Spy position to {EightPos}
+				wait until {Spy} at {EightPos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 8
+			else
+				move Spy position to {SixPos}
+				wait until {Spy} at {SixPos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 6
+			end if
+		elsif SpyPosition == 8
+			if Scroll2 exists
+				wait 5 seconds
+				delete Scroll2
+				SpyScrollsCollected++
+			end if
+			if LastSpyPosition == 7
+				move Spy position to {FivePos}
+				wait until {Spy} at {FivePos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 5
+			else
+				move Spy position to {SevenPos}
+				wait until {Spy} at {SevenPos}
+				LastSpyPosition = SpyPosition
+				SpyPosition = 7
+			end if
+		end if
+	end while
+end script SpyControl
+//-----------------------------------------------------------------------------
+// SoldierControl Creates and controls the soldiers
+//-----------------------------------------------------------------------------
+begin script SoldierControl
+	SoldierSpawn = marker at {934.631, 72.445, 1629.557}
+	SoldierPosition = 0
+	LastSoldierPosition = 0
+	OnePos = marker at {977.473, 72.788, 1636.754}
+	TwoPos = marker at {971.625, 74.160, 1660.684}
+	ThreePos = marker at {975.241, 82.895, 1687.265}
+	FourPos = marker at {971.387, 84.757, 1712.783}
+	FivePos = marker at {973.418, 87.657, 1728.723}
+	SixPos = marker at {1015.903, 77.816, 1636.447}
+	SevenPos = marker at {1012.344, 81.186, 1688.230}
+	EightPos = marker at {991.988, 84.985, 1710.658}
+start
+	Soldier1 = create VILLAGER VILLAGER_INFO_EGYPTIAN_LEADER_MALE at {SoldierSpawn}
+	SPEED of Soldier1 = 0.5
+	disable Soldier1 pickup
+	
+	while FA_ChallengeOver == FA_False and Soldier1 exists
+		if SoldierPosition == 0
+			move Soldier1 position to {OnePos}
+			wait until {Soldier1} at {OnePos}
+			SoldierPosition = 1
+		elsif SoldierPosition == 1
+			if Marker1Turned == FA_False
+				move Soldier1 position to {TwoPos}
+				wait until {Soldier1} at {TwoPos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 2
+			else
+				move Soldier1 position to {SixPos}
+				wait until {Soldier1} at {SixPos}
+				SoldierPosition = 6
+			end if
+		elsif SoldierPosition == 2
+			if Scroll1 exists
+				wait 5 seconds
+				delete Scroll1
+				SoldierHasAScroll = FA_True
+			end if
+			move Soldier1 position to {ThreePos}
+			wait until {Soldier1} at {ThreePos}
+			LastSoldierPosition = SoldierPosition
+			SoldierPosition = 3
+		elsif SoldierPosition == 3
+			if Marker2Turned == FA_False
+				move Soldier1 position to {FourPos}
+				wait until {Soldier1} at {FourPos}
+				if Hazard1 == FA_True
+					enable Soldier1 on fire 1
+					HEALTH of Soldier1 = 0
+					delete Soldier1
+				else
+					move Soldier1 position to {FivePos}
+					wait until {Soldier1} at {FivePos}
+					LastSoldierPosition = SoldierPosition
+					SoldierPosition = 5
+				end if
+			else
+				move Soldier1 position to {SevenPos}
+				wait until {Soldier1} at {SevenPos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 7
+			end if
+		elsif SoldierPosition == 5
+			if Marker3Turned == FA_False
+				move Soldier1 position to {FourPos}
+				wait until {Soldier1} at {FourPos}
+				if Hazard1 == FA_True
+					enable Soldier1 on fire 1
+					HEALTH of Soldier1 = 0
+					delete Soldier1
+				else
+					move Soldier1 position to {ThreePos}
+				end if
+			else
+				move Soldier1 position to {EightPos}
+				wait until {Soldier1} at {EightPos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 8
+			end if
+		elsif SoldierPosition == 6
+			if LastSoldierPosition > SoldierPosition
+				move Soldier1 position to {OnePos}
+				wait until {Soldier1} at {OnePos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 1
+			else
+				move Soldier1 position to {SevenPos}
+				wait until {Soldier1} at {SevenPos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 7
+			end if
+		elsif SoldierPosition == 7
+			if Marker5Turned == FA_False
+				move Soldier1 position to {EightPos}
+				wait until {Soldier1} at {EightPos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 8
+			else
+				move Soldier1 position to {SixPos}
+				wait until {Soldier1} at {SixPos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 6
+			end if
+		elsif SoldierPosition == 8
+			if Scroll2 exists
+				wait 5 seconds
+				delete Scroll2
+				SoldierHasAScroll = FA_True
+			end if
+			if LastSoldierPosition == 7
+				move Soldier1 position to {FivePos}
+				wait until {Soldier1} at {FivePos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 5
+			else
+				move Soldier1 position to {SevenPos}
+				wait until {Soldier1} at {SevenPos}
+				LastSoldierPosition = SoldierPosition
+				SoldierPosition = 7
+			end if
+		end if
+	end while
+end script SoldierControl
+//-----------------------------------------------------------------------------
+// HaveIWon Checks if the player has won or lost
+//-----------------------------------------------------------------------------
+begin script HaveIWon
+start
+	while FA_ChallengeOver == FA_False
+		if SpyScrollsCollected == 2
+			say "You Win!!!"
+			wait until read
+			FA_ChallengeOver = FA_True
+		elsif SoldierHasAScroll == FA_True or Spy not exists
+			say "You Lose!!!"
+			wait until read
+			FA_ChallengeOver = FA_True
+		elsif {Spy} at {Soldier1}
+			say "You Lose"
+			wait until read
+			FA_ChallengeOver = FA_True
+		end if
+	end while
+	
+	if Spy exists
+		delete Spy
+	end if
+	if Soldier1 exists
+		delete Soldier1
+	end if
+	if Marker1 exists
+		delete Marker1
+	end if
+	if Marker2 exists
+		delete Marker2
+	end if
+	if Marker3 exists
+		delete Marker3
+	end if
+	if Marker4 exists
+		delete Marker4
+	end if
+	if Marker5 exists
+		delete Marker5
+	end if
+	if Scroll1 exists
+		delete Scroll1
+	end if
+	if Scroll2 exists
+		delete Scroll2
+	end if
+end script HaveIWon

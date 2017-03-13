@@ -1,0 +1,218 @@
+global TheTalkingIsOver = 0
+
+//------------------------------------------------------------------
+// Advisor Dialogue
+//------------------------------------------------------------------
+begin script AdvisorDialogue
+
+start
+
+	begin known cinema
+
+		set camera roll -3 time 10
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_30"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_40"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_50"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_60"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_70"
+		wait until read
+
+		set camera roll 3 time 10
+
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_160"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_170"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_180"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_190"
+		wait until read
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_200"
+		wait until read
+
+		set camera roll 0 time 10
+
+		TheTalkingIsOver = 1
+
+	end known cinema
+
+end script AdvisorDialogue
+
+//------------------------------------------------------------------
+// Depth of Field Control
+//------------------------------------------------------------------
+begin script DepthOfFieldControl
+	DOPS=7
+	DOPM=0.7
+	BackupDOP[2]
+start
+
+	wait 8 seconds
+
+	BackupDOP[0] = get depth of field strength multiplier
+	BackupDOP[1] = get depth of field distance multiplier
+
+	while DOPS > 1
+		set depth of field strength multiplier to DOPS
+		set depth of field distance multiplier to DOPM
+		DOPS -= 0.03
+		//DOPM += 0.001
+	end while
+
+	wait 15 seconds
+
+	/*
+	while count < 90
+
+		set depth of field strength multiplier to DOPS
+		set depth of field distance multiplier to DOPM
+
+		DOPS = DOPS - 0.25
+		if count < 300
+			DOPM = DOPM + 0.01
+		end if
+
+		wait 0.1 seconds
+		count++
+	end while
+	set depth of field distance multiplier to 1
+	count = 1
+
+	while count < 10
+		set depth of field strength multiplier to 10/count
+		wait 3 seconds
+		count++
+	end while
+*/
+
+	set depth of field strength multiplier to BackupDOP[0]
+	set depth of field distance multiplier to BackupDOP[1]
+
+end script DepthOfFieldControl
+
+//------------------------------------------------------------------
+// Land 1 Intro Fly By
+//------------------------------------------------------------------
+begin script Land1IntroFlyBy
+
+	LCreate = marker at {1582.464,116.355,848.797}
+	Lmark = marker at {1576.824, 111.402, 850.354}
+	WmArk = marker at {1579.101,116.450,842.370}
+	AMark = marker at {1575.366,118.402,835.713}
+	CMark = marker at {1567.992,116.390,831.561}
+	AllCreaturesLook = marker at {1569.593,116.462,842.255}
+
+	IntroMixer=0
+
+start
+
+	set game time 18.30
+
+	begin fullscreen cinema
+
+		set camera position to {1526.488,115.802,872.509}
+		set camera focus to {1527.097,115.400,871.826}
+
+		IntroMixer = create mixer
+		
+		set mixer IntroMixer channel AUDIO_MIXER_CHANNEL_DIALOGUE to 3.0
+		set mixer IntroMixer channel AUDIO_MIXER_CHANNEL_ATMOS_MAP to 0.0
+		set mixer IntroMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.3
+
+		set fade red 0 green 0 blue 0 time 0
+		set game time 6.53
+
+		CreatureArray[1] = create CREATURE CREATURE_TYPE_WOLF at {WmArk}
+		CreatureArray[2] = create CREATURE CREATURE_TYPE_APE at {AMark}
+		CreatureArray[3] = create CREATURE CREATURE_TYPE_COW at {CMark}
+
+		//Create and move.. Bogde 
+		CreatureArray[0] = create CREATURE CREATURE_TYPE_LION at {LCreate}
+
+		move CreatureArray[0] position to {Lmark}
+
+		//wait until {CreatureArray[0]} at {Lmark}
+		wait until creature CreatureArray[0] finished script action
+		wait 5 seconds
+
+		set creature CreatureArray[0] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature CreatureArray[1] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature CreatureArray[2] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+		set creature CreatureArray[3] CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_SIZE 0 time 0
+
+		snap creature CreatureArray[0] focus to {AllCreaturesLook}
+		snap creature CreatureArray[1] focus to {AllCreaturesLook}
+		snap creature CreatureArray[2] focus to {AllCreaturesLook}
+		snap creature CreatureArray[3] focus to {AllCreaturesLook}		
+
+		start music "cut_scene_mystery_01" with fadetime 20
+
+		run background script DepthOfFieldControl
+
+		set camera position to {1052.287,101.486,878.486}
+		set camera focus to {1052.280,101.361,879.478}
+		wait 1 seconds
+		set mixer IntroMixer channel AUDIO_MIXER_CHANNEL_ATMOS_MAP to 1.0 with fadetime 10				
+
+		set fade in time 20
+		set camera roll -1 time 3 easein 0 easeout 0
+		wait 3 seconds
+		set camera roll 1 time 6 easein 0 easeout 0
+		
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_10"
+		//wait until read
+
+		eject good spirit
+
+		wait 4 seconds
+		say "BW2T_SCRIPT_01FINAL_ADVISORS_ARRIVE_20"
+		eject evil spirit
+		wait 2 seconds
+
+
+		//wait until read	
+		set camera roll -1 time 6 easein 0 easeout 0
+		wait 3 seconds
+	
+		set mixer IntroMixer channel AUDIO_MIXER_CHANNEL_DIALOGUE to 1.0 with fadetime 10
+
+		//set camera roll 1 time 3 easein 0 easeout 0
+		wait 3 seconds
+			
+		set camera roll -1 time 6 easein 0 easeout 0
+
+		move camera position to {1052.287,101.486,878.486} time 1
+		move camera focus to {1052.280,101.361,879.478} time 1
+		wait until camera ready
+
+		move camera position to {1133.021,177.856,1197.773} time 20 easein 3 easeout 0
+		move camera focus to {1133.783,177.353,1197.364} time 20 easein 3 easeout 0
+		wait 3 seconds
+		set camera position to camera position
+		set camera focus to camera focus
+		wait until camera ready
+
+		move camera position to {1133.021,177.856,1197.773} time 8 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1133.783,177.353,1197.364} time 8 catmullrom bias  0.0 tension 0.0
+		
+		move camera position to {1343.392,100.151,968.829} time 8 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1344.363,99.959,968.687} time 8 catmullrom bias  0.0 tension 0.0
+		
+		move camera position to {1491.607,149.936,943.147} time 5 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1492.088,149.442,942.423} time 5 catmullrom bias  0.0 tension 0.0
+		
+		move camera position to {1560.597, 122.378, 847.006} time 6 catmullrom bias  0.0 tension 0.0
+		move camera focus to {1561.327, 121.813, 846.622} time 6 catmullrom bias  0.0 tension 0.0
+		
+		run background script AdvisorDialogue
+		
+		wait 27 seconds
+		
+	end cinema
+
+end script Land1IntroFlyBy

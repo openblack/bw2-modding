@@ -1,0 +1,71 @@
+define script L8_FreeFood
+
+//------------------------------------------------------------------------------------------------------------------------
+// This is the land 8 control script
+//------------------------------------------------------------------------------------------------------------------------
+begin script Land8Control
+start
+	set toolbar state to MENU_TOOLBAR_STATE_CLOSED
+	
+	run script Land8DidYouKnow
+
+	run background script SetupBuildingsLand4Onwards
+
+	// Get the various towns and creatures
+	run script Land8Globals
+
+	run script L8_FreeFood
+	set initial level of player melee platoon to GLOBAL_VALUE_LAND_8_PLAYER_MELEE_LEVEL
+	set initial level of player ranged platoon to GLOBAL_VALUE_LAND_8_PLAYER_RANGED_LEVEL
+	set initial level of player siege weapon to GLOBAL_VALUE_LAND_8_PLAYER_CATAPULT_LEVEL
+
+	// Run the creature, town and army management scripts
+	run background script L8_Towns
+	run background script L8_Armies_ArmyBroNew_Main
+	
+	// Run the dialogue management scripts
+	//run background script L8_GeneralManagement
+	//run background script L8_AdvisorManagement
+	
+	// Run the challenges
+	//run background script Land8Nymphs
+	//run background script Land8MonkTemple
+	//run background script Land8ChickenWolfGrain
+	run background script L8_ThrowBloke
+	run background script Land8MonsterMine
+	run background script Land8OilBaron
+	run background script Land8DarkDisciples
+
+	// Welcome to the land
+	run script Land8Intro
+	L8_IntroPlayed = L8_TRUE
+
+	// Run the objectives
+	run background script Land8Objectives
+
+	enable game can be lost
+	enable town L8_GreekTown desire speech
+	//disable dialogue manager
+
+	// Wait until both Japanese towns have been converted
+	wait until L8_Complete == L8_TRUE
+	run background script LandOver(L8_GreekTown)
+	
+	// We've won the land
+	run script Land8Departure
+
+end script Land8Control
+
+begin script L8_FreeFood
+	FoodFree = 0
+	WoodFree = 0
+	OreFree = 0
+start
+	//Free resources
+	//FoodFree = create STORE FOOD at {1844.583,249.371,816.757}
+	//WoodFree = create STORE WOOD at {1835.316,251.592,826.834}
+	//OreFree = create STORE ORE at {1832.788,251.515,838.115}
+	add resource RESOURCE_TYPE_FOOD 8000 to L8_GreekTown
+	add resource RESOURCE_TYPE_WOOD 2000 to L8_GreekTown
+	add resource RESOURCE_TYPE_ORE 4000 to L8_GreekTown
+end script L8_FreeFood

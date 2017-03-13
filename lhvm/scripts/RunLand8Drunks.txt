@@ -1,0 +1,8 @@
+run script RunLand8Drunks
+
+begin script RunLand8Drunks
+start
+
+	run script Land8Drunks
+
+end script RunLand8Drunks

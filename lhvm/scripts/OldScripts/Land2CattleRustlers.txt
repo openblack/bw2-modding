@@ -1,0 +1,180 @@
+///////////////////////////////////////////////////////////////////////////////////
+//	Cattle_Rustlers Event - Land 2
+//	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+//	Changed to Farming Experts
+//
+//	Rewards:			Field blueprint. 
+//						Allows crops to grow well in cold conditions.
+//	Drawbacks:			Unsure atm... 
+//
+//	Rewards:			Additional food supplies.
+//	Drawbacks:			Evil/Neutral to steal cattle.
+//
+//	Start date:			20-03-03			By:	Phil
+//	Last Update:		20-03-03			By: Phil
+//
+//	Requires:	
+//
+//	Work Needed:	
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define CR_FALSE					= 0
+define CR_TRUE					= 1
+define CR_WAYPOINT_RADIUS		= 20
+
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CR_Learner_Herd[5]			//... Learner herd array.
+global CR_Norse_Small_Herd[5]		//... Norse's small herd array.
+global CR_Norse_Large_Herd_A[17]	//... Norse's first large herd array.
+global CR_Norse_Large_Herd_B[23]	//... Norse's second large herd array.
+global CR_Players_Town				= 0
+
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CR_Check_Food_Supply_Level
+define script CR_Evil_Advisor_Describes_Food_Shortage_And_Rustling
+define script CR_Good_Advisors_Disagrees_With_Cattle_Rustling
+define script CR_Advisors_Describe_Norse_Herds
+define script CR_Check_If_Learner_Cattle_Rustled
+define script CR_Check_If_Norse_Cattle_Rustled
+
+
+
+//... Run the main script not required.
+//run script Cattle_Rustlers
+
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//==========================
+begin script Land2CattleRustlers
+
+start
+
+	CR_Players_Town				= get town with id 0
+
+
+	run background script CR_Check_Food_Supply_Level
+	run background script CR_Check_If_Learner_Cattle_Rustled
+	run background script CR_Check_If_Norse_Cattle_Rustled
+	run script CR_Evil_Advisor_Describes_Food_Shortage_And_Rustling
+	run script CR_Good_Advisors_Disagrees_With_Cattle_Rustling
+	run script CR_Advisors_Describe_Norse_Herds
+
+
+end script Land2CattleRustlers
+//==========================
+
+
+
+//-----------------------------------------------------------------------------
+//	CR_Check_Food_Supply_Level
+//-----------------------------------------------------------------------------
+begin script CR_Check_Food_Supply_Level
+
+Greek_Storage_Pit_Position	= 0
+Greek_Storage_Pit			= 0
+Greek_Food_Level			= 0
+
+start
+
+	Greek_Storage_Pit_Position = marker at {985.654,2.760,1286.590}// check pos
+	Greek_Storage_Pit = get STORE at {Greek_Storage_Pit_Position} radius 5
+	Greek_Food_Level = get resource RESOURCE_TYPE_FOOD in Greek_Storage_Pit
+
+end script CR_Check_Food_Supply_Level
+
+
+
+//-----------------------------------------------------------------------------
+//	CR_Evil_Advisor_Describes_Food_Shortage_And_Rustling
+//-----------------------------------------------------------------------------
+begin script CR_Evil_Advisor_Describes_Food_Shortage_And_Rustling
+
+start
+
+end script CR_Evil_Advisor_Describes_Food_Shortage_And_Rustling
+
+
+
+//-----------------------------------------------------------------------------
+//	CR_Good_Advisors_Disagrees_With_Cattle_Rustling
+//-----------------------------------------------------------------------------
+begin script CR_Good_Advisors_Disagrees_With_Cattle_Rustling
+
+start
+
+end script CR_Good_Advisors_Disagrees_With_Cattle_Rustling
+
+
+
+//-----------------------------------------------------------------------------
+//	CR_Advisors_Describe_Norse_Herds
+//-----------------------------------------------------------------------------
+begin script CR_Advisors_Describe_Norse_Herds
+
+start
+
+end script CR_Advisors_Describe_Norse_Herds
+
+
+
+//-----------------------------------------------------------------------------
+//	CR_Check_If_Learner_Cattle_Rustled
+//-----------------------------------------------------------------------------
+begin script CR_Check_If_Learner_Cattle_Rustled
+
+start
+
+end script CR_Check_If_Learner_Cattle_Rustled
+
+
+
+//-----------------------------------------------------------------------------
+//	CR_Check_If_Norse_Cattle_Rustled
+//-----------------------------------------------------------------------------
+begin script CR_Check_If_Norse_Cattle_Rustled
+
+start
+
+end script CR_Check_If_Norse_Cattle_Rustled
+
+
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+/*
+
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+
+*/
+

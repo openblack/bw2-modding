@@ -1,0 +1,178 @@
+//----------------------------------------------------
+//----------------------------------------------------
+// DEFAULT VERSION of WANTED SCRIPT
+//----------------------------------------------------
+//----------------------------------------------------
+
+define script HandleWantedPoster
+define script OutlawBehaviour
+
+global OutlawsCaught = 0 /// THIS GLOBAL NEEDS TO BE PERSISITANT DATA (Jonty is doing a persistant data enum that we can get/set)
+global OutlawsKilled = 0 /// THIS GLOBAL NEEDS TO BE PERSISITANT DATA (Jonty is doing a persistant data enum that we can get/set)
+global OutlawCaptured[27] /// THIS GLOBAL ARRAY NEEDS TO BE PERSISITANT DATA (Jonty is doing a persistant data enum that we can get/set)
+
+//----------------------------------------------------
+// MAIN
+//----------------------------------------------------
+
+begin script GlobalWanted (OutlawNumber, Actor, ActorPos, JailLocation, PosterPos)
+
+ OutlawGrabbedSpeech[27]
+ OutlawSpecificSpeech[27]
+ OutlawDeadMessage = 0
+ 
+
+start
+
+	///OutlawGrabbedSpeech[0] = ENUM	//Land1#1
+	///OutlawGrabbedSpeech[1] = ENUM	//Land1#2
+	///OutlawGrabbedSpeech[2] = ENUM	//Land1#3
+	///OutlawGrabbedSpeech[3] = ENUM	//Land2#1
+	///OutlawGrabbedSpeech[4] = ENUM	//Land2#2
+	///OutlawGrabbedSpeech[5] = ENUM	//Land2#3
+	///OutlawGrabbedSpeech[6] = ENUM	//Land3#1
+	///OutlawGrabbedSpeech[7] = ENUM	//Land3#2
+	///OutlawGrabbedSpeech[8] = ENUM	// SPECIAL - Robin Hood
+	/// etc
+
+	///OutlawSpecificSpeech[0] = ENUM
+	///OutlawSpecificSpeech[1] = ENUM
+	///OutlawSpecificSpeech[2] = ENUM
+	///OutlawSpecificSpeech[3] = ENUM
+	///OutlawSpecificSpeech[4] = ENUM
+	///OutlawSpecificSpeech[5] = ENUM
+	///OutlawSpecificSpeech[6] = ENUM
+	///OutlawSpecificSpeech[7] = ENUM
+	/// etc
+
+
+	run background script HandleWantedPoster (PosterPos, OutlawNumber)
+
+
+	if OutlawNumber != 8 // check Actor is not a special outlaw
+		run background script OutlawBehaviour (OutlawNumber, Actor, ActorPos)
+	end if
+
+	begin loop
+		if {Actor} near {JailLocation} radius 20 and Actor is not HELD_ANY
+			if HEALTH of Actor > 0
+				if OutlawNumber == 8
+					/// TRIGGER ROBIN HOOD ALIVE SPECIAL RESOLUTION CUT-SCENE (PARSING ACTOR AND JAILLOCATION)
+					/// use OutlawSpecificComment[OutlawNumber]
+				else
+					/// TRIGGER ALIVE RESOLUTION CUT-SCENE (PARSING ACTOR AND JAILLOCATION)
+					/// use OutlawSpecificComment[OutlawNumber]
+				end if
+			else
+				if OutlawNumber == 8
+					/// TRIGGER ROBIN HOOD DEAD SPECIAL RESOLUTION CUT-SCENE (PARSING ACTOR AND JAILLOCATION)
+				else
+					/// TRIGGER DEAD RESOLUTION CUT-SCENE (PARSING ACTOR AND JAILLOCATION)
+				end if
+			end if
+			OutlawCaptured[OutlawNumber] = 1
+			OutlawsCaught++
+		end if
+
+		if OutlawNumber != 8
+			if Actor is HELD_ANY
+				begin dialogue
+					/// say sound OutlawGrabbedSpeech[OutlawNumber]
+					///wait until read
+				end dialogue
+			end if
+		end if
+
+		if HEALTH of Actor <= 0 and OutlawDeadMessage == 0
+			begin dialogue
+				eject good spirit
+				say "One of the outlaws on this land has been killed."
+				wait until read
+				say "Hand the corpse into the Sheriff for the reward."
+				wait until read
+			end dialogue
+			OutlawsKilled++
+			OutlawDeadMessage = 1
+		end if
+	until OutlawCaptured[OutlawNumber] == 1
+	end loop
+
+end script GlobalWanted
+
+//----------------------------------------------------
+// HANDLE WANTED POSTER
+//----------------------------------------------------
+
+begin script HandleWantedPoster (PosterPos)
+
+ OutlawPictures[27]
+ WantedPoster = 0
+
+start
+
+///OutlawPictures[0] = ENUM
+///OutlawPictures[1] = ENUM
+///OutlawPictures[2] = ENUM
+
+WantedPoster = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {PosterPos}
+
+	begin loop
+		if WantedPoster clicked
+			clear object clicked
+			/// Show OutlawPicture and remove temp BODGE text below
+			begin dialogue /// BODGE
+				say "Clicking here shows you a picture of the Wanted Outlaw." /// BODGE
+				wait until read /// BODGE
+			end dialogue /// BODGE
+		end if
+	until OutlawCaptured[OutlawNumber] == 1
+	end loop
+
+end script HandleWantedPoster
+
+//------------------------------------------------------------
+// DEFAULT OUTLAW BEHAVIOUR
+//------------------------------------------------------------
+
+begin script OutlawBehaviour (OutlawNumber, Actor, ActorPos)
+
+ OutlawCampfire = create OBJECT MOBILE_STATIC_INFO_BONFIRE at {ActorPos}+{0,3}
+ BailLoop = 0
+ RandomNum = 0
+
+start
+
+	begin loop
+		// Randomly wander area or chill at campfire. Mug any villagers that come into range.
+		RandomNum = number from 0 to 10
+		if RandomNum < 4
+			/// Chill by fire
+			BailLoop = 0
+			while Actor is not HELD_ANY and BailLoop == 0 and HEALTH of Actor > 0
+				move Actor position to {ActorPos}
+				wait until {Actor} at {ActorPos}
+				set Actor focus to {OutlawCampfire}
+				play anim "a_p_prod_campfire" on Actor loop 1
+				wait until Actor played
+				play anim "a_p_sitting_down2_sitting_into" on Actor loop 1
+				wait until played
+				play anim "a_p_sitting_down2_sitting" on Actor loop 4
+				wait until played
+				play anim "a_p_sitting_down2_sitting_outof" on Actor loop 1
+				wait until Actor played
+				BailLoop = 1
+			end while
+		elsif RandomNum < 8
+			/// Patrol Region randomly (Can we set them to a universally hating faction so they attack all villagers automatically?)
+			while Actor is not HELD_ANY and BailLoop == 0 and HEALTH of Actor > 0
+				/// Actor patrol {ActorPos} radius 50
+				wait 100 seconds
+			end while
+		else
+			/// Leave area specifically to mug someone? (Traders if they exist and Migrating people)
+		end if
+
+	until OutlawCaptured[OutlawNumber] == 1
+	end loop
+
+end script OutlawBehaviour

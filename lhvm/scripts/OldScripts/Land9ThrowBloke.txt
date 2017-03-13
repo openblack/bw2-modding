@@ -1,0 +1,17 @@
+
+begin script Land9ThrowBloke
+start
+/*
+    TB_BlokeCreate = marker at {1829.011,100.053,472.206}
+	TB_BlokeCamp = marker at {1798.573,93.415,589.312}
+
+	TB_TributeLevel[0] = 150
+	TB_TributeAmount[0] = 100
+	TB_TributeLevel[1] = 225
+	TB_TributeAmount[1] = 500
+	TB_TributeLevel[2] = 300
+	TB_TributeAmount[2] = 1000
+
+	run script TB_GlobalThrowBloke
+	*/
+end script Land9ThrowBloke

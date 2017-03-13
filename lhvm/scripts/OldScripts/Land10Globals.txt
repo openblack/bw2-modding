@@ -1,0 +1,58 @@
+//-----------------------------------------------------------
+// LAND 10 DEFINES
+//-----------------------------------------------------------
+define ST_DROPPER_STATE_WAIT				= 0	//Waiting to drop the rocks
+define ST_DROPPER_STATE_UNLEASH				= 1 //Start dropping the rocks
+
+//Genral comment defines			- used in Land10Stealth.txt ST_AztecGeneralComments
+define ST_GENERAL_CREATURE_BREAKS_WALLS			= 0
+define ST_GENERAL_WOMEN_ESCAPING				= 1
+define ST_GENERAL_ARCHERS_ATTACK				= 2
+define ST_GENERAL_ARCHERS_KILL					= 3
+define ST_GENERAL_ARCHERS_KILLED_BY_CREATURE	= 4
+define ST_GENERAL_CATAPULTS						= 5
+define ST_GENERAL_CREATURE_ATTACK				= 6
+define ST_GENERAL_STONES_ROLLED					= 7
+define ST_GENERAL_STONES_KILL					= 8
+define ST_GENERAL_CREATURE_FIGHT				= 9
+define ST_GENERAL_PLAYER_CREATURE_LOST			= 10
+define ST_GENERAL_PLAYER_CREATURE_WON			= 11
+define ST_GENERAL_EARTHQUAKE					= 12
+define ST_GENERAL_WOMEN_MADE_IT_BACK			= 13
+define ST_GENERAL_CREATURE_KILL_ROLLERS			= 14
+define ST_GENERAL_EARTHQUAKE_CHARGE				= 15
+define ST_GENERAL_WOMEN_MADE_IT____LAST			= 16
+
+//-----------------------------------------------------------
+// LAND 10 GLOBALS
+//-----------------------------------------------------------
+global L10Complete		= 0
+global L10GreekTown		= 0
+global L10_WomenSaved	= 0
+
+global LC10_MinorSettlement[3]
+
+global L10_StealthSectionComplete	= 0
+global L10_AztecGeneralCommentID	= ST_GENERAL_WOMEN_MADE_IT____LAST
+
+//Stealth triggers
+global L10_TriggerEarthquakeCharge	= 0
+global L10_TriggerEarthquake		= 0
+global L10_DropperState				= 0
+global L10_ExitTeleport				= 0
+
+//Aztec Creature Globals
+global L10_Gorilla			= 0
+global L10_GorillaAction	= 0
+
+//Aztec capital
+global L10AztecCapital		= 0
+
+
+//-----------------------------------------------------------
+// Global script
+//-----------------------------------------------------------
+begin script Land10Globals
+start
+	L10GreekTown = get town with id 0
+end script Land10Globals

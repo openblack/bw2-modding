@@ -1,0 +1,297 @@
+begin script Land7BodgingInTheBackground(Hurricane)
+
+ItThisRidiculous[50]
+ThisIs[50]
+count=0
+howlong=0
+HOusesThatCanBeDestroyed[5]
+whichhouse=0
+howmanyhousestodestroy=50
+
+start
+
+if EnemyFiringVersion == 1
+	howmanyhousestodestroy=20
+end if
+
+
+
+HOusesThatCanBeDestroyed[0] = variable ABODE_A
+HOusesThatCanBeDestroyed[1] = variable ABODE_B
+HOusesThatCanBeDestroyed[2] = variable ABODE_C
+HOusesThatCanBeDestroyed[3] = variable ABODE_D
+HOusesThatCanBeDestroyed[4] = variable ABODE_E
+
+
+while count != 20
+
+		wait 0.2 seconds
+
+		ItThisRidiculous[count] = get HOUSE constant HOusesThatCanBeDestroyed[whichhouse] at {Hurricane} radius 100 excluding scripted
+			if whichhouse < 4
+				whichhouse++
+			else
+				whichhouse = 0
+			end if
+
+
+		if ItThisRidiculous[count] exists and variable get ItThisRidiculous[count] sub type != variable GATEHOUSE and variable get ItThisRidiculous[count] sub type != variable TOWN_CENTRE and variable get ItThisRidiculous[count] sub type != variable MINE
+			ThisIs[count] = convert ItThisRidiculous[count] using SCRIPT_CONVERSION_ROCK
+			set ThisIs[count] velocity heading {ThisIs[count]} speed 0.1
+
+			run background script DeleteBuildingsWithExplode(ThisIs[count])	
+
+		end if
+
+		count++
+
+end while
+
+//	if ItThisRidiculous[count] exists
+//		//AGC - Removing rock physics: ThisIs[count]= get ItThisRidiculous[count] physics to rock
+//		ThisIs[count] = convert ItThisRidiculous[count] using SCRIPT_CONVERSION_ROCK
+//		set ThisIs[count] velocity heading {ThisIs[count]} speed 0.1
+//		//delete ThisIs[count] with explosion
+//
+//	else
+//		ItThisRidiculous[count] = get HOUSE at {Hurricane} radius 100 excluding scripted	
+//		wait 0.2 seconds
+//		howlong++
+//	end if
+//		
+//	if ThisIs[count] exists
+//		run background script DeleteBuildingsWithExplode(ThisIs[count])	
+//		count++
+//	end if
+//
+//end while
+count = 0
+
+wait until ClearUpStuff==1
+while count != 50
+	if ThisIs[count] exists
+		delete ThisIs[count]// with explosion
+	end if
+	count++
+end while
+
+ClearUpStuff=0
+wait 2 seconds
+
+end script Land7BodgingInTheBackground
+
+begin script Land7Hurricane(whichwonder, Hurricane)
+
+MyDance = 0
+Dancer = 0
+Wonder = 0
+Count = 0
+RelCamPos=0
+RelCamFoc=0
+AboveH=0
+Beam=0
+Beam2=0
+BeamPlace=0
+
+MusicEventTimer=0
+MusicEvent1=0
+MusicEvent2=0
+MusicEvent3=0
+MusicEvent4=0
+MusicEvent5=0
+MusicEvent6=0
+MusicEvent7=0
+MusicEvent8=0
+MusicEvent9=0
+
+StarDude=0
+StarAbode=0
+
+MyHurricanePos=0
+MyHurricaneFoc=0
+MyWeather=0
+
+checkthemofo=0
+count=0
+
+LoadsOfFloatingVillagers[20]
+
+DodgyBuilding=0
+
+Imwalkingaway=0
+
+HowLongDoIWait = create timer for 0 seconds
+
+start
+
+begin interruptible cinema
+
+	//shake camera strength 6.0
+
+		set camera position to {966.668, 491.963, 604.381}
+		set camera focus to {914.110, 455.577, 681.285}
+		wait 1 seconds
+
+		invoke Hurricane EPIC_HURRICANE_BEAM_DOWN
+		invoke Hurricane EPIC_START_GROUND_SWIRL
+		start music "hurricane_music"
+		MusicEventTimer=create timer for 0 seconds
+		MusicEvent1=get music "hurricane_music" event "1" time
+		MusicEvent2=get music "hurricane_music" event "2" time
+		MusicEvent3=get music "hurricane_music" event "3" time
+		MusicEvent4=get music "hurricane_music" event "4" time
+		MusicEvent5=get music "hurricane_music" event "5" time
+		MusicEvent6=get music "hurricane_music" event "6" time
+		MusicEvent7=get music "hurricane_music" event "7" time
+		MusicEvent8=get music "hurricane_music" event "8" time
+		MusicEvent9=get music "hurricane_music" event "9" time
+
+		attach atmos "spells" to Hurricane// range 500
+		set Hurricane atmos group 7 time 1 seconds
+
+		wait 4 seconds
+		invoke Hurricane EPIC_HURRICANE_END_BEAM
+
+		
+		RelCamPos = marker at get world position from Hurricane to {-118.462, 87.143, -39.850}
+		RelCamFoc = marker at get world position from Hurricane to {-25.092, 60.366, -16.080}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		invoke Hurricane EPIC_START_TOP_SWIRL
+
+		invoke Hurricane EPIC_CREATE_CLOUDS
+		invoke Hurricane EPIC_SET_CLOUDS_STORM
+
+		//wait until get MusicEventTimer time since set >= MusicEvent1
+		wait 1 seconds
+		invoke Hurricane EPIC_MOVE_TORNADO
+
+		invoke Hurricane EPIC_EXIT_TORNADO
+
+		skip current cutscene
+
+        
+		MyHurricanePos = marker at future position of epic miracle Hurricane with time 3 seconds
+		MyHurricaneFoc = marker at future focus of epic miracle Hurricane with time 3 seconds
+		set HowLongDoIWait time to 4 seconds
+
+		while StarDude not exists and get HowLongDoIWait time remaining > 0
+			StarDude = get star villager near {Hurricane}
+		end while
+
+		if StarDude exists
+			disable StarDude moveable
+			Imwalkingaway = marker at get target from {MyHurricanePos} to {StarDude} distance 2 angle 0
+			set StarDude focus to {Imwalkingaway}
+			move StarDude position to {Imwalkingaway}
+			
+			set HowLongDoIWait time to 3 seconds
+			wait until {StarDude} near {Imwalkingaway} radius 1 or get HowLongDoIWait time remaining <= 0
+			RelCamPos=marker at get world position from StarDude to {-4.789, 1.355, -0.787}
+			RelCamFoc=marker at get world position from StarDude to {-3.814, 1.363, -0.567}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 1 seconds
+			enable StarDude moveable
+			//set StarDude target {Hurricane} time 12
+			set StarDude velocity heading {Hurricane} speed 50
+			wait 1 seconds
+
+		end if
+/*
+		set camera position follow Hurricane offset {-75.293, 19.012, -17.634}
+		set camera focus follow Hurricane offset {-74.316, 18.923, -17.442}
+		//wait 5 seconds//until get MusicEventTimer time since set >= MusicEvent2
+		*/set HowLongDoIWait time to 4 seconds
+		
+		while StarAbode not exists and get HowLongDoIWait time remaining > 0
+			StarAbode = get star abode near {Hurricane}
+		end while
+
+		if StarAbode exists
+			MyWeather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_WHISPS at {StarAbode}
+			wait 0.2 seconds
+			invoke Hurricane EPIC_ENTER_TORNADO
+
+			RelCamPos = marker at get world position from StarAbode to {-16.691, 9.941, -21.881}
+			RelCamFoc = marker at get world position from StarAbode to {70.415, -12.137, 21.989}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 1 seconds
+
+			set lightning strike at {StarAbode} from MyWeather scale 1
+
+			DodgyBuilding= convert StarAbode using SCRIPT_CONVERSION_ROCK
+			
+			set DodgyBuilding target {Hurricane} time 4
+			run background script DeleteBuildingsWithExplode(DodgyBuilding)	
+			wait 2 seconds
+
+		end if
+
+		run background script Land7BodgingInTheBackground(Hurricane)
+	//	invoke Hurricane EPIC_ENABLE_TORNADO_DESTRUCTION
+
+		//wait 3 seconds
+		invoke Hurricane EPIC_EXIT_TORNADO
+
+		set camera position follow Hurricane offset {-147.384, 35.429, 6.775}
+		set camera focus follow Hurricane offset {-51.609, 36.574, -21.982}
+		move follow camera position offset {-96.105, 51.055, 48.184} time 7
+		move follow camera focus offset {-16.297, 47.515, -11.969} time 7
+
+		wait 4 seconds//wait until get MusicEventTimer time since set >= MusicEvent5
+		invoke Hurricane EPIC_ENTER_TORNADO
+
+		set camera position follow Hurricane offset {-63.892, 74.378, 3.421}
+		set camera focus follow Hurricane offset {-12.390, -8.397, -18.868}
+
+		wait 4 seconds
+		invoke Hurricane EPIC_EXIT_TORNADO
+
+
+		MyHurricanePos = marker at future position of epic miracle Hurricane with time 1 seconds
+		MyHurricaneFoc = marker at future focus of epic miracle Hurricane with time 1 seconds
+
+		//wait until get MusicEventTimer time since set >= MusicEvent6
+		//set Hurricane atmos group 9 time 1 seconds
+		set camera position follow Hurricane offset {-169.625, 80.674, 125.683}
+		set camera focus follow Hurricane offset {-168.884, 80.658, 125.011}
+		move follow camera position offset {-145.876, 137.833, 143.560} time 7
+		move follow camera focus offset {-145.292, 137.682, 142.763} time 7
+		wait 4 seconds//wait until get MusicEventTimer time since set >= MusicEvent7
+
+		/*RelCamPos = marker at get world position from Hurricane to {71.742, 17.985, -22.261}
+		RelCamFoc = marker at get world position from Hurricane to {70.783, 17.759, -22.091}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}*/
+
+		set camera position follow Hurricane offset {44.482, 46.008, 14.608}
+		set camera focus follow Hurricane offset {-3.617, -2.455, -58.452}
+		move follow camera position offset {71.533, 28.294, -9.278} time 5
+		move follow camera focus offset {-25.260, 44.754, -28.255} time 5
+
+
+		wait 4 seconds//wait until get MusicEventTimer time since set >= MusicEvent8
+
+		set camera position follow Hurricane offset {-94.899, 231.106, 418.347}
+		set camera focus follow Hurricane offset {-80.161, 232.516, 319.449}
+		move follow camera position offset {-99.984, 230.621, 452.480} time 3
+		move follow camera focus offset {-85.246, 232.032, 353.582} time 3
+		wait 4 seconds//wait until get MusicEventTimer time since set >= MusicEvent9
+		invoke Hurricane EPIC_STOP_TORNADO
+		invoke Hurricane EPIC_CLEAR_CLOUDS
+		invoke Hurricane EPIC_END_TORNADO
+		detach atmos from Hurricane
+		//stop camera shake
+
+		//reset sky colour 3 seconds
+		enable predefined sky "DEFAULT" time 3
+		wait 3 seconds
+		enable influence
+
+	end cinema
+
+
+end script Land7Hurricane

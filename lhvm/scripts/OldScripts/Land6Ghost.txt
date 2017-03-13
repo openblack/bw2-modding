@@ -1,0 +1,96 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Land 6 - Ghost script
+// ~~~~~~~~~~~~~~~~~~~~~
+//
+//Lava walker:
+//
+//For reasons of not wanting to have been besmirched by streams of lava; a ghost wants to cross successfully.
+//You see him die when he crosses a path and lava kills him. Sounds obvious but he will have had to try and divert
+//the lava but did so only temporarily or ineffectively.
+//You need to "save" him. Diverting the lava will help; but then he will be "killed" by another stream unless helped again.
+//The game is to divert it for a few seconds; then divert it a different way; or a different stream.
+//So it could be one stream that can be diverted in many different ways; or multiple streams that require quick changes; 
+//perhaps there's only one item you can use to divert it? Therefore requiring you to keep moving it.
+//Can the lava be temporarily frozen so the character can actually walk over it?
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define G6_FALSE			= 0
+define G6_TRUE			= 1
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global G6_SomeThing		= G6_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script G6_Create_Characters
+
+
+//========================================================================================
+//	Start of MAIN script
+//========================================================================================
+
+//=============================
+begin script Land6Ghost
+
+start
+
+	run script G6_Create_Characters
+
+	wait 100 seconds
+
+	begin dialogue
+		say "Well done! Land 6 Ghost Script complete..."
+		wait until read
+		clear dialogue
+	end dialogue
+	
+	wait 10 seconds
+
+end script Land6Ghost
+//=============================
+
+
+
+//-----------------------------------------------------------------------------
+//	G7_Create_Characters
+//-----------------------------------------------------------------------------
+begin script G6_Create_Characters
+
+start
+
+end script G6_Create_Characters
+
+
+
+//====================================================================================================
+//====================================== End Of File =================================================
+//====================================================================================================
+
+
+
+/*
+	begin dialogue
+		eject good spirit
+		say "."
+		wait until read
+		clear dialogue
+	end dialogue
+//-----------------------------------------------------------------------------
+//	
+//-----------------------------------------------------------------------------
+begin script 
+
+start
+
+end script 
+*/

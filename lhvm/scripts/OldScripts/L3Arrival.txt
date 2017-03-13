@@ -1,0 +1,26 @@
+//------------------------------------------------
+//  LAND 3 ARRIVAL CUT-SCENE (Yuka's Capture)
+//------------------------------------------------
+
+
+begin script L3Arrival
+start
+
+begin dialogue
+	say "The Land Three Arrival Cut-Scene has not been implemented yet."
+	wait until read
+	say "The Cut-Scene will show Dimitrios and the Greeks arriving by boat..."
+	wait until read
+	say "Then it shows Fenrick, the Norse High Priest, Woeing a Japanese girl..."
+	wait until read
+	say "A messanger interupts and reports the Greek arrival..."
+	wait until read
+	say "Fenrick orders all his forces abroad to return to destroy the Greeks..."
+	wati until read
+	say "He then imprisons Yuka to avoid the Japanese getting involved..."
+	wait until read
+	say "The player must hurry to defend his people from the imminent Norse attack"
+	wait until read
+end dialogue
+
+end script L3Arrival

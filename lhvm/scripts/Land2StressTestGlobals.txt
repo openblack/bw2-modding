@@ -1,0 +1,18 @@
+//-----------------------------------------------------------
+// LAND 2 GLOBALS
+//-----------------------------------------------------------
+global L2GreekTown = 0
+global L2CatapultStage = 1
+global L2ActiveVolcanos = 0
+global Land2Complete = 0
+global L2Creature = 0
+global L2Events = 0
+global InCameraRollMode = 0
+global L2DeleteUberVillagers = 0
+global L2DeleteCityArmies = 0
+global L2ChangeTime = 0
+
+begin script Land2Globals
+start
+	L2GreekTown = get town with id 0
+end script Land2Globals

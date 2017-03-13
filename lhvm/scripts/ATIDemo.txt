@@ -1,0 +1,473 @@
+run script ATIDemo
+
+begin script ATIDemo
+Dude=0
+OUtOfHouse=0
+Speaking[10]
+Miner[10]
+Farmer[10]
+JapanBird=0
+JapArmy=0
+AdmireView=0
+MyFlock=0
+Dove[10]
+Shouter=0
+Dudeperson=0
+EyeCandyBoat=0
+WolfMan=0
+MyWeatherPos=0
+MyWeather=0
+MyLightningPos=0
+SirenWonder=0
+ArmyDudes=0
+TheGreekTown=0
+EarthquakeWonder=0
+VolcanoWonder=0
+Gatehouse[2]
+ATIJapArmy[10]
+StartHere[2]
+count=0
+ATIJapArmyy=0
+MyMixer=0
+
+start
+
+//MyMixer = create mixer
+//set mixer MyMixer channel AUDIO_MIXER_CHANNEL_MENU_MUSIC to 0.0
+
+disable simulation sound
+
+TheGreekTown = get TOWN at {1817.536, 74.939, 632.392} radius 100
+/*
+EyeCandyBoat = create SHIP NORSE_SHIP at {1794.494, 0.046, 19.839}
+add {1647.417, 2.571, 16.650} to EyeCandyBoat waypoint schedule // optional en route waypoint
+add {1647.417, 2.571, 16.650} to EyeCandyBoat waypoint schedule // optional en route waypoint
+enable EyeCandyBoat waypoint schedule
+*/
+Gatehouse[0] = get HOUSE at {1053.260, 135.349, 877.710}
+Gatehouse[1] = get HOUSE at {1027.540, 135.375, 911.850}
+
+begin cinema
+	set fade red 0 green 0 blue 0 time 0
+	set game time 08.27
+	set fade in time 1
+	disable influence
+	//start music "cut_scene_end_battle 1"
+
+	set camera lens 64.000
+	set camera position to {2752.586, 263.341, -568.366}
+	set camera focus to {2753.581, 263.438, -568.386}
+	set camera lens 70.000 time 6
+	wait 5 seconds
+
+	set camera position to {2124.517, 113.143, 239.810}
+	set camera focus to {2123.880, 113.153, 240.581}
+
+	move camera position to {2090.763, 113.670, 280.658} time 8
+	move camera focus to {2090.126, 113.680, 281.429} time 8
+	wait 6 seconds
+
+	set camera position to {328.439, 195.619, 1239.500}
+	set camera focus to {329.261, 195.277, 1239.043}
+	move camera position to {352.118, 192.804, 1261.161} time 6
+	move camera focus to {352.866, 192.453, 1260.597} time 6	
+	wait 5 seconds
+
+	move game time 13.00 time 40
+    //set gate Gatehouse[0] open
+	//set gate Gatehouse[1] open
+	enable blooming
+
+	set camera position to {663.974, 67.782, 1240.965}
+	set camera focus to {663.014, 67.718, 1240.694}
+	move camera position to {653.131, 67.421, 1238.700} time 5
+	move camera focus to {652.200, 67.436, 1238.333} time 5	
+	wait until camera ready
+
+	set camera lens 70.000
+	set camera position to {624.311, 122.128, 1078.687}
+	set camera focus to {624.612, 122.062, 1077.736}
+	move camera position to {624.311, 117.360, 1078.687} time 8
+	move camera focus to {624.612, 117.294, 1077.736} time 8
+	JapanBird = create VILLAGER JAPANESE_HOUSEWIFE at {622.866, 123.815, 1076.890}
+	move JapanBird position to {624.494, 123.815, 1076.122}
+	wait 2 seconds
+	play anim "a_p_japan_kneeling_into" on JapanBird disable stand
+	wait until JapanBird played
+	play anim "a_p_japan_kneeling_loop" on JapanBird loop -1
+	//play anim "a_p_japan_kneeling_outof" on JapanBird
+	wait until camera ready
+	wait 2 seconds
+
+	//jap army
+	/*set camera lens 70.000
+	set camera position to {928.704, 138.331, 896.486}
+	set camera focus to {927.742, 138.474, 896.253}
+	move camera position to {938.323, 142.149, 898.816} time 7
+	move camera focus to {937.344, 142.065, 898.631} time 7
+	ATIJapArmy = create platoon PLATOON_INFO_JAPANESE_MELEE_1 at {922.045, 137.344, 897.670} with 12 men and 0 women
+	set platoon ATIJapArmy formation to 2 wide by 6 deep with 1 spacing
+	set ATIJapArmy focus to {942.807, 136.565, 895.030}
+	set ATIJapArmy position to {922.045, 137.344, 897.670}
+	move ATIJapArmy position to {965.171, 130.272, 868.460}
+	wait 6 seconds
+*/
+
+//out of barrack
+
+	set camera position to {507.382, 88.423, 1142.376}
+	set camera focus to {507.620, 88.017, 1143.258}
+
+	move camera position to {509.314, 88.141, 1143.000} time 5
+	move camera focus to {509.384, 87.689, 1143.890} time 5
+	ATIJapArmyy = create VILLAGER YUKA at {514.386, 83.553, 1144.805}
+
+	move ATIJapArmyy position to {504.126, 80.341, 1153.605}
+	StartHere[0] = marker at get target from {514.249, 81.331, 1152.523} to {509.763, 81.331, 1158.723} distance 1 angle 0
+	StartHere[1] = marker at get target from {515.076, 81.331, 1153.121} to {510.590, 81.331, 1159.321} distance 1 angle 0
+
+
+	while count < 10
+		ATIJapArmy[count] = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_2 at {StartHere[0]}
+		override ATIJapArmy[count] anim "a_p_meleecombat_soldier_march"
+		move ATIJapArmy[count] position to {514.249, 81.331, 1152.523}
+		count++
+		ATIJapArmy[count] = create SOLDIER PLATOON_INFO_JAPANESE_MELEE_2 at {StartHere[1]}
+		override ATIJapArmy[count] anim "a_p_meleecombat_soldier_march"
+		move ATIJapArmy[count] position to {515.076, 81.331, 1153.121}
+		count++
+		wait 1.5 seconds
+	end while
+
+
+	set camera position to {751.858, 396.895, 1987.693}
+	set camera focus to {752.383, 396.468, 1988.430}
+	move camera position to {747.375, 390.219, 2009.037} time 7
+	move camera focus to {747.960, 389.784, 2009.721} time 7
+	wait 6 seconds
+
+	//town centre
+	set camera position to {870.815, 320.006, 2155.433}
+	set camera focus to {870.765, 319.644, 2156.364}
+	move camera position to {866.239, 317.355, 2161.655} time 5
+	move camera focus to {866.208, 316.973, 2162.579} time 5
+	wait until camera ready
+
+	//former norse scene
+	set camera position to {1033.188, 258.907, 2064.287}
+	set camera focus to {1033.466, 258.710, 2065.227}
+	move camera position to {1033.188, 258.907, 2064.287} time 5
+	move camera focus to {1033.530, 258.640, 2065.188} time 5
+	wait 4 seconds
+
+	set camera position to {1590.186, 665.192, 589.219}
+	set camera focus to {1589.634, 664.667, 589.866}
+	move camera position to {1562.790, 664.974, 530.494} time 5
+	move camera focus to {1562.291, 664.434, 531.172} time 5
+	wait 4 seconds
+
+	AdmireView = create VILLAGER GREEK_BOATMASTER at {1151.176, 46.126, 651.270}
+	set AdmireView focus to {1164.713, 60.686, 642.064}
+
+	set camera lens 35.000
+	//play anim "a_p_scratching_bum" on AdmireView
+	set camera position to {1151.620, 47.221, 650.153}
+	set camera focus to {1151.344, 47.382, 651.100}
+	set camera lens 34.000 time 3
+	wait 2 seconds
+	set camera lens 70.000
+	set camera position to {1145.010, 48.847, 653.133}
+	set camera focus to {1145.942, 48.838, 652.770}
+	move camera position to {1143.471, 48.847, 649.183} time 5
+	move camera focus to {1144.402, 48.838, 648.820} time 5
+	wait 5 seconds
+
+	set camera position to {951.414, 136.252, 618.918}
+	set camera focus to {951.012, 135.850, 619.741}
+	move camera position to {940.077, 134.697, 617.455} time 5
+	move camera focus to {939.740, 134.281, 618.300} time 5
+	wait until camera ready
+
+	Farmer[0] = create VILLAGER GREEK_TRADER at {891.944, 71.449, 678.738}
+	Farmer[1] = create VILLAGER GREEK_TRADER at {894.756, 71.600, 680.339}
+	Farmer[2] = create VILLAGER GREEK_TRADER at {893.660, 71.629, 687.331}
+	Farmer[3] = create VILLAGER GREEK_TRADER at {895.320, 71.526, 685.094}
+	Farmer[4] = create VILLAGER GREEK_TRADER at {893.245, 72.481, 694.127}
+	Farmer[5] = create VILLAGER GREEK_TRADER at {895.843, 72.115, 693.200}
+	set Farmer[0] carrying CARRIED_OBJECT_SCYTHE
+	set Farmer[1] carrying CARRIED_OBJECT_SCYTHE
+	set Farmer[2] carrying CARRIED_OBJECT_SCYTHE
+	set Farmer[3] carrying CARRIED_OBJECT_SCYTHE
+	set Farmer[4] carrying CARRIED_OBJECT_SCYTHE
+	set Farmer[5] carrying CARRIED_OBJECT_SCYTHE
+
+	set camera position to {890.279, 75.344, 674.350}
+	set camera focus to {890.633, 74.920, 675.183}
+	move camera position to {893.168, 75.908, 674.114} time 6
+	move camera focus to {893.522, 75.484, 674.948} time 6
+	
+	play anim "a_p_farmer_harvesting" on Farmer[0] loop -1
+	wait 0.1 seconds
+	play anim "a_p_farmer_harvesting" on Farmer[1] loop -1
+	wait 0.2 seconds
+	play anim "a_p_farmer_harvesting" on Farmer[2] loop -1
+	wait 0.1 seconds
+	play anim "a_p_farmer_harvesting" on Farmer[3] loop -1
+	wait 0.2 seconds
+	play anim "a_p_farmer_harvesting" on Farmer[4] loop -1
+	wait 0.1 seconds
+	play anim "a_p_farmer_harvesting" on Farmer[5] loop -1
+
+	wait until camera ready
+	/*set camera lens 37.000
+	set camera position to {1725.173, 74.835, 612.070}
+	set camera focus to {1725.563, 74.513, 612.934}
+	move camera position to {1726.023, 74.835, 611.689} time 3
+	move camera focus to {1726.413, 74.513, 612.552} time 3
+	wait 2 seconds*/
+	Dude = create VILLAGER GREEK_TRADER at {936.158, 73.024, 697.435}
+	set Dude focus to {942.437, 74.455, 708.711}
+	move Dude position to {942.437, 74.455, 708.711}
+	wait 1 seconds
+
+	set camera lens 37.000
+	set camera position follow Dude offset {-2.498, 1.433, 3.536}
+	set camera focus follow Dude offset {-1.786, 1.309, 2.845}
+	wait 2.5 seconds
+	override Dude anim "a_p_waving_walking"
+	wait 2.3 seconds
+
+	set camera lens 70.000
+    Speaking[0] = create VILLAGER GREEK_TRADER at {937.967, 74.169, 715.419}
+	Speaking[1] = create VILLAGER GREEK_HOUSEWIFE at {939.336, 74.523, 716.340}
+	set Speaking[1] focus to {Speaking[0]}
+	set Speaking[0] focus to {Speaking[1]}
+	set camera position to {942.267, 76.094, 711.821}
+	set camera focus to {941.371, 76.058, 712.264}
+	move camera position to {942.245, 76.039, 715.169} time 5
+	move camera focus to {941.349, 76.003, 715.612} time 5
+
+	play anim "a_p_gossip_man" on Speaking[0]
+	play anim "a_p_scratching_head" on Speaking[1]
+	wait 4 seconds
+	
+	Miner[0] = create VILLAGER GREEK_FISHERMAN at {670.215, 119.070, 876.123}
+	move Miner[0] position to {675.297, 116.996, 872.781}
+	Miner[1] = create VILLAGER GREEK_TRADER at {671.327, 116.785, 870.363}
+	set Miner[0] carrying CARRIED_OBJECT_BAG
+	move Miner[1] position to {666.417, 118.288, 875.767}
+	wait 1 seconds
+	set camera lens 70.000
+	set camera position to {674.589, 122.663, 864.345}
+	set camera focus to {674.346, 122.386, 865.275}
+	wait 4 seconds
+
+	//shadows
+	set game time 16.00
+	move game time 21.00 time 23
+	set camera position to {968.813, 127.506, 628.398}
+	set camera focus to {968.289, 127.217, 629.198}
+
+	move camera position to {946.084, 122.164, 634.169} time 10
+	move camera focus to {945.626, 121.842, 634.997} time 10
+	wait 5 seconds
+
+	set camera position to {741.530, 142.460, 900.417}
+	set camera focus to {741.080, 141.942, 901.146}
+	move camera position to {750.815, 140.383, 906.068} time 25
+	move camera focus to {750.137, 139.983, 906.685} time 25
+	wait 18 seconds
+
+	set camera position to {835.257, 149.551, 765.292}
+	set camera focus to {834.323, 149.521, 764.936}
+	move camera position to {842.956, 187.630, 668.513} time 7
+	move camera focus to {841.971, 187.531, 668.372} time 7
+	wait 6 seconds
+
+	MyWeatherPos = marker at {1117.815, 50.155, 601.610}
+	MyLightningPos = marker at {1112.818, 51.221, 616.434}		
+	MyWeather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {MyWeatherPos}		
+	set cloud for MyWeather above {MyWeatherPos}
+	set cloud generation 4
+	set MyWeather properties rainfall 1 snowfall 0 overcast 0.7
+
+	//set game time 16.00
+	//move game time 20.00 time 20
+	WolfMan=create CREATURE CREATURE_TYPE_WOLF at {1117.815, 50.155, 601.610}
+	//stop music
+	//start music "cut_scene_danger_01"
+	
+	SCALE of WolfMan = 0.6
+	ALIGNMENT of WolfMan = 1
+	set player 0 creature to WolfMan
+	PLAYER of WolfMan = 0
+	set WolfMan DEVELOPMENT_PHASE_FULLY_MATURE development
+	wait 0.2 seconds
+
+	set camera position to {1128.031, 64.525, 576.756}
+	set camera focus to {1127.578, 64.171, 577.574}
+	move camera position to {1119.037, 58.050, 597.745} time 10
+	move camera focus to {1118.542, 57.761, 598.564} time 10
+	wait 7 seconds
+    
+	play anim C_INDIVIDUAL_HAPPY on WolfMan
+	wait 2 seconds
+	set camera position to {1116.688, 55.187, 591.087}
+	set camera focus to {1116.722, 55.143, 592.086}
+	wait until WolfMan played
+	
+	play anim C_INDIVIDUAL_PULLING_FACES2 on WolfMan
+	wait until WolfMan played
+
+	play anim C_INDIVIDUAL_POINTING_LAUGHING on WolfMan
+	wait until WolfMan played
+
+	play anim C_INDIVIDUAL_IMPRESS on WolfMan
+	//wait until WolfMan played
+	wait 3.5 seconds
+	set camera position to {1122.515, 57.298, 592.336}
+	set camera focus to {1121.913, 57.094, 593.108}
+	wait 2 seconds
+	set camera position to {1118.458, 55.240, 585.477}
+	set camera focus to {1118.493, 55.196, 586.476}
+	wait until WolfMan played
+
+	play anim C_INDIVIDUAL_SHAKEOFF on WolfMan
+	wait until WolfMan played
+
+	set camera lens 48.000 time 10
+	move camera position to {1121.471, 56.456, 589.640} time 10
+	move camera focus to {1121.082, 56.463, 590.561} time 10
+
+	set creature WolfMan CREATURE_SCRIPT_TRANSITIONAL_ATTRIBUTE_TYPE_ALIGNMENT -1.0 time 20
+	play anim C_INDIVIDUAL_ANGRY on WolfMan
+	wait 8 seconds
+	
+	move camera position to {1125.319, 52.337, 588.010} time 20
+	move camera focus to {1124.606, 52.707, 588.606} time 20
+	//wait 15 seconds
+	play anim C_FIGHT_HOLDING_INJURIES_BACK on WolfMan
+	wait until WolfMan played
+	play anim C_FIGHT_HOLDING_INJURIES_CHEST on WolfMan
+	wait until WolfMan played
+	play anim C_FIGHT_FINCHING_ARROWS_BACK on WolfMan
+	wait until WolfMan played
+	play anim C_FIGHT_FINCHING_ARROWS_CHEST on WolfMan
+	wait until WolfMan played
+	play anim C_FIGHT_FINCHING_ARROWS_ARMS on WolfMan
+	wait until WolfMan played
+	play anim C_INDIVIDUAL_SCRATCH on WolfMan
+	wait until WolfMan played	
+	stop music
+	set lightning strike at {MyLightningPos} from MyWeather
+	wait 2 seconds
+	
+	play anim C_FIGHT_THREAT3 on WolfMan
+	set camera position to {1122.729, 54.128, 582.694}
+	set camera focus to {1122.599, 54.182, 583.684}
+	wait 4.2 seconds
+	set camera position to {1115.887, 52.822, 587.342}
+	set camera focus to {1116.373, 52.718, 588.210}
+	wait 0.5 seconds
+	play string sound "WOLFBITE_LARGE"
+
+	wait 0.5 seconds//until WolfMan played
+	set lightning strike at {MyLightningPos} from MyWeather
+
+	set camera position to {2001.474, 422.395, 322.481}
+	set camera focus to {2000.725, 422.069, 323.058}
+	move camera position to {2158.941, 470.945, 292.868} time 10
+	move camera focus to {2158.184, 470.625, 293.438} time 10
+	wait 4 seconds
+	set fade red 255 green 255 blue 255 time 6
+
+	wait until camera ready
+	wait 3 seconds
+	//SirenWonder = create WONDER EPIC_WONDER_NUMBER_SIREN at {881.958, 63.819, 855.565}
+	set camera lens 70.000
+	delete WolfMan
+
+	wait 2 seconds
+	set fade in time 2
+	wait 2 seconds
+
+	end cinema/*
+	set fade in time 2
+	set camera position to {910.223, 289.432, 2176.225}+{15,15,15}
+	set camera focus to {910.223, 289.432, 2176.225}
+	wait 2 seconds
+
+stop music
+
+end cinema with widescreen
+
+create 20 worshippers at SirenWonder
+
+ArmyDudes = create platoon PLATOON_INFO_NORSE_MELEE_1 at {910.223, 289.432, 2176.225}+{15,0,15} with 30 men and 0 women
+set SirenWonder player 0
+attach SirenWonder to TheGreekTown
+set ArmyDudes player 1
+release ArmyDudes
+begin cinema
+set camera position to {910.223, 289.432, 2176.225}+{15,15,15}
+	set camera focus to {910.223, 289.432, 2176.225}
+	//set fade in time 2
+	wait 2 seconds
+end cinema with widescreen
+
+create epic EPIC_WONDER_NUMBER_SIREN at {1742.619, 54.159, 322.789}
+
+wait until ATIEndFlag==1
+
+set fade red 0 green 0 blue 0 time 2
+wait 2 seconds
+delete SirenWonder
+begin cinema
+
+	set camera position to {1242.519, 279.979, 1319.164}
+	set camera focus to {1241.772, 279.417, 1319.521}
+	set fade in time 2
+	EarthquakeWonder = create WONDER EPIC_WONDER_NUMBER_EARTHQUAKE at {881.958, 63.819, 855.565}
+	wait 2 seconds
+end cinema with widescreen
+
+create 20 worshippers at EarthquakeWonder
+set EarthquakeWonder player 0
+attach EarthquakeWonder to TheGreekTown
+
+create epic EPIC_WONDER_NUMBER_EARTHQUAKE at {1225.371, 256.815, 1329.744}
+
+wait until ATIEndFlag==0
+set fade red 0 green 0 blue 0 time 2
+delete EarthquakeWonder
+
+VolcanoWonder = create WONDER EPIC_WONDER_NUMBER_VOLCANO at {1792.410, 70.707, 547.029}
+
+wait 2 seconds
+
+create 20 worshippers at VolcanoWonder
+set VolcanoWonder player 0
+attach VolcanoWonder to TheGreekTown
+set fade red 0 green 0 blue 0 time 2
+
+begin cinema
+	wait 2 seconds
+	set camera position to {1150.924, 167.990, 950.285}+{15,15,15}
+	set camera focus to {1150.924, 167.990, 950.285}
+	set fade in time 2
+	wait 2 seconds
+end cinema with widescreen
+
+create epic EPIC_WONDER_NUMBER_VOLCANO at {1151.346, 167.114, 961.470}
+
+wait until ATIEndFlag==1
+begin cinema
+	set camera lens 58.000
+	//delete VolcanoWonder
+	set fade red 0 green 0 blue 0 time 5
+	wait 7 seconds
+	disable blooming
+	exit game
+end cinema
+*/
+end script ATIDemo

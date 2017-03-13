@@ -1,0 +1,166 @@
+define False = 0
+define True = 1
+define MAX_VILLAGERS = 100
+
+//-----------------------------------------------------------
+
+global ScriptFinished = False
+global DeletePeople = False
+
+define script LookAFterPeopleComingFromTeleporter(Portal)
+//-----------------------------------------------------------
+
+begin script Land6Intro
+GreekArchers = 0
+GreekTown = get town with id 0
+Portal = 0
+LC6_GeneralsInitialArchersx = 0
+LC6_GeneralsInitialMeleex = 0
+OpposingTown = get town with id 14	
+start
+	Portal = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {1020.625, 132.124, 2000.511} + {0, 3, 0} time -1
+	set fade red 0 green 0 blue 0 time 0
+	GreekArchers = create platoon PLATOON_INFO_GREEK_RANGED_2 at {869.172, 56.294, 740.945} with 50 men and 0 women
+	attach GreekArchers to GreekTown
+	
+	LC6_GeneralsInitialArchersx = create platoon PLATOON_INFO_JAPANESE_RANGED_4 at {1107.361, 139.687, 2035.267} with 50 men and 0 women
+	attach LC6_GeneralsInitialArchersx to OpposingTown
+	enable platoon LC6_GeneralsInitialArchersx camp
+
+	LC6_GeneralsInitialMeleex = create platoon PLATOON_INFO_JAPANESE_MELEE_4 at {1096.006, 135.407, 1994.371} with 50 men and 0 women
+	attach LC6_GeneralsInitialMeleex to OpposingTown
+	enable platoon LC6_GeneralsInitialMeleex camp
+	
+	begin cinema
+		start music "cut_scene_danger_01" loop 2
+		set game time 06.00
+
+		wait 2 seconds
+	
+		queue camera move with position {1871.061, 822.688, 138.804} focus {1810.697, 768.434, 197.214} time 0.0
+		queue camera move with position {1269.083, 361.618, 508.720} focus {1190.299, 302.637, 526.420} time 9.0
+		queue camera move with position {984.952, 176.270, 559.364} focus {922.110, 115.736, 608.217} time 10.0
+		
+		//queue camera move with position {868.973, 105.023, 673.833} focus {861.404, 57.735, 761.620} time 8.0
+		queue camera move with position {870.112, 85.255, 686.685} focus {858.515, 37.935, 774.014} time 8.0
+		queue camera move with position {823.841, 126.040, 979.869} focus {763.624, 104.754, 1056.816} time 8.0
+		
+		//queue camera move with position {749.005, 138.561, 1129.055} focus {745.386, 112.169, 1225.442} time 5.0
+		
+		//queue camera move with position {710.346, 144.092, 1137.566} focus {729.786, 116.485, 1231.694} time 4.0
+			queue camera move with position {759.122, 142.541, 1207.186} focus {787.125, 114.993, 1299.141} time 4.0
+		
+		//queue camera move with position {1058.682, 146.029, 1540.830} focus {1087.418, 110.839, 1629.917} time 4.0
+		queue camera move with position {1038.161, 133.630, 1515.531} focus {1065.541, 91.539, 1602.018} time 5.0
+		queue camera move with position {1159.412, 177.490, 1768.263} focus {1128.406, 136.543, 1854.066} time 5.0
+		queue camera move with position {1076.704, 162.629, 1953.752} focus {1023.750, 125.936, 2030.229} time 5.0
+		play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		
+		
+		run background script LandStart
+					
+		set fade in time 4
+		wait 3 seconds
+		eject good spirit
+		eject evil spirit
+
+		// GA: This place doesn't look so bad. We should be able to take it over with little effort.
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_06FINAL_INTRO_G_10
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_06FINAL_INTRO_E_10
+		wait until read
+		
+		//say "BW2T_SCRIPT_06FINAL_INTRO_10"
+		//wait until read
+		
+		//Great! More warfare! This is what makes my blood tingle!		
+		
+		//say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_INTRO_10"
+		//wait until read
+		
+		//BUT if your impress
+		//say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_INTRO_20"
+		//wait until read
+		
+		//Missing archers
+		
+		say "BW2T_SCRIPT_06FINAL_INTRO_20"
+		wait until read
+		send good spirit home
+		send evil spirit home
+		
+		wait 14 seconds
+		// EA: Ha! There are some juicy Towns to ransack! I'm gonna like this place.
+		say "BW2T_SCRIPT_06FINAL_INTRO_30"
+		wait until read
+		
+		wait 2 seconds
+		delete GreekArchers
+		run background script LookAFterPeopleComingFromTeleporter(Portal)
+		wait 5 seconds
+		// EA: What? What's this? Another Portal? Who does that belong to?
+		say "BW2T_SCRIPT_06FINAL_INTRO_40"
+		wait until read
+		
+		reset camera path 
+		queue camera move with position {1093.371, 162.629, 1965.292} focus {1040.417, 125.935, 2041.769} time 8.0
+		play camera path with easein 4 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		say "BW2T_SCRIPT_06FINAL_PDM_ENDLAND_INTRO_30"
+		wait until read
+		
+		say "BW2T_SCRIPT_06FINAL_INTRO_60"
+		wait until read
+		
+		
+		reset camera path
+		queue camera move with position {1209.394, 181.097, 1624.397} focus {1185.419, 162.958, 1719.771} time 5.0
+		queue camera move with position {890.606, 107.985, 825.306} focus {889.489, 102.083, 925.123} time 5.0
+		queue camera move with position {864.758, 91.606, 630.112} focus {863.367, 68.737, 727.451} time 5.0
+		play camera path with easein 12 easeout 4 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		eject good spirit
+		eject evil spirit
+		// GA: We'd better start building now. These Japanese seem to be formidable builders themselves.
+		say "BW2T_SCRIPT_06FINAL_INTRO_70"
+		wait until read
+
+		// EA: And get some armies, Boss. They look pretty handy at fighting as well!
+		say "BW2T_SCRIPT_06FINAL_INTRO_80"
+		wait until read
+		send good spirit home
+		send evil spirit home
+		wait 5 seconds
+		wait until camera ready
+		stop music with fadetime 5
+	end cinema
+	ScriptFinished=True
+	delete LC6_GeneralsInitialArchersx
+	delete LC6_GeneralsInitialMeleex
+	delete Portal
+end script Land6Intro
+
+//-----------------------------------------------------------
+
+begin script LookAFterPeopleComingFromTeleporter(Portal)
+People[GLOBAL_GLOBAL_VALUE_LAND_6_JAPANESE_CAPITAL_POPULATION]
+Counter = 0
+Effect = 0
+start
+
+	while Counter < GLOBAL_GLOBAL_VALUE_LAND_6_JAPANESE_CAPITAL_POPULATION
+		People[Counter] = create random villager of tribe TRIBE_TYPE_JAPANESE at {1013.581, 132.333, 2002.798} + {number from -3 to 3, 0, number from -3 to 3}//create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {1013.581, 132.333, 2002.798} + {number from -3 to 3, 0, number from -3 to 3}
+		attach People[Counter] to L6JapaneseCapital
+		move People[Counter] position to {1096.872, 134.420, 1980.595}		
+		Effect = create visual effect "gp_s_teleporter_people.ves" strength 1 scale 1 at {People[Counter]}
+		wait 0.5 seconds
+		delete Effect
+		Counter++
+	end while
+	
+	wait until DeletePeople == True
+	Counter = 0 
+	force while Counter < GLOBAL_GLOBAL_VALUE_LAND_6_JAPANESE_CAPITAL_POPULATION
+		release People[Counter]//delete People[Counter]
+		Counter++
+	end while
+end script LookAFterPeopleComingFromTeleporter
+
+//-----------------------------------------------------------

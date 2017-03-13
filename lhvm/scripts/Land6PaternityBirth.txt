@@ -1,0 +1,980 @@
+//================================================================
+// Paternity Birth
+// Lenny
+//================================================================
+
+//-------------------------------------------------------------
+// Constants
+//-------------------------------------------------------------
+define PB_FALSE		= 0
+define PB_TRUE		= 1
+
+define PB_TIME_BETWEEN_BURSTS	= 5
+
+define PB_ADVISOR_CAUGHT			= 0
+define PB_ADVISOR_MISSED			= 1
+define PB_ADVISOR_ABOUT_TO_EJECT	= 2
+define PB_ADVISOR_START				= 3
+
+define PB_NUM_LAMBS_REQUIRED		= 20
+
+//-------------------------------------------------------------
+// Globals
+//-------------------------------------------------------------
+global PB_Mother				= 0
+global PB_Shepard				= 0
+global OutroPlaying				= 0
+
+global PB_Completed				= PB_FALSE
+global PB_ForceQuit				= PB_FALSE
+global PB_ForceTooltipRemoval	= PB_FALSE
+global PB_Paused				= PB_FALSE
+
+global PB_NumCaught				= 0
+global PB_NumCaughtTooltip		= 0
+
+global PB_LastEjectComment		= 0
+global PB_LastMissComment		= 0
+global PB_MissTimer				= 0
+//global PB_CollectRing			= 0
+global PB_CollectRingPos		= 0
+global OnlookerSheep[4]
+global LambsMissed				= 0
+global AdvisorTalking			= 0
+global ChallengeOver			= 0
+
+
+//-------------------------------------------------------------
+// Script defines
+//-------------------------------------------------------------
+define script PB_Shepard
+define script PB_ThrowLambs
+define script PB_Lamb(Speed)
+//define script PB_QuitScroll
+define script PB_PronounceNumCaught
+define script PB_Advisors(ID)
+define script PB_InterfaceActions(EnableDisable)
+define script PB_CutSceneLamb(ID)
+define script placesomesheepdown
+
+//Cut Scenes
+define script PB_Intro
+define script PB_OutroWon
+define script PB_OutroLost
+
+//-------------------------------------------------------------
+// Land 6 Paternity Birth
+//-------------------------------------------------------------
+begin script Land6PaternityBirth		
+	Scroll		= 0
+	ScrollPos	= marker at {441.848, 71.666, 1988.315}
+	Influence	= 0
+start
+
+	PB_CollectRingPos = marker at {445.110, 64.452, 1941.969}//{440.869, 64.594, 1952.300}
+
+	while PB_Completed == PB_FALSE
+
+		Scroll = create highlight SILVER name "BW2T_SCRIPT_06FINAL_PATERNITYBIRTH_10" remind "BW2T_SCRIPT_06FINAL_PATERNITYBIRTH_10" at {ScrollPos}
+		ALTITUDE of Scroll = 1.5
+
+		wait until Scroll right clicked
+		delete Scroll
+
+		run script PB_Intro
+
+		set capture radius multiplier 1.7
+
+		PB_MissTimer = create timer for 0 seconds
+
+		//Influence = create influence at {PB_CollectRingPos} radius 150
+
+		Influence = create influence at {PB_CollectRingPos} radius 45
+
+		run background script PB_Shepard		
+		//run background script PB_PronounceNumCaught
+
+		//PB_CollectRing = create visual effect VISUAL_EFFECT_AREA_TARGET at {PB_CollectRingPos} time -1
+		//set PB_CollectRing colour red 255 green 0 blue 0
+		//SCALE of PB_CollectRing = 10
+
+
+		enable objective list in widescreen
+
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_7
+		disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 with amount 1 text "BW2T_SCRIPT_06FINAL_PATERNITYBIRTH_10" amount 0 description "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_6_PATERNITYBIRTH		
+		L6ShowingPaternityBirth = 1
+
+		
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 amount 1
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 text "BW2T_SCRIPT_06FINAL_PATERNITYBIRTH_10"
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 parent objective TRIBUTE_OBJECTIVE_LAND_7
+
+		begin interactive camera
+
+			enable objective list in widescreen
+			//set fade in time 1
+
+			//enable force tooltip draw
+			run script PB_InterfaceActions(0)
+
+			//set camera position to {438.420, 86.834, 1917.376}
+			//set camera focus to {436.333, 44.425, 2007.916}
+
+			//run script PB_Advisors(PB_ADVISOR_START)
+			//run background script PB_QuitScroll
+
+			run script PB_ThrowLambs
+
+		disable objective list in widescreen
+
+		//disable force tooltip draw
+		//stop visual effect PB_CollectRing		
+		delete Influence
+		run script PB_InterfaceActions(1)
+
+		end camera
+        
+		//Run lost outro
+		if PB_NumCaught < PB_NUM_LAMBS_REQUIRED
+
+			run script PB_OutroLost
+
+			wait 3 seconds
+			begin dialogue
+				eject evil spirit
+
+				//say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_LOSE_10"
+				//wait until read
+
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_LOSE_20"
+				wait until read
+			end  dialogue
+
+		else //Run succeeded outro
+			run script PB_OutroWon
+			
+			PB_Completed = PB_TRUE
+			
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE			
+			
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_8
+			
+			wait 2.5 seconds
+
+			disable player 0 objective TRIBUTE_OBJECTIVE_LAND_7
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 with amount 1 text "BW2T_SCRIPT_06FINAL_OBJECTIVE_PATERNTIYBIRTH_10" amount PB_NumCaught description "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_REMINDER" start value 1 reward GLOBAL_VALUE_TRIBUTE_LAND_6_PATERNITYBIRTH
+			set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+		end if			
+
+
+		set capture radius multiplier 1
+
+		PB_ForceQuit = PB_FALSE
+
+		wait 120 seconds
+
+	end while
+
+end script Land6PaternityBirth
+
+//-------------------------------------------------------------
+// Throw Lambs
+//-------------------------------------------------------------
+begin script PB_ThrowLambs
+	MiniTime		= 0
+	LagreTime		= 0
+	CommentTimer	= create timer for 0 seconds
+	BurstTimer		= create timer for 0 seconds
+	ThrowTimer		= create timer for 0 seconds	
+	FlyPos[5]		
+	Burst			= 0
+	Bursted			= 0
+	TotalBursted	= 0
+
+	//Burst balance
+	BurstAmount[15]
+	BurstTime[15]
+	BurstSpeed[15]
+
+	RandomNumber	= 0
+
+start
+
+	//Balance and crap
+	FlyPos[0] = marker at {435.141, 67, 1947.340}
+	FlyPos[1] = marker at {443.261, 71, 1945.159}
+	FlyPos[2] = marker at {420.259, 70, 1945.765}
+	FlyPos[3] = marker at {451.666, 71, 1942.217}
+	FlyPos[4] = marker at {428.376, 67, 1940.314}
+
+	//Amount of lambs to eject per burst
+	BurstAmount[0] = 1
+	BurstAmount[1] = 2
+	BurstAmount[2] = 1
+	BurstAmount[3] = 2
+	BurstAmount[4] = 2
+	BurstAmount[5] = 1
+	BurstAmount[6] = 2
+	BurstAmount[7] = 2
+	BurstAmount[8] = 3
+	BurstAmount[9] = 2
+	BurstAmount[10] = 2
+	BurstAmount[11] = 3
+	BurstAmount[12] = 3
+	BurstAmount[13] = 2
+	BurstAmount[14] = 3
+
+	//Time between each ejection
+	BurstTime[0] = 1//0
+	BurstTime[1] = 1//0
+	BurstTime[2] = 1//0
+	BurstTime[3] = 1//1
+	BurstTime[4] = 1//0.5	
+	BurstTime[5] = 1//0.5
+	BurstTime[6] = 1//0.4
+	BurstTime[7] = 1//0.3
+	BurstTime[8] = 1//0.4
+	BurstTime[9] = 1//0.4
+	BurstTime[10] = 1//0.2
+	BurstTime[11] = 1//0.4
+	BurstTime[12] = 1//0.2
+	BurstTime[13] = 1//0.3
+	BurstTime[14] = 1//0.1
+
+	//The speed at which the lambs eject (Very Sensitive)
+	BurstSpeed[0] = 29//23
+	BurstSpeed[1] = 29//24
+	BurstSpeed[2] = 29 //25
+	BurstSpeed[3] = 29//22
+	BurstSpeed[4] = 29//25
+	BurstSpeed[6] = 29//25
+	BurstSpeed[7] = 29///25
+	BurstSpeed[8] = 29//27
+	BurstSpeed[9] = 29//28
+	BurstSpeed[10] = 29//27
+	BurstSpeed[11] = 29//29
+	BurstSpeed[12] = 29//30
+	BurstSpeed[13] = 29//31
+	BurstSpeed[14] = 29//32
+
+	while PB_Completed == PB_FALSE and Burst < 14
+	
+		if get CommentTimer time remaining <= 0 and AdvisorTalking == 0
+			run background script PB_Advisors(PB_ADVISOR_ABOUT_TO_EJECT)
+			set CommentTimer time to 13 seconds
+			AdvisorTalking = 1
+		end if
+
+		disable objective window
+
+		Bursted = 0
+		while Bursted < BurstAmount[Burst]
+
+			wait until PB_Paused == PB_FALSE
+
+			if get ThrowTimer time remaining == 0
+				RandomNumber = number from 1 to 3
+				run background script PB_Lamb(BurstSpeed[Burst])
+				set ThrowTimer time to RandomNumber seconds
+				Bursted++
+				TotalBursted++
+			end if						
+
+		end while
+
+		Burst++
+
+		wait PB_TIME_BETWEEN_BURSTS seconds
+
+		wait 4 seconds
+
+	end while
+
+end script PB_ThrowLambs
+
+//-------------------------------------------------------------
+// Lamb
+//-------------------------------------------------------------
+begin script PB_Lamb(Speed)
+	Lamb			= 0
+	TrailFX			= 0
+	EjectPos		= marker at {433.994, 73.503, 2000.528}//marker at {434.394, 71.708, 1990.256}
+	CaughtFX		= 0
+	LastPos			= 0
+	LastDist		= 0
+	HasBeenHeld		= 0
+	CommentTimer	= create timer for 0 seconds
+	LandPos			= marker at {442.513, 65.069, 1957.972}//marker at {442.570, 65.014, 1951.214}
+	Landed			= 0
+	DIST			= 40
+	ANGLE			= 0
+	Influence		= 0
+
+start
+
+	Lamb = create ANIMAL SHEEP at {EjectPos}
+	ALTITUDE of Lamb = 0.3
+	enable Lamb indestructible
+	HEALTH of Lamb = 0.1
+
+	set Lamb physics balance 17
+	DIST = number from -30 to 0
+	ANGLE = 140
+	Landed = marker at get target from {EjectPos} to {LandPos} distance DIST angle ANGLE
+	set Lamb velocity heading {Landed} + {0,5,0} speed Speed
+	wait 1 seconds
+	disable Lamb indestructible
+	Influence = create influence on Lamb radius 3
+
+	TrailFX = create visual effect "gp_s_advisorgoodcloud_trail.ves" strength 0.01 scale 0.04 on Lamb time -1
+	set TrailFX colour red 255 green 255 blue 255
+
+	//Distance checker
+	begin loop
+		if get distance from {Lamb} to {LastPos} > LastDist
+			LastDist = get distance from {Lamb} to {LastPos}
+		end if
+		LastPos = marker at {Lamb}
+		if HEALTH of Lamb <= 0
+			stop visual effect TrailFX
+		end if
+	until SPEED of Lamb == 0 or Lamb is HELD or PB_ForceQuit == PB_TRUE or HEALTH of Lamb <= 0
+	end loop
+
+	//Delete tooltip
+	PB_ForceTooltipRemoval = PB_FALSE
+	stop visual effect TrailFX
+
+	if Lamb is HELD and HEALTH of Lamb > 0
+		play string sound "SCRIPT_SHEEP"
+		
+		delete Influence
+		HasBeenHeld = PB_TRUE
+		wait until not Lamb is HELD		
+		play string sound "SCRIPT_SHEEP"
+		
+		//Update ring colour
+		//set PB_CollectRing colour red 0 green 255 blue 0
+
+		disable Lamb pickup
+		disable Lamb moveable
+		enable Lamb indestructible
+
+		//Move to a spare position here
+		enable objective window
+		PB_NumCaught++
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 text "BW2T_SCRIPT_06FINAL_OBJECTIVE_PATERNTIYBIRTH_10" amount PB_NumCaught
+
+		stop visual effect TrailFX
+		CaughtFX = create visual effect "gp_s_physdust.ves" strength 1 scale 2 on Lamb time 2	
+		set CaughtFX colour red 0 green 255 blue 0
+
+		set Lamb position to {Lamb}
+		ALTITUDE of Lamb = 0		
+
+		wait until PB_ForceQuit == PB_TRUE
+
+		wait 2 seconds
+
+		delete Lamb
+
+	end if
+
+	wait 3 seconds
+
+	//delete Lamb with fade
+	LambsMissed ++
+
+	if get CommentTimer time remaining <= 0 and LambsMissed > 4 and AdvisorTalking == 0
+		run background script PB_Advisors(PB_ADVISOR_MISSED)
+		set CommentTimer time to 13 seconds
+		LambsMissed = 0
+		AdvisorTalking = 1
+	end if
+
+end script PB_Lamb
+
+//-------------------------------------------------------------
+// Land 6 Paternity Birth
+//-------------------------------------------------------------
+begin script PB_Shepard
+	ShepardPos	= marker at {436.950, 71.961, 1995.891}
+	Me = 0
+start
+
+	begin loop
+		play anim "a_p_panic" on PB_Shepard
+		wait until PB_Shepard played
+	until PB_ForceQuit == PB_TRUE
+	end loop
+
+	delete Me
+
+end script PB_Shepard
+
+//-------------------------------------------------------------
+// Quit Scroll
+//-------------------------------------------------------------
+/*begin script PB_QuitScroll
+	Scroll		= 0
+	ScrollPos	= marker at {459.021, 70.319, 1977.204}
+	ClickedOnce = 0
+	ClickTimer	= create timer for 0 seconds
+start
+
+	Scroll = create highlight DECLINE name "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_20" remind "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_20" at {ScrollPos}
+	ALTITUDE of Scroll = 1.5
+
+	begin loop
+
+		if Scroll right clicked and ClickedOnce == PB_FALSE
+			clear right clicked object
+			PB_Paused = PB_TRUE
+
+			begin known dialogue
+
+				eject good spirit
+
+				say "BW2T_HELP_TEXT_GUIDANCE_OPPOSITE_GA_06"
+				wait until read or Scroll right clicked
+
+				say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_933"
+				wait until read or Scroll right clicked
+
+			end known dialogue
+
+			ClickedOnce = PB_TRUE
+			set ClickTimer time to 4 seconds
+
+		end if
+
+		if get ClickTimer time remaining == 0 and ClickedOnce == PB_TRUE
+			ClickedOnce = PB_FALSE
+			PB_Paused = PB_FALSE
+		end if
+
+	until (Scroll right clicked and ClickedOnce == PB_TRUE) or PB_ForceQuit == PB_TRUE
+	end loop
+
+	delete Scroll
+	PB_ForceQuit = PB_TRUE
+
+end script PB_QuitScroll*/
+
+//-------------------------------------------------------------
+// Tooltip
+//-------------------------------------------------------------
+begin script PB_Advisors(ID)
+start
+
+	AdvisorTalking = 1
+
+	begin known cinema
+		if ID == PB_ADVISOR_START
+			eject evil spirit
+				//say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_20"
+				make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_E_20
+				wait until read
+			send evil spirit home
+
+		elsif ID == PB_ADVISOR_ABOUT_TO_EJECT			
+
+			if PB_LastEjectComment == 0
+				eject good spirit
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_EJECTING_10"
+				wait until read
+				send good spirit home
+			elsif PB_LastEjectComment == 1
+				eject good spirit
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_EJECTING_20"
+				wait until read
+				send good spirit home
+			elsif PB_LastEjectComment == 2
+				eject evil spirit
+				say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_EJECTING_30"	
+				wait until read
+				send evil spirit home
+			end if
+
+			wait until read
+
+			PB_LastEjectComment++
+			if PB_LastEjectComment == 3
+				PB_LastEjectComment = 0
+			end if
+
+		elsif ID == PB_ADVISOR_MISSED and OutroPlaying == 0
+			eject evil spirit
+				if PB_LastMissComment == 0
+					say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_100"
+					wait until read or OutroPlaying == 1
+				elsif PB_LastMissComment == 1
+					say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_10"
+					wait until read or OutroPlaying == 1
+				elsif PB_LastMissComment == 2
+					say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_30"
+					wait until read or OutroPlaying == 1
+				end if
+			send evil spirit home
+
+			PB_LastMissComment++
+			if PB_LastMissComment == 3
+				PB_LastMissComment = 0
+			end if
+
+		end if
+
+		clear dialogue
+		//send good spirit home
+		//send evil spirit home
+	//end if
+	end known cinema
+
+	AdvisorTalking = 0
+
+until PB_Paused == PB_TRUE
+end script PB_Advisors
+
+//-------------------------------------------------------------
+// Tooltip
+//-------------------------------------------------------------
+begin script PB_PronounceNumCaught
+	TooltipPos	= marker at {470.00, 71.00, 1976.00}
+	LastSaved	= 0
+start
+
+	begin loop
+		
+		wait until LastSaved != PB_NumCaught
+		LastSaved = PB_NumCaught
+
+		if PB_NumCaughtTooltip exists
+			delete PB_NumCaughtTooltip
+		end if
+
+		PB_NumCaughtTooltip = create tooltip at {TooltipPos} with text "BW2T_SCRIPT_06FINAL_OBJECTIVE_PATERNTIYBIRTH_10" amount PB_NumCaught
+		
+		wait until PB_ForceTooltipRemoval == PB_TRUE or 4 seconds
+		PB_ForceTooltipRemoval = PB_FALSE
+
+	end loop
+
+end script PB_PronounceNumCaught
+
+//-------------------------------------------------------------
+// Disable Interface Actions
+//-------------------------------------------------------------
+begin script PB_InterfaceActions(EnableDisable)
+start
+
+	if EnableDisable == 0
+
+		disable interface action MANACOST_BALANCE_TYPE_CREATEDISCIPLE
+		disable interface action MANACOST_BALANCE_TYPE_PLACEBLUEPRINT
+		disable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+		disable interface action MANACOST_BALANCE_TYPE_PERHOURCHANGED
+		disable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+		disable interface action MANACOST_BALANCE_TYPE_TAPBUILDING
+		disable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+		disable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		disable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT                   
+		disable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT                                            
+		disable pickup type PICKUP_BALANCE_TYPE_ROAD                                                     
+		disable pickup type PICKUP_BALANCE_TYPE_SMALLTREE                                               
+		disable pickup type PICKUP_BALANCE_TYPE_TREE                                                   
+		disable pickup type PICKUP_BALANCE_TYPE_SPELLSEED
+		disable pickup type PICKUP_BALANCE_TYPE_ABODE
+		disable pickup type PICKUP_BALANCE_TYPE_ARMYFLAG 
+		disable pickup type PICKUP_BALANCE_TYPE_TOWER
+
+	else
+
+		enable interface action MANACOST_BALANCE_TYPE_CREATEDISCIPLE
+		enable interface action MANACOST_BALANCE_TYPE_PLACEBLUEPRINT
+		enable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+		enable interface action MANACOST_BALANCE_TYPE_PERHOURCHANGED
+		enable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+		enable interface action MANACOST_BALANCE_TYPE_TAPBUILDING
+		enable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+		enable pickup type PICKUP_BALANCE_TYPE_VILLAGER
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLOBJECT
+		enable pickup type PICKUP_BALANCE_TYPE_MEDIUMOBJECT                   
+		enable pickup type PICKUP_BALANCE_TYPE_LARGEOBJECT                                            
+		enable pickup type PICKUP_BALANCE_TYPE_ROAD                                                     
+		enable pickup type PICKUP_BALANCE_TYPE_SMALLTREE                                               
+		enable pickup type PICKUP_BALANCE_TYPE_TREE                                                   
+		enable pickup type PICKUP_BALANCE_TYPE_SPELLSEED
+		enable pickup type PICKUP_BALANCE_TYPE_ABODE
+		enable pickup type PICKUP_BALANCE_TYPE_ARMYFLAG 
+		enable pickup type PICKUP_BALANCE_TYPE_TOWER
+
+	end if
+
+end script PB_InterfaceActions
+
+//-------------------------------------------------------------
+// Intro
+//-------------------------------------------------------------
+begin script PB_Intro
+	Lamb		= 0
+	LambFX		= 0
+	MotherPos	= marker at {434.843, 71.519, 2001.941}
+start
+
+	begin cinema
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		set camera position to {432.993, 73.792, 1999.333}
+		set camera focus to {433.617, 73.495, 2000.056}
+		move camera position to {432.567, 72.986, 2001.001} time 8
+		move camera focus to {433.493, 72.761, 2001.302} time 8
+
+		//SCALE of PB_Mother = 1.6
+	MotherPos	= marker at {434.843, 71.519, 2001.941}
+
+		PB_Mother = create ANIMAL AMBIENTANIMAL_INFO_SHEEP_PREG at {MotherPos}
+		enable force PB_Mother renderable
+		disable PB_Mother pickup
+
+		OnlookerSheep[0] = create ANIMAL AMBIENTANIMAL_INFO_SHEEP at {438.201, 72.847, 2001.683}
+		wait 0.1 seconds
+		disable OnlookerSheep[0] pickup 
+		disable OnlookerSheep[0] moveable
+		OnlookerSheep[1] = create ANIMAL AMBIENTANIMAL_INFO_SHEEP at {437.235, 72.809, 2001.014}
+		play anim "a_sheep_idle2" on OnlookerSheep[1] loop -1
+		wait 0.2 seconds
+		disable OnlookerSheep[1] pickup
+		disable OnlookerSheep[1] moveable
+		OnlookerSheep[2] = create ANIMAL AMBIENTANIMAL_INFO_SHEEP at {437.310, 72.809, 2003.131}
+		wait 0.1 seconds
+		disable OnlookerSheep[2] pickup
+		disable OnlookerSheep[2] moveable
+		OnlookerSheep[3] = create ANIMAL AMBIENTANIMAL_INFO_SHEEP at {434.511, 72.809, 2004.186}
+		play anim "a_sheep_idle2" on OnlookerSheep[3] loop -1
+		disable OnlookerSheep[3] pickup
+		disable OnlookerSheep[3] moveable
+
+		set OnlookerSheep[0] focus to {PB_Mother}
+		set OnlookerSheep[1] focus to {PB_Mother}
+		set OnlookerSheep[2] focus to {PB_Mother}
+		set OnlookerSheep[3] focus to {PB_Mother}
+
+
+
+		//wait 10 seconds
+		ANGLE of PB_Mother = 90
+
+		PB_Shepard = create VILLAGER FAIN at {PB_Mother}//{436.950, 71.961, 1995.891}
+		enable PB_Shepard indestructible
+
+		ANGLE of PB_Shepard = 270
+		ANGLE of PB_Mother = 240
+
+		disable PB_Shepard reactable
+		disable PB_Shepard moveable
+		disable PB_Mother reactable
+		disable PB_Mother moveable
+
+		set fade in time 2
+
+		set PB_Shepard position to {434.503, 70.739, 2002.196}
+		ALTITUDE of PB_Mother = 0.1
+		ALTITUDE of PB_Shepard = 0.1
+
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_40"
+		play anim "a_p_l6paternitybirth_shephard_sheep_comfort_a" on PB_Mother loop 2// disable stand blend time 0
+		play anim "a_p_l6paternitybirth_shephard_sheep_comfort_b" on PB_Shepard loop 2 disable stand blend time 0
+
+
+		wait until PB_Mother played
+		wait until PB_Shepard played
+		wait until read
+
+
+		play anim "a_p_l6paternitybirth_shephard_sheep_birth_a" on PB_Mother
+		play anim "a_p_l6paternitybirth_shephard_sheep_birth_b" on PB_Shepard
+		wait 1 seconds
+		play string sound "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_50"
+
+		Lamb = create ANIMAL AMBIENTANIMAL_INFO_SHEEP_LAMB at {435.258, 72.290, 2000.802}
+		LambFX = create visual effect "gp_s_advisorgoodcloud_trail.ves" strength 0.01 scale 0.03 on Lamb time -1
+		set LambFX colour red 255 green 255 blue 255
+
+		ALTITUDE of Lamb = 0.1
+		//wait 2 seconds
+
+		set Lamb physics balance 17
+		set Lamb velocity heading {438.420, 116.834, 1917.376} speed 14
+		
+		set camera position to {431.868, 74.312, 2004.142}
+		set camera focus to {432.617, 74.064, 2003.528}
+
+		//wait until PB_Shepard played
+		//play anim "a_p_l6paternitybirth_shephard_sheep_comfort_b" on PB_Shepard loop 2
+
+		//set camera position to {436.054, 72.838, 1997.511}
+		//set camera focus to {366.480, 42.012, 1932.630}
+		wait 1 seconds
+		eject good spirit
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_60"
+/*		wait 1.2 seconds
+
+		Lamb = create ANIMAL AMBIENTANIMAL_INFO_SHEEP_LAMB at {435.258, 72.290, 2000.802}
+		ALTITUDE of Lamb = 0.1
+		//wait 2 seconds
+
+		set Lamb physics balance 17
+		set Lamb velocity heading {438.420, 116.834, 1917.376} speed 15
+*/		wait 0.4 seconds
+
+		set camera position to {437.036, 85.001, 1920.222}//{438.420, 86.834, 1917.376}
+		set camera focus to {447.012, 45.370, 2011.494}//{436.333, 44.425, 2007.916}
+		wait until read
+		ALTITUDE of PB_Mother = 0.1
+
+		run background script PB_CutSceneLamb(0)
+
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_70"
+		wait until read
+
+		eject evil spirit
+		send good spirit home
+		//say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_20"
+		//say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_160"
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_E_20
+	
+		
+		//run background script PB_CutSceneLamb(1)
+		wait until read
+		send evil spirit home
+		stop visual effect LambFX
+
+		//set fade red 0 green 0 blue 0 time 1
+		//wait 1 seconds
+
+	end cinema
+
+end script PB_Intro
+
+//-------------------------------------------------------------
+// Outro Won
+//-------------------------------------------------------------
+begin script PB_OutroWon
+
+
+Lamb=0
+		MotherPos	= marker at {434.843, 71.519, 2001.941}
+
+start
+
+	OutroPlaying = 1
+
+	begin cinema
+
+		store camera details
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		PB_ForceQuit = PB_TRUE
+		delete PB_Mother
+		PB_Mother = create ANIMAL AMBIENTANIMAL_INFO_SHEEP_PREG at {MotherPos}
+
+		//ALTITUDE of PB_Mother = 0.3
+		disable PB_Mother pickup
+
+		ANGLE of PB_Mother = 240
+
+		disable PB_Mother reactable
+		disable PB_Mother moveable
+
+		//ALTITUDE of PB_Mother = 0.1
+		//ALTITUDE of PB_Shepard = 0.1
+
+		set PB_Shepard position to {433.059, 72.290, 2001.747}
+		//play anim "a_p_l6paternitybirth_shephard_lambs_hug_a" on Lamb loop -1
+		play anim "a_p_l6paternitybirth_shephard_lambs_hug_b" on PB_Shepard loop -1
+
+		play anim "a_p_l6paternitybirth_pregsheep_sit_loop" on PB_Mother loop -1
+
+		play anim "A_L3rooster_sheep_sit_loop" on OnlookerSheep[0] loop -1
+		wait 0.1 seconds
+		play anim "A_L3rooster_sheep_sit_loop" on OnlookerSheep[1] loop -1
+		wait 0.1 seconds
+		wait 0.1 seconds
+		play anim "A_L3rooster_sheep_sit_loop" on OnlookerSheep[2] loop -1
+		wait 0.1 seconds
+		play anim "A_L3rooster_sheep_sit_loop" on OnlookerSheep[3] loop -1		 
+		wait 0.1 seconds
+
+		Lamb = create ANIMAL AMBIENTANIMAL_INFO_SHEEP_LAMB at {PB_Shepard}
+		set Lamb focus to {433.276, 72.956, 1997.212}
+		play anim "a_p_l6paternitybirth_shephard_lambs_hug_a" on Lamb loop -1
+		//wait 100 seconds
+
+		set camera position to {434.174, 74.619, 1997.520}
+		set camera focus to {434.108, 74.304, 1998.467}
+		move camera position to {432.493, 73.508, 2000.021} time 8
+		move camera focus to {433.125, 73.296, 2000.766} time 8
+		set fade in time 2
+		wait 2 seconds
+
+		wait until camera ready
+
+		wait 0.5 seconds
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_130"
+		wait until read
+
+		eject good spirit
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_110"
+		wait until read
+		send good spirit home
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		store camera details
+
+		set camera position to {448.972, 83.077, 2003.917}
+		set camera focus to {474.281, 41.269, 1916.698}
+
+		run background script placesomesheepdown
+
+		wait 1 seconds
+
+		delete Lamb
+
+		delete PB_Mother
+		delete PB_Shepard
+		delete OnlookerSheep[0]
+		delete OnlookerSheep[1]
+		delete OnlookerSheep[2]
+		delete OnlookerSheep[3]
+
+		set fade in time 2
+
+	end cinema
+
+end script PB_OutroWon
+
+//-------------------------------------------------------------
+// Outro Lost
+//-------------------------------------------------------------
+begin script PB_OutroLost
+start
+
+	begin cinema
+
+		OutroPlaying = 1
+
+		store camera details
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		PB_ForceQuit = PB_TRUE
+		set PB_Mother position to {434.843, 71.519, 2001.941}
+		ANGLE of PB_Mother = 240
+		ALTITUDE of PB_Mother = 0.1
+
+		set PB_Shepard position to {434.786, 72.780, 2001.863}
+		ALTITUDE of PB_Shepard = 0.13
+
+		set PB_Shepard focus to {433.343, 72.847, 1999.356}
+
+		//set PB_Shepard position to {434.289, 73.095, 1995.526}
+		play anim "a_p_l6paternitybirth_shephard_sheep_death_a" on PB_Mother loop -1
+		play anim "a_p_l6paternitybirth_shephard_sheep_death_b" on PB_Shepard loop -1
+		set camera position to {433.361, 74.284, 1998.631}//set camera position to {434.108, 73.718, 1998.699}
+		set camera focus to {477.654, 34.161, 2078.807}//set camera focus to {434.058, 73.386, 1999.641}
+
+		move camera position to {431.127, 74.230, 1999.958} time 8//move camera position to {432.736, 73.009, 2000.913} time 8
+		move camera focus to {516.582, 33.511, 2032.197} time 8//move camera focus to {433.641, 72.834, 2001.301} time 8
+		set fade in time 2
+		wait 2.5 seconds
+		wait until camera ready
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_150"
+		//wait 8 seconds
+		wait until read
+		//wait 0.5 seconds
+		eject evil spirit
+		//make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_06FINAL_CHALLENGE_PATERNITY_SHEEP_MISS_E_20
+		say "BW2T_SCRIPT_06FINAL_CHALLENGE_PATERNITY_SHEEP_BIRTH_160"
+		
+		wait until read
+		send evil spirit home
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		restore camera details
+		delete PB_Mother
+		delete PB_Shepard
+		delete OnlookerSheep[0]
+		delete OnlookerSheep[1]
+		delete OnlookerSheep[2]
+		delete OnlookerSheep[3]
+
+		set fade in time 2
+		wait 2 seconds
+
+	end cinema
+
+end script PB_OutroLost
+
+//-------------------------------------------------------------
+// Look after Cutscene lamb
+//-------------------------------------------------------------
+begin script PB_CutSceneLamb(ID)
+	Lamb		= 0
+	LambFX		= 0
+start
+	
+	Lamb = create ANIMAL AMBIENTANIMAL_INFO_SHEEP_LAMB at {435.258, 72.290, 2000.802}
+	LambFX = create visual effect "gp_s_advisorgoodcloud_trail.ves" strength 0.01 scale 0.01 on Lamb time -1
+	set LambFX colour red 255 green 255 blue 255
+	disable Lamb pickup
+
+	ALTITUDE of Lamb = 0.1
+	//wait 2 seconds
+
+	set Lamb physics balance 17
+
+	if ID == 0
+		set Lamb velocity heading {428.376, 67, 1940.314} speed 26
+	elsif ID == 1
+		set Lamb velocity heading {451.666, 71, 1942.217} speed 24
+	end if
+
+	wait until not {Lamb} viewed
+
+	delete Lamb
+	stop visual effect LambFX
+
+end script PB_CutSceneLamb
+
+
+
+begin script placesomesheepdown
+
+placesheep[14]
+GrazingPoint = 0
+thisnumber = 1
+Flock = 0
+
+start
+
+	GrazingPoint = marker at {452.558, 64.671, 1931.594}
+	Flock = create flock container
+
+	while thisnumber < 15
+		placesheep[thisnumber] = create ANIMAL SHEEP at {GrazingPoint} + {number from -15 to 15, number from -15 to 15}
+		add placesheep[thisnumber] to flock Flock
+		thisnumber ++
+	end while
+
+	nominate placesheep[1] as leader for flock Flock
+
+end script placesomesheepdown

@@ -1,0 +1,227 @@
+//-----------------------------------------------------------------------------
+// BuildingTutorial
+//
+// Paul Nettleton
+//
+// The building tutorials for Gods playground
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+
+// Town extensions
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialTownCentre
+ScrollPos = marker at {1114.026,26.747,1470.591} 	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Town Centre Info"
+			wait until read
+		end cinema
+	end loop
+
+end script BuildingTutorialTownCentre
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialStoragePit
+ScrollPos = marker at {1140.559,26.501,1444.465}	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Storage Pit Info"
+			wait until read
+		end cinema
+	end loop
+	
+end script BuildingTutorialStoragePit
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialWorkshop
+ScrollPos = marker at {1133.365,26.785,1473.488} 	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Workshop Info"
+			wait until read
+		end cinema
+	end loop
+
+end script BuildingTutorialWorkshop
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingWarriorTraining
+ScrollPos =  marker at {1087.434,26.130,1420.156} //The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Warrior Training Info"
+			wait until read
+		end cinema
+	end loop
+	
+end script BuildingWarriorTraining
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingSeigeWorkshop
+ScrollPos = marker at {1090.197,26.130,1425.289} 	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Seige Workshop Info"
+			wait until read
+		end cinema
+	end loop
+	
+end script BuildingSeigeWorkshop
+
+//-----------------------------------------------------------------------------
+
+//Town extension
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialArchersExtension
+ScrollPos = marker at {1090.398,26.130,1429.526}  	//The position of the scroll
+SilverScroll = 0										//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Archers Info"
+			wait until read
+		end cinema
+	end loop
+	
+end script BuildingTutorialArchersExtension
+
+//-----------------------------------------------------------------------------
+
+//City extensions
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialWallGateTower
+ScrollPos = marker at {1091.047,26.130,1427.498} 	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "WallGateTower Info"
+			wait until read
+		end cinema
+	end loop
+	
+end script BuildingTutorialWallGateTower
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialSeigeExtension
+ScrollPos = marker at {1094.131,26.130,1416.311} 	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Seige Extension Info"
+			wait until read
+		end cinema
+	end loop
+	
+end script BuildingTutorialSeigeExtension
+
+//-----------------------------------------------------------------------------
+
+//Technology levels
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialLevelTwo
+ScrollPos = marker at {1086.827,26.130,1409.555} 	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Tech Level Two Info"
+			wait until read
+		end cinema
+	end loop
+	
+end script BuildingTutorialLevelTwo
+
+//-----------------------------------------------------------------------------
+
+begin script BuildingTutorialLevelThree
+ScrollPos = marker at {1092.824,27.489,1389.730} 	//The position of the scroll
+SilverScroll = 0									//The actual scroll
+start
+	SilverScroll = create highlight CHALLENGE_NONE HIGHLIGHT_TRIAL at {ScrollPos}
+	SCALE of SilverScroll = 0.75
+	begin loop
+		run script ChallengeHighlightNotify(SilverScroll, marker at {ScrollPos}, 1)
+		clear clicked object
+		begin cinema
+			say "Tech Level Three Info"
+			wait until read
+		end cinema
+	end loop
+end script BuildingTutorialLevelThree
+
+//-----------------------------------------------------------------------------
+
+// MicromanagementControl - decides what should be created.
+// Creates the building/runs the scripts necessary for the tutorial land.
+// Should also update the scoreboard stuff here.
+
+//-----------------------------------------------------------------------------
+
+begin script MicromanagementControl
+start
+end script MicromanagementControl
+
+//-----------------------------------------------------------------------------

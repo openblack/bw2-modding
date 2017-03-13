@@ -1,0 +1,201 @@
+//-------------------------//
+//  Constants & Variables  //
+//-------------------------//
+define JTAngleScoreboard	= 0
+define JTDistanceScoreboard	= 1
+global JTScoreboards[2]
+
+define JTTrue				= 0
+define JTFalse				= 1
+
+global JTThrower			= 0
+global JTCenterOfLine		= 0
+global JTAngle				= 0
+
+define JTDoingNothing		= 0
+define JTPlaying			= 1
+define JTRunning			= 2
+define JTAiming				= 3
+define JTReadyToThrow		= 4
+define JTThrowing			= 5
+define JTFoulThrow			= 6
+define JTFinished			= 7
+global JTGameStatus			= JTDoingNothing
+
+
+//----------------------//
+//  Script definitions  //
+//----------------------//
+define script JTHandleBlokeRunningUp
+define script JTCheckForFoul
+define script JTCheckForLift
+define script JTCheckForThrow
+
+
+//------------------------------------------//
+//  JTJavelinThrow:  Handles the main game	//
+//------------------------------------------//
+begin script JavelinThrow
+  AngleScoreboardPosition		= marker at {980.124,8.040,1260.288}
+  DistanceScoreboardPosition	= marker at {969.268,8.265,1256.656}
+  ScrollPosition				= marker at {980.334,8.295,1255.860}
+  ThrowerPosition				= marker at {0.000,0.000,0.000}
+  Scroll						= 0
+start
+	JTScoreboards[JTAngleScoreboard] = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {AngleScoreboardPosition}
+	JTScoreboards[JTDistanceScoreboard] = create highlight CHALLENGE_NONE SCRIPT_HIGHLIGHT_INFO_SCOREBOARD_BIG at {DistanceScoreboardPosition}
+	
+	JTCenterOfLine = get distance from {JTScoreboards[JTAngleScoreboard]} to {JTScoreboards[JTDistanceScoreboard]}
+	JTCenterOfLine = marker at get target from {JTScoreboards[JTAngleScoreboard]} to {JTScoreboards[JTDistanceScoreboard]} distance (JTCenterOfLine / 2) angle 180
+	
+	begin loop
+		JTGameStatus = JTPlaying
+		
+		Scroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {ScrollPosition}
+		wait until Scroll right clicked
+		delete Scroll
+		clear right clicked object
+
+		set JTScoreboards[JTAngleScoreboard] score 0
+		set JTScoreboards[JTDistanceScoreboard] score 0
+		
+		begin camera
+			move camera position to {995.328,20.945,1257.870} time 1
+			move camera focus to {978.370,8.656,1251.772} time 1
+		end camera
+		
+		//create line should go here
+			
+		JTThrower = create VILLAGER VILLAGER_INFO_SHAOLIN at get target from {JTScoreboards[JTAngleScoreboard]} to {JTCenterOfLine} distance 30 angle 90
+		set		 JTThrower focus to {JTCenterOfLine}
+		disable	 JTThrower pickup
+		enable	 JTThrower indestructible
+		disable	 JTThrower set on fire
+		SPEED of JTThrower = 0.6
+
+		wait until ((JTThrower right clicked) or (JTScoreboards[JTAngleScoreboard] right clicked))
+		if (JTScoreboards[JTAngleScoreboard] right clicked)
+			clear right clicked object
+			run script JTHandleBlokeRunningUp
+		else
+			JTGameStatus = JTFinished
+		end if
+		
+		wait until ((JTGameStatus == JTFoulThrow) or (JTGameStatus == JTFinished))
+		delete JTThrower with fade
+	end loop
+end script JavelinThrow
+
+
+//----------------------------------------------------------------------------------------//
+//  JTHandleBlokeruningUp:	Handles the bloke running up to the line (duh), and triggers  //
+//							the scripts to check for fouling, aiming and throwing		  //
+//----------------------------------------------------------------------------------------//
+begin script JTHandleBlokeRunningUp
+start
+	move JTThrower position to get target from {JTThrower} to {JTCenterOfLine} distance 1 angle 0
+	JTGameStatus = JTRunning
+	
+	run background script JTCheckForFoul
+	run background script JTCheckForLift
+	run background script JTCheckForThrow
+	begin loop
+		set JTScoreboards[JTDistanceScoreboard] score get distance from {JTThrower} to {JTCenterOfLine}
+		
+		until ((JTGameStatus == JTThrowing) or (JTGameStatus == JTFoulThrow))
+	end loop
+end script JTHandleBlokeRunningUp
+
+
+//------------------------------------------------------------------------------------//
+//  JTCheckForFoul:	 If the guy crosses the line, the throw is a foul and is aborted  //
+//------------------------------------------------------------------------------------//
+begin script JTCheckForFoul
+  OldDistance = 200
+  NewDistance = 0
+start
+	begin loop
+		NewDistance = get distance from {JTThrower} to {JTCenterOfLine}
+		if (NewDistance > OldDistance)
+			JTGameStatus = JTFoulThrow
+		end if
+		OldDistance = NewDistance
+		
+		until ((JTGameStatus == JTThrowing) or (JTGameStatus == JTFoulThrow) or (JTGameStatus == JTReadyToThrow))
+	end loop
+	
+	if (JTGameStatus == JTFoulThrow)
+		set draw text colour red 255 green 0 blue 0
+		draw text "FOUL THROW" across 0 down 0.8 width 1 height 0.2 size 0.2 fade in time 0.5 seconds
+		wait 1.5 seconds 
+		fade all draw text time 0.5 seconds
+	end if
+end script JTCheckForFoul
+
+
+//---------------------------------------------------------------------------------------------------------------//
+//  JTCheckForLift:	 Checks to see that the elevation has been activated, and keeps a track of the firing angle	 //
+//---------------------------------------------------------------------------------------------------------------//
+begin script JTCheckForLift
+  OldPosition		= 0
+  TriggerDistance	= 0.3
+start
+	JTAngle = 0
+	wait until JTScoreboards[JTAngleScoreboard] right clicked
+	clear right clicked object
+	
+	OldPosition = marker at {JTThrower}
+	JTGameStatus = JTAiming
+	
+	begin loop
+		if ((JTAngle < 90) and (get distance from {JTThrower} to {OldPosition} > TriggerDistance))
+			JTAngle += ((get distance from {JTThrower} to {OldPosition}) / TriggerDistance)
+			if (JTAngle > 90)
+				JTAngle = 90
+			end if
+			set JTScoreboards[JTAngleScoreboard] score JTAngle
+			OldPosition = marker at {JTThrower}
+		end if
+		
+		until (JTGameStatus != JTAiming)
+	end loop
+end script JTCheckForLift
+
+
+//----------------------------------------------------------------------------------------------------------//
+//  JTCheckForThrow:  Checks to see that the throw had been activated, and calculates the throwing target.	//
+//					  It then blasts the guy into the air, and keeps a track of how far he has travelled	//
+//----------------------------------------------------------------------------------------------------------//
+begin script JTCheckForThrow
+  Horizontal	= 0
+  Hypoteneuse	= 0
+  Height		= 0
+  Target		= 0
+  
+  Speed			= 25
+start
+	wait until ((JTScoreboards[JTAngleScoreboard] right clicked) and (JTGameStatus == JTAiming))
+	clear right clicked object
+	
+	JTGameStatus = JTThrowing
+	
+	//do the throwing calculations
+	if JTAngle == 90
+		JTAngle = 89.9
+	end if
+	Horizontal = Speed
+	Hypoteneuse = (Horizontal / (cos JTAngle))
+	Height = (Hypoteneuse * (sin JTAngle))
+	
+	Target = marker at get target from {JTThrower} - {5.000,0.000,0.000} to {JTThrower} distance 10 angle ANGLE of JTThrower
+	Target = marker at {Target} + {0, Height, 0}
+	
+	set JTThrower velocity heading {Target} speed Speed
+	while (JTThrower is FLYING)
+		Target = marker at {JTThrower} - {0, ALTITUDE of JTThrower, 0}
+		set JTScoreboards[JTAngleScoreboard] score get distance from {Target} to {JTCenterOfLine}
+	end while	
+	
+	JTGameStatus = JTFinished
+	delete Target with fade
+end script JTCheckForThrow

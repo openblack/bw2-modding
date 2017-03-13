@@ -1,0 +1,439 @@
+global DoEffects = 1
+global DoBeams = 1
+global DoFireworks = 1
+ 
+//-----------------------------------------------------------------
+
+begin script DoWaterEffects(CentralPos)
+Effect = 0 
+XPos = 0
+YPos = 0 
+NewPos = 0
+SplashEffect = 0 
+Beam = 0
+
+start
+	begin loop
+		XPos = number from -200 to 200
+		YPos = number from -200 to 200
+		XPos = XPos / 10
+		YPos = YPos / 10
+		NewPos = marker at {CentralPos} + {XPos, 0, YPos}
+		SplashEffect  = create visual effect "gp_s_godly_impact.ves" strength 3 scale 3 at {NewPos} time -1
+		//Beam = create visual effect "gp_s_rayfx.ves" strength 1  scale 1 at {NewPos} time 3//get MyTimer time remaining
+		until DoEffects == 0
+	end loop
+end script DoWaterEffects
+
+//-----------------------------------------------------------------
+
+begin script DoBeamEffects(CentralPos)
+Effect = 0 
+XPos = 0
+YPos = 0 
+NewPos = 0
+SplashEffect = 0
+Beam = 0
+Beam2 = 0
+start
+	begin loop
+		XPos = number from -400 to 400
+		YPos = number from -400 to 400
+		XPos = XPos / 10
+		YPos = YPos / 10
+		NewPos = marker at {CentralPos} + {XPos, 0, YPos}
+		
+		Beam  = create visual effect "ed_s_beam_up.ves" strength 1 scale 1 at {NewPos} time 5
+		//Beam2  = create visual effect "gp_s_fire_smoke.ves" strength 1 scale 1 at {NewPos} time 5
+		
+		//Beam = create visual effect VISUAL_EFFECT_EPIC_VOLCANO_BEAM_PULSE_UP at {NewPos} 
+		until DoBeams == 0
+	end loop
+end script DoBeamEffects
+
+begin script FireBall(CentrePos)
+fW2 = 0
+NewPos = 0 
+start
+	
+	begin loop
+		NewPos = marker at {CentrePos} + {number from -100 to 100, 0, number from -100 to 100}
+		
+		wait 1 seconds
+		until DoFireworks == 0
+	end loop
+end script FireBall
+
+begin script FireWorks(CentrePos)
+fW1 = 0
+fW2 = 0
+NewPos = 0
+SplashEffect = 0
+start
+
+	begin loop
+		NewPos = marker at {CentrePos} + {number from -20 to 20, 0, number from -20 to 20}
+		fW1 = create visual effect "gp_s_firework_g01.ves" strength 1 scale 1 at {NewPos} time 5
+		fW2 = create visual effect "gp_s_firework_g02.ves" strength 1 scale 1 at {NewPos} time 5
+		//fW2 = cast SPELL_FIREBALL_LEVEL_1 spell at {NewPos}+{0, -3, 0} from {NewPos} radius 3.0 time 3 curl 0
+		
+		//fW2 = create visual effect "hd_s_nightlight.ves" strength 3 scale 3 at {NewPos} time 5
+		wait 0.5 seconds
+		until DoFireworks == 0
+	end loop
+	
+		
+end script FireWorks
+
+
+//-----------------------------------------------------------------
+
+begin script Met(StartPos, EndPos)
+XDif = 0
+YDif = 0
+ZDif = 0
+Steps = 100
+Counter = 0
+FireBall = 0
+SmokeEffect = 0
+NewPos = 0
+SplashEffect = 0
+start
+	XDif = ((XPOS of EndPos) - (XPOS of StartPos))
+	XDif = XDif / Steps
+	YDif = ((ALTITUDE of EndPos) - (ALTITUDE of StartPos))
+	YDif = YDif / Steps
+	ZDif = ((ZPOS of EndPos) - (ZPOS of StartPos))
+	ZDif = ZDif / Steps
+	while Counter < Steps
+		NewPos = marker at {StartPos} + {Counter*XDif, Counter*YDif, Counter*ZDif}
+		FireBall = create visual effect "wh_s_flame_explode.ves" strength 1 scale 3 at {NewPos} time 4
+		Counter++
+	end while
+	//SplashEffect  = create visual effect "gp_s_godly_impact.ves" strength 1 scale 26 at {EndPos} time -1
+end script Met
+
+
+//-----------------------------------------------------------------
+
+begin script Land11Outro
+
+MeteorEffect = 0
+SplashEffect = 0
+SplashEffect2 = 0
+Statue = 0
+GreekGuy = 0
+HandObject = 0
+GateFX = 0
+
+L11AztecTownConversionMethod=0
+DepartureScroll = 0
+DepartureScrollPos = marker at {1729.877,358.372,2096.871}
+
+S = 0
+T = 0
+D = 0
+DT= 0
+d= 650
+bodge_height_factor	=	0.66
+bodge_height = -150
+EEffect = 0
+CSMixer = 0
+start
+	CSMixer = create mixer
+	/*begin dialogue
+		say "BW2T_SCRIPT_11FINAL_EPILOGUE_10"
+		wait until read
+		say "BW2T_SCRIPT_11FINAL_STORYLINE_ENDOFGAME_10"
+		wait until read
+	end dialogue
+	wait 50000 seconds*/
+
+//T = marker at {280.021, 120.112, 1660.037}
+T = marker at {443.582, 120.409, 1574.385}
+	//T = marker at {594.859, 136.204, 1778.828}
+	D = marker at {1,0,0.4}
+	S = marker at {XPOS of T - ((XPOS of D) * d), ALTITUDE of T + d * bodge_height_factor + bodge_height, ZPOS of T - ((ZPOS of D) * d)}
+	DT= marker at {XPOS of T, ALTITUDE of S, ZPOS of T}		
+	
+	
+	
+	/*begin cinema	
+		set camera position to {630.104, 151.558, 1511.133} 
+		set camera focus to {553.828, 159.652, 1575.293} 
+		run background script Met(marker at {-209.128, 620.079, 1464.126}, marker at {482.910, 121.181, 1619.718})
+		wait 50000 seconds
+					
+		
+	end cinema*/
+
+
+	//T = marker at {280.021, 120.112, 1660.037}
+	//D = marker at {1,0,0.4}
+	//S = marker at {XPOS of T - ((XPOS of D) * d), ALTITUDE of T + d, ZPOS of T - ((ZPOS of D) * d)}
+	//DT= marker at {T} + {0,d+bodge_height,0}
+	//S = marker at {XPOS of T +, 133.678 + d, ZPOS of T + d}
+	//S = marker at {XPOS of T , 134.514 + 100, ZPOS of T }
+	//begin cinema
+	
+	//	MeteorEffect  = create visual effect "gp_s_godly.ves" strength 1 scale 1 at {S} time 3.2 direction {DT}
+	//	set camera position to {630.104, 151.558, 1511.133} 
+	//	set camera focus to {553.828, 159.652, 1575.293} 
+	//	wait 40000 seconds
+	//end cinema
+//	wait 50000 seconds
+	//wait 50000 seconds
+
+
+//	visual at s.
+	
+//	visual set direction {D}	
+	
+	//D = marker at {XPOS of D * 20, YPOS of D * 20, ZPOS of D * 20}
+	
+	
+	
+	//Dy = marker at {d}*20
+	//S = marker at {
+	//begin cinema	
+		
+	//	set camera position to {630.104, 170.789, 1511.133}
+	//	set camera focus to {553.828, 178.884, 1575.293}
+	//	wait 50000 seconds
+	//end cinema
+		
+	//wait 600000 seconds
+	set game time 19.50
+	if variable get town L11AztecCapital status == variable TOWN_STATUS_CAPTURED
+		L11AztecTownConversionMethod = 1
+	else
+		L11AztecTownConversionMethod = 2
+	end if
+	
+	run background script FireWorks(marker at {1729.331, 343.341, 2006.177})
+	run background script FireWorks(marker at {1559.874, 246.798, 903.523})
+	run background script FireWorks(marker at {1932.751, 256.997, 584.651})
+	run background script FireWorks(marker at {630.673, 248.253, 892.272})
+	
+	begin cinema
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+
+		wait 2 seconds
+		start music "cut_scene_happy_02" loop 100
+		queue camera move with position {1288.400, 693.249, 2233.489} focus {1345.260, 632.025, 2178.533} time 0.0
+		queue camera move with position {1310.714, 730.724, 2211.924} focus {1364.791, 669.432, 2154.306} time 7.0
+		queue camera move with position {1424.136, 589.985, 2003.185} focus {1476.687, 546.357, 1930.150} time 5.0
+		queue camera move with position {2111.710, 365.451, 1037.520} focus {2076.798, 338.317, 947.823} time 10.0
+		queue camera move with position {2048.024, 367.983, 756.197} focus {1973.463, 326.470, 704.061} time 5.0
+		queue camera move with position {1648.220, 327.417, 685.655} focus {1598.123, 297.293, 766.789} time 8.0
+		queue camera move with position {1481.521, 413.606, 1322.266} focus {1548.928, 381.178, 1388.623} time 10.0
+		queue camera move with position {1593.953, 358.596, 1436.789} focus {1661.360, 326.168, 1503.146} time 25.0
+		play camera path with easein 4 easeout 8 method SCRIPT_CAMERAPATH_EQUALDISTANCE
+		set fade in time 2
+		wait 1 seconds
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_LAND_DONE_10"
+		wait until read
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_LAND_DONE_20"
+		wait until read
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_LAND_DONE_25"
+		wait until read
+		say "BW2T_SCRIPT_11FINAL_ADVISORS_LAND_DONE_26"
+		wait until read
+		eject good spirit
+		eject evil spirit
+		
+		
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_11FINAL_ADVISORS_LAND_DONE_G_30_40
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_11FINAL_ADVISORS_LAND_DONE_E_30_40
+		wait until read
+		send good spirit home
+		send evil spirit home
+		wait 1 seconds
+		
+		if L11AztecTownConversionMethod == 1 //aggressive
+
+			say "BW2T_SCRIPT_11FINAL_EPILOGUE_IF_WON_EVIL"
+			// GOOD_ADVISOR it's wonderful we won, but we should have done it the good way.
+			wait until read
+		elsif L11AztecTownConversionMethod == 2
+
+			say "BW2T_SCRIPT_11FINAL_EPILOGUE_IF_WON_GOOD"
+			// EVIL_ADVISOR Boss, you know we should have won using armies and war alone, don't you?
+			wait until read
+		end if
+			
+		//???
+		//say "BW2T_SCRIPT_11FINAL_EPILOGUE_IF_WON_NEUTRAL"
+		// GOOD_ADVISOR We didn't stray too far into being evil and we still won. We could have been more good, though.
+		//wait until read
+		wait until camera ready
+		DoFireworks = 0
+		
+		stop music with fadetime 2
+		wait 4 seconds
+	end cinema
+
+	//Deal with ticking the objective
+	if L11AztecTownConversionMethod == 1 //agressive
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment -0.2		
+	else
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment 0.2				
+	end if
+	//Either way we have completed the land.
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+
+// depature scroll
+
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {1728.636, 294.886, 1559.081}
+	ALTITUDE of DepartureScroll = 3
+
+	wait until DepartureScroll right clicked
+
+	clear right clicked object
+	delete DepartureScroll
+begin cinema
+	wait 2 seconds
+	//begin dialogue
+
+		eject evil spirit
+		eject good spirit
+
+		make good spirit play across 0.5 down 0.5 HELPDUDE_KM_11FINAL_EPILOGUE_G_20_30
+		make evil spirit play across 0.5 down 0.5 HELPDUDE_KM_11FINAL_EPILOGUE_E_20_30
+		wait until read
+
+		send good spirit home
+		send evil spirit home
+		clear dialogue
+	//end dialogue
+
+// fade to black here
+
+// credits roll
+
+// fade back in to below cinema
+//            |
+//            |
+//            V
+	set fade red 0 green 0 blue 0 time 5
+	wait 5 seconds
+	
+//CREDITS.....................
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_MAP to 0.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 0.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ANIMATION_CREATURE to 0.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_SFX to 0.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_SCRIPT_SFX to 0.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_DIALOGUE to 0.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_PHYSICS_SFX to 0.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0 
+start music "end_credits" loop 1000
+wait 4 seconds
+play credits	
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_MAP to 1.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ATMOS_POSITIONAL to 1.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_ANIMATION_CREATURE to 1.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_SFX to 1.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_SCRIPT_SFX to 1.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_DIALOGUE to 1.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_PHYSICS_SFX to 1.0 
+set mixer CSMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0 
+
+
+/////////////////////////////////
+	
+	
+	HandObject = create FEATURE FEATURE_INFO_HAND_POSED at {231.976, 126.872, 1667.191}
+	ALTITUDE of HandObject = 260
+	ANGLE of HandObject = 50
+	SCALE of HandObject = 0.2
+	set HandObject alpha 0.0
+	set game time 17.00
+	
+	DoEffects = 1
+	
+	enable predefined sky "VOLCANO" time 30
+	stop music with fadetime 2
+	wait 2 seconds	
+	GreekGuy = create VILLAGER OIL_BARON at {626.135, 149.269, 1517.568}
+	set GreekGuy focus to {625.763, 149.604, 1524.033}
+	
+	Statue = create FEATURE FEATURE_INFO_GORILLA_STATUE at {625.763, 149.604, 1524.033}
+	
+	
+		wait 2 seconds
+		start music "creaturefightmain_03" loop 1000
+		set camera position to {630.292, 160.929, 1512.074}
+		set camera focus to {544.782, 169.190, 1563.258}
+		set camera lens 78
+		move camera position to {630.292, 151.457, 1512.074} time 20
+		move camera focus to {544.782, 159.718, 1563.258} time 20
+		set fade in time 3
+		wait 7 seconds
+		play anim "a_p_finaloutro_man_praying" on GreekGuy loop -1
+		
+		wait 5 seconds
+		
+		//say "BW2T_SCRIPT_11FINAL_EPILOGUE_10"
+		//wait until read
+		say "BW2T_SCRIPT_11FINAL_STORYLINE_ENDOFGAME_10"
+		wait until read
+		
+		
+		
+		
+		
+		wait 1 seconds
+		//MeteorEffect  = create visual effect "gp_s_godly.ves" strength 1 scale 1 at {194.807, 120.070, 1664.774} time 3.2 
+		//MeteorEffect  = create visual effect "gp_s_godly.ves" strength 1 scale 1 at {185.822, 621.022, 1322.713} time 3.2 direction {443.795, 0.0, 1656.208}
+		
+		
+		
+		//wait until GreekGuy played
+		//play anim "a_p_finaloutro_man_standing" on GreekGuy loop -1 disable stand
+		
+		
+		//run background script Met(marker at {-209.128, 620.079, 1464.126}, marker at {482.910, 121.181, 1619.718})
+		
+		//say "BW2T_SCRIPT_11FINAL_STORYLINE_ENDOFGAME_20"
+		//wait until read
+		//say "BW2T_SCRIPT_11FINAL_STORYLINE_ENDOFGAME_30"
+		//wait until read
+		
+		
+		//move camera position to {630.104, 151.558, 1511.133} time 4
+		//move camera focus to {539.741, 159.320, 1553.247} time 4
+		//wait 3 seconds
+		wait 0.5 seconds
+		
+
+		EEffect  = create visual effect "gp_s_godly_explode.ves" strength 1 scale 1 at {S} time -1
+		wait 0.5 seconds
+		MeteorEffect  = create visual effect "gp_s_godly.ves" strength 1 scale 1 at {S} time -1 direction {DT}
+		wait 1.7 seconds
+		
+		play anim "a_p_finaloutro_man_getup" on GreekGuy loop 1 disable stand
+		wait 1 seconds
+		SplashEffect  = create visual effect "gp_s_godly_bang.ves" strength 1 scale 5 at {557.625, 135.366, 1598.380} time -1
+		wait 0.3 seconds
+		SplashEffect2  = create visual effect "gp_s_godly_bang.ves" strength 1 scale 7 at camera position time -1
+		set fade red 255 green 255 blue 255 time 1
+		clear dialogue
+		wait 8 seconds
+		if MyCreature exists
+			save my_creature
+		end if
+
+		disable game can be lost
+		wait 1 seconds
+		
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+		wait 4.5 seconds
+		set fade red 0 green 0 blue 0 time 0.0
+		run script LandExit
+		load map "./Data/Landscape/BW2/Land4.bwe"
+	end cinema
+
+
+end script Land11Outro

@@ -1,0 +1,7 @@
+//------------------------------------------------
+//  LAND 6 Egyptian TOWN AI
+//------------------------------------------------
+
+begin script Land6Egypt
+start
+end script Land6Egypt

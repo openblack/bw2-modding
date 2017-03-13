@@ -1,0 +1,6 @@
+run script RunIsSpellAvailable
+
+begin script RunIsSpellAvailable
+start
+	run script IsSpellAvailable
+end script RunIsSpellAvailable

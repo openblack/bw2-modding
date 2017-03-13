@@ -1,0 +1,33 @@
+//
+//This file contains all the scripts to compile in the Gods Playground
+//
+
+SetupLandGP.txt
+TownEventPotter.txt
+TownEventKnockADoorRun.txt
+TownEventChimneySweep.txt
+TownEventWindowCleaner.txt
+
+// the following have been taken out of the main build
+/*
+AssaultCourseMiniGame.txt
+Defender.txt
+GodGolf.txt
+Firecatcher.txt
+GestureGame.txt
+IsSpellAvailable.txt
+ThrowingMiniGame.txt
+MiracleTutorial.txt
+WelcomeTutorial.txt
+Rebound.txt
+Ricochet.txt
+GravityChallenge.txt
+DiscipleTutorial.txt
+Corruptor.txt
+JavelinThrow.txt
+FootRace.txt
+Bomber.txt
+Flyer.txt
+Marauders.txt
+BarrelRun.txt
+*/

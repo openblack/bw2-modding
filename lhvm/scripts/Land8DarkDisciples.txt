@@ -1,0 +1,697 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define DD_True = 1
+define DD_False = 0
+define RECRUITMENT_REST_TIME = 45 //100
+define MAX_NUMBER_OF_DISCIPLES = 8
+define MAX_NUMBER_OF_RECRUITED_DISCIPLES = 5
+define DD_EVIL = 1
+define DD_GOOD = 2
+define DD_NEUTRAL = 3
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global DD_Victims = 0 
+global DD_VillagersEnslaved = DD_True
+global DD_FreeVictimCommentSaid = DD_False
+global DD_WorshipPlatformFull[MAX_NUMBER_OF_DISCIPLES]
+global DD_WorshipPos[MAX_NUMBER_OF_DISCIPLES]
+global DD_SmashupPos[MAX_NUMBER_OF_DISCIPLES]
+global DD_Statue= 0
+global DD_StatueEffect= 0
+global DD_NumberOfVictims = 0
+global DD_StatueHit = 0
+global StatueFinished = DD_False
+global DD_Solution = 0
+global DD_StatueSpawnPos = 0
+global DD_ChallengeComplete = 0
+global GoHome = DD_False
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script DD_DarkDisciple(Victim)
+define script DD_SmashStatue(FreedVillager)
+define script LowerTheStatue(Statue)
+//-----------------------------------------------------------------------------
+//----Land8DarkDisciples----// 
+//-----------------------------------------------------------------------------
+begin script Land8DarkDisciples
+	
+	AlignmentTimer = create timer for 0 seconds
+	RestTimer = create timer for 0 seconds
+	DD_EVILRadius = 2
+	Victim = 0
+	PlayersPlatoon = 0
+	PlatoonAction = 0
+	Action = 0
+	Scroll = 0
+	ScrollCreated = DD_False
+	CommentSaid = DD_False
+	NearestTown = 0
+	Influence = 0
+	Counter = 0
+	DroppedTotal = 0
+	FreedVillagers[5]
+	DustEffect = 0
+	Rubble = 0
+	PlayersAlignment = 0
+	MinimumNumberofVictims = 5
+	TimerReset = DD_False
+	
+	FX = 0
+	MyWeather = 0
+	RN = 0
+start
+
+//----Initialise variables----//
+	DD_StatueSpawnPos = marker at {1366.017, 192.882, 725.339}
+	wait 0.2 seconds
+	//RN = create visual effect VISUAL_EFFECT_LIGHTNING_VILLAGER_STRIKE at {1364.492, 192.949, 720.842} time 3 
+	//MyWeather = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {1364.492, 192.949, 720.842}  
+
+	DD_WorshipPlatformFull[0] = DD_False
+	DD_WorshipPlatformFull[1] = DD_False
+	DD_WorshipPlatformFull[2] = DD_False
+	DD_WorshipPlatformFull[3] = DD_False
+	DD_WorshipPlatformFull[4] = DD_False
+	DD_WorshipPlatformFull[5] = DD_False
+	DD_WorshipPlatformFull[6] = DD_False
+	DD_WorshipPlatformFull[7] = DD_False
+	
+	NearestTown = get town with id 4	
+	
+//----Create DD_Statue----//
+
+	DD_Statue =	create FEATURE FEATURE_INFO_AZTEC_EVIL_STATUE at {DD_StatueSpawnPos}
+	ANGLE of DD_Statue = -90
+	enable DD_Statue indestructible
+
+    set ground alignment to -1 at {DD_Statue} radius 9 amount 1
+
+	DD_StatueEffect = create visual effect VISUAL_EFFECT_MIRACLE_CHARGE at {DD_StatueSpawnPos} time -1
+	set DD_StatueEffect colour red 192 green 0 blue 0
+	disable DD_Statue pickup
+	PLAYER of DD_Statue = 1
+	
+//----Wait for player to take the nearest town----//
+
+	wait until PLAYER of NearestTown == 0
+	PLAYER of DD_Statue = 0
+
+//----Initialise Positions----//
+	
+	DD_WorshipPos[0] = marker at get world position from DD_Statue to {1.822, -1.002, 4.842}
+	DD_WorshipPos[1] = marker at get world position from DD_Statue to {-0.954, 0.832, -4.637}
+	DD_WorshipPos[2] = marker at get world position from DD_Statue to {4.380, 0.815, -1.884}
+	DD_WorshipPos[3] = marker at get world position from DD_Statue to {-4.784, -0.508, 1.444}
+	DD_WorshipPos[4] = marker at get world position from DD_Statue to {-2.353, -0.772, 4.675}
+	DD_WorshipPos[5] = marker at get world position from DD_Statue to {3.006, 1.319, -3.960}
+	DD_WorshipPos[6] = marker at get world position from DD_Statue to {5.188, -0.790, 3.366}
+	DD_WorshipPos[7] = marker at get world position from DD_Statue to {-3.609, -0.156, -2.693}
+	DD_WorshipPos[8] = marker at {1363.473, 192.819, 729.283}
+	
+	DD_SmashupPos[0] = marker at get world position from DD_Statue to {1.087, 0.012, -3.638}
+	DD_SmashupPos[1] = marker at get world position from DD_Statue to {-3.063, 0.348, 1.584}
+	DD_SmashupPos[2] = marker at get world position from DD_Statue to {-2.091, 0.133, 3.502}
+	DD_SmashupPos[3] = marker at get world position from DD_Statue to {1.945, -0.214, 3.106}
+	DD_SmashupPos[4] = marker at get world position from DD_Statue to {3.324, -0.370, 2.167}
+	DD_SmashupPos[5] = marker at get world position from DD_Statue to {3.574, -0.391, 2.780}
+	DD_SmashupPos[6] = marker at get world position from DD_Statue to {-3.095, 0.321, 3.013}
+	DD_SmashupPos[7] = marker at get world position from DD_Statue to {-3.314, 0.394, -2.973}
+	
+//----Create Scroll----//
+	
+	Scroll = create highlight SILVER name "BW2T_SCRIPT_08FINAL_CHALLENGENAME_DARK_DISCIPLES" remind "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_REMINDER" at {1388.919, 190.779, 736.177}
+	ALTITUDE of Scroll = 3	
+
+	wait until Scroll right clicked	
+	
+	Influence = create influence on DD_Statue radius 20
+
+	delete Scroll
+	PLAYER of DD_Statue = 0
+	
+//----Intro Cutscene----//
+	  set fade red 0 green 0 blue 0 time 0.5
+      wait 0.5 seconds
+      begin cinema
+            
+            start music "GHOST_LEGION_MUSIC"
+            set ground alignment to -1 at {DD_Statue} radius 9 amount 2
+            Counter = 0
+            while Counter < 5
+	            Victim = get VILLAGER at {DD_Statue} radius 200 excluding scripted
+				if Victim not exists
+					Victim = create VILLAGER VILLAGER_INFO_JAPANESE_FORESTER_MALE at {1351.312, 190.740, 699.333} - {Counter, 0, Counter}//get target from {NearestTown} to {DD_Statue} distance 20 angle 180
+					HEALTH of Victim = 1.0
+				end if
+                if Victim exists
+					attach Victim to NearestTown
+					set Victim position to {1351.312, 190.740, 699.333}//get target from {NearestTown} to {DD_Statue} distance 20 angle 180
+                    //DD_NumberOfVictims++
+                    run background script DD_DarkDisciple(Victim)
+                    wait 0.5 seconds
+                    Counter++
+                end if
+            end while
+			set camera position to {1353.397, 216.116, 714.925}
+			set camera focus to {1403.690, 142.127, 759.597}
+            wait until camera ready
+            set fade in time 2
+            wait 1.5 seconds  
+
+            
+			move camera position to {1354.690, 214.212, 716.074} time 10
+			move camera focus to {1404.983, 140.224, 760.746} time 10
+            wait 3 seconds
+            eject good spirit
+            eject evil spirit
+	      //GA: where are all these people going?
+            say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_10"
+            wait until read
+            
+            set camera position to {1360.357, 199.263, 723.331}
+            set camera focus to {1431.292, 232.032, 785.739}
+            move camera position to {1360.357, 199.599, 723.331} time 20
+            move camera focus to {1431.292, 232.368, 785.739} time 20
+      //EA: look! A cool statue. I think its pretty neat Boss.
+            say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_20"
+            wait until read   
+      //GA: "It looks like some sort of evil force is making these people crazy. See if you can snap them out of it."
+            say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_110"
+            wait until read
+            
+            set camera position to {1354.690, 214.212, 716.074}
+			set camera focus to {1404.983, 140.224, 760.746} 
+            wait 3 seconds
+         
+			move camera position to {1353.397, 216.116, 714.925} time 10
+			move camera focus to {1403.690, 142.127, 759.597} time 10
+       
+       
+      //EA: "Let's put more worshippers there! Something bad is bound to happen!"
+            say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_120"
+            wait until read
+            stop music
+    end cinema
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_08FINAL_CHALLENGENAME_DARK_DISCIPLES" amount 1 description "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_8_DARKDISCIPLES
+	L9ShowingDarkDisciplesObjective = 1
+	
+	set RestTimer time to RECRUITMENT_REST_TIME seconds
+
+//----DD_Statue Behaviour----//
+
+	begin loop
+
+		//say "SAVED"
+		//say "$d" with number DD_NumberOfVictims
+		//say "SAVED"
+		//wait until read
+		//say "DD_Victims++"
+		//say "$d" with number DD_Victims
+		//say "DD_Victims++"
+		//wait until read
+
+		if Scroll not exists
+			Scroll = create highlight SILVER name "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_REMINDER" remind "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_REMINDER" at {1388.919, 190.779, 736.177}
+			ALTITUDE of Scroll = 3	
+		end if
+		
+		//if get AlignmentTimer time remaining == 0
+		//	DD_EVILRadius = 2
+		//	DD_EVILRadius += DD_NumberOfVictims
+		//	set ground alignment to -1 at {DD_Statue} radius DD_EVILRadius amount 1
+		//	set AlignmentTimer time to 1.5 seconds
+		//end if	
+	
+	//----Make DD_Statue Recruit Victims----//
+
+	if DD_NumberOfVictims < MinimumNumberofVictims and get RestTimer time remaining <= 0 //and DD_Solution == 0
+		Victim = get VILLAGER in NearestTown excluding scripted
+		if Victim exists
+			if DD_NumberOfVictims == 0
+					set RestTimer time to 15 seconds
+			end if
+			run background script DD_DarkDisciple(Victim)
+			wait 0.5 seconds
+		end if
+	end if
+
+	if get RestTimer time remaining <= 0
+			set RestTimer time to RECRUITMENT_REST_TIME seconds
+	end if
+
+	//----Check if player creates a Dark Disciple----//
+	
+		DroppedTotal = get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+		DroppedTotal += 1
+		Victim = get VILLAGER in state VILLAGER_SUBSTATE_LANDED at {DD_Statue} radius 20 excluding scripted
+		if DroppedTotal > get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+			if Victim exists
+				DD_EVILRadius += 1
+				run background script DD_DarkDisciple(Victim)
+				if CommentSaid == DD_False
+					begin dialogue
+						eject evil spirit
+						//EA: Brilliant, Boss. Now you're thinking my way!
+							say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_70"
+							wait until read
+						send evil spirit home
+					end dialogue
+					CommentSaid = DD_True
+				end if
+			end if
+		end if
+
+	//----Check for DD_EVIL conditions----//
+			
+		if DD_NumberOfVictims >= MAX_NUMBER_OF_DISCIPLES
+			DD_Solution = DD_EVIL
+		end if
+
+	//----Check for DD_NEUTRAL conditions----//	
+	
+		if DD_NumberOfVictims == 0 and DD_Victims == 0
+			DD_Solution = DD_GOOD
+		end if
+
+	until DD_Solution > 0
+	end loop
+	
+	if Scroll exists
+		delete Scroll
+	end if
+	
+//----End Cutscenes----//
+
+	if DD_Solution == DD_EVIL
+
+		DD_ChallengeComplete = 1
+		PlayersAlignment = get player 0 alignment
+		PlayersAlignment -= GLOBAL_VALUE_ALIGNMENT_CHANGE_LAND_8_DARKDISCIPLES
+		set player 0 alignment PlayersAlignment
+
+		set fade red 0 green 0 blue 0 time 2
+		wait 2 seconds
+		
+		begin cinema
+			start music "cut_scene_danger_01"
+			wait 2 seconds
+			
+			
+			
+			set camera lens 54
+			set camera position to {1357.537, 203.304, 725.472}
+			set camera focus to {1457.073, 193.940, 727.853}
+			
+			move camera position to {1358.159, 203.246, 725.487} time 10
+			move camera focus to {1457.695, 193.881, 727.868} time 10
+			set fade in time 2
+			wait 4 seconds
+			
+			FX = create visual effect "gp_s_fire_smoke.ves" strength 1 scale 0.4 at {DD_StatueSpawnPos} time 60
+
+			set lava puddle at {DD_StatueSpawnPos} radius 6 temperature 1
+			set lava puddle at {DD_StatueSpawnPos} radius 6 temperature 1
+			set lava puddle at {DD_StatueSpawnPos} radius 6 temperature 1
+			set lava puddle at {DD_StatueSpawnPos} radius 6 temperature 1
+			set lava puddle at {DD_StatueSpawnPos} radius 6 temperature 1
+
+			set lava running at {DD_StatueSpawnPos} heading {0,0,0}
+			wait 2 seconds
+			shake camera strength 6.0
+			wait 2 seconds
+			shake camera strength 7.0
+			//set camera position to {1365.602, 205.614, 722.331}
+			//set camera focus to {1345.681, 112.891, 754.038}
+			//set camera position to {1366.522, 204.896, 721.369}
+			//set camera focus to {1310.504, 142.996, 776.423}
+			wait 2 seconds
+			run background script LowerTheStatue(DD_Statue)
+			wait 2 seconds
+			
+			set camera position to {1358.138, 208.673, 708.956}
+			set camera focus to {1392.037, 149.079, 781.752}
+			set camera lens 54
+			move camera position to {1359.606, 206.094, 712.106} time 8
+			move camera focus to {1393.505, 146.499, 784.903} time 8
+			
+			
+			wait 12 seconds
+			eject evil spirit
+			wait 0.5 seconds
+			say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_170"
+			wait until read
+			send evil spirit home
+			set fade red 0 green 0 blue 0 time 4
+			wait 4 seconds
+			stop visual effect DD_StatueEffect
+			set camera position to {1390.036, 215.150, 709.429}
+			set camera focus to {1303.854, 169.862, 732.256}
+			set camera lens 70
+			StatueFinished = DD_True
+			stop camera shake
+			wait 1 seconds
+			set fade in time 1
+			wait 2 seconds
+			stop music with fadetime 4
+		end cinema	
+		
+	else
+		PlayersAlignment = get player 0 alignment
+		PlayersAlignment += GLOBAL_VALUE_ALIGNMENT_CHANGE_LAND_8_DARKDISCIPLES
+		set player 0 alignment PlayersAlignment
+
+		PLAYER of DD_Statue = 1
+		wait 1 seconds
+		Counter = 0
+		while Counter < 5
+			FreedVillagers[Counter] = get VILLAGER at {DD_Statue} radius 200 excluding scripted
+			if FreedVillagers[Counter] exists
+				run background script DD_SmashStatue(FreedVillagers[Counter])
+				Counter++
+			end if
+		end while
+		
+		while BUILT of DD_Statue > 0
+			wait until DD_StatueHit == 5
+			DD_StatueHit = 0
+			//DustEffect = create visual effect VISUAL_EFFECT_GEN_SMOKE at {DD_Statue} time 3 
+			DustEffect = create visual effect VISUAL_EFFECT_CREATURE_DUST at {DD_Statue} time 3 
+			DustEffect = create visual effect VISUAL_EFFECT_EARTHQUAKE_DUST at {DD_Statue} time 3 
+			DustEffect = create visual effect VISUAL_EFFECT_PHYSICS_DUST_IMPACT at {DD_Statue} time 3 
+			BUILT of DD_Statue  -= 0.2
+		end while 
+		
+		stop visual effect DD_StatueEffect
+		
+		//NEW
+		wait 2 seconds
+
+		delete DD_Statue
+		//increment tribute by GLOBAL_VALUE_TRIBUTE_LAND_8_DARKDISCIPLES
+		begin dialogue
+			eject good spirit
+		//GA: "Well done leader you really helped those people and look you got some tribute too!"
+			say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_150"
+			wait until read
+			send good spirit home
+		end dialogue
+	end if
+	
+	DD_VillagersEnslaved = DD_False
+	
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE
+    wait 2.5 seconds
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 status to TRIBUTE_OBJECTIVE_STATE_COMPLETE_HIDDEN
+
+end script Land8DarkDisciples
+
+begin script LowerTheStatue(Statue)
+
+start
+	play sound "EARTHQUAKE4" at {Statue} loop 20
+	begin loop
+		ALTITUDE of Statue = ALTITUDE of Statue - 0.04
+		until StatueFinished == DD_True
+	end loop
+	delete Statue
+end script LowerTheStatue	
+
+//-----------------------------------------------------------------------------
+//----DD_DarkDisciple----//
+//-----------------------------------------------------------------------------
+
+begin script DD_DarkDisciple(Victim)
+
+	End = DD_False
+	Victim_Praying = DD_False
+	Counter = 0
+	Random = 0
+	DroppedTotal = 0
+	AnimNumber = 0
+	LFX1 = 0
+	LFX2 = 0
+	MyWeather = 0
+	RNumber = 0
+	Influence = 0
+	EvilEffect = 0
+	SavedEffect = 0
+	DD_EmmiterRed = 175
+	DD_EmmiterGreen = 175
+	DD_EmmiterBlue = 250
+	RandomNum = 0
+	Brainwashed = DD_True
+	AvoidLoop = 0
+
+start
+	set Victim carrying CARRIED_OBJECT_NONE
+
+//----Placeholder this effect looks bad----//
+	
+	Random = number from 0 to 1
+	
+//----Assign Disciple a worship position----//
+	
+	while DD_WorshipPlatformFull[Counter] != DD_False
+		Counter++
+		if Counter >= 8
+			Counter = 0
+		end if
+	end while
+
+	DD_WorshipPlatformFull[Counter] = DD_True
+	
+	set villager Victim default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_RUNNING
+	while not {Victim} at {DD_WorshipPos[Counter]} and Brainwashed == DD_True
+		if variable get Victim navigation state != variable NAV_STATE_NAVIGATING 
+			move Victim position to {DD_WorshipPos[Counter]} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+			set Victim carrying CARRIED_OBJECT_NONE
+		end if
+		//If Victim is on their way and they clear all worshippers, send them home unbrainwashed.
+		if DD_NumberOfVictims == 0 and not DD_Solution == 0
+				Brainwashed = DD_False
+				set villager Victim default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_WALKING
+				//move Victim position to {L8_MinorSettlement[1]}
+				DD_WorshipPlatformFull[Counter] = DD_False
+				AvoidLoop = 1
+		end if
+	end while 
+
+	if AvoidLoop == 0
+		EvilEffect = create visual effect "gp_s_soldier_levelup.ves" strength 0.3 scale 1 on Victim time -1
+		set EvilEffect colour red 80 green 0 blue 0
+		DD_NumberOfVictims++
+		if DD_Victims > 0
+				DD_Victims--
+		end if
+	end if
+
+	if AvoidLoop == 0
+			begin loop
+
+				if not {Victim} at {DD_WorshipPos[Counter]} and Brainwashed == DD_True
+						move Victim position to {DD_WorshipPos[Counter]}
+						Victim_Praying = DD_False
+				end if
+				
+			//----Move Disciple to Worship site----//
+
+				if Victim is HELD
+					DroppedTotal = get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+					DroppedTotal += 1
+					
+					wait until Victim is not HELD
+					
+					//----Check if player frees a Disciple----//
+						if DroppedTotal == get total of stat STATS_ACC_GESTURE_CANCEL_HELD_OBJECT 
+							DD_NumberOfVictims--
+							SavedEffect = create visual effect "gp_s_glow.ves" strength 20.0 scale 1 on Victim time 4
+							set SavedEffect colour red DD_EmmiterRed green DD_EmmiterGreen blue DD_EmmiterBlue
+
+							if DD_FreeVictimCommentSaid == DD_False
+								begin dialogue
+									eject good spirit
+									//EA: That did it, Leader. Yes, shake them out of their trances!
+										say "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_80"
+										wait until read
+									send good spirit home
+								end dialogue
+								DD_FreeVictimCommentSaid = DD_True
+							else
+								RandomNum = number from 1 to 4
+								begin dialogue
+									eject good spirit
+									if RandomNum == 1
+											say "BW2T_SCRIPT_GENERIC_08"
+											wait until read
+									elsif RandomNum == 2
+											say "BW2T_SCRIPT_GENERIC_03"
+											wait until read
+									elsif RandomNum == 3
+											say "BW2T_SCRIPT_GENERIC_04"
+											wait until read
+									elsif RandomNum == 4
+											say "BW2T_SCRIPT_GENERIC_05"
+											wait until read
+									end if
+									send good spirit home
+								end dialogue
+							end if
+							Brainwashed = DD_False
+							DD_WorshipPlatformFull[Counter] = DD_False
+							End = DD_True
+							set villager Victim default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_WALKING
+							move Victim position to {L8_MinorSettlement[1]}
+							wait 0.5 seconds
+						end if
+					
+				end if
+				
+			//----Make Disciple kneel----//
+			
+				if {Victim} at {DD_WorshipPos[Counter]} and (Victim_Praying == DD_False or Victim played) and Brainwashed == DD_True
+					wait until variable get Victim navigation state != variable NAV_STATE_NAVIGATING 
+					move villager Victim focus to {DD_Statue} //{1366.144, 192.898, 724.903}
+					Victim_Praying = DD_True
+					if Random == 0
+						play anim "a_p_aztec_prayer_into" on Victim disable stand
+						wait until Victim played or HEALTH of Victim == 0 or DD_Solution == DD_GOOD or Victim is HELD
+						play anim "a_p_aztec_prayer_loop" on Victim loop 100 disable stand
+					elsif Random == 1
+						play anim "a_p_pray_into" on Victim disable stand
+						wait until Victim played or HEALTH of Victim == 0 or DD_Solution == DD_GOOD or Victim is HELD
+						play anim "a_p_pray" on Victim loop 1000 disable stand
+					end if
+				end if
+				
+				if DD_Solution == DD_EVIL
+					disable Victim reactable
+					set Victim focus to {DD_Statue}
+					play anim "a_p_japan_nod_stand" on Victim loop -1
+					//SmokeFX = create visual effect "gp_s_fire_smoke.ves" strength 1 scale 0.1 at {Victim} time 25
+					
+					RNumber = number from 170 to 190
+					RNumber /=10
+					wait RNumber seconds
+					
+					MyWeather = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_MEDIUM_CLOUD at {Victim}		
+					play anim "a_p_electrocution_into" on Victim loop 1 disable stand
+					set lightning strike at {Victim} from MyWeather scale 1
+					
+					if Victim is male
+						play sound "SCRIPT29_ARMYMANLOUDSCREAM" at {Victim} 
+					else
+						play sound "SCRIPT29_ARMYWOMANLOUDSCREAM" at {Victim} 
+					end if
+					
+					LFX1 = create visual effect VISUAL_EFFECT_LIGHTNING_VILLAGER_EXPLODE at {Victim} time 1
+					LFX2 = create visual effect VISUAL_EFFECT_LIGHTNING_VILLAGER_STRIKE at {Victim} time 8
+					wait until Victim played
+					
+					play anim "a_p_electrocution_loop" on Victim loop 6
+					wait until Victim played
+					play anim "a_p_electrocution_outof_death" on Victim loop 1
+					delete Victim with fade
+					
+					End = DD_True	
+				end if 
+
+				if HEALTH of Victim == 0 or Victim not exists
+					DD_NumberOfVictims--
+					DD_Victims++
+					End = DD_True
+					DD_WorshipPlatformFull[Counter] = DD_False
+				end if
+			
+			until End == DD_True or Brainwashed == DD_False or DD_Solution == DD_GOOD
+			end loop
+	end if
+
+	delete EvilEffect
+	release Victim
+
+	DD_WorshipPlatformFull[Counter] = DD_False
+	
+end script DD_DarkDisciple
+
+//-----------------------------------------------------------------------------
+//----DD_SmashStatue----//
+//-----------------------------------------------------------------------------
+begin script DD_SmashStatue(FreedVillager)
+	Random = 0
+	End = DD_False
+	Villager_Smashing = DD_False
+	Counter = 0
+start
+	DD_ChallengeComplete = 1
+	disable FreedVillager pickup
+	disable FreedVillager reactable
+	disable FreedVillager moveable
+	enable FreedVillager indestructible
+	move FreedVillager position to {FreedVillager}
+	set FreedVillager carrying CARRIED_OBJECT_MALLET_HEAVY
+
+	Random = number from 0 to 1
+	
+//----Assign Disciple a worship position----//
+	
+	while DD_WorshipPlatformFull[Counter] != DD_False
+		Counter++
+	end while
+	
+	DD_WorshipPlatformFull[Counter] = DD_True
+	
+	set villager FreedVillager default speed to SCRIPT_VILLAGER_DEFAULT_SPEED_RUNNING
+	while not {FreedVillager} at {DD_SmashupPos[Counter]} 
+		if variable get FreedVillager navigation state != variable NAV_STATE_NAVIGATING 
+			move FreedVillager position to {DD_SmashupPos[Counter]} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+		end if
+	end while 
+
+	set ground alignment to 1 at {DD_Statue} radius 9 amount 2
+
+	begin loop
+	
+	//----Check if the Dark Disciple is still under spell----//
+	
+		if FreedVillager not exists
+			End = DD_True
+		end if
+		
+	//----Move Disciple to Worship site----//
+
+		if not {FreedVillager} at {DD_SmashupPos[Counter]} and not variable get FreedVillager navigation state != variable NAV_STATE_NAVIGATING 
+			move FreedVillager position to {DD_SmashupPos[Counter]}
+			Villager_Smashing = DD_False
+		end if
+		
+	//----Make Disciple kneel----//
+	
+		if {FreedVillager} at {DD_SmashupPos[Counter]} and (Villager_Smashing == DD_False or FreedVillager played)
+			wait until variable get FreedVillager navigation state != variable NAV_STATE_NAVIGATING 
+			move villager FreedVillager focus to {1366.144, 192.898, 724.903}
+			wait 1 seconds
+			Villager_Smashing = DD_True
+			play anim "a_p_sledgehammer_into" on FreedVillager disable stand 
+			wait until FreedVillager played
+			play anim "a_p_sledgehammer" on FreedVillager disable stand 
+			wait until FreedVillager played
+			play sound "STATUECRUMBLE" at {FreedVillager}
+			DD_StatueHit++
+		end if
+	
+	until End == DD_True or DD_Statue not exists
+	end loop
+	
+	enable FreedVillager pickup
+	enable FreedVillager reactable
+	enable FreedVillager moveable
+	disable FreedVillager indestructible
+	
+	set FreedVillager carrying CARRIED_OBJECT_NONE	
+	release FreedVillager
+	DD_WorshipPlatformFull[Counter] = DD_False
+end script DD_SmashStatue

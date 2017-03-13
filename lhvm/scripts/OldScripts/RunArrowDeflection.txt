@@ -1,0 +1,10 @@
+//------------------------------------------------------------------------------------------------------------------------
+run script RunArrowDeflection
+//------------------------------------------------------------------------------------------------------------------------
+begin script RunArrowDeflection
+
+start
+
+	run script Land3ArrowDeflection
+	
+end script RunArrowDeflection

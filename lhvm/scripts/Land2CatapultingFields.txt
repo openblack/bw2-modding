@@ -1,0 +1,330 @@
+//==============================================================
+// Land 2 Catapulting Fields
+// Matt.L
+//==============================================================
+
+//-------------------------------------------------------------------------
+// Constants
+//-------------------------------------------------------------------------
+define CF_FALSE		= 0
+define CF_TRUE		= 1
+
+//Wall villagers
+define CF_NUMVILLAGERS	= 20
+
+//-------------------------------------------------------------------------
+// Globals
+//-------------------------------------------------------------------------
+global CF_Stage						= 0
+
+global CF_RescuePos					= 0
+global CF_CurrentAdvisorID			= CF_ADVISORS_NONE
+global CF_WallVillagersSaved		= 0
+global CF_GatehouseCameraTrigger	= CF_FALSE
+global CF_WallVillagerSayPickup		= CF_TRUE
+global CF_WallVillagerSayPutDown	= CF_TRUE
+
+global CF_NumWallVillagers			= 0
+global CF_MustDie					= CF_FALSE
+global CF_Attackers					= 0
+
+global CF_ArrowTargs[35]
+global CF_TargAmount				= 0
+global CF_SetLastObj				= CF_FALSE
+
+//-------------------------------------------------------------------------
+// Script defines
+//-------------------------------------------------------------------------
+define script CF_RescueVillagers
+define script CF_WallVillager(Me, Spawned)
+define script CF_EjectHouseVillager
+define script CF_EndArrows
+
+//-------------------------------------------------------------------------
+// Rescue Villagers
+//-------------------------------------------------------------------------
+begin script CF_RescueVillagers
+	SafeHighlightFX = 0
+	PlatoonCreate	= marker at {1807.425, 111.299, 1662.545}	
+	Target			= 0
+	VilagerLoop		= 0
+	NumOnWall		= 0
+	WallSeg			= 0
+start	
+	
+	WallSeg = get wall segment nearest {1798.502, 116.021, 1676.663} radius 10
+	NumOnWall = how many soldiers can get on wall WallSeg
+
+	CF_RescuePos = marker at {1793.345, 116.272, 1714.794}
+
+	run script Land2_DisableObjects(marker at {CF_RescuePos}, 100)
+
+	SafeHighlightFX = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {CF_RescuePos} + {0,1.2,0} time -1
+	//SafeHighlightFX = create visual effect "gp_s_area.ves" strength 1 scale 1.2 at {CF_RescuePos} time -1
+	//set SafeHighlightFX colour red 0 green 255 blue 0
+
+	CF_Attackers = create platoon PLATOON_INFO_AZTEC_RANGED_1 at {PlatoonCreate} with NumOnWall men and 0 women
+	PLAYER of CF_Attackers = 1
+	add action PLATOON_AGENDA_ACTION_GET_ON_WALL using WallSeg to front of CF_Attackers action queue
+
+	/*
+	VilagerLoop = 0
+	while VilagerLoop < CF_START_RESCUE_VILLAGERS
+		run background script CF_WallVillager(0)
+		VilagerLoop++
+	end while
+	*/
+	run background script CF_EjectHouseVillager
+
+	wait 10 seconds
+
+	wait until L2_Trigger_ReleaseWallVillagers == 1
+
+	//Main objectives
+	reset all objectives for player 0
+	enable objectives window
+	enable objectives list in widescreen
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_1 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_SAVED_11" amount 0
+
+	//Wall objectives
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 with amount 1 reward GLOBAL_VALUE_TRIBUTE_LAND2_WALL_VILLAGER force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_WALL_60"
+
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 amount 1 force open
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_WALL_10" amount 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 parent objective TRIBUTE_OBJECTIVE_LAND_2
+
+	wait 3 seconds
+	wait until CF_WallVillagersSaved >= 5	
+
+	CF_GatehouseCameraTrigger = CF_TRUE
+	
+	wait 7 seconds
+	stop visual effect SafeHighlightFX
+	delete CF_Attackers
+
+end script CF_RescueVillagers
+
+//-------------------------------------------------------------------------
+// Land 2 Catapulting Fields
+//-------------------------------------------------------------------------
+begin script CF_WallVillager(Me, Spawned)
+	CreatePos		= marker at {1787.771, 116.587, 1684.486}
+	VillagerLoop	= 0
+	Quitter			= 0
+	SayStuff		= CF_FALSE
+	RunOffPos		= marker at {1774.103, 114.283, 1572.930}
+	MovePos			= marker at {0, 0, 0} //generated
+	MeStill			= CF_FALSE
+	SetPlay			= CF_FALSE
+	Rand			= 0
+start	
+
+	if Me exists
+
+		CF_NumWallVillagers++
+
+		if Spawned == CF_FALSE
+			Rand = number from 1 to 3
+			if Rand == 1
+				MeStill = CF_TRUE
+				MovePos = marker at {CreatePos} + {number from -15 to 15, 0, number from -15 to 15}
+				//play anim "a_p_attract_your_attention" on Me loop -1
+				move Me position to {MovePos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+				SPEED of Me = 0.4
+			else
+				MeStill = CF_FALSE
+			end if
+		end if
+
+		attach Me to L2GreekTown
+		disable Me reactable
+		//enable Me indestructible
+		add Me to platoon CF_Attackers attack list
+
+		MovePos =  marker at {Me}
+		begin loop
+			//If I'm held then check to see where I land.. have I been saved?
+			if Me is HELD
+
+				play string sound "REWARD6"				
+
+				if CF_WallVillagerSayPickup == CF_TRUE
+					CF_WallVillagerSayPickup = CF_FALSE
+					run background script Land2Dialogue(CF_ADVISORS_VILLAGERS_BY_WALL_PICKUP)
+				end if
+
+				wait until not Me is HELD
+
+				//Control villager baseed on where the player places them
+				if {Me} near {CF_RescuePos} radius 10 and not Me is HELD and not Me is FLYING and HEALTH of Me > 0
+/*					CF_WallVillagersSaved++
+					run script Land2UpdateSaved
+					if CF_WallVillagerSayPutDown == CF_TRUE					
+						run background script Land2Dialogue(CF_ADVISORS_VILLAGERS_BY_WALL_PUTDOWN)
+						CF_WallVillagerSayPutDown = CF_FALSE
+					end if
+					Quitter = 1
+*/
+				//If the villager isnt placed in the teleport then they are now static.
+				else
+					set Me position to {Me}
+					move villager Me focus to camera position
+					play anim "a_p_attract_your_attention" on Me loop -1
+					MeStill = CF_TRUE
+				end if
+
+			end if
+
+			if {Me} near {CF_RescuePos} radius 10 and not Me is HELD and not Me is FLYING and HEALTH of Me > 0
+					enable Me indestructible
+					CF_WallVillagersSaved++
+					run script Land2UpdateSaved
+					if CF_WallVillagerSayPutDown == CF_TRUE					
+						run background script Land2Dialogue(CF_ADVISORS_VILLAGERS_BY_WALL_PUTDOWN)
+						CF_WallVillagerSayPutDown = CF_FALSE
+					end if
+					Quitter = 1
+			end if
+		
+			if MeStill == CF_FALSE
+
+				//If I'm not navigating then move me somewhere
+				if variable get Me navigation state != variable NAV_STATE_NAVIGATING 
+
+					MovePos = marker at {CreatePos} + {number from -15 to 15, 0, number from -15 to 15}
+					move Me position to {MovePos} using NAV_FAILURE_MODE_NEVER_FAIL_STRAIGHT_LINE navigation
+					SPEED of Me = 0.45
+
+					wait 1 seconds
+						override Me anim "a_p_run_on_fire"
+
+				end if
+
+			elsif MeStill == CF_TRUE and variable get Me navigation state != variable NAV_STATE_NAVIGATING and SetPlay == CF_FALSE// and Me played
+				SetPlay = CF_TRUE
+				play anim "a_p_attract_your_attention" on Me loop -1
+
+			end if
+
+			if CF_MustDie == CF_TRUE
+
+				if CF_WallVillagersSaved >= 5
+					disable Me pickup
+				end if
+
+				//Setup for arrows
+				CF_ArrowTargs[CF_TargAmount] = Me
+				CF_TargAmount++
+
+
+				wait 6 seconds
+				delete Me
+			end if			
+
+			if not {Me} near {CreatePos} radius 40 and Me is FLYING
+				HEALTH of Me = 0
+			end if
+
+		until Quitter == 1 or L2Events >= 1 or HEALTH of Me <= 0 or not Me exists
+		end loop
+		
+		CF_NumWallVillagers--
+
+		if RF_RunRing == 0 and CF_SetLastObj == CF_FALSE
+			if CF_WallVillagersSaved <= 5
+				set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 text "BW2T_SCRIPT_02FINAL_OBJECTIVE_WALL_50" amount (5-CF_WallVillagersSaved)
+			end if
+		elsif CF_NumWallVillagers == 0
+			//set player 0 objective TRIBUTE_OBJECTIVE_LAND_3 value 1
+			//set player 0 objective TRIBUTE_OBJECTIVE_LAND_2 value 1
+			CF_SetLastObj = CF_TRUE
+		end if
+
+		if Me exists
+			disable Me pickup
+			if not {Me} near {CF_RescuePos} radius 10
+				wait 7 seconds
+				delete Me with fade
+			else
+				run script LT_TeleportDude(Me, marker at {CF_RescuePos})
+			end if
+		end if
+	
+	end if
+
+end script CF_WallVillager
+
+//-------------------------------------------------------------------------
+// Eject House Villager
+//-------------------------------------------------------------------------
+begin script CF_EjectHouseVillager
+	Houses[5]
+	Rand			= 0
+	EjectedVillager = 0
+	TotalEjected	= 0
+	Spawned			= CF_FALSE
+start
+
+	Houses[0] = get HOUSE at {1773.131, 118.095, 1672.694} radius 5
+	Houses[1] = get HOUSE at {1770.696, 116.099, 1688.986} radius 5
+	Houses[2] = get HOUSE at {1774.619, 116.062, 1695.957} radius 5
+	Houses[3] = get HOUSE at {1796.677, 116.380, 1698.590} radius 5
+	Houses[4] = get HOUSE at {1804.615, 116.368, 1693.330} radius 5
+
+	//wait until L2_Trigger_ReleaseWallVillagers == 1
+
+	begin loop
+
+		if CF_NumWallVillagers < CF_NUMVILLAGERS
+			Rand = number from 0 to 4
+			if Houses[Rand] exists
+
+				if TotalEjected >= CF_NUMVILLAGERS
+					Spawned = CF_TRUE
+				end if
+
+				EjectedVillager = create VILLAGER GREEK_FARMER at extra position 0 of Houses[Rand]
+				run background script CF_WallVillager(EjectedVillager, Spawned)				
+				TotalEjected++
+
+			end if
+		end if
+
+	until CF_WallVillagersSaved >= 5
+	end loop
+
+	CF_MustDie = CF_TRUE
+
+	run background script CF_EndArrows
+
+end script CF_EjectHouseVillager
+
+//-------------------------------------------------------------------------
+// End Arrows
+//-------------------------------------------------------------------------
+begin script CF_EndArrows
+	Barrage		= 0
+	Curr		= 0
+	RunTimer	= create timer for 8 seconds
+	FromPos[6]
+start
+
+	FromPos[0] = marker at {1808.315,127.000,1688.161}
+	FromPos[1] = marker at {1793.000,127.000,1670.620}
+	FromPos[2] = marker at {1796.000,127.000,1673.981}
+	FromPos[3] = marker at {1798.000,126.000,1675.814}
+	FromPos[4] = marker at {1800.000,127.000,1678.538}
+	FromPos[5] = marker at {1804.500,127.000,1683.141}
+
+	while get RunTimer time remaining != 0
+
+		while Curr < CF_TargAmount
+			Barrage = create missiles MISSILE_ARROW launch MISSILE_LAUNCH_LOW size 3 from {FromPos[(number from 0 to 5)]} to {CF_ArrowTargs[Curr]} speed 7
+			Curr++
+		end while
+
+	end while
+
+end script CF_EndArrows

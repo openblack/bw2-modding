@@ -1,0 +1,452 @@
+///////////////////////////////////////////////////////////////////////////////
+//	SIGVED'S RETURN (L4)
+//	~~~~~~~~~~~~~~~~~~~~
+//	Description:
+//	This is the return of Sigved to give you a bit of a beating for being evil.
+//	Sigved and his army are hiding out near the main Japanese town. When the
+//	player attacks the Japanese on the battlefield or tries go around them
+//	Sigved and his army will attack the player.
+//
+//	Rewards:			None
+//
+//	Start date:			18-09-03			By:	Steve
+//	Update date:		02-04-03			By: Steve
+//
+//	ToDo:	Replace Sigved follow with actuall folow code.
+//			Make sure Sigved can attack
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L4SR_TRUE					= 1
+define L4SR_FALSE					= 0
+define L4SR_NUM_PLATOONS			= 5
+define L4SR_VILLAGERS_PER_PLATOON	= 12
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global L4SR_Sigved					= 0
+global L4SR_SigvedPos				= 0
+
+global L4SR_SigvedArmy[L4SR_NUM_PLATOONS]
+global L4SR_SigvedArmyPos[L4SR_NUM_PLATOONS]
+
+global L4SR_SigvedAttacked			= L4SR_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script L4SR_CreateSigvedAndHisArmy
+define script L4SR_CheckForPlayerClose
+define script L4SR_CheckForAttackStarted
+define script L4SR_MaintainSigvedsHealth
+define script L4SR_SigvedInterceptPlayersArmy(Army)
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land4SigvedsReturn
+start
+
+	// Setup Sigved and his army near the main Japanese town. and hide them from the player
+	run script L4SR_CreateSigvedAndHisArmy
+	run background script L4SR_CheckForPlayerClose
+	run background script L4SR_CheckForAttackStarted
+	run background script L4SR_MaintainSigvedsHealth
+
+end script Land4SigvedsReturn
+
+
+//-----------------------------------------------------------------------------
+//	Create Sigved's army and hide them from the player near the Japanese main town
+//-----------------------------------------------------------------------------
+begin script L4SR_CreateSigvedAndHisArmy
+start
+
+	// Create Sigved
+	L4SR_SigvedPos = marker at {2014.539, 161.109, 1359.852}
+	L4SR_Sigved	= create VILLAGER SIGVED at {L4SR_SigvedPos}
+	HEALTH of L4SR_Sigved = 1
+
+	// Create Sigved's army
+	L4SR_SigvedArmyPos[0] = marker at {2000.572, 171.732, 1350.213}
+	L4SR_SigvedArmyPos[1] = marker at {1997.477, 167.752, 1381.395}
+	L4SR_SigvedArmyPos[2] = marker at {2009.330, 164.034, 1387.394}
+	L4SR_SigvedArmyPos[3] = marker at {2015.898, 160.751, 1361.997}
+	L4SR_SigvedArmyPos[4] = marker at {2011.118, 163.603, 1350.456}
+	L4SR_SigvedArmy[0] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L4SR_SigvedArmyPos[0]} with L4SR_VILLAGERS_PER_PLATOON men and 0 women
+	L4SR_SigvedArmy[1] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L4SR_SigvedArmyPos[1]} with L4SR_VILLAGERS_PER_PLATOON men and 0 women
+	L4SR_SigvedArmy[2] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L4SR_SigvedArmyPos[2]} with L4SR_VILLAGERS_PER_PLATOON men and 0 women
+	L4SR_SigvedArmy[3] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L4SR_SigvedArmyPos[3]} with L4SR_VILLAGERS_PER_PLATOON men and 0 women
+	L4SR_SigvedArmy[4] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L4SR_SigvedArmyPos[4]} with L4SR_VILLAGERS_PER_PLATOON men and 0 women
+
+	// Make Sigved and his army non pickupable
+	disable L4SR_Sigved pickup
+	disable L4SR_SigvedArmy[0] pickup
+	disable L4SR_SigvedArmy[1] pickup
+	disable L4SR_SigvedArmy[2] pickup
+	disable L4SR_SigvedArmy[3] pickup
+	disable L4SR_SigvedArmy[4] pickup
+
+	// Set the allegiance of Sigved and his army
+	set L4SR_Sigved player 6
+	set L4SR_SigvedArmy[0] player 6
+	set L4SR_SigvedArmy[1] player 6
+	set L4SR_SigvedArmy[2] player 6
+	set L4SR_SigvedArmy[3] player 6
+	set L4SR_SigvedArmy[4] player 6
+	set player 0 ENEMY to player 6
+
+	// Make the army follow Sigved
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L4SR_Sigved to L4SR_SigvedArmy[0] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L4SR_Sigved to L4SR_SigvedArmy[1] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L4SR_Sigved to L4SR_SigvedArmy[2] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L4SR_Sigved to L4SR_SigvedArmy[3] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L4SR_Sigved to L4SR_SigvedArmy[4] action queue
+
+end script L4SR_CreateSigvedAndHisArmy
+
+
+//-----------------------------------------------------------------------------
+//	Checks to see if the player is quite close to the hiding army and give "Shhh" type responses
+//-----------------------------------------------------------------------------
+begin script L4SR_CheckForPlayerClose
+
+	FrequencyTimer	= create timer for 0 seconds
+
+start
+
+	// Keep checking until the attack is kicked off
+	while L4SR_SigvedAttacked == L4SR_FALSE
+		if L4SR_Sigved exists and HEALTH of L4SR_Sigved > 0
+			if camera position near {L4SR_SigvedPos} radius 100
+				if get FrequencyTimer time remaining <= 0
+					begin dialogue
+						say "BW2T_SCRIPT_04C_01SIGVEDSRETURN_KEEPQUIET_10" by L4SR_Sigved
+						wait until read
+
+						say "BW2T_SCRIPT_04C_01SIGVEDSRETURN_KEEPQUIET_20" by L4SR_Sigved
+						wait until read
+					end dialogue
+
+					// Only get these sounds every 30 seconds or so
+					set FrequencyTimer time to 30 seconds
+				end if
+			end if
+			wait 1 seconds // before we check the radius again
+		end if
+	end while
+
+end script L4SR_CheckForPlayerClose
+
+
+//-----------------------------------------------------------------------------
+//	Check to see if the attack should be started
+//-----------------------------------------------------------------------------
+begin script L4SR_CheckForAttackStarted
+
+	GoingToBattlefiedPos		= marker at {1682.983, 77.789, 1495.159}		// He's going to face the Japs
+	SneakingRoundTheBackPos		= marker at {2096.434, 97.910, 1474.238}		// He's sneaking around the back
+	GotArmy						= L4SR_FALSE
+	PlayersArmy					= 0
+	PAlignment					= 0
+	Counter						= 0
+
+start
+
+	while L4SR_SigvedAttacked == L4SR_FALSE
+		// Reset the got army flag
+		GotArmy = L4SR_FALSE
+
+		// Get any player army near the checkpoints then kick off the attack from Sigved
+		PlayersArmy = get platoon of player 0 nearest {GoingToBattlefiedPos} radius 10
+
+		// Have we got an army or should we check the next checkpoint?
+		if PlayersArmy exists
+			GotArmy = L4SR_TRUE
+		else
+			PlayersArmy = get platoon of player 0 nearest {SneakingRoundTheBackPos} radius 10
+			if PlayersArmy exists
+				GotArmy = L4SR_TRUE
+			end if
+		end if
+
+		if GotArmy == L4SR_TRUE
+			// Kick off the attack from Sigved here...
+			if L4SR_Sigved exists and HEALTH of L4SR_Sigved > 0	
+				L4SR_SigvedAttacked = L4SR_TRUE
+
+				run background script L4SR_SigvedInterceptPlayersArmy(PlayersArmy)
+			end if
+		end if
+	end while
+
+end script L4SR_CheckForAttackStarted
+
+
+//-----------------------------------------------------------------------------
+//	Make sure that Sigved is the last surviving member of the help squad
+//-----------------------------------------------------------------------------
+begin script L4SR_MaintainSigvedsHealth
+
+	OkToDamageSigved	= L4SR_FALSE
+	SigvedTemp			= 0
+	Counter				= 0
+
+start
+
+	// Make Sigved invulnerable
+	enable L4SR_Sigved indestructible
+	disable L4SR_Sigved pickup
+
+	// Keep checking to see if Sigved is the last remaining enemy warrior
+	while OkToDamageSigved == L4SR_FALSE
+		SigvedTemp = get L4SR_Sigved temperature
+		Counter = 0
+
+		// Check to see if Sigved is on fire (raised temperature)
+		if SigvedTemp > 0
+			// Put the fire out over time
+			set L4SR_Sigved temperature 0
+		end if
+
+		// Assume all armies are dead
+		OkToDamageSigved = L4SR_TRUE
+		// Check to see if all of Sigved's army has been killed
+		while Counter < L4SR_NUM_PLATOONS
+			if L4SR_SigvedArmy[Counter] exists
+				// if at least one army is alive, don't let sigved die
+				OkToDamageSigved = L4SR_FALSE
+			end if
+			Counter++
+		end while
+	end while
+
+	// Make Sigved vulnerable
+	disable L4SR_Sigved indestructible
+
+end script L4SR_MaintainSigvedsHealth
+
+
+//-----------------------------------------------------------------------------
+//	Make Sigved and his army intercept the players army
+//-----------------------------------------------------------------------------
+begin script L4SR_SigvedInterceptPlayersArmy(Army)
+start
+
+	SPEED of L4SR_Sigved = 0.5
+
+	begin loop
+		move L4SR_Sigved position to {Army}
+		until {L4SR_Sigved} near {Army} radius 5
+	end loop
+
+end script L4SR_SigvedInterceptPlayersArmy
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------
+/* // For referecne
+///////////////////////////////////////////////////////////////////////////////
+//	SIGVED'S RETURN (L5)
+//	~~~~~~~~~~~~~~~~~~~~
+//	Description:
+//	This is the return of Sigved to give you a bit of help for being good.
+//	He'll help defend the players town when it first comes under attack from the Aztecs.
+//
+//	Rewards:			None
+//
+//	Start date:			18-09-03			By:	Steve
+//	Update date:		02-04-04			By: Steve
+//
+//	ToDo:	Make sure Sigved can attack
+//			Replace Sigved follow with actual folow code (once created)
+//			Make sure that {1369.215, 92.523, 959.666} has a forest around it
+//			Make sure that Sigved can get from {1369.215, 92.523, 959.666} up the hill (once units can't walk up mountains)
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L5SR_TRUE					= 1
+define L5SR_FALSE					= 0
+define L5SR_NUM_PLATOONS			= 5
+define L5SR_VILLAGERS_PER_PLATOON	= 12
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global L5SR_Sigved					= 0
+global L5SR_SigvedPos				= 0
+
+global L5SR_SigvedArmy[L5SR_NUM_PLATOONS]
+global L5SR_SigvedArmyPos[L5SR_NUM_PLATOONS]
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script L5SR_CreateSigvedAndHisArmy
+define script L5SR_MaintainSigvedsHealth
+define script L5SR_SigvedAttack
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land5SigvedsReturn
+
+	PAlignment		= 0
+
+start
+
+	// Create Sigved and his saviours :)
+	run script L5SR_CreateSigvedAndHisArmy
+	run background script L5SR_MaintainSigvedsHealth
+
+	// Wait for a while before sending in the cavalry
+	wait until SigvedHasEnemies == 1
+
+	run background script L5SR_SigvedAttack
+
+end script Land5SigvedsReturn
+
+
+//-----------------------------------------------------------------------------
+//	Create Sigved's army and hide them from the player near the Japanese main town
+//-----------------------------------------------------------------------------
+begin script L5SR_CreateSigvedAndHisArmy
+start
+	// Create Sigved
+	L5SR_SigvedPos = marker at {1369.215, 92.523, 959.666}
+	L5SR_Sigved	= create VILLAGER SIGVED at {L5SR_SigvedPos}
+	HEALTH of L5SR_Sigved = 1
+
+	// Create Sigved's army
+	L5SR_SigvedArmyPos[0] = marker at {1384.436, 87.748, 974.937}
+	L5SR_SigvedArmyPos[1] = marker at {1378.959, 91.983, 959.101}
+	L5SR_SigvedArmyPos[2] = marker at {1373.557, 92.667, 953.720}
+	L5SR_SigvedArmyPos[3] = marker at {1370.851, 91.828, 963.214}
+	L5SR_SigvedArmyPos[4] = marker at {1380.822, 87.664, 975.058}
+	L5SR_SigvedArmy[0] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L5SR_SigvedArmyPos[0]} with L5SR_VILLAGERS_PER_PLATOON men and 0 women
+	L5SR_SigvedArmy[1] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L5SR_SigvedArmyPos[1]} with L5SR_VILLAGERS_PER_PLATOON men and 0 women
+	L5SR_SigvedArmy[2] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L5SR_SigvedArmyPos[2]} with L5SR_VILLAGERS_PER_PLATOON men and 0 women
+	L5SR_SigvedArmy[3] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L5SR_SigvedArmyPos[3]} with L5SR_VILLAGERS_PER_PLATOON men and 0 women
+	L5SR_SigvedArmy[4] = create platoon PLATOON_INFO_NORSE_MELEE_1 at {L5SR_SigvedArmyPos[4]} with L5SR_VILLAGERS_PER_PLATOON men and 0 women
+
+	// Make Sigved and his army non pickupable
+	disable L5SR_Sigved pickup
+	disable L5SR_SigvedArmy[0] pickup
+	disable L5SR_SigvedArmy[1] pickup
+	disable L5SR_SigvedArmy[2] pickup
+	disable L5SR_SigvedArmy[3] pickup
+	disable L5SR_SigvedArmy[4] pickup
+
+	// Make Sigved and his army indestructible
+	enable L5SR_Sigved indestructible
+	enable L5SR_SigvedArmy[0] indestructible
+	enable L5SR_SigvedArmy[1] indestructible
+	enable L5SR_SigvedArmy[2] indestructible
+	enable L5SR_SigvedArmy[3] indestructible
+	enable L5SR_SigvedArmy[4] indestructible
+
+	// Set the allegiance of Sigved and his army
+	set L5SR_Sigved player 6
+	set L5SR_SigvedArmy[0] player 6
+	set L5SR_SigvedArmy[1] player 6
+	set L5SR_SigvedArmy[2] player 6
+	set L5SR_SigvedArmy[3] player 6
+	set L5SR_SigvedArmy[4] player 6
+	set player 0 FRIEND to player 6
+
+	// Make the army follow Sigved
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L5SR_Sigved to L5SR_SigvedArmy[0] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L5SR_Sigved to L5SR_SigvedArmy[1] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L5SR_Sigved to L5SR_SigvedArmy[2] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L5SR_Sigved to L5SR_SigvedArmy[3] action queue
+	add action PLATOON_AGENDA_ACTION_FOLLOW_OBJECT using L5SR_Sigved to L5SR_SigvedArmy[4] action queue
+
+end script L5SR_CreateSigvedAndHisArmy
+
+
+//-----------------------------------------------------------------------------
+//	Make sure that Sigved is the last surviving member of the help squad
+//-----------------------------------------------------------------------------
+begin script L5SR_MaintainSigvedsHealth
+
+	OkToDamageSigved	= L5SR_FALSE
+	SigvedTemp			= 0
+	Counter				= 0
+
+start
+
+	// Make Sigved's army killable
+	disable L5SR_SigvedArmy[0] indestructible
+	disable L5SR_SigvedArmy[1] indestructible
+	disable L5SR_SigvedArmy[2] indestructible
+	disable L5SR_SigvedArmy[3] indestructible
+	disable L5SR_SigvedArmy[4] indestructible
+
+	// Keep checking to see if Sigved is the last remaining enemy warrior
+	while OkToDamageSigved == L5SR_FALSE
+		SigvedTemp = get L5SR_Sigved temperature
+		Counter = 0
+
+		// Check to see if Sigved is on fire (raised temperature)
+		if SigvedTemp > 0
+			// Put the fire out over time
+			set L5SR_Sigved temperature 0
+		end if
+
+		// Assume all armies are dead
+		OkToDamageSigved = L5SR_TRUE
+		// Check to see if all of Sigved's army has been killed
+		while Counter < L5SR_NUM_PLATOONS
+			if L5SR_SigvedArmy[Counter] exists
+				// if at least one army is alive, don't let sigved die
+				OkToDamageSigved = L5SR_FALSE
+			end if
+			Counter++
+		end while
+	end while
+
+	// Make Sigved vulnerable
+	disable L5SR_Sigved indestructible
+
+end script L5SR_MaintainSigvedsHealth
+
+begin script L5SR_SigvedAttack
+	count = 0
+	NUM_SIGVED_ENEMIES	= 2 /// ADDED BY KC - SCRIPT WOULD NOT COMPILE!
+start
+	SPEED of L5SR_Sigved = 0.5
+	while count < NUM_SIGVED_ENEMIES
+		while SigvedsEnemies[count] exists
+			move L5SR_Sigved position to {SigvedsEnemies[count]}
+		end while
+		count++
+	end while
+
+	// if sigved is still alive at this point, he will join the player
+	set L5SR_Sigved player 0
+	set L5SR_SigvedArmy[0] player 0
+	set L5SR_SigvedArmy[1] player 0
+	set L5SR_SigvedArmy[2] player 0
+	set L5SR_SigvedArmy[3] player 0
+	set L5SR_SigvedArmy[4] player 0
+
+end script L5SR_SigvedAttack
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------
+*/

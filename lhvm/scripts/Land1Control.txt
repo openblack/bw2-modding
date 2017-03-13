@@ -1,0 +1,262 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define L1_NUM_CLICKS		= 2
+define L1_CLICK_TIME		= 4
+
+//-----------------------------------------------------------------------------
+//	Script Defines
+//-----------------------------------------------------------------------------
+define script Land1KeepTime
+define script Land1WatchClicks
+define script Land1Weather(Pos)
+define script SetupMoaiHead(Pos)
+define script CreatureSleep
+
+
+//-----------------------------------------------------------------------------
+//	Land 1 Control
+//-----------------------------------------------------------------------------
+begin script Land1Control
+start
+	
+/*	begin cinema //Jonty - not needed due to loading screen update.
+		set fade red 0 green 0 blue 0 time 0
+	end cinema*/
+	
+	//Setup Moai heads
+	run script SetupMoaiHead(marker at {1591.254, 111.069, 848.389})
+	run script SetupMoaiHead(marker at {1596.277, 110.497, 827.229})
+	run script SetupMoaiHead(marker at {1584.756, 107.769, 808.580})
+	run script SetupMoaiHead(marker at {1691.605, 122.941, 820.607})
+
+	//disable things we don't want in Land 1
+	disable toolbar
+	disable can use destruction tool
+	disable tribute visual
+	disable global influence
+	disable game can be lost
+	disable drawing of all flags
+	disable game time
+	disable creature icon visible
+	disable floaty icons	
+
+	//interface
+	disable interface action MANACOST_BALANCE_TYPE_INITIATECREATUREFIST	
+	disable interface action MANACOST_BALANCE_TYPE_ENTERTIMECHANGE
+	disable interface action MANACOST_BALANCE_TYPE_CRACKROCK
+	disable interface action MANACOST_BALANCE_TYPE_GODBUILD
+
+	run script Land1Globals
+	disable town L1_Town desire speech
+
+	//run background script Land1Eloi
+	run background script EL_MountainWaterfalls
+
+	run script Land1CreatureSelectionNew
+
+	run background script Land1VillagerTutorial
+	//Enable all tutorials
+	run script Land1Tutorial
+
+	run background script CreatureSleep
+
+	//Make sure objective window is up
+	enable objective window
+
+	run background script Land1WatchClicks
+
+	//run script Land1FollowCreature
+
+	enable global influence
+	enable floaty icons
+
+	enable objective window
+	run background script Land1Scrolls
+	run background script Land1Eloi
+	run background script Land1RockMan
+	run background script Land1DidYouKnow   
+	if SkippedTutorials == 0
+		run script Land1PickupTutorial
+	else
+		run background script Land1PickupTutorial
+	end if
+
+
+	wait until L1_DiscipleTutorialComplete == 1 or SkippedTutorials == 1
+
+	//Add silver scroll objectives
+	reset all objectives for player 0
+
+	if SkippedTutorials == 0
+	
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_7 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ROCKMAN_10"
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_30"
+
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_15 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_ELOI_THROW_20"
+			
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 amount 1 force open
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 text "BW2T_SCRIPT_01FINAL_OBJECTIVE_LEAVE_10"
+
+	end if
+
+
+
+	wait until L1_EloiComplete == 1 and L1_WaterfallComplete == 1 and L1_RockManComplete == 1
+
+	run script Land1Weather(marker at {938.755, 72.811, 1496.364})
+	run script Land1Weather(marker at {1130.764, 66.713, 2005.831})
+	run script Land1Weather(marker at {1263.803, 73.035, 1085.399})
+	run script Land1Weather(marker at {1526.089, 122.496, 1438.015})
+
+end script Land1Control
+
+//-----------------------------------------------------------------------------
+//	Land 1 Keep Time
+//-----------------------------------------------------------------------------
+begin script Land1KeepTime
+start
+	//This maintains time on Land 2
+	begin loop		
+		move game time 10.40 time 2
+		wait 2 seconds
+	end loop
+end script Land1KeepTime
+
+//-----------------------------------------------------------------------------
+//	Watch Clicks
+//-----------------------------------------------------------------------------
+begin script Land1WatchClicks
+	Object			= 0
+	ClickTimer		= create timer for 0 seconds
+	Clicks			= 0
+start
+
+	begin loop
+
+		wait until mouse left button clicked
+		clear left clicked position
+
+		//Animal
+		Object = get ANIMAL at hand position radius 5
+		if not Object exists
+			//Tree
+			Object = get TREE at hand position radius 5
+			if not Object exists
+				//Rock
+				Object = get ROCK_OBJECT at hand position radius 5
+				if not Object exists
+					//Villager
+					Object = get VILLAGER at hand position radius 5
+					if not Object exists
+						Object = get CHILD at hand position radius 5
+						if not Object exists
+							//Object
+							Object = get OBJECT at hand position radius 5
+						end if
+					end if
+				end if
+			end if
+		end if
+
+		if Object exists
+
+			set ClickTimer time to L1_CLICK_TIME seconds
+			
+			begin loop				
+
+				if mouse left button clicked
+					clear left clicked position
+					Clicks++
+					wait until not bindable action BINDABLE_ACTION_TYPE_MOVE performed
+				end if
+
+			until Clicks >= L1_NUM_CLICKS or get ClickTimer time remaining == 0
+			end loop
+			
+			if Clicks >= L1_NUM_CLICKS
+				enable hand icon draw
+				set bindable hand icon BINDABLE_ACTION_TYPE_ACTION
+				wait until not hand position near {Object} radius 5 or 3 seconds
+				disable hand icon draw
+			end if
+
+			clear left clicked position
+			Clicks = 0
+
+		end if
+
+	end loop
+
+end script Land1WatchClicks
+
+//-----------------------------------------------------------------------------
+// Land 1 Weather
+//-----------------------------------------------------------------------------
+begin script Land1Weather(Pos)
+	ID = 0
+start
+
+	while L1_Weather[ID] exists
+		ID++
+	end while
+
+	if ID < 5
+		L1_Weather[ID] = create SCRIPT_OBJECT_TYPE_WEATHER_THING WEATHER_INFO_WHISPS at {Pos} + {0, 100, 0}
+		set cloud for L1_Weather[ID] above {Pos} + {0, 100, 0}
+		set cloud L1_Weather[ID] points to 10
+		set cloud L1_Weather[ID] altitude 140
+		set cloud generation 0
+		set cloud L1_Weather[ID] size to x 200 y 200 z 200
+		set L1_Weather[ID] properties rainfall 1 snowfall 0 overcast 0.5
+	end if
+
+end script Land1Weather
+
+//-----------------------------------------------------------------------------
+// Setup Moai Head
+//-----------------------------------------------------------------------------
+begin script SetupMoaiHead(Pos)
+	Head	= 0
+start
+
+	Head = get ROCK_OBJECT at {Pos} radius 5
+
+	disable Head pickup
+	disable Head moveable
+	enable Head indestructible
+
+end script SetupMoaiHead
+
+//-----------------------------------------------------------------------------
+// Creature Sleep
+//-----------------------------------------------------------------------------
+begin script CreatureSleep
+	SleepPos		= marker at {1569.698, 111.479, 838.337}
+start
+
+	wait 1 seconds
+
+	force MyCreature finish
+	set MyCreature position to {SleepPos}
+	disable leash on MyCreature
+	enable MyCreature indestructible
+
+	if MyCreature exists
+		begin loop
+			begin loop
+				set creature MyCreature energy to 0	// <- and he doesn't wake up because
+				if not variable get MyCreature current action == variable CREATURE_SLEEP_ON_THE_SPOT
+					force MyCreature CREATURE_SLEEP_ON_THE_SPOT MyCreature
+				end if
+			until creature MyCreature finished script action
+			end loop
+		end loop
+	end if
+
+
+end script CreatureSleep

@@ -1,0 +1,6 @@
+run script RunLand5UndeadLegion
+
+begin script RunLand5UndeadLegion
+start
+	run script Land5UndeadLegion
+end script RunLand5UndeadLegion

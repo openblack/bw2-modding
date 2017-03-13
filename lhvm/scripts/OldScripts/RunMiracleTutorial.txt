@@ -1,0 +1,21 @@
+//-----------------------------------------------------------------------------
+run script RunMiracleTutorial
+//-----------------------------------------------------------------------------
+begin script RunMiracleTutorial
+
+CamPos	= marker at {0.000,0.000,0.000}
+CamFoc	= marker at {0.000,0.000,0.000}
+
+start
+
+	// Setup the camera position
+//	begin cinema
+//		set camera position to {CamPos}
+//		set camera focus to {CamFoc}
+//	end cinema
+
+	run script MiracleTutorial
+	
+end script RunMiracleTutorial
+
+//-----------------------------------------------------------------------------

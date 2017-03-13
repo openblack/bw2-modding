@@ -1,0 +1,231 @@
+//*************************************************************
+//
+//	Land4TownObjectives
+//
+//*************************************************************
+
+
+define LO_FALSE = 0
+define LO_TRUE = 1
+
+//*************************************************************
+//	Land4TownObjectives
+//*************************************************************
+begin script Land4TownObjectives
+	BreedObjective = LO_FALSE
+	TroopObjective = LO_FALSE
+	FightObjective = LO_FALSE
+	AbodeObjective = LO_FALSE
+	EntertainObjective = LO_FALSE
+	TownObjective = LO_FALSE
+	WoodObjective = LO_FALSE
+	FoodObjective = LO_FALSE
+	ObjectivesComplete = 0
+start
+
+	reset all objectives for player 0
+	
+	////////////////////
+	//GLOBAL OBJECTIVES
+	
+	
+	//PRIMARYOBJECTIVES
+	//These are controlled by SCRIPT ONLY
+	
+	
+	//PRIMARY- WIN THE LAND!!!!
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" start value 0 reward 100000 alignment 0.1
+		
+	/////SECONDARY OBJECTIVES - these are controlled by gamecode	
+	
+	//RESOURCE Objectives
+	
+	//Collect Resources    
+	set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_ALL with amount 12000 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_120" amount 12000 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_121" start value 0 reward 0
+	
+	//Collect 4000 ore    
+	set player 0 objective TRIBUTE_OBJECTIVE_MINE_ORE with amount 4000 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_30" amount 4000 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_31" parent TRIBUTE_OBJECTIVE_COLLECT_ALL start value 0 reward 3000
+	
+	//Collect 4000 food    
+	set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_FOOD with amount 4000 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_90" amount 4000 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_91" parent TRIBUTE_OBJECTIVE_COLLECT_ALL start value 0 reward 3000
+	
+	//Collect 4000 wood    
+	set player 0 objective TRIBUTE_OBJECTIVE_COLLECT_WOOD with amount 4000 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_100" amount 4000 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_101" parent TRIBUTE_OBJECTIVE_COLLECT_ALL start value 0 reward 3000
+	
+	
+	//SPECIAL OBJECTIVES
+	
+	//Deforest the land
+	set player 0 objective TRIBUTE_OBJECTIVE_AS_SOON_AS_TREES_REMOVED with amount 1 text "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_10" amount 1 description "BW2T_SCRIPT_10FINAL_OBJECTIVE_EVIL_11" start value 0 reward 30000 alignment -0.1
+	
+	//Increase impressiveness by 30000    
+	set player 0 objective TRIBUTE_OBJECTIVE_INCREASE_IMPRESSIVENESS with amount 30000 text "BW2T_SCRIPT_06FINAL_OBJECTIVE_NEUTRAL_10" amount 30000 description "BW2T_SCRIPT_06FINAL_OBJECTIVE_NEUTRAL_11" start value 0 reward 10000 alignment 0.05
+	
+	
+	//TOWN OBJECTIVES
+	
+	//Create 12 disciple breeders    
+	set player 0 objective TRIBUTE_OBJECTIVE_MAKE_BREEDER_DISCIPLES with amount 12 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_50" amount 12 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_51" start value 0 reward 4000
+
+	//Creature Builds 12 Abodes     
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_BUILD_ABODES with amount 12 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_20" amount 12 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_21"  class TRIBUTE_OBJECTIVE_CLASS_TOWN start value 0 reward 10000
+
+	//Achieve town status    
+	set player 0 objective TRIBUTE_OBJECTIVE_REACH_TOWN_STATUS with amount 1 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_40" amount 150 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_41" start value 0 reward 10000
+	
+	//Build X BUILDINGS on an impressive AREA TODO
+	set player 0 objective TRIBUTE_OBJECTIVE_BUILD_IMPRESSIVE_BUILDINGS with amount 10 text "BW2T_SCRIPT_OBJECTIVES_PICKUP37" amount 10 description "BW2T_SCRIPT_09FINAL_OBJECTIVE_NEUTRAL_31" start value 0 reward 3000
+	
+	//Build 1 Field on Fertile Area    
+	set player 0 objective TRIBUTE_OBJECTIVE_BUILD_FIELD_FERTILE with amount 1 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_70" amount 1 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_71" start value 0 reward 3000
+	
+	//Water Field    
+	set player 0 objective TRIBUTE_OBJECTIVE_WATER_FIELD with amount 1 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_80" amount 1 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_81" start value 0 reward 3000 alignment 0.001
+	
+	//Create X disciple worshippers 
+	set player 0 objective TRIBUTE_OBJECTIVE_MAKE_WORSHIPPER_DISCIPLES with amount 10 text "BW2T_SCRIPT_03FINAL_OBJECTIVE_GOOD_20" amount 10 description "BW2T_SCRIPT_03FINAL_OBJECTIVE_GOOD_21" start value 0 reward 5000
+	
+	//Water Forest    
+	set player 0 objective TRIBUTE_OBJECTIVE_WATER_FOREST with amount 1 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_110" amount 1 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_111" start value 0 reward 3000
+
+	
+	//CREATURE objectives
+	
+	//Creature entertain 5 people    
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_ENTERTAIN with amount 5 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_GOOD_20" amount 5 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_GOOD_21" start value 0 reward 8000
+	
+	//Creature Collects 3000 food    
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_FOOD with amount 3000 text "BW2T_SCRIPT_07FINAL_OBJECTIVE_NEUTRAL_70" amount 3000 description "BW2T_SCRIPT_07FINAL_OBJECTIVE_NEUTRAL_71" class TRIBUTE_OBJECTIVE_CLASS_CREATURE start value 0 reward 3000
+
+	//Creature kill 2 platoons    
+	set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_KILL_PLATOONS with amount 2 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_EVIL_20" amount 2 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_EVIL_21" start value 0 reward 4000
+
+
+
+	//ARMY objectives	
+	
+	//Level up a platoon to Regular Skill    
+	set player 0 objective TRIBUTE_OBJECTIVE_LEVEL_UP_PLATOON with amount 2 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_EVIL_30" amount 2 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_EVIL_31" start value 0 reward 4000 alignment -0.001
+	
+
+	//NO LONGER USED
+	//set player 0 objective TRIBUTE_OBJECTIVE_MAKE_BUILDING_ON_MOST_IMPRESSIVE_AREA with amount 1 text "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_60" amount 1 description "BW2T_SCRIPT_04FINAL_OBJECTIVE_NEUTRAL_61" start value 0 reward 3000
+	
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_GOLD amount 20
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_SPECIAL amount 0
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_TOWN amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_ARMY amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_CREATURE amount 1
+	set player 0 objective class TRIBUTE_OBJECTIVE_CLASS_RESOURCES amount 1
+	
+	begin loop
+		//Breed
+		////if BreedObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN complete
+		////		BreedObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_BREED_CHILDREN
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+
+		//////Troops
+		////if TroopObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_CREATE_TROOPS complete
+		////		TroopObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_CREATE_TROOPS value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_CREATE_TROOPS
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+
+		//////Fight
+		////if FightObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT complete
+		////		FightObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+
+		//////Abode
+		////if AbodeObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_CREATURE_BUILD_ABODES complete
+		////		AbodeObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_BUILD_ABODES value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_CREATURE_BUILD_ABODES
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+		////
+		//////EntertainObjective
+		////if EntertainObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_CREATURE_ENTERTAIN complete
+		////		EntertainObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_ENTERTAIN value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_CREATURE_ENTERTAIN
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+		////
+		//////TownObjective
+		////if TownObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_REACH_TOWN_STATUS complete
+		////		TownObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_REACH_TOWN_STATUS value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_REACH_TOWN_STATUS
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+		////
+		//////WoodObjective
+		////if WoodObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_WOOD complete
+		////		WoodObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_WOOD value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_WOOD
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+		////
+		//////FoodObjective
+		////if FoodObjective == LO_FALSE
+		////	if player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_FOOD complete
+		////		FoodObjective = LO_TRUE
+		////		set player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_FOOD value 1
+		////		enable objective window
+		////		wait 2.5 seconds
+		////		disable player 0 objective TRIBUTE_OBJECTIVE_CREATURE_COLLECT_FOOD
+		////		wait 1.5 seconds
+		////		disable objective window
+		////	end if			
+		////end if
+
+	end loop
+
+	
+	//set player 0 objective TRIBUTE_OBJECTIVE_MADE_SOLDIERS amount 20
+
+end script Land4TownObjectives

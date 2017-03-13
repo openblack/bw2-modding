@@ -1,0 +1,90 @@
+begin script Land8Departure
+	DepartureScrollPos = marker at {1835.835, 260.129, 771.210}
+	DepartureScroll = 0
+	Portal = 0
+	CSMixer = 0
+	
+start
+	CSMixer = create mixer
+	
+	Portal = create visual effect VISUAL_EFFECT_TELEPORTER_HOOP at {DepartureScrollPos} + {0, 1.5, 0} time -1
+	run script Land8Outro
+	
+	//We have completed the land!
+	set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+
+	DepartureScroll = create highlight GOLD name "BW2T_SCRIPT_GENERIC_DEPART_LAND" remind "BW2T_SCRIPT_GENERIC_DEPART_LAND" at {DepartureScrollPos}
+	ALTITUDE of DepartureScroll = 3
+
+	wait until DepartureScroll right clicked
+
+	begin dialogue
+		eject good spirit
+		//say "Are you sure you wish to leave the land?"
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_934"
+		wait until read
+		//say "Click again to confirm"
+		say "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_933"
+		wait until read
+		send good spirit home
+	end dialogue
+	
+	clear right clicked object
+	wait until DepartureScroll right clicked
+	delete DepartureScroll
+
+	if MyCreature exists
+		save my_creature
+	end if
+	
+	// Get the dialogue for the enemy and for the advisors
+	
+	set fade red 0 green 0 blue 0 time 2
+	wait 2 seconds
+	begin cinema
+		start music "farming_communtiy_land2" loop 10
+		wait 2 seconds
+	
+		set camera position to {1827.335, 277.940, 776.394}
+		set camera focus to {1869.108, 190.523, 751.874}
+		move camera position to {1834.558, 262.919, 772.247} time 15
+		move camera focus to {1876.342, 175.449, 747.674} time 15
+		set fade in time 1
+		eject evil spirit
+		eject good spirit
+		say "BW2T_SCRIPT_08FINAL_ADVISORS_PLAYERWINS_30"
+		wait until read
+		say "BW2T_SCRIPT_08FINAL_ADVISORS_PLAYERWINS_40"
+		wait until read
+		send good spirit home
+		send evil spirit home 
+		set fade red 0 green 0 blue 0 time 3
+		set mixer CSMixer channel AUDIO_MIXER_CHANNEL_GLOBAL to 0.0 with fadetime 3
+		wait 3.5 seconds
+		wait 1 seconds
+	end cinema
+
+	
+	////
+	//TRIGGER processing of land end objectives
+	process land end objectives
+	wait until land end objectives processed
+
+	if L9ShowingDarkDisciplesObjective == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_8 with amount 1 text "BW2T_SCRIPT_08FINAL_CHALLENGENAME_DARK_DISCIPLES" amount 1 description "BW2T_SCRIPT_08FINAL_CHALLENGE_DARK_DISCIPLES_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_8_DARKDISCIPLES
+	end if
+	
+	if L9ShowingOilBaronObjective == 0
+		set player 0 objective TRIBUTE_OBJECTIVE_LAND_9 with amount 1 text "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_SCROLL_10" amount 1 description "BW2T_SCRIPT_08FINAL_CHALLENGE_OIL_BARON_REMINDER" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_8_OILBARON
+	end if
+	
+	if L9ShowingMonsterMineObjective  == 0
+	set player 0 objective TRIBUTE_OBJECTIVE_LAND_10 with amount 1 text "BW2T_SCRIPT_08FINAL_MONSTERMINE_580" amount 1 description "BW2T_SCRIPT_08FINAL_MONSTERMINE_590" start value 0 reward GLOBAL_VALUE_TRIBUTE_LAND_8_MONSTERMINE	
+	end if			
+	
+
+	disable game can be lost
+	run script LandExit
+	load map "./Data/Landscape/BW2/Land9.bwe"
+
+end script Land8Departure

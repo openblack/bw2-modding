@@ -1,0 +1,23 @@
+//====================================================
+// Land 6 Waterfall
+// Matt.L
+//====================================================
+
+//----------------------------------------------------
+// Land 6 Waterfall
+//----------------------------------------------------
+begin script Land6Waterfall
+	WaterfallFX = 0
+	SplashFX = 0
+	SprayFX = 0
+	PlopFX = 0
+	WaterfallPos = marker at {826.085, 173.465, 323.951}
+	SplashPos = marker at {652.617, 152.830, 593.944}
+start
+
+	WaterfallFX = create visual effect "gp_s_waterfall.ves" strength 1 scale 1.4 at {WaterfallPos} time -1
+	set WaterfallFX colour red 128 green 200 blue 192
+	SplashFX = create visual effect "gp_s_waterfall_ground.ves" strength 1 scale 2 at {SplashPos} time -1
+
+	wait 50000000000000000 seconds
+end script Land6Waterfall

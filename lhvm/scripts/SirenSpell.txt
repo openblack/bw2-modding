@@ -1,0 +1,718 @@
+
+//--------------------------------------------------------------------------------------------------------------
+define SSTrue = 1
+
+//--------------------------------------------------------------------------------------------------------------
+global DancePositions[20]
+global BellyPos=0
+global ATIEndFlag=0
+global Land11VolcanoCasting = 0
+global WhiChEpicSpellIsBeingCast = 0
+
+//--------------------------------------------------------------------------------------------------------------
+begin script SirenSubtitles
+
+SirenSubTimer=0
+
+Marker1=0
+Marker2=0
+Marker3=0
+Marker4=0
+Marker5=0
+Marker6=0
+
+SkipMeNow=0
+
+start
+
+	Marker1=get music "SirenSong" event "siren1" time
+	Marker2=get music "SirenSong" event "siren2" time
+	Marker3=get music "SirenSong" event "siren3" time
+	Marker4=get music "SirenSong" event "siren4" time
+	Marker5=get music "SirenSong" event "siren5" time
+	Marker6=get music "SirenSong" event "siren6" time
+
+	SirenSubTimer=create timer for 0 seconds
+
+
+	begin known cinema
+
+		while SkipMeNow==0
+
+			wait until get SirenSubTimer time since set >= Marker1	
+			say "BW2T_SCRIPT_SIREN_SONG_10"
+			wait until get SirenSubTimer time since set >= Marker2	
+			say "BW2T_SCRIPT_SIREN_SONG_20"
+			wait until get SirenSubTimer time since set >= Marker3	
+			say "BW2T_SCRIPT_SIREN_SONG_30"
+			wait until get SirenSubTimer time since set >= Marker4	
+			say "BW2T_SCRIPT_SIREN_SONG_40"
+			wait until get SirenSubTimer time since set >= Marker5	
+			say "BW2T_SCRIPT_SIREN_SONG_50"
+			wait until get SirenSubTimer time since set >= Marker6	
+			say "BW2T_SCRIPT_SIREN_SONG_60"
+			wait until read
+			clear dialogue
+			SkipMeNow=1
+		end while
+
+	end known cinema
+
+end script SirenSubtitles
+
+
+begin script SetupDancerPositions(whichspell)
+
+start
+
+	if whichspell == 0 //siren
+    
+		DancePositions[0]=marker at {-5.002, 5.872, 3.985}
+		DancePositions[1]=marker at {-4.460, 5.872, 5.124}
+		DancePositions[2]=marker at {-6.273, 5.872, 2.992}
+		DancePositions[3]=marker at {-6.614, 5.872, 3.953}
+		DancePositions[4]=marker at {-5.343, 5.872, 4.946}
+		DancePositions[5]=marker at {-4.072, 5.872, 5.938}
+		DancePositions[6]=marker at {-6.026, 5.872, 6.868}
+		DancePositions[7]=marker at {-7.885, 5.872, 2.961}
+		DancePositions[8]=marker at {-6.956, 5.872, 4.914}
+		DancePositions[9]=marker at {-2.801, 5.872, 6.930}
+		DancePositions[10]=marker at {-4.755, 5.872, 7.860}
+		DancePositions[11]=marker at {-8.878, 5.872, 4.232}
+		DancePositions[12]=marker at {-6.987, 5.872, 6.527}
+		DancePositions[13]=marker at {-4.135, 5.872, 9.162}
+		DancePositions[14]=marker at {-7.018, 5.872, 8.139}
+		DancePositions[15]=marker at {-8.909, 5.872, 5.844}
+		DancePositions[16]=marker at {-6.125, 5.872, 9.452}
+		DancePositions[17]=marker at {-10.184, 5.872, 4.364}
+		DancePositions[18]=marker at {-9.060, 5.872, 2.954}
+		DancePositions[19]=marker at {-8.444, 5.872, 6.993}
+
+	elsif whichspell == 1 //volcano
+
+		DancePositions[0]=marker at {0.315, 1.410, -11.642}
+		DancePositions[1]=marker at {-1.096, 1.149, -10.804}
+		DancePositions[2]=marker at {-1.338, 1.149, -12.035}
+		DancePositions[3]=marker at {-2.718, 1.149, -11.253}
+		DancePositions[4]=marker at {-4.341, 1.149, -11.701}
+		DancePositions[5]=marker at {1.216, 1.149, -10.748}
+		DancePositions[6]=marker at {2.988, 1.149, -10.841}
+		DancePositions[7]=marker at {2.205, 1.149, -12.221}
+		DancePositions[8]=marker at {0.853, 1.149, -12.594}
+		DancePositions[9]=marker at {-0.499, 1.149, -12.968}
+		DancePositions[10]=marker at {-3.352, 1.149, -13.174}
+		DancePositions[11]=marker at {-2.363, 1.149, -14.647}
+
+		DancePositions[12]=marker at {3.585, 1.149, -13.004}
+		DancePositions[13]=marker at {1.460, 1.149, -13.736}
+		DancePositions[14]=marker at {-0.051, 1.149, -14.590}
+		DancePositions[15]=marker at {-1.851, 1.149, -13.341}	
+		DancePositions[16]=marker at {2.847, 1.149, -14.232}
+		DancePositions[17]=marker at {-4.436, 1.149, -14.380}
+		DancePositions[18]=marker at {1.534, 1.149, -15.423}
+		DancePositions[19]=marker at {-2.506, 1.149, -15.979}
+
+	elsif whichspell == 2 //earthquake
+
+		DancePositions[0]=marker at {0.311, 4.174, 11.804}
+		DancePositions[1]=marker at {1.725, 4.174, 12.277}
+		DancePositions[2]=marker at {2.670, 4.174, 11.807}
+		DancePositions[3]=marker at {-2.048, 4.174, 11.800}
+		DancePositions[4]=marker at {3.140, 4.174, 12.751}
+		DancePositions[5]=marker at {-0.687, 4.174, 12.500}
+		DancePositions[6]=marker at {1.763, 4.174, 13.611}
+		DancePositions[7]=marker at {3.323, 4.174, 14.148}
+		DancePositions[8]=marker at {0.499, 4.174, 12.812}
+		DancePositions[9]=marker at {-1.584, 4.174, 12.943}
+		DancePositions[10]=marker at {0.015, 4.174, 14.284}
+		DancePositions[11]=marker at {-2.436, 4.174, 14.294}
+
+		DancePositions[12]=marker at {2.224, 4.174, 15.010}
+		DancePositions[13]=marker at {-3.546, 4.174, 12.706}
+		DancePositions[14]=marker at {0.877, 4.174, 15.384}
+		DancePositions[15]=marker at {-1.332, 4.174, 14.658}
+		DancePositions[16]=marker at {-3.783, 4.174, 14.668}
+		DancePositions[17]=marker at {3.576, 4.174, 15.863}
+		DancePositions[18]=marker at {-0.590, 4.174, 16.125}
+		DancePositions[19]=marker at {-2.552, 4.174, 15.888}
+
+	elsif whichspell == 3 //Hurricane
+
+		DancePositions[0]=marker at {0.987, 0.354, 12.999}
+		DancePositions[1]=marker at {2.807, 0.354, 12.886}
+		DancePositions[2]=marker at {-0.981, 0.354, 13.670}
+		DancePositions[3]=marker at {-2.653, 0.354, 13.226}
+		DancePositions[4]=marker at {3.625, 0.354, 14.297}
+		DancePositions[5]=marker at {1.806, 0.354, 14.410}
+		DancePositions[6]=marker at {-0.014, 0.354, 14.523}
+		DancePositions[7]=marker at {4.444, 0.354, 15.707}
+		DancePositions[8]=marker at {-3.654, 0.354, 14.750}
+		DancePositions[9]=marker at {2.624, 0.354, 15.821}
+		DancePositions[10]=marker at {0.804, 0.354, 15.934}
+		DancePositions[11]=marker at {-1.982, 0.354, 15.194}
+
+		DancePositions[12]=marker at {3.443, 0.354, 17.231}
+		DancePositions[13]=marker at {-0.737, 0.354, 16.121}
+		DancePositions[14]=marker at {-4.098, 0.354, 16.422}
+		DancePositions[15]=marker at {-2.426, 0.354, 16.866}
+		DancePositions[16]=marker at {1.623, 0.354, 17.344}
+		DancePositions[17]=marker at {-0.197, 0.354, 17.458}
+		DancePositions[18]=marker at {4.627, 0.354, 12.773}
+		DancePositions[19]=marker at {-1.608, 0.354, 18.276}
+
+	elsif whichspell == 4 // WOMD
+
+		DancePositions[0]=marker at {3.521, 1.768, 22.614}
+		DancePositions[1]=marker at {1.650, 4.882, 22.793}
+		DancePositions[2]=marker at {-0.522, 1.645, 22.752}
+		DancePositions[3]=marker at {-2.539, 1.587, 22.649}
+		DancePositions[4]=marker at {-4.802, 1.554, 22.654}
+		DancePositions[5]=marker at {-5.902, 4.516, 22.897}
+		DancePositions[6]=marker at {4.788, 1.887, 23.757}
+		DancePositions[7]=marker at {2.626, 1.792, 23.854}
+		DancePositions[8]=marker at {0.592, 1.726, 23.804}
+		DancePositions[9]=marker at {-1.886, 1.651, 23.911}
+		DancePositions[10]=marker at {-3.893, 1.609, 23.813}
+		DancePositions[11]=marker at {-5.831, 1.594, 24.056}
+
+		DancePositions[12]=marker at {3.807, 1.917, 25.455}
+		DancePositions[13]=marker at {1.559, 1.816, 25.369}
+		DancePositions[14]=marker at {-0.393, 4.933, 25.322}
+		DancePositions[15]=marker at {-2.971, 1.681, 25.435}
+		DancePositions[16]=marker at {-5.221, 1.656, 25.827}
+		DancePositions[17]=marker at {-7.495, 1.621, 25.885}
+		DancePositions[18]=marker at {6.087, 1.953, 25.018}
+		DancePositions[19]=marker at {6.128, 1.882, 22.657}
+
+	end if
+
+
+end script SetupDancerPositions
+
+//--------------------------------------------------------------------------------------------------------------
+begin script DancerLookAtWonder(MyVillager, Wonder, Count, whichspell)
+	
+	MyPos=0
+	LessEvenDudes=0
+
+start
+    
+	MyPos=marker at get world position from Wonder to {DancePositions[Count]}
+	set MyVillager position to {MyPos}
+	LessEvenDudes = number from 0 to 10
+	//wait LessEvenDudes/20 seconds
+	//play anim "a_p_dance_worship3" on MyVillager loop -1
+
+
+	if WhiChEpicSpellIsBeingCast == 0
+		//siren
+		play anim "a_p_dance_worship1" on MyVillager loop -1
+	elsif WhiChEpicSpellIsBeingCast == 2
+		//earthquake
+		play anim "a_p_dance_celebrate03" on MyVillager loop -1
+	elsif WhiChEpicSpellIsBeingCast == 1
+		//volcano
+		play anim "a_p_dance_worship2" on MyVillager loop -1
+	else//if WhiChEpicSpellIsBeingCast == 3
+		//hurricane
+		play anim "a_p_dance_worship3" on MyVillager loop -1
+	end if
+
+	set MyVillager focus to {Wonder}
+    wait 20 seconds
+
+end script DancerLookAtWonder
+
+//--------------------------------------------------------------------------------------------------------------
+begin script SirenSpell(EnemyWonder, Siren)
+
+	Shockeddude = 0
+	Wonder = 0
+	MyDance = 0
+	Dancer = 0
+	Count = 0
+
+	WonderCamPosLinkup=0
+	WonderCamFocLinkup=0
+	
+	RelCamPos=0
+	RelCamFoc=0
+
+	StarVillager=0
+	StarNymph=0
+	AboveSiren=0
+
+	MeOldMateDave=0
+	MusicEventTimer=0
+	MusicEvent1=0
+	MusicEvent2=0
+	WaitUntilPairedAnimStarts=0
+	SirenMixer=0
+	HackVillexistingTimer=0
+
+start
+
+	WhiChEpicSpellIsBeingCast = Siren
+
+
+	SirenMixer = create mixer
+	set mixer SirenMixer channel AUDIO_MIXER_CHANNEL_ANIMATION_VILLAGER to 1.0
+	set mixer SirenMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 1.0
+	set mixer SirenMixer channel AUDIO_MIXER_CHANNEL_SCRIPT_SFX to 1.0
+	
+	run script SetupDancerPositions(0)
+
+	begin interruptible cinema
+			
+		//focus on wonder and dancers
+		Wonder = get Siren creator
+		if Wonder not exists
+			Wonder = EnemyWonder
+		end if
+		MyDance=get Wonder dance
+		Dancer=get first in MyDance
+	                        
+		while Dancer exists and Count <= 19
+			detach Dancer from MyDance     
+			run background script DancerLookAtWonder(Dancer, Wonder, Count, 0)
+			Count++
+			Dancer=get first in MyDance
+			if Count == 3
+				Shockeddude = Dancer
+			end if
+		end while
+	
+//start flame on wonder and zoom into other flame////////////////////////////////////////////////
+		
+		AboveSiren = marker at {Siren}+{0.000,3.000,0.000}
+
+		move camera focus to {AboveSiren} time 2
+		move camera position to {AboveSiren} time 2
+		wait 1 seconds
+
+		set fade red 255 green 255 blue 255 time 1
+		wait 1 seconds
+		
+		RelCamPos=marker at get world position from Wonder to {-13.391, 4.641, 1.841}
+		RelCamFoc=marker at get world position from Wonder to {54.199, 77.960, 9.324}
+		
+		disable simulation sound
+		
+		//Chant music around the wonder
+		start music "greek_chant"// to Wonder
+		
+		play string sound "SCRIPT4_SEPIC_FLAMETHROWERWHOOSH4"	//Wonder sound loop 1
+		play string sound "SCRIPT4_SEPIC_CASTSPELLFREEZE1"	//Wonder sound loop 2
+		play string sound "SCRIPT4_SEPIC_EPICTOWERLOOP2"
+		play string sound "SCRIPT4_SEPIC_EPICTOWERLOOP3"
+
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set fade in time 1
+		//wait 1 seconds
+		
+		//suitable sfx for thunder and other ominous, powerful sounds
+		///////////////////////////////////////////////////////////////////////////////
+
+		RelCamPos=marker at get world position from Wonder  to {-13.391, 4.641, 1.841}
+		RelCamFoc=marker at get world position from Wonder  to {83.362, -18.238, 12.534}
+		move camera position to {RelCamPos} time 7 easein 0 easeout 0
+		move camera focus to {RelCamFoc} time 7 easein 0 easeout 0
+		wait 7 seconds
+		//wait until camera ready
+			
+		RelCamPos=marker at get world position from Wonder  to {-5.434, 4.101, -1.597}
+		RelCamFoc=marker at get world position from Wonder  to {-11.843, -33.951, 90.658}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}		
+
+		RelCamPos=marker at get world position from Wonder  to {-5.434, 4.101, -1.597}
+		RelCamFoc=marker at get world position from Wonder  to {-16.732, -38.075, 88.369}
+		move camera position to {RelCamPos} time 3 easein 0 easeout 0
+		move camera focus to {RelCamFoc} time 3 easein 0 easeout 0
+		wait 3 seconds
+		
+		/*RelCamPos=marker at get world position from Wonder  to {-18.947, 0.969, 13.936}
+		RelCamFoc=marker at get world position from Wonder  to {21.481, 2.488, 10.615}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		wait 3 seconds*/
+		
+		RelCamPos=marker at get world position from Wonder to {8.296, 5.021, -7.021}
+		RelCamFoc=marker at get world position from Wonder to {-55.144, 73.302, 29.215}
+
+		set camera lens 50.000
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set camera lens 48.000 time 2
+
+		//invoke Wonder EPIC_WONDER_STAGE_2 //Torch effect
+		invoke Wonder EPIC_WONDER_STAGE_2
+		invoke Wonder EPIC_WONDER_STAGE_3
+		invoke Wonder EPIC_WONDER_STAGE_4
+		invoke Wonder EPIC_WONDER_STAGE_5
+
+		wait 1 seconds
+		play string sound "SCRIPT4_SEPIC_EXPLOSION3"	//Zap!
+		wait 0.5 seconds
+
+		//Remove the chant music
+		detach music from Wonder
+
+		if Shockeddude exists
+			play anim "A_P_SIREN_REACTION" on Shockeddude
+			wait 0.2 seconds
+			set camera lens 37.000
+			RelCamPos=marker at get world position from Shockeddude to {0.320, 2.783, 0.888}
+			RelCamFoc=marker at get world position from Shockeddude to {0.030, 1.948, 0.420}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			set camera lens 34.000 time 1
+		end if
+		
+		wait 1.4 seconds
+
+		RelCamPos=marker at get world position from Wonder  to {-11.134, 5.632, 10.823}
+		RelCamFoc=marker at get world position from Wonder  to {55.577, -28.978, -55.144}
+		set camera lens 70.000
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+	
+		wait 0.2 seconds
+		//invoke Wonder EPIC_WONDER_STAGE_1 //Bottom effect explosion
+		play string sound "SCRIPT4_SEPIC_EPICTOWERELECTRIC2"	//Zap!
+
+		//set sky colour red 0 green 33 blue 64 time 9
+		enable predefined sky "SIREN" time 9
+	
+		RelCamPos=marker at get world position from Wonder to {-11.134, 37.408, 10.823}
+		RelCamFoc=marker at get world position from Wonder to {59.923, 49.631, -58.477}
+		move camera position to {RelCamPos} time 9
+		move camera focus to {RelCamFoc} time 9
+		
+		wait 1 second
+		invoke Wonder EPIC_WONDER_STAGE_2
+		
+		play string sound "SCRIPT4_SEPIC_FLAMETHROWERWHOOSH1"	//Zap!
+		play string sound "SCRIPT4_SEPIC_EXPLOSION1"	//Zap!
+		wait 2 seconds
+		
+		invoke Wonder EPIC_WONDER_STAGE_3
+		play string sound "SCRIPT4_SEPIC_FLAMETHROWERWHOOSH2"	//Zap!
+		play string sound "SCRIPT4_SEPIC_EXPLOSION2"	//Zap!
+
+		invoke Wonder EPIC_WONDER_STAGE_4
+		wait 3 seconds
+
+		//invoke Wonder EPIC_WONDER_STAGE_1 //Bottom effect explosion
+		invoke Wonder EPIC_WONDER_STAGE_5
+		wait 3 seconds
+		stop sound "SCRIPT4_SEPIC_EPICTOWERELECTRIC2"
+		//send beam of light into the air
+
+		invoke Wonder EPIC_WONDER_STAGE_6
+		//play string sound "SCRIPT4_SEPIC_FREEZE_01"	//Long Beam Zap!
+
+		wait 0.2 seconds
+		
+		play string sound "SCRIPT4_SEPIC_EXPLOSION3"	//Zap!
+		play string sound "SCRIPT4_SEPIC_BEAMOFLIGHT11"
+		stop sound "SCRIPT4_SEPIC_EPICTOWERLOOP2"
+		stop sound "SCRIPT4_SEPIC_EPICTOWERLOOP3"
+			
+		RelCamPos=marker at get world position from Wonder  to {-11.134, 37.408, 10.823}
+		RelCamFoc=marker at get world position from Wonder  to {1.549, 135.599, -3.240}
+		move camera position to {RelCamPos} time 0.6
+		move camera focus to {RelCamFoc} time 0.6
+		
+		//wait until camera ready
+		disable shadows
+		wait 0.6 seconds
+		set fade red 255 green 255 blue 255 time 1.5
+		wait 0.7 seconds
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		set camera lens 50.000
+		invoke Siren EPIC_MOVE_VILLAGERS //teleports enemy villagers to siren (not on screen)
+		//Stop the wonder sounds.
+		stop sound "SCRIPT4_SEPIC_FLAMETHROWERWHOOSH4"	//Wonder sound loop 1
+		stop sound "SCRIPT4_SEPIC_CASTSPELLFREEZE1"	//Wonder sound loop 2
+
+		//beam down from afar?///////////////////////////////////////////////////////////////////////
+		
+		RelCamPos=marker at get world position from Siren  to {-40.758, 28.688, 34.774}
+		RelCamFoc=marker at get world position from Siren  to {-40.010, 28.594, 34.117}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		set fade in time 1
+
+		wait 0.8 seconds
+		invoke Siren EPIC_BEAM_DOWN //sEND BEAM DOWN
+		wait 0.2 seconds
+	
+		RelCamPos=marker at get world position from Siren  to {-40.758, 28.688, 34.774}
+		RelCamFoc=marker at get world position from Siren  to {-40.043, 28.364, 34.154}
+		move camera position to {RelCamPos} time 1.5
+		move camera focus to {RelCamFoc} time 1.5
+
+		wait 0.5 seconds
+
+		play string sound "SCRIPT4_SEPIC_BEAMOFLIGHTSTART1"	//Short Beam Zap!
+		play string sound "SCRIPT4_SEPIC_BEAMOFLIGHT11"
+		wait 0.5 second
+		play string sound "SCRIPT4_SEPIC_BEAMOFLIGHTLOOP7"
+	
+		MeOldMateDave = get Siren star STAR_VILLAGER1
+		stop music
+		wait 2 seconds
+
+		if MeOldMateDave exists
+
+			set camera lens 34.000		
+			RelCamPos=marker at get world position from MeOldMateDave to {-4.750, 3.239, 5.303}
+			RelCamFoc=marker at get world position from MeOldMateDave to {-3.949, 2.902, 4.809}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+		end if
+
+		wait 2 seconds
+
+		stop sound "SCRIPT4_SEPIC_BEAMOFLIGHT7"
+		stop sound "SCRIPT4_SEPIC_DECAYCHARGESPELL"
+		
+		invoke Siren EPIC_SHOW_SIREN //show siren
+		invoke Siren EPIC_SHUT_DOWN_BEAM
+		
+		//set mixer SirenMixer channel AUDIO_MIXER_CHANNEL_MUSIC to 0.7		
+
+		//Once beam hits ground
+		start music "SirenSong"
+		run background script SirenSubtitles
+
+		stop sound "SCRIPT4_SEPIC_BEAMOFLIGHTLOOP7"
+
+		//Create a timer for time up counting
+		MusicEventTimer=create timer for 0 seconds
+		MusicEvent1=get music "SirenSong" event "e1" time
+		MusicEvent2=get music "SirenSong" event "e2" time
+
+		//new
+		set camera lens 50.000
+		
+		RelCamPos=marker at get world position from Siren to {0.299, 18.818, 0.665}
+		RelCamFoc=marker at get world position from Siren to {-14.789, -92.676, -38.880}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		RelCamPos=marker at get world position from Siren to {1.701, 60.175, -0.018}
+		RelCamFoc=marker at get world position from Siren to {-2.676, -45.344, -44.427}
+		move camera position to {RelCamPos} time 6.5
+		move camera focus to {RelCamFoc} time 6.5
+		
+		wait 6.5 seconds
+		//wait until camera ready
+
+		set camera position follow Siren offset {-0.751, 7.898, 24.249}
+		set camera focus follow Siren offset {1.475, -3.738, -89.701}
+
+		wait 6 seconds
+
+		//close up
+		set camera lens 18.000
+		set camera position follow Siren offset {19.979, 9.857, 15.356}
+		set camera focus follow Siren offset {-70.832, 7.366, -54.446}
+			
+		wait until get MusicEventTimer time since set >= MusicEvent1
+
+		set camera lens 50.000
+		set camera position follow Siren offset {1.072, 7.771, 24.721}
+		set camera focus follow Siren offset {-7.308, -4.887, -88.835}
+		set camera position to camera position
+		set camera focus to camera focus
+
+		invoke Siren EPIC_SUMMON_NYMPHS
+		wait 0.5 seconds
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		invoke Siren EPIC_ADD_NYMPHS //add nymphs
+		set camera position follow Siren offset {-0.253, 10.650, 22.440}
+		set camera focus follow Siren offset {-8.047, -10.598, -89.869}
+		wait 0.2 seconds
+		set camera position to camera position
+		set camera focus to camera focus
+			
+		set camera lens 70.000 time 3
+
+		MeOldMateDave = get Siren star STAR_VILLAGER1
+
+		wait 3 seconds		
+
+	//1st low tracking//////////////////////////////////////////////////////////////////////////////////
+
+		StarNymph = get Siren star STAR_NYMPH
+
+		if MeOldMateDave exists
+
+			RelCamPos=marker at get world position from MeOldMateDave to {0.509, 0.736, -1.712}
+			RelCamFoc=marker at get world position from MeOldMateDave to {0.651, 1.155, -0.815}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+				
+			RelCamPos=marker at get world position from MeOldMateDave to {-1.194, 0.721, -1.437}
+			RelCamFoc=marker at get world position from MeOldMateDave to {-1.052, 1.140, -0.540}
+			move camera position to {RelCamPos} time 7
+			move camera focus to {RelCamFoc} time 7
+		end if
+
+		wait 6 seconds
+
+	//down siren leg//////////////////////////////////////////////////////////////////////////////////
+			
+		RelCamPos=marker at get world position from Siren  to {-3.240, 37.112, 3.494}
+		RelCamFoc=marker at get world position from Siren  to {24.455, 52.740, -55.142}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+			
+		RelCamPos=marker at get world position from Siren  to {-16.892, 18.205, 24.192}
+		RelCamFoc=marker at get world position from Siren  to {14.588, 37.534, -31.350}
+		move camera position to {RelCamPos} time 7
+		move camera focus to {RelCamFoc} time 7
+		wait 6 seconds
+
+	//follow nymph//////////////////////////////////////////////////////////////////////////////////
+
+		//set camera position follow StarNymph offset {-0.983,-0.576,-1.214}
+		//set camera focus follow StarNymph offset {4.980,4.667,11.096}
+
+		RelCamPos=marker at get world position from Siren to {-74.461, 44.675, -31.588}
+		RelCamFoc=marker at get world position from Siren to {8.412, 4.457, 7.328}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		RelCamPos=marker at get world position from Siren to {-76.002, 44.476, -27.218}
+		RelCamFoc=marker at get world position from Siren to {9.026, 5.094, 7.707}
+		move camera position to {RelCamPos} time 5 easein 0 easeout 0
+		move camera focus to {RelCamFoc} time 5 easein 0 easeout 0
+			
+		wait 5 seconds
+		//wait until get MusicEventTimer time since set >= MusicEvent2
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		RelCamPos=marker at get world position from Siren  to {-14.726, 27.090, 9.482}
+		RelCamFoc=marker at get world position from Siren  to {107.596, 61.052, -67.388}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+		//wait 2 seconds
+
+		invoke Siren EPIC_TRIGGER_NYMPHS_GESTURE //sic nymphs
+		wait 2 seconds
+		wait 1 seconds
+
+		invoke Siren EPIC_TRIGGER_NYMPHS //sic nymphs
+
+		RelCamPos=marker at get world position from Siren to {-14.726, 27.090, 9.482}
+		RelCamFoc=marker at get world position from Siren to {106.261, -55.985, 31.522}
+		move camera position to {RelCamPos} time 2.5
+		move camera focus to {RelCamFoc} time 2.5
+		wait 2.3 seconds
+
+		//play string sound "SCRIPT4_SEPIC_EPICTOWERLOOP1"	//Beam us up sample!
+
+		/*RelCamPos=marker at get world position from Siren  to {-35.153, 7.701, 28.173}
+		RelCamFoc=marker at get world position from Siren  to {-33.970, 7.373, 27.803}
+		move camera position to {RelCamPos} time 3*/
+
+
+		StarVillager = get Siren star STAR_VILLAGER
+
+		if StarVillager exists
+
+			HackVillexistingTimer =create timer for 10 seconds
+
+			while WaitUntilPairedAnimStarts not exists or get HackVillexistingTimer time remaining <= 0
+				WaitUntilPairedAnimStarts = get Siren star EPIC_WONDER_HACK_VILLAGER
+			end while
+
+		end if
+		
+		StarVillager = get Siren star STAR_VILLAGER
+
+		if StarVillager exists
+
+			set camera lens 38.000
+			RelCamPos=marker at get world position from StarVillager to {0.820, 1.323, 1.452}
+			RelCamFoc=marker at get world position from StarVillager to {0.187, 1.248, 0.682}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			wait 2 seconds
+			RelCamPos=marker at get world position from StarVillager to {3.891, 1.394, -1.827}
+			RelCamFoc=marker at get world position from StarVillager to {3.160, 1.347, -1.146}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+
+			wait 2 seconds
+
+			RelCamPos=marker at get world position from StarVillager to {11.107, 2.570, 6.509}
+			RelCamFoc=marker at get world position from StarVillager to {10.243, 2.511, 6.010}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 5 seconds
+				
+			RelCamPos=marker at get world position from StarVillager to {24.125, 12.082, 39.660}
+			RelCamFoc=marker at get world position from StarVillager to {23.729, 11.905, 38.759}
+			move camera position to {RelCamPos} time 8
+			move camera focus to {RelCamFoc} time 8
+
+			wait 8 seconds
+			//wait until camera ready
+
+		end if
+
+		play string sound "SCRIPT4_SEPIC_SIRENDISAPPEAR"	
+		//stop sound "SCRIPT4_SEPIC_EPICTOWERLOOP1"
+
+		///this removal sample will now be played in code
+		//play string sound "SCRIPT4_SEPIC_BEAMOFLIGHTLOOP6"
+
+		invoke Siren EPIC_REMOVE_SIREN
+		set camera lens 70.000
+
+		RelCamPos=marker at get world position from Siren to {-0.137, 15.183, 43.739}
+		RelCamFoc=marker at get world position from Siren to {-0.093, 15.178, 42.740}
+		set camera position to {RelCamPos}
+		set camera focus to {RelCamFoc}
+
+		wait 2 seconds
+
+		RelCamPos=marker at get world position from Siren to {-0.137, 15.183, 43.739}
+		RelCamFoc=marker at get world position from Siren to {-0.094, 14.899, 42.781}
+		move camera position to {RelCamPos} time 4
+		move camera focus to {RelCamFoc} time 4
+	
+		invoke Wonder EPIC_WONDER_STAGE_5			
+		invoke Wonder EPIC_WONDER_STAGE_7			
+		wait 7 seconds
+
+		//reset sky colour 3 seconds//restore sky colour to normal
+		enable predefined sky "DEFAULT" time 3
+		wait 3 seconds
+
+		enable simulation sound
+
+		enable shadows
+		
+		stop music//kill the music
+
+		invoke Wonder EPIC_WONDER_STAGE_LAST
+
+		ATIEndFlag=1
+
+		wait 2 seconds
+	
+	end cinema//exit widescreen
+
+	destroy mixer SirenMixer with fadetime 2
+
+end script SirenSpell

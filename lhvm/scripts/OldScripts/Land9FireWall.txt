@@ -1,0 +1,52 @@
+
+
+
+begin script Land9FireWall
+
+WallPos1 = marker at {579.134,89.578,327.978} 
+WallPos2 = marker at {641.918,89.072,584.225}
+FirePos[10]
+TimerNumber = 0
+RandomFire = 0
+Timer = create timer for TimerNumber seconds
+FirePlume = 0
+TargetPlatoon = 0
+PlatoonTimer = 0
+
+start
+
+FirePos[0] = marker at {560.429,96.308,424.675}
+FirePos[1] = marker at {494.962,93.392,367.784}
+FirePos[2] = marker at {581.871,91.978,490.130}
+FirePos[3] = marker at {540.793,94.274,570.980}
+FirePos[4] = marker at {447.118,91.206,461.998}
+FirePos[5] = marker at {539.657,93.952,474.482}
+FirePos[6] = marker at {407.614,92.588,386.574}
+FirePos[7] = marker at {505.970,96.798,440.829}
+FirePos[8] = marker at {554.516,93.825,506.687}
+FirePos[9] = marker at {467.835,91.172,596.505}
+
+begin loop
+
+	TargetPlatoon = get platoon of player 0 nearest {LC9_MinorSettlement[7]} radius 1000
+
+	if get Timer time remaining <= 0
+		FirePlume = create visual effect "gp_s_fire_big.ves" strength 1 scale 2 at {FirePos[RandomFire]} + {0, 0, 0} time 1
+		TimerNumber = number from 5 to 10
+		RandomFire = number from 0 to 9
+		set Timer time to TimerNumber seconds
+	end if
+
+	if TargetPlatoon exists
+		if {TargetPlatoon} and {LC9_MinorSettlement[7]} on same side of line between {WallPos1} and {WallPos2}
+			PlatoonTimer = number from 5 to 10
+			FirePlume = create visual effect "gp_s_fire_big.ves" strength 1 scale 2 at {TargetPlatoon} + {0, 0, 0} time 1
+		end if
+	end if
+	
+
+
+until LC9_RainDanceComplete == 1
+end loop
+
+end script Land9FireWall

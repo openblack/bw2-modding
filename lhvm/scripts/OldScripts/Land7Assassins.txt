@@ -1,0 +1,1070 @@
+///////////////////////////////////////////////////////////////////////////////
+//	ASSASSINS
+//	~~~~~~~~~
+//
+//	Your high priest has been targeted for execution by an enemy tribe.
+//	They have sent out a number of assassins to kill him. The idea is the player
+//	needs to prevent this by killing or persuading them to change their ways.
+//
+//	Rewards:			Unknown
+//
+//	Start date:			26-02-03			By:	Steve
+//	Update date:		28-11-03			By: Steve
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define AS_TRUE						= 1
+define AS_FALSE						= 0
+define AS_PLAYER_OWNED				= 1
+define AS_NUMBER_OF_ASSASSINS		= 10
+define AS_MAX_SINGLE_ASSASSINS		= 5
+
+// <TEMP>
+// Just for testing moving through houses
+define AS_NUMBER_OF_SAFEHOUSES		= 25
+global AS_Safehouse[AS_NUMBER_OF_SAFEHOUSES]
+// </TEMP>
+
+
+// Times the single assassin will attack between
+define AS_START_ATTACK_TIME			= 18.00
+define AS_LATEST_START_ATTACK_TIME	= 05.00
+
+
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global AS_Assassin[AS_NUMBER_OF_ASSASSINS]
+global AS_AssassinAlive[AS_NUMBER_OF_ASSASSINS]
+global AS_AssassinConverted[AS_NUMBER_OF_ASSASSINS]
+
+global AS_AssassinTarget				= 0
+global AS_Time							= 0
+global AS_PlayerTownToAttack			= 0
+global AS_LastEnemyTownToTake			= 0
+global AS_SendGroupOfAssassins			= AS_FALSE
+global AS_DimitriosKilled				= AS_FALSE
+global AS_DimitriosIsDeadCutsceneRun	= AS_FALSE
+
+
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script AS_SetupAssassins
+define script AS_HandleOccasionalAssassins
+define script AS_HandleMainAssassinAttack
+define script AS_CreateAssassin(AssassinID, Position)
+define script AS_FindSafePlaceToEnterTown(AssassinID)
+define script AS_GetTargetForAssassin
+define script AS_IsAssassinAlive(AssassinID)
+define script AS_OccasionalAssassinsUseSafehousesToGetToAndAttackTarget(AssassinID)
+define script AS_GroupAssassinsUseSafehousesToGetToAndAttackTarget(AssassinID)
+define script AS_KeepTrackOfTime
+define script AS_ShouldWeSendTheGroupOfAssassins
+define script AS_CheckForConvertingAssassin(AssassinID)
+define script AS_MoveConvertedAssassinToRallyPoint(ExAssassin, RallyPoint)
+define script AS_CreateDimitrios
+define script AS_DimitriosIsDead(Dim, Assassin)
+
+
+// <TEMP>
+define script AS_CreateSafehouses
+define script AS_ConverterRelicCreate
+define script AS_ConverterRelicActivation
+//define script AS_CreateDayAndNightToggleRock
+// </TEMP>
+
+
+//-----------------------------------------------------------------------------
+//	Start of script
+//-----------------------------------------------------------------------------
+begin script Land7Assassins
+start
+
+	// Setup the script variables, run the occasional assassins then make the group of assassins attack
+	run script AS_SetupAssassins
+	run script AS_HandleOccasionalAssassins
+	wait until AS_SendGroupOfAssassins == AS_TRUE
+	run script AS_HandleMainAssassinAttack
+
+end script Land7Assassins
+
+
+//-----------------------------------------------------------------------------
+//	Setup the global variables and background scripts etc.
+//-----------------------------------------------------------------------------
+begin script AS_SetupAssassins
+
+	Counter		= 0
+
+start
+
+// <TEMP>
+run script AS_CreateSafehouses
+run script AS_ConverterRelicCreate
+run background script AS_ConverterRelicActivation
+//run background script AS_CreateDayAndNightToggleRock
+// </TEMP>
+
+
+
+
+
+	// Setup global variables
+	AS_SendGroupOfAssassins = AS_FALSE
+	//AS_SendGroupOfAssassins = AS_TRUE					// TEMP: Just to test the group straight away
+
+	// Get the relevant towns
+	AS_PlayerTownToAttack = get TOWN at {1739.631,27.249,775.513} radius 100
+	AS_LastEnemyTownToTake = get TOWN at {790.542,64.777,2082.271} radius 100
+
+	// Run the background checks
+	run background script AS_KeepTrackOfTime
+	run background script AS_ShouldWeSendTheGroupOfAssassins
+
+	// Keep track of the health of the assassins
+	while Counter < AS_NUMBER_OF_ASSASSINS
+		run background script AS_IsAssassinAlive(Counter)
+		Counter++
+	end while
+
+end script AS_SetupAssassins
+
+
+
+
+//-----------------------------------------------------------------------------
+//	SINGLE ATTACKS FROM OCCASIONAL ASSASSINS
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//	Take care of the first part of the script
+//-----------------------------------------------------------------------------
+begin script AS_HandleOccasionalAssassins
+
+	CreatePos		= marker at {1644.645,35.282,845.776}
+	AmountSent		= 0
+
+start
+
+	begin loop
+		// Make sure that the assassins will only try to get into the town during night
+//		if AS_Time > AS_START_ATTACK_TIME and AS_Time < AS_LATEST_START_ATTACK_TIME
+			if AS_AssassinAlive[0] == AS_FALSE
+				run script AS_CreateAssassin(0, CreatePos)
+				run background script AS_CheckForConvertingAssassin(0)
+				run script AS_FindSafePlaceToEnterTown(0)
+				run script AS_OccasionalAssassinsUseSafehousesToGetToAndAttackTarget(0)
+				AmountSent++
+				if AmountSent < AS_MAX_SINGLE_ASSASSINS
+					//wait 1 seconds
+					//wait 60 seconds
+					say "Starting another assassin off."
+					wait until read
+				end if
+			end if
+//		end if
+	until AS_SendGroupOfAssassins == AS_TRUE
+	until AmountSent >= AS_MAX_SINGLE_ASSASSINS
+	end loop
+
+end script AS_HandleOccasionalAssassins
+
+
+//-----------------------------------------------------------------------------
+//	Create an assassin
+//-----------------------------------------------------------------------------
+begin script AS_CreateAssassin(AssassinID, Position)
+start
+
+	AS_Assassin[AssassinID] = create VILLAGER VILLAGER_INFO_JAPANESE_LEADER_MALE at {Position}
+	AS_AssassinConverted[AssassinID] = AS_FALSE
+	SCALE of AS_Assassin[AssassinID] = 5
+
+end script AS_CreateAssassin
+
+
+//-----------------------------------------------------------------------------
+//	Get the assassin to bypass guards etc to get into the town
+//-----------------------------------------------------------------------------
+begin script AS_FindSafePlaceToEnterTown(AssassinID)
+start
+
+	// Check to see if the town has a wall
+	// Check to see if the gate is open or not
+	// If the gate is closed........
+	//		Get the least defended point of the town wall
+	//		Goto the wall and scale up
+	//		Check to see if the way down is free
+	//			Go down the tower if it's clear
+	//		If the way is not clear
+	//			Wait for a while then go down if it's clear
+	//			Otherwise wait until the guard is facing the other way then kill him and then go down
+	// If the gate is open..........
+	//		Sneak past when the guards are looking elsewhere
+	//		If too heavily defended use the wall
+
+end script AS_FindSafePlaceToEnterTown
+
+
+//-----------------------------------------------------------------------------
+//	Get a target for the assassin
+//-----------------------------------------------------------------------------
+begin script AS_GetTargetForAssassin
+
+	UnitCheckID		= 0
+	UnitTypeToCheck	= 0
+	GotTarget		= AS_FALSE
+	CannotGetTarget	= AS_FALSE
+
+start
+/*
+	// NOTE: WILL NEED TO CHECK FOR THE FIGHTING UNIT TYPE OF THE PLAYER WITH MOST EXPERIENCE - ONCE EXPERIENCE IS IN
+	// Get a fighting unit target for the assassin to attack
+	while AS_SingleAssassinAlive == AS_TRUE and GotTarget == AS_FALSE and CannotGetTarget == AS_FALSE
+		// Increment to the next unit type check
+		UnitCheckID++
+
+		if UnitCheckID <= 6
+			// Which unit type should we check for?
+			if UnitCheckID == 1
+				UnitTypeToCheck = variable PLATOON_INFO_GREEK_MELEE_1
+			elsif UnitCheckID == 2
+				UnitTypeToCheck = variable PLATOON_INFO_GREEK_MELEE_3
+			elsif UnitCheckID == 3
+				UnitTypeToCheck = variable PLATOON_INFO_GREEK_MELEE_2
+			elsif UnitCheckID == 4
+				UnitTypeToCheck = variable PLATOON_INFO_GREEK_RANGED_1
+			elsif UnitCheckID == 5
+				UnitTypeToCheck = variable PLATOON_INFO_GREEK_RANGED_2
+			else
+				UnitTypeToCheck = variable PLATOON_INFO_GREEK_RANGED_3
+			end if
+
+			// NEED TO BE ABLE TO GET A SOLDIER IN THE SAME WAY YOU CAN GET A VILLAGER - NOT YET DONE
+			// Check to see if the unit is found in the town
+			AS_SingleAssassinTarget = get SOLDIER constant UnitTypeToCheck at {AS_PlayerTownToAttack} radius 100
+
+			// Does the target exist and is it the players unit?
+			if AS_SingleAssassinTarget exists and PLAYER of AS_SingleAssassinTarget == AS_PLAYER_OWNED
+				say "Found a fighting unit of the player to attack."
+				wait until read
+				GotTarget = AS_TRUE
+			else
+				AS_SingleAssassinTarget = 0
+			end if
+		else
+			// The player has no fighting unit in his town
+			AS_SingleAssassinTarget = 0
+			CannotGetTarget = AS_TRUE
+			say "Couldn't get an attacking unit of the player to attack."
+			wait until read
+		end if
+	end while
+*/
+
+// <TEMP>
+	if AS_SendGroupOfAssassins == AS_FALSE
+		while GotTarget == AS_FALSE and CannotGetTarget == AS_FALSE
+			AS_AssassinTarget = get VILLAGER at {AS_PlayerTownToAttack} radius 100
+
+			if AS_AssassinTarget exists
+				if PLAYER of AS_AssassinTarget == AS_PLAYER_OWNED
+					SCALE of AS_AssassinTarget = 10
+					GotTarget = AS_TRUE
+				else
+					say "Target is not the players villager."
+					wait until read
+				end if
+			else
+				say "Cannot find a valid target."
+				wait until read
+				AS_AssassinTarget = 0
+				CannotGetTarget = AS_TRUE
+			end if
+		end while
+	else
+		say "Getting the Greek High Priest as a target for the group of Assassins."
+		wait until read
+
+		AS_AssassinTarget = get VILLAGER VILLAGER_INFO_EGYPTIAN_FORESTER_MALE at {AS_LastEnemyTownToTake} radius 500
+
+		if AS_AssassinTarget exists
+			say "Got Dimi."
+			wait until read
+// NOTE: Cannot check to see Dimi is player owned as he was created in script.
+// At the moment you cannot set the player of a villager - needs to be fixed.
+//			if PLAYER of AS_AssassinTarget == AS_PLAYER_OWNED
+				SCALE of AS_AssassinTarget = 10
+//			end if
+		else
+			AS_AssassinTarget = 0
+			say "Not got Dimi."
+			wait until read
+		end if
+	end if
+// </TEMP>
+
+end script AS_GetTargetForAssassin
+
+
+//-----------------------------------------------------------------------------
+//	Move to the target to attack it
+//-----------------------------------------------------------------------------
+begin script AS_OccasionalAssassinsUseSafehousesToGetToAndAttackTarget(AssassinID)
+
+	HOUSE_SEARCH_RADIUS			= 10
+	ATTACK_THRESHOLD			= 30
+	TIME_DELAY					= 5
+	KILL_THRESHOLD				= 3
+	DistanceToTarget			= 0
+	NearbyHouse					= 0
+	LastHouseHidIn				= 0
+	ExAssassin					= 0
+	AttackedTarget				= AS_FALSE
+	CannotFindTarget			= AS_FALSE
+	AssassinMovingToTarget		= AS_FALSE
+	HouseSearchTimer			= create timer for TIME_DELAY seconds
+	KeepAssassinOnTarget		= create timer for TIME_DELAY seconds
+	RallyPoint					= marker at {1678.741,28.813,773.146}
+
+start
+
+	// Do a simple tracking routine
+	begin loop
+		if AS_AssassinTarget exists and HEALTH of AS_AssassinTarget > 0
+			// Got a target so go and attack him
+			DistanceToTarget = get distance from {AS_Assassin[AssassinID]} to {AS_AssassinTarget}
+
+			// Handle the assassins actions based on the distance away from the target
+			if DistanceToTarget < KILL_THRESHOLD
+				// Stop the assassin and kill the target
+				move AS_Assassin[AssassinID] position to {AS_Assassin[AssassinID]}
+				AttackedTarget = AS_TRUE
+			elsif DistanceToTarget < ATTACK_THRESHOLD
+				// Go straight for the target
+				move AS_Assassin[AssassinID] position to {AS_AssassinTarget}
+				SPEED of AS_Assassin[AssassinID] = 0.5
+			else
+				// Move to the target but use houses along the way for cover
+				if AS_AssassinAlive[AssassinID] == AS_TRUE
+					if AssassinMovingToTarget == AS_FALSE
+						move AS_Assassin[AssassinID] position to {AS_AssassinTarget}
+						AssassinMovingToTarget = AS_TRUE
+					end if
+
+// <TEMP>
+// This is only being used until we get an object following another object
+// Check to see if we should do another move towards the target
+if get KeepAssassinOnTarget time remaining <= 0
+	set KeepAssassinOnTarget time to TIME_DELAY seconds
+	AssassinMovingToTarget = AS_FALSE
+end if
+// </TEMP>
+
+					// Check to see if there is a house to hide in for a while
+					if get HouseSearchTimer time remaining <= 0
+						NearbyHouse = get HOUSE at {AS_Assassin[AssassinID]} radius HOUSE_SEARCH_RADIUS
+						if NearbyHouse exists and NearbyHouse != LastHouseHidIn
+							move AS_Assassin[AssassinID] position to {NearbyHouse}
+							wait until {AS_Assassin[AssassinID]} near {NearbyHouse} radius 2 or AS_AssassinAlive[AssassinID] == AS_FALSE
+
+							// Make the assassin wait in the house for a while
+							if AS_AssassinAlive[AssassinID] == AS_TRUE
+								wait number from 5 to 15 seconds
+								LastHouseHidIn = NearbyHouse
+								set HouseSearchTimer time to TIME_DELAY seconds
+							end if
+						end if
+					end if
+				end if
+			end if
+		else
+			// Get a target
+			run script AS_GetTargetForAssassin
+
+			// Make sure there is a target for the assassin
+			if not AS_AssassinTarget exists
+				CannotFindTarget = AS_TRUE
+			end if
+		end if
+
+	until AS_AssassinAlive[AssassinID] == AS_FALSE
+	until AS_AssassinConverted[AssassinID] == AS_TRUE
+	until AttackedTarget == AS_TRUE
+	until CannotFindTarget == AS_TRUE
+	until AS_SendGroupOfAssassins == AS_TRUE
+	end loop
+
+
+
+	// Clean up the assassin if he's got to his target or he has no target or the group of assassins are on their way
+	if AS_AssassinAlive[AssassinID] == AS_TRUE
+		if AttackedTarget == AS_TRUE
+			delete AS_AssassinTarget
+			say "Killed the target..."
+			wait until read
+		elsif CannotFindTarget == AS_TRUE
+			say "Couldn't get a target..."
+			wait until read
+		elsif AS_SendGroupOfAssassins == AS_TRUE
+			say "The enemy town has been taken over..."
+			wait until read
+		end if
+
+		// Clean up the assassin whether he is converted or otherwise
+		if AS_AssassinConverted[AssassinID] == AS_TRUE
+			ExAssassin = AS_Assassin[AssassinID]
+			AS_Assassin[AssassinID] = 0
+			run background script AS_MoveConvertedAssassinToRallyPoint(ExAssassin, RallyPoint)
+		else
+			say "Deleting Assassin - will make him exit the area properly eventually."
+			wait until read
+			delete AS_Assassin[AssassinID]
+		end if
+	end if
+
+end script AS_OccasionalAssassinsUseSafehousesToGetToAndAttackTarget
+
+
+//-----------------------------------------------------------------------------
+//	Keep track of whether the assassin is alive or not
+//-----------------------------------------------------------------------------
+begin script AS_IsAssassinAlive(AssassinID)
+start
+
+	// Flag whether the assassin is alive or not
+	begin loop
+		if AS_Assassin[AssassinID] exists and HEALTH of AS_Assassin[AssassinID] > 0
+			AS_AssassinAlive[AssassinID] = AS_TRUE
+		else
+			AS_AssassinAlive[AssassinID] = AS_FALSE
+		end if
+	end loop
+
+end script AS_IsAssassinAlive
+
+
+//-----------------------------------------------------------------------------
+// Flag that we should stop the occasional attacks and send the group
+//-----------------------------------------------------------------------------
+begin script AS_ShouldWeSendTheGroupOfAssassins
+start
+
+	while AS_SendGroupOfAssassins == AS_FALSE
+		if PLAYER of AS_LastEnemyTownToTake == AS_PLAYER_OWNED
+			AS_SendGroupOfAssassins = AS_TRUE
+		end if
+	end while
+
+end script AS_ShouldWeSendTheGroupOfAssassins
+
+
+//-----------------------------------------------------------------------------
+// Keep checking to see if the converter relic has been used to convert the assassins
+//-----------------------------------------------------------------------------
+begin script AS_CheckForConvertingAssassin(AssassinID)
+
+	CheckForConvertingThisAssassin		= AS_FALSE
+
+start
+
+	// Make sure the assassin is alive before beginning the checks
+	wait until AS_AssassinAlive[AssassinID] == AS_TRUE
+
+	// Keep checking while the assassin is alive and not converted and the converter relic exists
+	while AS_AssassinAlive[AssassinID] == AS_TRUE and AS_AssassinConverted[AssassinID] == AS_FALSE and L7_ConverterRelic exists
+		// Only do the converting check if the relic exists and it's active
+		if L7_ConverterRelic exists and L7_ConverterRelicActive == AS_TRUE
+			// Make sure they are dropped next to the relic or the relic is dropped next to them
+			if AS_Assassin[AssassinID] is HELD
+				wait until not AS_Assassin[AssassinID] is HELD
+				CheckForConvertingThisAssassin = AS_TRUE
+			elsif L7_ConverterRelic is HELD
+				wait until not L7_ConverterRelic is HELD
+				CheckForConvertingThisAssassin = AS_TRUE
+			end if
+
+			// Should we convert the assassin?
+			if CheckForConvertingThisAssassin == AS_TRUE
+				if {L7_ConverterRelic} near {AS_Assassin[AssassinID]} radius 10
+					// Convert that assassin here...
+					say "Assassin $d has been converted." with number AssassinID
+					wait until read
+					AS_AssassinConverted[AssassinID] = AS_TRUE
+				end if
+				CheckForConvertingThisAssassin = AS_FALSE
+			end if
+		end if
+	end while
+
+end script AS_CheckForConvertingAssassin
+
+
+//-----------------------------------------------------------------------------
+// Move the newly converted assassin to a rally point
+//-----------------------------------------------------------------------------
+begin script AS_MoveConvertedAssassinToRallyPoint(ExAssassin, RallyPoint)
+start
+
+	if ExAssassin exists and HEALTH of ExAssassin > 0
+		move ExAssassin position to {RallyPoint}
+		wait until {ExAssassin} near {RallyPoint} radius 2 or not ExAssassin exists or HEALTH of ExAssassin <= 0
+	end if
+
+end script AS_MoveConvertedAssassinToRallyPoint
+
+
+//-----------------------------------------------------------------------------
+// Keep track of the time of day
+//-----------------------------------------------------------------------------
+begin  script AS_KeepTrackOfTime
+start
+
+	begin loop
+		// Get the current time of day
+		AS_Time = get game time
+	end loop
+
+end script AS_KeepTrackOfTime
+
+
+
+
+//-----------------------------------------------------------------------------
+//	BIG ATTACK FROM A GROUP OF ASSASSINS
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//	Take care of the main assassin attack
+//-----------------------------------------------------------------------------
+begin script AS_HandleMainAssassinAttack
+
+	AssassinCreatePos[AS_NUMBER_OF_ASSASSINS]
+
+	AssassinStart	= marker at {770.748,65.597,2079.067}
+	Counter			= 0
+
+start
+
+	say "Sending group of Assassins here..."
+	// Make sure there is a slight delay
+	wait 10 seconds
+
+	// Create the group of assassins target
+	run script AS_CreateDimitrios
+
+	// Create the start positions for the assassins (inside the town wall)
+	AssassinCreatePos[0] = marker at {AssassinStart}
+	AssassinCreatePos[1] = marker at {AssassinStart} + {2, 2}
+	AssassinCreatePos[2] = marker at {AssassinStart} + {-2, -2}
+	AssassinCreatePos[3] = marker at {AssassinStart} + {4, 4}
+	AssassinCreatePos[4] = marker at {AssassinStart} + {-4, -4}
+	AssassinCreatePos[5] = marker at {AssassinStart} + {6, 6}
+	AssassinCreatePos[6] = marker at {AssassinStart} + {-6, -6}
+	AssassinCreatePos[7] = marker at {AssassinStart} + {8, 8}
+	AssassinCreatePos[8] = marker at {AssassinStart} + {-8, -8}
+	AssassinCreatePos[9] = marker at {AssassinStart} + {10, 10}
+
+	// Get the target for the group of assassins (Dimitrios)
+	run script AS_GetTargetForAssassin
+
+	// Handle the assassins actions
+	if AS_AssassinTarget exists and HEALTH of AS_AssassinTarget > 0
+		while Counter < AS_NUMBER_OF_ASSASSINS
+			if AS_AssassinAlive[Counter] == AS_FALSE
+				// Need to start the assassins inside the players town
+				run script AS_CreateAssassin(Counter, AssassinCreatePos[Counter])
+				run background script AS_CheckForConvertingAssassin(Counter)
+				run background script AS_GroupAssassinsUseSafehousesToGetToAndAttackTarget(Counter)
+			end if
+			Counter++
+		end while
+	end if
+
+end script AS_HandleMainAssassinAttack
+
+
+//-----------------------------------------------------------------------------
+//	Move the group of assassins to the target
+//-----------------------------------------------------------------------------
+begin script AS_GroupAssassinsUseSafehousesToGetToAndAttackTarget(AssassinID)
+
+	HOUSE_SEARCH_RADIUS			= 10
+	ATTACK_THRESHOLD			= 30
+	TIME_DELAY					= 5
+	KILL_THRESHOLD				= 3
+	DistanceToTarget			= 0
+	NearbyHouse					= 0
+	LastHouseHidIn				= 0
+	ExAssassin					= 0
+	CannotFindTarget			= AS_FALSE
+	AssassinMovingToTarget		= AS_FALSE
+	HouseSearchTimer			= create timer for TIME_DELAY seconds
+	KeepAssassinOnTarget		= create timer for TIME_DELAY seconds
+	RallyPoint					= marker at {835.833,61.994,2104.814}
+
+start
+
+	// Do a simple tracking routine
+	begin loop
+		if AS_AssassinTarget exists and HEALTH of AS_AssassinTarget > 0
+			// Got a target so go and attack him
+			DistanceToTarget = get distance from {AS_Assassin[AssassinID]} to {AS_AssassinTarget}
+
+			// Handle the assassins actions based on the distance away from the target
+			if DistanceToTarget < KILL_THRESHOLD
+				// Stop the assassin and kill the target
+				move AS_Assassin[AssassinID] position to {AS_Assassin[AssassinID]}
+				AS_DimitriosKilled = AS_TRUE
+			elsif DistanceToTarget < ATTACK_THRESHOLD
+				// Go straight for the target
+				move AS_Assassin[AssassinID] position to {AS_AssassinTarget}
+				SPEED of AS_Assassin[AssassinID] = 0.5
+			else
+				// Move to the target but use houses along the way for cover
+				if AS_AssassinAlive[AssassinID] == AS_TRUE
+					if AssassinMovingToTarget == AS_FALSE
+						move AS_Assassin[AssassinID] position to {AS_AssassinTarget}
+						AssassinMovingToTarget = AS_TRUE
+					end if
+
+// <TEMP>
+// This is only being used until we get an object following another object
+// Check to see if we should do another move towards the target
+if get KeepAssassinOnTarget time remaining <= 0
+	set KeepAssassinOnTarget time to TIME_DELAY seconds
+	AssassinMovingToTarget = AS_FALSE
+end if
+// </TEMP>
+
+					// Check to see if there is a house to hide in for a while
+					if get HouseSearchTimer time remaining <= 0
+						NearbyHouse = get HOUSE at {AS_Assassin[AssassinID]} radius HOUSE_SEARCH_RADIUS
+						if NearbyHouse exists and NearbyHouse != LastHouseHidIn
+							move AS_Assassin[AssassinID] position to {NearbyHouse}
+							wait until {AS_Assassin[AssassinID]} near {NearbyHouse} radius 2 or AS_AssassinAlive[AssassinID] == AS_FALSE
+
+							// Make the assassin wait in the house for a while
+							if AS_AssassinAlive[AssassinID] == AS_TRUE
+								wait number from 5 to 15 seconds
+								LastHouseHidIn = NearbyHouse
+								set HouseSearchTimer time to TIME_DELAY seconds
+							end if
+						end if
+					end if
+				end if
+			end if
+		else
+			// Stop the assassin as there is no target for him
+			move AS_Assassin[AssassinID] position to {AS_Assassin[AssassinID]}
+			CannotFindTarget = AS_TRUE
+		end if
+
+	until AS_AssassinAlive[AssassinID] == AS_FALSE
+	until AS_AssassinConverted[AssassinID] == AS_TRUE
+	until AS_DimitriosKilled == AS_TRUE
+	until CannotFindTarget == AS_TRUE
+	end loop
+
+
+
+	// Clean up the assassin if he wasn't the one to get to Dimitrios
+	// Clean up the assassin whether he is converted or otherwise
+	if AS_AssassinConverted[AssassinID] == AS_TRUE
+		ExAssassin = AS_Assassin[AssassinID]
+		AS_Assassin[AssassinID] = 0
+		run background script AS_MoveConvertedAssassinToRallyPoint(ExAssassin, RallyPoint)
+	else
+		if AS_DimitriosKilled == AS_TRUE
+			run background script AS_DimitriosIsDead(AS_AssassinTarget, AS_Assassin[AssassinID])
+			delete AS_Assassin[AssassinID]
+		end if
+	end if
+
+end script AS_GroupAssassinsUseSafehousesToGetToAndAttackTarget
+
+
+//-----------------------------------------------------------------------------
+//	Create the greek high priest as the target for the group of assassins
+//-----------------------------------------------------------------------------
+begin script AS_CreateDimitrios
+
+	Dimi			= 0
+	CreatePos		= marker at {829.430,35.909,1925.455}
+
+start
+
+	Dimi = create VILLAGER VILLAGER_INFO_EGYPTIAN_FORESTER_MALE at {CreatePos}
+	PLAYER of Dimi = AS_PLAYER_OWNED					// NOTE: Doesn't work at the moment but will be fixed I hope
+
+end script AS_CreateDimitrios
+
+
+//-----------------------------------------------------------------------------
+//Dimitrios Slain Cutscene
+//-----------------------------------------------------------------------------
+begin script AS_DimitriosIsDead(Dim, Assassin)
+
+	Hiroku=0
+	HirokuPos=0
+	DimPos[2]
+	AssasinPos[3]
+	MournerPos[13]
+	Mourner[13]
+	RelCamPos=0
+	RelCamFoc=0
+	Town=0
+	TownPos=marker at {1151.065,48.000,790.560}
+
+start
+
+	// Make sure the cutscene is only run once
+	if AS_DimitriosIsDeadCutsceneRun == AS_FALSE
+		AS_DimitriosIsDeadCutsceneRun = AS_TRUE
+
+		say "Dimitrios has been killed, do cutscene here..."
+		wait until read
+
+		delete Dim
+
+/*
+		Town = get HOUSE at {TownPos}
+
+		// Make Dimitrios face away from the assassin
+		set Dim focus to get target from {Assassin} to {Dim} distance 1 angle 0
+
+		begin cinema
+			//assassin closing in
+			set camera lens 32.000
+			RelCamPos=marker at get world position from Town to {21.854,0.533,-14.740}
+			RelCamFoc=marker at get world position from Town to {24.514,0.643,-23.675}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait until {Assassin} near {Dim} radius 1
+			set Dim focus to {Assassin}
+			play anim "A_P_TURN_180" on Dim 
+			wait until Dim played
+
+			//close-up of death
+			set camera lens 20.000
+			RelCamPos=marker at get world position from Town to {22.510,0.683,-16.834}
+			RelCamFoc=marker at get world position from Town to {26.402,0.794,-25.306}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 3 seconds
+				/// no alternate a_p anim
+			play anim "M_P_DEAD1" on Dim loop -1
+			//wider shot
+			move Assassin position to {AssasinPos[2]}
+
+			//wide again
+			set camera lens 32.000
+			RelCamPos=marker at get world position from Town to {22.246,1.823,-13.155}
+			RelCamFoc=marker at get world position from Town to {22.499,-2.182,-21.570}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 2 seconds
+
+			set camera lens 46.000 time 10
+			RelCamPos=marker at get world position from Town to {27.611,7.415,-20.776}
+			RelCamFoc=marker at get world position from Town to {21.851,1.183,-16.916}
+			move camera position to {RelCamPos} time 10
+			move camera focus to {RelCamFoc} time 6
+			wait 6 seconds
+
+			set fade red 0 green 0 blue 0 time 4
+			wait until fade ready
+
+			//////////////////////////////////////////////////////////////////////////////
+			//second scene
+
+			DimPos[1] = marker at get world position from Town to {-21.169,0.000,-13.890}
+			HirokuPos = marker at get world position from Town to {-20.525,0.000,-9.494}
+
+			set Dim position to {DimPos[1]}
+
+			Hiroku = create VILLAGER VILLAGER_INFO_JAPANESE_LEADER_MALE at {HirokuPos}
+
+			MournerPos[0]= marker at get target from {Dim} to {Hiroku} distance 3 angle 60
+			MournerPos[1]= marker at get target from {Dim} to {Hiroku} distance 3 angle 20
+			MournerPos[2]= marker at get target from {Dim} to {Hiroku} distance 3 angle 80
+			MournerPos[3]= marker at get target from {Dim} to {Hiroku} distance 3 angle 40
+			MournerPos[4]= marker at get target from {Dim} to {Hiroku} distance 3 angle 0
+			MournerPos[5]= marker at get target from {Dim} to {Hiroku} distance 3 angle 300
+			MournerPos[6]= marker at get target from {Dim} to {Hiroku} distance 3 angle 340
+			MournerPos[7]= marker at get target from {Dim} to {Hiroku} distance 3 angle 280
+			MournerPos[8]= marker at get target from {Dim} to {Hiroku} distance 3 angle 320
+			MournerPos[9]= marker at get target from {Dim} to {Hiroku} distance 3.5 angle 0
+			MournerPos[10]= marker at get target from {Dim} to {Hiroku} distance 3.5 angle 40
+			MournerPos[11]= marker at get target from {Dim} to {Hiroku} distance 3.5 angle 20
+			MournerPos[12]= marker at get target from {Dim} to {Hiroku} distance 3.5 angle 320
+
+			Mourner[0] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[0]}
+			Mourner[1] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[1]}
+			Mourner[2] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[2]}
+			Mourner[3] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[3]}
+			Mourner[4] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[4]}
+			Mourner[5] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[5]}
+			Mourner[6] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[6]}
+			Mourner[7] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[7]}
+			Mourner[8] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[8]}
+			Mourner[9] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[9]}
+			Mourner[10] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[10]}
+			Mourner[11] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[11]}
+			Mourner[12] = create VILLAGER VILLAGER_INFO_AZTEC_FARMER_MALE at {MournerPos[12]}
+
+			set Mourner[0] focus to {Dim}
+			set Mourner[1] focus to {Dim}
+			set Mourner[2] focus to {Dim}
+			set Mourner[3] focus to {Dim}
+			set Mourner[4] focus to {Dim}
+			set Mourner[5] focus to {Dim}
+			set Mourner[6] focus to {Dim}
+			set Mourner[7] focus to {Dim}
+			set Mourner[8] focus to {Dim}
+			set Mourner[9] focus to {Dim}
+			set Mourner[10] focus to {Dim}
+			set Mourner[11] focus to {Dim}
+			set Mourner[12] focus to {Dim}
+			set Hiroku focus to {Dim}
+
+				//wide opening or maybe a closeup what the hell!
+			set camera lens 46.000
+			RelCamPos=marker at get world position from Town to{-16.279,2.599,-5.726}
+			RelCamFoc=marker at get world position from Town to {-22.728,-0.572,-11.736}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			set camera lens 42.000 time 4		
+			set fade in time 2
+			wait 4 seconds
+
+			//crowd reactions w hiroku
+			set camera lens 46.000
+			RelCamPos=marker at get world position from Town to {-20.264,0.603,-10.118}
+			RelCamFoc=marker at get world position from Town to {-25.346,0.292,-2.253}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			set camera lens 43.000 time 4
+			wait 4 seconds
+
+
+			set Hiroku focus to {Mourner[4]}
+			play anim "A_P_TURN_180" on Hiroku 
+
+			//close up of turn
+			set camera lens 32.000
+			RelCamPos=marker at get world position from Town to {-20.055,0.555,-8.550}
+			RelCamFoc=marker at get world position from Town to {-43.779,2.130,-54.579}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			wait 4 seconds
+
+			//behind hiroku speaks
+			set camera lens 32.000
+			RelCamPos=marker at get world position from Town to {-19.649,0.547,-10.347}
+			RelCamFoc=marker at get world position from Town to {-46.326,2.122,34.038}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "People of Egypt, hear me!  We’ve lost our leader, but not our god."
+			wait 4 seconds
+
+				//crowd
+			set camera lens 32.000
+			RelCamPos=marker at get world position from Town to {-20.628,1.691,-4.986}
+			RelCamFoc=marker at get world position from Town to {-18.524,-13.302,-54.533}
+			set camera position to {RelCamPos}
+			set camera focus to {RelCamFoc}
+			say "We are not afraid, our belief is strong.  Let the ground of Aztecca tremble, for we are coming."
+			wait 4 seconds
+			clear dialogue
+
+				//wide end
+			set camera lens 32.000
+			RelCamPos=marker at get world position from Town to {-21.337,0.461,-12.606}
+			RelCamFoc=marker at get world position from Town to {-31.775,-19.791,-59.137}
+			move camera position to {RelCamPos} time 10
+			move camera focus to {RelCamFoc} time 10
+			wait 4 seconds
+			set fade red 255 green 255 blue 255 time 6
+			wait until fade ready
+
+			delete Assassin
+			delete Dim
+			delete Hiroku
+			delete Mourner[0]
+			delete Mourner[1]
+			delete Mourner[2]
+			delete Mourner[3]
+			delete Mourner[4]
+			delete Mourner[5]
+			delete Mourner[6]
+			delete Mourner[7]
+			delete Mourner[8]
+			delete Mourner[9]
+			delete Mourner[10]
+			delete Mourner[11]
+			delete Mourner[12]
+			wait 4 seconds
+
+			restore camera details
+			set fade in time 0.1
+			wait 0.1 seconds
+
+		end cinema
+*/
+	end if
+
+end script AS_DimitriosIsDead
+
+
+//-----------------------------------------------------------------------------
+//	End of script
+//-----------------------------------------------------------------------------
+
+
+
+
+
+// <TEMP>
+//-----------------------------------------------------------------------------
+//	Make some safehouses for the assassins to run into
+//-----------------------------------------------------------------------------
+begin script AS_CreateSafehouses
+
+	DIST				= 0
+	ANGLE				= 0
+	Amount				= 0
+	HousePos			= 0
+	Counter				= 0
+	HousePosCentre		= marker at {1673.343,30.193,823.539}
+
+/*
+	HousePos			= marker at {1749.536,27.698,910.115}
+	XOffset				= 0
+	ZOffset				= 0
+	Counter				= 0
+*/
+start
+
+	while Counter < AS_NUMBER_OF_SAFEHOUSES
+		if Counter == 0
+			DIST = 0
+			ANGLE = 0
+			Amount = 1
+		elsif Counter == 1
+			DIST = 20
+			ANGLE = 0
+			Amount = 8
+		elsif Counter == 9
+			DIST = 40
+			ANGLE = 0
+			Amount = 16
+		end if
+
+		HousePos = marker at get target from {HousePosCentre} + {10, 0} to {HousePosCentre} distance DIST angle ANGLE
+		AS_Safehouse[Counter] = create HOUSE ABODE_INFO_GREEK_HUT at {HousePos}
+		set AS_Safehouse[Counter] focus to {HousePosCentre}
+		ANGLE += 360 / Amount
+		Counter++
+	end while
+
+
+/*
+	// Create a block of houses
+	while Counter < AS_NUMBER_OF_SAFEHOUSES
+		AS_Safehouse[Counter] = create HOUSE ABODE_INFO_GREEK_HUT at {HousePos} + {XOffset, ZOffset}
+		XOffset += 20
+		if Counter > 0 and Counter % (AS_NUMBER_OF_SAFEHOUSES / 4) == 0
+			XOffset = 0
+			ZOffset += 20
+		end if
+		Counter++
+	end while
+*/
+end script AS_CreateSafehouses
+
+
+//-----------------------------------------------------------------------------
+//	Create a converter relic for placeholder purposes only
+//-----------------------------------------------------------------------------
+begin script AS_ConverterRelicCreate
+
+	RelicPos		= marker at {807.375,63.759,2095.348}
+
+start
+
+	L7_ConverterRelic = create OBJECT REWARD_OBJECT_INFO_SINGING_STONE at {RelicPos}
+	enable L7_ConverterRelic indestructible
+	disable L7_ConverterRelic set on fire
+	L7_ConverterRelicActive = AS_FALSE
+
+end script AS_ConverterRelicCreate
+
+
+//-----------------------------------------------------------------------------
+//	Check for the activation of the converter relic
+//-----------------------------------------------------------------------------
+begin script AS_ConverterRelicActivation
+
+	ConverterRelicDestroyed		= AS_FALSE
+
+start
+
+	while L7_ConverterRelicActive == AS_FALSE and ConverterRelicDestroyed == AS_FALSE
+		if L7_ConverterRelic exists
+			if hand position near {L7_ConverterRelic} radius 5 and L7_ConverterRelicActive == AS_FALSE
+				say "CONVERTER RELIC - INACTIVE. Right click to activate."
+				wait until read
+			end if
+
+			if L7_ConverterRelic right clicked
+				say "CONVERTER RELIC - ACTIVE"
+				wait until read
+				L7_ConverterRelicActive = AS_TRUE
+			end if
+		else
+			ConverterRelicDestroyed = AS_TRUE
+		end if
+	end while
+
+end script AS_ConverterRelicActivation
+
+
+/*
+//-----------------------------------------------------------------------------
+//	Toggle night and day
+//-----------------------------------------------------------------------------
+begin script AS_CreateDayAndNightToggleRock
+	
+	Rock		= 0
+	RockInHand	= AS_FALSE
+
+start
+
+	if Rock not exists
+		//Rock = create ROCK_OBJECT MOBILE_STATIC_INFO_LARGE_NORSE_ROCK at {1823.535,28.076,1111.589} + {10, 10}
+		Rock = create VILLAGER MALE at {1823.535,28.076,1111.589} + {10, 10}
+		SCALE of Rock = 10
+		enable Rock indestructible
+	end if
+
+	begin loop
+		if Rock is HELD
+			if RockInHand == AS_FALSE
+				if AS_Time > AS_START_ATTACK_TIME and AS_Time < AS_END_ATTACK_TIME
+					set game time AS_END_ATTACK_TIME + 0.30
+				else
+					set game time AS_START_ATTACK_TIME + 0.30
+				end if
+				RockInHand = AS_TRUE
+			end if
+		else
+			RockInHand = AS_FALSE
+		end if
+	end loop
+
+end script AS_CreateDayAndNightToggleRock
+*/
+// </TEMP>

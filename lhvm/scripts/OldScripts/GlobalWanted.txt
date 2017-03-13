@@ -1,0 +1,312 @@
+/*********************************************************
+** GlobalWanted
+**********************************************************
+** A control script to handle each lands wanted scripts
+*********************************************************/
+
+/*********************************************************
+** Max index
+*********************************************************/
+define GW_MAX_PEOPLE_PER_LAND		= 8		
+define GW_MAX_CAMPS_PER_LAND		= 4
+
+/*********************************************************
+** True/False
+*********************************************************/
+define GW_FALSE						= 0
+define GW_TRUE						= 1
+
+/*********************************************************
+** Wanted States
+*********************************************************/
+define GW_WS_EMPTY					= 0
+define GW_WS_READY					= 1
+define GW_WS_ALIVE					= 2
+define GW_WS_DEAD					= 3
+define GW_WS_CAPTURED				= 4
+
+/*********************************************************
+** Customization values
+*********************************************************/
+define GW_CAMP_OFFSET_DIST			= 3
+
+/*********************************************************
+** Return Interface
+*********************************************************/
+global GW_ReturnValue
+global GW_ReturnValueLock			= GW_FALSE
+
+/*********************************************************
+** States and Entities
+*********************************************************/
+global GW_Wanted_People[GW_MAX_PEOPLE_PER_LAND]
+global GW_Wanted_PCurrentCamp[GW_MAX_PEOPLE_PER_LAND]
+global GW_Wanted_PState[GW_MAX_PEOPLE_PER_LAND]
+global GW_Current_Num_People		= 0
+/********************************************************/
+global GW_Wanted_Camps[GW_MAX_CAMPS_PER_LAND]
+global GW_FX_Fire[GW_MAX_CAMPS_PER_LAND]
+global GW_FX_Smoke[GW_MAX_CAMPS_PER_LAND]
+global GW_Current_Num_Camps			= 0
+
+define script GW_MoveCamp(PeopleIndex)
+define script GW_ChangePosAtCamp(PeopleIndex)
+define script GW_IdleAnim(PeopleIndex)
+define script GW_DecideWhatToDo(PeopleIndex)
+
+/*********************************************************
+** GW_AddCamp
+**********************************************************
+** Adds a camp, if possible
+*********************************************************/
+begin script GW_AddCamp(Pos,Morning,Evening)
+start
+	if GW_Current_Num_Camps < GW_MAX_CAMPS_PER_LAND
+		GW_Wanted_Camps[GW_Current_Num_Camps] = create ROCK_OBJECT MOBILE_STATIC_INFO_SCRIPT_OBJECT at {Pos}
+		Pos = marker at {GW_Wanted_Camps[GW_Current_Num_Camps]}
+		override mesh for GW_Wanted_Camps[GW_Current_Num_Camps] with "..\features\m_generic_bonfire"
+		disable GW_Wanted_Camps[GW_Current_Num_Camps] pickup
+		GW_Current_Num_Camps++
+
+		begin loop
+			wait until get game time < Morning or get game time >= Evening
+			GW_FX_Fire[GW_Current_Num_Camps] = create visual effect "gp_s_fire_vil.ves" strength 1 scale 0.5 at {Pos} + {0,0,0} time -1
+			GW_FX_Smoke[GW_Current_Num_Camps] = create visual effect "Gp_s_smoke_chimney.ves" strength 0.5 scale 0.8 at {Pos} + {0,1,0} time -1
+			wait until get game time >= Morning and get game time < Evening
+			delete GW_FX_Fire[GW_Current_Num_Camps]
+			delete GW_FX_Smoke[GW_Current_Num_Camps]
+		end loop
+	end if
+end script GW_AddCamp
+
+/*********************************************************
+** GW_GetUnusedPeopleIndex
+**********************************************************
+** Gets an unsued index to use to handle outside interactions
+** Must call the following to use:
+		wait until GW_ReturnValueLock == GW_FALSE
+		GW_ReturnValueLock = GW_TRUE
+		run script GW_GetUnusedPeopleIndex
+		MyIndex = GW_ReturnValue
+		GW_ReturnValueLock = GW_FALSE
+** MyIndex should be replaced with the variable of your choice
+** Please be sure to call the above, or you may break the script
+*********************************************************/
+begin script GW_GetUnusedPeopleIndex
+	GotUnused = GW_FALSE
+	Count = 0
+start
+	if GW_ReturnValueLock == GW_TRUE
+		while GotUnused == GW_FALSE
+			if GW_Wanted_PState[Count] == GW_WS_EMPTY
+				GW_Wanted_PState[Count] = GW_WS_READY
+				GW_ReturnValue = Count
+				GotUnused = GW_TRUE
+			end if
+			Count++
+			if Count >= GW_MAX_PEOPLE_PER_LAND
+				Count = 0
+			end if
+		end while
+	else
+		say "Warning: Return Value not locked before accessing"
+	end if
+end script GW_GetUnusedPeopleIndex
+
+/*********************************************************
+** GW_RecyclePersonWhenInState
+**********************************************************
+** when the person gets into the specified state, their
+** state is set back to GW_WS_EMPTY
+*********************************************************/
+begin script GW_RecyclePersonWhenInState(PeopleIndex,ThisState)
+start
+	wait until GW_Wanted_PState[PeopleIndex] == ThisState or GW_Wanted_PState[PeopleIndex] == GW_WS_EMPTY
+	GW_Wanted_PState[PeopleIndex] = GW_WS_EMPTY
+	GW_Wanted_People[PeopleIndex] = 0
+end script GW_RecyclePersonWhenInState
+
+/*********************************************************
+** GW_CheckIfInPrison
+**********************************************************
+** makes sure this GW_Wanted_People can be put in prison
+** then waits until they either are, or they are no longer alive
+** when (if) they are, it sets their state to GW_WS_CAPTURED
+*********************************************************/
+begin script GW_CheckIfInPrison(Index)
+	PrisonObject = 0
+start
+	enable villager GW_Wanted_People[Index] can be imprisoned
+	while GW_Wanted_PState[Index] == GW_WS_ALIVE and GW_Wanted_People[Index] exists
+		PrisonObject = get prison of GW_Wanted_People[Index]
+		if PrisonObject exists
+			GW_Wanted_PState[Index] = GW_WS_CAPTURED
+		end if
+		wait 0.2 seconds
+	end while
+end script GW_CheckIfInPrison
+
+/*********************************************************
+** GW_CheckIfDead
+**********************************************************
+** waits until the GW_Wanted_People is either dead or captured
+** when (if) they are dead, it sets their state to GW_WS_DEAD
+*********************************************************/
+begin script GW_CheckIfDead(Index)
+start
+	while GW_Wanted_PState[Index] == GW_WS_ALIVE and GW_Wanted_People[Index] exists
+		if HEALTH of GW_Wanted_People[Index] == 0
+			GW_Wanted_PState[Index] = GW_WS_DEAD
+		end if
+		wait 0.2 seconds
+	end while
+end script GW_CheckIfDead
+
+begin script GW_MoveCamp(PeopleIndex)
+start
+	GW_Wanted_PCurrentCamp[PeopleIndex] = (number from 1 to GW_Current_Num_Camps) - 1
+	run background script GW_ChangePosAtCamp(PeopleIndex)
+end script GW_MoveCamp
+
+/*********************************************************
+** GW_ChangePosAtCamp
+**********************************************************
+** sends this People to a new position at thier camp
+*********************************************************/
+begin script GW_ChangePosAtCamp(PeopleIndex)
+	MyCamp = 0
+	PosNearCamp = 0
+start
+	MyCamp = GW_Wanted_Camps[GW_Wanted_PCurrentCamp[PeopleIndex]]
+	PosNearCamp = marker at get target from {MyCamp} + {1,0,0} to {MyCamp} distance GW_CAMP_OFFSET_DIST angle number from 0 to 360
+	move GW_Wanted_People[PeopleIndex] position to {PosNearCamp}
+
+	wait until {GW_Wanted_People[PeopleIndex]} near {PosNearCamp} radius 0.1 or not GW_Wanted_People[PeopleIndex] exists
+	set GW_Wanted_People[PeopleIndex] position to {GW_Wanted_People[PeopleIndex]}
+	set GW_Wanted_People[PeopleIndex] focus to {MyCamp}
+
+	run background script GW_DecideWhatToDo(PeopleIndex)
+end script GW_ChangePosAtCamp
+
+begin script GW_IdleAnim(PeopleIndex)
+	IdleType = 0
+start
+	IdleType = number from 1 to 12
+
+	// sit down
+	if IdleType == 1
+		play anim "a_p_checking_for_rain" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 2
+		play anim "a_p_coughing" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 3
+		play anim "a_p_crowd_lost_2" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 4
+		play anim "a_p_hands_in_pockets" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 5
+		play anim "a_p_huff" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 6
+		play anim "a_p_inspect_object_2" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 7
+		play anim "a_p_looking_for_something" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 8
+		play anim "a_p_overworked_2" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 9
+		play anim "a_p_scratching_bum" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 10
+		play anim "a_p_siren_reaction" on GW_Wanted_People[PeopleIndex]
+	elsif IdleType == 11
+		play anim "a_p_stand_despair_2" on GW_Wanted_People[PeopleIndex]
+	else
+		play anim "a_p_yawn2" on GW_Wanted_People[PeopleIndex]
+	end if
+	wait until GW_Wanted_People[PeopleIndex] played
+
+	run background script GW_DecideWhatToDo(PeopleIndex)
+end script GW_IdleAnim
+
+/*********************************************************
+** GW_DecideWhatToDo
+**********************************************************
+** decision tree for this people. all branches should start at a camp
+*********************************************************/
+begin script GW_DecideWhatToDo(PeopleIndex)
+	ToDo = 0
+	ThinkingCycles = 0
+start
+	// spend a moment thinking what to do
+	ThinkingCycles = number from 1 to 5
+	while ThinkingCycles > 0
+		play anim "a_p_stand" on GW_Wanted_People[PeopleIndex]
+		wait until GW_Wanted_People[PeopleIndex] played
+		ThinkingCycles--
+	end while
+
+//	ToDo = number from 1 to 6
+//	if ToDo == 1
+//		run background script GW_MoveCamp(PeopleIndex)
+//	elsif ToDo == 2
+//		run background script GW_ChangePosAtCamp(PeopleIndex)
+//	else
+		run background script GW_IdleAnim(PeopleIndex)
+//	end if
+end script GW_DecideWhatToDo
+
+begin script GW_CreateMerryMan(Pos,Foc,Tribute)
+	Index = 0
+	MerryManNum = 0
+start
+	if GW_Current_Num_People < GW_MAX_PEOPLE_PER_LAND
+		Index = GW_Current_Num_People
+		GW_Current_Num_People++
+
+		MerryManNum = number from 1 to 10
+		if MerryManNum == 1
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN1 at {Pos}
+		elsif MerryManNum == 2
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN2 at {Pos}
+		elsif MerryManNum == 3
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN3 at {Pos}
+		elsif MerryManNum == 4
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN4 at {Pos}
+		elsif MerryManNum == 5
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN5 at {Pos}
+		elsif MerryManNum == 6
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN6 at {Pos}
+		elsif MerryManNum == 7
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN7 at {Pos}
+		elsif MerryManNum == 8
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN8 at {Pos}
+		elsif MerryManNum == 9
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN9 at {Pos}
+		else
+			GW_Wanted_People[Index] = create VILLAGER MERRYMAN10 at {Pos}
+		end if
+
+		GW_Wanted_PState[Index] = GW_WS_ALIVE
+		set GW_Wanted_People[Index] focus to {Foc}
+		run background script GW_CheckIfInPrison(Index)
+		run background script GW_CheckIfDead(Index)
+		run background script GW_DecideWhatToDo(Index)
+
+		wait until GW_Wanted_PState[Index] != GW_WS_ALIVE
+		if GW_Wanted_PState[Index] == GW_WS_CAPTURED
+			increment tribute by Tribute
+		end if
+	end if
+end script GW_CreateMerryMan
+
+begin script GW_TresureMarker(Pos)
+	TresureTT = 0
+	GoodLoc = GW_FALSE
+start
+	TresureTT = create tooltip at {Pos} with text "BW2T_SCRIPT_03FINAL_ADVISORS_TUT_940"
+
+	while GoodLoc == GW_FALSE
+		wait until mouse right button down
+		if {Pos} near hand position radius 5
+			GoodLoc = GW_TRUE
+		end if
+	end while
+
+	delete TresureTT
+end script GW_TresureMarker

@@ -1,0 +1,94 @@
+//-------------------------------------
+// MAIN
+//-------------------------------------
+
+global L5EB_BlueprintStolen = 0
+
+define script L5EB_StealBlueprint
+
+begin script L5EB_Land5EuronymousBlueprint
+
+SpyScroll = 0
+
+GossipMan1 = 0
+GossipMan2 = 0
+
+start
+
+	run background script L5EB_StealBlueprint
+	SpyScroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {1427.438,161.021,922.667}
+
+	GossipMan1 = create VILLAGER VILLAGER_INFO_JAPANESE_FISHERMAN_MALE at {1427.057,160.883,924.705}
+	GossipMan2 = create VILLAGER VILLAGER_INFO_JAPANESE_FISHERMAN_MALE at {2854.114+0.797, 321.765, 1849.410-0.046}
+	set GossipMan1 focus to {642.801,0.000,5066.763}
+	set GossipMan2 focus to {642.801,0.000,5066.763}
+	disable GossipMan1 alternative mesh
+	enable GossipMan2 alternative mesh
+		
+	wait until SpyScroll right clicked or L5EB_BlueprintStolen != 0
+	if L5EB_BlueprintStolen != 0
+		clear right clicked object
+		delete SpyScroll
+		
+		//This is the intro, in case you need to be told what to do.
+		begin cinema
+			play anim "A_P_STAND" on GossipMan1 loop 10000
+			wait 0.2 seconds
+			play anim "A_P_STAND" on GossipMan2 loop 10000
+			
+			set camera lens 37
+			move camera position to {1427.363,161.561,924.029} time 4
+			move camera focus to {1344.929,164.788,1461.342} time 4
+			wait until camera ready
+			
+			say "I have hear a rumour..."
+			wait until read
+			
+			say "...about a wonder blueprint."
+			wait until read
+			
+			//play anim "ANM_P_INTO_POINTING" on GossipMan2 loop 1
+			play anim "A_P_INTO_POINTING" on GossipMan2 loop 1
+			wait until GossipMan2 played 
+			play anim "A_P_TALK_AND_POINTING" on GossipMan2 loop 1000
+			
+			set camera lens 13
+		
+			set camera position to {1428.262,161.529,924.921}
+			set camera focus to {899.396,196.443,804.120}
+			say "There is apparently a blueprint of a wonder..."
+			wait until read
+			say "...in the house near the wonder construction site"
+			wait until read
+			
+			play anim "A_P_OUT_OF_POINTING" on GossipMan2 loop 1
+			
+			set camera lens 10
+			set camera position to {1427.439,161.513,925.787}
+			set camera focus to {1428.100,195.975,383.271}
+			
+			wait until GossipMan2 played
+			play anim "A_P_STAND" on GossipMan1 loop 10000
+			
+			say "I wonder who is strong enough to get it?"
+			wait until read
+			
+			set camera lens 70
+			set camera position to {1429.681,168.628,912.299}
+			set camera focus to {1388.059,50.176,1302.940}
+			wait 1 seconds
+		
+		end cinema
+	end if
+end script L5EB_Land5EuronymousBlueprint
+
+begin script L5EB_StealBlueprint
+	ForemansHut = 0
+	ForemansHutLoc = 0
+start
+	ForemansHut = get HOUSE at {ForemansHutLoc}
+	wait until HEALTH of ForemansHut < 0.2
+	// create blueprint at ForemansHut
+	// wait until blueprint is taken?
+	L5EB_BlueprintStolen = 1
+end script L5EB_StealBlueprint

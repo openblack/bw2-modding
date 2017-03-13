@@ -1,0 +1,121 @@
+//--------------------------------------------------------------------------------------------------
+//  LAND 3 VIKING RAIDERS EVENT
+// This script creates a fixed number of Viking Longboats around the edge of the map out at sea
+// that sail to the Norse City and disembark. The player can sink them with well thrown projectiles
+//--------------------------------------------------------------------------------------------------
+
+define script HandleLongboat
+
+global LongboatsSunk = 0
+global LongboatsReturned = 0
+global LongboatActive = 0
+
+//------------------------------------------------
+// MAIN
+//------------------------------------------------
+
+begin script VikingRaiders
+
+LongboatTimer = create timer for 0 seconds
+LongboatTotal = 0
+InitialDelay = 180
+DefaultDelay = 30
+
+start
+
+	/// create Army container
+	VikingRaiderArmy = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_CRESCENT at {VikingRaiderArmySpawnPos} facing L3NorseTown with 0 villagers
+
+	set LongboatTimer time to InitialDelay seconds
+	begin loop
+
+		if get LongboatTimer time remaining <= 0 and LongboatActive == 0
+			begin dialogue
+				say "A Norse Longboat has arrived home and is sailing for their Capitol."
+				wait until read
+			end dialogue
+			run background script HandleLongboat (LongboatTotal)
+			LongboatActive = 1
+			LongboatTotal++
+		end if
+
+		if LongboatActive == 2
+			set LongboatTimer time to DefaultDelay seconds
+			LongboatActive = 0
+		end if
+
+	until (LongboatsReturned + LongboatsSunk) >= 10
+	end loop
+
+	KCVikingsReturned = 1
+
+end script VikingRaiders
+
+//-----------------------------------------------------------------------------------
+// HANDLE LONGBOAT
+//-----------------------------------------------------------------------------------
+
+begin script HandleLongboat (BoatNumber)
+
+ StartMarker[10]
+ LBWaypoint[10]
+ DockPos = marker at {0.000,0.000,0.000}
+ VikingRaiderArmySpawnPos = marker at {0.000,0.000,0.000}
+ NewVikingArrivals = 0
+ Longboat = 0
+
+start
+
+	StartMarker[0] = marker at {0.000,0.000,0.000}
+	StartMarker[1] = marker at {0.000,0.000,0.000}
+	StartMarker[2] = marker at {0.000,0.000,0.000}
+	StartMarker[3] = marker at {0.000,0.000,0.000}
+	StartMarker[4] = marker at {0.000,0.000,0.000}
+	StartMarker[5] = marker at {0.000,0.000,0.000}
+	StartMarker[6] = marker at {0.000,0.000,0.000}
+	StartMarker[7] = marker at {0.000,0.000,0.000}
+	StartMarker[8] = marker at {0.000,0.000,0.000}
+	StartMarker[9] = marker at {0.000,0.000,0.000}
+	LBWaypoint[0] = marker at {0.000,0.000,0.000}
+	LBWaypoint[1] = marker at {0.000,0.000,0.000}
+	LBWaypoint[2] = marker at {0.000,0.000,0.000}
+	LBWaypoint[3] = marker at {0.000,0.000,0.000}
+	LBWaypoint[4] = marker at {0.000,0.000,0.000}
+	LBWaypoint[5] = marker at {0.000,0.000,0.000}
+	LBWaypoint[6] = marker at {0.000,0.000,0.000}
+	LBWaypoint[7] = marker at {0.000,0.000,0.000}
+	LBWaypoint[8] = marker at {0.000,0.000,0.000}
+	LBWaypoint[9] = marker at {0.000,0.000,0.000}
+/*
+	/// NEEDS LONG BOATS
+	Longboat = create LONG_BOAT at {StartMarker[BoatNumber]}
+	move Longboat position to {LBWaypoint[BoatNumber]}
+	wait until {Longboat} near {LBWaypoint[BoatNumber]} radius 5 or HEALTH of Longboat <= 0
+
+	if HEALTH of Longboat > 0
+		move Longboat position to {DockPos}
+		wait until {Longboat} near {DockPos} radius 1 or HEALTH of Longboat <= 0
+	end if
+
+	if HEALTH of Longboat > 0
+		LongboatsReturned++
+		// create raider platoon and add to Army container
+		NewVikingArrivals = create platoon ARMY_UNIT_TYPE_MELEE tribe TRIBE_TYPE_NORSE formation FORMATION_TYPE_CRESCENT at {VikingRaiderArmySpawnPos} facing L3NorseTown with 20 villagers
+		attach NewVikingArrivals to L3NorseTown
+		merge platoon NewVikingArrivals into platoon VikingRaiderArmy
+		delete Longboat with fade
+	else
+		LongboatsSunk++
+		begin dialogue
+			say "Good aim, Boss. You sank one of the Norse longships."
+			wait until read
+		end dialogue
+	end if
+*/
+    /// REMOVE THE FOLLOWING TWO BODGE LINES
+	wait 30 seconds	///BODGE LINE
+	LongboatsReturned++	///BODGE LINE
+
+	LongboatActive = 2
+
+end script HandleLongboat

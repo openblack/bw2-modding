@@ -1,0 +1,7 @@
+run script RunLand1VillagerTutorial
+
+begin script RunLand1VillagerTutorial
+start
+	L1_ShowDiscipleTutorialScroll = 1
+	run script Land1VillagerTutorial
+end script RunLand1VillagerTutorial

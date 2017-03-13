@@ -1,0 +1,73 @@
+//------------------------------------------------
+//  LAND 5 ISLAND DEPARTURE CUT-SCENE
+//------------------------------------------------
+
+
+begin script Land5IslandDeparture
+
+ IslandDepartureScroll = 0
+ IslandDepartureScrollPos = marker at {1239.604,57.319,2042.146}
+
+ DepartShips[3]
+ DepartShipsDest[3]
+
+start
+
+	IslandDepartureScroll = create highlight CHALLENGE_NONE HIGHLIGHT_CHALLENGE at {IslandDepartureScrollPos}
+
+	begin loop
+		if IslandDepartureScroll right clicked
+			clear right clicked object
+
+			begin cinema				
+			
+				set fade red 0 green 0 blue 0 time 1
+				wait 1 seconds
+				start music "big_battle_01"
+
+				set camera position to {1364.516, 50.790, 43.066}
+				set camera focus to {1365.079, 50.815, 42.239}
+				set fade in time 1
+
+				move camera position to {1341.377, 90.211, 102.840} time 20
+				move camera focus to {1341.811, 89.954, 101.977} time 20
+
+				DepartShips[0] = create SHIP GREEK_SHIP at {1384.013, 0.656, 49.875}
+				DepartShips[1] = create SHIP GREEK_SHIP at get world position from DepartShips[0] to {-21.221, -43.959, 6.639}
+				DepartShips[2] = create SHIP GREEK_SHIP at get world position from DepartShips[0] to  {-43.194, -44.289, -0.233}
+
+				DepartShipsDest[0] = marker at get target from {DepartShips[0]} to {1346.472, 0.000, -193.319} distance 100 angle 0
+				DepartShipsDest[1] = marker at get target from {DepartShips[1]} to {1389.689, 0.000, -207.288} distance 100 angle 0
+				DepartShipsDest[2] = marker at get target from {DepartShips[2]} to {1417.065, 0.000, -235.563} distance 100 angle 0
+
+				add {DepartShipsDest[0]} to DepartShips[0] waypoint schedule // optional en route waypoint
+				add {DepartShipsDest[1]} to DepartShips[1] waypoint schedule // optional en route waypoint
+				add {DepartShipsDest[2]} to DepartShips[2] waypoint schedule // optional en route waypoint
+
+				SPEED of DepartShips[0] = 0.5
+				SPEED of DepartShips[1] = 0.5
+				SPEED of DepartShips[2] = 0.5
+
+				enable DepartShips[0] waypoint schedule
+				enable DepartShips[1] waypoint schedule
+				enable DepartShips[2] waypoint schedule
+
+				wait 8 seconds
+
+				set fade red 0 green 0 blue 0 time 5
+				wait 2 seconds
+				stop music
+				wait 3 seconds
+
+				delete DepartShips[0]
+				delete DepartShips[1]
+				delete DepartShips[2]
+
+				set fade in time 1
+				wait 1 seconds
+
+			end cinema
+		end if
+	end loop
+
+end script Land5IslandDeparture

@@ -1,0 +1,7 @@
+run script RunLand6SevenSamurai
+
+begin script RunLand6SevenSamurai
+start
+	run script Land6SevenSamurai
+
+end script RunLand6SevenSamurai

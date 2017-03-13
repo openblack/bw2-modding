@@ -1,0 +1,35 @@
+begin script Land9Departure
+
+DepartureScrollPos = marker at {2042.269, 96.561, 785.273}
+
+DepartureScroll = 0
+
+Flag = 0
+
+start
+while L9Complete != 1
+	
+	if PLAYER of L9AztecCapital == 0 or variable get town L9AztecCapital status == variable TOWN_STATUS_MIGRATION_STARTED
+	
+	///
+	///TA: DEAL WITH TICKING THE OBJECTIVE
+	//This has to occur before the land over script!
+		if PLAYER of L9AztecCapital == 0
+			set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment -0.1		
+		else
+			set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND with amount 1 text "BW2T_SCRIPT_07FINAL_SECONDARYOBJECTIVE_80" amount 1 description "BW2T_SCRIPT_06FINAL_SECONDARYOBJECTIVE_51" alignment 0.1				
+		end if
+		//Either way we have completed the land.
+		set player 0 objective TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND value 1
+	
+	
+	
+		run background script LandOver(L9GreekTown)
+		if Flag == 0
+			run script Land9Outro
+		end if
+
+	end if
+end while
+
+end script Land9Departure

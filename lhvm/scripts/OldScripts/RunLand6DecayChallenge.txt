@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Decay Challenge script
+//-----------------------------------------------------------------------------
+run script RunLand6DecayChallenge
+
+begin script RunLand6DecayChallenge
+
+start
+
+	run script Land6DecayChallenge
+
+end script RunLand6DecayChallenge

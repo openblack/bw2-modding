@@ -1,0 +1,156 @@
+//-----------------------------------------------------------------------------
+//	Constants
+//-----------------------------------------------------------------------------
+define NUMBER_OF_BLOCKS = 7
+define CS_True = 1
+define CS_False = 0
+//-----------------------------------------------------------------------------
+//	Globals
+//-----------------------------------------------------------------------------
+global CS_Block[NUMBER_OF_BLOCKS]
+global CS_Challenge_Over = CS_True
+global CS_GrandKai = 0
+global CS_ChopSuey = 0
+global CS_Hit = 0
+global CS_Block_In_Play = 0
+global CS_Challenge_Failed = CS_True
+//-----------------------------------------------------------------------------
+//	Script defines
+//-----------------------------------------------------------------------------
+define script CS_Create_Blocks
+define script CS_Camera_Control
+define script CS_GrandKai_Control
+define script CS_ChopSuey_Control(CS_Random_Number)
+define script CS_Block_Hit
+//-----------------------------------------------------------------------------
+run script Land5ChopSuey // Main function, calls other scripts
+//-----------------------------------------------------------------------------
+begin script Land5ChopSuey
+CS_Scroll = 0
+CS_Scroll_Spawn_Pos = 0
+i = 0
+start
+	CS_Scroll_Spawn_Pos = marker at {1686.281, 71.478, 1363.358}
+	begin loop
+		wait until CS_Challenge_Over == CS_True
+			i = 0
+			while i < NUMBER_OF_BLOCKS
+				if CS_Block[i] exists
+					delete CS_Block[i]
+				end if
+				i++
+			end while
+			CS_Scroll = create highlight CHALLENGE_BOWLING HIGHLIGHT_CHALLENGE at {CS_Scroll_Spawn_Pos}
+			ALTITUDE of CS_Scroll  = 8
+			clear right clicked object
+			wait until CS_Scroll right clicked
+				CS_Challenge_Over = CS_False
+				delete CS_Scroll
+				run background script CS_Create_Blocks
+				run background script CS_Camera_Control
+				run background script CS_GrandKai_Control
+				run background script CS_Block_Hit
+	until CS_Challenge_Failed == CS_False and CS_Challenge_Over == CS_True
+	end loop
+end script Land5ChopSuey
+//-----------------------------------------------------------------------------
+// CS_Create_Blocks -- Creates Blocks
+//-----------------------------------------------------------------------------
+begin script CS_Create_Blocks
+i = 0
+CS_BlockSpawnPos[NUMBER_OF_BLOCKS]
+start
+	CS_BlockSpawnPos[0] = marker at {1677.059, 71.754, 1361.961}
+	CS_BlockSpawnPos[1] = marker at {1679.978, 72.577, 1364.572}
+	CS_BlockSpawnPos[2] = marker at {1683.082, 73.383, 1367.646}
+	CS_BlockSpawnPos[3] = marker at {1685.964, 71.561, 1363.987}
+	CS_BlockSpawnPos[4] = marker at {1689.430, 73.130, 1367.193}
+	CS_BlockSpawnPos[5] = marker at {1691.778, 72.035, 1364.171}
+	CS_BlockSpawnPos[6] = marker at {1695.059, 71.113, 1360.917}
+	
+	while i < NUMBER_OF_BLOCKS
+		CS_Block[i] = create OBJECT MOBILE_STATIC_INFO_TOMBMARKERS at {CS_BlockSpawnPos[i]}
+		i++
+	end while
+	
+end script CS_Create_Blocks
+//-----------------------------------------------------------------------------
+// CS_Camera_Control -- Controls Fixed Camera
+//-----------------------------------------------------------------------------
+begin script CS_Camera_Control
+	start
+		begin interactive camera 
+			set camera position to {1685.409, 64.840, 1346.978} + {0,10,0}
+			set camera focus to {1685.961, 70.365, 1361.368}
+			wait until CS_Challenge_Over == CS_True
+		end interactive camera 
+end script CS_Camera_Control
+//-----------------------------------------------------------------------------
+// CS_GrandKai_Control -- Controls Grand-Kai Character
+//-----------------------------------------------------------------------------
+begin script CS_GrandKai_Control
+CS_GrandKai_Spawn_Pos[NUMBER_OF_BLOCKS]
+CS_Random_Number = 0
+start
+	CS_GrandKai_Spawn_Pos[0] = marker at {1678.886, 71.595, 1362.332}
+	CS_GrandKai_Spawn_Pos[1] = marker at {1682.106, 72.285, 1364.755}
+	CS_GrandKai_Spawn_Pos[2] = marker at {1685.055, 72.905, 1366.872}
+	CS_GrandKai_Spawn_Pos[3] = marker at {1687.655, 71.471, 1363.387}
+	CS_GrandKai_Spawn_Pos[4] = marker at {1690.868, 72.777, 1366.151}
+	CS_GrandKai_Spawn_Pos[5] = marker at {1692.919, 71.651, 1362.713}
+	CS_GrandKai_Spawn_Pos[6] = marker at {1692.698, 70.976, 1361.292}
+	wait 3 seconds
+	while CS_Challenge_Over == CS_False
+		CS_Random_Number = number from 0 to 6
+		if CS_Block[CS_Random_Number] exists
+			CS_Block_In_Play = CS_Block[CS_Random_Number]
+			//run background script CS_ChopSuey_Control(CS_Random_Number)
+			CS_GrandKai = create VILLAGER VILLAGER_INFO_OLD_MONK at {CS_GrandKai_Spawn_Pos[CS_Random_Number]}
+			set CS_GrandKai focus to {CS_Block[CS_Random_Number]}
+			play anim "a_p_pointing" on CS_GrandKai
+			wait until CS_GrandKai played 
+			wait 1 second
+			delete CS_GrandKai
+			CS_Block_In_Play = 0
+			wait 2.5 seconds
+		end if
+	end while
+end script CS_GrandKai_Control
+//-----------------------------------------------------------------------------
+// CS_ChopSuey_Control -- Controls Chop-Suey Character
+//-----------------------------------------------------------------------------
+begin script CS_ChopSuey_Control(CS_Random_Number)
+
+start
+
+end script CS_ChopSuey_Control
+//-----------------------------------------------------------------------------
+// CS_Block_Hit -- Detects When A Block Is Hit
+//-----------------------------------------------------------------------------
+begin script CS_Block_Hit
+i = 0
+CS_Block_Clicked = 0
+start
+	CS_Hit = 0
+	begin loop 
+		clear left clicked object
+		wait until CS_Block[0] left clicked or CS_Block[1] left clicked or CS_Block[2] left clicked or CS_Block[3] left clicked or CS_Block[4] left clicked or CS_Block[5] left clicked or CS_Block[6] left clicked
+			CS_Block_Clicked = get object left clicked
+			if CS_Block_Clicked == CS_Block_In_Play
+				delete CS_Block_In_Play
+				CS_Hit++
+			else
+				say "Wrong block"
+				wait until read
+				CS_Challenge_Failed = CS_True
+				CS_Challenge_Over = CS_True
+			end if
+		if CS_Hit >= NUMBER_OF_BLOCKS
+			say "You Win!"
+			wait until read
+			CS_Challenge_Failed = CS_False
+			CS_Challenge_Over = CS_True
+		end if 
+	until CS_Challenge_Over == CS_True
+	end loop
+end script CS_Block_Hit

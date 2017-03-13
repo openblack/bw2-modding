@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+//	Run Land 7 Creature Upgrade
+//-----------------------------------------------------------------------------
+run script RunLand7CreatureUpgrade
+
+begin script RunLand7CreatureUpgrade
+
+start
+
+	run script Land7CreatureUpgrade
+
+end script RunLand7CreatureUpgrade

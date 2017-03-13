@@ -1,0 +1,6 @@
+run script RunLand4Kidnappers
+
+begin script RunLand4Kidnappers
+start
+	run script Land4Kidnappers
+end script RunLand4Kidnappers

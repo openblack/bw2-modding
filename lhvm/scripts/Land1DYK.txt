@@ -1,0 +1,16 @@
+//-----------------------------------------------------------------
+// Land 1 Did You Know - Initial Placement by Ron 13th May 2005
+//-----------------------------------------------------------------
+begin script Land1DidYouKnow
+
+	Sign			= 0
+
+start
+
+	//Sign = create dyk at {1340.666,70.256,2165.648} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_TAPPING_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_TAPPING_DESCRIPTION"
+	Sign = create dyk at {906.730, 69.333, 1492.403} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_INFO_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_INFO_DESCRIPTION"
+	Sign = create dyk at {1015.277, 81.306, 1508.019} title "BW2T_INTERFACE_TOOLTIP_DYK_HAND_THROWING_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HAND_THROWING_DESCRIPTION"
+	Sign = create dyk at {858.564,66.298,1477.390} title "BW2T_INTERFACE_TOOLTIP_DYK_HINTS_CHALLENGES_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_HINTS_CHALLENGES_DESCRIPTION"
+	//Sign = create dyk at {894.390,75.421,1523.740} title "BW2T_INTERFACE_TOOLTIP_DYK_CHARTEST_TITLE" description "BW2T_INTERFACE_TOOLTIP_DYK_CHARTEST_DESCRIPTION"
+
+end script Land1DidYouKnow

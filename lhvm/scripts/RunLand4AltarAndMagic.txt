@@ -1,0 +1,6 @@
+run script RunLand4AltarAndMagic
+
+begin script RunLand4AltarAndMagic
+start
+	run script Land4AltarAndMagic
+end script RunLand4AltarAndMagic
