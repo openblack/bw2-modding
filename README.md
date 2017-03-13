@@ -11,8 +11,8 @@ A repository of information related to modding Lionhead's Black & White 2.
 
 ## Other
 
-* [LHVM][/lhvm]
-* [Shaders][/shaders]
+* [LHVM](/lhvm)
+* [Shaders](/shaders)
 
 ## Links
 
