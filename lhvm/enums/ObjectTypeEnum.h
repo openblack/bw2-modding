@@ -1,0 +1,72 @@
+#ifndef __OBJECT_TYPE_ENUM_H__
+#define __OBJECT_TYPE_ENUM_H__
+
+// Last Saved,#2005-06-29 16:39:14#,"Matthew Wiggins"
+
+//*****************************************************************************
+// ENUM Values: OBJECT_TYPE
+//*****************************************************************************
+enum     OBJECT_TYPE
+{
+    OBJECT_TYPE_INVALID                             = -2 ,
+    OBJECT_TYPE_ANY                                 = -1 ,
+    OBJECT_TYPE_ABODE                               =  0 ,
+    OBJECT_TYPE_CREATURE                            =  1 ,
+    OBJECT_TYPE_VILLAGER                            =  2 ,
+    OBJECT_TYPE_MAGIC                               =  3 ,
+    OBJECT_TYPE_ANIMAL                              =  4 ,
+    OBJECT_TYPE_LIGHTNING                           =  5 ,
+    OBJECT_TYPE_FOREST_TREE                         =  6 ,
+    OBJECT_TYPE_FIREWALL_SECTION                    =  7 ,
+    OBJECT_TYPE_CITADEL                             =  8 ,
+    OBJECT_TYPE_TERRAIN                             =  9 ,
+    OBJECT_TYPE_MAGIC_LIVING                        =  10 ,
+    OBJECT_TYPE_WALL_SECTION                        =  11 ,
+    OBJECT_TYPE_FAKE_WALL_SECTION                   =  12 ,
+    OBJECT_TYPE_SPELL                               =  13 ,
+    OBJECT_TYPE_BOUNDRY                             =  14 ,
+    OBJECT_TYPE_BALL                                =  15 ,
+    OBJECT_TYPE_SHOT                                =  16 ,
+    OBJECT_TYPE_COMPUTER_PLAYER                     =  17 ,
+    OBJECT_TYPE_FIELD                               =  18 ,
+    OBJECT_TYPE_FEATURE                             =  19 ,
+    OBJECT_TYPE_MOBILE_OBJECT                       =  20 ,
+    OBJECT_TYPE_POT                                 =  21 ,
+    OBJECT_TYPE_FOOTBALL                            =  22 ,
+    OBJECT_TYPE_GROUND                              =  23 ,
+    OBJECT_TYPE_PRAYER                              =  24 ,
+    OBJECT_TYPE_SHOW_NEED                           =  25 ,
+    OBJECT_TYPE_PFOOTBALL                           =  26 ,
+    OBJECT_TYPE_PBALL                               =  27 ,
+    OBJECT_TYPE_MOBILE_STATIC                       =  28 ,
+    OBJECT_TYPE_DUMMY                               =  29 ,
+    OBJECT_TYPE_HELP_SPIRIT                         =  30 ,
+    OBJECT_TYPE_TOTEM_STATUE                        =  31 ,
+    OBJECT_TYPE_BIG_FOREST                          =  32 ,
+    OBJECT_TYPE_FISH_FARM                           =  33 ,
+    OBJECT_TYPE_REWARD                              =  34 ,
+    OBJECT_TYPE_SCRIPT_HIGHLIGHT                    =  35 ,
+    OBJECT_TYPE_WATERFALL                           =  36 ,
+    OBJECT_TYPE_HELP_ORB                            =  37 ,
+    OBJECT_TYPE_LEASH_SELECTOR                      =  38 ,
+    OBJECT_TYPE_ONE_OFF_SPELL                       =  39 ,
+    OBJECT_TYPE_FURNITURE                           =  40 ,
+    OBJECT_TYPE_FLOWERS                             =  41 ,
+    OBJECT_TYPE_FIREFLY                             =  42 ,
+    OBJECT_TYPE_ARENA_SPELL_ICON                    =  43 ,
+    OBJECT_TYPE_MAP_SHIELD                          =  44 ,
+    OBJECT_TYPE_CREATURE_ISLES_BUILDING             =  45 ,
+    OBJECT_TYPE_ARMY_FLAG                           =  46 ,
+    OBJECT_TYPE_SHIP                                =  47 ,
+    OBJECT_TYPE_SIEGEWEAPON                         =  48 ,
+    OBJECT_TYPE_GAME_LAVA                           =  49 ,
+    OBJECT_TYPE_PERSONALISATION                     =  50 ,
+    OBJECT_TYPE_ROAD                                =  51 ,
+    OBJECT_TYPE_SIEGEWEAPON_FLAG                    =  52 ,
+    OBJECT_TYPE_RECRUITMENT_TENT                    =  53 ,
+    OBJECT_TYPE_CREATURE_FLAG                       =  54 ,
+    OBJECT_TYPE_SIEGEWEAPON_AMMO                    =  55 ,
+    OBJECT_TYPE_LAST                                =  56 ,
+};
+
+#endif    // __OBJECT_TYPE_ENUM_H__

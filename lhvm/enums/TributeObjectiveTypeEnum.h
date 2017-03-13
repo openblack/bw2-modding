@@ -1,0 +1,137 @@
+#ifndef __TRIBUTE_OBJECTIVE_TYPE_ENUM_H__
+#define __TRIBUTE_OBJECTIVE_TYPE_ENUM_H__
+
+// Last Saved,#2005-08-12 11:33:20#,"Triston Attridge"
+
+//*****************************************************************************
+// ENUM Values: TRIBUTE_OBJECTIVE_TYPE
+//*****************************************************************************
+enum     TRIBUTE_OBJECTIVE_TYPE
+{
+    TRIBUTE_OBJECTIVE_TYPE_NONE                     = -1 ,
+    TRIBUTE_OBJECTIVE_TYPE_FIRST                    =  0 ,
+    TRIBUTE_OBJECTIVE_MINE_ORE                      =  0 ,
+    TRIBUTE_OBJECTIVE_COLLECT_WOOD                  =  1 ,
+    TRIBUTE_OBJECTIVE_COLLECT_FOOD                  =  2 ,
+    TRIBUTE_OBJECTIVE_ACHIEVE_POPULATION            =  3 ,
+    TRIBUTE_OBJECTIVE_CREATE_TROOPS                 =  4 ,
+    TRIBUTE_OBJECTIVE_BREED_CHILDREN                =  5 ,
+    TRIBUTE_OBJECTIVE_WIN_CREATURE_FIGHT            =  6 ,
+    TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS                =  7 ,
+    TRIBUTE_OBJECTIVE_BUILT_ABODE                   =  8 ,
+    TRIBUTE_OBJECTIVE_MAKE_DISCIPLES                =  9 ,
+    TRIBUTE_OBJECTIVE_MAKE_FARMER_DISCIPLES         =  10 ,
+    TRIBUTE_OBJECTIVE_MAKE_FORESTER_DISCIPLES       =  11 ,
+    TRIBUTE_OBJECTIVE_MAKE_FISHERMAN_DISCIPLES      =  12 ,
+    TRIBUTE_OBJECTIVE_MAKE_BREEDER_DISCIPLES        =  13 ,
+    TRIBUTE_OBJECTIVE_MAKE_WORSHIPPER_DISCIPLES     =  14 ,
+    TRIBUTE_OBJECTIVE_MAKE_BUILDER_DISCIPLES        =  15 ,
+    TRIBUTE_OBJECTIVE_MAKE_MINER_DISCIPLES          =  16 ,
+    TRIBUTE_OBJECTIVE_CREATURE_COLLECT_WOOD         =  17 ,
+    TRIBUTE_OBJECTIVE_CREATURE_COLLECT_FOOD         =  18 ,
+    TRIBUTE_OBJECTIVE_CREATURE_COLLECT_ORE          =  19 ,
+    TRIBUTE_OBJECTIVE_ENEMY_CREATURE_DEAD           =  20 ,
+    TRIBUTE_OBJECTIVE_PLAYER_TAKE_OVER_MINOR_SETTLEMENTS
+                                                    =  21 ,
+    TRIBUTE_OBJECTIVE_BUILD_IMPRESSIVE_BUILDINGS    =  22 ,
+    TRIBUTE_OBJECTIVE_CREATURE_WATER_TREES          =  23 ,
+    TRIBUTE_OBJECTIVE_PLAYER_BUILD_FIELDS           =  24 ,
+    TRIBUTE_OBJECTIVE_CREATURE_BUILD_ABODES         =  25 ,
+    TRIBUTE_OBJECTIVE_REACH_TOWN_STATUS             =  26 ,
+    TRIBUTE_OBJECTIVE_REACH_CITY_STATUS             =  27 ,
+    TRIBUTE_OBJECTIVE_REACH_METROPOLIS_STATUS       =  28 ,
+    TRIBUTE_OBJECTIVE_CREATURE_ENTERTAIN            =  29 ,
+    TRIBUTE_OBJECTIVE_CREATURE_ATTACK_TROOPS        =  30 ,
+    TRIBUTE_OBJECTIVE_CREATURE_KILL_SOLDIERS        =  31 ,
+    TRIBUTE_OBJECTIVE_CREATURE_PLANT_TREES          =  32 ,
+    TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_IMPRESSIVENESS =  33 ,
+    TRIBUTE_OBJECTIVE_TAKEOVER_TOWNS_FORCE          =  34 ,
+    TRIBUTE_OBJECTIVE_LEVEL_UP_PLATOON              =  35 ,
+    TRIBUTE_OBJECTIVE_BUILD_FIELD_FERTILE           =  36 ,
+    TRIBUTE_OBJECTIVE_INCREASE_IMPRESSIVENESS       =  37 ,
+    TRIBUTE_OBJECTIVE_BUILD_EMBELLISHMENT           =  38 ,
+    TRIBUTE_OBJECTIVE_CREATURE_ENTERTAIN_AT_ONCE    =  39 ,
+    TRIBUTE_OBJECTIVE_BUILD_WONDER                  =  40 ,
+    TRIBUTE_OBJECTIVE_KILL_ENEMY_CREATURE_WITH_ARMIES
+                                                    =  41 ,
+    TRIBUTE_OBJECTIVE_HEAL_VILLAGERS                =  42 ,
+    TRIBUTE_OBJECTIVE_COLLECT_ALL                   =  43 ,
+    TRIBUTE_OBJECTIVE_CREATURE_COLLECT_ALL          =  44 ,
+    TRIBUTE_OBJECTIVE_WATER_FIELD                   =  45 ,
+    TRIBUTE_OBJECTIVE_WATER_FOREST                  =  46 ,
+    TRIBUTE_OBJECTIVE_CREATURE_KILL_PLATOONS        =  47 ,
+    TRIBUTE_OBJECTIVE_CREATE_PLATOONS               =  48 ,
+    TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_FIRE         =  49 ,
+    TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_ELECTRICITY  =  50 ,
+    TRIBUTE_OBJECTIVE_DEFEAT_ARMY_WITH_METEOR       =  51 ,
+    TRIBUTE_OBJECTIVE_SPECIAL_SEGREGATE_MEN_WOMEN   =  52 ,
+    TRIBUTE_OBJECTIVE_SPECIAL_ENLIST_ALL_MEN        =  53 ,
+    TRIBUTE_OBJECTIVE_SPECIAL_DEFEAT_WALL_ATTACKERS =  54 ,
+    TRIBUTE_OBJECTIVE_SPECIAL_PROTECT_N_VILLAGERS_WITH_SHIELD_MIRACLE
+                                                    =  55 ,
+    TRIBUTE_OBJECTIVE_SPECIAL_LINK_TOWNS_WITH_IMPRESSIVENESS
+                                                    =  56 ,
+    TRIBUTE_OBJECTIVE_SPECIAL_ENCLOSE_TOWN_WITHIN_WALLS
+                                                    =  57 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_CONNECT_TOWNS_WITH_ROADS
+                                                    =  58 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_BUILDINGS_DESTROYED=  59 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_LIVING_THINGS_DEAD =  60 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_FOOD_DESTROYED     =  61 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_NON_GREEK_DEAD     =  62 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_TREES_REMOVED      =  63 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_CONVERT_ALIGMNENT_TO_GOOD
+                                                    =  64 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_CONVERT_ALIGMNENT_TO_EVIL
+                                                    =  65 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_ULTIMATE_GOOD      =  66 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_ULTIMATE_EVIL      =  67 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_UNCOVER_ALL_DYK    =  68 ,
+    TRIBUTE_OBJECTIVE_AS_SOON_AS_CREATURE_BREAK_ENEMY_WALLS
+                                                    =  69 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_NEVER_ATTACK         =  70 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_NEVER_RUN_OUT_OF_FOOD=  71 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_CREATURE_BUILD_ALL_BUILDINGS
+                                                    =  72 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_NEVER_LOSE_VILLAGER_TO_ATTACK
+                                                    =  73 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_CRATURE_BUILD_ALL_ABODES
+                                                    =  74 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_HAPPINESS_ABOVE      =  75 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_ATTACKED_ONLY_UNDER_DARKNESS
+                                                    =  76 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_CREATURE_KILL_PLATOON=  77 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_FIELDS_ON_FERTILE_LAND
+                                                    =  78 ,
+    TRIBUTE_OBJECTIVE_FAILABLE_WATER_FIELDS_EVERY_DAY
+                                                    =  79 ,
+    TRIBUTE_OBJECTIVE_LAND_1                        =  80 ,
+    TRIBUTE_OBJECTIVE_LAND_2                        =  81 ,
+    TRIBUTE_OBJECTIVE_LAND_3                        =  82 ,
+    TRIBUTE_OBJECTIVE_LAND_4                        =  83 ,
+    TRIBUTE_OBJECTIVE_LAND_5                        =  84 ,
+    TRIBUTE_OBJECTIVE_LAND_6                        =  85 ,
+    TRIBUTE_OBJECTIVE_LAND_7                        =  86 ,
+    TRIBUTE_OBJECTIVE_LAND_8                        =  87 ,
+    TRIBUTE_OBJECTIVE_LAND_9                        =  88 ,
+    TRIBUTE_OBJECTIVE_LAND_10                       =  89 ,
+    TRIBUTE_OBJECTIVE_LAND_11                       =  90 ,
+    TRIBUTE_OBJECTIVE_LAND_12                       =  91 ,
+    TRIBUTE_OBJECTIVE_LAND_13                       =  92 ,
+    TRIBUTE_OBJECTIVE_LAND_14                       =  93 ,
+    TRIBUTE_OBJECTIVE_LAND_15                       =  94 ,
+    TRIBUTE_OBJECTIVE_LAND_16                       =  95 ,
+    TRIBUTE_OBJECTIVE_LAND_17                       =  96 ,
+    TRIBUTE_OBJECTIVE_LAND_18                       =  97 ,
+    TRIBUTE_OBJECTIVE_LAND_19                       =  98 ,
+    TRIBUTE_OBJECTIVE_LAND_20                       =  99 ,
+    TRIBUTE_OBJECTIVE_LAND_21                       =  100 ,
+    TRIBUTE_OBJECTIVE_LAND_22                       =  101 ,
+    TRIBUTE_OBJECTIVE_LAND_23                       =  102 ,
+    TRIBUTE_OBJECTIVE_LAND_24                       =  103 ,
+    TRIBUTE_OBJECTIVE_LAND_25                       =  104 ,
+    TRIBUTE_OBJECTIVE_SCRIPT_CONTROLLED_WIN_LAND    =  105 ,
+    TRIBUTE_OBJECTIVE_TYPE_LAST                     =  106 ,
+};
+
+#endif    // __TRIBUTE_OBJECTIVE_TYPE_ENUM_H__

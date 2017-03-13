@@ -1,0 +1,44 @@
+#ifndef __EMBELLISHMENT_INFO_ENUM_H__
+#define __EMBELLISHMENT_INFO_ENUM_H__
+
+// Last Saved,#2005-04-21 10:39:33#,"Lionhead"
+
+//*****************************************************************************
+// ENUM Values: EMBELLISHMENT_INFO
+//*****************************************************************************
+enum     EMBELLISHMENT_INFO
+{
+    EMBELLISHMENT_INFO_NONE                         = -1 ,
+    EMBELLISHMENT_INFO_AZTEC_FOUNTAIN               =  0 ,
+    EMBELLISHMENT_INFO_AZTEC_FOUNTAIN_GOOD          =  1 ,
+    EMBELLISHMENT_INFO_AZTEC_FOUNTAIN_EVIL          =  2 ,
+    EMBELLISHMENT_INFO_AZTEC_STATUE                 =  3 ,
+    EMBELLISHMENT_INFO_AZTEC_STATUE_GOOD            =  4 ,
+    EMBELLISHMENT_INFO_AZTEC_STATUE_EVIL            =  5 ,
+    EMBELLISHMENT_INFO_JAPANESE_FOUNTAIN            =  6 ,
+    EMBELLISHMENT_INFO_JAPANESE_FOUNTAIN_GOOD       =  7 ,
+    EMBELLISHMENT_INFO_JAPANESE_FOUNTAIN_EVIL       =  8 ,
+    EMBELLISHMENT_INFO_JAPANESE_SHRINE              =  9 ,
+    EMBELLISHMENT_INFO_JAPANESE_SHRINE_GOOD         =  10 ,
+    EMBELLISHMENT_INFO_JAPANESE_SHRINE_EVIL         =  11 ,
+    EMBELLISHMENT_INFO_JAPANESE_GARDEN              =  12 ,
+    EMBELLISHMENT_INFO_JAPANESE_GARDEN_EVIL         =  13 ,
+    EMBELLISHMENT_INFO_NORSE_FOUNTAIN               =  14 ,
+    EMBELLISHMENT_INFO_NORSE_FOUNTAIN_GOOD          =  15 ,
+    EMBELLISHMENT_INFO_NORSE_FOUNTAIN_EVIL          =  16 ,
+    EMBELLISHMENT_INFO_NORSE_STATUE                 =  17 ,
+    EMBELLISHMENT_INFO_NORSE_STATUE_GOOD            =  18 ,
+    EMBELLISHMENT_INFO_NORSE_STATUE_EVIL            =  19 ,
+    EMBELLISHMENT_INFO_GREEK_FERTILITY_STATUE       =  20 ,
+    EMBELLISHMENT_INFO_GREEK_FOUNTAIN               =  21 ,
+    EMBELLISHMENT_INFO_GREEK_STREETLAMP             =  22 ,
+    EMBELLISHMENT_INFO_GREEK_TORTURE_PIT            =  23 ,
+    EMBELLISHMENT_INFO_GREEK_COLUMN                 =  24 ,
+    EMBELLISHMENT_INFO_GREEK_GARDEN                 =  25 ,
+    EMBELLISHMENT_INFO_GREEK_WELL                   =  26 ,
+    EMBELLISHMENT_INFO_GREEK_SPIKE                  =  27 ,
+    EMBELLISHMENT_INFO_GREEK_MIRACLE_ENHANCER       =  28 ,
+    EMBELLISHMENT_INFO_LAST                         =  29 ,
+};
+
+#endif    // __EMBELLISHMENT_INFO_ENUM_H__
