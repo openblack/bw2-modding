@@ -18,3 +18,23 @@ The file has a header identifying the file format and version: ASCII
 `LiOnHeAdMODEL`, followed by `27 bytes` of null padding. Followed by a `uint32`
 possibly describing the version. Then followed again by another `uint32` that
 must be set to `0x2B00B1E5`. :smirk:
+
+A lot of the header is completely unknown to me, but enough is known to read
+a model's geometry. The following is the structure after `0x2B00B1E5`:
+
+```
+uint32_t modelType: this is either 5 or 6 depending on if the model has bones
+uint32_t headerSize;
+char[68] unknown;
+uint32_t numMaterialDefinitions;
+uint32_t numMeshDescriptions;
+uint32_t numBones;
+uint32_t numEnts;
+uint32_t numUnknown
+uint32_t numUnknown;
+char[20] unknown;
+uint32_t numVertex;
+uint32_t numStrides;
+uint32_t unknown;
+uint32_t numIndices;
+```
