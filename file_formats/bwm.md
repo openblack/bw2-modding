@@ -139,5 +139,3 @@ Named like this in bwmTool reader, don't know what it's used for
 uint_32 modelCleaveCount;
 float[3] modelCleave[modelCleaveCount]
 ```
-## File Map
-
