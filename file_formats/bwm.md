@@ -37,7 +37,7 @@ uint32_t numUnknown2; // Count the number of an entity whose purpose is unknown
 char[20] unknown;
 uint32_t numVertex;
 uint32_t numStrides;
-uint32_t type; //Tell if the file is a model or a skin (model for people and animal) it determines the step to make for each faces (if 3 then 1, if 2 then 3) in the table of indes to build a face.
+uint32_t type; //Tell if the file is a model or a skin (model for people and animal) it determines the step to make for // each faces (if 3 then 1, if 2 then 3) in the table of indes to build a face.
 uint32_t numIndices;
 ```
 
@@ -107,7 +107,11 @@ float[3] point;
 ```
 
 ### Stride
-
+This structure tell the number of stride to take in the following data block and how data is to be read during each stride. For instance if `idSize` contains `[0, 2, 1, 2, 2, 1, 2, 1, 2, 1]` the odd indicies seems to correspond to a data type (yet to be confirmed), the even indicies indicate which format of data to read. In this example we have 5 data structure of id `[0, 1, 2, 2, 2]` and format `[2, 2, 1, 1, 1]`. Data to size correspondence are as follow :
+- 0 or 3 = 4 bytes
+- 1 = 12 bytes
+- 2 = 8 bytes
+- 4 = 1 byte
 ```
 uint_32 count;
 uint_32 idSize[2*count];
