@@ -37,7 +37,8 @@ uint32_t numUnknown2; // Count the number of an entity whose purpose is unknown
 char[20] unknown;
 uint32_t numVertex;
 uint32_t numStrides;
-uint32_t type; //Tell if the file is a model or a skin (model for people and animal) it determines the step to make for // each faces (if 3 then 1, if 2 then 3) in the table of indes to build a face.
+uint32_t type; //Tell if the file is a model or a skin (model for people and animal) it determines the step to make for 
+// each faces (if 3 then 1, if 2 then 3) in the table of indes to build a face.
 uint32_t numIndices;
 ```
 
@@ -61,7 +62,14 @@ char[64] type;
 ```
 uint_32 facesCount;
 uint_32 indiciesOffset;
-char[128] unknown1;
+uint_32 indiciesSize;
+uint_32 vertexOffset;
+uint_32 vertexSize;
+float[3] axis1; //First axis of a rotation matrix
+float[3] axis2; //Second axis of a rotation matrix
+float[3] axis3; //Thirs axis of a rotation matrix
+float[3] position;
+char[68] unknown1;
 uint_32 materialRefsCount;
 char[4] unknown2;
 uint_32 id;
@@ -69,6 +77,7 @@ char[64] name;
 ```
 
 ### Material Reference Definition
+This section is stocked in the file right after the mesh definition. There are a number of material references equal to the sum of materialRefsCount for each mesh description. For example if you have 2 mesh with 2 material references this section will contain 4 material references the first two for the first one and the last two for the second one.
 ```
 uint_32 materialDefinition;
 uint_32 indiciesOffset;
@@ -120,10 +129,12 @@ uint_32 unknown[136 - (2*count)]; //Presumed to be garbage
 ### Stride organized data
 
 #### Vertex
+This section is defined by the first stride, it is usually comprised of the vertex position and its normal with a tuple for uv coordinates.
 ```
 float[3] position;
 float[3] normal;
 float[2] uv;
+// End of common vertex definition
 float[2] unknown1;
 float[2] unknown2;
 ```
@@ -138,7 +149,7 @@ uint_16[numIndices]
 ```
 
 ### Model Cleaves
-Named like this in bwmTool reader, don't know what it's used for
+Named like this in bwmTool reader, don't know what it's used for.
 ```
 uint_32 modelCleaveCount;
 float[3] modelCleave[modelCleaveCount]
