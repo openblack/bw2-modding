@@ -20,21 +20,35 @@ possibly describing the version. Then followed again by another `uint32` that
 must be set to `0x2B00B1E5`. :smirk:
 
 A lot of the header is completely unknown to me, but enough is known to read
-a model's geometry. The following is the structure after `0x2B00B1E5`:
+a model's geometry :
 
 ```
 char[40] magicFileIdentifier; //'LiOnHeAdMODEL' followed by 27 bytes of padding
 uint32_t size; //Size of the file minus the size of this value and of magicFileIdentifier
 uint32_t magicNumber; // Must always be 0x2B00B1E5
 uint32_t version; // Version of the file format only encoutered version 5 or 6
-char[72] unknown1;
+uint32_t metadataSize // Size of all data definitions, in practice it is the
+// beginning of the vertex minus 56 bytes
+
+/** All the following data block is not fully understood but has an impact
+ *  on collision check when placing road, it also give the minimum collision
+ *  box when no footprint is given */
+char[12] unknown;
+float unknown_float; // Purpose unknown but setting it to zero can cause the model
+// to stop being displayed
+char[40] unknown1;
+float snapToRoadDistance; // Displacement on the X axis (from the origin of the model)
+// used to align the building allong the road.
+char[8] unknown2;
+//End of data block
+
 uint32_t numMaterialDefinitions;
 uint32_t numMeshDescriptions;
 uint32_t numBones;
 uint32_t numEnts;
 uint32_t numUnknown1; // Count the number of an entity whose purpose is unknown
-uint32_t numUnknown2; // Count the number of an entity whose purpose is unknown
-char[20] unknown;
+uint32_t numCollisionPoint; // Count the number of an entity whose purpose is unknown
+char[20] unknown3;
 uint32_t numVertex;
 uint32_t numStrides;
 uint32_t type; //Tell if the file is a model or a skin (model for people and animal) it determines the step to make for 
@@ -110,7 +124,8 @@ char[256] name
 float[3] point;
 ```
 
-### Entity Unknown2:
+### Collision point:
+This array of point is the footprint used to check for collision when placing building. It seems to be mostly usefull to check collision when placing the building, deleting it allow to build on existing road but not near building with valid collision footprint. Another set of data control the minimum collision inside the header. Testing show that collision check or not reversible (placing a temple then a hovel can allow for placement that are invalid the other way).
 ```
 float[3] point;
 ```
