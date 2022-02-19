@@ -30,17 +30,15 @@ uint32_t version; // Version of the file format only encoutered version 5 or 6
 uint32_t metadataSize // Size of all data definitions, in practice it is the
 // beginning of the vertex minus 56 bytes
 
-/** All the following data block is not fully understood but has an impact
- *  on collision check when placing road, it also give the minimum collision
- *  box when no footprint is given */
-char[12] unknown;
-float unknown_float; // Purpose unknown but setting it to zero can cause the model
-// to stop being displayed
-char[40] unknown1;
-float snapToRoadDistance; // Displacement on the X axis (from the origin of the model)
-// used to align the building allong the road.
-char[8] unknown2;
-//End of data block
+float unknown;
+float[3] pnt;
+float[3] box1; //First point of a bounding box
+float[3] box2; //Second point of a bounding box
+float[3] center;
+float height;
+float radius; //Also define the distance to snap the building to the road
+uint32_t unknown2; //Always 0, 1 or 2
+float volume;
 
 uint32_t numMaterialDefinitions;
 uint32_t numMeshDescriptions;
@@ -64,10 +62,9 @@ is empty).
 ```
 char[64] diffuseMap;
 char[64] lightMap;
-char[64] unknown1; // Can't confirm but it seems link to be a growthmap for blossoming tree
+char[64] growthMap;
 char[64] specularMap;
-char[64] unknown2; //Can't confirm but it seems to be a growthmap for vegetation in general
-// including alignemnet related vines and plant on building.
+char[64] animatedTexture;
 char[64] normalMap;
 char[64] type;
 ```
@@ -83,10 +80,15 @@ float[3] axis1; //First axis of a rotation matrix
 float[3] axis2; //Second axis of a rotation matrix
 float[3] axis3; //Thirs axis of a rotation matrix
 float[3] position;
-char[68] unknown1;
+char[16] unknown1;
+float[3] box1;
+float[3] box2; 
+char[20] unknown2;
+uint32_t unknown_int;
+float volume;
 uint_32 materialRefsCount;
 char[4] unknown2;
-uint_32 id;
+uint_32 lod_level;
 char[64] name;
 ```
 
@@ -103,6 +105,7 @@ char[4] unknown2;
 ```
 
 ### Bone Definition
+Define the position and orientation of a bone, information on the skeleton are found in [.al](/file_formats/al.md) files
 ```
 float[3] axis1; //First axis of a rotation matrix
 float[3] axis2; //Second axis of a rotation matrix
@@ -142,9 +145,10 @@ uint_32 idSize[2*count];
 uint_32 unknown[136 - (2*count)]; //Presumed to be garbage
 ````
 ### Stride organized data
+The data structure defined in strides are repeated for the number of vertex defined in the file.
 
 #### Vertex
-This section is defined by the first stride, it is usually comprised of the vertex position and its normal with a tuple for uv coordinates.
+This section is defined by the first stride (or stride 0), it is usually comprised of the vertex position and its normal with a tuple for uv coordinates.
 ```
 float[3] position;
 float[3] normal;
@@ -154,8 +158,12 @@ float[2] unknown1;
 float[2] unknown2;
 ```
 
-#### Unknown Data
-If the number of Stride is over 1 multiple Array will be stored there, as it happens only on skins it is presumed that this data is there for animation purpose
+#### Bone weight
+In skins you find 8 more strides, they link the vertex with the bones with a bone index/weight scheme, each vertex is associated to at most 4 different bones.
+From stride 1 to 4 you find.
+`char boneIndex; //Index of the bone`
+From stride 5 to 8 you find.
+`float boneWeight; //How much the bone impact the vertex during animation`
 
 ### Indices
 A table of `uint_16` containing index for the vertex array. The way to extract faces differs if your file contain a model or a skin (you'll need to move by 3 for each face for a model and by one for a skin).
