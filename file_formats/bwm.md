@@ -80,7 +80,8 @@ float[3] axis1; //First axis of a rotation matrix
 float[3] axis2; //Second axis of a rotation matrix
 float[3] axis3; //Thirs axis of a rotation matrix
 float[3] position;
-char[16] unknown1;
+float[3] center;
+float radius; // Control collison with the god hand
 float[3] box1;
 float[3] box2; 
 char[20] unknown2;
