@@ -162,9 +162,13 @@ float[2] uv_plants;
 #### Bone weight
 In skins you find 8 more strides, they link the vertex with the bones with a bone index/weight scheme, each vertex is associated to at most 4 different bones.
 From stride 1 to 4 you find.
-```char boneIndex; //Index of the bone```
+```
+char boneIndex; //Index of the bone
+```
 From stride 5 to 8 you find.
-```float boneWeight; //How much the bone impact the vertex during animation```
+```
+float boneWeight; //How much the bone impact the vertex during animation
+```
 
 ### Indices
 A table of `uint_16` containing index for the vertex array. The way to extract faces differs if your file contain a model or a skin (you'll need to move by 3 for each face for a model and by one for a skin).
