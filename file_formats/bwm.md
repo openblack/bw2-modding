@@ -153,10 +153,10 @@ This section is defined by the first stride (or stride 0), it is usually compris
 ```
 float[3] position;
 float[3] normal;
-float[2] uv;
+float[2] uv_texture;
 // End of common vertex definition
-float[2] unknown1;
-float[2] unknown2;
+float[2] uv_ligthmap;
+float[2] uv_plants;
 ```
 
 #### Bone weight
