@@ -32,10 +32,36 @@ Each animation metadata are as follow :
 ```
   uint32_t unknowns1[2]; // Always the same values across file
   char name[64];
-  uint32_t unknowns2[7]; // Always the same values for one file
-  uint32_t unknowns3[11];
+  uint32_t unknowns2[6]; // Always 3 for the first and zero for the rest
+  uint32_t boneCount;
+  uint32_t frameCount;
+  float samplingRate; // Framerate of the animation in Hz
+  float duration; // Animation usually samplingRate * frameCount
+  // It can be different but this will lead to mismatch in the animation loop.
+  uint32_t unknown1;
+  uint32_t unknown2; // Either 256 or 257
+  uint32_t unknowns3[8];
   uint32_t animationOffset; // Where to find the data of the animation in the file
 ```
 
 # Animation Data
 The majority of the information inside an animation library and right now the least understood part.
+## Animation Header
+Mostly a copy of the animation metadata except for the unknowns2 values
+```
+  uint32_t unknowns1[2]; // Always the same values across file
+  char name[64];
+  uint32_t unknowns2[6]; // The first value is always 3, last three values are always 0 asfaik.
+  // The second and third value vary change for each animation
+  uint32_t boneCount;
+  uint32_t frameCount;
+  float samplingRate; // Framerate of the animation in Hz
+  float duration; // Animation usually samplingRate * frameCount
+  // It can be different but this will lead to mismatch in the animation loop.
+  uint32_t unknown1;
+  uint32_t unknown2; // Either 256 or 257
+  uint32_t unknowns3[8];
+  uint32_t animationOffset; // Where to find the data of the animation in the file
+```
+## Animation Data
+Most likely contains keyframes but i don't know how they are organized
