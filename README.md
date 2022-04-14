@@ -4,6 +4,7 @@ A repository of information related to modding Lionhead's Black & White 2.
 
 ## File Formats
 
+* [.al](/file_formats/al.md)
 * [.bwe](/file_formats/bwe.md)
 * [.bwm](/file_formats/bwm.md)
 * [.chl](/file_formats/chl.md)
