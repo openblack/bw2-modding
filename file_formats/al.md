@@ -30,38 +30,45 @@ uint32_t parent;
 A list containing the medata of an animation.
 Each animation metadata are as follow :
 ```
-  uint32_t unknowns1[2]; // Always the same values across file
+  uint32_t magicNumber; //Magic number always equal to 0xFEC
+  uint32_t unknown1; // Always 9
   char name[64];
-  uint32_t unknowns2[6]; // Always 3 for the first and zero for the rest
+  uint32_t unknowns1[6]; // The first value is always 3 the rest are zero
   uint32_t boneCount;
   uint32_t frameCount;
   float samplingRate; // Framerate of the animation in Hz
   float duration; // Animation usually samplingRate * frameCount
   // It can be different but this will lead to mismatch in the animation loop.
-  uint32_t unknown1;
-  uint32_t unknown2; // Either 256 or 257
-  uint32_t unknowns3[8];
+  uint32_t unknown2;
+  uint32_t unknown3; // Either 256 or 257
+  uint32_t unknowns2a[2];
+  uint32_t unknown4;
+  uint32_t unknowns2b[2]; // unknowns2a == ununknowns2b
+  uint32_t unknown4;
   uint32_t animationOffset; // Where to find the data of the animation in the file
 ```
 
 # Animation Data
 The majority of the information inside an animation library and right now the least understood part.
 ## Animation Header
-Mostly a copy of the animation metadata except for the unknowns2 values
+Identical to the associated metadata except for the values inside the unknowns1 array.
 ```
-  uint32_t unknowns1[2]; // Always the same values across file
+  uint32_t magicNumber; //Magic number always equal to 0xFEC
+  uint32_t unknown1; // Always 9
   char name[64];
-  uint32_t unknowns2[6]; // The first value is always 3, last three values are always 0 asfaik.
-  // The second and third value vary change for each animation
+  uint32_t unknowns1[6]; // The first value is always 3, last three values are always 0 asfaik.
+  // The second and third value vary from one animation to another
   uint32_t boneCount;
   uint32_t frameCount;
   float samplingRate; // Framerate of the animation in Hz
   float duration; // Animation usually samplingRate * frameCount
   // It can be different but this will lead to mismatch in the animation loop.
-  uint32_t unknown1;
-  uint32_t unknown2; // Either 256 or 257
-  uint32_t unknowns3[8];
-  uint32_t animationOffset; // Where to find the data of the animation in the file
+  uint32_t unknown2;
+  uint32_t unknown3; // Either 256 or 257
+  uint32_t unknowns2a[2];
+  uint32_t unknown4;
+  uint32_t unknowns2b[2]; // unknowns2a == ununknowns2b
+  uint32_t unknown4;
 ```
 ## Animation Data
 Most likely contains keyframes but i don't know how they are organized
