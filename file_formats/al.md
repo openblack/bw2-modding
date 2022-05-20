@@ -39,8 +39,10 @@ Each animation metadata are as follow :
   float samplingRate; // Framerate of the animation in Hz
   float duration; // Animation usually samplingRate * frameCount
   // It can be different but this will lead to mismatch in the animation loop.
-  uint32_t unknown2;
-  uint32_t unknown3; // Either 256 or 257
+  uint32_t distance;
+  bool isCyclic;
+  bool isHierarchical;
+  uint16_t empty; // always 0
   uint32_t unknowns2a[2];
   uint32_t unknown4;
   uint32_t unknowns2b[2]; // unknowns2a == ununknowns2b
@@ -63,8 +65,10 @@ Identical to the associated metadata except for the values inside the unknowns1 
   float samplingRate; // Framerate of the animation in Hz
   float duration; // Animation usually samplingRate * frameCount
   // It can be different but this will lead to mismatch in the animation loop.
-  uint32_t unknown2;
-  uint32_t unknown3; // Either 256 or 257
+  uint32_t distance;
+  bool isCyclic;
+  bool isHierarchical;
+  uint16_t empty; // always 0
   uint32_t unknowns2a[2];
   uint32_t unknown4;
   uint32_t unknowns2b[2]; // unknowns2a == ununknowns2b
