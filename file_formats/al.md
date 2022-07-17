@@ -58,7 +58,8 @@ Identical to the associated metadata except for the values inside the unknowns1 
   uint32_t magicNumber; //Magic number always equal to 0xFEC
   uint32_t unknown1; // Always 9
   char name[64];
-  uint32_t unknowns1[6]; // The first value is always 3, last three values are always 0 asfaik.
+  uint32_t unknowns1[5]; // The first value is always 3, last two values are always 0 asfaik.
+  uint32_t animEventCount;
   // The second and third value vary from one animation to another
   uint32_t boneCount;
   uint32_t frameCount;
@@ -74,5 +75,23 @@ Identical to the associated metadata except for the values inside the unknowns1 
   uint32_t unknowns2b[2]; // unknowns2a == ununknowns2b
   uint32_t unknown4;
 ```
+## Animation Event
+An array of Animation Event followed by the name of its element.
+### Animation Event
+```
+uint32_t boneOffset // Offset to the "bone name" from the beginning of the Animation in the file
+uint32_t nameOffset // Offset to the name of the event from the beginning of the animation in the file
+float axis1[4] // First axis of the rotatio section of a transformation matrix
+float axis1[4] // Second axis of the rotation section of a transformation matrix
+float axis1[4] // Third axis of the rotatio section of a transformation matrix
+float translation[4] // Transformation vector of a transformation matrix
+```
+### Animation Event Strings
+The names pointed by `boneOffset` and `nameOffset` are stored right after the end of the array of animation event as a list of null terminated strings.
+They are organised in the following order :
+- Name of bone before name of event
+- From first Animation Event to last
+
+
 ## Animation Data
 Most likely contains keyframes but i don't know how they are organized
