@@ -31,9 +31,12 @@ A list containing the medata of an animation.
 Each animation metadata are as follow :
 ```
   uint32_t magicNumber; //Magic number always equal to 0xFEC
-  uint32_t unknown1; // Always 9
+  uint32_t animationVersion; // Always 9
   char name[64];
-  uint32_t unknowns1[6]; // The first value is always 3 the rest are zero
+  uint32_t animationType; // 3 for hierarchical, no other animation type was met for now
+  uint32_t unknowns1[4]; // all values are always 0 asfaik.
+  uint32_t animEventCount;
+  // The second and third value vary from one animation to another
   uint32_t boneCount;
   uint32_t frameCount;
   float samplingRate; // Framerate of the animation in Hz
@@ -47,7 +50,7 @@ Each animation metadata are as follow :
   uint32_t unknown4;
   uint32_t unknowns2b[2]; // unknowns2a == ununknowns2b
   uint32_t unknown4;
-  uint32_t animationOffset; // Where to find the data of the animation in the file
+  uint32_t animationOffset; // position of the animation data from the start of the file
 ```
 
 # Animation Data
@@ -56,9 +59,10 @@ The majority of the information inside an animation library and right now the le
 Identical to the associated metadata except for the values inside the unknowns1 array.
 ```
   uint32_t magicNumber; //Magic number always equal to 0xFEC
-  uint32_t unknown1; // Always 9
+  uint32_t animationVersion; // Always 9
   char name[64];
-  uint32_t unknowns1[5]; // The first value is always 3, last two values are always 0 asfaik.
+  uint32_t animationType; // 3 for hierarchical, no other animation type was met for now
+  uint32_t unknowns1[4]; // last two values are always 0 asfaik.
   uint32_t animEventCount;
   // The second and third value vary from one animation to another
   uint32_t boneCount;
@@ -79,7 +83,7 @@ Identical to the associated metadata except for the values inside the unknowns1 
 An array of Animation Event followed by the name of its element.
 ### Animation Event
 ```
-uint32_t boneOffset // Offset to the "bone name" from the beginning of the Animation in the file
+uint32_t boneOffset // Offset to the "bone name" from the beginning of the animation in the file
 uint32_t nameOffset // Offset to the name of the event from the beginning of the animation in the file
 float axis1[4] // First axis of the rotatio section of a transformation matrix
 float axis1[4] // Second axis of the rotation section of a transformation matrix
@@ -92,6 +96,13 @@ They are organised in the following order :
 - Name of bone before name of event
 - From first Animation Event to last
 
+Example from the a_bear_die animation in bear.al, you can find the following strings (`�` are null character).
+```
+LHAnimEvent04�::FOOTSTEPS.99�LHAnimEvent03�::FOOTSTEPS.99�LHAnimEvent05�::POLARHITGROUND.99�LHAnimEvent01�::POLAR1.99�
+```
+You then have `LHAnimEvent04` as bone name and `::FOOTSTEPS.99` as event name for the first event,
+`LHAnimEvent03` as bone name and `::FOOTSTEPS.99` as event name for the second event,
+and so on for the rest.
 
 ## Animation Data
 Most likely contains keyframes but i don't know how they are organized
