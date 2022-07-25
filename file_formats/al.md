@@ -34,7 +34,8 @@ Each animation metadata are as follow :
   uint32_t animationVersion; // Always 9
   char name[64];
   uint32_t animationType; // 3 for hierarchical, no other animation type was met for now
-  uint32_t unknowns1[4]; // all values are always 0 asfaik.
+  uint32_t animationEventStringSize // Size of the section where AnimationEvent names are stored, 0 in metadata
+  uint32_t unknowns1[3]; // all values are always 0 asfaik.
   uint32_t animEventCount;
   // The second and third value vary from one animation to another
   uint32_t boneCount;
@@ -62,7 +63,8 @@ Identical to the associated metadata except for the values inside the unknowns1 
   uint32_t animationVersion; // Always 9
   char name[64];
   uint32_t animationType; // 3 for hierarchical, no other animation type was met for now
-  uint32_t unknowns1[4]; // last two values are always 0 asfaik.
+  uint32_t animationEventStringSize // Size of the section where AnimationEvent names are stored
+  uint32_t unknowns1[3]; // last two values are always 0 asfaik.
   uint32_t animEventCount;
   // The second and third value vary from one animation to another
   uint32_t boneCount;
