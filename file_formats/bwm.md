@@ -11,6 +11,8 @@ render static meshes.
 ![A model file imported into blender](images/bwm-blender.png)
 ![A model file visualized in wireframe](images/bwm-program.png)
 
+At the end of this page you can find an [ImHex](https://imhex.werwolv.net/) Pattern corresponding to this file format. 
+
 ## File Format
 
 ### Header
@@ -181,4 +183,160 @@ Named like this in bwmTool reader, don't know what it's used for.
 ```
 uint_32 modelCleaveCount;
 float[3] modelCleave[modelCleaveCount]
+```
+
+# A pattern to use with ImHex
+
+```C
+#pragma pattern_limit 1000000
+struct header {
+	char idString[40];
+	u32 size;
+	u32 magicNumber;
+	u32 version;
+	u32 metadataSize;
+	float unk1;
+	float pnt[3];
+	float box1[3];
+	float box2[3];
+	float cent[3];
+	float height;
+	float radius;
+	u32 unk2;
+	float volume;
+	u32 matDefCount;
+	u32 meshDescCount;
+	u32 boneCount;
+	u32 entityCount;
+	u32 unkCount;
+	u32 collCount;
+	float unk3;
+	float unks2[3];
+	float unk4;
+	u32 vertexCount;
+	u32 strideCount;
+	u32 type;
+	u32 indexCount;
+};
+
+header head @ 0x00;
+
+struct matDef{
+	char diffuse[64];
+	char light[64];
+	char growth[64];
+	char specular[64];
+	char animation[64];
+	char normal[64];
+	char type[64];
+};
+
+matDef matDefs[head.matDefCount] @$;
+
+struct matRef {
+	u32 matDesc;
+	u32 indiceOff;
+	u32 indiceSize;
+	u32 vertexOff;
+	u32 vertexSize;
+	u32 faceOff;
+	u32 faceSize;
+	float unk;
+};
+
+struct meshDesc {
+	u32 faceCount;
+	u32 indiceOff;
+	u32 indiceSize;
+	u32 vertexOff;
+	u32 vertexSize;
+	
+	float zaxis[3];
+	float xaxis[3];
+	float yaxis[3];
+	float position[3];
+	
+	float cent[3];
+	float radius;
+	float box1[3];
+	float box2[3];
+	float unks[3];
+	float height;
+	float unk1;
+	
+	u32 unk_int;
+	float volume;
+	u32 matRefCount;
+	u32 u2;
+	u32 lod_level;
+	char name[64];
+	u32 unks3[2];
+	
+};
+
+meshDesc meshDescs[head.meshDescCount] @$;
+
+fn matRefCount() {
+	u32 i = head.meshDescCount;
+	u32 refCount = 0;
+	while (i > 0) {
+		i -= 1;
+		refCount += meshDescs[i].matRefCount;
+	}
+	return refCount;
+};
+
+matRef matRefs[matRefCount()] @$;
+
+struct bone {
+	float zaxis[3];
+	float xaxis[3];
+	float yaxis[3];
+	float position[3];
+};
+
+bone bones[head.boneCount] @$;
+
+struct entity {
+	float zaxis[3];
+	float xaxis[3];
+	float yaxis[3];
+	float position[3];
+	char name[256];
+};
+
+entity entities[head.entityCount] @$;
+
+struct unk {
+	float position[3];
+};
+
+unk unks[head.unkCount] @$;
+
+struct coll {
+	float position[3];
+};
+
+coll colls[head.collCount] @$;
+
+struct stride {
+	u32 size;
+	u32 idSize[2*size];
+	padding[0x84 - 8*size];
+};
+
+stride strides[head.strideCount] @$;
+
+struct vertex {
+	float position[3];
+	float normal[3];
+	float uv[2];
+	if (strides[0].size > 3)
+		float lightuv[2];
+	if (strides[0].size > 4)
+		float unkuv[2];
+};
+
+vertex vertices[head.vertexCount] @$;
+u16 indexes[head.indexCount] @$;
 ```
