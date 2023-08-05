@@ -2,6 +2,8 @@ The format `al` is used to store information related to animation of a [.bwm](/f
 The format is found inside the `Art\binary_anim_libs` and knowledge on the format is still quite limited.
 Here is a rough overview of how the format is organized.
 
+At the end of this page you can find an [ImHex](https://imhex.werwolv.net/) Pattern corresponding to this file format. 
+
 # Header
 
 The header of the file is as follow :
@@ -108,3 +110,116 @@ and so on for the rest.
 
 ## Animation Data
 Most likely contains keyframes but i don't know how they are organized
+
+# A pattern to use with ImHex
+
+```C
+#pragma pattern_limit 10000000
+#include <std/ptr.pat>
+
+struct header {
+    u32 magicnumber;
+    u32 unknown1;
+    char name[64];
+    u32 metadataOffset;
+    u32 size;
+    u32 animationOffset;
+    u32 animationCount;
+    float unknowns2[2];
+};
+
+header fileHeader @0x0;
+
+struct bone{
+    char name[32];
+    s32 parentBone;
+};
+
+struct armature {
+    u32 boneCount;
+    u32 unknown;
+    bone skeleton[boneCount];
+};
+
+armature skeleton @0x60;
+
+struct animationHeader {
+    u32 magicNumber;
+    u32 version;
+    char name[64];
+    u32 animationType;
+    u32 animationEventStringSize;
+    u32 offsetBlockSize;
+    u32 unknown1[2];
+    u32 animationEventCount;
+    u32 boneCount;
+    u32 frameCount;
+    float samplingRate;
+    float duration;
+    float distance;
+    bool isCyclic;
+    bool isHierarchical;
+    u16 flags;
+    u32 unknowns[6];
+};
+
+using metadata;
+
+struct animationEvent {
+    u32 boneOffset;
+    u32 nameOffset;
+    float transitionMatrix[16];
+};
+
+struct unk {
+	u32 index[2];
+};
+
+struct tuple{	
+	u32 data[2];
+	//float val[size] @ 0x828 + (offset*size);
+};
+
+struct CompressedQuaternion {
+	s16 xyz[3];
+};
+
+struct Quaternion{
+	float rotation[4];
+};
+
+struct Point{
+	float position[3];
+};
+
+struct animation {
+    animationHeader header;
+    //Animation Event block
+    animationEvent events[header.animationEventCount];
+    padding[header.animationEventStringSize];
+    u32 something;
+    padding[12];
+    char unk[something];
+    // Offset Block
+    tuple offsetArray[header.frameCount];
+    padding[header.offsetBlockSize - header.frameCount*8];
+    // Unknown Data Block
+    u32 unk2[2];
+    char unk3[32];
+    Point posComp;
+	// KeyFrame Block
+    Point point;
+    Quaternion frameZeroRotations[header.boneCount];
+    Point frameZeroPosition[header.boneCount];;
+    CompressedQuaternion first[(header.frameCount-1)*((unk2[0]))];
+    CompressedQuaternion second[(header.frameCount-1)*((unk2[1]))];
+};
+
+struct animationMetadata {
+    animationHeader info;
+    u32 offset;
+	animation anim @ offset;
+};
+
+animationMetadata metadata[fileHeader.animationCount] @fileHeader.metadataOffset+0x60;
+```
